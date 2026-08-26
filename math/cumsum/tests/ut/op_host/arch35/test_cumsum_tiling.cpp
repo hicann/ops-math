@@ -19,15 +19,9 @@ using namespace ge;
 
 class CumsumTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "CumsumTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase()
-    {
-        std::cout << "CumsumTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(CumsumTiling, Cumsum_test_tiling_001)

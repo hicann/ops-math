@@ -76,7 +76,7 @@ static Status ParseOpToGraphConcat(const ge::Operator& op, Graph& graph)
     std::vector<std::pair<ge::Operator, std::vector<size_t>>> output_indexs;
 
     if (input_size == 0) {
-        OP_LOGE(GetOpName(op).c_str(), "input_size must ge 1");
+        OP_LOGE(GetOpName(op).c_str(), "input_size must be at least 1");
         return FAILED;
     } else if (input_size == 1) {
         auto data_op = op::Data((ori_name + "_data").c_str()).set_attr_index(0);

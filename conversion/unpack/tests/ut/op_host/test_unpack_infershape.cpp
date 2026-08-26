@@ -15,15 +15,9 @@
 
 class UnpackInfershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "UnpackInfershape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase()
-    {
-        std::cout << "UnpackInfershape TearDown" << std::endl;
-    }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(UnpackInfershape, unpack_infershape_test1)

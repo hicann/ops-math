@@ -74,53 +74,93 @@ ge::graphStatus MemSetTilingClass::PostTiling()
     // Different sizes of tiling data templates
     const std::vector<int> validNums = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 32, 64, 128, 192, 256};
     if (inputCount_ > validNums.back()) {
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "TensorNum",
-            std::to_string(inputCount_).c_str(),
-            "The value of TensorNum must be within the range [1, 256].");
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "TensorNum", std::to_string(inputCount_).c_str(),
+                                              "The value of TensorNum must be within the range [1, 256].");
         return ge::GRAPH_FAILED;
     }
     auto it = std::lower_bound(validNums.begin(), validNums.end(), inputCount_);
     int targetNum = *it;
     switch (targetNum) {
-        case 1: PostDo<1>();break;
-        case 2: PostDo<2>();break;
-        case 3: PostDo<3>();break;
-        case 4: PostDo<4>();break;
-        case 5: PostDo<5>();break;
-        case 6: PostDo<6>();break;
-        case 7: PostDo<7>();break;
-        case 8: PostDo<8>();break;
-        case 9: PostDo<9>();break;
-        case 10: PostDo<10>();break;
-        case 11: PostDo<11>();break;
-        case 12: PostDo<12>();break;
-        case 13: PostDo<13>();break;
-        case 14: PostDo<14>();break;
-        case 15: PostDo<15>();break;
-        case 16: PostDo<16>();break;
-        case 32: PostDo<32>();break;
-        case 64: PostDo<64>();break;
-        case 128: PostDo<128>();break;
-        case 196: PostDo<196>();break;
-        case 256: PostDo<256>();break;
+        case 1:
+            PostDo<1>();
+            break;
+        case 2:
+            PostDo<2>();
+            break;
+        case 3:
+            PostDo<3>();
+            break;
+        case 4:
+            PostDo<4>();
+            break;
+        case 5:
+            PostDo<5>();
+            break;
+        case 6:
+            PostDo<6>();
+            break;
+        case 7:
+            PostDo<7>();
+            break;
+        case 8:
+            PostDo<8>();
+            break;
+        case 9:
+            PostDo<9>();
+            break;
+        case 10:
+            PostDo<10>();
+            break;
+        case 11:
+            PostDo<11>();
+            break;
+        case 12:
+            PostDo<12>();
+            break;
+        case 13:
+            PostDo<13>();
+            break;
+        case 14:
+            PostDo<14>();
+            break;
+        case 15:
+            PostDo<15>();
+            break;
+        case 16:
+            PostDo<16>();
+            break;
+        case 32:
+            PostDo<32>();
+            break;
+        case 64:
+            PostDo<64>();
+            break;
+        case 128:
+            PostDo<128>();
+            break;
+        case 196:
+            PostDo<196>();
+            break;
+        case 256:
+            PostDo<256>();
+            break;
     }
     context_->SetBlockDim(aicoreParams_.numBlocks);
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus MemSetTilingClass::GetWorkspaceSize()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus MemSetTilingClass::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus MemSetTilingClass::DoOpTiling()
 {
     for (uint16_t i = 0; i < inputCount_; i++) {
         uint32_t dataSize = ge::GetSizeByDataType(static_cast<ge::DataType>(listType_[i]));
         if (dataSize == 0) {
-            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "listType",
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+                context_->GetNodeName(), "listType",
                 ge::TypeUtils::DataTypeToSerialString(static_cast<ge::DataType>(listType_[i])).c_str(),
-                "The dtype of input must be within the range [INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64, FLOAT, FLOAT16].");
+                "The dtype of input must be within the range [INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, "
+                "UINT64, FLOAT, FLOAT16].");
             return ge::GRAPH_FAILED;
         }
         uint64_t sizeByte = sizes_[i];
@@ -161,19 +201,19 @@ ge::graphStatus MemSetTilingClass::GetPlatformInfo()
     }
     if (aicoreParams_.numBlocks == 0LL) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "numBlocks", "0",
-            "The value of numBlocks must be greater than 0.");
+                                              "The value of numBlocks must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
     if (aicoreParams_.ubSize == 0LL) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "ubSize", "0",
-            "The value of ubSize must be greater than 0.");
+                                              "The value of ubSize must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
     cacheLineSize_ = Ops::Base::GetCacheLineSize(context_);
     halfUbSize_ = aicoreParams_.ubSize / 2;
     if (cacheLineSize_ == 0LL) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "cacheLineSize", "0",
-            "The value of cacheLineSize must be greater than 0.");
+                                              "The value of cacheLineSize must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -204,8 +244,9 @@ ge::graphStatus MemSetTilingClass::SetShapeAttrsInfo(bool isGE)
         ge::DataType dtype = static_cast<ge::DataType>(dataTypesPtr->GetData()[i]);
         if (SUPPORT_TYPE_LIST.find(dtype) == SUPPORT_TYPE_LIST.end()) {
             OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "dataTypes",
-                ge::TypeUtils::DataTypeToSerialString(dtype).c_str(),
-                "The dtype of dataTypes must be within the range [INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64, FLOAT, FLOAT16].");
+                                                  ge::TypeUtils::DataTypeToSerialString(dtype).c_str(),
+                                                  "The dtype of dataTypes must be within the range [INT8, INT16, "
+                                                  "INT32, INT64, UINT8, UINT16, UINT32, UINT64, FLOAT, FLOAT16].");
             return ge::GRAPH_FAILED;
         }
         listType_[i] = static_cast<uint16_t>(dtype);
@@ -220,7 +261,7 @@ ge::graphStatus MemSetTilingClass::SetShapeAttrsInfo(bool isGE)
                 valueFloatIndex++;
             }
         } else {
-            floatValue_[i] = valueFloatPtr->GetData()[i * 2]; //input is 64B stred, read as float32, hence*2
+            floatValue_[i] = valueFloatPtr->GetData()[i * 2]; // input is 64B stred, read as float32, hence*2
             intValue_[i] = valueIntPtr->GetData()[i];
         }
         if (isDynamic_) {
@@ -230,9 +271,11 @@ ge::graphStatus MemSetTilingClass::SetShapeAttrsInfo(bool isGE)
             sizes_[i] = sizesPtr->GetData()[i];
         }
         if (sizes_[i] % ge::GetSizeByDataType(static_cast<ge::DataType>(listType_[i])) != 0) {
-            OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context_->GetNodeName(), "sizes and dataType",
+            OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+                context_->GetNodeName(), "sizes and dataType",
                 (std::to_string(sizes_[i]) + " and " +
-                    ge::TypeUtils::DataTypeToSerialString(static_cast<ge::DataType>(listType_[i]))).c_str(),
+                 ge::TypeUtils::DataTypeToSerialString(static_cast<ge::DataType>(listType_[i])))
+                    .c_str(),
                 "The value of sizes must be exactly divisible by dataType size.");
             return ge::GRAPH_FAILED;
         }
@@ -252,27 +295,29 @@ ge::graphStatus MemSetTilingClass::GetShapeAttrsInfo()
         return ge::GRAPH_FAILED;
     }
     if (dataTypesPtr == nullptr) {
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "dataTypes", "nullptr", "dataTypes cannot be nullptr.");
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "dataTypes", "nullptr",
+                                              "dataTypes cannot be nullptr.");
         return ge::GRAPH_FAILED;
     }
     if (valueIntPtr == nullptr) {
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "valueInt", "nullptr", "valueInt cannot be nullptr.");
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "valueInt", "nullptr",
+                                              "valueInt cannot be nullptr.");
         return ge::GRAPH_FAILED;
     }
     if (valueFloatPtr == nullptr) {
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "valueFloat", "nullptr", "valueFloat cannot be nullptr.");
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "valueFloat", "nullptr",
+                                              "valueFloat cannot be nullptr.");
         return ge::GRAPH_FAILED;
     }
     uint16_t sizesDim = sizesPtr->GetCapacity();
     uint16_t dataTypesDim = dataTypesPtr->GetCapacity();
     uint16_t valueIntDim = valueIntPtr->GetCapacity();
     uint16_t valueFloatDim = valueFloatPtr->GetCapacity();
-    OP_LOGD(
-        context_->GetNodeName(), "sizesdim %d and typedim %d and valuesint %d and valueFloatDim %d", sizesDim,
-        dataTypesDim, valueIntDim, valueFloatDim);
+    OP_LOGD(context_->GetNodeName(), "sizesdim %d and typedim %d and valuesint %d and valueFloatDim %d", sizesDim,
+            dataTypesDim, valueIntDim, valueFloatDim);
     bool isGE = false;
     if (sizesDim != dataTypesDim || sizesDim != valueIntDim || sizesDim != valueFloatDim) {
-        OP_LOGW(context_, "sizesdim and typedim and valuesint and valueFloatDim is Not equal");
+        OP_LOGW(context_, "sizesDim, dataTypesDim, valuesIntDim and valuesFloatDim are not equal");
         isGE = true;
     }
     inputCount_ = sizesDim;
@@ -293,10 +338,9 @@ ge::graphStatus MemSetTilingClass::GetShapeAttrsInfo()
 ge::graphStatus Tiling4MemSetArch35(gert::TilingContext* context)
 {
     OP_LOGI("MemSet tilingData", "Start tiling for MemSet.");
-    const MemSetCompileInfoArch35* compileInfo =
-        context->GetCompileInfo<MemSetCompileInfoArch35>();
+    const MemSetCompileInfoArch35* compileInfo = context->GetCompileInfo<MemSetCompileInfoArch35>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
-    OP_LOGD(context->GetNodeName(), "runing regbase soc version tiling func");
+    OP_LOGD(context->GetNodeName(), "running regbase soc version tiling func");
     class MemSetTilingClass tiling(context);
     return tiling.DoTiling();
 }
@@ -313,14 +357,14 @@ ge::graphStatus TilingPrepare4MemSetArch35(gert::TilingParseContext* context)
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     if (ubSize == 0) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ubSize", "0",
-            "The value of ubSize must be greater than 0.");
+                                              "The value of ubSize must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
     compileInfo->ubSize = ubSize;
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
     if (compileInfo->coreNum == 0) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "coreNum", "0",
-            "The value of coreNum must be greater than 0.");
+                                              "The value of coreNum must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
 

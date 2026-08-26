@@ -121,8 +121,8 @@ using std::min;
 
 class ConcatV2Test : public testing::Test {
 protected:
-    static void SetUpTestCase() { std::cout << "concat_v2_test SetUp" << std::endl; }
-    static void TearDownTestCase() { std::cout << "concat_v2_test TearDown" << std::endl; }
+    static void SetUpTestCase() {}
+    static void TearDownTestCase() {}
 };
 
 // ============================================================================

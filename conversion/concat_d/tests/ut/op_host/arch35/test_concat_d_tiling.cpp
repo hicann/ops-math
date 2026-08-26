@@ -17,9 +17,9 @@
 
 class ConcatDTiling : public testing::Test {
 protected:
-    static void SetUpTestCase() { std::cout << "ConcatDTiling SetUp" << std::endl; }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase() { std::cout << "ConcatDTiling TearDown" << std::endl; }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(ConcatDTiling, ConcatD_tiling_UT_one_axis_diff_shape_align)

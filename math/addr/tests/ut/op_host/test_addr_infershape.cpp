@@ -17,29 +17,22 @@ using namespace ge;
 
 class AddrInfershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "AddrInfershape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase()
-    {
-        std::cout << "AddrInfershape TearDown" << std::endl;
-    }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(AddrInfershape, addr_infershape_success_x1_2d)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Addr",
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Addr",
+                                                      {
+                                                          {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {4, 3},
     };
@@ -48,16 +41,15 @@ TEST_F(AddrInfershape, addr_infershape_success_x1_2d)
 
 TEST_F(AddrInfershape, addr_infershape_success_x1_1d)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Addr",
-        {
-            {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Addr",
+                                                      {
+                                                          {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {4, 3},
     };
@@ -66,16 +58,15 @@ TEST_F(AddrInfershape, addr_infershape_success_x1_1d)
 
 TEST_F(AddrInfershape, addr_infershape_success_x1_2d_broadcast_1)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Addr",
-        {
-            {{{1, 3}, {1, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Addr",
+                                                      {
+                                                          {{{1, 3}, {1, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {4, 3},
     };
@@ -84,16 +75,15 @@ TEST_F(AddrInfershape, addr_infershape_success_x1_2d_broadcast_1)
 
 TEST_F(AddrInfershape, addr_infershape_success_x1_2d_broadcast_2)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Addr",
-        {
-            {{{4, 1}, {4, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Addr",
+                                                      {
+                                                          {{{4, 1}, {4, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {4, 3},
     };
@@ -102,16 +92,15 @@ TEST_F(AddrInfershape, addr_infershape_success_x1_2d_broadcast_2)
 
 TEST_F(AddrInfershape, addr_infershape_success_x1_2d_broadcast_3)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Addr",
-        {
-            {{{1, 1}, {1, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Addr",
+                                                      {
+                                                          {{{1, 1}, {1, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {4, 3},
     };
@@ -120,16 +109,15 @@ TEST_F(AddrInfershape, addr_infershape_success_x1_2d_broadcast_3)
 
 TEST_F(AddrInfershape, addr_infershape_success_fp16)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Addr",
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Addr",
+                                                      {
+                                                          {{{4, 3}, {4, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{4}, {4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{3}, {3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {4, 3},
     };
@@ -138,16 +126,15 @@ TEST_F(AddrInfershape, addr_infershape_success_fp16)
 
 TEST_F(AddrInfershape, addr_infershape_success_bf16)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Addr",
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_BF16, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Addr",
+                                                      {
+                                                          {{{4, 3}, {4, 3}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                          {{{4}, {4}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                          {{{3}, {3}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {4, 3},
     };
@@ -156,16 +143,15 @@ TEST_F(AddrInfershape, addr_infershape_success_bf16)
 
 TEST_F(AddrInfershape, addr_infershape_success_int32)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Addr",
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Addr",
+                                                      {
+                                                          {{{4, 3}, {4, 3}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                          {{{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                          {{{3}, {3}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {4, 3},
     };
@@ -174,16 +160,15 @@ TEST_F(AddrInfershape, addr_infershape_success_int32)
 
 TEST_F(AddrInfershape, addr_infershape_success_int8)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Addr",
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_INT8, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_INT8, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_INT8, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_INT8, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Addr",
+                                                      {
+                                                          {{{4, 3}, {4, 3}}, ge::DT_INT8, ge::FORMAT_ND},
+                                                          {{{4}, {4}}, ge::DT_INT8, ge::FORMAT_ND},
+                                                          {{{3}, {3}}, ge::DT_INT8, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_INT8, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {4, 3},
     };
@@ -192,16 +177,15 @@ TEST_F(AddrInfershape, addr_infershape_success_int8)
 
 TEST_F(AddrInfershape, addr_infershape_success_uint8)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Addr",
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_UINT8, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_UINT8, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_UINT8, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_UINT8, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Addr",
+                                                      {
+                                                          {{{4, 3}, {4, 3}}, ge::DT_UINT8, ge::FORMAT_ND},
+                                                          {{{4}, {4}}, ge::DT_UINT8, ge::FORMAT_ND},
+                                                          {{{3}, {3}}, ge::DT_UINT8, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_UINT8, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {4, 3},
     };
@@ -210,16 +194,15 @@ TEST_F(AddrInfershape, addr_infershape_success_uint8)
 
 TEST_F(AddrInfershape, addr_infershape_success_bool)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Addr",
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_BOOL, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_BOOL, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_BOOL, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_BOOL, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Addr",
+                                                      {
+                                                          {{{4, 3}, {4, 3}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                                          {{{4}, {4}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                                          {{{3}, {3}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {4, 3},
     };
@@ -228,16 +211,15 @@ TEST_F(AddrInfershape, addr_infershape_success_bool)
 
 TEST_F(AddrInfershape, addr_infershape_unknown_rank_x2)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Addr",
-        {
-            {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Addr",
+                                                      {
+                                                          {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {-2},
     };
@@ -246,16 +228,15 @@ TEST_F(AddrInfershape, addr_infershape_unknown_rank_x2)
 
 TEST_F(AddrInfershape, addr_infershape_unknown_rank_x3)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Addr",
-        {
-            {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Addr",
+                                                      {
+                                                          {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {-2},
     };
@@ -264,60 +245,56 @@ TEST_F(AddrInfershape, addr_infershape_unknown_rank_x3)
 
 TEST_F(AddrInfershape, addr_infershape_failed_x1_dim_0)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Addr",
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Addr",
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, {});
 }
 
 TEST_F(AddrInfershape, addr_infershape_failed_x1_dim_3)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Addr",
-        {
-            {{{4, 3, 2}, {4, 3, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Addr",
+                                                      {
+                                                          {{{4, 3, 2}, {4, 3, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, {});
 }
 
 TEST_F(AddrInfershape, addr_infershape_failed_x2_not_1d)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Addr",
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4, 2}, {4, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Addr",
+                                                      {
+                                                          {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{4, 2}, {4, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, {});
 }
 
 TEST_F(AddrInfershape, addr_infershape_failed_x3_not_1d)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Addr",
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{3, 2}, {3, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Addr",
+                                                      {
+                                                          {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{3, 2}, {3, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, {});
 }

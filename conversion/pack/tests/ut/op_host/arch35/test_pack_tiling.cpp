@@ -17,9 +17,9 @@
 
 class PackTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase() { std::cout << "PackTilingTest SetUp" << std::endl; }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase() { std::cout << "PackTilingTest TearDown" << std::endl; }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(PackTilingTest, Pack_asc_tiling_UT_notfirst_axis_align_bitwidth4_01)

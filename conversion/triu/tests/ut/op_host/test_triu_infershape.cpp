@@ -19,34 +19,38 @@
 #include "infershape_case_executor.h"
 
 class triu : public testing::Test {
- protected:
-  static void SetUpTestCase() { std::cout << "triu SetUp" << std::endl; }
+protected:
+    static void SetUpTestCase() {}
 
-  static void TearDownTestCase() { std::cout << "triu TearDown" << std::endl; }
+    static void TearDownTestCase() {}
 };
 
-TEST_F(triu, triu_infer_test_1) {
+TEST_F(triu, triu_infer_test_1)
+{
     gert::InfershapeContextPara infershapeContextPara("Triu",
                                                       {
-                                                        {{{6, 10}, {6, 10}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{6, 10}, {6, 10}}, ge::DT_FLOAT16, ge::FORMAT_ND},
                                                       },
                                                       {
-                                                        {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-                                                      }
-                                                     );
-    std::vector<std::vector<int64_t>> expectOutputShape = {{6, 10}, };
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {6, 10},
+    };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-TEST_F(triu, triu_infer_test_2) {
+TEST_F(triu, triu_infer_test_2)
+{
     gert::InfershapeContextPara infershapeContextPara("Triu",
                                                       {
-                                                        {{{7, 5}, {7, 5}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{7, 5}, {7, 5}}, ge::DT_FLOAT16, ge::FORMAT_ND},
                                                       },
                                                       {
-                                                        {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-                                                      }
-                                                     );
-    std::vector<std::vector<int64_t>> expectOutputShape = {{7, 5}, };
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {7, 5},
+    };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }

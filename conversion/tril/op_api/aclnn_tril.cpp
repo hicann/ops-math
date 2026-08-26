@@ -98,9 +98,8 @@ static bool CheckFormat(const aclTensor* self, const aclTensor* out)
 {
     // self和out的format必须一致
     if (self->GetStorageFormat() != out->GetStorageFormat()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "self format is different with out format, self [%s], out [%s].",
-            op::ToString(self->GetStorageFormat()).GetString(), op::ToString(out->GetStorageFormat()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self format is different from out format, self [%s], out [%s].",
+                op::ToString(self->GetStorageFormat()).GetString(), op::ToString(out->GetStorageFormat()).GetString());
         return false;
     }
     return true;
@@ -122,8 +121,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out)
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnTrilGetWorkspaceSize(
-    const aclTensor* self, int64_t diagonal, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnTrilGetWorkspaceSize(const aclTensor* self, int64_t diagonal, aclTensor* out, uint64_t* workspaceSize,
+                                      aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
@@ -162,8 +161,8 @@ aclnnStatus aclnnTrilGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceTrilGetWorkspaceSize(
-    const aclTensor* selfRef, int64_t diagonal, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceTrilGetWorkspaceSize(const aclTensor* selfRef, int64_t diagonal, uint64_t* workspaceSize,
+                                             aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 

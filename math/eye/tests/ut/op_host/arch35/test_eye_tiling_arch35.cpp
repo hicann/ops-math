@@ -18,31 +18,30 @@ using namespace std;
 using namespace ge;
 
 class EyeTiling : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "EyeTiling SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() {}
 
-  static void TearDownTestCase() {
-    std::cout << "EyeTiling TearDown" << std::endl;
-  }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(EyeTiling, eye_test_tiling_001)
 {
     optiling::EyeCompileInfo compileInfo = {64, 253952};
-    gert::TilingContextPara tilingContextPara("Eye",
-        {{{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},},
-        {{{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},},
+    gert::TilingContextPara tilingContextPara(
+        "Eye",
         {
-            gert::TilingContextPara::OpAttr("num_rows", Ops::Math::AnyValue::CreateFrom<int64_t>(8)),
-            gert::TilingContextPara::OpAttr("num_columns", Ops::Math::AnyValue::CreateFrom<int64_t>(8)),
-            gert::TilingContextPara::OpAttr("batch_shape", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({})),
-            gert::TilingContextPara::OpAttr("dtype", Ops::Math::AnyValue::CreateFrom<int64_t>(1))
+            {{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
         },
+        {
+            {{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        {gert::TilingContextPara::OpAttr("num_rows", Ops::Math::AnyValue::CreateFrom<int64_t>(8)),
+         gert::TilingContextPara::OpAttr("num_columns", Ops::Math::AnyValue::CreateFrom<int64_t>(8)),
+         gert::TilingContextPara::OpAttr("batch_shape", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({})),
+         gert::TilingContextPara::OpAttr("dtype", Ops::Math::AnyValue::CreateFrom<int64_t>(1))},
         &compileInfo);
     uint64_t expectTilingKey = 1001;
     string expectTilingData = "1 1 1 1 8 8 1 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
-}                
+}

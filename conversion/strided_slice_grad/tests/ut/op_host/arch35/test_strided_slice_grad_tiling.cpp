@@ -20,15 +20,9 @@ using namespace ge;
 
 class StridedSliceGradTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "StridedSliceGradTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase()
-    {
-        std::cout << "StridedSliceGradTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(StridedSliceGradTiling, StridedSliceGrad_test_tiling_001)
@@ -62,6 +56,6 @@ TEST_F(StridedSliceGradTiling, StridedSliceGrad_test_tiling_001)
     uint64_t expectTilingKey = 124;
     string expectTilingData = "1 128 0 128 1 1 0 0 0 1 1 ";
     std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCaseForEle(
-        tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData,
+                          expectWorkspaces);
 }

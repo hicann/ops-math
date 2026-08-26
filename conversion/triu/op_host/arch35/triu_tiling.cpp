@@ -33,15 +33,15 @@ inline static T* GetCompileInfoPtr(gert::TilingParseContext* context)
     return context->GetCompiledInfo<T>();
 }
 
-int64_t GetEltNumPerCore(
-    int64_t availableUBSize, int32_t availableCoreNum, int64_t unitNum, uint8_t dtypeBytes, int64_t totalEltNum)
+int64_t GetEltNumPerCore(int64_t availableUBSize, int32_t availableCoreNum, int64_t unitNum, uint8_t dtypeBytes,
+                         int64_t totalEltNum)
 {
     assert(unitNum > 0);
     assert(dtypeBytes > 0);
     assert(availableCoreNum > 0);
     // we wanna use all available cores, and make sure there're enough(256 at least) elements on each core as well
-    int64_t eltNumPerCore =
-        (std::max(totalEltNum / availableCoreNum, MIN_ELT_NUM_PER_CORE) + unitNum - 1) / unitNum * unitNum;
+    int64_t eltNumPerCore = (std::max(totalEltNum / availableCoreNum, MIN_ELT_NUM_PER_CORE) + unitNum - 1) / unitNum *
+                            unitNum;
     // next, we need to make sure there's avalible ub space to use on each core
     eltNumPerCore = std::min(availableUBSize / dtypeBytes / unitNum * unitNum, eltNumPerCore);
     // also, the input tensor may be too samll
@@ -84,15 +84,13 @@ static ge::graphStatus TilingPrepareTrilForAscendC(gert::TilingParseContext* con
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->availableAICoreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        (compileInfo->availableAICoreNum <= 0), OP_LOGE(context->GetNodeName(), "Failed to core num."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->availableAICoreNum <= 0), OP_LOGE(context->GetNodeName(), "Failed to get core num."),
+                return ge::GRAPH_FAILED);
     uint64_t ubSize;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compileInfo->availableUBSize = static_cast<int64_t>(ubSize);
-    OP_CHECK_IF(
-        (compileInfo->availableUBSize <= 0), OP_LOGE(context->GetNodeName(), "Failed to get ub size."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->availableUBSize <= 0), OP_LOGE(context->GetNodeName(), "Failed to get ub size."),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 

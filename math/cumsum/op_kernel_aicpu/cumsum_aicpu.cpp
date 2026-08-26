@@ -272,7 +272,7 @@ uint32_t CumsumCpuKernel::Compute(CpuKernelContext& ctx)
         CUMSUM_COMPUTE_CASE(DT_COMPLEX64, std::complex<float>, ctx)
         CUMSUM_COMPUTE_CASE(DT_COMPLEX128, std::complex<double>, ctx)
         default:
-            KERNEL_LOG_ERROR("Cumsum kernel data type [%s] not support.", DTypeStr(input_data_type).c_str());
+            KERNEL_LOG_ERROR("Cumsum kernel data type [%s] not supported.", DTypeStr(input_data_type).c_str());
             return KERNEL_STATUS_PARAM_INVALID;
     }
     return KERNEL_STATUS_OK;

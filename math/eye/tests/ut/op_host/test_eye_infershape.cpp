@@ -14,14 +14,10 @@
 #include "base/registry/op_impl_space_registry_v2.h"
 
 class Eye : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "Eye SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() {}
 
-  static void TearDownTestCase() {
-    std::cout << "Eye TearDown" << std::endl;
-  }
+    static void TearDownTestCase() {}
 };
 
 static std::vector<int64_t> ToVector(const gert::Shape& shape)
@@ -34,13 +30,11 @@ static std::vector<int64_t> ToVector(const gert::Shape& shape)
     return shapeVec;
 }
 
-static void ExeTestCase(
-    std::vector<std::vector<int64_t> > expectResults,
-    const std::vector<gert::StorageShape>& inputShapes,  // 存储所有输入StorageShape参数
-    const std::vector<ge::DataType>& dtypes,             // 存储所有DataType参数
-    gert::StorageShape& outStorageShape,
-    int64_t numrows, int64_t numcolumns, int64_t dtype,
-    ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
+static void ExeTestCase(std::vector<std::vector<int64_t> > expectResults,
+                        const std::vector<gert::StorageShape>& inputShapes, // 存储所有输入StorageShape参数
+                        const std::vector<ge::DataType>& dtypes,            // 存储所有DataType参数
+                        gert::StorageShape& outStorageShape, int64_t numrows, int64_t numcolumns, int64_t dtype,
+                        ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
 {
     // 从vector中取出对应参数（保持原顺序）
     const auto& x1StorageShape = inputShapes[0];
@@ -48,26 +42,23 @@ static void ExeTestCase(
     ge::DataType input1Dtype = dtypes[0];
     ge::DataType outputDtype = dtypes[0];
 
-
     /* make infershape context */
-    std::vector<gert::Tensor *> inputTensors = {
-        (gert::Tensor *)&x1StorageShape
-    };
+    std::vector<gert::Tensor*> inputTensors = {(gert::Tensor*)&x1StorageShape};
 
     std::vector<int64_t> batchshape = {};
-    std::vector<gert::StorageShape *> outputShapes = {&outStorageShape};
+    std::vector<gert::StorageShape*> outputShapes = {&outStorageShape};
     auto contextHolder = gert::InferShapeContextFaker()
-        .SetOpType("Eye")
-        .NodeIoNum(1, 1)
-        .NodeInputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
-        .InputTensors(inputTensors)
-        .OutputShapes(outputShapes)
-        .Attr("num_rows", numrows)
-        .Attr("num_columns", numcolumns)
-        .Attr("batch_shape", batchshape)
-        .Attr("dtype", dtype)
-        .Build();
+                             .SetOpType("Eye")
+                             .NodeIoNum(1, 1)
+                             .NodeInputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .NodeOutputTd(0, outputDtype, ge::FORMAT_ND, ge::FORMAT_ND)
+                             .InputTensors(inputTensors)
+                             .OutputShapes(outputShapes)
+                             .Attr("num_rows", numrows)
+                             .Attr("num_columns", numcolumns)
+                             .Attr("batch_shape", batchshape)
+                             .Attr("dtype", dtype)
+                             .Build();
 
     /* get infershape func */
     auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
@@ -84,17 +75,13 @@ static void ExeTestCase(
 TEST_F(Eye, Eye_infershape_case_0)
 {
     // 用vector存储同类型参数（顺序与原参数列表一致）
-    std::vector<gert::StorageShape> inputShapes = {
-        {{8, 8}, {8, 8}}                         
-    };
-    std::vector<ge::DataType> dtypes = {
-        ge::DT_FLOAT16,  // input1Dtype
-        ge::DT_FLOAT16
-    };
+    std::vector<gert::StorageShape> inputShapes = {{{8, 8}, {8, 8}}};
+    std::vector<ge::DataType> dtypes = {ge::DT_FLOAT16, // input1Dtype
+                                        ge::DT_FLOAT16};
 
     std::vector<int64_t> expectResult = {8, 8};
     gert::StorageShape outStorageShape = {};
 
     // 简化后的函数调用
     ExeTestCase({expectResult}, inputShapes, dtypes, outStorageShape, 8, 8, 1, ge::GRAPH_SUCCESS);
-} 
+}

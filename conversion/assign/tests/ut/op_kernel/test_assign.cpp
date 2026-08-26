@@ -20,14 +20,8 @@
 
 class AssignTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "assign_test SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "assign_test TearDown" << std::endl;
-    }
+    static void SetUpTestCase() {}
+    static void TearDownTestCase() {}
 };
 
 // ============================================================================

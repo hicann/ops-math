@@ -128,7 +128,7 @@ static bool CheckFormat(const aclTensorList* tensors, const aclTensor* y)
 {
     op::Format format = (*tensors)[0]->GetStorageFormat();
     if (op::IsPrivateFormat(format)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only supports ND, NCHW, NHWC, HWCN, NDHWC, NCDHW.");
         return false;
     }
     for (uint64_t i = 1; i < tensors->Size(); i++) {
@@ -156,7 +156,7 @@ static bool CheckShape(const aclTensorList* tensors, int64_t* realDim)
         (*realDim) += dimNum;
     }
     if ((*realDim) < 0 || (*realDim) >= dimNum) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "dimnum %ld exceed the dim range of the tensor %ld.", orgDim, dimNum);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "dimnum %ld exceeds the dim range of the tensor %ld.", orgDim, dimNum);
         return false;
     }
     for (uint64_t i = 1; i < tensors->Size(); i++) {

@@ -22,10 +22,7 @@ namespace {
 constexpr uint32_t kNumBlocks = 1;
 constexpr int64_t kElementCount = 256;
 
-inline size_t Align32(size_t size)
-{
-    return (size + 31U) / 32U * 32U;
-}
+inline size_t Align32(size_t size) { return (size + 31U) / 32U * 32U; }
 } // namespace
 
 using namespace AddsOp;
@@ -34,15 +31,9 @@ using namespace AddsOp;
 
 class AddsKernelTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "AddsKernelTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase()
-    {
-        std::cout << "AddsKernelTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(AddsKernelTest, test_fp32_basic)
@@ -167,7 +158,6 @@ TEST_F(AddsKernelTest, test_int32_basic)
     ICPU_SET_TILING_KEY(5);
     ICPU_RUN_KF((adds<0, 5>), kNumBlocks, x, y, workspace, tiling);
 
-
     AscendC::GmFree(x);
     AscendC::GmFree(y);
     AscendC::GmFree(workspace);
@@ -200,7 +190,6 @@ TEST_F(AddsKernelTest, test_int16_basic)
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_SET_TILING_KEY(4);
     ICPU_RUN_KF((adds<0, 4>), kNumBlocks, x, y, workspace, tiling);
-
 
     AscendC::GmFree(x);
     AscendC::GmFree(y);

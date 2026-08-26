@@ -14,27 +14,22 @@
 #include "infershape_case_executor.h"
 
 class AssignTest : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "AssignTest SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() {}
 
-  static void TearDownTestCase() {
-    std::cout << "AssignTest TearDown" << std::endl;
-  }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(AssignTest, InfershapeAssign_001)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Assign",
-        {
-            {{{2, 2}, {2, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{2, 2}, {2, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Assign",
+                                                      {
+                                                          {{{2, 2}, {2, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{2, 2}, {2, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {2, 2},
     };

@@ -23,9 +23,9 @@ using namespace std;
 
 class l2_eye_test : public testing::Test {
 protected:
-    static void SetUpTestCase() { std::cout << "l2_eye_test SetUp" << std::endl; }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase() { std::cout << "l2_eye_test TearDown" << std::endl; }
+    static void TearDownTestCase() {}
 };
 
 // 浮点类型支持

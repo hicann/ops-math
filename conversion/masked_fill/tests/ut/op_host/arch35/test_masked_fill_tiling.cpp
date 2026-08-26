@@ -15,14 +15,10 @@
 #include "tiling_case_executor.h"
 
 class MaskedFillTiling : public testing::Test {
-  protected:
-    static void SetUpTestCase() {
-      std::cout << "MaskedFillTiling SetUp" << std::endl;
-    }
+protected:
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase() {
-      std::cout << "MaskedFillTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(MaskedFillTiling, masked_fill_test_0)
@@ -30,12 +26,12 @@ TEST_F(MaskedFillTiling, masked_fill_test_0)
     optiling::MaskedFillCompileInfo compileInfo = {64, 245760};
     gert::TilingContextPara tilingContextPara("MaskedFill",
                                               {
-                                                {{{16}, {16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-                                                {{{16}, {16}}, ge::DT_BOOL, ge::FORMAT_ND},
-                                                {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{16}, {16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{16}, {16}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
                                               },
                                               {
-                                                {{{16}, {16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{16}, {16}}, ge::DT_FLOAT16, ge::FORMAT_ND},
                                               },
                                               &compileInfo);
     uint64_t expectTilingKey = 8;
@@ -49,12 +45,12 @@ TEST_F(MaskedFillTiling, masked_fill_test_1)
     optiling::MaskedFillCompileInfo compileInfo = {64, 245760};
     gert::TilingContextPara tilingContextPara("MaskedFill",
                                               {
-                                                {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-                                                {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BOOL, ge::FORMAT_ND},
-                                                {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
                                               },
                                               {
-                                                {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
                                               },
                                               &compileInfo);
     uint64_t expectTilingKey = 8;
@@ -68,12 +64,12 @@ TEST_F(MaskedFillTiling, masked_fill_test_2)
     optiling::MaskedFillCompileInfo compileInfo = {64, 245760};
     gert::TilingContextPara tilingContextPara("MaskedFill",
                                               {
-                                                {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-                                                {{{16, 1, 1, 1, 1}, {16, 1, 1, 1, 1}}, ge::DT_BOOL, ge::FORMAT_ND},
-                                                {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{16, 1, 1, 1, 1}, {16, 1, 1, 1, 1}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
                                               },
                                               {
-                                                {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
                                               },
                                               &compileInfo);
     uint64_t expectTilingKey = 0;
@@ -84,16 +80,17 @@ TEST_F(MaskedFillTiling, masked_fill_test_2)
 TEST_F(MaskedFillTiling, masked_fill_test_3)
 {
     optiling::MaskedFillCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara tilingContextPara("MaskedFill",
-                                              {
-                                                {{{16, 1, 1, 1, 1, 1, 1, 1}, {16, 1, 1, 1, 1, 1, 1, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-                                                {{{16, 1, 1, 1, 1, 1, 1, 1}, {16, 1, 1, 1, 1, 1, 1, 1}}, ge::DT_BOOL, ge::FORMAT_ND},
-                                                {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-                                              },
-                                              {
-                                                {{{16, 1, 1, 1, 1, 1, 1, 1}, {16, 1, 1, 1, 1, 1, 1, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-                                              },
-                                              &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "MaskedFill",
+        {
+            {{{16, 1, 1, 1, 1, 1, 1, 1}, {16, 1, 1, 1, 1, 1, 1, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+            {{{16, 1, 1, 1, 1, 1, 1, 1}, {16, 1, 1, 1, 1, 1, 1, 1}}, ge::DT_BOOL, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        {
+            {{{16, 1, 1, 1, 1, 1, 1, 1}, {16, 1, 1, 1, 1, 1, 1, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "16 1125904201810432 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -105,12 +102,12 @@ TEST_F(MaskedFillTiling, masked_fill_test_4)
     optiling::MaskedFillCompileInfo compileInfo = {64, 245760};
     gert::TilingContextPara tilingContextPara("MaskedFill",
                                               {
-                                                {{{16}, {16}}, ge::DT_INT64, ge::FORMAT_ND},
-                                                {{{16}, {16}}, ge::DT_BOOL, ge::FORMAT_ND},
-                                                {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                  {{{16}, {16}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                  {{{16}, {16}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},
                                               },
                                               {
-                                                {{{16}, {16}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                  {{{16}, {16}}, ge::DT_INT64, ge::FORMAT_ND},
                                               },
                                               &compileInfo);
     uint64_t expectTilingKey = 8;
@@ -124,12 +121,12 @@ TEST_F(MaskedFillTiling, masked_fill_test_5)
     optiling::MaskedFillCompileInfo compileInfo = {64, 245760};
     gert::TilingContextPara tilingContextPara("MaskedFill",
                                               {
-                                                {{{16}, {16}}, ge::DT_INT64, ge::FORMAT_ND},
-                                                {{{16}, {16}}, ge::DT_BOOL, ge::FORMAT_ND},
-                                                {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                  {{{16}, {16}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                  {{{16}, {16}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},
                                               },
                                               {
-                                                {{{16}, {16}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                  {{{16}, {16}}, ge::DT_INT64, ge::FORMAT_ND},
                                               },
                                               &compileInfo);
     uint64_t expectTilingKey = 8;

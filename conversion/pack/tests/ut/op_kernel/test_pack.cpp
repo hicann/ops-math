@@ -129,8 +129,8 @@ using std::min;
 
 class PackTest : public testing::Test {
 protected:
-    static void SetUpTestCase() { std::cout << "pack_test SetUp" << std::endl; }
-    static void TearDownTestCase() { std::cout << "pack_test TearDown" << std::endl; }
+    static void SetUpTestCase() {}
+    static void TearDownTestCase() {}
 };
 
 // ============================================================================

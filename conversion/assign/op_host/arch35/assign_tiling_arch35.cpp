@@ -59,21 +59,23 @@ static ge::graphStatus CheckDtypeForAssign(const gert::TilingContext* context)
     auto refPtr = context->GetInputDesc(INDEX_INPUT_REF);
     OP_CHECK_NULL_WITH_CONTEXT(context, refPtr);
     auto refDtype = refPtr->GetDataType();
-    OP_CHECK_IF(IsInvalidTypeForAssign(refDtype),
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "ref",
-            Ops::Base::ToString(refDtype).c_str(),
-            "The dtype of ref must be within the range [DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT64, DT_UINT64, DT_INT32, DT_UINT32, DT_INT16, DT_UINT16, DT_INT8, DT_UINT8, DT_DOUBLE, DT_BOOL, DT_COMPLEX32, DT_COMPLEX64]."),
+    OP_CHECK_IF(
+        IsInvalidTypeForAssign(refDtype),
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            context->GetNodeName(), "ref", Ops::Base::ToString(refDtype).c_str(),
+            "The dtype of ref must be within the range [DT_FLOAT, DT_FLOAT16, DT_BF16, DT_INT64, DT_UINT64, DT_INT32, "
+            "DT_UINT32, DT_INT16, DT_UINT16, DT_INT8, DT_UINT8, DT_DOUBLE, DT_BOOL, DT_COMPLEX32, DT_COMPLEX64]."),
         return ge::GRAPH_FAILED);
 
     auto valuePtr = context->GetInputDesc(INDEX_INPUT_VALUE);
     OP_CHECK_NULL_WITH_CONTEXT(context, valuePtr);
     auto valueDtype = valuePtr->GetDataType();
-    OP_CHECK_IF(
-        valueDtype != refDtype,
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context->GetNodeName(), "ref, value",
-            (Ops::Base::ToString(refDtype) + ", " + Ops::Base::ToString(valueDtype)).c_str(),
-            "The dtypes of ref and value must be the same."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(valueDtype != refDtype,
+                OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+                    context->GetNodeName(), "ref, value",
+                    (Ops::Base::ToString(refDtype) + ", " + Ops::Base::ToString(valueDtype)).c_str(),
+                    "The dtypes of ref and value must be the same."),
+                return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }
@@ -94,10 +96,9 @@ static ge::graphStatus CheckShapeForAssign(const gert::TilingContext* context, A
 
     tilingParam.tilingKey = 0;
     OP_CHECK_IF(refShape != valueShape,
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "ref, value",
-            "ref_shape, value_shape",
-            "The shapes of ref and value must be the same."),
-        return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "ref, value", "ref_shape, value_shape",
+                                                       "The shapes of ref and value must be the same."),
+                return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }
@@ -113,15 +114,17 @@ static void SetTilingData(TensorMoveTilingData& tilingData, const AssignTilingPa
     tilingData.set_tilingKey(tilingParam.tilingKey);
 }
 
-static void PrintTilingData(const gert::TilingContext *context, TensorMoveTilingData &tilingData)
+static void PrintTilingData(const gert::TilingContext* context, TensorMoveTilingData& tilingData)
 {
-    OP_LOGI(context->GetNodeName(), "Assign tilingData: totalCoreNum:%ld, usedCoreNum:%ld, ubFactor:%ld, tailBlockTailUbFactor:%ld, "
-        "blockFactor:%ld, tailBlockFactor:%ld, tilingKey:%ld ", tilingData.get_totalCoreNum(), tilingData.get_usedCoreNum(),
-        tilingData.get_ubFactor(), tilingData.get_tailBlockTailUbFactor(), tilingData.get_blockFactor(),
-        tilingData.get_tailBlockFactor(), tilingData.get_tilingKey());
+    OP_LOGI(context->GetNodeName(),
+            "Assign tilingData: totalCoreNum:%ld, usedCoreNum:%ld, ubFactor:%ld, tailBlockTailUbFactor:%ld, "
+            "blockFactor:%ld, tailBlockFactor:%ld, tilingKey:%ld ",
+            tilingData.get_totalCoreNum(), tilingData.get_usedCoreNum(), tilingData.get_ubFactor(),
+            tilingData.get_tailBlockTailUbFactor(), tilingData.get_blockFactor(), tilingData.get_tailBlockFactor(),
+            tilingData.get_tilingKey());
 }
 
-static void CalcBlockFactor(AssignTilingParam &tilingParam, int64_t numel)
+static void CalcBlockFactor(AssignTilingParam& tilingParam, int64_t numel)
 {
     tilingParam.uo = CeilDiv(numel, tilingParam.ubFactor);
     tilingParam.tailBlockTailUbFactor = GetRemainder(numel, tilingParam.ubFactor);
@@ -175,12 +178,12 @@ static ge::graphStatus AssignTilingForAscendC(gert::TilingContext* context)
 {
     OP_LOGD(context->GetNodeName(), "AssignTilingForAscendC running begin.");
 
-    OP_CHECK_IF(CheckDtypeForAssign(context) != ge::GRAPH_SUCCESS, OP_LOGE(context->GetNodeName(), "The dtype check failed."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckDtypeForAssign(context) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "The dtype check failed."), return ge::GRAPH_FAILED);
 
     AssignTilingParam tilingParam;
     OP_CHECK_IF(CheckShapeForAssign(context, tilingParam) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "The shape check failed."), return ge::GRAPH_FAILED);
+                OP_LOGE(context->GetNodeName(), "The shape check failed."), return ge::GRAPH_FAILED);
 
     auto compileInfo = reinterpret_cast<const AssignCompileInfo*>(context->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
@@ -188,8 +191,8 @@ static ge::graphStatus AssignTilingForAscendC(gert::TilingContext* context)
     tilingParam.totalCoreNum = compileInfo->coreNum;
     tilingParam.ubSize = compileInfo->ubSize;
 
-    OP_CHECK_IF(DoTiling(context, tilingParam) != ge::GRAPH_SUCCESS, OP_LOGE(context->GetNodeName(), "Dotiling failed."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(DoTiling(context, tilingParam) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "Dotiling failed."), return ge::GRAPH_FAILED);
 
     // tilingkey由数据类型所占字节表示(1/2/4/8)
     tilingParam.tilingKey += tilingParam.bytesForOneData;
@@ -197,7 +200,7 @@ static ge::graphStatus AssignTilingForAscendC(gert::TilingContext* context)
     TensorMoveTilingData tilingData;
     SetTilingData(tilingData, tilingParam);
     OP_CHECK_IF(tilingData.GetDataSize() > context->GetRawTilingData()->GetCapacity(),
-        OP_LOGE(context->GetNodeName(), "set tiling data fail."), return ge::GRAPH_FAILED);
+                OP_LOGE(context->GetNodeName(), "Failed to set tiling data."), return ge::GRAPH_FAILED);
     tilingData.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
     context->GetRawTilingData()->SetDataSize(tilingData.GetDataSize());
     context->SetBlockDim(tilingData.get_usedCoreNum());
@@ -210,10 +213,7 @@ static ge::graphStatus AssignTilingForAscendC(gert::TilingContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus Tiling4Assign(gert::TilingContext* context)
-{
-    return AssignTilingForAscendC(context);
-}
+static ge::graphStatus Tiling4Assign(gert::TilingContext* context) { return AssignTilingForAscendC(context); }
 
 static ge::graphStatus TilingPrepare4Assign(gert::TilingParseContext* context)
 {
@@ -224,11 +224,13 @@ static ge::graphStatus TilingPrepare4Assign(gert::TilingParseContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF((compileInfo->coreNum <= 0), OP_LOGE(context->GetNodeName(), "Failed to get core num."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->coreNum <= 0), OP_LOGE(context->GetNodeName(), "Failed to get core num."),
+                return ge::GRAPH_FAILED);
     uint64_t ubSize;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compileInfo->ubSize = static_cast<int64_t>(ubSize);
-    OP_CHECK_IF((compileInfo->ubSize <= 0), OP_LOGE(context->GetNodeName(), "Failed to get ub size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->ubSize <= 0), OP_LOGE(context->GetNodeName(), "Failed to get ub size."),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 

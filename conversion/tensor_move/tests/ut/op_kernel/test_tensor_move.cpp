@@ -20,14 +20,8 @@
 
 class TensorMoveTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "tensor_move_test SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "tensor_move_test TearDown" << std::endl;
-    }
+    static void SetUpTestCase() {}
+    static void TearDownTestCase() {}
 };
 
 // ============================================================================

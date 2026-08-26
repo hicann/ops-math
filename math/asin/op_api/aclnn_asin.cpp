@@ -33,15 +33,15 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
     DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_INT8,  DataType::DT_INT16,
     DataType::DT_INT32, DataType::DT_INT64,   DataType::DT_BOOL,   DataType::DT_UINT8, DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> DTYPE_OUT_LIST = {
-    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_BF16};
+static const std::initializer_list<op::DataType> DTYPE_OUT_LIST = {DataType::DT_FLOAT, DataType::DT_FLOAT16,
+                                                                   DataType::DT_DOUBLE, DataType::DT_BF16};
 
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_V100 = {
     DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_INT8, DataType::DT_INT16,
     DataType::DT_INT32, DataType::DT_INT64,   DataType::DT_BOOL,   DataType::DT_UINT8};
 
-static const std::initializer_list<op::DataType> DTYPE_OUT_LIST_V100 = {
-    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE};
+static const std::initializer_list<op::DataType> DTYPE_OUT_LIST_V100 = {DataType::DT_FLOAT, DataType::DT_FLOAT16,
+                                                                        DataType::DT_DOUBLE};
 
 static bool isSupportBf16Version()
 {
@@ -57,8 +57,8 @@ static bool isSupportBf16Version()
 static bool isSupportedKernel(DataType castDtype)
 {
     auto npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
-    if (npuArch == NpuArch::DAV_3510 && (castDtype == DataType::DT_BF16 || castDtype == DataType::DT_FLOAT16 ||
-        castDtype == DataType::DT_FLOAT)) {
+    if (npuArch == NpuArch::DAV_3510 &&
+        (castDtype == DataType::DT_BF16 || castDtype == DataType::DT_FLOAT16 || castDtype == DataType::DT_FLOAT)) {
         return true;
     } else {
         OP_LOGD("The npuArch does not support Kernel with input");
@@ -77,17 +77,17 @@ static const std::initializer_list<DataType>& GetSelfRefDtypeList()
 }
 
 // 1个输入1个输出的参数校验
-static aclnnStatus CheckParams1In1Out(
-    const aclTensor* self, const aclTensor* out, const std::initializer_list<op::DataType>& dtypeSupportList,
-    const std::initializer_list<op::DataType>& dtypeOutList)
+static aclnnStatus CheckParams1In1Out(const aclTensor* self, const aclTensor* out,
+                                      const std::initializer_list<op::DataType>& dtypeSupportList,
+                                      const std::initializer_list<op::DataType>& dtypeOutList)
 {
     // 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
     CHECK_RET(CheckDtypeValid1In1Out(self, out, dtypeSupportList, dtypeOutList), ACLNN_ERR_PARAM_INVALID);
     // 检查输入的数据的值是否合理
     CHECK_RET(CheckSameShape1In1Out(self, out), ACLNN_ERR_PARAM_INVALID);
-    
+
     if (self->GetStorageFormat() != Format::FORMAT_ND) {
-        OP_LOGW("Only support ND format for asin/inplaceAsin operator.");
+        OP_LOGW("Only supports ND format for asin/inplaceAsin operator.");
     }
     return ACLNN_SUCCESS;
 }
@@ -110,8 +110,8 @@ static aclnnStatus CheckInplaceParams(aclTensor* selfRef)
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus ExecAsinGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus ExecAsinGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                            aclOpExecutor** executor)
 {
     CHECK_NOT_NULL(self, out);
     // 创建OpExecutor
@@ -119,8 +119,8 @@ static aclnnStatus ExecAsinGetWorkspaceSize(
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
     // 检查输入的数据类型是否在算子的支持列表内
-    std::initializer_list<op::DataType> dtypeSupportList =
-        (isSupportBf16Version()) ? DTYPE_SUPPORT_LIST : DTYPE_SUPPORT_LIST_V100;
+    std::initializer_list<op::DataType> dtypeSupportList = (isSupportBf16Version()) ? DTYPE_SUPPORT_LIST :
+                                                                                      DTYPE_SUPPORT_LIST_V100;
     std::initializer_list<op::DataType> dtypeOutList = (isSupportBf16Version()) ? DTYPE_OUT_LIST : DTYPE_OUT_LIST_V100;
     // 参数检查
     auto ret = CheckParams1In1Out(self, out, dtypeSupportList, dtypeOutList);
@@ -158,7 +158,7 @@ static aclnnStatus ExecAsinGetWorkspaceSize(
             selfCast = selfContiguous;
         }
     }
-    
+
     CHECK_RET(selfCast != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 执行L0算子
@@ -179,8 +179,8 @@ static aclnnStatus ExecAsinGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnAsinGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnAsinGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                      aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnAsin, DFX_IN(self), DFX_OUT(out));
     return ExecAsinGetWorkspaceSize(self, out, workspaceSize, executor);

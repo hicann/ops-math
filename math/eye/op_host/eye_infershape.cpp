@@ -15,16 +15,16 @@
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 
-
 namespace {
 constexpr size_t EYE_ATTR_NUM_ROWS = 0;
 constexpr size_t EYE_ATTR_NUM_COLUMNS = 1;
 constexpr size_t EYE_ATTR_BATCH_SHAPE = 2;
-}  // namespace
+} // namespace
 
 namespace ops {
 using namespace Ops::Base;
-ge::graphStatus InferShapeForEye(gert::InferShapeContext* context) {
+ge::graphStatus InferShapeForEye(gert::InferShapeContext* context)
+{
     auto out_shape = context->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, out_shape);
     auto attr_ptr = context->GetAttrs();
@@ -41,7 +41,7 @@ ge::graphStatus InferShapeForEye(gert::InferShapeContext* context) {
     std::vector<int64_t> output_shape_vec;
     for (size_t i = 0; i < batch_shape_ptr->GetSize(); ++i) {
         if (batch_shape_array[i] <= 0) {
-            OP_LOGE(context->GetNodeName(), "value of batch_shape must greater than 0, but got %ld",
+            OP_LOGE(context->GetNodeName(), "value of batch_shape must be greater than 0, but got %ld",
                     batch_shape_array[i]);
             return ge::GRAPH_FAILED;
         }
@@ -51,8 +51,7 @@ ge::graphStatus InferShapeForEye(gert::InferShapeContext* context) {
     auto num_rows = *num_rows_ptr;
     auto num_columns = *num_columns_ptr;
     if (num_rows <= 0) {
-        OP_LOGE(context->GetNodeName(), "num_rows must greater than 0, but got %ld",
-                num_rows);
+        OP_LOGE(context->GetNodeName(), "num_rows must be greater than 0, but got %ld", num_rows);
         return ge::GRAPH_FAILED;
     }
     if (num_columns <= 0) {
@@ -69,4 +68,4 @@ ge::graphStatus InferShapeForEye(gert::InferShapeContext* context) {
 }
 
 IMPL_OP_INFERSHAPE(Eye).InferShape(InferShapeForEye);
-}  // namespace ops
+} // namespace ops

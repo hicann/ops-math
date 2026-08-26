@@ -18,28 +18,23 @@
 using namespace std;
 
 class TensorMoveTilingTest : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "TensorMoveTilingTest SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() {}
 
-  static void TearDownTestCase() {
-    std::cout << "TensorMoveTilingTest TearDown" << std::endl;
-  }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(TensorMoveTilingTest, tensormove_tiling1)
 {
     optiling::TensorMoveCompileInfo compileInfo = {64, 253952};
-    gert::TilingContextPara tilingContextPara(
-        "TensorMove",
-        {
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("TensorMove",
+                                              {
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 4;
     string expectTilingData = "64 1 1 1 512 256 4 ";
     std::vector<size_t> expectWorkspaces = {32};
@@ -49,15 +44,14 @@ TEST_F(TensorMoveTilingTest, tensormove_tiling1)
 TEST_F(TensorMoveTilingTest, tensormove_invalid_dtype)
 {
     optiling::TensorMoveCompileInfo compileInfo = {64, 253952};
-    gert::TilingContextPara tilingContextPara(
-        "TensorMove",
-        {
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_COMPLEX128, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("TensorMove",
+                                              {
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_COMPLEX128, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 4;
     string expectTilingData = "64 1 1 1 512 256 4 ";
     std::vector<size_t> expectWorkspaces = {32};

@@ -23,15 +23,9 @@ using namespace std;
 
 class StridedSliceGradInfershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "StridedSliceGrad SetUp" << std::endl;
-    }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase()
-    {
-        std::cout << "StridedSliceGrad TearDown" << std::endl;
-    }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(StridedSliceGradInfershape, strided_slice_grad_infershape_test1)

@@ -19,15 +19,9 @@ using namespace std;
 
 class l2_triu_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "triu_test SetUp" << endl;
-    }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase()
-    {
-        cout << "triu_test TearDown" << endl;
-    }
+    static void TearDownTestCase() {}
 };
 
 // 测试所有支持的类型
@@ -36,7 +30,6 @@ TEST_F(l2_triu_test, case_1_all_dtype)
     vector<aclDataType> dtype_list{ACL_FLOAT, ACL_FLOAT16, ACL_INT64, ACL_INT32,  ACL_INT16,  ACL_UINT8,
                                    ACL_INT8,  ACL_DOUBLE,  ACL_BOOL,  ACL_UINT64, ACL_UINT32, ACL_UINT16};
     for (auto dtype : dtype_list) {
-        cout << "+++++++++++++++++++++++ start to test dtype: " << String(dtype) << endl;
         auto inputDesc = TensorDesc({3, 5}, dtype, ACL_FORMAT_ND)
                              .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15});
         auto outDesc = TensorDesc({3, 5}, dtype, ACL_FORMAT_ND);
@@ -50,8 +43,8 @@ TEST_F(l2_triu_test, case_1_all_dtype)
 
 TEST_F(l2_triu_test, case_2_in_out_different_dtype)
 {
-    auto inputDesc =
-        TensorDesc({3, 4}, ACL_INT8, ACL_FORMAT_ND).Value(vector<int>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto inputDesc = TensorDesc({3, 4}, ACL_INT8, ACL_FORMAT_ND)
+                         .Value(vector<int>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto outDesc = TensorDesc({3, 4}, ACL_INT16, ACL_FORMAT_ND);
     int64_t diagonal = -2;
     auto ut = OP_API_UT(aclnnTriu, INPUT(inputDesc, diagonal), OUTPUT(outDesc));
@@ -65,9 +58,8 @@ TEST_F(l2_triu_test, case_3_all_format)
     vector<aclFormat> format_list{ACL_FORMAT_NC1HWC0, ACL_FORMAT_NCHW,  ACL_FORMAT_NHWC, ACL_FORMAT_ND,
                                   ACL_FORMAT_HWCN,    ACL_FORMAT_NDHWC, ACL_FORMAT_NCDHW};
     for (auto format : format_list) {
-        cout << "+++++++++++++++++++++++ start to test format: " << format << endl;
-        auto inputDesc =
-            TensorDesc({3, 4}, ACL_INT32, format).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+        auto inputDesc = TensorDesc({3, 4}, ACL_INT32, format)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
         auto outDesc = TensorDesc({3, 4}, ACL_INT32, format);
         int64_t diagonal = 0;
         auto ut = OP_API_UT(aclnnTriu, INPUT(inputDesc, diagonal), OUTPUT(outDesc));
@@ -94,8 +86,8 @@ TEST_F(l2_triu_test, case_4_different_format)
 
 TEST_F(l2_triu_test, case_5_different_shape)
 {
-    auto inputDesc =
-        TensorDesc({3, 4}, ACL_INT16, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+    auto inputDesc = TensorDesc({3, 4}, ACL_INT16, ACL_FORMAT_ND)
+                         .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
     auto outDesc = TensorDesc({2, 3}, ACL_INT16, ACL_FORMAT_ND);
     int64_t diagonal = 0;
     auto ut = OP_API_UT(aclnnTriu, INPUT(inputDesc, diagonal), OUTPUT(outDesc));

@@ -18,29 +18,24 @@
 using namespace std;
 
 class AssignTilingTest : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "AssignTilingTest SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() {}
 
-  static void TearDownTestCase() {
-    std::cout << "AssignTilingTest TearDown" << std::endl;
-  }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(AssignTilingTest, Assign_tiling_float)
 {
     optiling::AssignCompileInfo compileInfo = {64, 253952};
-    gert::TilingContextPara tilingContextPara(
-        "Assign",
-        {
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Assign",
+                                              {
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 4;
     string expectTilingData = "64 1 1 1 512 256 4 ";
     std::vector<size_t> expectWorkspaces = {32};
@@ -50,16 +45,15 @@ TEST_F(AssignTilingTest, Assign_tiling_float)
 TEST_F(AssignTilingTest, Assign_tiling_float16)
 {
     optiling::AssignCompileInfo compileInfo = {64, 253952};
-    gert::TilingContextPara tilingContextPara(
-        "Assign",
-        {
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Assign",
+                                              {
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 2;
     string expectTilingData = "64 1 1 1 1024 256 2 ";
     std::vector<size_t> expectWorkspaces = {32};
@@ -69,16 +63,15 @@ TEST_F(AssignTilingTest, Assign_tiling_float16)
 TEST_F(AssignTilingTest, Assign_tiling_int8)
 {
     optiling::AssignCompileInfo compileInfo = {64, 253952};
-    gert::TilingContextPara tilingContextPara(
-        "Assign",
-        {
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_INT8, ge::FORMAT_ND},
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_INT8, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_INT8, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Assign",
+                                              {
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_INT8, ge::FORMAT_ND},
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_INT8, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_INT8, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 1;
     string expectTilingData = "64 1 1 1 2048 256 1 ";
     std::vector<size_t> expectWorkspaces = {32};
@@ -88,16 +81,15 @@ TEST_F(AssignTilingTest, Assign_tiling_int8)
 TEST_F(AssignTilingTest, Assign_tiling_uint8)
 {
     optiling::AssignCompileInfo compileInfo = {64, 253952};
-    gert::TilingContextPara tilingContextPara(
-        "Assign",
-        {
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_UINT8, ge::FORMAT_ND},
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_UINT8, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_UINT8, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Assign",
+                                              {
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_UINT8, ge::FORMAT_ND},
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_UINT8, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_UINT8, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 1;
     string expectTilingData = "64 1 1 1 2048 256 1 ";
     std::vector<size_t> expectWorkspaces = {32};
@@ -107,16 +99,15 @@ TEST_F(AssignTilingTest, Assign_tiling_uint8)
 TEST_F(AssignTilingTest, Assign_tiling_int32)
 {
     optiling::AssignCompileInfo compileInfo = {64, 253952};
-    gert::TilingContextPara tilingContextPara(
-        "Assign",
-        {
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Assign",
+                                              {
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 4;
     string expectTilingData = "64 1 1 1 512 256 4 ";
     std::vector<size_t> expectWorkspaces = {32};
@@ -126,16 +117,15 @@ TEST_F(AssignTilingTest, Assign_tiling_int32)
 TEST_F(AssignTilingTest, Assign_tiling_int64)
 {
     optiling::AssignCompileInfo compileInfo = {64, 253952};
-    gert::TilingContextPara tilingContextPara(
-        "Assign",
-        {
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_INT64, ge::FORMAT_ND},
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Assign",
+                                              {
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_INT64, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_INT64, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "64 1 1 1 256 256 8 ";
     std::vector<size_t> expectWorkspaces = {32};
@@ -145,16 +135,15 @@ TEST_F(AssignTilingTest, Assign_tiling_int64)
 TEST_F(AssignTilingTest, Assign_tiling_uint64)
 {
     optiling::AssignCompileInfo compileInfo = {64, 253952};
-    gert::TilingContextPara tilingContextPara(
-        "Assign",
-        {
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_UINT64, ge::FORMAT_ND},
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_UINT64, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_UINT64, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Assign",
+                                              {
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_UINT64, ge::FORMAT_ND},
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_UINT64, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_UINT64, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "64 1 1 1 256 256 8 ";
     std::vector<size_t> expectWorkspaces = {32};
@@ -164,16 +153,15 @@ TEST_F(AssignTilingTest, Assign_tiling_uint64)
 TEST_F(AssignTilingTest, Assign_tiling_invalid_dtype)
 {
     optiling::AssignCompileInfo compileInfo = {64, 253952};
-    gert::TilingContextPara tilingContextPara(
-        "Assign",
-        {
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_UINT64, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_UINT64, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Assign",
+                                              {
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_UINT64, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 4, 4, 4}, {4, 4, 4, 4}}, ge::DT_UINT64, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 4;
     string expectTilingData = "64 1 1 1 512 256 4 ";
     std::vector<size_t> expectWorkspaces = {32};

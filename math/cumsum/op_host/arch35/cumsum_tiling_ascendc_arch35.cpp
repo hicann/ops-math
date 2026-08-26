@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -147,16 +147,14 @@ struct CumsumTilingData {
     CumsumCoreOuterTilingData outerTd;
 };
 
-enum class SklanskyPattern : uint32_t
-{
+enum class SklanskyPattern : uint32_t {
     SS_ONEWAY = 0,
     SS_TWOWAY = 1,
 };
 
 class CumsumAscendcTilingImpl {
 public:
-    explicit CumsumAscendcTilingImpl(gert::TilingContext* context) : context_(context)
-    {}
+    explicit CumsumAscendcTilingImpl(gert::TilingContext* context) : context_(context) {}
 
     ge::graphStatus Init(const CumsumCompileInfo* compileInfo);
 
@@ -215,8 +213,8 @@ private:
 
     void InitIterGroupUbTiling(int32_t nFactor, IterGroupTiling& iterGroupTiling);
 
-    void DoBlockSplitBalance(
-        int64_t splitLen, int32_t coreNum, int32_t& mainBlockNum, int32_t& tailBlockNum, int64_t& blockFactor);
+    void DoBlockSplitBalance(int64_t splitLen, int32_t coreNum, int32_t& mainBlockNum, int32_t& tailBlockNum,
+                             int64_t& blockFactor);
 
     void JudgeSklanskyPatten(int64_t rLen, int64_t alignN);
 
@@ -242,8 +240,8 @@ private:
 
     void FillUbPara(CumsumUbPara& dstUbPara, UbPara& srcUbPara);
 
-    void FillSklanskyItersTiling(
-        CumsumSklanskyItersTiling& cumsumSklanskyItersTiling, SklanskyItersTiling& sklanskyItersTiling);
+    void FillSklanskyItersTiling(CumsumSklanskyItersTiling& cumsumSklanskyItersTiling,
+                                 SklanskyItersTiling& sklanskyItersTiling);
 
     void FillIterGroupTiling(CumsumIterGroupTiling& dstIterGroupTiling, IterGroupTiling& srcIterGroupTiling);
 
@@ -289,11 +287,10 @@ ge::graphStatus CumsumAscendcTilingImpl::Init(const CumsumCompileInfo* compileIn
     vRegSize_ = static_cast<int32_t>(compileInfo->vRegSize);
     ubSize_ = static_cast<int32_t>(compileInfo->ub_size);
     coreNum_ = static_cast<int32_t>(compileInfo->core_num);
-    OP_CHECK_IF(
-        coreNum_ > CORE_NUM_MAX,
-        OP_LOGW(
-            context_->GetNodeName(), "core num greater than 64, not support, set core num = 64. coreNum:%d", coreNum_),
-        coreNum_ = CORE_NUM_MAX);
+    OP_CHECK_IF(coreNum_ > CORE_NUM_MAX,
+                OP_LOGW(context_->GetNodeName(),
+                        "core num greater than 64, not supported, set core num = 64. coreNum: %d", coreNum_),
+                coreNum_ = CORE_NUM_MAX);
 
     auto inputXDesc = context_->GetInputDesc(INPUT_X_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, inputXDesc);
@@ -303,9 +300,8 @@ ge::graphStatus CumsumAscendcTilingImpl::Init(const CumsumCompileInfo* compileIn
     dtCast_ = (dType == ge::DataType::DT_FLOAT16 || dType == ge::DataType::DT_BF16) ? true : false;
 
     int64_t axis = 0;
-    OP_CHECK_IF(
-        !Ops::Base::GetConstInt(context_, INPUT_AXIS_INDEX, axis),
-        OP_LOGE(context_->GetNodeName(), "axis Get const int fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(!Ops::Base::GetConstInt(context_, INPUT_AXIS_INDEX, axis),
+                OP_LOGE(context_->GetNodeName(), "Failed to get the const value of axis."), return ge::GRAPH_FAILED);
     auto xStorage = context_->GetInputShape(INPUT_X_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, xStorage);
     const gert::Shape& xShape = Ops::Base::EnsureNotScalar(xStorage->GetStorageShape());
@@ -315,10 +311,10 @@ ge::graphStatus CumsumAscendcTilingImpl::Init(const CumsumCompileInfo* compileIn
     }
     OP_CHECK_IF(
         axis >= static_cast<int64_t>(xDimNum) || axis < static_cast<int64_t>(-xDimNum),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "axis",
-            std::to_string(axis).c_str(),
-            ("The value of axis must be within the range [-" + std::to_string(xDimNum) + 
-             ", " + std::to_string(xDimNum - 1) + "].").c_str()),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "axis", std::to_string(axis).c_str(),
+                                              ("The value of axis must be within the range [-" +
+                                               std::to_string(xDimNum) + ", " + std::to_string(xDimNum - 1) + "].")
+                                                  .c_str()),
         return ge::GRAPH_FAILED);
 
     // 合轴
@@ -361,13 +357,10 @@ ge::graphStatus CumsumAscendcTilingImpl::DoTiling()
             1 :
             std::max(td_.innerTd.realCoreNum, td_.outerTd.coreGroupCount * td_.outerTd.coreGroupCoreNum));
     context_->SetTilingKey(tilingKey_);
-    if (tilingKey_ == TILING_KEY_CORE_SS_ONEWAY ||
-        tilingKey_ == TILING_KEY_CORE_SS_TWOWAY ||
-        tilingKey_ == TILING_KEY_CORE_SS_UB_SS_ONEWAY ||
-        tilingKey_ == TILING_KEY_CORE_SS_UB_SS_TWOWAY) {
+    if (tilingKey_ == TILING_KEY_CORE_SS_ONEWAY || tilingKey_ == TILING_KEY_CORE_SS_TWOWAY ||
+        tilingKey_ == TILING_KEY_CORE_SS_UB_SS_ONEWAY || tilingKey_ == TILING_KEY_CORE_SS_UB_SS_TWOWAY) {
         OP_CHECK_IF(context_->SetScheduleMode(1) != ge::GRAPH_SUCCESS,
-                    OP_LOGE(context_->GetNodeName(), "Failed to set ScheduleMode!"),
-                    return ge::GRAPH_FAILED);
+                    OP_LOGE(context_->GetNodeName(), "Failed to set ScheduleMode!"), return ge::GRAPH_FAILED);
     }
     size_t* workspaces = context_->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, workspaces);
@@ -448,9 +441,8 @@ void CumsumAscendcTilingImpl::NGreaterClRFullLoad()
             nMaxForFullUb = (nMaxForFullUb % blockSize_ == 0) ?
                                 nMaxForFullUb :
                                 Ops::Base::CeilAlign(nMaxForFullUb, blockSize_) - blockSize_;
-            DoUbSplit(
-                td_.innerTd.nBlockPara.blockTailFactor, static_cast<int64_t>(nMaxForFullUb / dtSize_),
-                td_.innerTd.nUbPara.tailCoreUbPara);
+            DoUbSplit(td_.innerTd.nBlockPara.blockTailFactor, static_cast<int64_t>(nMaxForFullUb / dtSize_),
+                      td_.innerTd.nUbPara.tailCoreUbPara);
         }
 
         td_.innerTd.realCoreNum = td_.innerTd.mBlockPara.blockCount;
@@ -470,12 +462,10 @@ void CumsumAscendcTilingImpl::NGreaterClRFullLoad()
         nMaxForFullUb = (nMaxForFullUb % blockSize_ == 0) ?
                             nMaxForFullUb :
                             Ops::Base::CeilAlign(nMaxForFullUb, blockSize_) - blockSize_;
-        DoUbSplit(
-            td_.innerTd.nBlockPara.blockFactor, static_cast<int64_t>(nMaxForFullUb / dtSize_),
-            td_.innerTd.nUbPara.mainCoreUbPara);
-        DoUbSplit(
-            td_.innerTd.nBlockPara.blockTailFactor, static_cast<int64_t>(nMaxForFullUb / dtSize_),
-            td_.innerTd.nUbPara.tailCoreUbPara);
+        DoUbSplit(td_.innerTd.nBlockPara.blockFactor, static_cast<int64_t>(nMaxForFullUb / dtSize_),
+                  td_.innerTd.nUbPara.mainCoreUbPara);
+        DoUbSplit(td_.innerTd.nBlockPara.blockTailFactor, static_cast<int64_t>(nMaxForFullUb / dtSize_),
+                  td_.innerTd.nUbPara.tailCoreUbPara);
 
         td_.innerTd.realCoreNum = td_.innerTd.mBlockPara.blockCount * borrowNCount_;
         tilingKey_ = TILING_KEY_ONEWAY;
@@ -493,12 +483,11 @@ void CumsumAscendcTilingImpl::NGreaterClRNotFullLoad()
         DoBlockSplit(td_.innerTd.lenR, 1, td_.innerTd.rBlockPara);
         DoBlockSplit(td_.innerTd.lenN, 1, td_.innerTd.nBlockPara);
 
-        int32_t rMaxForFullUb =
-            LastPow2(MaxForFullUb(ubSize_ - UB_SS_BUFFER_SIZE - UB_SS_BR_BUFF_SIZE - UB_SS_BR_IDX_BUFF_SIZE, clSize_));
+        int32_t rMaxForFullUb = LastPow2(
+            MaxForFullUb(ubSize_ - UB_SS_BUFFER_SIZE - UB_SS_BR_BUFF_SIZE - UB_SS_BR_IDX_BUFF_SIZE, clSize_));
         DoUbSplit(td_.innerTd.rBlockPara.blockTailFactor, rMaxForFullUb, td_.innerTd.rUbPara.tailCoreUbPara);
-        DoUbSplit(
-            td_.innerTd.nBlockPara.blockTailFactor, static_cast<int64_t>(clSize_ / dtSizeCast_),
-            td_.innerTd.nUbPara.tailCoreUbPara);
+        DoUbSplit(td_.innerTd.nBlockPara.blockTailFactor, static_cast<int64_t>(clSize_ / dtSizeCast_),
+                  td_.innerTd.nUbPara.tailCoreUbPara);
 
         td_.innerTd.realCoreNum = td_.innerTd.mBlockPara.blockCount;
         tilingKey_ = TILING_KEY_UB_SS_ONEWAY;
@@ -513,12 +502,10 @@ void CumsumAscendcTilingImpl::NGreaterClRNotFullLoad()
             borrowNCount_ = std::min(borrowNCount_, borrowNMax);
             DoBlockSplit(td_.innerTd.lenN, borrowNCount_, td_.innerTd.nBlockPara);
             borrowNCount_ = td_.innerTd.nBlockPara.blockCount;
-            DoUbSplit(
-                td_.innerTd.nBlockPara.blockFactor, static_cast<int64_t>(clSize_ / dtSizeCast_),
-                td_.innerTd.nUbPara.mainCoreUbPara);
-            DoUbSplit(
-                td_.innerTd.nBlockPara.blockTailFactor, static_cast<int64_t>(clSize_ / dtSizeCast_),
-                td_.innerTd.nUbPara.tailCoreUbPara);
+            DoUbSplit(td_.innerTd.nBlockPara.blockFactor, static_cast<int64_t>(clSize_ / dtSizeCast_),
+                      td_.innerTd.nUbPara.mainCoreUbPara);
+            DoUbSplit(td_.innerTd.nBlockPara.blockTailFactor, static_cast<int64_t>(clSize_ / dtSizeCast_),
+                      td_.innerTd.nUbPara.tailCoreUbPara);
 
             DoBlockSplit(td_.innerTd.lenR, 1, td_.innerTd.rBlockPara);
             int32_t rMaxForFullUb = LastPow2(
@@ -538,21 +525,20 @@ void CumsumAscendcTilingImpl::NGreaterClRNotFullLoad()
 
 void CumsumAscendcTilingImpl::NGreaterClRNotFullLoadBorrowR()
 {
-    td_.innerTd.nBlockPara.blockFactor =
-        td_.innerTd.lenN < static_cast<int64_t>(clSize_ / dtSizeCast_) ? td_.innerTd.lenN : clSize_ / dtSizeCast_;
-    td_.innerTd.nBlockPara.blockCount =
-        Ops::Base::CeilDiv(td_.innerTd.lenN, static_cast<int64_t>(td_.innerTd.nBlockPara.blockFactor));
+    td_.innerTd.nBlockPara.blockFactor = td_.innerTd.lenN < static_cast<int64_t>(clSize_ / dtSizeCast_) ?
+                                             td_.innerTd.lenN :
+                                             clSize_ / dtSizeCast_;
+    td_.innerTd.nBlockPara.blockCount = Ops::Base::CeilDiv(td_.innerTd.lenN,
+                                                           static_cast<int64_t>(td_.innerTd.nBlockPara.blockFactor));
     td_.innerTd.nBlockPara.blockTailFactor = (td_.innerTd.lenN % td_.innerTd.nBlockPara.blockFactor == 0) ?
                                                  td_.innerTd.nBlockPara.blockFactor :
                                                  td_.innerTd.lenN % td_.innerTd.nBlockPara.blockFactor;
-    td_.innerTd.nBlockPara.blockFactor =
-        (td_.innerTd.nBlockPara.blockCount == 1) ? 0 : td_.innerTd.nBlockPara.blockFactor;
-    DoUbSplit(
-        td_.innerTd.nBlockPara.blockFactor, static_cast<int64_t>(clSize_ / dtSizeCast_),
-        td_.innerTd.nUbPara.mainCoreUbPara);
-    DoUbSplit(
-        td_.innerTd.nBlockPara.blockTailFactor, static_cast<int64_t>(clSize_ / dtSizeCast_),
-        td_.innerTd.nUbPara.tailCoreUbPara);
+    td_.innerTd.nBlockPara.blockFactor = (td_.innerTd.nBlockPara.blockCount == 1) ? 0 :
+                                                                                    td_.innerTd.nBlockPara.blockFactor;
+    DoUbSplit(td_.innerTd.nBlockPara.blockFactor, static_cast<int64_t>(clSize_ / dtSizeCast_),
+              td_.innerTd.nUbPara.mainCoreUbPara);
+    DoUbSplit(td_.innerTd.nBlockPara.blockTailFactor, static_cast<int64_t>(clSize_ / dtSizeCast_),
+              td_.innerTd.nUbPara.tailCoreUbPara);
 
     DoBlockSplit(td_.innerTd.lenR, borrowRCount_, td_.innerTd.rBlockPara);
     borrowRCount_ = td_.innerTd.rBlockPara.blockCount;
@@ -565,8 +551,8 @@ void CumsumAscendcTilingImpl::NGreaterClRNotFullLoadBorrowR()
         td_.innerTd.realCoreNum = td_.innerTd.mBlockPara.blockCount * borrowNCount_ * borrowRCount_;
         tilingKey_ = TILING_KEY_CORE_SS_ONEWAY;
     } else { // R不能全载
-        int32_t rMaxForFullUb =
-            LastPow2(MaxForFullUb(ubSize_ - UB_SS_BUFFER_SIZE - UB_SS_BR_IDX_BUFF_SIZE - UB_SS_BR_BUFF_SIZE, clSize_));
+        int32_t rMaxForFullUb = LastPow2(
+            MaxForFullUb(ubSize_ - UB_SS_BUFFER_SIZE - UB_SS_BR_IDX_BUFF_SIZE - UB_SS_BR_BUFF_SIZE, clSize_));
         DoUbSplit(td_.innerTd.rBlockPara.blockFactor, rMaxForFullUb, td_.innerTd.rUbPara.mainCoreUbPara);
         DoUbSplit(td_.innerTd.rBlockPara.blockTailFactor, rMaxForFullUb, td_.innerTd.rUbPara.tailCoreUbPara);
 
@@ -598,8 +584,8 @@ void CumsumAscendcTilingImpl::RNGreaterCl()
         5、纵向sklansky需要的固定buffer 2K 6、 纵向sklansky需要的固定buffer的索引 8K */
         int64_t foldBufferSizeCast = foldLen_ * vRegSize_;
         int64_t foldBufferSizeOrg = dtCast_ ? foldBufferSizeCast / CONST_2 : 0;
-        int64_t unfoldBufferSize = Ops::Base::CeilAlign(
-            td_.innerTd.lenN * foldCount_ * foldLen_ * dtSizeCast_, static_cast<int64_t>(blockSize_));
+        int64_t unfoldBufferSize = Ops::Base::CeilAlign(td_.innerTd.lenN * foldCount_ * foldLen_ * dtSizeCast_,
+                                                        static_cast<int64_t>(blockSize_));
         int64_t totalBuffSize = foldBufferSizeOrg + foldBufferSizeCast + unfoldBufferSize + vRegSize_ +
                                 TWOWAY_BUFF_SIZE + TWOWAY_IDX_BUFF_SIZE;
         if (totalBuffSize <= ubSize_) { // R满足UB全载
@@ -660,9 +646,8 @@ void CumsumAscendcTilingImpl::RNGreaterClBorrowM(int64_t mAfterBorrow)
     td_.innerTd.mBlockPara.blockTailFactor = (td_.innerTd.mBlockPara.blockTailFactor - 1) * borrowMCount_ + borrowM;
     int64_t rMaxForFullUb = MaxForFullUb(ubSize_, static_cast<int32_t>(borrowMCount_ * alignN_));
     if (td_.innerTd.lenR > rMaxForFullUb) { // R无法UB全载，R切UB，M每次UB载入1个borrowMCount_
-        rMaxForFullUb = MaxForFullUb(
-            ubSize_ - UB_SS_BUFFER_SIZE - UB_SS_BR_BUFF_SIZE - UB_SS_BR_IDX_BUFF_SIZE,
-            static_cast<int32_t>(borrowMCount_ * alignN_));
+        rMaxForFullUb = MaxForFullUb(ubSize_ - UB_SS_BUFFER_SIZE - UB_SS_BR_BUFF_SIZE - UB_SS_BR_IDX_BUFF_SIZE,
+                                     static_cast<int32_t>(borrowMCount_ * alignN_));
         DoUbSplit(td_.innerTd.rBlockPara.blockTailFactor, rMaxForFullUb, td_.innerTd.rUbPara.tailCoreUbPara);
         DoUbSplit(td_.innerTd.mBlockPara.blockFactor, borrowMCount_, td_.innerTd.mUbPara.mainCoreUbPara);
         DoUbSplit(td_.innerTd.mBlockPara.blockTailFactor, borrowMCount_, td_.innerTd.mUbPara.tailCoreUbPara);
@@ -670,12 +655,11 @@ void CumsumAscendcTilingImpl::RNGreaterClBorrowM(int64_t mAfterBorrow)
         tilingKey_ = TILING_KEY_UB_SS_ONEWAY;
     } else { // R UB全载，M按照borrowMCount_为单元，尽量多的载入UB
         UbFullLoad(td_.innerTd.rBlockPara.blockTailFactor, td_.innerTd.rUbPara.tailCoreUbPara);
-        int64_t mMaxForFullUb = MaxForFullUb(
-            ubSize_, static_cast<int32_t>(td_.innerTd.lenR * borrowMCount_ * alignN_));
-        DoUbSplit(
-            td_.innerTd.mBlockPara.blockFactor, borrowMCount_ * mMaxForFullUb, td_.innerTd.mUbPara.mainCoreUbPara);
-        DoUbSplit(
-            td_.innerTd.mBlockPara.blockTailFactor, borrowMCount_ * mMaxForFullUb, td_.innerTd.mUbPara.tailCoreUbPara);
+        int64_t mMaxForFullUb = MaxForFullUb(ubSize_, static_cast<int32_t>(td_.innerTd.lenR * borrowMCount_ * alignN_));
+        DoUbSplit(td_.innerTd.mBlockPara.blockFactor, borrowMCount_ * mMaxForFullUb,
+                  td_.innerTd.mUbPara.mainCoreUbPara);
+        DoUbSplit(td_.innerTd.mBlockPara.blockTailFactor, borrowMCount_ * mMaxForFullUb,
+                  td_.innerTd.mUbPara.tailCoreUbPara);
         td_.innerTd.realCoreNum = td_.innerTd.mBlockPara.blockCount;
         tilingKey_ = TILING_KEY_ONEWAY;
     }
@@ -731,8 +715,8 @@ void CumsumAscendcTilingImpl::RNGreaterClRNotFullLoadNotBorrowR()
 
     if (ssPatten_ == SklanskyPattern::SS_ONEWAY) { // 单向sklansky
         // R切分UB，factor满足2^k
-        int32_t rMaxForFullUb =
-            MaxForFullUb(ubSize_ - UB_SS_BUFFER_SIZE - UB_SS_BR_IDX_BUFF_SIZE - UB_SS_BR_BUFF_SIZE, alignN_);
+        int32_t rMaxForFullUb = MaxForFullUb(ubSize_ - UB_SS_BUFFER_SIZE - UB_SS_BR_IDX_BUFF_SIZE - UB_SS_BR_BUFF_SIZE,
+                                             alignN_);
         int32_t rFactor = LastPow2(rMaxForFullUb);
         DoUbSplit(td_.innerTd.rBlockPara.blockTailFactor, rFactor, td_.innerTd.rUbPara.tailCoreUbPara);
 
@@ -742,22 +726,20 @@ void CumsumAscendcTilingImpl::RNGreaterClRNotFullLoadNotBorrowR()
         // R切分UB，factor满足2^k
         int64_t alignN = dtCast_ ? vRegSize_ + vRegSize_ / CONST_2 : vRegSize_;
         alignN += td_.innerTd.lenN * foldCount_ * dtSizeCast_;
-        int64_t totalBuffSize = static_cast<int64_t>(
-            ubSize_ - UB_SS_BUFFER_SIZE - UB_SS_BR_IDX_BUFF_SIZE - UB_SS_BR_BUFF_SIZE - vRegSize_ - blockSize_ -
-            TWOWAY_BUFF_SIZE - TWOWAY_IDX_BUFF_SIZE);
+        int64_t totalBuffSize = static_cast<int64_t>(ubSize_ - UB_SS_BUFFER_SIZE - UB_SS_BR_IDX_BUFF_SIZE -
+                                                     UB_SS_BR_BUFF_SIZE - vRegSize_ - blockSize_ - TWOWAY_BUFF_SIZE -
+                                                     TWOWAY_IDX_BUFF_SIZE);
         int32_t rMaxForFullUb = Ops::Base::FloorDiv(totalBuffSize, alignN);
         rMaxForFullUb *= foldCount_;
         int32_t rFactor = LastPow2(rMaxForFullUb);
         DoUbSplit(td_.innerTd.rBlockPara.blockTailFactor, rFactor, td_.innerTd.rUbPara.tailCoreUbPara);
 
         int64_t foldN = Ops::Base::CeilAlign(td_.innerTd.lenN * dtSizeCast_, static_cast<int64_t>(blockSize_));
-        DoFold(
-            td_.innerTd.rUbPara.tailCoreUbPara.ubFactor, foldN, td_.innerTd.tailCoreMainUbFoldPara.foldCount,
-            td_.innerTd.tailCoreMainUbFoldPara.foldLen);
+        DoFold(td_.innerTd.rUbPara.tailCoreUbPara.ubFactor, foldN, td_.innerTd.tailCoreMainUbFoldPara.foldCount,
+               td_.innerTd.tailCoreMainUbFoldPara.foldLen);
         td_.innerTd.tailCoreMainUbFoldPara.sklanskyIter = std::log2(td_.innerTd.tailCoreMainUbFoldPara.foldLen);
-        DoFold(
-            td_.innerTd.rUbPara.tailCoreUbPara.ubTailFactor, foldN, td_.innerTd.tailCoreTailUbFoldPara.foldCount,
-            td_.innerTd.tailCoreTailUbFoldPara.foldLen);
+        DoFold(td_.innerTd.rUbPara.tailCoreUbPara.ubTailFactor, foldN, td_.innerTd.tailCoreTailUbFoldPara.foldCount,
+               td_.innerTd.tailCoreTailUbFoldPara.foldLen);
         td_.innerTd.tailCoreTailUbFoldPara.sklanskyIter = std::log2(td_.innerTd.tailCoreTailUbFoldPara.foldLen);
 
         td_.innerTd.realCoreNum = td_.innerTd.mBlockPara.blockCount;
@@ -792,8 +774,8 @@ void CumsumAscendcTilingImpl::RNGreaterClRNotFullLoadBorrowR()
             tilingKey_ = TILING_KEY_CORE_SS_ONEWAY;
         } else { // R不满足UB全载
             // R切分UB，factor满足2^k
-            rMaxForFullUb =
-                MaxForFullUb(ubSize_ - UB_SS_BUFFER_SIZE - UB_SS_BR_IDX_BUFF_SIZE - UB_SS_BR_BUFF_SIZE, alignN_);
+            rMaxForFullUb = MaxForFullUb(ubSize_ - UB_SS_BUFFER_SIZE - UB_SS_BR_IDX_BUFF_SIZE - UB_SS_BR_BUFF_SIZE,
+                                         alignN_);
             int32_t rFactor = LastPow2(rMaxForFullUb);
             DoUbSplit(td_.innerTd.rBlockPara.blockFactor, rFactor, td_.innerTd.rUbPara.mainCoreUbPara);
             DoUbSplit(td_.innerTd.rBlockPara.blockTailFactor, rFactor, td_.innerTd.rUbPara.tailCoreUbPara);
@@ -813,22 +795,20 @@ void CumsumAscendcTilingImpl::RNGreaterClRNotFullLoadBorrowRTwoway()
     5、纵向sklansky需要的固定buffer 2K 6、 纵向sklansky需要的固定buffer的索引 8K */
     int64_t foldBufferSizeCast = foldLen_ * vRegSize_;
     int64_t foldBufferSizeOrg = dtCast_ ? foldBufferSizeCast / CONST_2 : 0;
-    int64_t unfoldBufferSize =
-        Ops::Base::CeilAlign(td_.innerTd.lenN * foldCount_ * foldLen_ * dtSizeCast_, static_cast<int64_t>(blockSize_));
-    int64_t totalBuffSize =
-        foldBufferSizeOrg + foldBufferSizeCast + unfoldBufferSize + vRegSize_ + TWOWAY_BUFF_SIZE + TWOWAY_IDX_BUFF_SIZE;
+    int64_t unfoldBufferSize = Ops::Base::CeilAlign(td_.innerTd.lenN * foldCount_ * foldLen_ * dtSizeCast_,
+                                                    static_cast<int64_t>(blockSize_));
+    int64_t totalBuffSize = foldBufferSizeOrg + foldBufferSizeCast + unfoldBufferSize + vRegSize_ + TWOWAY_BUFF_SIZE +
+                            TWOWAY_IDX_BUFF_SIZE;
     // 用主核的长度来判定R是否全载
     if (totalBuffSize <= ubSize_) { // R满足UB全载
         UbFullLoad(td_.innerTd.rBlockPara.blockFactor, td_.innerTd.rUbPara.mainCoreUbPara);
         UbFullLoad(td_.innerTd.rBlockPara.blockTailFactor, td_.innerTd.rUbPara.tailCoreUbPara);
 
-        DoFold(
-            td_.innerTd.rUbPara.mainCoreUbPara.ubTailFactor, foldN, td_.innerTd.mainCoreTailUbFoldPara.foldCount,
-            td_.innerTd.mainCoreTailUbFoldPara.foldLen);
+        DoFold(td_.innerTd.rUbPara.mainCoreUbPara.ubTailFactor, foldN, td_.innerTd.mainCoreTailUbFoldPara.foldCount,
+               td_.innerTd.mainCoreTailUbFoldPara.foldLen);
         td_.innerTd.mainCoreTailUbFoldPara.sklanskyIter = std::log2(td_.innerTd.mainCoreTailUbFoldPara.foldLen);
-        DoFold(
-            td_.innerTd.rUbPara.tailCoreUbPara.ubTailFactor, foldN, td_.innerTd.tailCoreTailUbFoldPara.foldCount,
-            td_.innerTd.tailCoreTailUbFoldPara.foldLen);
+        DoFold(td_.innerTd.rUbPara.tailCoreUbPara.ubTailFactor, foldN, td_.innerTd.tailCoreTailUbFoldPara.foldCount,
+               td_.innerTd.tailCoreTailUbFoldPara.foldLen);
         td_.innerTd.tailCoreTailUbFoldPara.sklanskyIter = std::log2(td_.innerTd.tailCoreTailUbFoldPara.foldLen);
 
         tilingKey_ = TILING_KEY_CORE_SS_TWOWAY;
@@ -836,30 +816,25 @@ void CumsumAscendcTilingImpl::RNGreaterClRNotFullLoadBorrowRTwoway()
         // R切分UB，factor满足2^k
         int64_t alignN = dtCast_ ? vRegSize_ + vRegSize_ / CONST_2 : vRegSize_;
         alignN += td_.innerTd.lenN * foldCount_ * dtSizeCast_;
-        totalBuffSize = static_cast<int64_t>(
-            ubSize_ - UB_SS_BUFFER_SIZE - UB_SS_BR_IDX_BUFF_SIZE - UB_SS_BR_BUFF_SIZE - vRegSize_ - blockSize_ -
-            TWOWAY_BUFF_SIZE - TWOWAY_IDX_BUFF_SIZE);
+        totalBuffSize = static_cast<int64_t>(ubSize_ - UB_SS_BUFFER_SIZE - UB_SS_BR_IDX_BUFF_SIZE - UB_SS_BR_BUFF_SIZE -
+                                             vRegSize_ - blockSize_ - TWOWAY_BUFF_SIZE - TWOWAY_IDX_BUFF_SIZE);
         int32_t rMaxForFullUb = Ops::Base::FloorDiv(totalBuffSize, alignN);
         rMaxForFullUb *= foldCount_;
         int32_t rFactor = LastPow2(rMaxForFullUb);
         DoUbSplit(td_.innerTd.rBlockPara.blockFactor, rFactor, td_.innerTd.rUbPara.mainCoreUbPara);
         DoUbSplit(td_.innerTd.rBlockPara.blockTailFactor, rFactor, td_.innerTd.rUbPara.tailCoreUbPara);
 
-        DoFold(
-            td_.innerTd.rUbPara.mainCoreUbPara.ubFactor, foldN, td_.innerTd.mainCoreMainUbFoldPara.foldCount,
-            td_.innerTd.mainCoreMainUbFoldPara.foldLen);
+        DoFold(td_.innerTd.rUbPara.mainCoreUbPara.ubFactor, foldN, td_.innerTd.mainCoreMainUbFoldPara.foldCount,
+               td_.innerTd.mainCoreMainUbFoldPara.foldLen);
         td_.innerTd.mainCoreMainUbFoldPara.sklanskyIter = std::log2(td_.innerTd.mainCoreMainUbFoldPara.foldLen);
-        DoFold(
-            td_.innerTd.rUbPara.mainCoreUbPara.ubTailFactor, foldN, td_.innerTd.mainCoreTailUbFoldPara.foldCount,
-            td_.innerTd.mainCoreTailUbFoldPara.foldLen);
+        DoFold(td_.innerTd.rUbPara.mainCoreUbPara.ubTailFactor, foldN, td_.innerTd.mainCoreTailUbFoldPara.foldCount,
+               td_.innerTd.mainCoreTailUbFoldPara.foldLen);
         td_.innerTd.mainCoreTailUbFoldPara.sklanskyIter = std::log2(td_.innerTd.mainCoreTailUbFoldPara.foldLen);
-        DoFold(
-            td_.innerTd.rUbPara.tailCoreUbPara.ubFactor, foldN, td_.innerTd.tailCoreMainUbFoldPara.foldCount,
-            td_.innerTd.tailCoreMainUbFoldPara.foldLen);
+        DoFold(td_.innerTd.rUbPara.tailCoreUbPara.ubFactor, foldN, td_.innerTd.tailCoreMainUbFoldPara.foldCount,
+               td_.innerTd.tailCoreMainUbFoldPara.foldLen);
         td_.innerTd.tailCoreMainUbFoldPara.sklanskyIter = std::log2(td_.innerTd.tailCoreMainUbFoldPara.foldLen);
-        DoFold(
-            td_.innerTd.rUbPara.tailCoreUbPara.ubTailFactor, foldN, td_.innerTd.tailCoreTailUbFoldPara.foldCount,
-            td_.innerTd.tailCoreTailUbFoldPara.foldLen);
+        DoFold(td_.innerTd.rUbPara.tailCoreUbPara.ubTailFactor, foldN, td_.innerTd.tailCoreTailUbFoldPara.foldCount,
+               td_.innerTd.tailCoreTailUbFoldPara.foldLen);
         td_.innerTd.tailCoreTailUbFoldPara.sklanskyIter = std::log2(td_.innerTd.tailCoreTailUbFoldPara.foldLen);
 
         tilingKey_ = TILING_KEY_CORE_SS_UB_SS_TWOWAY;
@@ -868,8 +843,8 @@ void CumsumAscendcTilingImpl::RNGreaterClRNotFullLoadBorrowRTwoway()
 
 void CumsumAscendcTilingImpl::MRNGreaterCl()
 {
-    int32_t minMForCl =
-        Ops::Base::CeilDiv(static_cast<int64_t>(clSize_), td_.innerTd.lenR * td_.innerTd.lenN * dtSize_);
+    int32_t minMForCl = Ops::Base::CeilDiv(static_cast<int64_t>(clSize_),
+                                           td_.innerTd.lenR * td_.innerTd.lenN * dtSize_);
     int64_t blockCountMinMForCl = Ops::Base::CeilDiv(td_.innerTd.lenM, static_cast<int64_t>(minMForCl));
     if (blockCountMinMForCl <= coreNum_) {
         DoBlockSplit(td_.innerTd.lenM, blockCountMinMForCl, td_.innerTd.mBlockPara);
@@ -903,24 +878,24 @@ void CumsumAscendcTilingImpl::CalcBufferSize()
         case TILING_KEY_TWOWAY:
         case TILING_KEY_CORE_SS_TWOWAY: {
             td_.innerTd.xUnfoldBufSize = CalcXUnfoldBufSize();
-            td_.innerTd.xBufSize = CalcXBufSize(
-                ubSize_ - td_.innerTd.xUnfoldBufSize - vRegSize_ - TWOWAY_BUFF_SIZE - TWOWAY_IDX_BUFF_SIZE);
+            td_.innerTd.xBufSize = CalcXBufSize(ubSize_ - td_.innerTd.xUnfoldBufSize - vRegSize_ - TWOWAY_BUFF_SIZE -
+                                                TWOWAY_IDX_BUFF_SIZE);
             break;
         }
         case TILING_KEY_UB_SS_ONEWAY:
         case TILING_KEY_CORE_SS_UB_SS_ONEWAY: {
             td_.innerTd.ubSklanskyBufSize = UB_SS_BUFFER_SIZE;
-            td_.innerTd.xBufSize =
-                CalcXBufSize(ubSize_ - td_.innerTd.ubSklanskyBufSize - UB_SS_BR_IDX_BUFF_SIZE - UB_SS_BR_BUFF_SIZE);
+            td_.innerTd.xBufSize = CalcXBufSize(ubSize_ - td_.innerTd.ubSklanskyBufSize - UB_SS_BR_IDX_BUFF_SIZE -
+                                                UB_SS_BR_BUFF_SIZE);
             break;
         }
         case TILING_KEY_UB_SS_TWOWAY:
         case TILING_KEY_CORE_SS_UB_SS_TWOWAY: {
             td_.innerTd.ubSklanskyBufSize = UB_SS_BUFFER_SIZE;
             td_.innerTd.xUnfoldBufSize = CalcXUnfoldBufSize();
-            td_.innerTd.xBufSize = CalcXBufSize(
-                ubSize_ - td_.innerTd.ubSklanskyBufSize - UB_SS_BR_IDX_BUFF_SIZE - UB_SS_BR_BUFF_SIZE -
-                td_.innerTd.xUnfoldBufSize - vRegSize_ - TWOWAY_BUFF_SIZE - TWOWAY_IDX_BUFF_SIZE);
+            td_.innerTd.xBufSize = CalcXBufSize(ubSize_ - td_.innerTd.ubSklanskyBufSize - UB_SS_BR_IDX_BUFF_SIZE -
+                                                UB_SS_BR_BUFF_SIZE - td_.innerTd.xUnfoldBufSize - vRegSize_ -
+                                                TWOWAY_BUFF_SIZE - TWOWAY_IDX_BUFF_SIZE);
             break;
         }
         default: {
@@ -983,25 +958,25 @@ void CumsumAscendcTilingImpl::TilingStrategyOuterTd()
     }
 
     td_.outerTd.sklanskyItersCount = ceil(log2(borrowRCount_));
-    td_.outerTd.addFactorRepeatTimesMain =
-        td_.innerTd.nUbPara.mainCoreUbPara.ubTailFactor == 0 ?
-            0 :
-            Ops::Base::FloorDiv(vRegSize_ * CONST_3 / dtSizeCast_, td_.innerTd.nUbPara.mainCoreUbPara.ubTailFactor);
-    td_.outerTd.addFactorRepeatTimesTail =
-        td_.innerTd.nUbPara.tailCoreUbPara.ubTailFactor == 0 ?
-            0 :
-            Ops::Base::FloorDiv(vRegSize_ * CONST_3 / dtSizeCast_, td_.innerTd.nUbPara.tailCoreUbPara.ubTailFactor);
+    td_.outerTd.addFactorRepeatTimesMain = td_.innerTd.nUbPara.mainCoreUbPara.ubTailFactor == 0 ?
+                                               0 :
+                                               Ops::Base::FloorDiv(vRegSize_ * CONST_3 / dtSizeCast_,
+                                                                   td_.innerTd.nUbPara.mainCoreUbPara.ubTailFactor);
+    td_.outerTd.addFactorRepeatTimesTail = td_.innerTd.nUbPara.tailCoreUbPara.ubTailFactor == 0 ?
+                                               0 :
+                                               Ops::Base::FloorDiv(vRegSize_ * CONST_3 / dtSizeCast_,
+                                                                   td_.innerTd.nUbPara.tailCoreUbPara.ubTailFactor);
     td_.outerTd.coreGroupCount = static_cast<int32_t>(td_.innerTd.lenM) * borrowNCount_;
     td_.outerTd.coreGroupCoreNum = Ops::Base::FloorDiv(coreNum_, td_.outerTd.coreGroupCount);
     td_.outerTd.addFactorBufferSize = vRegSize_ * CONST_3;
     td_.outerTd.addFactorOffsetBufferSize = ADD_FACTOR_OFFSET_MAX;
     if (dtCast_) {
-        td_.outerTd.addDataBufferSize =
-            (ubSize_ - td_.outerTd.addFactorBufferSize * CONST_2 - td_.outerTd.addFactorOffsetBufferSize) / CAST_MULT /
-            blockSize_ * blockSize_;
+        td_.outerTd.addDataBufferSize = (ubSize_ - td_.outerTd.addFactorBufferSize * CONST_2 -
+                                         td_.outerTd.addFactorOffsetBufferSize) /
+                                        CAST_MULT / blockSize_ * blockSize_;
     } else {
-        td_.outerTd.addDataBufferSize =
-            ubSize_ - td_.outerTd.addFactorBufferSize - td_.outerTd.addFactorOffsetBufferSize;
+        td_.outerTd.addDataBufferSize = ubSize_ - td_.outerTd.addFactorBufferSize -
+                                        td_.outerTd.addFactorOffsetBufferSize;
     }
 
     TilingStrategyOuterTdSklanskyItersTiling();
@@ -1021,17 +996,17 @@ void CumsumAscendcTilingImpl::TilingStrategyOuterTdSklanskyItersTiling()
         int32_t mainIterGroupCount = borrowRCount_ % ssiTiling.iterGroupAddOffset == 0 ?
                                          Ops::Base::FloorDiv(borrowRCount_, ssiTiling.iterGroupAddOffset) - 1 :
                                          Ops::Base::FloorDiv(borrowRCount_, ssiTiling.iterGroupAddOffset);
-        int32_t tailIterGroupCount =
-            borrowRCount_ % ssiTiling.iterGroupAddOffset <= ssiTiling.iterGroupAddCount ? 0 : 1;
+        int32_t tailIterGroupCount = borrowRCount_ % ssiTiling.iterGroupAddOffset <= ssiTiling.iterGroupAddCount ? 0 :
+                                                                                                                   1;
         tailIterGroupCount = borrowRCount_ % ssiTiling.iterGroupAddOffset == 0 ? 1 : tailIterGroupCount;
         ssiTiling.iterGroupCount = mainIterGroupCount + tailIterGroupCount;
         ssiTiling.iterGroupCoreNum = Ops::Base::FloorDiv(td_.outerTd.coreGroupCoreNum, ssiTiling.iterGroupCount);
 
         // 主块分组
         if (mainIterGroupCount > 0) {
-            InitIterGroupTiling(
-                ssiTiling.iterGroupAddCount * td_.innerTd.rBlockPara.blockFactor, ssiTiling.iterGroupCoreNum,
-                ssiTiling.mainIterGroupMainNTiling, ssiTiling.mainIterGroupTailNTiling);
+            InitIterGroupTiling(ssiTiling.iterGroupAddCount * td_.innerTd.rBlockPara.blockFactor,
+                                ssiTiling.iterGroupCoreNum, ssiTiling.mainIterGroupMainNTiling,
+                                ssiTiling.mainIterGroupTailNTiling);
         }
 
         // 尾块分组
@@ -1039,9 +1014,9 @@ void CumsumAscendcTilingImpl::TilingStrategyOuterTdSklanskyItersTiling()
             int32_t mainRCnt = borrowRCount_ % ssiTiling.iterGroupAddOffset == 0 ?
                                    ssiTiling.iterGroupAddOffset - ssiTiling.iterGroupAddCount - 1 :
                                    borrowRCount_ % ssiTiling.iterGroupAddOffset - ssiTiling.iterGroupAddCount - 1;
-            InitIterGroupTiling(
-                mainRCnt * td_.innerTd.rBlockPara.blockFactor + td_.innerTd.rBlockPara.blockTailFactor,
-                ssiTiling.iterGroupCoreNum, ssiTiling.tailIterGroupMainNTiling, ssiTiling.tailIterGroupTailNTiling);
+            InitIterGroupTiling(mainRCnt * td_.innerTd.rBlockPara.blockFactor + td_.innerTd.rBlockPara.blockTailFactor,
+                                ssiTiling.iterGroupCoreNum, ssiTiling.tailIterGroupMainNTiling,
+                                ssiTiling.tailIterGroupTailNTiling);
         } else { // 如果没有尾块，尾块的切分策略就等于主块的切分策略
             ssiTiling.tailIterGroupMainNTiling = ssiTiling.mainIterGroupMainNTiling;
             ssiTiling.tailIterGroupTailNTiling = ssiTiling.mainIterGroupTailNTiling;
@@ -1049,12 +1024,11 @@ void CumsumAscendcTilingImpl::TilingStrategyOuterTdSklanskyItersTiling()
     }
 }
 
-void CumsumAscendcTilingImpl::InitIterGroupTiling(
-    int64_t rLen, int32_t coreNum, IterGroupTiling& mainNTiling, IterGroupTiling& tailNTiling)
+void CumsumAscendcTilingImpl::InitIterGroupTiling(int64_t rLen, int32_t coreNum, IterGroupTiling& mainNTiling,
+                                                  IterGroupTiling& tailNTiling)
 {
-    DoBlockSplitBalance(
-        rLen, coreNum, mainNTiling.iterGroupMainBlockCount, mainNTiling.iterGroupTailBlockCount,
-        mainNTiling.iterGroupBlockFactor);
+    DoBlockSplitBalance(rLen, coreNum, mainNTiling.iterGroupMainBlockCount, mainNTiling.iterGroupTailBlockCount,
+                        mainNTiling.iterGroupBlockFactor);
 
     // 主块N和尾块N切分策略是一样的
     tailNTiling.iterGroupMainBlockCount = mainNTiling.iterGroupMainBlockCount;
@@ -1077,9 +1051,8 @@ void CumsumAscendcTilingImpl::InitIterGroupUbTiling(int32_t nFactor, IterGroupTi
     // 主核UB切分策略
     if (iterGroupTiling.iterGroupMainBlockCount > 0) {
         __UbPara ubPara;
-        DoUbSplit(
-            iterGroupTiling.iterGroupBlockFactor,
-            Ops::Base::FloorDiv(td_.outerTd.addDataBufferSize - blockSize_, nFactor * dtSize_), ubPara);
+        DoUbSplit(iterGroupTiling.iterGroupBlockFactor,
+                  Ops::Base::FloorDiv(td_.outerTd.addDataBufferSize - blockSize_, nFactor * dtSize_), ubPara);
         iterGroupTiling.iterGroupMainCoreUbFactor = ubPara.ubFactor;
         iterGroupTiling.iterGroupMainCoreUbTailFactor = ubPara.ubTailFactor;
         iterGroupTiling.iterGroupMainCoreUbFactorCount = ubPara.ubCount;
@@ -1088,17 +1061,16 @@ void CumsumAscendcTilingImpl::InitIterGroupUbTiling(int32_t nFactor, IterGroupTi
     // 尾核UB切分策略
     if (iterGroupTiling.iterGroupTailBlockCount > 0) {
         __UbPara ubPara;
-        DoUbSplit(
-            iterGroupTiling.iterGroupBlockFactor - 1,
-            Ops::Base::FloorDiv(td_.outerTd.addDataBufferSize - blockSize_, nFactor * dtSize_), ubPara);
+        DoUbSplit(iterGroupTiling.iterGroupBlockFactor - 1,
+                  Ops::Base::FloorDiv(td_.outerTd.addDataBufferSize - blockSize_, nFactor * dtSize_), ubPara);
         iterGroupTiling.iterGroupTailCoreUbFactor = ubPara.ubFactor;
         iterGroupTiling.iterGroupTailCoreUbTailFactor = ubPara.ubTailFactor;
         iterGroupTiling.iterGroupTailCoreUbFactorCount = ubPara.ubCount;
     }
 }
 
-void CumsumAscendcTilingImpl::DoBlockSplitBalance(
-    int64_t splitLen, int32_t coreNum, int32_t& mainBlockNum, int32_t& tailBlockNum, int64_t& blockFactor)
+void CumsumAscendcTilingImpl::DoBlockSplitBalance(int64_t splitLen, int32_t coreNum, int32_t& mainBlockNum,
+                                                  int32_t& tailBlockNum, int64_t& blockFactor)
 {
     if (splitLen <= 0) {
         return;
@@ -1157,10 +1129,7 @@ void CumsumAscendcTilingImpl::CoreFullLoad(int64_t len, BlockPara& blockPara, __
     DoUbSplit(blockPara.blockTailFactor, blockPara.blockTailFactor, ubPara);
 }
 
-void CumsumAscendcTilingImpl::UbFullLoad(int64_t len, __UbPara& ubPara)
-{
-    DoUbSplit(len, len, ubPara);
-}
+void CumsumAscendcTilingImpl::UbFullLoad(int64_t len, __UbPara& ubPara) { DoUbSplit(len, len, ubPara); }
 
 int32_t CumsumAscendcTilingImpl::MaxForFullUb(int32_t bufferMax, int32_t alignLen)
 {
@@ -1175,8 +1144,8 @@ void CumsumAscendcTilingImpl::DoBlockSplit(int64_t splitLen, int32_t coreNum, Bl
     blockPara.blockCount = splitLen < coreNum ? splitLen : coreNum;
     blockPara.blockFactor = Ops::Base::CeilDiv(splitLen, static_cast<int64_t>(blockPara.blockCount));
     blockPara.blockCount = Ops::Base::CeilDiv(splitLen, blockPara.blockFactor);
-    blockPara.blockTailFactor =
-        (splitLen % blockPara.blockFactor == 0) ? blockPara.blockFactor : splitLen % blockPara.blockFactor;
+    blockPara.blockTailFactor = (splitLen % blockPara.blockFactor == 0) ? blockPara.blockFactor :
+                                                                          splitLen % blockPara.blockFactor;
     blockPara.blockFactor = (blockPara.blockCount == 1) ? 0 : blockPara.blockFactor;
 }
 
@@ -1272,26 +1241,26 @@ void CumsumAscendcTilingImpl::FillUbPara(CumsumUbPara& dstUbPara, UbPara& srcUbP
     dstUbPara.tailCoreUbPara.set_ubTailFactor(srcUbPara.tailCoreUbPara.ubTailFactor);
 }
 
-void CumsumAscendcTilingImpl::FillSklanskyItersTiling(
-    CumsumSklanskyItersTiling& cumsumSklanskyItersTiling, SklanskyItersTiling& sklanskyItersTiling)
+void CumsumAscendcTilingImpl::FillSklanskyItersTiling(CumsumSklanskyItersTiling& cumsumSklanskyItersTiling,
+                                                      SklanskyItersTiling& sklanskyItersTiling)
 {
     cumsumSklanskyItersTiling.set_iterGroupCount(sklanskyItersTiling.iterGroupCount);
     cumsumSklanskyItersTiling.set_iterGroupAddCount(sklanskyItersTiling.iterGroupAddCount);
     cumsumSklanskyItersTiling.set_iterGroupAddOffset(sklanskyItersTiling.iterGroupAddOffset);
     cumsumSklanskyItersTiling.set_iterGroupStartOffset(sklanskyItersTiling.iterGroupStartOffset);
     cumsumSklanskyItersTiling.set_iterGroupCoreNum(sklanskyItersTiling.iterGroupCoreNum);
-    FillIterGroupTiling(
-        cumsumSklanskyItersTiling.mainIterGroupMainNTiling, sklanskyItersTiling.mainIterGroupMainNTiling);
-    FillIterGroupTiling(
-        cumsumSklanskyItersTiling.tailIterGroupMainNTiling, sklanskyItersTiling.tailIterGroupMainNTiling);
-    FillIterGroupTiling(
-        cumsumSklanskyItersTiling.mainIterGroupTailNTiling, sklanskyItersTiling.mainIterGroupTailNTiling);
-    FillIterGroupTiling(
-        cumsumSklanskyItersTiling.tailIterGroupTailNTiling, sklanskyItersTiling.tailIterGroupTailNTiling);
+    FillIterGroupTiling(cumsumSklanskyItersTiling.mainIterGroupMainNTiling,
+                        sklanskyItersTiling.mainIterGroupMainNTiling);
+    FillIterGroupTiling(cumsumSklanskyItersTiling.tailIterGroupMainNTiling,
+                        sklanskyItersTiling.tailIterGroupMainNTiling);
+    FillIterGroupTiling(cumsumSklanskyItersTiling.mainIterGroupTailNTiling,
+                        sklanskyItersTiling.mainIterGroupTailNTiling);
+    FillIterGroupTiling(cumsumSklanskyItersTiling.tailIterGroupTailNTiling,
+                        sklanskyItersTiling.tailIterGroupTailNTiling);
 }
 
-void CumsumAscendcTilingImpl::FillIterGroupTiling(
-    CumsumIterGroupTiling& dstIterGroupTiling, IterGroupTiling& srcIterGroupTiling)
+void CumsumAscendcTilingImpl::FillIterGroupTiling(CumsumIterGroupTiling& dstIterGroupTiling,
+                                                  IterGroupTiling& srcIterGroupTiling)
 {
     dstIterGroupTiling.set_iterGroupBlockFactor(srcIterGroupTiling.iterGroupBlockFactor);
     dstIterGroupTiling.set_iterGroupMainBlockCount(srcIterGroupTiling.iterGroupMainBlockCount);
@@ -1306,42 +1275,39 @@ void CumsumAscendcTilingImpl::FillIterGroupTiling(
 
 void CumsumAscendcTilingImpl::PrintTilingData()
 {
-    OP_LOGI(
-        context_->GetNodeName(),
-        "tilingData is tilingKey:%lu, exclusive:%d, reverse:%d, realCoreNum:%d, lenM:%ld, lenR:%ld, lenN:%ld, \
+    OP_LOGI(context_->GetNodeName(),
+            "tilingData is tilingKey:%lu, exclusive:%d, reverse:%d, realCoreNum:%d, lenM:%ld, lenR:%ld, lenN:%ld, \
         xBufSize:%d, xUnfoldBufSize:%d, ubSklanskyBufSize:%d, borrowN:%d, borrowR:%d, borrowM:%d",
-        tilingKey_, td_.innerTd.exclusive, td_.innerTd.reverse, td_.innerTd.realCoreNum, td_.innerTd.lenM,
-        td_.innerTd.lenR, td_.innerTd.lenN, td_.innerTd.xBufSize, td_.innerTd.xUnfoldBufSize,
-        td_.innerTd.ubSklanskyBufSize, borrowNCount_, borrowRCount_, borrowMCount_);
+            tilingKey_, td_.innerTd.exclusive, td_.innerTd.reverse, td_.innerTd.realCoreNum, td_.innerTd.lenM,
+            td_.innerTd.lenR, td_.innerTd.lenN, td_.innerTd.xBufSize, td_.innerTd.xUnfoldBufSize,
+            td_.innerTd.ubSklanskyBufSize, borrowNCount_, borrowRCount_, borrowMCount_);
 
     PrintFoldPara();
     PrintBlockPara();
     PrintUbPara();
 
-    OP_LOGI(
-        context_->GetNodeName(),
-        "tilingData is addFactorRepeatTimesMain:%d, addFactorRepeatTimesTail:%d, coreGroupCount:%d, \
+    OP_LOGI(context_->GetNodeName(),
+            "tilingData is addFactorRepeatTimesMain:%d, addFactorRepeatTimesTail:%d, coreGroupCount:%d, \
         coreGroupCoreNum:%d, sklanskyItersCount:%d, addFactorBufferSize:%d, addDataBufferSize:%d, \
         addFactorOffsetBufferSize:%d",
-        td_.outerTd.addFactorRepeatTimesMain, td_.outerTd.addFactorRepeatTimesTail, td_.outerTd.coreGroupCount,
-        td_.outerTd.coreGroupCoreNum, td_.outerTd.sklanskyItersCount, td_.outerTd.addFactorBufferSize,
-        td_.outerTd.addDataBufferSize, td_.outerTd.addFactorOffsetBufferSize);
+            td_.outerTd.addFactorRepeatTimesMain, td_.outerTd.addFactorRepeatTimesTail, td_.outerTd.coreGroupCount,
+            td_.outerTd.coreGroupCoreNum, td_.outerTd.sklanskyItersCount, td_.outerTd.addFactorBufferSize,
+            td_.outerTd.addDataBufferSize, td_.outerTd.addFactorOffsetBufferSize);
 
     PrintSklanskyItersTiling();
 }
 
 void CumsumAscendcTilingImpl::PrintFoldPara()
 {
-    OP_LOGI(
-        context_->GetNodeName(),
-        "tilingData is mainCoreMainUbFoldPara:%d %ld %d, mainCoreTailUbFoldPara:%d %ld %d, \
+    OP_LOGI(context_->GetNodeName(),
+            "tilingData is mainCoreMainUbFoldPara:%d %ld %d, mainCoreTailUbFoldPara:%d %ld %d, \
         tailCoreMainUbFoldPara:%d %ld %d, tailCoreTailUbFoldPara:%d %ld %d",
-        td_.innerTd.mainCoreMainUbFoldPara.foldCount, td_.innerTd.mainCoreMainUbFoldPara.foldLen,
-        td_.innerTd.mainCoreMainUbFoldPara.sklanskyIter, td_.innerTd.mainCoreTailUbFoldPara.foldCount,
-        td_.innerTd.mainCoreTailUbFoldPara.foldLen, td_.innerTd.mainCoreTailUbFoldPara.sklanskyIter,
-        td_.innerTd.tailCoreMainUbFoldPara.foldCount, td_.innerTd.tailCoreMainUbFoldPara.foldLen,
-        td_.innerTd.tailCoreMainUbFoldPara.sklanskyIter, td_.innerTd.tailCoreTailUbFoldPara.foldCount,
-        td_.innerTd.tailCoreTailUbFoldPara.foldLen, td_.innerTd.tailCoreTailUbFoldPara.sklanskyIter);
+            td_.innerTd.mainCoreMainUbFoldPara.foldCount, td_.innerTd.mainCoreMainUbFoldPara.foldLen,
+            td_.innerTd.mainCoreMainUbFoldPara.sklanskyIter, td_.innerTd.mainCoreTailUbFoldPara.foldCount,
+            td_.innerTd.mainCoreTailUbFoldPara.foldLen, td_.innerTd.mainCoreTailUbFoldPara.sklanskyIter,
+            td_.innerTd.tailCoreMainUbFoldPara.foldCount, td_.innerTd.tailCoreMainUbFoldPara.foldLen,
+            td_.innerTd.tailCoreMainUbFoldPara.sklanskyIter, td_.innerTd.tailCoreTailUbFoldPara.foldCount,
+            td_.innerTd.tailCoreTailUbFoldPara.foldLen, td_.innerTd.tailCoreTailUbFoldPara.sklanskyIter);
 }
 
 void CumsumAscendcTilingImpl::PrintBlockPara()
@@ -1355,18 +1321,17 @@ void CumsumAscendcTilingImpl::PrintBlockPara()
 
 void CumsumAscendcTilingImpl::PrintUbPara()
 {
-    OP_LOGI(
-        context_->GetNodeName(),
-        "tilingData is mUbPara:%d %d %d %d %d %d, rUbPara:%d %d %d %d %d %d, nUbPara:%d %d %d %d %d %d",
-        td_.innerTd.mUbPara.mainCoreUbPara.ubCount, td_.innerTd.mUbPara.mainCoreUbPara.ubFactor,
-        td_.innerTd.mUbPara.mainCoreUbPara.ubTailFactor, td_.innerTd.mUbPara.tailCoreUbPara.ubCount,
-        td_.innerTd.mUbPara.tailCoreUbPara.ubFactor, td_.innerTd.mUbPara.tailCoreUbPara.ubTailFactor,
-        td_.innerTd.rUbPara.mainCoreUbPara.ubCount, td_.innerTd.rUbPara.mainCoreUbPara.ubFactor,
-        td_.innerTd.rUbPara.mainCoreUbPara.ubTailFactor, td_.innerTd.rUbPara.tailCoreUbPara.ubCount,
-        td_.innerTd.rUbPara.tailCoreUbPara.ubFactor, td_.innerTd.rUbPara.tailCoreUbPara.ubTailFactor,
-        td_.innerTd.nUbPara.mainCoreUbPara.ubCount, td_.innerTd.nUbPara.mainCoreUbPara.ubFactor,
-        td_.innerTd.nUbPara.mainCoreUbPara.ubTailFactor, td_.innerTd.nUbPara.tailCoreUbPara.ubCount,
-        td_.innerTd.nUbPara.tailCoreUbPara.ubFactor, td_.innerTd.nUbPara.tailCoreUbPara.ubTailFactor);
+    OP_LOGI(context_->GetNodeName(),
+            "tilingData is mUbPara:%d %d %d %d %d %d, rUbPara:%d %d %d %d %d %d, nUbPara:%d %d %d %d %d %d",
+            td_.innerTd.mUbPara.mainCoreUbPara.ubCount, td_.innerTd.mUbPara.mainCoreUbPara.ubFactor,
+            td_.innerTd.mUbPara.mainCoreUbPara.ubTailFactor, td_.innerTd.mUbPara.tailCoreUbPara.ubCount,
+            td_.innerTd.mUbPara.tailCoreUbPara.ubFactor, td_.innerTd.mUbPara.tailCoreUbPara.ubTailFactor,
+            td_.innerTd.rUbPara.mainCoreUbPara.ubCount, td_.innerTd.rUbPara.mainCoreUbPara.ubFactor,
+            td_.innerTd.rUbPara.mainCoreUbPara.ubTailFactor, td_.innerTd.rUbPara.tailCoreUbPara.ubCount,
+            td_.innerTd.rUbPara.tailCoreUbPara.ubFactor, td_.innerTd.rUbPara.tailCoreUbPara.ubTailFactor,
+            td_.innerTd.nUbPara.mainCoreUbPara.ubCount, td_.innerTd.nUbPara.mainCoreUbPara.ubFactor,
+            td_.innerTd.nUbPara.mainCoreUbPara.ubTailFactor, td_.innerTd.nUbPara.tailCoreUbPara.ubCount,
+            td_.innerTd.nUbPara.tailCoreUbPara.ubFactor, td_.innerTd.nUbPara.tailCoreUbPara.ubTailFactor);
 }
 
 void CumsumAscendcTilingImpl::PrintSklanskyItersTiling()
@@ -1390,16 +1355,15 @@ void CumsumAscendcTilingImpl::PrintSklanskyItersTiling()
 
 void CumsumAscendcTilingImpl::PrintIterGroupTiling(IterGroupTiling& iterGroupTiling)
 {
-    OP_LOGI(
-        context_->GetNodeName(),
-        "tilingData is iterGroupBlockFactor:%ld, iterGroupMainBlockCount:%d, iterGroupTailBlockCount:%d, \
+    OP_LOGI(context_->GetNodeName(),
+            "tilingData is iterGroupBlockFactor:%ld, iterGroupMainBlockCount:%d, iterGroupTailBlockCount:%d, \
         iterGroupMainCoreUbFactorCount:%d, iterGroupMainCoreUbFactor:%d, iterGroupMainCoreUbTailFactor:%d, \
         iterGroupTailCoreUbFactorCount:%d, iterGroupTailCoreUbFactor:%d, iterGroupTailCoreUbTailFactor:%d",
-        iterGroupTiling.iterGroupBlockFactor, iterGroupTiling.iterGroupMainBlockCount,
-        iterGroupTiling.iterGroupTailBlockCount, iterGroupTiling.iterGroupMainCoreUbFactorCount,
-        iterGroupTiling.iterGroupMainCoreUbFactor, iterGroupTiling.iterGroupMainCoreUbTailFactor,
-        iterGroupTiling.iterGroupTailCoreUbFactorCount, iterGroupTiling.iterGroupTailCoreUbFactor,
-        iterGroupTiling.iterGroupTailCoreUbTailFactor);
+            iterGroupTiling.iterGroupBlockFactor, iterGroupTiling.iterGroupMainBlockCount,
+            iterGroupTiling.iterGroupTailBlockCount, iterGroupTiling.iterGroupMainCoreUbFactorCount,
+            iterGroupTiling.iterGroupMainCoreUbFactor, iterGroupTiling.iterGroupMainCoreUbTailFactor,
+            iterGroupTiling.iterGroupTailCoreUbFactorCount, iterGroupTiling.iterGroupTailCoreUbFactor,
+            iterGroupTiling.iterGroupTailCoreUbTailFactor);
 }
 
 ge::graphStatus TilingCumsumAscendc(gert::TilingContext* context)

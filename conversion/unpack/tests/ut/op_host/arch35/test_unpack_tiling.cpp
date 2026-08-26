@@ -20,15 +20,9 @@ using namespace ge;
 
 class UnpackTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "UnpackTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase()
-    {
-        std::cout << "UnpackTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(UnpackTiling, Unpack_test_tiling_001)

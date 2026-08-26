@@ -14,59 +14,56 @@
 
 class Asin_UT : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "Asin_UT SetUp" << std::endl;
-    }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase()
-    {
-        std::cout << "Asin_UT TearDown" << std::endl;
-    }
+    static void TearDownTestCase() {}
 };
 
 // 测试 float16 输入输出 shape 一致
 TEST_F(Asin_UT, InferShapeAsin_float16)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Asin",
-        {
-            {{{4, 3, 4}, {4, 3, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        });
-    std::vector<std::vector<int64_t>> expectOutputShape = {{4, 3, 4},};
+    gert::InfershapeContextPara infershapeContextPara("Asin",
+                                                      {
+                                                          {{{4, 3, 4}, {4, 3, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {4, 3, 4},
+    };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 // 测试 float 输入输出 shape 一致
 TEST_F(Asin_UT, InferShapeAsin_float)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Asin",
-        {
-            {{{4, 3, 4}, {4, 3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        });
-    std::vector<std::vector<int64_t>> expectOutputShape = {{4, 3, 4},};
+    gert::InfershapeContextPara infershapeContextPara("Asin",
+                                                      {
+                                                          {{{4, 3, 4}, {4, 3, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {4, 3, 4},
+    };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 // 测试 bfloat16 输入输出 shape 一致
 TEST_F(Asin_UT, InferShapeAsin_bfloat16)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Asin",
-        {
-            {{{4, 3, 4}, {4, 3, 4}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_BF16, ge::FORMAT_ND},
-        });
-    std::vector<std::vector<int64_t>> expectOutputShape = {{4, 3, 4},};
+    gert::InfershapeContextPara infershapeContextPara("Asin",
+                                                      {
+                                                          {{{4, 3, 4}, {4, 3, 4}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {4, 3, 4},
+    };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
@@ -81,36 +78,40 @@ TEST_F(Asin_UT, InferShapeAsin_multidim)
         {
             {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
         });
-    std::vector<std::vector<int64_t>> expectOutputShape = {{2, 16, 32, 16},};
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {2, 16, 32, 16},
+    };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 // 测试一维 shape
 TEST_F(Asin_UT, InferShapeAsin_1d)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Asin",
-        {
-            {{{100}, {100}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        });
-    std::vector<std::vector<int64_t>> expectOutputShape = {{100},};
+    gert::InfershapeContextPara infershapeContextPara("Asin",
+                                                      {
+                                                          {{{100}, {100}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {100},
+    };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 // 测试空 tensor
 TEST_F(Asin_UT, InferShapeAsin_empty)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Asin",
-        {
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        });
-    std::vector<std::vector<int64_t>> expectOutputShape = {{0},};
+    gert::InfershapeContextPara infershapeContextPara("Asin",
+                                                      {
+                                                          {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {0},
+    };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }

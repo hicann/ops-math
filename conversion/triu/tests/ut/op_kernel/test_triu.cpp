@@ -20,14 +20,8 @@
 
 class TriuTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "triu_test SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "triu_test TearDown" << std::endl;
-    }
+    static void SetUpTestCase() {}
+    static void TearDownTestCase() {}
 };
 
 // ============================================================================

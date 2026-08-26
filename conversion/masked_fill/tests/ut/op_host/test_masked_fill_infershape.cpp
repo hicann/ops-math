@@ -13,29 +13,26 @@
 #include "infershape_context_faker.h"
 #include "infershape_case_executor.h"
 
-class masked_fill:public testing::Test{
-    protected:
-        static void SetUpTestCase(){
-            std::cout<<"masked_fill Proto Test SetUp"<<std::endl;
-        }
+class masked_fill : public testing::Test {
+protected:
+    static void SetUpTestCase() {}
 
-        static void TearDownTestCase(){
-            std::cout<<"masked_fill Proto Test TearDown"<<std::endl;
-        }
+    static void TearDownTestCase() {}
 };
 
-
-TEST_F(masked_fill,masked_fill_infershape_diff_test){
+TEST_F(masked_fill, masked_fill_infershape_diff_test)
+{
     gert::InfershapeContextPara infershapeContextPara("MaskedFill",
                                                       {
-                                                        {{{-1,8,375}, {-1,8,375}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-                                                        {{{-1,8,375}, {-1,8,375}}, ge::DT_INT8, ge::FORMAT_ND},
-                                                        {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{-1, 8, 375}, {-1, 8, 375}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{-1, 8, 375}, {-1, 8, 375}}, ge::DT_INT8, ge::FORMAT_ND},
+                                                          {{{1}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
                                                       },
                                                       {
-                                                        {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-                                                      }
-                                                     );
-    std::vector<std::vector<int64_t>> expectOutputShape = {{-1, 8, 375},};
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-1, 8, 375},
+    };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }

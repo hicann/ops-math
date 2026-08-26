@@ -20,14 +20,8 @@
 
 class StridedSliceGradTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "StridedSliceGradTest SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "StridedSliceGradTest TearDown" << std::endl;
-    }
+    static void SetUpTestCase() {}
+    static void TearDownTestCase() {}
 };
 
 // ============================================================================
@@ -38,34 +32,34 @@ TEST_F(StridedSliceGradTest, test_empty_tensor_int32)
 {
     constexpr int64_t OUT_ELEMS = 128;
 
-    uint8_t* shape   = (uint8_t*)AscendC::GmAlloc(2 * sizeof(int32_t));
-    uint8_t* begin   = (uint8_t*)AscendC::GmAlloc(2 * sizeof(int32_t));
-    uint8_t* end     = (uint8_t*)AscendC::GmAlloc(2 * sizeof(int32_t));
+    uint8_t* shape = (uint8_t*)AscendC::GmAlloc(2 * sizeof(int32_t));
+    uint8_t* begin = (uint8_t*)AscendC::GmAlloc(2 * sizeof(int32_t));
+    uint8_t* end = (uint8_t*)AscendC::GmAlloc(2 * sizeof(int32_t));
     uint8_t* strides = (uint8_t*)AscendC::GmAlloc(2 * sizeof(int32_t));
-    uint8_t* dy      = (uint8_t*)AscendC::GmAlloc(sizeof(int32_t));  // empty
-    uint8_t* output  = (uint8_t*)AscendC::GmAlloc(OUT_ELEMS * sizeof(int32_t));
+    uint8_t* dy = (uint8_t*)AscendC::GmAlloc(sizeof(int32_t)); // empty
+    uint8_t* output = (uint8_t*)AscendC::GmAlloc(OUT_ELEMS * sizeof(int32_t));
 
     constexpr size_t workspaceSize = 16 * 1024 * 1024;
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(workspaceSize);
-    uint8_t* tiling    = (uint8_t*)AscendC::GmAlloc(sizeof(StridedSliceGradTilingData));
+    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(sizeof(StridedSliceGradTilingData));
 
     StridedSliceGradTilingData* td = reinterpret_cast<StridedSliceGradTilingData*>(tiling);
-    td->usedCoreNumForClear          = 1;
+    td->usedCoreNumForClear = 1;
     td->normalCoreProcessNumForClear = OUT_ELEMS;
-    td->tailCoreProcessNumForClear   = OUT_ELEMS;
-    td->normalCoreProcessNum         = 0;
-    td->tailCoreProcessNum           = 0;
-    td->tailAxisOuter                = 0;
-    td->tailAxisInner                = 0;
-    td->tailAxisTail                 = 0;
-    td->inputDimNum                  = 2;
-    td->usedCoreNum                  = 1;
-    td->totalCoreNum                 = 1;
-    td->bufferSize                   = OUT_ELEMS * sizeof(int32_t);
-    td->splitUbAxisNum               = 0;
-    td->bytesForOneData              = sizeof(int32_t);
-    td->tilingKey                    = 104;
-    td->workspaceSize                = workspaceSize;
+    td->tailCoreProcessNumForClear = OUT_ELEMS;
+    td->normalCoreProcessNum = 0;
+    td->tailCoreProcessNum = 0;
+    td->tailAxisOuter = 0;
+    td->tailAxisInner = 0;
+    td->tailAxisTail = 0;
+    td->inputDimNum = 2;
+    td->usedCoreNum = 1;
+    td->totalCoreNum = 1;
+    td->bufferSize = OUT_ELEMS * sizeof(int32_t);
+    td->splitUbAxisNum = 0;
+    td->bytesForOneData = sizeof(int32_t);
+    td->tilingKey = 104;
+    td->workspaceSize = workspaceSize;
 
     uint32_t numBlocks = 1;
     ICPU_SET_TILING_KEY(104);

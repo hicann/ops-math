@@ -56,8 +56,7 @@ static bool CheckNotNull(const aclTensorList* tensors, const int64_t* realDim, c
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
     if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-        IsRegBase()) {
+        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase()) {
         return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
     } else {
         return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
@@ -69,9 +68,8 @@ static bool CheckDtypeValid(const aclTensorList* tensors, const aclTensor* out)
     auto supportList = GetDtypeSupportList();
     for (uint64_t i = 0; i < tensors->Size(); i++) {
         if (!CheckType((*tensors)[i]->GetDataType(), supportList)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "tensor %lu not implemented for %s, should be in dtype support list [%s].", i,
-                op::ToString((*tensors)[i]->GetDataType()).GetString(), op::ToString(supportList).GetString());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "tensor %lu not implemented for %s, should be in dtype support list [%s].",
+                    i, op::ToString((*tensors)[i]->GetDataType()).GetString(), op::ToString(supportList).GetString());
             return false;
         }
     }
@@ -85,9 +83,8 @@ static bool CheckPromoteType(const aclTensorList* tensors, const aclTensor* out)
     for (uint64_t i = 1; i < tensors->Size(); i++) {
         promoteType = op::PromoteType((*tensors)[i]->GetDataType(), promoteType);
         if (promoteType == DataType::DT_UNDEFINED) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "tensor %lu dtype %s and dtype %s can not promote dtype.", i,
-                op::ToString((*tensors)[i]->GetDataType()).GetString(), op::ToString(promoteType).GetString());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "tensor %lu dtype %s and dtype %s can not promote dtype.", i,
+                    op::ToString((*tensors)[i]->GetDataType()).GetString(), op::ToString(promoteType).GetString());
             return false;
         }
     }
@@ -109,24 +106,21 @@ static bool CheckShape(const aclTensorList* tensors, int64_t* realDim)
         (*realDim) += dimNum + 1;
     }
     if ((*realDim) < 0 || (*realDim) > dimNum) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "dimnum %ld exceed the dim range of the [%ld, %ld].", originDim, -(dimNum + 1),
-            dimNum);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "dimnum %ld exceeds the dim range [%ld, %ld].", originDim, -(dimNum + 1),
+                dimNum);
         return false;
     }
     for (uint64_t i = 1; i < tensors->Size(); i++) {
         op::Shape shapeCurrent = (*tensors)[i]->GetViewShape();
         if (dimNum != (int64_t)shapeCurrent.GetDimNum()) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "dimnum of tensor %lu is [%zu], should be equal to tensor 0 [%ld].", i,
-                shapeCurrent.GetDimNum(), dimNum);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "dimnum of tensor %lu is [%zu], should be equal to tensor 0 [%ld].", i,
+                    shapeCurrent.GetDimNum(), dimNum);
             return false;
         }
         for (int64_t j = 0; j < dimNum; j++) {
             if (shapeFirst.GetDim(j) != shapeCurrent.GetDim(j)) {
-                OP_LOGE(
-                    ACLNN_ERR_PARAM_INVALID, "dim %ld of tensor %lu is [%ld], should be equal to tensor 0 [%ld].", j, i,
-                    shapeCurrent.GetDim(j), shapeFirst.GetDim(j));
+                OP_LOGE(ACLNN_ERR_PARAM_INVALID, "dim %ld of tensor %lu is [%ld], should be equal to tensor 0 [%ld].",
+                        j, i, shapeCurrent.GetDim(j), shapeFirst.GetDim(j));
                 return false;
             }
         }
@@ -143,8 +137,8 @@ static aclnnStatus CheckParams(const aclTensorList* tensors, int64_t* realDim, c
     return ACLNN_SUCCESS;
 }
 
-static bool EmplaceTensorList(
-    const aclTensorList* tensors, op::FVector<const aclTensor*>& tensorListA, DataType& promoteType)
+static bool EmplaceTensorList(const aclTensorList* tensors, op::FVector<const aclTensor*>& tensorListA,
+                              DataType& promoteType)
 {
     tensorListA.emplace_back((*tensors)[0]);
     for (uint64_t i = 1; i < tensors->Size(); i++) {
@@ -154,8 +148,8 @@ static bool EmplaceTensorList(
     return true;
 }
 
-static aclnnStatus SplitToStack(
-    const aclTensorList* tensors, int64_t dim, aclOpExecutor* executor, const aclTensor** out)
+static aclnnStatus SplitToStack(const aclTensorList* tensors, int64_t dim, aclOpExecutor* executor,
+                                const aclTensor** out)
 {
     size_t maxInputs = 32;
     op::FVector<const aclTensor*> tensorListA;
@@ -209,8 +203,8 @@ static aclnnStatus SplitToStack(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnStackGetWorkspaceSize(
-    const aclTensorList* tensors, int64_t dim, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnStackGetWorkspaceSize(const aclTensorList* tensors, int64_t dim, aclTensor* out,
+                                       uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnStack, DFX_IN(tensors, dim), DFX_OUT(out));
 

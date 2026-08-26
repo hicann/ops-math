@@ -80,7 +80,7 @@ nddmaSizeLen: %d, ubDstSizeLen: %d, enableMovAlign: %d, enableDstInt64: %d, used
             tilingData.get_ubDimSize(), tilingData.get_uo(), tilingData.get_nddmaSizeLen(),
             tilingData.get_ubDstSizeLen(), tilingData.get_enableMovAlign(), tilingData.get_enableDstInt64(),
             tilingParam.usedCoreNum, tilingParam.tilingKey);
-    OP_LOGI("ViewCopy", "blockStride: %d,blockSrcStride: %d,nddmaSize: %d,nddmaStride: %d,blockDstStride: %d, \
+    OP_LOGI("ViewCopy", "blockStride: %d, blockSrcStride: %d, nddmaSize: %d, nddmaStride: %d, blockDstStride: %d, \
 ubDstSize: %d,ubDstStride: %d,contiguousUbDstStride: %d,contiguousUbSrcStride: %d",
             tilingData.get_blockStride(), tilingData.get_blockSrcStride(), tilingData.get_nddmaSize(),
             tilingData.get_nddmaStride(), tilingData.get_blockDstStride(), tilingData.get_ubDstSize(),
@@ -835,7 +835,7 @@ static ge::graphStatus SetBaseTilingInfo(gert::TilingContext* context, ViewCopyT
     tilingParam.isSimt = IsEnableSimt(tilingParam);
     if (tilingParam.isSimt) {
         OP_CHECK_IF((tilingParam.ubSize <= DCACHE_SIZE),
-                    OP_LOGE(context->GetNodeName(), "ub size less than Dcache Size"), return ge::GRAPH_FAILED);
+                    OP_LOGE(context->GetNodeName(), "ub size is less than Dcache size."), return ge::GRAPH_FAILED);
         tilingParam.ubSize = tilingParam.ubSize - DCACHE_SIZE;
         context->SetLocalMemorySize(tilingParam.ubSize + SIMT_UB_RES_SIZE);
     }
@@ -1102,7 +1102,7 @@ ge::graphStatus TilingPrepareViewCopyForAscendC(gert::TilingParseContext* contex
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->CoreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF((compileInfo->CoreNum <= 0), OP_LOGE(context->GetNodeName(), "Failed to core num."),
+    OP_CHECK_IF((compileInfo->CoreNum <= 0), OP_LOGE(context->GetNodeName(), "Failed to get core num."),
                 return ge::GRAPH_FAILED);
     uint64_t ubSize;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);

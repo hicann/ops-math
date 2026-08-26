@@ -40,8 +40,8 @@ static constexpr int64_t UNKNOWN_DIM_VALUE_ = -1L;
 static ge::graphStatus IsMasksAllZero(gert::InferShapeContext* context, bool& is_mask_all_zero)
 {
     is_mask_all_zero = true;
-    static const std::vector<size_t> attr_list = {
-        ATTR_BEGIN_IDX, ATTR_END_IDX, ATTR_ELLIPSIS_IDX, ATTR_NEW_AXIS_IDX, ATTR_SHRINK_AXIS_IDX};
+    static const std::vector<size_t> attr_list = {ATTR_BEGIN_IDX, ATTR_END_IDX, ATTR_ELLIPSIS_IDX, ATTR_NEW_AXIS_IDX,
+                                                  ATTR_SHRINK_AXIS_IDX};
     auto attrs = context->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
     for (const auto& param : attr_list) {
@@ -76,32 +76,26 @@ static ge::graphStatus InferShape4StridedSliceGrad(gert::InferShapeContext* cont
     OP_CHECK_NULL_WITH_CONTEXT(context, output_shape);
 
     // get the input const value for shape, save to output_shape
-    OP_CHECK_IF(
-        Ops::Base::GetConstIntToShape(context, IN_SHAPE_IDX, *output_shape),
-        OP_LOGD(
-            context->GetNodeName(), "do infershape of StridedSliceGrad succ, output = %s",
-            Ops::Base::ToString(*output_shape).c_str()),
-        return ge::GRAPH_SUCCESS);
+    OP_CHECK_IF(Ops::Base::GetConstIntToShape(context, IN_SHAPE_IDX, *output_shape),
+                OP_LOGD(context->GetNodeName(), "do infershape of StridedSliceGrad succ, output = %s",
+                        Ops::Base::ToString(*output_shape).c_str()),
+                return ge::GRAPH_SUCCESS);
 
     // dynamic infershape scenario
     const gert::Shape* in_dy_shape = context->GetInputShape(IN_DY_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context, in_dy_shape);
     const gert::Shape* in_shape_shape = context->GetInputShape(IN_SHAPE_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context, in_shape_shape);
-    OP_CHECK_IF(
-        in_shape_shape->GetDimNum() > 1,
-        OP_LOGE(
-            context->GetNodeName(), "the rank of in_shape shape must be 1, but shape is %s",
-            Ops::Base::ToString(*in_shape_shape).c_str()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(in_shape_shape->GetDimNum() > 1,
+                OP_LOGE(context->GetNodeName(), "the rank of in_shape shape must be 1, but shape is %s",
+                        Ops::Base::ToString(*in_shape_shape).c_str()),
+                return ge::GRAPH_FAILED);
     const int64_t in_shape_shape_value = in_shape_shape->IsScalar() ? 1 : in_shape_shape->GetDim(0);
 
-    OP_CHECK_IF(
-        in_shape_shape_value == 0,
-        OP_LOGE(
-            context->GetNodeName(), "in_shape cannot be empty tensor, but shape is %s",
-            Ops::Base::ToString(*in_shape_shape).c_str()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(in_shape_shape_value == 0,
+                OP_LOGE(context->GetNodeName(), "in_shape cannot be empty tensor, but shape is %s",
+                        Ops::Base::ToString(*in_shape_shape).c_str()),
+                return ge::GRAPH_FAILED);
 
     // shape is unknown, out_shape is -2
     if (in_shape_shape_value < 0) {
@@ -118,14 +112,11 @@ static ge::graphStatus InferShape4StridedSliceGrad(gert::InferShapeContext* cont
 
     // special branch: when shape is not const and rank of begin < rank of dy
     int64_t begin_len = -1;
-    OP_CHECK_IF(
-        GetMaxStridedLen(context, begin_len) == ge::GRAPH_FAILED,
-        OP_LOGE(context->GetNodeName(), "get max strided len failed!"), return ge::GRAPH_FAILED);
-
     bool no_mask = true;
-    OP_CHECK_IF(
-        IsMasksAllZero(context, no_mask) == ge::GRAPH_FAILED,
-        OP_LOGE(context->GetNodeName(), "get max strided len failed!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetMaxStridedLen(context, begin_len) == ge::GRAPH_FAILED,
+                OP_LOGE(context->GetNodeName(), "get max strided len failed!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(IsMasksAllZero(context, no_mask) == ge::GRAPH_FAILED,
+                OP_LOGE(context->GetNodeName(), "check masks zero failed!"), return ge::GRAPH_FAILED);
 
     if (no_mask && begin_len > 0 && begin_len < in_shape_shape_value) {
         OP_LOGD(context->GetNodeName(), "Enter the special branch when shape is not const.");
@@ -133,8 +124,8 @@ static ge::graphStatus InferShape4StridedSliceGrad(gert::InferShapeContext* cont
         for (int64_t dim = 0; dim < begin_len; dim++) {
             output_shape->SetDim(dim, UNKNOWN_DIM_VALUE_);
         }
-        OP_LOGD(
-            context->GetNodeName(), "special branch: output shape is %s", Ops::Base::ToString(*in_shape_shape).c_str());
+        OP_LOGD(context->GetNodeName(), "special branch: output shape is %s",
+                Ops::Base::ToString(*in_shape_shape).c_str());
         return ge::GRAPH_SUCCESS;
     }
 

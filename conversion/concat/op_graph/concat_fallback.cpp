@@ -69,14 +69,14 @@ static graphStatus ConcatExecuteFuncD(OpExecutePrepareContext* hostApiCtx)
     OP_LOGI("aclnnfallback", "concatDim: %ld", *concatDim);
 
     auto apiRet = CANN_OPS_OPB_ASYN_EXEC_ACLNN(hostApiCtx, aclnnCat, geTenserList, *concatDim, outGe);
-    OP_CHECK_IF(apiRet != GRAPH_SUCCESS, OP_LOGE("aclnnfallback", "apiRet faild:%u", apiRet), return GRAPH_FAILED);
+    OP_CHECK_IF(apiRet != GRAPH_SUCCESS, OP_LOGE("aclnnfallback", "apiRet failed:%u", apiRet), return GRAPH_FAILED);
 
     return GRAPH_SUCCESS;
 }
 
 static graphStatus ConcatExecuteFunc(OpExecutePrepareContext* hostApiCtx)
 {
-    OP_CHECK_IF(hostApiCtx == nullptr, OP_LOGE("aclnnfallback", "hostApiCtx nullptr"), return GRAPH_FAILED);
+    OP_CHECK_IF(hostApiCtx == nullptr, OP_LOGE("aclnnfallback", "hostApiCtx is nullptr"), return GRAPH_FAILED);
 
     auto inputNum = hostApiCtx->GetComputeNodeInputNum();
     OP_CHECK_IF(inputNum <= 1, OP_LOGE("aclnnfallback", "inputNum <=1"), return GRAPH_FAILED);
@@ -87,18 +87,18 @@ static graphStatus ConcatExecuteFunc(OpExecutePrepareContext* hostApiCtx)
         geTenserList.push_back(geT);
     }
     auto outGe = hostApiCtx->GetOutputTensor(kConcatOut);
-    OP_CHECK_IF(outGe == nullptr, OP_LOGE("aclnnfallback", "outGe nullptr"), return GRAPH_FAILED);
+    OP_CHECK_IF(outGe == nullptr, OP_LOGE("aclnnfallback", "outGe is nullptr"), return GRAPH_FAILED);
 
     auto geT = hostApiCtx->GetInputTensor(inputNum - 1);
-    OP_CHECK_IF(geT == nullptr, OP_LOGE("aclnnfallback", "geT nullptr"), return GRAPH_FAILED);
+    OP_CHECK_IF(geT == nullptr, OP_LOGE("aclnnfallback", "geT is nullptr"), return GRAPH_FAILED);
 
     const int64_t* concatDim = geT->GetData<int64_t>();
-    OP_CHECK_IF(concatDim == nullptr, OP_LOGE("aclnnfallback", "concatDim nullptr"), return GRAPH_FAILED);
+    OP_CHECK_IF(concatDim == nullptr, OP_LOGE("aclnnfallback", "concatDim is nullptr"), return GRAPH_FAILED);
 
     OP_LOGI("aclnnfallback", "concatDim: %ld", *concatDim);
 
     auto apiRet = CANN_OPS_OPB_ASYN_EXEC_ACLNN(hostApiCtx, aclnnCat, geTenserList, *concatDim, outGe);
-    OP_CHECK_IF(apiRet != GRAPH_SUCCESS, OP_LOGE("aclnnfallback", "apiRet faild:%u", apiRet), return GRAPH_FAILED);
+    OP_CHECK_IF(apiRet != GRAPH_SUCCESS, OP_LOGE("aclnnfallback", "apiRet failed:%u", apiRet), return GRAPH_FAILED);
 
     return GRAPH_SUCCESS;
 }

@@ -20,13 +20,7 @@
 #include "tiling_case_executor.h"
 
 class TriuTest : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "TriuTest Setup" << std::endl;
-  }
-  static void TearDownTestCase() {
-    std::cout << "TriuTest TearDown" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() {}
+    static void TearDownTestCase() {}
 };
-
-

@@ -41,9 +41,8 @@ static inline bool IsUnknownRank(const gert::Shape* check_shape)
 
 static inline ge::graphStatus SetUnknownRank(gert::Shape* output_shape)
 {
-    OP_CHECK_IF(
-        output_shape == nullptr, OP_LOGD("SetUnknownRank", "the output_shape is nullptr, return unsuccess"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(output_shape == nullptr, OP_LOGD("SetUnknownRank", "the output_shape is nullptr, return unsuccess"),
+                return ge::GRAPH_FAILED);
     output_shape->SetDimNum(0);
     output_shape->AppendDim(UNKNOWN_RANK_DIM_VALUE_);
 
@@ -64,7 +63,7 @@ static ge::graphStatus InferShape4Addr(gert::InferShapeContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, out_shape);
 
     if (IsUnknownRank(x2_shape) || IsUnknownRank(x3_shape)) {
-        OP_LOGD(context->GetNodeName(), "the input shape is [-2], set output shape is [-2]!");
+        OP_LOGD(context->GetNodeName(), "the input shape is [-2], set output shape to [-2]!");
         SetUnknownRank(out_shape);
         return ge::GRAPH_SUCCESS;
     }
@@ -72,13 +71,11 @@ static ge::graphStatus InferShape4Addr(gert::InferShapeContext* context)
     size_t x1_dim = x1_shape->GetDimNum();
     size_t x2_dim = x2_shape->GetDimNum();
     size_t x3_dim = x3_shape->GetDimNum();
-    
-    OP_CHECK_IF(
-        (x1_dim != DIM_NUM_TWO && x1_dim != 1) || x2_dim != 1 || x3_dim != 1,
-        OP_LOGE(
-            context->GetNodeName(), "check input dim failed. x1: %s, x2: %s, x3: %s", ToString(*x1_shape).c_str(),
-            ToString(*x2_shape).c_str(), ToString(*x3_shape).c_str()),
-        return ge::GRAPH_FAILED);
+
+    OP_CHECK_IF((x1_dim != DIM_NUM_TWO && x1_dim != 1) || x2_dim != 1 || x3_dim != 1,
+                OP_LOGE(context->GetNodeName(), "check input dim failed. x1: %s, x2: %s, x3: %s",
+                        ToString(*x1_shape).c_str(), ToString(*x2_shape).c_str(), ToString(*x3_shape).c_str()),
+                return ge::GRAPH_FAILED);
     out_shape->SetDimNum(DIM_NUM_TWO);
     out_shape->SetDim(0, x2_shape->GetDim(0));
     out_shape->SetDim(1, x3_shape->GetDim(0));

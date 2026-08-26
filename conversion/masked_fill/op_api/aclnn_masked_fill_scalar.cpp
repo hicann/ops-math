@@ -72,9 +72,8 @@ static bool CheckDtypeValid(const aclTensor* selfRef, const aclTensor* mask)
 {
     // 如果soc是1980芯片，则不支持DT_BF16，需要校验拦截
     if (!CheckSocVersionIsSupportBf16() && (selfRef->GetDataType() == op::DataType::DT_BF16)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "Input dtype of aclnnInplaceMaskedFillScalar is not support bfloat16 in current socversion.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "Input dtype of aclnnInplaceMaskedFillScalar is not supported in current soc version.");
         return false;
     }
 
@@ -97,9 +96,8 @@ static bool CheckShape(const aclTensor* selfRef, const aclTensor* mask)
     OP_CHECK_BROADCAST_AND_INFER_SHAPE(selfRef, mask, broadcastShape, return false);
 
     if (broadcastShape != selfRef->GetViewShape()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
-            op::ToString(broadcastShape).GetString(), op::ToString(selfRef->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
+                op::ToString(broadcastShape).GetString(), op::ToString(selfRef->GetViewShape()).GetString());
         return false;
     }
     return true;
@@ -119,9 +117,9 @@ static aclnnStatus CheckParams(const aclTensor* selfRef, const aclTensor* mask, 
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceMaskedFillScalarGetWorkspaceSize(
-    aclTensor* selfRef, const aclTensor* mask, const aclScalar* value, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnInplaceMaskedFillScalarGetWorkspaceSize(aclTensor* selfRef, const aclTensor* mask,
+                                                         const aclScalar* value, uint64_t* workspaceSize,
+                                                         aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceMaskedFillScalar, DFX_IN(selfRef, mask, value), DFX_OUT(selfRef));
     // 固定写法，参数检查
@@ -168,8 +166,8 @@ aclnnStatus aclnnInplaceMaskedFillScalarGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceMaskedFillScalar(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+aclnnStatus aclnnInplaceMaskedFillScalar(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                         aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnInplaceMaskedFillScalar);
     // 固定写法，调用框架能力，完成计算

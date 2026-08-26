@@ -16,33 +16,26 @@
 
 class PackInferTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "PackInferTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase()
-    {
-        std::cout << "PackInferTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(PackInferTest, pack_infer_test_1)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Pack",
-        {
-            {{{-1, -1}, {-1, -1}}, ge::DT_FLOAT16, ge::FORMAT_NCHW},
-            {{{-1, -1}, {-1, -1}}, ge::DT_FLOAT16, ge::FORMAT_NCHW},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {"axis", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
-            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
-        },
-        {2}, {1});
+    gert::InfershapeContextPara infershapeContextPara("Pack",
+                                                      {
+                                                          {{{-1, -1}, {-1, -1}}, ge::DT_FLOAT16, ge::FORMAT_NCHW},
+                                                          {{{-1, -1}, {-1, -1}}, ge::DT_FLOAT16, ge::FORMAT_NCHW},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"axis", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+                                                          {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+                                                      },
+                                                      {2}, {1});
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {2, -1, -1},
     };
@@ -51,20 +44,19 @@ TEST_F(PackInferTest, pack_infer_test_1)
 
 TEST_F(PackInferTest, pack_infer_test_2)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Pack",
-        {
-            {{{-1, -1}, {-1, -1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{-1, -1}, {-1, -1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {"axis", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
-            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
-        },
-        {2}, {1});
+    gert::InfershapeContextPara infershapeContextPara("Pack",
+                                                      {
+                                                          {{{-1, -1}, {-1, -1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{-1, -1}, {-1, -1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"axis", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
+                                                          {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+                                                      },
+                                                      {2}, {1});
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {-1, 2, -1},
     };
@@ -96,21 +88,20 @@ TEST_F(PackInferTest, pack_infer_test_3rt)
 
 TEST_F(PackInferTest, pack_infer_test_4rt)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Pack",
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {"axis", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
-            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
-        },
-        {3}, {1});
+    gert::InfershapeContextPara infershapeContextPara("Pack",
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"axis", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+                                                          {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
+                                                      },
+                                                      {3}, {1});
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {3},
     };
@@ -119,20 +110,19 @@ TEST_F(PackInferTest, pack_infer_test_4rt)
 
 TEST_F(PackInferTest, pack_infer_test_6)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Pack",
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {"axis", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
-            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
-        },
-        {2}, {1});
+    gert::InfershapeContextPara infershapeContextPara("Pack",
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"axis", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+                                                          {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+                                                      },
+                                                      {2}, {1});
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {2},
     };
@@ -161,18 +151,17 @@ TEST_F(PackInferTest, pack_infer_test_7)
 
 TEST_F(PackInferTest, pack_infer_test_8)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Pack",
-        {
-            {{{3, 2, 2, 5}, {3, 2, 2, 5}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {"axis", Ops::Math::AnyValue::CreateFrom<int64_t>(10)},
-            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
-        },
-        {1}, {1});
+    gert::InfershapeContextPara infershapeContextPara("Pack",
+                                                      {
+                                                          {{{3, 2, 2, 5}, {3, 2, 2, 5}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"axis", Ops::Math::AnyValue::CreateFrom<int64_t>(10)},
+                                                          {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
+                                                      },
+                                                      {1}, {1});
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED);
 }

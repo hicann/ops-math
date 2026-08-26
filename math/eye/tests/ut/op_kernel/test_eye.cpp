@@ -20,14 +20,8 @@
 
 class EyeTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "eye_test SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "eye_test TearDown" << std::endl;
-    }
+    static void SetUpTestCase() {}
+    static void TearDownTestCase() {}
 };
 
 // ============================================================================

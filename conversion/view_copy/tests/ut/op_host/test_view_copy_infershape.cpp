@@ -14,41 +14,32 @@
 #include "infershape_case_executor.h"
 
 class TEST_VIEWCOPY_UT : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "viewcopy test SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() {}
 
-  static void TearDownTestCase() {
-    std::cout << "viewcopy test TearDown" << std::endl;
-  }
+    static void TearDownTestCase() {}
 };
 
-TEST_F(TEST_VIEWCOPY_UT, viewcopy_infershape) {
- 	gert::InfershapeContextPara infershapeContextPara(
-    "ViewCopy",
- 	  {
-      {{{5, 3, 4, 1}, {5, 3, 4, 1}}, ge::DT_UINT8, ge::FORMAT_ND},
- 	    {{{3, 1, 1}, {3, 1, 1}}, ge::DT_UINT8, ge::FORMAT_ND}
- 	  },
- 	  {
- 	    {{{}, {}}, ge::DT_UINT8, ge::FORMAT_ND},
- 	  });
- 	std::vector<std::vector<int64_t>> expectOutputShape = {{5, 3, 4, 1}};
- 	ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+TEST_F(TEST_VIEWCOPY_UT, viewcopy_infershape)
+{
+    gert::InfershapeContextPara infershapeContextPara("ViewCopy",
+                                                      {{{{5, 3, 4, 1}, {5, 3, 4, 1}}, ge::DT_UINT8, ge::FORMAT_ND},
+                                                       {{{3, 1, 1}, {3, 1, 1}}, ge::DT_UINT8, ge::FORMAT_ND}},
+                                                      {
+                                                          {{{}, {}}, ge::DT_UINT8, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{5, 3, 4, 1}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-TEST_F(TEST_VIEWCOPY_UT, viewcopy_size_equal) {
+TEST_F(TEST_VIEWCOPY_UT, viewcopy_size_equal)
+{
     gert::InfershapeContextPara infershapeContextPara(
-    "ViewCopy",
- 	  {
-      {{{3, 1, 1}, {3, 1, 1}}, ge::DT_UINT8, ge::FORMAT_ND},
- 	    {{{3, 1, 1}, {3, 1, 1}}, ge::DT_UINT8, ge::FORMAT_ND}
- 	  },
- 	  {
- 	    {{{}, {}}, ge::DT_UINT8, ge::FORMAT_ND},
- 	  });
- 	std::vector<std::vector<int64_t>> expectOutputShape = {{3, 1, 1}};
- 	ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+        "ViewCopy",
+        {{{{3, 1, 1}, {3, 1, 1}}, ge::DT_UINT8, ge::FORMAT_ND}, {{{3, 1, 1}, {3, 1, 1}}, ge::DT_UINT8, ge::FORMAT_ND}},
+        {
+            {{{}, {}}, ge::DT_UINT8, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{3, 1, 1}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
-

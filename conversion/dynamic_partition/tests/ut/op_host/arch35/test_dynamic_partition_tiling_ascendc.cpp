@@ -23,9 +23,9 @@ using namespace std;
 
 class DynamicPartitionTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase() { std::cout << "DynamicPartitionTilingTest SetUp" << std::endl; }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase() { std::cout << "DynamicPartitionTilingTest TearDown" << std::endl; }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(DynamicPartitionTilingTest, DynamicPartitionTiling_001)

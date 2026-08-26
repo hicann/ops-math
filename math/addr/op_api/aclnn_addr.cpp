@@ -71,12 +71,12 @@ static bool CheckBetaAndAlphaDtyeValid(const aclScalar* beta, const aclScalar* a
 {
     // beta和alpha为bool类型值时，其他入参只能是bool类型
     if (beta && highDtype != DataType::DT_BOOL && beta->GetDataType() == DataType::DT_BOOL) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Boolean beta only supported for Boolean results.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Boolean beta is only supported for Boolean results.");
         return false;
     }
 
     if (alpha && highDtype != DataType::DT_BOOL && alpha->GetDataType() == DataType::DT_BOOL) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Boolean alpha only supported for Boolean results.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Boolean alpha is only supported for Boolean results.");
         return false;
     }
 

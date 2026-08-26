@@ -24,33 +24,26 @@ using namespace std;
 
 class AddrTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "AddrTiling SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "AddrTiling TearDown" << std::endl;
-    }
+    static void SetUpTestCase() {}
+    static void TearDownTestCase() {}
 };
 
 // 1. dtype不一致（x1=FP32, x2=FP16），期望报错 (EZ0021)
 TEST_F(AddrTiling, ascend910D1_test_tiling_failed_dtype_mismatch)
 {
     optiling::AddrCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "Addr",
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Addr",
+                                              {
+                                                  {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{4}, {4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
@@ -58,19 +51,18 @@ TEST_F(AddrTiling, ascend910D1_test_tiling_failed_dtype_mismatch)
 TEST_F(AddrTiling, ascend910D1_test_tiling_failed_x2_not_1d)
 {
     optiling::AddrCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "Addr",
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4, 2}, {4, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Addr",
+                                              {
+                                                  {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{4, 2}, {4, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
@@ -78,19 +70,18 @@ TEST_F(AddrTiling, ascend910D1_test_tiling_failed_x2_not_1d)
 TEST_F(AddrTiling, ascend910D1_test_tiling_failed_x3_not_1d)
 {
     optiling::AddrCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "Addr",
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{3, 2}, {3, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Addr",
+                                              {
+                                                  {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{3, 2}, {3, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
@@ -98,19 +89,18 @@ TEST_F(AddrTiling, ascend910D1_test_tiling_failed_x3_not_1d)
 TEST_F(AddrTiling, ascend910D1_test_tiling_failed_x1_1d_broadcast)
 {
     optiling::AddrCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "Addr",
-        {
-            {{{5}, {5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Addr",
+                                              {
+                                                  {{{5}, {5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
@@ -118,19 +108,18 @@ TEST_F(AddrTiling, ascend910D1_test_tiling_failed_x1_1d_broadcast)
 TEST_F(AddrTiling, ascend910D1_test_tiling_failed_x1_2d_broadcast)
 {
     optiling::AddrCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "Addr",
-        {
-            {{{5, 7}, {5, 7}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Addr",
+                                              {
+                                                  {{{5, 7}, {5, 7}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
@@ -138,19 +127,18 @@ TEST_F(AddrTiling, ascend910D1_test_tiling_failed_x1_2d_broadcast)
 TEST_F(AddrTiling, ascend910D1_test_tiling_failed_x1_dim_3)
 {
     optiling::AddrCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "Addr",
-        {
-            {{{2, 4, 3}, {2, 4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Addr",
+                                              {
+                                                  {{{2, 4, 3}, {2, 4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
@@ -158,19 +146,18 @@ TEST_F(AddrTiling, ascend910D1_test_tiling_failed_x1_dim_3)
 TEST_F(AddrTiling, ascend910D1_test_tiling_failed_y_shape_mismatch)
 {
     optiling::AddrCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "Addr",
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 5}, {4, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Addr",
+                                              {
+                                                  {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 5}, {4, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
@@ -178,19 +165,18 @@ TEST_F(AddrTiling, ascend910D1_test_tiling_failed_y_shape_mismatch)
 TEST_F(AddrTiling, ascend910D1_test_tiling_failed_empty_tensor)
 {
     optiling::AddrCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "Addr",
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Addr",
+                                              {
+                                                  {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 3}, {4, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
@@ -198,18 +184,17 @@ TEST_F(AddrTiling, ascend910D1_test_tiling_failed_empty_tensor)
 TEST_F(AddrTiling, ascend910D1_test_tiling_failed_unsupported_dtype)
 {
     optiling::AddrCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "Addr",
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{3}, {3}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 3}, {4, 3}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Addr",
+                                              {
+                                                  {{{4, 3}, {4, 3}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{3}, {3}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 3}, {4, 3}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }

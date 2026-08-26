@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -34,14 +34,12 @@ ge::graphStatus Cumsum4IntTiling::GetHardwareInfo()
     blockSize_ = static_cast<int64_t>(compileInfo->blockSize);
     cacheLine_ = static_cast<int64_t>(compileInfo->clSize);
     vlSize_ = static_cast<int64_t>(compileInfo->vRegSize);
-    OP_CHECK_IF(
-        (coreNum_ <= 0 || ubSize_ <= 0 || blockSize_ <= 0 || cacheLine_ <= 0 || vlSize_ <= 0),
-        OP_LOGE(
-            context_->GetNodeName(),
-            "Cumsum4Int GetHardwareInfo Failed, Core count:%ld, UB size:%ld, "
-            "Block size:%ld, Cache line:%ld, VL size:%ld.",
-            coreNum_, ubSize_, blockSize_, cacheLine_, vlSize_),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((coreNum_ <= 0 || ubSize_ <= 0 || blockSize_ <= 0 || cacheLine_ <= 0 || vlSize_ <= 0),
+                OP_LOGE(context_->GetNodeName(),
+                        "Cumsum4Int GetHardwareInfo Failed, Core count:%ld, UB size:%ld, "
+                        "Block size:%ld, Cache line:%ld, VL size:%ld.",
+                        coreNum_, ubSize_, blockSize_, cacheLine_, vlSize_),
+                return ge::GRAPH_FAILED);
 
     auto dtype = context_->GetInputDesc(0)->GetDataType();
     dtypeSize = GetSizeByDataType(dtype);
@@ -56,9 +54,8 @@ ge::graphStatus Cumsum4IntTiling::GetInputDims()
 {
     constexpr int64_t inputIdxAxis = 1;
     int64_t axisAttr = static_cast<int64_t>(-1);
-    OP_CHECK_IF(
-        !Ops::Base::GetConstInt(context_, inputIdxAxis, axisAttr),
-        OP_LOGE(context_->GetNodeName(), "Axis GetConstInt error!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(!Ops::Base::GetConstInt(context_, inputIdxAxis, axisAttr),
+                OP_LOGE(context_->GetNodeName(), "Failed to get the const value of axis."), return ge::GRAPH_FAILED);
 
     auto xStorage = context_->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, xStorage);
@@ -66,10 +63,10 @@ ge::graphStatus Cumsum4IntTiling::GetInputDims()
     size_t xDimNum = xShape_.GetDimNum();
     OP_CHECK_IF(
         axisAttr >= static_cast<int64_t>(xDimNum) || axisAttr < static_cast<int64_t>(-xDimNum),
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "axis",
-            std::to_string(axisAttr).c_str(),
-            ("The value of axis must be within the range [-" + std::to_string(xDimNum) + 
-             ", " + std::to_string(xDimNum - 1) + "].").c_str()),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "axis", std::to_string(axisAttr).c_str(),
+                                              ("The value of axis must be within the range [-" +
+                                               std::to_string(xDimNum) + ", " + std::to_string(xDimNum - 1) + "].")
+                                                  .c_str()),
         return ge::GRAPH_FAILED);
 
     if (axisAttr < 0) {
@@ -109,16 +106,13 @@ void Cumsum4IntTiling::AdjustTensor4TDRA()
     if (rightAxisLen * dtypeSize > cacheLine_) {
         OP_CHECK_IF(
             dtypeSize == 0,
-            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-                context_->GetNodeName(), "input",
-                Ops::Base::ToString(context_->GetInputDesc(0)->GetDataType()).c_str(),
-                "The dtype size of input must be greater than 0."),
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "input",
+                                                  Ops::Base::ToString(context_->GetInputDesc(0)->GetDataType()).c_str(),
+                                                  "The dtype size of input must be greater than 0."),
             return);
-        OP_CHECK_IF(
-            cacheLine_ == 0, OP_LOGE("AdjustTensor4TDRA", "cacheLine_ is zero"),
-            return);
-        tmpRALpUnit =
-            std::min(tensorSize_ / tmpRLpUnit * dtypeSize / cacheLine_ * cacheLine_ / dtypeSize, rightAxisLen);
+        OP_CHECK_IF(cacheLine_ == 0, OP_LOGE("AdjustTensor4TDRA", "cacheLine_ is zero"), return);
+        tmpRALpUnit = std::min(tensorSize_ / tmpRLpUnit * dtypeSize / cacheLine_ * cacheLine_ / dtypeSize,
+                               rightAxisLen);
     }
     // split cores on R
     uint32_t rWeight = CalcAxisWeight(Ops::Base::CeilDiv(midAxisLen, tmpRLpUnit));
@@ -140,8 +134,8 @@ void Cumsum4IntTiling::AdjustTensor4TDRA()
 void Cumsum4IntTiling::AdjustTensor4TDLA(int64_t comLeftA)
 {
     tensorSize_ = maxTensorSize;
-    OP_CHECK_IF(
-        (comLeftA == 0 || raLpUnit_ == 0), OP_LOGE("AdjustTensor4TDLA", "comLeftA or raLpUnit_ is zero"), return);
+    OP_CHECK_IF((comLeftA == 0 || raLpUnit_ == 0), OP_LOGE("AdjustTensor4TDLA", "comLeftA or raLpUnit_ is zero"),
+                return);
     int64_t tmpRLpUnit = std::min(tensorSize_ / comLeftA / raLpUnit_, midAxisLen);
     if (tmpRLpUnit == midAxisLen) {
         int64_t tmpTensorSize_ = Ops::Base::CeilAlign(
@@ -162,8 +156,9 @@ void Cumsum4IntTiling::AdjustTensor4TDR(int64_t comLeftA)
     int64_t rLpCnt = Ops::Base::CeilDiv(midAxisLen, rLpUnit);
     // split cores on R
     if (CalcAxisWeight(leftAxisLen) * uint32_t(NUM_TWO) < CalcAxisWeight(rLpCnt)) {
-        int64_t tmpTensorSize_ =
-            Ops::Base::CeilDiv(Ops::Base::CeilDiv(midAxisLen * rightAxisLen, minTensorSize), coreNum_) * minTensorSize;
+        int64_t tmpTensorSize_ = Ops::Base::CeilDiv(Ops::Base::CeilDiv(midAxisLen * rightAxisLen, minTensorSize),
+                                                    coreNum_) *
+                                 minTensorSize;
         tensorSize_ = std::min(tmpTensorSize_, tensorSize_);
     }
 }
@@ -173,8 +168,8 @@ bool Cumsum4IntTiling::CheckBGC(int64_t comLeftA, int64_t arSize)
     constexpr int64_t halfBGCnt = 8;
     constexpr int64_t parallBytes = 512;
     int64_t comCnt = std::min(halfBGCnt, comLeftA);
-    int64_t sizeInByte =
-        (midAxisLen > rLpUnit_) ? Ops::Base::CeilAlign(arSize * dtypeSize, blockSize_) : arSize * dtypeSize;
+    int64_t sizeInByte = (midAxisLen > rLpUnit_) ? Ops::Base::CeilAlign(arSize * dtypeSize, blockSize_) :
+                                                   arSize * dtypeSize;
     if (sizeInByte % blockSize_ == 0 && sizeInByte * comCnt % parallBytes == 0) {
         return true;
     }
@@ -237,8 +232,8 @@ void Cumsum4IntTiling::GetAxisLpUnit()
             AdjustLARLpUnit(comLeftA_);
         }
         // to avoid going into branch Group-R
-        OP_CHECK_IF(
-            (laLpUnit_ == 0 || rLpUnit_ == 0), OP_LOGE("GetAxisLpUnit", "laLpUnit_ or rLpUnit_ is zero"), return);
+        OP_CHECK_IF((laLpUnit_ == 0 || rLpUnit_ == 0), OP_LOGE("GetAxisLpUnit", "laLpUnit_ or rLpUnit_ is zero"),
+                    return);
         if (leftAxisLen / laLpUnit_ >= midAxisLen / rLpUnit_ / NUM_TWO || rLpUnit_ == midAxisLen) {
             return;
         }
@@ -329,9 +324,9 @@ void Cumsum4IntTiling::CalcTilingKey()
 
 ge::graphStatus Cumsum4IntTiling::CalcTilingData()
 {
-    OP_CHECK_IF(
-        (GetInputDims() != ge::GRAPH_SUCCESS),
-        OP_LOGE(context_->GetNodeName(), "Cumsum4IntTiling failed to get input shape info."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((GetInputDims() != ge::GRAPH_SUCCESS),
+                OP_LOGE(context_->GetNodeName(), "Cumsum4IntTiling failed to get input shape info."),
+                return ge::GRAPH_FAILED);
 
     GetAxisLpUnit();
     GetMCTilingInfo();
@@ -362,8 +357,7 @@ void Cumsum4IntTiling::WriteTilingData()
     context_->SetTilingKey(tilingKey_);
     if (tilingKey_ == CUM_WITH_GROUP) {
         OP_CHECK_IF(context_->SetScheduleMode(1) != ge::GRAPH_SUCCESS,
-                    OP_LOGE(context_->GetNodeName(), "Failed to set ScheduleMode!"),
-                    return);
+                    OP_LOGE(context_->GetNodeName(), "Failed to set ScheduleMode!"), return);
     }
     tilingData_.set_tilingKey(tilingKey_);
     tilingData_.set_isExclusive(isExclusive_);
@@ -419,15 +413,15 @@ std::string Cumsum4IntTiling::PrintTilingData()
 
 ge::graphStatus Cumsum4IntTiling::DoTiling()
 {
-    OP_CHECK_IF(
-        (GetHardwareInfo() != ge::GRAPH_SUCCESS),
-        OP_LOGE(context_->GetNodeName(), "Cumsum4IntTiling failed to get hardware info."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        (GetAttrInfo() != ge::GRAPH_SUCCESS),
-        OP_LOGE(context_->GetNodeName(), "Cumsum4IntTiling failed to get input attr."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        (CalcTilingData() != ge::GRAPH_SUCCESS),
-        OP_LOGE(context_->GetNodeName(), "Cumsum4IntTiling failed to caculate tiling data."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((GetHardwareInfo() != ge::GRAPH_SUCCESS),
+                OP_LOGE(context_->GetNodeName(), "Cumsum4IntTiling failed to get hardware info."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF((GetAttrInfo() != ge::GRAPH_SUCCESS),
+                OP_LOGE(context_->GetNodeName(), "Cumsum4IntTiling failed to get input attr."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF((CalcTilingData() != ge::GRAPH_SUCCESS),
+                OP_LOGE(context_->GetNodeName(), "Cumsum4IntTiling failed to calculate tiling data."),
+                return ge::GRAPH_FAILED);
     WriteTilingData();
     OP_LOGI("Cumsum4IntTiling", "The tiling data is: %s", PrintTilingData().c_str());
 

@@ -108,9 +108,9 @@ static inline void PrintTilingDataList(T& tilingData)
 template <typename T>
 static inline void PrintTilingData(T& tilingData, int64_t tilingKey, int64_t usedCoreNum)
 {
-    OP_LOGI("[Concat]", "ubSplitDim1: %d, dim: %d, blockFactor: %ld,tailBlockFactor: %ld,\
-ubFactorDim0: %d,ubFactorDim1: %d,tailUbFactorDim0: %d, tailUbFactorDim1: %d,uoDim0: %ld,uoDim1: %ld,\
-tensorNum: %d,catDim1: %ld,isnon: %d,tilingKey: %ld,usedCoreNum: %ld",
+    OP_LOGI("[Concat]", "ubSplitDim1: %d, dim: %d, blockFactor: %ld, tailBlockFactor: %ld, \
+ubFactorDim0: %d, ubFactorDim1: %d, tailUbFactorDim0: %d, tailUbFactorDim1: %d, uoDim0: %ld, uoDim1: %ld, \
+tensorNum: %d, catDim1: %ld, isnon: %d, tilingKey: %ld, usedCoreNum: %ld",
             tilingData.get_ubSplitDim1(), tilingData.get_dim(), tilingData.get_blockFactor(),
             tilingData.get_tailBlockFactor(), tilingData.get_ubFactorDim0(), tilingData.get_ubFactorDim1(),
             tilingData.get_tailUbFactorDim0(), tilingData.get_tailUbFactorDim1(), tilingData.get_uoDim0(),
@@ -286,7 +286,7 @@ inline static ge::graphStatus CalcBaseTilingParam(const gert::TilingContext* con
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     param.totalCoreNum = min(static_cast<int64_t>(compileInfo->totalCoreNum), TILING_ARRAY_LENGTH);
     if (compileInfo->totalCoreNum > TILING_ARRAY_LENGTH) {
-        OP_LOGW("[Concat]", "Currently, more than 72 cores are not supported, Only 72 cores are used.");
+        OP_LOGW("[Concat]", "Currently, more than 72 cores are not supported; only 72 cores are used.");
     }
     param.ubSize = compileInfo->ubSize;
     param.tensorNum = param.tensorList.size();
@@ -1629,18 +1629,18 @@ ge::graphStatus TilingPrepareForConcat(gert::TilingParseContext* context)
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->totalCoreNum = ascendcPlatform.GetCoreNumAiv();
     OP_CHECK_IF((compileInfo->totalCoreNum <= 0),
-                OP_LOGE(context->GetNodeName(), "TilingPrepareForConcat fail to get core num."),
+                OP_LOGE(context->GetNodeName(), "TilingPrepareForConcat Failed to get core num."),
                 return ge::GRAPH_FAILED);
 
     uint64_t ubSize;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compileInfo->ubSize = static_cast<int64_t>(ubSize);
     OP_CHECK_IF((compileInfo->ubSize <= 0),
-                OP_LOGE(context->GetNodeName(), "TilingPrepareForConcat fail to get ub size."),
+                OP_LOGE(context->GetNodeName(), "TilingPrepareForConcat Failed to get ub size."),
                 return ge::GRAPH_FAILED);
     compileInfo->vectorLen = static_cast<int64_t>(Ops::Base::GetVRegSize(context));
     OP_CHECK_IF((compileInfo->vectorLen <= 0),
-                OP_LOGE(context->GetNodeName(), "TilingPrepareForConcat fail to get vectorLen."),
+                OP_LOGE(context->GetNodeName(), "TilingPrepareForConcat Failed to get vectorLen."),
                 return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }

@@ -23,8 +23,8 @@ using namespace std;
 
 class l2_asin_test : public testing::Test {
 protected:
-    static void SetUpTestCase() { std::cout << "Asin Test Setup" << std::endl; }
-    static void TearDownTestCase() { std::cout << "Asin Test TearDown" << std::endl; }
+    static void SetUpTestCase() {}
+    static void TearDownTestCase() {}
 };
 
 TEST_F(l2_asin_test, case_1)

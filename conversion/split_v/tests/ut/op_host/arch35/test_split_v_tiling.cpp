@@ -23,9 +23,9 @@ using namespace std;
 using namespace ge;
 class SplitVTiling : public testing::Test {
 protected:
-    static void SetUpTestCase() { std::cout << "SplitVTiling SetUp" << std::endl; }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase() { std::cout << "SplitVTiling TearDown" << std::endl; }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(SplitVTiling, SplitV_test_tiling_001)
@@ -171,11 +171,7 @@ TEST_F(SplitVTiling, SplitV_test_tiling_many_small_split_small_m)
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
-    int64_t nBlockCount = GetTilingField(tilingInfo, IDX_N_BLOCK_COUNT);
-    int64_t mBlockCount = GetTilingField(tilingInfo, IDX_M_BLOCK_COUNT);
     int64_t realCoreNum = GetTilingField(tilingInfo, IDX_REAL_CORE_NUM);
-    std::cout << "[diag small_m] nBlockCount=" << nBlockCount << " mBlockCount=" << mBlockCount
-              << " realCoreNum=" << realCoreNum << std::endl;
     // 核心证据: 尽管有 200 个 split 块, 512B 上界 + 小 M 使核严重用不满。
     EXPECT_LT(realCoreNum, 32);
 }
@@ -209,15 +205,11 @@ TEST_F(SplitVTiling, SplitV_test_tiling_many_small_split_large_m)
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
     int64_t nBlockCount = GetTilingField(tilingInfo, IDX_N_BLOCK_COUNT);
-    int64_t mBlockCount = GetTilingField(tilingInfo, IDX_M_BLOCK_COUNT);
     int64_t realCoreNum = GetTilingField(tilingInfo, IDX_REAL_CORE_NUM);
-    std::cout << "[diag large_m] nBlockCount=" << nBlockCount << " mBlockCount=" << mBlockCount
-              << " realCoreNum=" << realCoreNum << std::endl;
     // 放宽后 N 切核上界 = CeilDiv(401, 128/4) = 13, 应突破原 512B 对齐的上界 4。
     EXPECT_GT(nBlockCount, 4);
     // computeCost 模型据此在 M/N 间重新权衡, 应充分利用多核 (具体核数由模型决定, 不强绑 32)。
     EXPECT_GT(realCoreNum, 1);
-    (void)mBlockCount;
 }
 
 // huge split(numSplit > HUGE_SPLIT_NUM=4096) + 大 M(>= HUGE_M=64) 回归:
@@ -252,12 +244,8 @@ TEST_F(SplitVTiling, SplitV_test_tiling_huge_split_large_m_force_m2)
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
     int64_t nBlockCount = GetTilingField(tilingInfo, IDX_N_BLOCK_COUNT);
     int64_t mBlockCount = GetTilingField(tilingInfo, IDX_M_BLOCK_COUNT);
-    int64_t realCoreNum = GetTilingField(tilingInfo, IDX_REAL_CORE_NUM);
-    std::cout << "[diag huge_split] nBlockCount=" << nBlockCount << " mBlockCount=" << mBlockCount
-              << " realCoreNum=" << realCoreNum << std::endl;
     // 硬覆盖强制 M 只切 2 份。
     EXPECT_EQ(mBlockCount, 2);
     // 其余核全给 N 轴, 充分分核。
     EXPECT_GT(nBlockCount, 4);
-    (void)realCoreNum;
 }

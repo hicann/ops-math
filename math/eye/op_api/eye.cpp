@@ -30,22 +30,25 @@ namespace l0op {
 OP_TYPE_REGISTER(Eye);
 
 // AICORE算子kernel
-inline static const aclTensor *EyeAiCore(aclTensor *out, const int64_t n, const int64_t m, aclOpExecutor *executor) {
-  L0_DFX(EyeAiCore, out, n, m);
-  // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore Eye算子加入任务队列
-  auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Eye, OP_OUTPUT(out), OP_ATTR(n, m, static_cast<aclIntArray *>(nullptr), out->GetDataType()));
-  OP_CHECK(ret ==  ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "EyeAiCcore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-    return nullptr);
-  return out;
+inline static const aclTensor* EyeAiCore(aclTensor* out, const int64_t n, const int64_t m, aclOpExecutor* executor)
+{
+    L0_DFX(EyeAiCore, out, n, m);
+    // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore Eye算子加入任务队列
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Eye, OP_OUTPUT(out),
+                                           OP_ATTR(n, m, static_cast<aclIntArray*>(nullptr), out->GetDataType()));
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "EyeAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
+             return nullptr);
+    return out;
 }
 
-const aclTensor *Eye(aclTensor *out, const int64_t n, const int64_t m, aclOpExecutor *executor) {
-  auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
-  if (IsRegBase(npuArch)) {
-    auto eyeOut = executor->AllocTensor(out->GetViewShape(), out->GetDataType());
-    CHECK_RET(eyeOut != nullptr, nullptr);
-    return EyeAiCore(eyeOut, n, m, executor);
-  }
-  return EyeAiCore(out, n, m, executor);
+const aclTensor* Eye(aclTensor* out, const int64_t n, const int64_t m, aclOpExecutor* executor)
+{
+    auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
+        auto eyeOut = executor->AllocTensor(out->GetViewShape(), out->GetDataType());
+        CHECK_RET(eyeOut != nullptr, nullptr);
+        return EyeAiCore(eyeOut, n, m, executor);
+    }
+    return EyeAiCore(out, n, m, executor);
 }
-}  // namespace l0op
+} // namespace l0op

@@ -78,7 +78,7 @@ ge::graphStatus DynamicPartitionTiling::GetInputShapeAndType()
     OP_CHECK_IF(dtypeSize_ == 0U, OP_LOGE(context_->GetNodeName(), "The data type size is zero!"),
                 return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(!CheckInputs(), OP_LOGE(context_->GetNodeName(), "Get input shape and type is failed!"),
+    OP_CHECK_IF(!CheckInputs(), OP_LOGE(context_->GetNodeName(), "Failed to get input shape and type!"),
                 return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -349,19 +349,19 @@ std::string DynamicPartitionTiling::PrintTilingData()
 ge::graphStatus DynamicPartitionTiling::WriteTilingData()
 {
     OP_CHECK_IF(context_->SetTilingKey(tilingData_.tilingKey) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context_->GetNodeName(), "Set tiling key is failed!"), return ge::GRAPH_FAILED);
+                OP_LOGE(context_->GetNodeName(), "Failed to set tiling key!"), return ge::GRAPH_FAILED);
 
     if (tilingData_.tilingKey == ::DynPart::TILING_NUM_PART_ONE) {
         OP_CHECK_IF(
             context_->SetBlockDim(static_cast<uint32_t>(numPartOneTilingData_.usedCoreCnt)) != ge::GRAPH_SUCCESS,
-            OP_LOGE(context_->GetNodeName(), "Set used core size is failed!"), return ge::GRAPH_FAILED);
+            OP_LOGE(context_->GetNodeName(), "Failed to set used core size!"), return ge::GRAPH_FAILED);
         auto ptrTD = context_->GetRawTilingData();
         OP_CHECK_NULL_WITH_CONTEXT(context_, ptrTD);
         auto capSize = ptrTD->GetCapacity();
         void* ptrData = ptrTD->GetData();
         OP_CHECK_NULL_WITH_CONTEXT(context_, ptrData);
         OP_CHECK_IF(memcpy_s(ptrData, capSize, &numPartOneTilingData_, sizeof(numPartOneTilingData_)) != 0,
-                    OP_LOGE(context_->GetNodeName(), "Set tiling data is failed!"), return ge::GRAPH_FAILED);
+                    OP_LOGE(context_->GetNodeName(), "Failed to set tiling data!"), return ge::GRAPH_FAILED);
         ptrTD->SetDataSize(sizeof(numPartOneTilingData_));
         size_t* ptrWS = context_->GetWorkspaceSizes(1);
         OP_CHECK_NULL_WITH_CONTEXT(context_, ptrWS);
@@ -382,7 +382,7 @@ ge::graphStatus DynamicPartitionTiling::WriteTilingData()
                     OP_LOGE(context_->GetNodeName(), "Failed to set ScheduleMode!"), return ge::GRAPH_FAILED);
     }
     OP_CHECK_IF(context_->SetBlockDim(static_cast<uint32_t>(tilingData_.usedCoreCnt)) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context_->GetNodeName(), "Set used core size is failed!"), return ge::GRAPH_FAILED);
+                OP_LOGE(context_->GetNodeName(), "Failed to set used core size!"), return ge::GRAPH_FAILED);
 
     auto ptrTD = context_->GetRawTilingData();
     OP_CHECK_NULL_WITH_CONTEXT(context_, ptrTD);
@@ -392,7 +392,7 @@ ge::graphStatus DynamicPartitionTiling::WriteTilingData()
     void* ptrStruct = static_cast<void*>(&tilingData_);
     OP_CHECK_NULL_WITH_CONTEXT(context_, ptrStruct);
     OP_CHECK_IF(memcpy_s(ptrData, capSize, ptrStruct, sizeof(tilingData_)) != 0,
-                OP_LOGE(context_->GetNodeName(), "Set tiling data is failed!"), return ge::GRAPH_FAILED);
+                OP_LOGE(context_->GetNodeName(), "Failed to set tiling data!"), return ge::GRAPH_FAILED);
     ptrTD->SetDataSize(sizeof(tilingData_));
 
     size_t usrWorkspaceSize = 0;
@@ -414,9 +414,9 @@ ge::graphStatus DynamicPartitionTiling::DoTiling()
     compileInfo_ = context_->GetCompileInfo<DynamicPartitionCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfo_);
 
-    OP_CHECK_IF(GetInputShapeAndType() != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "Do tiling is failed!"),
+    OP_CHECK_IF(GetInputShapeAndType() != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "Failed to do tiling!"),
                 return ge::GRAPH_FAILED);
-    OP_CHECK_IF(GetAttrNumPartitions() != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "Do tiling is failed!"),
+    OP_CHECK_IF(GetAttrNumPartitions() != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "Failed to do tiling!"),
                 return ge::GRAPH_FAILED);
     CalcTilingData();
     return WriteTilingData();

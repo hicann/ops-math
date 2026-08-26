@@ -18,38 +18,33 @@ using namespace std;
 
 class SplitTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "SplitTilingTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase()
-    {
-        std::cout << "SplitTilingTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() {}
 };
 
-TEST_F(SplitTilingTest, test_tiling_int32) {
+TEST_F(SplitTilingTest, test_tiling_int32)
+{
     optiling::SplitVCompileInfo compileInfo;
     compileInfo.core_num = 64;
     compileInfo.maxCoreNum = 64;
     compileInfo.ubSizePlatform = 253952;
     int32_t split_dim = 1;
     gert::TilingContextPara tilingContextPara("Split",
-        {
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, &split_dim},
-            {{{11, 16}, {11, 16}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{11, 8}, {11, 8}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{11, 8}, {11, 8}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {"num_split", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
-        },
-        &compileInfo);
+                                              {
+                                                  {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, &split_dim},
+                                                  {{{11, 16}, {11, 16}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{11, 8}, {11, 8}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{11, 8}, {11, 8}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {"num_split", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+                                              },
+                                              &compileInfo);
 
-    uint64_t expectTilingKey = 101;
+    uint64_t expectTilingKey = 111;
     string expectTilingData = "253952 1 0 11 11 11 1 2 2 2 1 8 8 8 8 8 1 1 1 0 8 8 -1 -1 0 0 11 0 0 0 0 0 0 0 0 0 0"
                               " 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"
                               " 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"

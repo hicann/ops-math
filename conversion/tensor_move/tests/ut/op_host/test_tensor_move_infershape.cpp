@@ -14,26 +14,21 @@
 #include "infershape_case_executor.h"
 
 class TensorMoveInfershapeTest : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "TensorMoveInfershapeTest SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() {}
 
-  static void TearDownTestCase() {
-    std::cout << "TensorMoveInfershapeTest TearDown" << std::endl;
-  }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(TensorMoveInfershapeTest, tensormove_infershape_001)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "TensorMove",
-        {
-            {{{2, 2}, {2, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("TensorMove",
+                                                      {
+                                                          {{{2, 2}, {2, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
 
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {2, 2},

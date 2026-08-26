@@ -22,33 +22,26 @@ using namespace std;
 
 class AsStridedTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "AsStridedTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase()
-    {
-        std::cout << "AsStridedTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(AsStridedTiling, as_strided_tiling_test_case1)
 {
     optiling::AsStridedCompileInfo compileInfo = {64, 262144};
     std::vector<int64_t> inputSizeValues = {3, 2};
-    gert::TilingContextPara tilingContextPara(
-        "AsStrided",
-        {{{{4, 4, 3, 3}, {4, 4, 3, 3}}, ge::DT_INT8, ge::FORMAT_ND},
-         {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()},
-         {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()},
-         {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()}},
-        {
-            {
-                {{{3}, {3}}, ge::DT_INT8, ge::FORMAT_ND},
-            },
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("AsStrided",
+                                              {{{{4, 4, 3, 3}, {4, 4, 3, 3}}, ge::DT_INT8, ge::FORMAT_ND},
+                                               {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()},
+                                               {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()},
+                                               {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()}},
+                                              {
+                                                  {
+                                                      {{{3}, {3}}, ge::DT_INT8, ge::FORMAT_ND},
+                                                  },
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 400;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
@@ -58,18 +51,17 @@ TEST_F(AsStridedTiling, as_strided_tiling_test_case2)
 {
     optiling::AsStridedCompileInfo compileInfo = {64, 262144};
     std::vector<int64_t> inputSizeValues = {3, 2};
-    gert::TilingContextPara tilingContextPara(
-        "AsStrided",
-        {{{{4, 4, 3, 3}, {4, 4, 3, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-         {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()},
-         {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()},
-         {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()}},
-        {
-            {
-                {{{3}, {3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            },
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("AsStrided",
+                                              {{{{4, 4, 3, 3}, {4, 4, 3, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()},
+                                               {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()},
+                                               {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()}},
+                                              {
+                                                  {
+                                                      {{{3}, {3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  },
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 400;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
@@ -79,18 +71,17 @@ TEST_F(AsStridedTiling, as_strided_tiling_test_case3)
 {
     optiling::AsStridedCompileInfo compileInfo = {64, 262144};
     std::vector<int64_t> inputSizeValues = {3, 2};
-    gert::TilingContextPara tilingContextPara(
-        "AsStrided",
-        {{{{4, 4, 3, 3}, {4, 4, 3, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-         {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()},
-         {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()},
-         {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()}},
-        {
-            {
-                {{{3}, {3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            },
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("AsStrided",
+                                              {{{{4, 4, 3, 3}, {4, 4, 3, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()},
+                                               {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()},
+                                               {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()}},
+                                              {
+                                                  {
+                                                      {{{3}, {3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  },
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 400;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
@@ -100,18 +91,17 @@ TEST_F(AsStridedTiling, as_strided_tiling_test_case4)
 {
     optiling::AsStridedCompileInfo compileInfo = {64, 262144};
     std::vector<int64_t> inputSizeValues = {3, 2, 6, 6};
-    gert::TilingContextPara tilingContextPara(
-        "AsStrided",
-        {{{{4, 4, 3, 3}, {4, 4, 3, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-         {{{4}, {4}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()},
-         {{{4}, {4}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()},
-         {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()}},
-        {
-            {
-                {{{3}, {3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            },
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("AsStrided",
+                                              {{{{4, 4, 3, 3}, {4, 4, 3, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {{{4}, {4}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()},
+                                               {{{4}, {4}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()},
+                                               {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, inputSizeValues.data()}},
+                                              {
+                                                  {
+                                                      {{{3}, {3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  },
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 400;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
@@ -163,18 +153,17 @@ TEST_F(AsStridedTiling, as_strided_tiling_test_case7)
 {
     optiling::AsStridedCompileInfo compileInfo = {64, 262144};
     std::vector<int64_t> inputSizeValues = {3};
-    gert::TilingContextPara tilingContextPara(
-        "AsStrided",
-        {{{{1000, 1000, 512}, {1000, 1000, 512}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-         {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, inputSizeValues.data()},
-         {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, inputSizeValues.data()},
-         {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, inputSizeValues.data()}},
-        {
-            {
-                {{{124, 2, 80}, {124, 2, 80}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            },
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("AsStrided",
+                                              {{{{1000, 1000, 512}, {1000, 1000, 512}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, inputSizeValues.data()},
+                                               {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, inputSizeValues.data()},
+                                               {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, inputSizeValues.data()}},
+                                              {
+                                                  {
+                                                      {{{124, 2, 80}, {124, 2, 80}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  },
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 400;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
@@ -184,18 +173,17 @@ TEST_F(AsStridedTiling, as_strided_tiling_test_case8)
 {
     optiling::AsStridedCompileInfo compileInfo = {64, 262144};
     std::vector<int64_t> inputSizeValues = {3};
-    gert::TilingContextPara tilingContextPara(
-        "AsStrided",
-        {{{{1000, 1000, 512}, {1000, 1000, 512}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-         {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, inputSizeValues.data()},
-         {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, inputSizeValues.data()},
-         {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, inputSizeValues.data()}},
-        {
-            {
-                {{{124, 2, 80}, {124, 2, 80}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            },
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("AsStrided",
+                                              {{{{1000, 1000, 512}, {1000, 1000, 512}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, inputSizeValues.data()},
+                                               {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, inputSizeValues.data()},
+                                               {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, inputSizeValues.data()}},
+                                              {
+                                                  {
+                                                      {{{124, 2, 80}, {124, 2, 80}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  },
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 400;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
@@ -205,18 +193,17 @@ TEST_F(AsStridedTiling, as_strided_tiling_test_case9)
 {
     optiling::AsStridedCompileInfo compileInfo = {64, 262144};
     std::vector<int64_t> inputSizeValues = {1};
-    gert::TilingContextPara tilingContextPara(
-        "AsStrided",
-        {{{{3, 3, 3, 3}, {3, 3, 3, 3}}, ge::DT_INT32, ge::FORMAT_ND},
-         {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, inputSizeValues.data()},
-         {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, inputSizeValues.data()},
-         {{{3}, {3}}, ge::DT_INT32, ge::FORMAT_ND, true, inputSizeValues.data()}},
-        {
-            {
-                {{{1, 1, 1, 1}, {1, 1, 1, 1}}, ge::DT_INT32, ge::FORMAT_ND},
-            },
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("AsStrided",
+                                              {{{{3, 3, 3, 3}, {3, 3, 3, 3}}, ge::DT_INT32, ge::FORMAT_ND},
+                                               {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, inputSizeValues.data()},
+                                               {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, inputSizeValues.data()},
+                                               {{{3}, {3}}, ge::DT_INT32, ge::FORMAT_ND, true, inputSizeValues.data()}},
+                                              {
+                                                  {
+                                                      {{{1, 1, 1, 1}, {1, 1, 1, 1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  },
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 400;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);

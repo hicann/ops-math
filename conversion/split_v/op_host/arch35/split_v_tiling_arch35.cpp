@@ -129,13 +129,13 @@ ge::graphStatus SplitVTiling::ModifySizeSplitList()
 
     // 没有负数，sizeSplitsTotal 需要和切分的dim轴大小相等
     OP_CHECK_IF((negNum == 0 && sizeSplitsTotal != splitDimShape),
-                OP_LOGE(context_->GetNodeName(), "sizeSplitsTotal:%ld not equal splitDimShape:%ld", sizeSplitsTotal,
+                OP_LOGE(context_->GetNodeName(), "sizeSplitsTotal:%ld not equal to splitDimShape:%ld", sizeSplitsTotal,
                         splitDimShape),
                 return ge::GRAPH_FAILED);
 
     // 最多只能有一个负数
     OP_CHECK_IF(negNum > 1,
-                OP_LOGE(context_->GetNodeName(), "sizeSplits negtive num:%d cannot be bigger than 1", negNum),
+                OP_LOGE(context_->GetNodeName(), "sizeSplits negative num:%d cannot be bigger than 1", negNum),
                 return ge::GRAPH_FAILED);
 
     if (negNum > 0) {

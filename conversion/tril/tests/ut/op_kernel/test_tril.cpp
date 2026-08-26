@@ -20,14 +20,8 @@
 
 class TrilTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "tril_test SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "tril_test TearDown" << std::endl;
-    }
+    static void SetUpTestCase() {}
+    static void TearDownTestCase() {}
 };
 
 // ============================================================================

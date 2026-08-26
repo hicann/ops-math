@@ -19,25 +19,25 @@ using namespace AscendC;
 
 namespace optiling {
 
-graphStatus Tiling4Split(TilingContext* context) {
+graphStatus Tiling4Split(TilingContext* context)
+{
     OP_LOGD(context->GetNodeName(), "begin to do Tiling4Split");
     auto compile_info = reinterpret_cast<const SplitVCompileInfo*>(context->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
 
     uint32_t maxCoreNum = compile_info->maxCoreNum;
     uint32_t ubSizePlatform = compile_info->ubSizePlatform;
-    OP_CHECK_IF(ubSizePlatform <= 0, OP_LOGE(context->GetNodeName(),
-                    "get ubSize <= 0 error"),
-                    return GRAPH_FAILED);
+    OP_CHECK_IF(ubSizePlatform <= 0,
+                OP_LOGE(context->GetNodeName(), "Failed to get ubSize, ubSize must be greater than 0."),
+                return GRAPH_FAILED);
     int32_t isSameLen = 1;
     OP_CHECK_IF(SplitVTilingAscendC(context, maxCoreNum, ubSizePlatform, isSameLen) != ge::GRAPH_SUCCESS,
-                    OP_LOGE(context->GetNodeName(),
-                    "AscendC split tiling function call failed"),
-                    return ge::GRAPH_FAILED);
+                OP_LOGE(context->GetNodeName(), "AscendC split tiling function call failed"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
-graphStatus TilingPrepare4Split(TilingParseContext* context) {
+graphStatus TilingPrepare4Split(TilingParseContext* context)
+{
     OP_LOGD(context->GetNodeName(), "AscendC Tiling Starting!");
     auto compile_info = context->GetCompiledInfo<SplitVCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
@@ -46,18 +46,15 @@ graphStatus TilingPrepare4Split(TilingParseContext* context) {
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compile_info->maxCoreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF((compile_info->maxCoreNum <= 0),
-                    OP_LOGE(context->GetNodeName(), "The core num is invalid."),
-                    return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compile_info->maxCoreNum <= 0), OP_LOGE(context->GetNodeName(), "The core num is invalid."),
+                return ge::GRAPH_FAILED);
     uint64_t ubSize;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compile_info->ubSizePlatform = static_cast<uint32_t>(ubSize);
-    OP_CHECK_IF((compile_info->ubSizePlatform <= 0),
-                    OP_LOGE(context->GetNodeName(), "The ubSize is invalid."),
-                    return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compile_info->ubSizePlatform <= 0), OP_LOGE(context->GetNodeName(), "The ubSize is invalid."),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_OPTILING(Split).Tiling(Tiling4Split)
-              .TilingParse<SplitVCompileInfo>(TilingPrepare4Split);
-}  // namespace optiling
+IMPL_OP_OPTILING(Split).Tiling(Tiling4Split).TilingParse<SplitVCompileInfo>(TilingPrepare4Split);
+} // namespace optiling

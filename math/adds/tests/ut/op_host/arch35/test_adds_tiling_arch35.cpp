@@ -21,15 +21,9 @@ using optiling::AddsCompileInfo;
 
 class AddsTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "AddsTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase()
-    {
-        std::cout << "AddsTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() {}
 };
 
 // Test 1: FP32 basic shape
@@ -38,24 +32,21 @@ TEST_F(AddsTilingTest, adds_fp32_basic)
     AddsCompileInfo compileInfo;
     compileInfo.coreNum = 40;
     compileInfo.ubSize = 196608;
-    
+
     gert::TilingContextPara tilingContextPara(
         "Adds",
         {
-            {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT, ge::FORMAT_ND},  // input
+            {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT, ge::FORMAT_ND}, // input
         },
         {
-            {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT, ge::FORMAT_ND},  // output
+            {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
         },
         {
-            {"value", Ops::Math::AnyValue::CreateFrom<float>(1.5f)},  // scalar value
+            {"value", Ops::Math::AnyValue::CreateFrom<float>(1.5f)}, // scalar value
         },
-        &compileInfo,
-        40,
-        196608,
-        4096);
-    
-    uint64_t expectTilingKey = 7;  // schMode=0, dtype=3 (FP32)
+        &compileInfo, 40, 196608, 4096);
+
+    uint64_t expectTilingKey = 7; // schMode=0, dtype=3 (FP32)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -66,24 +57,21 @@ TEST_F(AddsTilingTest, adds_fp16_basic)
     AddsCompileInfo compileInfo;
     compileInfo.coreNum = 40;
     compileInfo.ubSize = 196608;
-    
+
     gert::TilingContextPara tilingContextPara(
         "Adds",
         {
-            {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT16, ge::FORMAT_ND},  // input
+            {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT16, ge::FORMAT_ND}, // input
         },
         {
-            {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT16, ge::FORMAT_ND},  // output
+            {{{1024, 1024}, {1024, 1024}}, ge::DT_FLOAT16, ge::FORMAT_ND}, // output
         },
         {
-            {"value", Ops::Math::AnyValue::CreateFrom<float>(2.0f)},  // scalar value
+            {"value", Ops::Math::AnyValue::CreateFrom<float>(2.0f)}, // scalar value
         },
-        &compileInfo,
-        40,
-        196608,
-        4096);
-    
-    uint64_t expectTilingKey = 3;  // schMode=0, dtype=1 (FP16)
+        &compileInfo, 40, 196608, 4096);
+
+    uint64_t expectTilingKey = 3; // schMode=0, dtype=1 (FP16)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -94,24 +82,21 @@ TEST_F(AddsTilingTest, adds_bf16_basic)
     AddsCompileInfo compileInfo;
     compileInfo.coreNum = 40;
     compileInfo.ubSize = 196608;
-    
+
     gert::TilingContextPara tilingContextPara(
         "Adds",
         {
-            {{{512, 512}, {512, 512}}, ge::DT_BF16, ge::FORMAT_ND},  // input
+            {{{512, 512}, {512, 512}}, ge::DT_BF16, ge::FORMAT_ND}, // input
         },
         {
-            {{{512, 512}, {512, 512}}, ge::DT_BF16, ge::FORMAT_ND},  // output
+            {{{512, 512}, {512, 512}}, ge::DT_BF16, ge::FORMAT_ND}, // output
         },
         {
-            {"value", Ops::Math::AnyValue::CreateFrom<float>(0.5f)},  // scalar value
+            {"value", Ops::Math::AnyValue::CreateFrom<float>(0.5f)}, // scalar value
         },
-        &compileInfo,
-        40,
-        196608,
-        4096);
-    
-    uint64_t expectTilingKey = 5;  // schMode=0, dtype=2 (BF16)
+        &compileInfo, 40, 196608, 4096);
+
+    uint64_t expectTilingKey = 5; // schMode=0, dtype=2 (BF16)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -122,24 +107,21 @@ TEST_F(AddsTilingTest, adds_int32_basic)
     AddsCompileInfo compileInfo;
     compileInfo.coreNum = 40;
     compileInfo.ubSize = 196608;
-    
+
     gert::TilingContextPara tilingContextPara(
         "Adds",
         {
-            {{{256, 256}, {256, 256}}, ge::DT_INT32, ge::FORMAT_ND},  // input
+            {{{256, 256}, {256, 256}}, ge::DT_INT32, ge::FORMAT_ND}, // input
         },
         {
-            {{{256, 256}, {256, 256}}, ge::DT_INT32, ge::FORMAT_ND},  // output
+            {{{256, 256}, {256, 256}}, ge::DT_INT32, ge::FORMAT_ND}, // output
         },
         {
-            {"value", Ops::Math::AnyValue::CreateFrom<float>(10.0f)},  // scalar value
+            {"value", Ops::Math::AnyValue::CreateFrom<float>(10.0f)}, // scalar value
         },
-        &compileInfo,
-        40,
-        196608,
-        4096);
-    
-    uint64_t expectTilingKey = 11;  // schMode=0, dtype=5 (INT32)
+        &compileInfo, 40, 196608, 4096);
+
+    uint64_t expectTilingKey = 11; // schMode=0, dtype=5 (INT32)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -150,24 +132,21 @@ TEST_F(AddsTilingTest, adds_int16_basic)
     AddsCompileInfo compileInfo;
     compileInfo.coreNum = 40;
     compileInfo.ubSize = 196608;
-    
+
     gert::TilingContextPara tilingContextPara(
         "Adds",
         {
-            {{{128, 128}, {128, 128}}, ge::DT_INT16, ge::FORMAT_ND},  // input
+            {{{128, 128}, {128, 128}}, ge::DT_INT16, ge::FORMAT_ND}, // input
         },
         {
-            {{{128, 128}, {128, 128}}, ge::DT_INT16, ge::FORMAT_ND},  // output
+            {{{128, 128}, {128, 128}}, ge::DT_INT16, ge::FORMAT_ND}, // output
         },
         {
-            {"value", Ops::Math::AnyValue::CreateFrom<float>(5.0f)},  // scalar value
+            {"value", Ops::Math::AnyValue::CreateFrom<float>(5.0f)}, // scalar value
         },
-        &compileInfo,
-        40,
-        196608,
-        4096);
-    
-    uint64_t expectTilingKey = 9;  // schMode=0, dtype=4 (INT16)
+        &compileInfo, 40, 196608, 4096);
+
+    uint64_t expectTilingKey = 9; // schMode=0, dtype=4 (INT16)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -178,24 +157,21 @@ TEST_F(AddsTilingTest, adds_int64_basic)
     AddsCompileInfo compileInfo;
     compileInfo.coreNum = 40;
     compileInfo.ubSize = 196608;
-    
+
     gert::TilingContextPara tilingContextPara(
         "Adds",
         {
-            {{{128, 128}, {128, 128}}, ge::DT_INT64, ge::FORMAT_ND},  // input
+            {{{128, 128}, {128, 128}}, ge::DT_INT64, ge::FORMAT_ND}, // input
         },
         {
-            {{{128, 128}, {128, 128}}, ge::DT_INT64, ge::FORMAT_ND},  // output
+            {{{128, 128}, {128, 128}}, ge::DT_INT64, ge::FORMAT_ND}, // output
         },
         {
-            {"value", Ops::Math::AnyValue::CreateFrom<float>(15.0f)},  // scalar value
+            {"value", Ops::Math::AnyValue::CreateFrom<float>(15.0f)}, // scalar value
         },
-        &compileInfo,
-        40,
-        196608,
-        4096);
-    
-    uint64_t expectTilingKey = 13;  // schMode=0, dtype=6 (INT64)
+        &compileInfo, 40, 196608, 4096);
+
+    uint64_t expectTilingKey = 13; // schMode=0, dtype=6 (INT64)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -206,24 +182,21 @@ TEST_F(AddsTilingTest, adds_fp32_1d)
     AddsCompileInfo compileInfo;
     compileInfo.coreNum = 40;
     compileInfo.ubSize = 196608;
-    
+
     gert::TilingContextPara tilingContextPara(
         "Adds",
         {
-            {{{1024}, {1024}}, ge::DT_FLOAT, ge::FORMAT_ND},  // input
+            {{{1024}, {1024}}, ge::DT_FLOAT, ge::FORMAT_ND}, // input
         },
         {
-            {{{1024}, {1024}}, ge::DT_FLOAT, ge::FORMAT_ND},  // output
+            {{{1024}, {1024}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
         },
         {
-            {"value", Ops::Math::AnyValue::CreateFrom<float>(1.0f)},  // scalar value
+            {"value", Ops::Math::AnyValue::CreateFrom<float>(1.0f)}, // scalar value
         },
-        &compileInfo,
-        40,
-        196608,
-        4096);
-    
-    uint64_t expectTilingKey = 7;  // schMode=0, dtype=3 (FP32)
+        &compileInfo, 40, 196608, 4096);
+
+    uint64_t expectTilingKey = 7; // schMode=0, dtype=3 (FP32)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -234,24 +207,21 @@ TEST_F(AddsTilingTest, adds_int64_1d)
     AddsCompileInfo compileInfo;
     compileInfo.coreNum = 40;
     compileInfo.ubSize = 196608;
-    
+
     gert::TilingContextPara tilingContextPara(
         "Adds",
         {
-            {{{2048}, {2048}}, ge::DT_INT64, ge::FORMAT_ND},  // input
+            {{{2048}, {2048}}, ge::DT_INT64, ge::FORMAT_ND}, // input
         },
         {
-            {{{2048}, {2048}}, ge::DT_INT64, ge::FORMAT_ND},  // output
+            {{{2048}, {2048}}, ge::DT_INT64, ge::FORMAT_ND}, // output
         },
         {
-            {"value", Ops::Math::AnyValue::CreateFrom<float>(100.0f)},  // scalar value
+            {"value", Ops::Math::AnyValue::CreateFrom<float>(100.0f)}, // scalar value
         },
-        &compileInfo,
-        40,
-        196608,
-        4096);
-    
-    uint64_t expectTilingKey = 13;  // schMode=0, dtype=6 (INT64)
+        &compileInfo, 40, 196608, 4096);
+
+    uint64_t expectTilingKey = 13; // schMode=0, dtype=6 (INT64)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -262,24 +232,21 @@ TEST_F(AddsTilingTest, adds_int64_4d)
     AddsCompileInfo compileInfo;
     compileInfo.coreNum = 40;
     compileInfo.ubSize = 196608;
-    
+
     gert::TilingContextPara tilingContextPara(
         "Adds",
         {
-            {{{2, 4, 8, 16}, {2, 4, 8, 16}}, ge::DT_INT64, ge::FORMAT_ND},  // input
+            {{{2, 4, 8, 16}, {2, 4, 8, 16}}, ge::DT_INT64, ge::FORMAT_ND}, // input
         },
         {
-            {{{2, 4, 8, 16}, {2, 4, 8, 16}}, ge::DT_INT64, ge::FORMAT_ND},  // output
+            {{{2, 4, 8, 16}, {2, 4, 8, 16}}, ge::DT_INT64, ge::FORMAT_ND}, // output
         },
         {
-            {"value", Ops::Math::AnyValue::CreateFrom<float>(50.0f)},  // scalar value
+            {"value", Ops::Math::AnyValue::CreateFrom<float>(50.0f)}, // scalar value
         },
-        &compileInfo,
-        40,
-        196608,
-        4096);
-    
-    uint64_t expectTilingKey = 13;  // schMode=0, dtype=6 (INT64)
+        &compileInfo, 40, 196608, 4096);
+
+    uint64_t expectTilingKey = 13; // schMode=0, dtype=6 (INT64)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -290,24 +257,21 @@ TEST_F(AddsTilingTest, adds_int64_negative_scalar)
     AddsCompileInfo compileInfo;
     compileInfo.coreNum = 40;
     compileInfo.ubSize = 196608;
-    
+
     gert::TilingContextPara tilingContextPara(
         "Adds",
         {
-            {{{256, 256}, {256, 256}}, ge::DT_INT64, ge::FORMAT_ND},  // input
+            {{{256, 256}, {256, 256}}, ge::DT_INT64, ge::FORMAT_ND}, // input
         },
         {
-            {{{256, 256}, {256, 256}}, ge::DT_INT64, ge::FORMAT_ND},  // output
+            {{{256, 256}, {256, 256}}, ge::DT_INT64, ge::FORMAT_ND}, // output
         },
         {
-            {"value", Ops::Math::AnyValue::CreateFrom<float>(-100.0f)},  // negative scalar
+            {"value", Ops::Math::AnyValue::CreateFrom<float>(-100.0f)}, // negative scalar
         },
-        &compileInfo,
-        40,
-        196608,
-        4096);
-    
-    uint64_t expectTilingKey = 13;  // schMode=0, dtype=6 (INT64)
+        &compileInfo, 40, 196608, 4096);
+
+    uint64_t expectTilingKey = 13; // schMode=0, dtype=6 (INT64)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -318,24 +282,21 @@ TEST_F(AddsTilingTest, adds_int64_zero_scalar)
     AddsCompileInfo compileInfo;
     compileInfo.coreNum = 40;
     compileInfo.ubSize = 196608;
-    
+
     gert::TilingContextPara tilingContextPara(
         "Adds",
         {
-            {{{128, 128}, {128, 128}}, ge::DT_INT64, ge::FORMAT_ND},  // input
+            {{{128, 128}, {128, 128}}, ge::DT_INT64, ge::FORMAT_ND}, // input
         },
         {
-            {{{128, 128}, {128, 128}}, ge::DT_INT64, ge::FORMAT_ND},  // output
+            {{{128, 128}, {128, 128}}, ge::DT_INT64, ge::FORMAT_ND}, // output
         },
         {
-            {"value", Ops::Math::AnyValue::CreateFrom<float>(0.0f)},  // zero scalar
+            {"value", Ops::Math::AnyValue::CreateFrom<float>(0.0f)}, // zero scalar
         },
-        &compileInfo,
-        40,
-        196608,
-        4096);
-    
-    uint64_t expectTilingKey = 13;  // schMode=0, dtype=6 (INT64)
+        &compileInfo, 40, 196608, 4096);
+
+    uint64_t expectTilingKey = 13; // schMode=0, dtype=6 (INT64)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -346,24 +307,21 @@ TEST_F(AddsTilingTest, adds_int64_large_scalar)
     AddsCompileInfo compileInfo;
     compileInfo.coreNum = 40;
     compileInfo.ubSize = 196608;
-    
+
     gert::TilingContextPara tilingContextPara(
         "Adds",
         {
-            {{{64, 64}, {64, 64}}, ge::DT_INT64, ge::FORMAT_ND},  // input
+            {{{64, 64}, {64, 64}}, ge::DT_INT64, ge::FORMAT_ND}, // input
         },
         {
-            {{{64, 64}, {64, 64}}, ge::DT_INT64, ge::FORMAT_ND},  // output
+            {{{64, 64}, {64, 64}}, ge::DT_INT64, ge::FORMAT_ND}, // output
         },
         {
-            {"value", Ops::Math::AnyValue::CreateFrom<float>(10000.0f)},  // large scalar
+            {"value", Ops::Math::AnyValue::CreateFrom<float>(10000.0f)}, // large scalar
         },
-        &compileInfo,
-        40,
-        196608,
-        4096);
-    
-    uint64_t expectTilingKey = 13;  // schMode=0, dtype=6 (INT64)
+        &compileInfo, 40, 196608, 4096);
+
+    uint64_t expectTilingKey = 13; // schMode=0, dtype=6 (INT64)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -374,24 +332,21 @@ TEST_F(AddsTilingTest, adds_fp32_4d)
     AddsCompileInfo compileInfo;
     compileInfo.coreNum = 40;
     compileInfo.ubSize = 196608;
-    
+
     gert::TilingContextPara tilingContextPara(
         "Adds",
         {
-            {{{2, 4, 8, 16}, {2, 4, 8, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},  // input
+            {{{2, 4, 8, 16}, {2, 4, 8, 16}}, ge::DT_FLOAT, ge::FORMAT_ND}, // input
         },
         {
-            {{{2, 4, 8, 16}, {2, 4, 8, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},  // output
+            {{{2, 4, 8, 16}, {2, 4, 8, 16}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
         },
         {
-            {"value", Ops::Math::AnyValue::CreateFrom<float>(3.0f)},  // scalar value
+            {"value", Ops::Math::AnyValue::CreateFrom<float>(3.0f)}, // scalar value
         },
-        &compileInfo,
-        40,
-        196608,
-        4096);
-    
-    uint64_t expectTilingKey = 7;  // schMode=0, dtype=3 (FP32)
+        &compileInfo, 40, 196608, 4096);
+
+    uint64_t expectTilingKey = 7; // schMode=0, dtype=3 (FP32)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -402,24 +357,21 @@ TEST_F(AddsTilingTest, adds_fp32_negative_scalar)
     AddsCompileInfo compileInfo;
     compileInfo.coreNum = 40;
     compileInfo.ubSize = 196608;
-    
+
     gert::TilingContextPara tilingContextPara(
         "Adds",
         {
-            {{{512, 512}, {512, 512}}, ge::DT_FLOAT, ge::FORMAT_ND},  // input
+            {{{512, 512}, {512, 512}}, ge::DT_FLOAT, ge::FORMAT_ND}, // input
         },
         {
-            {{{512, 512}, {512, 512}}, ge::DT_FLOAT, ge::FORMAT_ND},  // output
+            {{{512, 512}, {512, 512}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
         },
         {
-            {"value", Ops::Math::AnyValue::CreateFrom<float>(-2.5f)},  // negative scalar
+            {"value", Ops::Math::AnyValue::CreateFrom<float>(-2.5f)}, // negative scalar
         },
-        &compileInfo,
-        40,
-        196608,
-        4096);
-    
-    uint64_t expectTilingKey = 7;  // schMode=0, dtype=3 (FP32)
+        &compileInfo, 40, 196608, 4096);
+
+    uint64_t expectTilingKey = 7; // schMode=0, dtype=3 (FP32)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -430,24 +382,21 @@ TEST_F(AddsTilingTest, adds_fp32_zero_scalar)
     AddsCompileInfo compileInfo;
     compileInfo.coreNum = 40;
     compileInfo.ubSize = 196608;
-    
+
     gert::TilingContextPara tilingContextPara(
         "Adds",
         {
-            {{{256, 256}, {256, 256}}, ge::DT_FLOAT, ge::FORMAT_ND},  // input
+            {{{256, 256}, {256, 256}}, ge::DT_FLOAT, ge::FORMAT_ND}, // input
         },
         {
-            {{{256, 256}, {256, 256}}, ge::DT_FLOAT, ge::FORMAT_ND},  // output
+            {{{256, 256}, {256, 256}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
         },
         {
-            {"value", Ops::Math::AnyValue::CreateFrom<float>(0.0f)},  // zero scalar
+            {"value", Ops::Math::AnyValue::CreateFrom<float>(0.0f)}, // zero scalar
         },
-        &compileInfo,
-        40,
-        196608,
-        4096);
-    
-    uint64_t expectTilingKey = 7;  // schMode=0, dtype=3 (FP32)
+        &compileInfo, 40, 196608, 4096);
+
+    uint64_t expectTilingKey = 7; // schMode=0, dtype=3 (FP32)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -458,24 +407,21 @@ TEST_F(AddsTilingTest, adds_fp32_large_scalar)
     AddsCompileInfo compileInfo;
     compileInfo.coreNum = 40;
     compileInfo.ubSize = 196608;
-    
+
     gert::TilingContextPara tilingContextPara(
         "Adds",
         {
-            {{{128, 128}, {128, 128}}, ge::DT_FLOAT, ge::FORMAT_ND},  // input
+            {{{128, 128}, {128, 128}}, ge::DT_FLOAT, ge::FORMAT_ND}, // input
         },
         {
-            {{{128, 128}, {128, 128}}, ge::DT_FLOAT, ge::FORMAT_ND},  // output
+            {{{128, 128}, {128, 128}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
         },
         {
-            {"value", Ops::Math::AnyValue::CreateFrom<float>(1000.0f)},  // large scalar
+            {"value", Ops::Math::AnyValue::CreateFrom<float>(1000.0f)}, // large scalar
         },
-        &compileInfo,
-        40,
-        196608,
-        4096);
-    
-    uint64_t expectTilingKey = 7;  // schMode=0, dtype=3 (FP32)
+        &compileInfo, 40, 196608, 4096);
+
+    uint64_t expectTilingKey = 7; // schMode=0, dtype=3 (FP32)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -486,24 +432,20 @@ TEST_F(AddsTilingTest, adds_fp32_different_cores)
     AddsCompileInfo compileInfo;
     compileInfo.coreNum = 16;
     compileInfo.ubSize = 196608;
-    
-    gert::TilingContextPara tilingContextPara(
-        "Adds",
-        {
-            {{{512, 512}, {512, 512}}, ge::DT_FLOAT, ge::FORMAT_ND},  // input
-        },
-        {
-            {{{512, 512}, {512, 512}}, ge::DT_FLOAT, ge::FORMAT_ND},  // output
-        },
-        {
-            {"value", Ops::Math::AnyValue::CreateFrom<float>(1.0f)},  // scalar
-        },
-        &compileInfo,
-        16,
-        196608,
-        4096);
-    
-    uint64_t expectTilingKey = 7;  // schMode=0, dtype=3 (FP32)
+
+    gert::TilingContextPara tilingContextPara("Adds",
+                                              {
+                                                  {{{512, 512}, {512, 512}}, ge::DT_FLOAT, ge::FORMAT_ND}, // input
+                                              },
+                                              {
+                                                  {{{512, 512}, {512, 512}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
+                                              },
+                                              {
+                                                  {"value", Ops::Math::AnyValue::CreateFrom<float>(1.0f)}, // scalar
+                                              },
+                                              &compileInfo, 16, 196608, 4096);
+
+    uint64_t expectTilingKey = 7; // schMode=0, dtype=3 (FP32)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
@@ -514,24 +456,20 @@ TEST_F(AddsTilingTest, adds_fp32_small_ub)
     AddsCompileInfo compileInfo;
     compileInfo.coreNum = 8;
     compileInfo.ubSize = 32768;
-    
-    gert::TilingContextPara tilingContextPara(
-        "Adds",
-        {
-            {{{256, 256}, {256, 256}}, ge::DT_FLOAT, ge::FORMAT_ND},  // input
-        },
-        {
-            {{{256, 256}, {256, 256}}, ge::DT_FLOAT, ge::FORMAT_ND},  // output
-        },
-        {
-            {"value", Ops::Math::AnyValue::CreateFrom<float>(1.0f)},  // scalar
-        },
-        &compileInfo,
-        8,
-        32768,
-        4096);
-    
-    uint64_t expectTilingKey = 7;  // schMode=0, dtype=3 (FP32)
+
+    gert::TilingContextPara tilingContextPara("Adds",
+                                              {
+                                                  {{{256, 256}, {256, 256}}, ge::DT_FLOAT, ge::FORMAT_ND}, // input
+                                              },
+                                              {
+                                                  {{{256, 256}, {256, 256}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output
+                                              },
+                                              {
+                                                  {"value", Ops::Math::AnyValue::CreateFrom<float>(1.0f)}, // scalar
+                                              },
+                                              &compileInfo, 8, 32768, 4096);
+
+    uint64_t expectTilingKey = 7; // schMode=0, dtype=3 (FP32)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }

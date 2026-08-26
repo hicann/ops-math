@@ -15,15 +15,9 @@
 
 class AsStridedInfershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "as_strided_test_infershape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase()
-    {
-        std::cout << "as_strided_test_infershape SetUp" << std::endl;
-    }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(AsStridedInfershape, as_strided_infershape_test1)

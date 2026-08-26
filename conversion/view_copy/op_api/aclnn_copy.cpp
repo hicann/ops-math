@@ -61,9 +61,8 @@ static bool CheckShape(const aclTensor* self, const aclTensor* src)
     op::Shape broadcastShape;
     OP_CHECK_BROADCAST_AND_INFER_SHAPE(self, src, broadcastShape, return false);
     if (broadcastShape != self->GetViewShape()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Shape of broadcast result should be %s, but self is %s.",
-            op::ToString(broadcastShape).GetString(), op::ToString(self->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of broadcast result should be %s, but self is %s.",
+                op::ToString(broadcastShape).GetString(), op::ToString(self->GetViewShape()).GetString());
         return false;
     }
 
@@ -74,8 +73,7 @@ static void CheckFormat(const aclTensor* x)
 {
     op::Format format = x->GetStorageFormat();
     if (format == Format::FORMAT_FRACTAL_NZ) {
-        OP_LOGW("Format of input gets [%s], this format mat lead to precision failure",
-        op::ToString(format).GetString());
+        OP_LOGW("Format of input is [%s], this format may lead to precision failure", op::ToString(format).GetString());
     }
 }
 
@@ -97,14 +95,14 @@ aclTensor* BraodCastTensor(const op::Shape dstShape, const aclTensor* src, aclOp
 {
     auto dstTensor = executor->AllocTensor(dstShape, src->GetDataType());
     op::FVector<int64_t, op::MAX_DIM_NUM> broadcastDims = op::ToShapeVector(dstShape);
-    auto shape =
-        executor->ConvertToTensor(broadcastDims.data(), broadcastDims.size(), static_cast<op::DataType>(ACL_INT64));
+    auto shape = executor->ConvertToTensor(broadcastDims.data(), broadcastDims.size(),
+                                           static_cast<op::DataType>(ACL_INT64));
     auto result = l0op::BroadcastTo(src, dstTensor, shape, executor);
     return const_cast<aclTensor*>(result);
 }
 
-aclnnStatus aclnnInplaceCopyGetWorkspaceSize(
-    aclTensor* selfRef, const aclTensor* src, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceCopyGetWorkspaceSize(aclTensor* selfRef, const aclTensor* src, uint64_t* workspaceSize,
+                                             aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 

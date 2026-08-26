@@ -16,34 +16,27 @@
 
 class ConcatDInfershapeTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "ConcatDInfershapeTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase()
-    {
-        std::cout << "ConcatDInfershapeTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(ConcatDInfershapeTest, concat_d_infer_shape_fp16)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "ConcatD",
-        {
-            {{{2, 100, 4}, {2, 100, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{2, 100, 4}, {2, 100, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{2, 100, 4}, {2, 100, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {"concat_dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
-            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
-        },
-        {3}, {1});
+    gert::InfershapeContextPara infershapeContextPara("ConcatD",
+                                                      {
+                                                          {{{2, 100, 4}, {2, 100, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{2, 100, 4}, {2, 100, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{2, 100, 4}, {2, 100, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"concat_dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
+                                                          {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
+                                                      },
+                                                      {3}, {1});
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {2, 100, 12},
     };
@@ -52,19 +45,18 @@ TEST_F(ConcatDInfershapeTest, concat_d_infer_shape_fp16)
 
 TEST_F(ConcatDInfershapeTest, concat_d_infer_shape_fp16_n1)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "ConcatD",
-        {
-            {{{2, 100, 4}, {2, 100, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {"concat_dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
-            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
-        },
-        {1}, {1});
+    gert::InfershapeContextPara infershapeContextPara("ConcatD",
+                                                      {
+                                                          {{{2, 100, 4}, {2, 100, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"concat_dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
+                                                          {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
+                                                      },
+                                                      {1}, {1});
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {2, 100, 4},
     };
@@ -73,21 +65,20 @@ TEST_F(ConcatDInfershapeTest, concat_d_infer_shape_fp16_n1)
 
 TEST_F(ConcatDInfershapeTest, concat_d_infer_shape_fp16_shape)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "ConcatD",
-        {
-            {{{2, 100, 1}, {2, 100, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{2, 100, 24}, {2, 100, 24}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{2, 100, 34}, {2, 100, 34}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {"concat_dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
-            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
-        },
-        {3}, {1});
+    gert::InfershapeContextPara infershapeContextPara("ConcatD",
+                                                      {
+                                                          {{{2, 100, 1}, {2, 100, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{2, 100, 24}, {2, 100, 24}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{2, 100, 34}, {2, 100, 34}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"concat_dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
+                                                          {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
+                                                      },
+                                                      {3}, {1});
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {2, 100, 59},
     };
@@ -96,41 +87,39 @@ TEST_F(ConcatDInfershapeTest, concat_d_infer_shape_fp16_shape)
 
 TEST_F(ConcatDInfershapeTest, concat_d_infer_shape_fp16_errorshape)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "ConcatD",
-        {
-            {{{2, 100, 1}, {2, 100, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{2, 100, 24}, {2, 100, 24}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{2, 100, 34}, {2, 100, 34}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {"concat_dim", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
-            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
-        },
-        {3}, {1});
+    gert::InfershapeContextPara infershapeContextPara("ConcatD",
+                                                      {
+                                                          {{{2, 100, 1}, {2, 100, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{2, 100, 24}, {2, 100, 24}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{2, 100, 34}, {2, 100, 34}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"concat_dim", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
+                                                          {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
+                                                      },
+                                                      {3}, {1});
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED);
 }
 
 TEST_F(ConcatDInfershapeTest, concat_d_infer_shape_fp16_errordim)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "ConcatD",
-        {
-            {{{2, 100, 1}, {2, 100, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{2, 100, 24}, {2, 100, 24}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{2, 100, 34}, {2, 100, 34}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {"concat_dim", Ops::Math::AnyValue::CreateFrom<int64_t>(5)},
-            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
-        },
-        {3}, {1});
+    gert::InfershapeContextPara infershapeContextPara("ConcatD",
+                                                      {
+                                                          {{{2, 100, 1}, {2, 100, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{2, 100, 24}, {2, 100, 24}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{2, 100, 34}, {2, 100, 34}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"concat_dim", Ops::Math::AnyValue::CreateFrom<int64_t>(5)},
+                                                          {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
+                                                      },
+                                                      {3}, {1});
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED);
 }
 
@@ -156,42 +145,40 @@ TEST_F(ConcatDInfershapeTest, concat_d_infer_shape_fp16_errorshapdim)
 
 TEST_F(ConcatDInfershapeTest, concat_d_infer_shape_fp16_scalar)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "ConcatD",
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {"concat_dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
-            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
-        },
-        {3}, {1});
+    gert::InfershapeContextPara infershapeContextPara("ConcatD",
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"concat_dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
+                                                          {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
+                                                      },
+                                                      {3}, {1});
     std::vector<std::vector<int64_t>> expectOutputShape = {};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 TEST_F(ConcatDInfershapeTest, concat_d_infer_shape_no_shape_range_fp16)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "ConcatD",
-        {
-            {{{2, 100, 4}, {2, 100, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{2, 100, 4}, {2, 100, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{2, 100, 4}, {2, 100, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {"concat_dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
-            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
-        },
-        {3}, {1});
+    gert::InfershapeContextPara infershapeContextPara("ConcatD",
+                                                      {
+                                                          {{{2, 100, 4}, {2, 100, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{2, 100, 4}, {2, 100, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{2, 100, 4}, {2, 100, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"concat_dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
+                                                          {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
+                                                      },
+                                                      {3}, {1});
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {2, 100, 12},
     };
@@ -200,21 +187,20 @@ TEST_F(ConcatDInfershapeTest, concat_d_infer_shape_no_shape_range_fp16)
 
 TEST_F(ConcatDInfershapeTest, concat_d_infer_shape_no_shape_range_mix_fp16)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "ConcatD",
-        {
-            {{{2, 100, 4}, {2, 100, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{2, 100, 4}, {2, 100, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{2, 100, 4}, {-1, -1, -1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {"concat_dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
-            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
-        },
-        {3}, {1});
+    gert::InfershapeContextPara infershapeContextPara("ConcatD",
+                                                      {
+                                                          {{{2, 100, 4}, {2, 100, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{2, 100, 4}, {2, 100, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{2, 100, 4}, {-1, -1, -1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"concat_dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
+                                                          {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
+                                                      },
+                                                      {3}, {1});
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {2, 100, 12},
     };
@@ -223,21 +209,20 @@ TEST_F(ConcatDInfershapeTest, concat_d_infer_shape_no_shape_range_mix_fp16)
 
 TEST_F(ConcatDInfershapeTest, concat_d_infer_shape_dynamic_fp16)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "ConcatD",
-        {
-            {{{2, 100, 4}, {-1, -1, -1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{2, 100, 4}, {-1, -1, -1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{2, 100, 4}, {-1, -1, -1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {"concat_dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
-            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
-        },
-        {3}, {1});
+    gert::InfershapeContextPara infershapeContextPara("ConcatD",
+                                                      {
+                                                          {{{2, 100, 4}, {-1, -1, -1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{2, 100, 4}, {-1, -1, -1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{2, 100, 4}, {-1, -1, -1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"concat_dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
+                                                          {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
+                                                      },
+                                                      {3}, {1});
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {2, 100, 12},
     };
@@ -246,21 +231,20 @@ TEST_F(ConcatDInfershapeTest, concat_d_infer_shape_dynamic_fp16)
 
 TEST_F(ConcatDInfershapeTest, concat_d_infer_shape_dynamic2_fp16)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "ConcatD",
-        {
-            {{{2, 100, 4}, {-1, -1, 5}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{2, 100, 4}, {-1, -1, -1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{2, 100, 4}, {-1, -1, -1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {"concat_dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
-            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
-        },
-        {3}, {1});
+    gert::InfershapeContextPara infershapeContextPara("ConcatD",
+                                                      {
+                                                          {{{2, 100, 4}, {-1, -1, 5}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{2, 100, 4}, {-1, -1, -1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{2, 100, 4}, {-1, -1, -1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"concat_dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
+                                                          {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
+                                                      },
+                                                      {3}, {1});
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {2, 100, 12},
     };

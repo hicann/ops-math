@@ -23,15 +23,9 @@ using namespace std;
 
 class SplitVInfershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "SplitV SetUp" << std::endl;
-    }
+    static void SetUpTestCase() {}
 
-    static void TearDownTestCase()
-    {
-        std::cout << "SplitV TearDown" << std::endl;
-    }
+    static void TearDownTestCase() {}
 };
 
 TEST_F(SplitVInfershape, split_v_infershape_test1)

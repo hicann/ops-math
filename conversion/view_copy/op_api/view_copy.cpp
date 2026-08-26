@@ -69,11 +69,11 @@ static const std::initializer_list<op::DataType> ONE_BYTE_DTYPE_LIST = {
 static const std::initializer_list<op::DataType> TWO_BYTE_DTYPE_LIST = {
     op::DataType::DT_FLOAT16, op::DataType::DT_INT16, op::DataType::DT_UINT16, op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> FOUR_BYTE_DTYPE_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_INT32, op::DataType::DT_UINT32};
+static const std::initializer_list<op::DataType> FOUR_BYTE_DTYPE_LIST = {op::DataType::DT_FLOAT, op::DataType::DT_INT32,
+                                                                         op::DataType::DT_UINT32};
 
-static const std::initializer_list<op::DataType> EIGHT_BYTE_DTYPE_LIST = {
-    op::DataType::DT_INT64, op::DataType::DT_UINT64};
+static const std::initializer_list<op::DataType> EIGHT_BYTE_DTYPE_LIST = {op::DataType::DT_INT64,
+                                                                          op::DataType::DT_UINT64};
 
 static int64_t GetByteSize(const op::DataType dtype)
 {
@@ -127,8 +127,8 @@ int64_t ReCalSize(int64_t dst_size_len, int64_t& last_stride, const op::Shape& d
     return new_len;
 }
 
-static bool IsAiCoreSupport(
-    const op::DataType dataType, const op::Shape& srcSize, const op::Shape& dstSize, const op::Strides& dstStrides)
+static bool IsAiCoreSupport(const op::DataType dataType, const op::Shape& srcSize, const op::Shape& dstSize,
+                            const op::Strides& dstStrides)
 {
     if (!IsAiCoreSupport(dataType)) {
         return false;
@@ -176,83 +176,75 @@ static bool IsAiCoreSupport(
     return true;
 }
 
-const aclTensor* ViewCopyAiCpu(
-    const aclTensor* y, const aclTensor* dstSize, const aclTensor* dstStride, const aclTensor* dstOffset,
-    const aclTensor* x, const aclTensor* srcSize, const aclTensor* srcStride, const aclTensor* srcOffset,
-    aclOpExecutor* executor)
+const aclTensor* ViewCopyAiCpu(const aclTensor* y, const aclTensor* dstSize, const aclTensor* dstStride,
+                               const aclTensor* dstOffset, const aclTensor* x, const aclTensor* srcSize,
+                               const aclTensor* srcStride, const aclTensor* srcOffset, aclOpExecutor* executor)
 {
     L0_DFX(ViewCopyAiCpu, y, dstSize, dstStride, dstOffset, x, srcSize, srcStride, srcOffset);
     auto yConst = const_cast<aclTensor*>(y);
     static op::internal::AicpuTaskSpace space("ViewCopy");
 
-    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(
-        ViewCopy, OP_ATTR_NAMES(), OP_INPUT(y, dstSize, dstStride, dstOffset, x, srcSize, srcStride, srcOffset),
-        OP_OUTPUT(yConst));
+    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(ViewCopy, OP_ATTR_NAMES(),
+                                          OP_INPUT(y, dstSize, dstStride, dstOffset, x, srcSize, srcStride, srcOffset),
+                                          OP_OUTPUT(yConst));
     CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
     return y;
 }
 
-const aclTensor* ViewCopyAiCore(
-    const aclTensor* y, const aclTensor* dstSize, const aclTensor* dstStride, const aclTensor* dstOffset,
-    const aclTensor* x, const aclTensor* srcSize, const aclTensor* srcStride, const aclTensor* srcOffset,
-    aclOpExecutor* executor)
+const aclTensor* ViewCopyAiCore(const aclTensor* y, const aclTensor* dstSize, const aclTensor* dstStride,
+                                const aclTensor* dstOffset, const aclTensor* x, const aclTensor* srcSize,
+                                const aclTensor* srcStride, const aclTensor* srcOffset, aclOpExecutor* executor)
 {
     L0_DFX(ViewCopyAiCore, y, dstSize, dstStride, dstOffset, x, srcSize, srcStride, srcOffset);
     auto ret = ADD_TO_LAUNCHER_LIST_AICORE(
         ViewCopy, OP_INPUT(y, dstSize, dstStride, dstOffset, x, srcSize, srcStride, srcOffset), OP_OUTPUT(y));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ViewCopyAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-        return nullptr);
+    OP_CHECK(ret == ACLNN_SUCCESS,
+             OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ViewCopyAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."), return nullptr);
     return y;
 }
 
-const aclTensor* ViewCopy(
-    const aclTensor* y, const aclTensor* dstSize, const aclTensor* dstStride, const aclTensor* dstOffset,
-    const aclTensor* x, const aclTensor* srcSize, const aclTensor* srcStride, const aclTensor* srcOffset,
-    aclOpExecutor* executor)
+const aclTensor* ViewCopy(const aclTensor* y, const aclTensor* dstSize, const aclTensor* dstStride,
+                          const aclTensor* dstOffset, const aclTensor* x, const aclTensor* srcSize,
+                          const aclTensor* srcStride, const aclTensor* srcOffset, aclOpExecutor* executor)
 {
     if (op::CheckType(x->GetDataType(), AICPU_DTYPE_SUPPORT_LIST)) {
         return ViewCopyAiCpu(y, dstSize, dstStride, dstOffset, x, srcSize, srcStride, srcOffset, executor);
     }
-    OP_LOGE(
-        ACL_ERROR_INVALID_PARAM, "ViewCopy on aicpu do not support dtype: %s.",
-        op::ToString(x->GetDataType()).GetString());
+    OP_LOGE(ACL_ERROR_INVALID_PARAM, "ViewCopy on AICPU does not support dtype: %s.",
+            op::ToString(x->GetDataType()).GetString());
     return nullptr;
 }
 
-const aclTensor* ViewCopy(
-    const aclTensor* y, const op::Shape& dstSize, const op::Strides& dstStride, int64_t dstOffset, const aclTensor* x,
-    const op::Shape& srcSize, const op::Strides& srcStride, int64_t srcOffset, aclOpExecutor* executor)
+const aclTensor* ViewCopy(const aclTensor* y, const op::Shape& dstSize, const op::Strides& dstStride, int64_t dstOffset,
+                          const aclTensor* x, const op::Shape& srcSize, const op::Strides& srcStride, int64_t srcOffset,
+                          aclOpExecutor* executor)
 {
-    auto srcSizeTensor =
-        executor->ConvertToTensor(op::ToShapeVector(srcSize).data(), srcSize.GetDimNum(), op::ToOpDataType(ACL_INT64));
+    auto srcSizeTensor = executor->ConvertToTensor(op::ToShapeVector(srcSize).data(), srcSize.GetDimNum(),
+                                                   op::ToOpDataType(ACL_INT64));
     auto srcStrideTensor = executor->ConvertToTensor(srcStride.data(), srcStride.size(), op::ToOpDataType(ACL_INT64));
     auto srcOffsetTensor = executor->ConvertToTensor(&srcOffset, 1, op::ToOpDataType(ACL_INT64));
 
-    auto dstSizeTensor =
-        executor->ConvertToTensor(op::ToShapeVector(dstSize).data(), dstSize.GetDimNum(), op::ToOpDataType(ACL_INT64));
+    auto dstSizeTensor = executor->ConvertToTensor(op::ToShapeVector(dstSize).data(), dstSize.GetDimNum(),
+                                                   op::ToOpDataType(ACL_INT64));
     auto dstStrideTensor = executor->ConvertToTensor(dstStride.data(), dstStride.size(), op::ToOpDataType(ACL_INT64));
     auto dstOffsetTensor = executor->ConvertToTensor(&dstOffset, 1, op::ToOpDataType(ACL_INT64));
     if (op::IsRegBase()) {
         if (IsAiCoreSupport(x->GetDataType())) {
             return ViewCopyAiCore(y, dstSizeTensor, dstStrideTensor, dstOffsetTensor, x, srcSizeTensor, srcStrideTensor,
-                srcOffsetTensor, executor);
+                                  srcOffsetTensor, executor);
         }
     } else if (IsAiCoreSupport(x->GetDataType(), srcSize, dstSize, dstStride)) {
-        return ViewCopyAiCore(
-            y, dstSizeTensor, dstStrideTensor, dstOffsetTensor, x, srcSizeTensor, srcStrideTensor, srcOffsetTensor,
-            executor);
+        return ViewCopyAiCore(y, dstSizeTensor, dstStrideTensor, dstOffsetTensor, x, srcSizeTensor, srcStrideTensor,
+                              srcOffsetTensor, executor);
     }
 
     if (op::CheckType(x->GetDataType(), AICPU_DTYPE_SUPPORT_LIST)) {
-        return ViewCopyAiCpu(
-            y, dstSizeTensor, dstStrideTensor, dstOffsetTensor, x, srcSizeTensor, srcStrideTensor, srcOffsetTensor,
-            executor);
+        return ViewCopyAiCpu(y, dstSizeTensor, dstStrideTensor, dstOffsetTensor, x, srcSizeTensor, srcStrideTensor,
+                             srcOffsetTensor, executor);
     }
 
-    OP_LOGE(
-        ACL_ERROR_INVALID_PARAM, "ViewCopy on aicpu do not support dtype: %s.",
-        op::ToString(x->GetDataType()).GetString());
+    OP_LOGE(ACL_ERROR_INVALID_PARAM, "ViewCopy on AICPU does not support dtype: %s.",
+            op::ToString(x->GetDataType()).GetString());
     return nullptr;
 }
 

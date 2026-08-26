@@ -73,7 +73,7 @@ static bool CheckDtypeValid(const aclTensor* selfRef, const aclTensor* mask, con
     // 如果soc是1980芯片，则不支持DT_BF16，需要校验拦截
     if (!CheckSocVersionIsSupportBf16() && (selfRef->GetDataType() == op::DataType::DT_BF16)) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "Input dtype of aclnnInplaceMaskedFillTensor is not support bfloat16 in current socversion.");
+                "Input dtype of aclnnInplaceMaskedFillTensor is not supported in current soc version.");
         return false;
     }
 
@@ -109,7 +109,7 @@ static void CheckFormat(const aclTensor* selfRef)
 {
     // 检查format，若是NZ格式，则添加警告
     if (selfRef->GetStorageFormat() == Format::FORMAT_FRACTAL_NZ) {
-        OP_LOGW("Format of selfRef gets [%s], this format may lead to precision failure.",
+        OP_LOGW("Format of selfRef is [%s], this format may lead to precision failure.",
                 op::ToString(selfRef->GetStorageFormat()).GetString());
     }
 }
