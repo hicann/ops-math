@@ -43,6 +43,11 @@ constexpr float CONST_S_MIN = 1.0e-45f;      // clip 下界（requirement §8.1�
 constexpr float CONST_S_MAX = 3.4028235e34f; // clip 上界（requirement §8.1）
 // ln(2) FP32 近似 ≈ 0.6931（requirement v1.2 §8.1 + DESIGN v2.1 §3.5.1 / §5.1 R5 已修正）
 constexpr float CONST_LN2_ADD = 0.693147180559945286227f;
+// 分段阈值改用 acosh 值比较，避免 FP16/BF16 alias 路径额外保存原输入 x：
+//   acosh(10)    = 2.993222846...，x < 10 时保留 log1p 补偿；
+//   acosh(sqrt(FLT_MAX)) = 45.054566706...，x² 即将溢出时切换到 log(x)+ln(2) 渐近式。
+constexpr float CONST_NEAR_ACOSH_THRESHOLD = 2.9932229518890380859375f;
+constexpr float CONST_LARGE_ACOSH_THRESHOLD = 45.0545654296875f;
 
 // Double Buffer 固定为 2（13 步含 Log/Sqrt/Div 计算密集，双缓冲收益显著）
 static constexpr int32_t BUFFER_NUM = 2;
@@ -241,26 +246,39 @@ __aicore__ inline void Acosh<T>::ComputeFp32Pipeline(LocalTensor<float>& xFp32, 
     // -------- Step 7: yFp32 = dataR + 1 = u = x + √(x²-1) --------
     AscendC::Adds(yFp32, dataR, CONST_ONE, n);
 
-    // -------- Step 10: dataT = log(u)（dataT Buffer 在 step 6 之后可释放复用） --------
+    // -------- Step 10: dataT = log(u)，即直接公式结果 --------
     AscendC::Log(dataT, yFp32, n);
 
-    // -------- Step 11: dataT = log(u) * dataR = log(u) × ((x-1)+√(x²-1)) --------
-    AscendC::Mul(dataT, dataT, dataR, n);
+    // -------- Step 11: dataR = log(u) * s（补偿公式分子） --------
+    // 乘法顺序保持与原实现一致，避免近 1 区间出现额外舍入回归；dataT 始终保留 direct=log(u)。
+    AscendC::Mul(dataR, dataT, dataR, n);
 
-    // -------- Step 8: dataR = u - 1 = s（未 clip）（dataR Buffer 在 step 11 之后释放复用） --------
-    AscendC::Adds(dataR, yFp32, CONST_NEG_ONE, n);
+    // -------- Step 8: yFp32 = u - 1（舍入后的分母） --------
+    AscendC::Adds(yFp32, yFp32, CONST_NEG_ONE, n);
 
-    // -------- Step 9a: dataR = max(s, 1e-45)，下界保护防止后续 Div 除零 --------
-    AscendC::Maxs(dataR, dataR, CONST_S_MIN, n);
+    // -------- Step 9a: yFp32 = max(u-1, 1e-45)，下界保护防止后续 Div 除零 --------
+    AscendC::Maxs(yFp32, yFp32, CONST_S_MIN, n);
 
-    // -------- Step 9b: dataR = min(s, 3.4e34)，上界保护防溢出 --------
-    AscendC::Mins(dataR, dataR, CONST_S_MAX, n);
+    // -------- Step 9b: yFp32 = min(u-1, 3.4e34)，上界保护防溢出 --------
+    AscendC::Mins(yFp32, yFp32, CONST_S_MAX, n);
 
-    // -------- Step 12: dataT = dataT / dataR = log(u) × ((x-1)+√(x²-1)) / clip(s) --------
-    AscendC::Div(dataT, dataT, dataR, n);
+    // -------- Step 12: yFp32 = log(u) * s / clip(u-1)，仅近 1 区间需要 --------
+    // 中大值最终直接选择 dataT，从而避免无意义的乘除结果参与输出。
+    AscendC::Div(yFp32, dataR, yFp32, n);
 
-    // -------- Step 13c: yFp32 = min(res, log(x)+ln(2))，大参数修正 --------
-    AscendC::Min(yFp32, dataT, logTmp, n);
+    // dataR 生命周期结束，复用其 UB 作为 Compare/Select 位掩码，无需增加 UB 占用。
+    LocalTensor<uint8_t> mask = dataR.ReinterpretCast<uint8_t>();
+
+    // -------- 分段 1：x < 10 使用补偿公式，否则直接使用 log(u) --------
+    // direct=acosh(x) 单调递增，因此可直接与 acosh(10) 比较；NaN 比较为 false，仍选 direct=NaN。
+    AscendC::CompareScalar(mask, dataT, CONST_NEAR_ACOSH_THRESHOLD, AscendC::CMPMODE::LT, n);
+    AscendC::Select(yFp32, mask, yFp32, dataT, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
+
+    // -------- 分段 2：x² 即将溢出时使用 log(x)+ln(2) 渐近式 --------
+    // 避免 x² 溢出后的中间 inf 参与最终结果，同时取消 Min 带来的系统性向下偏置。
+    // direct=+inf 时比较同样为 true，有限超大 x 会选择有限的 log(x)+ln(2)。
+    AscendC::CompareScalar(mask, dataT, CONST_LARGE_ACOSH_THRESHOLD, AscendC::CMPMODE::GE, n);
+    AscendC::Select(yFp32, mask, logTmp, yFp32, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
 }
 
 } // namespace NsAcosh
