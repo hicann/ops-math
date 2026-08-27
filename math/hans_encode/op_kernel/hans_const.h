@@ -78,11 +78,9 @@ constexpr uint32_t MANTISSABITMASK_SEC0 = 1977048437;
 constexpr uint32_t MANTISSABITMASK_SEC1 = 1568003933;
 constexpr uint32_t MANTISSABITMASK_SEC2 = 3613226455;
 
-class EventManager
-{
+class EventManager {
 public:
-    __aicore__ inline EventManager()
-    {}
+    __aicore__ inline EventManager() {}
 
     __aicore__ inline void InitEvent()
     {
@@ -179,17 +177,17 @@ struct DecodeLoopConfig {
     int32_t bigLoop;
 };
 
-__aicore__ inline void Uint162Int32Helper(
-    LocalTensor<uint16_t> srcUint16, LocalTensor<uint16_t> transposeUint16, LocalTensor<int32_t> dstInt32,
-    LocalTensor<uint16_t> constZero, int32_t processNum = EACH_LOOOP_PROCESS_NUM)
+__aicore__ inline void Uint162Int32Helper(LocalTensor<uint16_t> srcUint16, LocalTensor<uint16_t> transposeUint16,
+                                          LocalTensor<int32_t> dstInt32, LocalTensor<uint16_t> constZero,
+                                          int32_t processNum = EACH_LOOOP_PROCESS_NUM)
 {
     const int processNumUint16 = 256;
     const int dataBlockSize = 16;
     const int dataBlockNum = 16;
     const int byteScaleInt162Int32 = 2;
     uint8_t repeatTimes = processNum / processNumUint16;
-    AscendC::TransDataTo5HDParams transDataParams = {
-        false, false, repeatTimes, dataBlockSize / dataBlockSize, processNumUint16 / dataBlockSize};
+    AscendC::TransDataTo5HDParams transDataParams = {false, false, repeatTimes, dataBlockSize / dataBlockSize,
+                                                     processNumUint16 / dataBlockSize};
     int transposeStep = 2;
     int transposeOffset = 8;
     AscendC::LocalTensor<uint16_t> dstLocalList[dataBlockSize];
@@ -214,8 +212,8 @@ __aicore__ inline void Uint162Int32Helper(
     AscendC::TransDataTo5HD(dstLocalList, srcLocalList, transDataParams);
     PipeBarrier<PIPE_V>();
     for (int i = 0; i < dataBlockNum; i++) {
-        dstLocalList[i] = dstInt32.template ReinterpretCast<
-            uint16_t>()[dataBlockSize * transposeStep * i + transposeOffset * byteScaleInt162Int32];
+        dstLocalList[i] = dstInt32.template ReinterpretCast<uint16_t>()[dataBlockSize * transposeStep * i +
+                                                                        transposeOffset * byteScaleInt162Int32];
     }
     for (int i = 0; i < dataBlockNum; i += transposeStep) {
         srcLocalList[i] = transposeUint16[dataBlockSize * repeatTimes * (i / transposeStep + transposeOffset)];
@@ -226,41 +224,37 @@ __aicore__ inline void Uint162Int32Helper(
 }
 
 template <typename T>
-__aicore__ inline void MallocLocalTensor(
-    TBuf<TPosition::VECCALC>& calcBuf, LocalTensor<T>& Tensor, int32_t TensorSize, uint64_t& ubOffset,
-    int32_t Scale = 1)
+__aicore__ inline void MallocLocalTensor(TBuf<TPosition::VECCALC>& calcBuf, LocalTensor<T>& Tensor, int32_t TensorSize,
+                                         uint64_t& ubOffset, int32_t Scale = 1)
 {
     Tensor = calcBuf.GetWithOffset<T>(TensorSize, ubOffset);
     ubOffset += TensorSize * sizeof(T) * Scale;
 }
 
-__aicore__ inline void SortPdf(
-    LocalTensor<int32_t>& pdfUb, LocalTensor<int32_t>& pdfRangeIndexLocal, LocalTensor<float>& pdfSortLocal,
-    LocalTensor<float>& pdfMrgsortLocal, int32_t repeatTimes)
+__aicore__ inline void SortPdf(LocalTensor<int32_t>& pdfUb, LocalTensor<int32_t>& pdfRangeIndexLocal,
+                               LocalTensor<float>& pdfSortLocal, LocalTensor<float>& pdfMrgsortLocal,
+                               int32_t repeatTimes)
 {
-    Sort32<float>(
-        pdfSortLocal, pdfUb.template ReinterpretCast<float>(), pdfRangeIndexLocal.ReinterpretCast<uint32_t>(),
-        repeatTimes);
+    Sort32<float>(pdfSortLocal, pdfUb.template ReinterpretCast<float>(), pdfRangeIndexLocal.ReinterpretCast<uint32_t>(),
+                  repeatTimes);
     PipeBarrier<PIPE_V>();
     const int validBitMode[3] = {3, 7, 15};
     int sortInexArr[4] = {0, 64, 128, 192};
-    MrgSortSrcList<float> srcList1(
-        pdfSortLocal[sortInexArr[0]], pdfSortLocal[sortInexArr[1]], pdfSortLocal[sortInexArr[CONST_2]],
-        pdfSortLocal[sortInexArr[CONST_3]]);
+    MrgSortSrcList<float> srcList1(pdfSortLocal[sortInexArr[0]], pdfSortLocal[sortInexArr[1]],
+                                   pdfSortLocal[sortInexArr[CONST_2]], pdfSortLocal[sortInexArr[CONST_3]]);
     uint16_t elementLengths[ARRAY_LEN4] = {CONST_32, CONST_32, CONST_32, CONST_32};
     MrgSort4Info srcInfo(elementLengths, false, validBitMode[CONST_2], 1);
     MrgSort<float>(pdfMrgsortLocal, srcList1, srcInfo);
     PipeBarrier<PIPE_V>();
     int sortInexArrSec[4] = {256, 320, 384, 448};
-    MrgSortSrcList<float> srcList2(
-        pdfSortLocal[sortInexArrSec[0]], pdfSortLocal[sortInexArrSec[1]], pdfSortLocal[sortInexArrSec[CONST_2]],
-        pdfSortLocal[sortInexArrSec[CONST_3]]);
+    MrgSortSrcList<float> srcList2(pdfSortLocal[sortInexArrSec[0]], pdfSortLocal[sortInexArrSec[1]],
+                                   pdfSortLocal[sortInexArrSec[CONST_2]], pdfSortLocal[sortInexArrSec[CONST_3]]);
     MrgSort<float>(pdfMrgsortLocal[sortInexArrSec[0]], srcList2, srcInfo);
     PipeBarrier<PIPE_V>();
     int sortInexArrLast[4] = {0, 256, 0, 256};
-    MrgSortSrcList<float> srcList3(
-        pdfMrgsortLocal[sortInexArrLast[0]], pdfMrgsortLocal[sortInexArrLast[1]],
-        pdfMrgsortLocal[sortInexArrLast[CONST_2]], pdfMrgsortLocal[sortInexArrLast[CONST_3]]);
+    MrgSortSrcList<float> srcList3(pdfMrgsortLocal[sortInexArrLast[0]], pdfMrgsortLocal[sortInexArrLast[1]],
+                                   pdfMrgsortLocal[sortInexArrLast[CONST_2]],
+                                   pdfMrgsortLocal[sortInexArrLast[CONST_3]]);
     uint16_t eleLengths[ARRAY_LEN4] = {CONST_128, CONST_128, 0, 0};
     MrgSort4Info src256Info(eleLengths, false, validBitMode[0], 1);
     MrgSort<float>(pdfSortLocal, srcList3, src256Info);
@@ -268,15 +262,16 @@ __aicore__ inline void SortPdf(
 }
 
 template <bool IF_BF16>
-__aicore__ inline void SetIdxValue(
-    LocalTensor<int32_t>* pdfSortIndexReverseUb, LocalTensor<float>& pdfSortLocal, int32_t pdfLen)
+__aicore__ inline void SetIdxValue(LocalTensor<int32_t>* pdfSortIndexReverseUb, LocalTensor<float>& pdfSortLocal,
+                                   int32_t pdfLen)
 {
     int32_t pdfValue = 0;
     int32_t valueInterval = 2;
     for (int32_t i_0 = 0; i_0 < pdfLen; ++i_0) {
         pdfValue = pdfSortLocal.ReinterpretCast<int32_t>().GetValue(valueInterval * i_0 + 1);
         if (IF_BF16) {
-            pdfSortIndexReverseUb->ReinterpretCast<uint16_t>().SetValue(i_0, (uint16_t)(pdfValue * PDF_LENGTH));
+            pdfSortIndexReverseUb->ReinterpretCast<uint16_t>().SetValue(i_0,
+                                                                        static_cast<uint16_t>(pdfValue * PDF_LENGTH));
         } else {
             pdfSortIndexReverseUb->SetValue(i_0, pdfValue * SHIFT_LEFT_24);
         }
@@ -284,9 +279,9 @@ __aicore__ inline void SetIdxValue(
 }
 
 template <bool IF_BF16>
-__aicore__ inline void GetPdfSortIndex(
-    TBuf<TPosition::VECCALC>& calcBuf, GlobalTensor<int32_t>& pdfGm, EventManager& eventManager, uint64_t& ubOffset,
-    LocalTensor<int32_t>* pdfSortIndexReverseUb)
+__aicore__ inline void GetPdfSortIndex(TBuf<TPosition::VECCALC>& calcBuf, GlobalTensor<int32_t>& pdfGm,
+                                       EventManager& eventManager, uint64_t& ubOffset,
+                                       LocalTensor<int32_t>* pdfSortIndexReverseUb)
 {
     LocalTensor<int32_t> pdfUb;
     LocalTensor<int32_t> pdfRangeIndexLocal;
@@ -317,6 +312,6 @@ __aicore__ inline void GetPdfSortIndex(
     }
 }
 
-}  // namespace HansCommonNs
+} // namespace HansCommonNs
 
 #endif // HANS_CONST_H

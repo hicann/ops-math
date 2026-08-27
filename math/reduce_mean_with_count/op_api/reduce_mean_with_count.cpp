@@ -67,24 +67,24 @@ static op::Shape ComputeReduceOutputShape(const aclTensor* x, const aclIntArray*
     return yShape;
 }
 
-const aclTensor* ReduceMeanWithCount(const aclTensor* x, const aclTensor* count, const aclTensor* countSum,
+const aclTensor* ReduceMeanWithCount(const aclTensor* input, const aclTensor* count, const aclTensor* countSum,
                                      const aclIntArray* axes, bool keepDims, aclOpExecutor* executor)
 {
-    L0_DFX(ReduceMeanWithCount, x, count, countSum, axes, keepDims);
+    L0_DFX(ReduceMeanWithCount, input, count, countSum, axes, keepDims);
 
     const aclTensor* yOut = nullptr;
     if (IsRegBase()) {
         OP_LOGI("ReduceMeanWithCount use manual ComputeReduceOutputShape for RegBase.");
-        auto yShape = ComputeReduceOutputShape(x, axes, keepDims);
-        yOut = executor->AllocTensor(yShape, x->GetDataType(), x->GetStorageFormat());
+        auto yShape = ComputeReduceOutputShape(input, axes, keepDims);
+        yOut = executor->AllocTensor(yShape, input->GetDataType(), input->GetStorageFormat());
     } else {
         OP_LOGI("ReduceMeanWithCount use INFER_SHAPE.");
-        yOut = executor->AllocTensor(x->GetDataType(), op::Format::FORMAT_ND, op::Format::FORMAT_ND);
-        INFER_SHAPE(ReduceMeanWithCount, OP_INPUT(x, count, countSum), OP_OUTPUT(yOut), OP_ATTR(axes, keepDims));
+        yOut = executor->AllocTensor(input->GetDataType(), op::Format::FORMAT_ND, op::Format::FORMAT_ND);
+        INFER_SHAPE(ReduceMeanWithCount, OP_INPUT(input, count, countSum), OP_OUTPUT(yOut), OP_ATTR(axes, keepDims));
     }
     CHECK_RET(yOut != nullptr, nullptr);
 
-    auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(ReduceMeanWithCount, OP_INPUT(x, count, countSum), OP_OUTPUT(yOut),
+    auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(ReduceMeanWithCount, OP_INPUT(input, count, countSum), OP_OUTPUT(yOut),
                                                  OP_ATTR(axes, keepDims));
     OP_CHECK(retAicore == ACLNN_SUCCESS,
              OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ReduceMeanWithCount ADD_TO_LAUNCHER_LIST_AICORE failed."),
