@@ -33,16 +33,11 @@ constexpr static int32_t INDEX_OUTPUT_OUT = 0;
 constexpr static size_t WORKSPACE_COUNT = 1;
 constexpr static const int32_t INT16_BITS_NUM = 16;
 
-class LinSpaceRegbaseTilingClass : public Ops::Base::TilingBaseClass
-{
+class LinSpaceRegbaseTilingClass : public Ops::Base::TilingBaseClass {
 public:
-    explicit LinSpaceRegbaseTilingClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit LinSpaceRegbaseTilingClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
-    void Reset(gert::TilingContext* context) override
-    {
-        Ops::Base::TilingBaseClass::Reset(context);
-    }
+    void Reset(gert::TilingContext* context) override { Ops::Base::TilingBaseClass::Reset(context); }
 
 protected:
     bool IsCapable() override;
@@ -51,15 +46,9 @@ protected:
 
     ge::graphStatus GetPlatformInfo() override;
     ge::graphStatus GetShapeAttrsInfo() override;
-    ge::graphStatus GetWorkspaceSize() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus GetWorkspaceSize() override { return ge::GRAPH_SUCCESS; }
 
-    ge::graphStatus DoLibApiTiling() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus DoLibApiTiling() override { return ge::GRAPH_SUCCESS; }
 
     void SetStep();
 
@@ -85,8 +74,8 @@ static inline int64_t Align128FloorSize(int64_t value)
 }
 
 template <typename T>
-static ge::graphStatus LinSpaceGetConstValue(
-    gert::TilingContext* context, const gert::Tensor* tensor, T& value, ge::DataType dataType)
+static ge::graphStatus LinSpaceGetConstValue(gert::TilingContext* context, const gert::Tensor* tensor, T& value,
+                                             ge::DataType dataType)
 {
     if (dataType == ge::DT_INT64) {
         const int64_t* const_data_ptr = tensor->GetData<int64_t>();
@@ -137,8 +126,8 @@ static ge::graphStatus LinSpaceGetConstValue(
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus GetConstStartOrStop(
-    gert::TilingContext* context, const gert::Tensor* tensor_index, float& index, int64_t input_index)
+static ge::graphStatus GetConstStartOrStop(gert::TilingContext* context, const gert::Tensor* tensor_index, float& index,
+                                           int64_t input_index)
 {
     auto inputDesc = context->GetInputDesc(input_index);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
@@ -180,49 +169,44 @@ static ge::graphStatus GetConstStartOrStop(
             break;
         }
         default:
-            OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(),
-                (input_index == static_cast<int64_t>(INDEX_INPUT_START)) ? "start" : "stop",
-                Ops::Base::ToString(dataType).c_str(),
-                "float32, float16, bfloat16, int32, int16, int8 or uint8");
+            OP_LOGE_FOR_INVALID_DTYPE(
+                context->GetNodeName(), (input_index == static_cast<int64_t>(INDEX_INPUT_START)) ? "start" : "stop",
+                Ops::Base::ToString(dataType).c_str(), "float32, float16, bfloat16, int32, int16, int8 or uint8");
             return ge::GRAPH_FAILED;
     }
 
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus CheckDtypeIsValid(
-    gert::TilingContext* context, ge::DataType start, ge::DataType stop, ge::DataType num, ge::DataType output)
+static ge::graphStatus CheckDtypeIsValid(gert::TilingContext* context, ge::DataType start, ge::DataType stop,
+                                         ge::DataType num, ge::DataType output)
 {
     std::set<ge::DataType> numDtype = {ge::DT_INT32, ge::DT_INT64};
     std::set<ge::DataType> otherDtype = {ge::DT_UINT8, ge::DT_INT8,    ge::DT_INT16, ge::DT_INT32,
                                          ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
 
-    OP_CHECK_IF(
-        otherDtype.count(start) == 0,
-        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "start", Ops::Base::ToString(start).c_str(),
-            "uint8, int8, int16, int32, float32, float16 or bf16"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        otherDtype.count(stop) == 0,
-        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "stop", Ops::Base::ToString(stop).c_str(),
-            "uint8, int8, int16, int32, float32, float16 or bf16"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        otherDtype.count(output) == 0,
-        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "output", Ops::Base::ToString(output).c_str(),
-            "uint8, int8, int16, int32, float32, float16 or bf16"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(otherDtype.count(start) == 0,
+                OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "start", Ops::Base::ToString(start).c_str(),
+                                          "uint8, int8, int16, int32, float32, float16 or bf16"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(otherDtype.count(stop) == 0,
+                OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "stop", Ops::Base::ToString(stop).c_str(),
+                                          "uint8, int8, int16, int32, float32, float16 or bf16"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(otherDtype.count(output) == 0,
+                OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "output", Ops::Base::ToString(output).c_str(),
+                                          "uint8, int8, int16, int32, float32, float16 or bf16"),
+                return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         numDtype.count(num) == 0,
-        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "num", Ops::Base::ToString(num).c_str(),
-            "int32 or int64"),
+        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "num", Ops::Base::ToString(num).c_str(), "int32 or int64"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 static ge::graphStatus CalcLinSpaceTilingParam(LinSpaceRegbaseTilingParam& tilingParam, ge::DataType outDtype)
 {
-    OP_LOGD("[CalcLinSpaceTilingParam]", "TilingLinSpace Enter CalcLinSpaceTilingParam funtion.");
+    OP_LOGD("[CalcLinSpaceTilingParam]", "TilingLinSpace Enter CalcLinSpaceTilingParam function.");
 
     // 分核
     int64_t numOfPerCore = tilingParam.num > 0 ? tilingParam.num : 0;
@@ -300,10 +284,7 @@ static ge::graphStatus CalcLinSpaceTilingParam(LinSpaceRegbaseTilingParam& tilin
     return ge::GRAPH_SUCCESS;
 }
 
-bool LinSpaceRegbaseTilingClass::IsCapable()
-{
-    return Ops::Base::IsRegbaseSocVersion(context_);
-}
+bool LinSpaceRegbaseTilingClass::IsCapable() { return Ops::Base::IsRegbaseSocVersion(context_); }
 
 ge::graphStatus LinSpaceRegbaseTilingClass::GetPlatformInfo()
 {
@@ -376,19 +357,17 @@ ge::graphStatus LinSpaceRegbaseTilingClass::DoOpTiling()
 
     float start(0);
     float stop(0);
-    OP_CHECK_IF(
-        GetConstStartOrStop(context_, tensorStart, start, INDEX_INPUT_START) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "set tilingData start fail."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        GetConstStartOrStop(context_, tensorStop, stop, INDEX_INPUT_STOP) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "set tilingData stop fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetConstStartOrStop(context_, tensorStart, start, INDEX_INPUT_START) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context_->GetNodeName(), "set tilingData start fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetConstStartOrStop(context_, tensorStop, stop, INDEX_INPUT_STOP) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context_->GetNodeName(), "set tilingData stop fail."), return ge::GRAPH_FAILED);
     tilingParam_.start = start;
     tilingParam_.stop = stop;
     SetStep();
     ret = CalcLinSpaceTilingParam(tilingParam_, outDataType_);
     OP_CHECK_IF(
         ret != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "[CalcLinSpaceTilingParam] TilingLinSpace fail to caculate tiling param."),
+        OP_LOGE(context_->GetNodeName(), "[CalcLinSpaceTilingParam] TilingLinSpace fail to calculate tiling param."),
         return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
@@ -437,10 +416,7 @@ ge::graphStatus LinSpaceRegbaseTilingClass::PostTiling()
     return ge::GRAPH_SUCCESS;
 }
 
-uint64_t LinSpaceRegbaseTilingClass::GetTilingKey() const
-{
-    return DOUBLE_CAST_TILING_KEY;
-}
+uint64_t LinSpaceRegbaseTilingClass::GetTilingKey() const { return DOUBLE_CAST_TILING_KEY; }
 
 REGISTER_OPS_TILING_TEMPLATE(LinSpace, LinSpaceRegbaseTilingClass, 3000);
 

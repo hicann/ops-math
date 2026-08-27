@@ -74,8 +74,7 @@ static graphStatus GetNattrValue(gert::InferShapeContext* context, int64_t& numI
     numIndices = *attrN;
     OP_CHECK_IF(
         numIndices < 1,
-        OP_LOGE(context->GetNodeName(),
-            "invalid value [%ld] of attr[N], it should be not less than 1.", numIndices),
+        OP_LOGE(context->GetNodeName(), "invalid value [%ld] of attr[N], it should be not less than 1.", numIndices),
         return GRAPH_FAILED);
     const auto indicesInfoIndices = context->GetIrInputInstanceInfo(DYNAMICSTITCH_IDX_IN_INDICES);
     OP_CHECK_NULL_WITH_CONTEXT(context, indicesInfoIndices);
@@ -88,8 +87,9 @@ static graphStatus GetNattrValue(gert::InferShapeContext* context, int64_t& numI
     OP_CHECK_IF(
         isInvalid,
         OP_LOGE(context->GetNodeName(),
-            "the tensorList size of indices and x must be same of the value of N, now indices'size is: %zu, "
-            "x's size is: %zu, N's value is: %ld", instanceNumIndices, instanceNumX, numIndices),
+                "the tensorList size of indices and x must be the same as the value of N, now indices' size is: %zu, "
+                "x's size is: %zu, N's value is: %ld",
+                instanceNumIndices, instanceNumX, numIndices),
         return GRAPH_FAILED);
     return GRAPH_SUCCESS;
 }
@@ -109,23 +109,24 @@ static bool CheckValidShapeSize(const gert::Shape* indicesShape, const gert::Sha
 }
 
 static graphStatus StartWith(gert::InferShapeContext* context, const gert::Shape* indicesShape,
-    const gert::Shape* xShape, std::vector<int64_t>& dims, const int64_t i)
+                             const gert::Shape* xShape, std::vector<int64_t>& dims, const int64_t i)
 {
     const size_t indicesDimNum = indicesShape->GetDimNum();
     const size_t xDimNum = xShape->GetDimNum();
-    OP_CHECK_IF(
-        indicesDimNum > xDimNum,
-        OP_LOGE(context->GetNodeName(),
-            "the %ldth input[indices]'s dimNum must <= the %ldth input[x]'s dimNum, but now is: %zu and %zu",
-            i, i, indicesDimNum, xDimNum),
-        return GRAPH_FAILED);
+    OP_CHECK_IF(indicesDimNum > xDimNum,
+                OP_LOGE(context->GetNodeName(),
+                        "the %ldth input[indices]'s dimNum must be less than or equal to the %ldth input[x]'s dimNum, "
+                        "but now is: %zu and %zu",
+                        i, i, indicesDimNum, xDimNum),
+                return GRAPH_FAILED);
     dims.reserve(xDimNum);
     dims.resize(indicesDimNum);
     for (size_t j = 0; j < indicesDimNum; ++j) {
         if (MergeDim(xShape->GetDim(j), indicesShape->GetDim(j), dims[j]) != GRAPH_SUCCESS) {
             OP_LOGE(context->GetNodeName(),
-                "failed to call MergeDim function to merge the %ldth input[indices]'s dim[%ld] and the %ldth "
-                "input[x]'s dim[%ld]", i, indicesShape->GetDim(j), i, xShape->GetDim(j));
+                    "failed to call MergeDim function to merge the %ldth input[indices]'s dim[%ld] and the %ldth "
+                    "input[x]'s dim[%ld]",
+                    i, indicesShape->GetDim(j), i, xShape->GetDim(j));
             return GRAPH_FAILED;
         }
     }
@@ -137,7 +138,7 @@ static graphStatus StartWith(gert::InferShapeContext* context, const gert::Shape
 }
 
 static graphStatus SameExtraShape(gert::InferShapeContext* context, gert::Shape& commonShape,
-    const std::vector<int64_t>& dims, const int64_t i)
+                                  const std::vector<int64_t>& dims, const int64_t i)
 {
     if (commonShape == gert::Shape({DYNAMICSTITCH_UNKOWNSHAPE})) {
         commonShape.SetDimNum(dims.size());
@@ -150,34 +151,31 @@ static graphStatus SameExtraShape(gert::InferShapeContext* context, gert::Shape&
         for (size_t j = 0; j < dims.size(); j++) {
             currSuffixShape.SetDim(j, dims[j]);
         }
-        OP_CHECK_IF(
-            currSuffixShape != commonShape,
-            OP_LOGE(context->GetNodeName(),
-                "the suffixShape must be same, but now %ldth suffixShape is does not same.", i),
-            return GRAPH_FAILED);
+        OP_CHECK_IF(currSuffixShape != commonShape,
+                    OP_LOGE(context->GetNodeName(),
+                            "the suffixShape must be the same, but now the %ldth suffixShape is not the same.", i),
+                    return GRAPH_FAILED);
     }
     return GRAPH_SUCCESS;
 }
 
 static graphStatus GetInputConstData(gert::InferShapeContext* context, const gert::Shape* indicesShape,
-    int32_t& maxIndex, bool& getAllIndicesData, const int64_t i)
+                                     int32_t& maxIndex, bool& getAllIndicesData, const int64_t i)
 {
     auto indicesTensor = context->GetDynamicInputTensor(DYNAMICSTITCH_IDX_IN_INDICES, i);
     OP_CHECK_NULL_WITH_CONTEXT(context, indicesTensor);
     auto indicesDtype = indicesTensor->GetDataType();
-    OP_CHECK_IF(
-        indicesDtype != DT_INT32,
-        OP_LOGE(context->GetNodeName(),
-            "the indices dtype only support int32, but now get a %s", Ops::Base::ToString(indicesDtype).c_str()),
-        return GRAPH_FAILED);
+    OP_CHECK_IF(indicesDtype != DT_INT32,
+                OP_LOGE(context->GetNodeName(), "the indices dtype only support int32, but now get a %s",
+                        Ops::Base::ToString(indicesDtype).c_str()),
+                return GRAPH_FAILED);
     const int32_t* indicesTensorData = indicesTensor->GetData<int32_t>();
     if (indicesTensorData) {
         for (int64_t j = 0; j < indicesShape->GetShapeSize(); j++) {
             int32_t currValue = static_cast<int32_t>(*(indicesTensorData + j));
             OP_CHECK_IF(
                 currValue < 0,
-                OP_LOGE(context->GetNodeName(),
-                    "the indices'value must be a positive value, but got %d", currValue),
+                OP_LOGE(context->GetNodeName(), "the indices'value must be a positive value, but got %d", currValue),
                 return GRAPH_FAILED);
             maxIndex = std::max(maxIndex, currValue);
         }
@@ -188,7 +186,7 @@ static graphStatus GetInputConstData(gert::InferShapeContext* context, const ger
 }
 
 static void SetOuputShape(gert::Shape* yShape, const bool& getAllIndicesData, const int32_t& maxIndex,
-    const gert::Shape& commonShape)
+                          const gert::Shape& commonShape)
 {
     int64_t outputDim0 = getAllIndicesData ? (static_cast<int64_t>(maxIndex) + 1) : (DYNAMICSTITCH_UNKNOWNDIM);
     size_t outputDimNum = commonShape.GetDimNum() + 1;
@@ -207,7 +205,7 @@ struct DynamicStitchState {
 };
 
 static graphStatus InferAllStitchIndices(gert::InferShapeContext* context, const int64_t numIndices,
-    DynamicStitchState& state, gert::Shape* yShape, bool& earlyReturn)
+                                         DynamicStitchState& state, gert::Shape* yShape, bool& earlyReturn)
 {
     earlyReturn = false;
     for (int64_t i = 0; i < numIndices; i++) {
@@ -219,24 +217,19 @@ static graphStatus InferAllStitchIndices(gert::InferShapeContext* context, const
             continue;
         }
         std::vector<int64_t> dims;
-        OP_CHECK_IF(
-            StartWith(context, indicesShape, xShape, dims, i) != GRAPH_SUCCESS,
-            OP_LOGE(context->GetNodeName(), "StartWith failed."),
-            return GRAPH_FAILED);
+        OP_CHECK_IF(StartWith(context, indicesShape, xShape, dims, i) != GRAPH_SUCCESS,
+                    OP_LOGE(context->GetNodeName(), "StartWith failed."), return GRAPH_FAILED);
         if (IsUnknown(dims)) {
             yShape->SetDimNum(1);
             yShape->SetDim(0, DYNAMICSTITCH_UNKOWNSHAPE);
             earlyReturn = true;
             return GRAPH_SUCCESS;
         }
-        OP_CHECK_IF(
-            SameExtraShape(context, state.commonShape, dims, i) != GRAPH_SUCCESS,
-            OP_LOGE(context->GetNodeName(), "SameExtraShape failed."),
-            return GRAPH_FAILED);
+        OP_CHECK_IF(SameExtraShape(context, state.commonShape, dims, i) != GRAPH_SUCCESS,
+                    OP_LOGE(context->GetNodeName(), "SameExtraShape failed."), return GRAPH_FAILED);
         OP_CHECK_IF(
             GetInputConstData(context, indicesShape, state.maxIndex, state.getAllIndicesData, i) != GRAPH_SUCCESS,
-            OP_LOGE(context->GetNodeName(), "GetInputConstData failed."),
-            return GRAPH_FAILED);
+            OP_LOGE(context->GetNodeName(), "GetInputConstData failed."), return GRAPH_FAILED);
     }
     return GRAPH_SUCCESS;
 }
@@ -245,18 +238,14 @@ static graphStatus InferShape4DynamicStitch(gert::InferShapeContext* context)
 {
     OP_LOGD(context->GetNodeName(), "InferShape4DynamicStitch enter");
     int64_t numIndices = 0;
-    OP_CHECK_IF(
-        GetNattrValue(context, numIndices) != GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "GetNattrValue failed."),
-        return GRAPH_FAILED);
+    OP_CHECK_IF(GetNattrValue(context, numIndices) != GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "GetNattrValue failed."), return GRAPH_FAILED);
     DynamicStitchState state = {gert::Shape({DYNAMICSTITCH_UNKOWNSHAPE}), true, -1, 0};
     auto yShape = context->GetOutputShape(DYNAMICSTITCH_IDX_OUT_Y);
     OP_CHECK_NULL_WITH_CONTEXT(context, yShape);
     bool earlyReturn = false;
-    OP_CHECK_IF(
-        InferAllStitchIndices(context, numIndices, state, yShape, earlyReturn) != GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "InferAllStitchIndices failed."),
-        return GRAPH_FAILED);
+    OP_CHECK_IF(InferAllStitchIndices(context, numIndices, state, yShape, earlyReturn) != GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "InferAllStitchIndices failed."), return GRAPH_FAILED);
     if (earlyReturn) {
         return GRAPH_SUCCESS;
     }
@@ -264,11 +253,10 @@ static graphStatus InferShape4DynamicStitch(gert::InferShapeContext* context)
         *yShape = gert::Shape({DYNAMICSTITCH_IDX_ZERO});
         return GRAPH_SUCCESS;
     }
-    OP_CHECK_IF(
-        state.maxIndex >= std::numeric_limits<int32_t>::max(),
-        OP_LOGE(context->GetNodeName(),
-            "the maxIndex must be less than the maximum value of int32, now got %d", state.maxIndex),
-        return GRAPH_FAILED);
+    OP_CHECK_IF(state.maxIndex >= std::numeric_limits<int32_t>::max(),
+                OP_LOGE(context->GetNodeName(), "the maxIndex must be less than the maximum value of int32, now got %d",
+                        state.maxIndex),
+                return GRAPH_FAILED);
     SetOuputShape(yShape, state.getAllIndicesData, state.maxIndex, state.commonShape);
     return GRAPH_SUCCESS;
 }
@@ -286,4 +274,4 @@ IMPL_OP_INFERSHAPE(DynamicStitch)
     .InputsDataDependency({DYNAMICSTITCH_IDX_IN_INDICES})
     .InferShape(InferShape4DynamicStitch)
     .InferDataType(InferDataType4DynamicStitch);
-}  // namespace ops
+} // namespace ops

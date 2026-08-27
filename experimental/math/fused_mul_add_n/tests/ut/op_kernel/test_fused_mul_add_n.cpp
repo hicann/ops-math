@@ -66,7 +66,7 @@
 #include "fused_mul_add_n_tiling.h"
 
 // A2 flat kernel 入口：实验态 op_kernel UT 直接 #include kernel .cpp 编入测试翻译单元
-//（与 experimental/math/accumulate_nv2、acos 等已验证用例一致）。kernel 内的
+// （与 experimental/math/accumulate_nv2、acos 等已验证用例一致）。kernel 内的
 // GET_TILING_DATA_WITH_STRUCT 已被本目录 fused_mul_add_n_tiling.h（cmake -include 注入）
 // 重定义为从扁平 tiling 缓冲反序列化，故 UT 完全自包含。
 // 必须在 `using namespace std;` 之前 include，避免 AscendC 的 dec 与 std::dec 二义冲突。
@@ -78,14 +78,8 @@ using namespace std;
 
 class FusedMulAddN : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "FusedMulAddN SetUp" << endl;
-    }
-    static void TearDownTestCase()
-    {
-        cout << "FusedMulAddN TearDown" << endl;
-    }
+    static void SetUpTestCase() { cout << "FusedMulAddN SetUp" << endl; }
+    static void TearDownTestCase() { cout << "FusedMulAddN TearDown" << endl; }
 };
 
 template <typename T1, typename T2>
@@ -103,18 +97,9 @@ static inline T1 CeilDiv(T1 a, T2 b)
 // ===========================================================================
 // dtype → TilingKey / sizeof / 每元素 UB 字节数（与 host op_host/fused_mul_add_n_tiling.cpp 完全一致）
 // ===========================================================================
-enum class DType {
-    FP32 = 0,
-    FP16 = 1,
-    INT32 = 2,
-    INT16 = 3,
-    BF16 = 4
-};
+enum class DType { FP32 = 0, FP16 = 1, INT32 = 2, INT16 = 3, BF16 = 4 };
 
-static int64_t DTypeTilingKey(DType d)
-{
-    return static_cast<int64_t>(d);
-}
+static int64_t DTypeTilingKey(DType d) { return static_cast<int64_t>(d); }
 
 static int64_t DTypeElemSize(DType d)
 {
@@ -256,8 +241,8 @@ struct PrecResult {
 
 // 浮点社区标准 MERE/MARE：在 fp32 域用最终 dtype 数值（半精度已舍回）比对。
 //   MERE = mean(|a-g| / (|g|+1e-7)) ; MARE = max(同) ; 判定 MERE<thr && MARE<10*thr
-static PrecResult CheckFloatCommunity(
-    const std::vector<float>& actual, const std::vector<float>& golden, double threshold)
+static PrecResult CheckFloatCommunity(const std::vector<float>& actual, const std::vector<float>& golden,
+                                      double threshold)
 {
     const double eps = 1e-7;
     int64_t n = static_cast<int64_t>(golden.size());
@@ -328,8 +313,8 @@ static double FloatThresholdOf(DType d)
 
 // 浮点（fp32/fp16/bf16）执行器
 template <typename T>
-static PrecResult RunFloatCase(
-    DType d, int64_t totalNum, float x3Value, int64_t coreNum, int64_t ubSize, unsigned seed, float lo, float hi)
+static PrecResult RunFloatCase(DType d, int64_t totalNum, float x3Value, int64_t coreNum, int64_t ubSize, unsigned seed,
+                               float lo, float hi)
 {
     UtTilingPlan plan = BuildTiling(totalNum, d, coreNum, ubSize);
 
@@ -407,8 +392,8 @@ static PrecResult RunFloatCase(
 
 // 整型（int32/int16）执行器
 template <typename T>
-static PrecResult RunIntCase(
-    DType d, int64_t totalNum, int32_t x3Value, int64_t coreNum, int64_t ubSize, unsigned seed, int32_t lo, int32_t hi)
+static PrecResult RunIntCase(DType d, int64_t totalNum, int32_t x3Value, int64_t coreNum, int64_t ubSize, unsigned seed,
+                             int32_t lo, int32_t hi)
 {
     UtTilingPlan plan = BuildTiling(totalNum, d, coreNum, ubSize);
 
@@ -476,9 +461,8 @@ static PrecResult RunIntCase(
 //   即分配 ≥1 元素并在 x3[0] 写入值）。kernel 仅 GetValue(0)，故两种形态应产出
 //   完全相同的字节级输出 —— 证明 x3 张量形态不改数值。
 //   ⚠ x3ElemCapacity 仅影响 GM 分配大小，不改变 kernel 读取语义（始终取 x3[0]）。
-static std::vector<float> RunFp32Capture(
-    int64_t totalNum, float x3Value, int64_t coreNum, int64_t ubSize, unsigned seed, float lo, float hi,
-    int64_t x3ElemCapacity)
+static std::vector<float> RunFp32Capture(int64_t totalNum, float x3Value, int64_t coreNum, int64_t ubSize,
+                                         unsigned seed, float lo, float hi, int64_t x3ElemCapacity)
 {
     UtTilingPlan plan = BuildTiling(totalNum, DType::FP32, coreNum, ubSize);
 
@@ -566,8 +550,8 @@ TEST_F(FusedMulAddN, L0_001_fp32_1d_aligned_256)
 // float32 [32,64]=2048 2D 对齐形状 fp32 主路径冒烟，x3=1.5
 TEST_F(FusedMulAddN, L0_002_fp32_2d_aligned_32x64)
 {
-    PrecResult r =
-        RunFloatCase<float>(DType::FP32, 32 * 64, 1.5f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 2, -1.0f, 1.0f);
+    PrecResult r = RunFloatCase<float>(DType::FP32, 32 * 64, 1.5f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 2, -1.0f,
+                                       1.0f);
     ExpectFloatPass(r, "L0-002");
 }
 
@@ -587,22 +571,22 @@ TEST_F(FusedMulAddN, L0_003_fp32_1d_unaligned_tail_100)
 // fp32 对齐基础，x3=2.5，uniform[-10,10]
 TEST_F(FusedMulAddN, L1_001_fp32_aligned_1024)
 {
-    PrecResult r =
-        RunFloatCase<float>(DType::FP32, 1024, 2.5f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 11, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<float>(DType::FP32, 1024, 2.5f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 11, -10.0f,
+                                       10.0f);
     ExpectFloatPass(r, "L1-001");
 }
 // fp16 对齐基础（升 fp32 计算）
 TEST_F(FusedMulAddN, L1_002_fp16_aligned_1024)
 {
-    PrecResult r =
-        RunFloatCase<half>(DType::FP16, 1024, 2.5f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 12, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<half>(DType::FP16, 1024, 2.5f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 12, -10.0f,
+                                      10.0f);
     ExpectFloatPass(r, "L1-002");
 }
 // bf16 对齐基础（升 fp32 计算）
 TEST_F(FusedMulAddN, L1_003_bf16_aligned_1024)
 {
-    PrecResult r =
-        RunFloatCase<bfloat16_t>(DType::BF16, 1024, 2.5f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 13, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<bfloat16_t>(DType::BF16, 1024, 2.5f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 13, -10.0f,
+                                            10.0f);
     ExpectFloatPass(r, "L1-003");
 }
 // int32 对齐基础，x3=3，randint[-100,100]
@@ -622,8 +606,8 @@ TEST_F(FusedMulAddN, L1_005_int16_aligned_1024)
 // fp32 非对齐尾块（37 非 8 倍）
 TEST_F(FusedMulAddN, L1_006_fp32_unaligned_tail_37)
 {
-    PrecResult r =
-        RunFloatCase<float>(DType::FP32, 37, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 16, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<float>(DType::FP32, 37, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 16, -10.0f,
+                                       10.0f);
     ExpectFloatPass(r, "L1-006");
 }
 // fp16 非对齐尾块（37 非 16 倍）
@@ -635,8 +619,8 @@ TEST_F(FusedMulAddN, L1_007_fp16_unaligned_tail_37)
 // bf16 非对齐尾块（37 非 16 倍）
 TEST_F(FusedMulAddN, L1_008_bf16_unaligned_tail_37)
 {
-    PrecResult r =
-        RunFloatCase<bfloat16_t>(DType::BF16, 37, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 18, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<bfloat16_t>(DType::BF16, 37, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 18, -10.0f,
+                                            10.0f);
     ExpectFloatPass(r, "L1-008");
 }
 // int32 非对齐尾块（37 非 8 倍）
@@ -676,29 +660,29 @@ TEST_F(FusedMulAddN, L1_013_int32_single_element)
 // fp32 大规模，x3=1.25，uniform[-1,1]
 TEST_F(FusedMulAddN, L1_014_fp32_multicore_multitile_1M)
 {
-    PrecResult r =
-        RunFloatCase<float>(DType::FP32, 1048576, 1.25f, SIM_CORE_NUM_MULTI, SIM_UB_SIZE_SMALL, 24, -1.0f, 1.0f);
+    PrecResult r = RunFloatCase<float>(DType::FP32, 1048576, 1.25f, SIM_CORE_NUM_MULTI, SIM_UB_SIZE_SMALL, 24, -1.0f,
+                                       1.0f);
     ExpectFloatPass(r, "L1-014");
 }
 // fp16 大规模
 TEST_F(FusedMulAddN, L1_015_fp16_multicore_multitile_1M)
 {
-    PrecResult r =
-        RunFloatCase<half>(DType::FP16, 1048576, 1.25f, SIM_CORE_NUM_MULTI, SIM_UB_SIZE_SMALL, 25, -1.0f, 1.0f);
+    PrecResult r = RunFloatCase<half>(DType::FP16, 1048576, 1.25f, SIM_CORE_NUM_MULTI, SIM_UB_SIZE_SMALL, 25, -1.0f,
+                                      1.0f);
     ExpectFloatPass(r, "L1-015");
 }
 // bf16 大规模
 TEST_F(FusedMulAddN, L1_016_bf16_multicore_multitile_1M)
 {
-    PrecResult r =
-        RunFloatCase<bfloat16_t>(DType::BF16, 1048576, 1.25f, SIM_CORE_NUM_MULTI, SIM_UB_SIZE_SMALL, 26, -1.0f, 1.0f);
+    PrecResult r = RunFloatCase<bfloat16_t>(DType::BF16, 1048576, 1.25f, SIM_CORE_NUM_MULTI, SIM_UB_SIZE_SMALL, 26,
+                                            -1.0f, 1.0f);
     ExpectFloatPass(r, "L1-016");
 }
 // int32 大规模
 TEST_F(FusedMulAddN, L1_017_int32_multicore_multitile_1M)
 {
-    PrecResult r =
-        RunIntCase<int32_t>(DType::INT32, 1048576, 2, SIM_CORE_NUM_MULTI, SIM_UB_SIZE_SMALL, 27, -1000, 1000);
+    PrecResult r = RunIntCase<int32_t>(DType::INT32, 1048576, 2, SIM_CORE_NUM_MULTI, SIM_UB_SIZE_SMALL, 27, -1000,
+                                       1000);
     ExpectIntPass(r, "L1-017");
 }
 // int16 大规模
@@ -712,29 +696,29 @@ TEST_F(FusedMulAddN, L1_018_int16_multicore_multitile_1M)
 // fp32 质数级元素
 TEST_F(FusedMulAddN, L1_019_fp32_multicore_unaligned_tail_1000003)
 {
-    PrecResult r =
-        RunFloatCase<float>(DType::FP32, 1000003, 1.5f, SIM_CORE_NUM_MULTI, SIM_UB_SIZE_SMALL, 29, -1.0f, 1.0f);
+    PrecResult r = RunFloatCase<float>(DType::FP32, 1000003, 1.5f, SIM_CORE_NUM_MULTI, SIM_UB_SIZE_SMALL, 29, -1.0f,
+                                       1.0f);
     ExpectFloatPass(r, "L1-019");
 }
 // fp16 质数级元素
 TEST_F(FusedMulAddN, L1_020_fp16_multicore_unaligned_tail_1000003)
 {
-    PrecResult r =
-        RunFloatCase<half>(DType::FP16, 1000003, 1.5f, SIM_CORE_NUM_MULTI, SIM_UB_SIZE_SMALL, 30, -1.0f, 1.0f);
+    PrecResult r = RunFloatCase<half>(DType::FP16, 1000003, 1.5f, SIM_CORE_NUM_MULTI, SIM_UB_SIZE_SMALL, 30, -1.0f,
+                                      1.0f);
     ExpectFloatPass(r, "L1-020");
 }
 // bf16 质数级元素
 TEST_F(FusedMulAddN, L1_036_bf16_multicore_unaligned_tail_1000003)
 {
-    PrecResult r =
-        RunFloatCase<bfloat16_t>(DType::BF16, 1000003, 1.5f, SIM_CORE_NUM_MULTI, SIM_UB_SIZE_SMALL, 31, -1.0f, 1.0f);
+    PrecResult r = RunFloatCase<bfloat16_t>(DType::BF16, 1000003, 1.5f, SIM_CORE_NUM_MULTI, SIM_UB_SIZE_SMALL, 31,
+                                            -1.0f, 1.0f);
     ExpectFloatPass(r, "L1-036");
 }
 // int32 质数级元素
 TEST_F(FusedMulAddN, L1_037_int32_multicore_unaligned_tail_1000003)
 {
-    PrecResult r =
-        RunIntCase<int32_t>(DType::INT32, 1000003, 2, SIM_CORE_NUM_MULTI, SIM_UB_SIZE_SMALL, 32, -1000, 1000);
+    PrecResult r = RunIntCase<int32_t>(DType::INT32, 1000003, 2, SIM_CORE_NUM_MULTI, SIM_UB_SIZE_SMALL, 32, -1000,
+                                       1000);
     ExpectIntPass(r, "L1-037");
 }
 
@@ -742,22 +726,22 @@ TEST_F(FusedMulAddN, L1_037_int32_multicore_unaligned_tail_1000003)
 // fp32 3D [8,16,32]=4096
 TEST_F(FusedMulAddN, L1_021_fp32_3d_8x16x32)
 {
-    PrecResult r =
-        RunFloatCase<float>(DType::FP32, 8 * 16 * 32, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 33, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<float>(DType::FP32, 8 * 16 * 32, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 33,
+                                       -10.0f, 10.0f);
     ExpectFloatPass(r, "L1-021");
 }
 // fp16 4D [4,8,8,16]=4096
 TEST_F(FusedMulAddN, L1_022_fp16_4d_4x8x8x16)
 {
-    PrecResult r = RunFloatCase<half>(
-        DType::FP16, 4 * 8 * 8 * 16, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 34, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<half>(DType::FP16, 4 * 8 * 8 * 16, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 34,
+                                      -10.0f, 10.0f);
     ExpectFloatPass(r, "L1-022");
 }
 // bf16 3D 非对齐 [3,5,7]=105（非16倍）
 TEST_F(FusedMulAddN, L1_023_bf16_3d_unaligned_3x5x7)
 {
-    PrecResult r = RunFloatCase<bfloat16_t>(
-        DType::BF16, 3 * 5 * 7, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 35, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<bfloat16_t>(DType::BF16, 3 * 5 * 7, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 35,
+                                            -10.0f, 10.0f);
     ExpectFloatPass(r, "L1-023");
 }
 
@@ -765,50 +749,50 @@ TEST_F(FusedMulAddN, L1_023_bf16_3d_unaligned_3x5x7)
 // fp32 x3=0 退化为 y=x2
 TEST_F(FusedMulAddN, L1_024_fp32_x3_zero)
 {
-    PrecResult r =
-        RunFloatCase<float>(DType::FP32, 1024, 0.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 36, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<float>(DType::FP32, 1024, 0.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 36, -10.0f,
+                                       10.0f);
     ExpectFloatPass(r, "L1-024");
 }
 // fp32 x3=1 退化为 y=x1+x2
 TEST_F(FusedMulAddN, L1_025_fp32_x3_one)
 {
-    PrecResult r =
-        RunFloatCase<float>(DType::FP32, 1024, 1.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 37, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<float>(DType::FP32, 1024, 1.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 37, -10.0f,
+                                       10.0f);
     ExpectFloatPass(r, "L1-025");
 }
 // fp32 x3 负值
 TEST_F(FusedMulAddN, L1_026_fp32_x3_negative)
 {
-    PrecResult r =
-        RunFloatCase<float>(DType::FP32, 1024, -3.5f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 38, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<float>(DType::FP32, 1024, -3.5f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 38, -10.0f,
+                                       10.0f);
     ExpectFloatPass(r, "L1-026");
 }
 // fp16 x3=0
 TEST_F(FusedMulAddN, L1_027_fp16_x3_zero)
 {
-    PrecResult r =
-        RunFloatCase<half>(DType::FP16, 1024, 0.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 39, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<half>(DType::FP16, 1024, 0.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 39, -10.0f,
+                                      10.0f);
     ExpectFloatPass(r, "L1-027");
 }
 // fp16 x3 负值
 TEST_F(FusedMulAddN, L1_028_fp16_x3_negative)
 {
-    PrecResult r =
-        RunFloatCase<half>(DType::FP16, 1024, -2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 40, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<half>(DType::FP16, 1024, -2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 40, -10.0f,
+                                      10.0f);
     ExpectFloatPass(r, "L1-028");
 }
 // bf16 x3=0
 TEST_F(FusedMulAddN, L1_029_bf16_x3_zero)
 {
-    PrecResult r =
-        RunFloatCase<bfloat16_t>(DType::BF16, 1024, 0.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 41, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<bfloat16_t>(DType::BF16, 1024, 0.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 41, -10.0f,
+                                            10.0f);
     ExpectFloatPass(r, "L1-029");
 }
 // bf16 x3=1
 TEST_F(FusedMulAddN, L1_030_bf16_x3_one)
 {
-    PrecResult r =
-        RunFloatCase<bfloat16_t>(DType::BF16, 1024, 1.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 42, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<bfloat16_t>(DType::BF16, 1024, 1.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 42, -10.0f,
+                                            10.0f);
     ExpectFloatPass(r, "L1-030");
 }
 // int32 x3=0
@@ -870,10 +854,10 @@ TEST_F(FusedMulAddN, L1_035_fp32_x3_shape_1x1_equiv_to_1)
     const float x3Value = 2.0f;
     const unsigned seed = 135; // 两次必须同种子，保证 x1/x2 数据完全一致
     // 末参为 x3Cap：1 表示 x3 形态 [1]，2 表示 x3 形态 [1,1]（仍 1 个逻辑元素）。
-    std::vector<float> yShape1 =
-        RunFp32Capture(totalNum, x3Value, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, seed, -10.0f, 10.0f, 1);
-    std::vector<float> yShape1x1 =
-        RunFp32Capture(totalNum, x3Value, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, seed, -10.0f, 10.0f, 2);
+    std::vector<float> yShape1 = RunFp32Capture(totalNum, x3Value, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, seed, -10.0f,
+                                                10.0f, 1);
+    std::vector<float> yShape1x1 = RunFp32Capture(totalNum, x3Value, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, seed,
+                                                  -10.0f, 10.0f, 2);
 
     ASSERT_EQ(yShape1.size(), yShape1x1.size());
     int64_t mismatch = 0;
@@ -884,11 +868,11 @@ TEST_F(FusedMulAddN, L1_035_fp32_x3_shape_1x1_equiv_to_1)
     }
     std::cout << "[L1-035] x3 shape [1,1] vs [1] mismatch=" << mismatch << " (require 0, bit-exact) => "
               << (mismatch == 0 ? "PASS" : "FAIL") << std::endl;
-    EXPECT_EQ(mismatch, 0) << "L1-035 x3 shape [1,1] 与 [1] 输出不一致, mismatch=" << mismatch;
+    EXPECT_EQ(mismatch, 0) << "L1-035 x3 shape [1,1] and [1] outputs differ, mismatch=" << mismatch;
 
     // 同时对 [1,1] 形态做一次正确性 golden 比对（避免两形态同样错误而误判等价）。
-    PrecResult r = RunFloatCase<float>(
-        DType::FP32, totalNum, x3Value, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, seed, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<float>(DType::FP32, totalNum, x3Value, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, seed,
+                                       -10.0f, 10.0f);
     ExpectFloatPass(r, "L1-035(golden)");
 }
 
@@ -920,20 +904,20 @@ TEST_F(FusedMulAddN, B1_boundary_tail1_int16_multicore_17)
 // fp32 block=8 边界
 TEST_F(FusedMulAddN, B1_align_fp32_exactly_8)
 {
-    PrecResult r =
-        RunFloatCase<float>(DType::FP32, 8, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 110, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<float>(DType::FP32, 8, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 110, -10.0f,
+                                       10.0f);
     ExpectFloatPass(r, "B1-align-fp32-8");
 }
 TEST_F(FusedMulAddN, B1_align_fp32_7)
 {
-    PrecResult r =
-        RunFloatCase<float>(DType::FP32, 7, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 111, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<float>(DType::FP32, 7, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 111, -10.0f,
+                                       10.0f);
     ExpectFloatPass(r, "B1-align-fp32-7");
 }
 TEST_F(FusedMulAddN, B1_align_fp32_9)
 {
-    PrecResult r =
-        RunFloatCase<float>(DType::FP32, 9, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 112, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<float>(DType::FP32, 9, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 112, -10.0f,
+                                       10.0f);
     ExpectFloatPass(r, "B1-align-fp32-9");
 }
 TEST_F(FusedMulAddN, B1_align_int32_exactly_8)
@@ -944,26 +928,26 @@ TEST_F(FusedMulAddN, B1_align_int32_exactly_8)
 // fp16/bf16/int16 block=16 边界
 TEST_F(FusedMulAddN, B1_align_fp16_exactly_16)
 {
-    PrecResult r =
-        RunFloatCase<half>(DType::FP16, 16, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 114, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<half>(DType::FP16, 16, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 114, -10.0f,
+                                      10.0f);
     ExpectFloatPass(r, "B1-align-fp16-16");
 }
 TEST_F(FusedMulAddN, B1_align_fp16_15)
 {
-    PrecResult r =
-        RunFloatCase<half>(DType::FP16, 15, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 115, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<half>(DType::FP16, 15, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 115, -10.0f,
+                                      10.0f);
     ExpectFloatPass(r, "B1-align-fp16-15");
 }
 TEST_F(FusedMulAddN, B1_align_fp16_17)
 {
-    PrecResult r =
-        RunFloatCase<half>(DType::FP16, 17, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 116, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<half>(DType::FP16, 17, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 116, -10.0f,
+                                      10.0f);
     ExpectFloatPass(r, "B1-align-fp16-17");
 }
 TEST_F(FusedMulAddN, B1_align_bf16_exactly_16)
 {
-    PrecResult r =
-        RunFloatCase<bfloat16_t>(DType::BF16, 16, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 117, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<bfloat16_t>(DType::BF16, 16, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 117, -10.0f,
+                                            10.0f);
     ExpectFloatPass(r, "B1-align-bf16-16");
 }
 TEST_F(FusedMulAddN, B1_align_int16_exactly_16)
@@ -980,8 +964,8 @@ TEST_F(FusedMulAddN, B1_align_int16_15)
 // ---- 边界强化 (c) 单元素（int16/bf16）----
 TEST_F(FusedMulAddN, B1_single_element_bf16)
 {
-    PrecResult r =
-        RunFloatCase<bfloat16_t>(DType::BF16, 1, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 120, -10.0f, 10.0f);
+    PrecResult r = RunFloatCase<bfloat16_t>(DType::BF16, 1, 2.0f, SIM_CORE_NUM_SINGLE, SIM_UB_SIZE_LARGE, 120, -10.0f,
+                                            10.0f);
     ExpectFloatPass(r, "B1-single-bf16");
 }
 TEST_F(FusedMulAddN, B1_single_element_int16)

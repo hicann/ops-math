@@ -53,11 +53,15 @@ def compute_golden_fused_mul_add_n(
     返回:
         与 x1 同 shape 同 dtype 的 golden tensor（CPU）
     """
-    assert x1.shape == x2.shape, f"golden: x1/x2 shape 必须一致 {tuple(x1.shape)} vs {tuple(x2.shape)}"
+    assert x1.shape == x2.shape, (
+        f"golden: x1/x2 shape 必须一致 {tuple(x1.shape)} vs {tuple(x2.shape)}"
+    )
     assert x1.dtype == x2.dtype == x3.dtype, (
         f"golden: x1/x2/x3 dtype 必须一致 {x1.dtype}/{x2.dtype}/{x3.dtype}"
     )
-    assert x3.numel() == 1, f"golden: x3 必须为单元素标量张量 (ShapeSize=1)，实际 numel={x3.numel()}"
+    assert x3.numel() == 1, (
+        f"golden: x3 必须为单元素标量张量 (ShapeSize=1)，实际 numel={x3.numel()}"
+    )
 
     dtype = x1.dtype
 
@@ -72,8 +76,8 @@ def compute_golden_fused_mul_add_n(
         # numpy 同 dtype 整型运算遵循 C 内建 2's-complement 回绕（与硬件一致），分两步截断。
         # 注意：np.asarray 保留 0-d（rank=0 标量）形状；不要用 ascontiguousarray（会把 0-d 提升为 [1]）。
         with np.errstate(over="ignore"):
-            tmp = np.asarray(x1_np * s_np, dtype=np_t)      # 第一步：mul 回绕到 T
-            y_np = np.asarray(tmp + x2_np, dtype=np_t)       # 第二步：add 回绕到 T
+            tmp = np.asarray(x1_np * s_np, dtype=np_t)  # 第一步：mul 回绕到 T
+            y_np = np.asarray(tmp + x2_np, dtype=np_t)  # 第二步：add 回绕到 T
         # torch.from_numpy 不接受只读视图时复制一份；0-d 形状由 reshape(x1 形状) 保证一致
         return torch.from_numpy(y_np.copy()).reshape(x1.shape)
 
@@ -89,12 +93,18 @@ def compute_golden_fused_mul_add_n(
 # Golden 正确性自测
 # ============================================================================
 
+
 def test_golden_correctness() -> bool:
     """验证 golden 函数本身的正确性（公式 / 标量广播 / 不变量 / 整型回绕 / 极端值）。"""
     all_passed = True
 
-    def _check(name: str, got: torch.Tensor, expected: torch.Tensor, exact: bool = True,
-               nan_mask: torch.Tensor = None) -> None:
+    def _check(
+        name: str,
+        got: torch.Tensor,
+        expected: torch.Tensor,
+        exact: bool = True,
+        nan_mask: torch.Tensor = None,
+    ) -> None:
         nonlocal all_passed
         if nan_mask is not None:
             # NaN 位置单独判定，其余位置数值判定
@@ -104,12 +114,20 @@ def test_golden_correctness() -> bool:
             if exact:
                 ok = ok and bool(torch.equal(got[finite], expected[finite]))
             else:
-                ok = ok and bool(torch.allclose(got[finite].float(), expected[finite].float(),
-                                                rtol=1e-3, atol=1e-3))
+                ok = ok and bool(
+                    torch.allclose(
+                        got[finite].float(),
+                        expected[finite].float(),
+                        rtol=1e-3,
+                        atol=1e-3,
+                    )
+                )
         elif exact:
             ok = bool(torch.equal(got, expected))
         else:
-            ok = bool(torch.allclose(got.float(), expected.float(), rtol=1e-3, atol=1e-3))
+            ok = bool(
+                torch.allclose(got.float(), expected.float(), rtol=1e-3, atol=1e-3)
+            )
         print(f"  {name}: {'PASS' if ok else 'FAIL'}")
         if not ok:
             print(f"    got     ={got.flatten().tolist()}")
@@ -120,78 +138,123 @@ def test_golden_correctness() -> bool:
     x1 = torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
     x2 = torch.tensor([[10.0, 20.0, 30.0], [40.0, 50.0, 60.0]])
     x3 = torch.tensor([2.0])
-    _check("fp32 基础公式 y=x1*2+x2", compute_golden_fused_mul_add_n(x1, x2, x3),
-           torch.tensor([[12.0, 24.0, 36.0], [48.0, 60.0, 72.0]]), exact=False)
+    _check(
+        "fp32 basic formula y=x1*2+x2",
+        compute_golden_fused_mul_add_n(x1, x2, x3),
+        torch.tensor([[12.0, 24.0, 36.0], [48.0, 60.0, 72.0]]),
+        exact=False,
+    )
 
     # 2) x3=0 不变量：y == x2
     x3z = torch.tensor([0.0])
-    _check("x3=0 ⇒ y==x2 (zero_multiplier_yields_x2)",
-           compute_golden_fused_mul_add_n(x1, x2, x3z), x2, exact=False)
+    _check(
+        "x3=0 ⇒ y==x2 (zero_multiplier_yields_x2)",
+        compute_golden_fused_mul_add_n(x1, x2, x3z),
+        x2,
+        exact=False,
+    )
 
     # 3) x3=1 退化为 addn：y == x1 + x2
     x3o = torch.tensor([1.0])
-    _check("x3=1 ⇒ y==x1+x2 (单位元)",
-           compute_golden_fused_mul_add_n(x1, x2, x3o), x1 + x2, exact=False)
+    _check(
+        "x3=1 ⇒ y==x1+x2 (identity)",
+        compute_golden_fused_mul_add_n(x1, x2, x3o),
+        x1 + x2,
+        exact=False,
+    )
 
     # 4) x3 形态 [1,1] 等价单元素标量广播
-    _check("x3 形态[1,1] 等价标量",
-           compute_golden_fused_mul_add_n(x1, x2, torch.tensor([[2.0]])),
-           torch.tensor([[12.0, 24.0, 36.0], [48.0, 60.0, 72.0]]), exact=False)
+    _check(
+        "x3 shape [1,1] is scalar-equivalent",
+        compute_golden_fused_mul_add_n(x1, x2, torch.tensor([[2.0]])),
+        torch.tensor([[12.0, 24.0, 36.0], [48.0, 60.0, 72.0]]),
+        exact=False,
+    )
 
     # 5) rank=0 标量输入
-    _check("rank=0 标量输入",
-           compute_golden_fused_mul_add_n(torch.tensor(3.0), torch.tensor(4.0), torch.tensor([2.0])),
-           torch.tensor(10.0), exact=False)
+    _check(
+        "rank-0 scalar input",
+        compute_golden_fused_mul_add_n(
+            torch.tensor(3.0), torch.tensor(4.0), torch.tensor([2.0])
+        ),
+        torch.tensor(10.0),
+        exact=False,
+    )
 
     # 6) int32 基础（bitwise）
     ix1 = torch.tensor([10, 20, -30, 0, 50], dtype=torch.int32)
     ix2 = torch.tensor([5, -10, 30, 0, -50], dtype=torch.int32)
     ix3 = torch.tensor([3], dtype=torch.int32)
-    _check("int32 基础 y=x1*3+x2",
-           compute_golden_fused_mul_add_n(ix1, ix2, ix3),
-           torch.tensor([35, 50, -60, 0, 100], dtype=torch.int32), exact=True)
+    _check(
+        "int32 basic y=x1*3+x2",
+        compute_golden_fused_mul_add_n(ix1, ix2, ix3),
+        torch.tensor([35, 50, -60, 0, 100], dtype=torch.int32),
+        exact=True,
+    )
 
     # 7) int32 上界回绕 INT32_MAX*1 + 1 = INT32_MIN（两步回绕）
-    _check("int32 上界回绕 MAX*1+1=MIN",
-           compute_golden_fused_mul_add_n(
-               torch.tensor([2147483647], dtype=torch.int32),
-               torch.tensor([1], dtype=torch.int32),
-               torch.tensor([1], dtype=torch.int32)),
-           torch.tensor([-2147483648], dtype=torch.int32), exact=True)
+    _check(
+        "int32 upper-bound wraparound MAX*1+1=MIN",
+        compute_golden_fused_mul_add_n(
+            torch.tensor([2147483647], dtype=torch.int32),
+            torch.tensor([1], dtype=torch.int32),
+            torch.tensor([1], dtype=torch.int32),
+        ),
+        torch.tensor([-2147483648], dtype=torch.int32),
+        exact=True,
+    )
 
     # 8) int16 上界回绕 INT16_MAX*1 + 1 = INT16_MIN
-    _check("int16 上界回绕 MAX*1+1=MIN",
-           compute_golden_fused_mul_add_n(
-               torch.tensor([32767], dtype=torch.int16),
-               torch.tensor([1], dtype=torch.int16),
-               torch.tensor([1], dtype=torch.int16)),
-           torch.tensor([-32768], dtype=torch.int16), exact=True)
+    _check(
+        "int16 upper-bound wraparound MAX*1+1=MIN",
+        compute_golden_fused_mul_add_n(
+            torch.tensor([32767], dtype=torch.int16),
+            torch.tensor([1], dtype=torch.int16),
+            torch.tensor([1], dtype=torch.int16),
+        ),
+        torch.tensor([-32768], dtype=torch.int16),
+        exact=True,
+    )
 
     # 9) int16 下界
-    _check("int16 下界 MIN*1+0=MIN",
-           compute_golden_fused_mul_add_n(
-               torch.tensor([-32768, -32768], dtype=torch.int16),
-               torch.tensor([0, 0], dtype=torch.int16),
-               torch.tensor([1], dtype=torch.int16)),
-           torch.tensor([-32768, -32768], dtype=torch.int16), exact=True)
+    _check(
+        "int16 lower bound MIN*1+0=MIN",
+        compute_golden_fused_mul_add_n(
+            torch.tensor([-32768, -32768], dtype=torch.int16),
+            torch.tensor([0, 0], dtype=torch.int16),
+            torch.tensor([1], dtype=torch.int16),
+        ),
+        torch.tensor([-32768, -32768], dtype=torch.int16),
+        exact=True,
+    )
 
     # 10) NaN 传播：x1 含 NaN ⇒ 输出该位置 NaN
     nan_x1 = torch.tensor([1.0, float("nan"), 3.0])
     nan_x2 = torch.tensor([1.0, 1.0, 1.0])
     g = compute_golden_fused_mul_add_n(nan_x1, nan_x2, torch.tensor([2.0]))
-    _check("NaN 传播", g, torch.tensor([3.0, 0.0, 7.0]), exact=False,
-           nan_mask=torch.tensor([False, True, False]))
+    _check(
+        "NaN propagation",
+        g,
+        torch.tensor([3.0, 0.0, 7.0]),
+        exact=False,
+        nan_mask=torch.tensor([False, True, False]),
+    )
 
     # 11) +inf：x1=+inf, x3=2, x2=1 ⇒ +inf
     inf_g = compute_golden_fused_mul_add_n(
-        torch.tensor([float("inf")]), torch.tensor([1.0]), torch.tensor([2.0]))
+        torch.tensor([float("inf")]), torch.tensor([1.0]), torch.tensor([2.0])
+    )
     ok_inf = bool(torch.isinf(inf_g).all() and (inf_g > 0).all())
-    print(f"  +inf 传播: {'PASS' if ok_inf else 'FAIL'}")
+    print(f"  +inf propagation: {'PASS' if ok_inf else 'FAIL'}")
     all_passed = all_passed and ok_inf
 
     # 12) 全零输入 ⇒ y 全 0
     z = torch.zeros(8)
-    _check("全零输入 ⇒ y 全 0",
-           compute_golden_fused_mul_add_n(z, z, torch.zeros(1)), z, exact=False)
+    _check(
+        "all-zero input ⇒ y is all zeros",
+        compute_golden_fused_mul_add_n(z, z, torch.zeros(1)),
+        z,
+        exact=False,
+    )
 
     return all_passed

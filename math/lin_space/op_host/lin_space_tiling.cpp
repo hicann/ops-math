@@ -31,16 +31,11 @@ static const int64_t MATRIX_SIZE = 256;
 static const int32_t OUT_SIZE = 16 * 1024;
 static const int32_t WORK_SPACE_SIZE = 32;
 
-class LinSpaceMemBaseTilingClass : public Ops::Base::TilingBaseClass
-{
+class LinSpaceMemBaseTilingClass : public Ops::Base::TilingBaseClass {
 public:
-    explicit LinSpaceMemBaseTilingClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit LinSpaceMemBaseTilingClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
-    void Reset(gert::TilingContext* context) override
-    {
-        Ops::Base::TilingBaseClass::Reset(context);
-    }
+    void Reset(gert::TilingContext* context) override { Ops::Base::TilingBaseClass::Reset(context); }
 
 protected:
     ge::graphStatus GetPlatformInfo() override
@@ -58,37 +53,19 @@ protected:
         return ge::GRAPH_SUCCESS;
     }
 
-    ge::graphStatus GetWorkspaceSize() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus GetWorkspaceSize() override { return ge::GRAPH_SUCCESS; }
 
-    ge::graphStatus DoLibApiTiling() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus DoLibApiTiling() override { return ge::GRAPH_SUCCESS; }
 
-    bool IsCapable() override
-    {
-        return (!Ops::Base::IsRegbaseSocVersion(context_));
-    }
+    bool IsCapable() override { return (!Ops::Base::IsRegbaseSocVersion(context_)); }
 
     ge::graphStatus DoOpTiling() override;
 
-    ge::graphStatus PostTiling() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus PostTiling() override { return ge::GRAPH_SUCCESS; }
 
-    ge::graphStatus GetShapeAttrsInfo() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus GetShapeAttrsInfo() override { return ge::GRAPH_SUCCESS; }
 
-    uint64_t GetTilingKey() const override
-    {
-        return context_->GetTilingKey();
-    }
+    uint64_t GetTilingKey() const override { return context_->GetTilingKey(); }
 
     NpuArch npuArch_;
 };
@@ -130,33 +107,30 @@ inline static ge::graphStatus LinSpaceSetTilingData(gert::TilingContext* context
 inline static int64_t CalcAlignNumPerCore(const ge::DataType outputDtype, const gert::TilingContext* context)
 {
     int32_t typeSize = ge::GetSizeByDataType(outputDtype);
-    OP_CHECK_IF(
-        (typeSize <= 0),
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-            context->GetNodeName(), "output", Ops::Base::ToString(outputDtype).c_str(),
-            "The dtype size of output must be greater than 0"),
-        return -1);
+    OP_CHECK_IF((typeSize <= 0),
+                OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "output",
+                                                      Ops::Base::ToString(outputDtype).c_str(),
+                                                      "The dtype size of output must be greater than 0"),
+                return -1);
     return BLOCK_SIZE / typeSize;
 }
 
 inline static int64_t CalcMaxOutNum(const ge::DataType outDataType, const gert::TilingContext* context)
 {
     ge::DataType calcDataType = outDataType;
-    
+
     if (outDataType == ge::DT_BF16 || outDataType == ge::DT_INT32) {
         calcDataType = ge::DT_FLOAT;
-    } else if (outDataType == ge::DT_INT8 || outDataType == ge::DT_UINT8 || 
-               outDataType == ge::DT_INT16) {
+    } else if (outDataType == ge::DT_INT8 || outDataType == ge::DT_UINT8 || outDataType == ge::DT_INT16) {
         calcDataType = ge::DT_FLOAT16;
     }
-    
+
     int32_t outTypeSize = ge::GetSizeByDataType(calcDataType);
-    OP_CHECK_IF(
-        (outTypeSize <= 0),
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-            context->GetNodeName(), "output", Ops::Base::ToString(calcDataType).c_str(),
-            "The dtype size of output must be greater than 0"),
-        return -1);
+    OP_CHECK_IF((outTypeSize <= 0),
+                OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "output",
+                                                      Ops::Base::ToString(calcDataType).c_str(),
+                                                      "The dtype size of output must be greater than 0"),
+                return -1);
     return OUT_SIZE / outTypeSize;
 }
 
@@ -175,22 +149,18 @@ static bool InputTypeIsInvalid(const gert::TilingContext* context)
     bool dStartIsInvalid = (dStart != ge::DT_INT32) && (dStart != ge::DT_FLOAT) && (dStart != ge::DT_FLOAT16) &&
                            (dStart != ge::DT_BF16) && (dStart != ge::DT_INT8) && (dStart != ge::DT_UINT8) &&
                            (dStart != ge::DT_INT16);
-    OP_CHECK_IF(
-        dStartIsInvalid,
-        OP_LOGE_FOR_INVALID_DTYPE(
-            context->GetNodeName(), "start", Ops::Base::ToString(dStart).c_str(),
-            "float32, float16, bfloat16, int32, int16, int8 or uint8"),
-        return true);
+    OP_CHECK_IF(dStartIsInvalid,
+                OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "start", Ops::Base::ToString(dStart).c_str(),
+                                          "float32, float16, bfloat16, int32, int16, int8 or uint8"),
+                return true);
 
     bool dStopIsInvalid = (dStop != ge::DT_INT32) && (dStop != ge::DT_FLOAT) && (dStop != ge::DT_FLOAT16) &&
                           (dStop != ge::DT_BF16) && (dStop != ge::DT_INT8) && (dStop != ge::DT_UINT8) &&
                           (dStop != ge::DT_INT16);
-    OP_CHECK_IF(
-        dStopIsInvalid,
-        OP_LOGE_FOR_INVALID_DTYPE(
-            context->GetNodeName(), "stop", Ops::Base::ToString(dStop).c_str(),
-            "float32, float16, bfloat16, int32, int16, int8 or uint8"),
-        return true);
+    OP_CHECK_IF(dStopIsInvalid,
+                OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "stop", Ops::Base::ToString(dStop).c_str(),
+                                          "float32, float16, bfloat16, int32, int16, int8 or uint8"),
+                return true);
     bool dNumIsInvalid = (dNum != ge::DT_INT32) && (dNum != ge::DT_INT64);
     OP_CHECK_IF(
         dNumIsInvalid,
@@ -201,8 +171,8 @@ static bool InputTypeIsInvalid(const gert::TilingContext* context)
 }
 
 template <typename T>
-static ge::graphStatus LinSpaceGetConstValue(
-    gert::TilingContext* context, const gert::Tensor* tensor, T& value, ge::DataType dataType)
+static ge::graphStatus LinSpaceGetConstValue(gert::TilingContext* context, const gert::Tensor* tensor, T& value,
+                                             ge::DataType dataType)
 {
     if (dataType == ge::DT_INT64) {
         const int64_t* const_data_ptr = tensor->GetData<int64_t>();
@@ -253,8 +223,8 @@ static ge::graphStatus LinSpaceGetConstValue(
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus GetConstNum(
-    gert::TilingContext* context, const gert::Tensor* tensor_num, int64_t& num, int64_t input_index)
+static ge::graphStatus GetConstNum(gert::TilingContext* context, const gert::Tensor* tensor_num, int64_t& num,
+                                   int64_t input_index)
 {
     auto numDesc = context->GetInputDesc(input_index);
     OP_CHECK_NULL_WITH_CONTEXT(context, numDesc);
@@ -262,28 +232,26 @@ static ge::graphStatus GetConstNum(
     switch (dataType) {
         case ge::DT_INT32: {
             int32_t num_32(0);
-            OP_CHECK_IF(
-                LinSpaceGetConstValue<int32_t>(context, tensor_num, num_32, dataType) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "get num const value fail."), return ge::GRAPH_FAILED);
+            OP_CHECK_IF(LinSpaceGetConstValue<int32_t>(context, tensor_num, num_32, dataType) != ge::GRAPH_SUCCESS,
+                        OP_LOGE(context->GetNodeName(), "get num const value fail."), return ge::GRAPH_FAILED);
             num = (int64_t)num_32;
             break;
         }
         case ge::DT_INT64:
-            OP_CHECK_IF(
-                LinSpaceGetConstValue<int64_t>(context, tensor_num, num, dataType) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "get const value fail."), return ge::GRAPH_FAILED);
+            OP_CHECK_IF(LinSpaceGetConstValue<int64_t>(context, tensor_num, num, dataType) != ge::GRAPH_SUCCESS,
+                        OP_LOGE(context->GetNodeName(), "get const value fail."), return ge::GRAPH_FAILED);
             break;
         default:
-            OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "num",
-                Ops::Base::ToString(dataType).c_str(), "int32 or int64");
+            OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "num", Ops::Base::ToString(dataType).c_str(),
+                                      "int32 or int64");
             return ge::GRAPH_FAILED;
     }
 
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus GetConstStartOrStop(
-    gert::TilingContext* context, const gert::Tensor* tensor_index, float& index, int64_t input_index)
+static ge::graphStatus GetConstStartOrStop(gert::TilingContext* context, const gert::Tensor* tensor_index, float& index,
+                                           int64_t input_index)
 {
     auto inputDesc = context->GetInputDesc(input_index);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
@@ -325,18 +293,17 @@ static ge::graphStatus GetConstStartOrStop(
             break;
         }
         default:
-            OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(),
-                (input_index == static_cast<int64_t>(INPUT_IDX_START)) ? "start" : "stop",
-                Ops::Base::ToString(dataType).c_str(),
-                "float32, float16, bfloat16, int32, int16, int8 or uint8");
+            OP_LOGE_FOR_INVALID_DTYPE(
+                context->GetNodeName(), (input_index == static_cast<int64_t>(INPUT_IDX_START)) ? "start" : "stop",
+                Ops::Base::ToString(dataType).c_str(), "float32, float16, bfloat16, int32, int16, int8 or uint8");
             return ge::GRAPH_FAILED;
     }
 
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus SetLoopNumForLinSpace(
-    const gert::TilingContext* context, LinSpaceTilingData& tilingData, const ge::DataType outDataType)
+static ge::graphStatus SetLoopNumForLinSpace(const gert::TilingContext* context, LinSpaceTilingData& tilingData,
+                                             const ge::DataType outDataType)
 {
     int64_t maxOutNum = CalcMaxOutNum(outDataType, context);
     int64_t matrixLen = tilingData.get_numPerCore() <= MATRIX_SIZE ? tilingData.get_numPerCore() : MATRIX_SIZE;
@@ -353,27 +320,25 @@ static ge::graphStatus SetLoopNumForLinSpace(
         tilingData.set_innerTailLoopTail(0);
     } else {
         tilingData.set_innerLoopNum(tilingData.get_numPerCore() / MATRIX_SIZE / POWER_BASE_NUM);
-        tilingData.set_innerLoopTail(
-            tilingData.get_numPerCore() - (MATRIX_SIZE << GetBaseNum(tilingData.get_innerLoopNum())));
+        tilingData.set_innerLoopTail(tilingData.get_numPerCore() -
+                                     (MATRIX_SIZE << GetBaseNum(tilingData.get_innerLoopNum())));
         tilingData.set_innerTailLoopNum(tilingData.get_tailNum() / MATRIX_SIZE / POWER_BASE_NUM);
         tilingData.set_innerTailLoopTail(
             tilingData.get_tailNum() > MATRIX_SIZE ?
                 (tilingData.get_tailNum() - (MATRIX_SIZE << GetBaseNum(tilingData.get_innerTailLoopNum()))) :
                 0);
     }
-    OP_LOGD(
-        context->GetNodeName(),
-        "tilingData is matrixLen:%ld, outerLoopNum:%ld, outerLoopNumTail:%ld, \
+    OP_LOGD(context->GetNodeName(), "tilingData is matrixLen:%ld, outerLoopNum:%ld, outerLoopNumTail:%ld, \
           outerTailLoopNum:%ld, outerTailLoopNumTail:%ld, innerLoopNum:%ld, innerLoopTail:%ld, \
           innerTailLoopNum:%ld, innerTailLoopTail:%ld",
-        tilingData.get_matrixLen(), tilingData.get_outerLoopNum(), tilingData.get_outerLoopNumTail(),
-        tilingData.get_outerTailLoopNum(), tilingData.get_outerTailLoopNumTail(), tilingData.get_innerLoopNum(),
-        tilingData.get_innerLoopTail(), tilingData.get_innerTailLoopNum(), tilingData.get_innerTailLoopTail());
+            tilingData.get_matrixLen(), tilingData.get_outerLoopNum(), tilingData.get_outerLoopNumTail(),
+            tilingData.get_outerTailLoopNum(), tilingData.get_outerTailLoopNumTail(), tilingData.get_innerLoopNum(),
+            tilingData.get_innerLoopTail(), tilingData.get_innerTailLoopNum(), tilingData.get_innerTailLoopTail());
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus SetTilingTilingKeyOneCore(
-    const gert::TilingContext* context, LinSpaceTilingData& tilingData, const ge::DataType outDataType)
+static ge::graphStatus SetTilingTilingKeyOneCore(const gert::TilingContext* context, LinSpaceTilingData& tilingData,
+                                                 const ge::DataType outDataType)
 {
     switch (outDataType) {
         case ge::DT_FLOAT:
@@ -398,99 +363,92 @@ static ge::graphStatus SetTilingTilingKeyOneCore(
             tilingData.set_tilingKey(static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_703));
             break;
         default:
-            OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "output",
-                Ops::Base::ToString(outDataType).c_str(),
-                "float32, float16, bfloat16, int32, int16, int8 or uint8");
+            OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "output", Ops::Base::ToString(outDataType).c_str(),
+                                      "float32, float16, bfloat16, int32, int16, int8 or uint8");
             return ge::GRAPH_FAILED;
     }
 
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus SetTilingTilingKeyForLinSpace(
-    gert::TilingContext* context, LinSpaceTilingData& tilingData, const ge::DataType outDataType)
+static ge::graphStatus SetTilingTilingKeyForLinSpace(gert::TilingContext* context, LinSpaceTilingData& tilingData,
+                                                     const ge::DataType outDataType)
 {
     int64_t maxOutNum = CalcMaxOutNum(outDataType, context);
     if (tilingData.get_realCoreNum() == 1) {
-        OP_CHECK_IF(
-            SetTilingTilingKeyOneCore(context, tilingData, outDataType) != ge::GRAPH_SUCCESS,
-            OP_LOGE(context->GetNodeName(), "set tilingKey fail."), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(SetTilingTilingKeyOneCore(context, tilingData, outDataType) != ge::GRAPH_SUCCESS,
+                    OP_LOGE(context->GetNodeName(), "set tilingKey fail."), return ge::GRAPH_FAILED);
     } else {
         switch (outDataType) {
             case ge::DT_FLOAT:
-                tilingData.set_tilingKey(
-                    tilingData.get_numPerCore() <= maxOutNum ? static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_101) :
-                                                               static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_102));
+                tilingData.set_tilingKey(tilingData.get_numPerCore() <= maxOutNum ?
+                                             static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_101) :
+                                             static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_102));
                 break;
             case ge::DT_FLOAT16:
-                tilingData.set_tilingKey(
-                    tilingData.get_numPerCore() <= maxOutNum ? static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_201) :
-                                                               static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_202));
+                tilingData.set_tilingKey(tilingData.get_numPerCore() <= maxOutNum ?
+                                             static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_201) :
+                                             static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_202));
                 break;
             case ge::DT_INT8:
-                tilingData.set_tilingKey(
-                    tilingData.get_numPerCore() <= maxOutNum ? static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_301) :
-                                                               static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_302));
+                tilingData.set_tilingKey(tilingData.get_numPerCore() <= maxOutNum ?
+                                             static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_301) :
+                                             static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_302));
                 break;
             case ge::DT_UINT8:
-                tilingData.set_tilingKey(
-                    tilingData.get_numPerCore() <= maxOutNum ? static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_401) :
-                                                               static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_402));
+                tilingData.set_tilingKey(tilingData.get_numPerCore() <= maxOutNum ?
+                                             static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_401) :
+                                             static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_402));
                 break;
             case ge::DT_INT16:
-                tilingData.set_tilingKey(
-                    tilingData.get_numPerCore() <= maxOutNum ? static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_501) :
-                                                               static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_502));
+                tilingData.set_tilingKey(tilingData.get_numPerCore() <= maxOutNum ?
+                                             static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_501) :
+                                             static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_502));
                 break;
             case ge::DT_INT32:
-                tilingData.set_tilingKey(
-                    tilingData.get_numPerCore() <= maxOutNum ? static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_601) :
-                                                               static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_602));
+                tilingData.set_tilingKey(tilingData.get_numPerCore() <= maxOutNum ?
+                                             static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_601) :
+                                             static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_602));
                 break;
             case ge::DT_BF16:
-                tilingData.set_tilingKey(
-                    tilingData.get_numPerCore() <= maxOutNum ? static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_701) :
-                                                               static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_702));
+                tilingData.set_tilingKey(tilingData.get_numPerCore() <= maxOutNum ?
+                                             static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_701) :
+                                             static_cast<int64_t>(LinSpaceTilingKey::TILINGKEY_702));
                 break;
             default:
-                OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "output",
-                    Ops::Base::ToString(outDataType).c_str(),
-                    "float32, float16, bfloat16, int32, int16, int8 or uint8");
+                OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "output", Ops::Base::ToString(outDataType).c_str(),
+                                          "float32, float16, bfloat16, int32, int16, int8 or uint8");
                 return ge::GRAPH_FAILED;
         }
     }
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus SetTilingDataForLinSpace(
-    gert::TilingContext* context, LinSpaceTilingData& tilingData, const ge::DataType outDataType)
+static ge::graphStatus SetTilingDataForLinSpace(gert::TilingContext* context, LinSpaceTilingData& tilingData,
+                                                const ge::DataType outDataType)
 {
-    OP_CHECK_IF(
-        SetTilingTilingKeyForLinSpace(context, tilingData, outDataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "set loopNum fail."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        SetLoopNumForLinSpace(context, tilingData, outDataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "set loopNum fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(SetTilingTilingKeyForLinSpace(context, tilingData, outDataType) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "set loopNum fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(SetLoopNumForLinSpace(context, tilingData, outDataType) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "set loopNum fail."), return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(
-        LinSpaceSetTilingData(context, tilingData) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "LinSpaceSetTilingData set tiling data fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(LinSpaceSetTilingData(context, tilingData) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "LinSpaceSetTilingData set tiling data fail."),
+                return ge::GRAPH_FAILED);
     context->SetBlockDim(tilingData.get_realCoreNum());
     context->SetTilingKey(tilingData.get_tilingKey());
 
     size_t* workspaces = context->GetWorkspaceSizes(1);
     workspaces[0] = WORK_SPACE_SIZE;
 
-    OP_LOGD(
-        context->GetNodeName(), "tilingData is tilingKey:%ld, realCoreNum:%ld, numPerCore:%ld, tailNum:%ld",
-        tilingData.get_tilingKey(), tilingData.get_realCoreNum(), tilingData.get_numPerCore(),
-        tilingData.get_tailNum());
+    OP_LOGD(context->GetNodeName(), "tilingData is tilingKey:%ld, realCoreNum:%ld, numPerCore:%ld, tailNum:%ld",
+            tilingData.get_tilingKey(), tilingData.get_realCoreNum(), tilingData.get_numPerCore(),
+            tilingData.get_tailNum());
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus SetTilingBasicInfo(
-    const gert::TilingContext* context, LinSpaceTilingData& tilingData, const float& start, const float& stop,
-    const int64_t& num)
+static ge::graphStatus SetTilingBasicInfo(const gert::TilingContext* context, LinSpaceTilingData& tilingData,
+                                          const float& start, const float& stop, const int64_t& num)
 {
     tilingData.set_start(start);
     tilingData.set_stop(stop);
@@ -500,9 +458,8 @@ static ge::graphStatus SetTilingBasicInfo(
     } else {
         tilingData.set_scalar(0);
     }
-    OP_LOGD(
-        context->GetNodeName(), "tilingData is start:%f, stop:%f, num:%ld, scalar:%f", tilingData.get_start(),
-        tilingData.get_stop(), tilingData.get_num(), tilingData.get_scalar());
+    OP_LOGD(context->GetNodeName(), "tilingData is start:%f, stop:%f, num:%ld, scalar:%f", tilingData.get_start(),
+            tilingData.get_stop(), tilingData.get_num(), tilingData.get_scalar());
     return ge::GRAPH_SUCCESS;
 }
 
@@ -516,16 +473,16 @@ static ge::graphStatus TilingPrepare4LinSpace(gert::TilingParseContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->totalCoreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        (compileInfo->totalCoreNum <= 0),
-        OP_LOGE(context->GetNodeName(), "TilingPrepare4LinSpace fail to get core num."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->totalCoreNum <= 0),
+                OP_LOGE(context->GetNodeName(), "TilingPrepare4LinSpace fail to get core num."),
+                return ge::GRAPH_FAILED);
 
     uint64_t ubSizePlatForm;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
     compileInfo->ubSizePlatForm = static_cast<int64_t>(ubSizePlatForm);
-    OP_CHECK_IF(
-        (compileInfo->ubSizePlatForm <= 0),
-        OP_LOGE(context->GetNodeName(), "TilingPrepare4LinSpaceFlat fail to get ub size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->ubSizePlatForm <= 0),
+                OP_LOGE(context->GetNodeName(), "TilingPrepare4LinSpace fail to get ub size."),
+                return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }
@@ -539,26 +496,21 @@ ge::graphStatus LinSpaceMemBaseTilingClass::DoOpTiling()
     OP_CHECK_NULL_WITH_CONTEXT(context_, tensor_stop);
     auto tensor_num = context_->GetInputTensor(INPUT_IDX_NUM);
     OP_CHECK_NULL_WITH_CONTEXT(context_, tensor_num);
-    OP_CHECK_IF(
-        InputTypeIsInvalid(context_), OP_LOGE(context_->GetNodeName(), "input dtype is invalid."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(InputTypeIsInvalid(context_), OP_LOGE(context_->GetNodeName(), "input dtype is invalid."),
+                return ge::GRAPH_FAILED);
 
     LinSpaceTilingData tilingData;
     float start(0);
     float stop(0);
     int64_t num(0);
-    OP_CHECK_IF(
-        GetConstNum(context_, tensor_num, num, INPUT_IDX_NUM) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "set tilingData num fail."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        GetConstStartOrStop(context_, tensor_start, start, INPUT_IDX_START) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "set tilingData start fail."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        GetConstStartOrStop(context_, tensor_stop, stop, INPUT_IDX_STOP) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "set tilingData stop fail."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        SetTilingBasicInfo(context_, tilingData, start, stop, num) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "set basic info fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetConstNum(context_, tensor_num, num, INPUT_IDX_NUM) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context_->GetNodeName(), "set tilingData num fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetConstStartOrStop(context_, tensor_start, start, INPUT_IDX_START) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context_->GetNodeName(), "set tilingData start fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetConstStartOrStop(context_, tensor_stop, stop, INPUT_IDX_STOP) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context_->GetNodeName(), "set tilingData stop fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(SetTilingBasicInfo(context_, tilingData, start, stop, num) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context_->GetNodeName(), "set basic info fail."), return ge::GRAPH_FAILED);
 
     auto outputDesc = context_->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, outputDesc);
@@ -575,9 +527,8 @@ ge::graphStatus LinSpaceMemBaseTilingClass::DoOpTiling()
     tilingData.set_realCoreNum(CeilDiv(tilingData.get_num(), tilingData.get_numPerCore()));
     int64_t tailNum = tilingData.get_num() - (tilingData.get_realCoreNum() - 1) * tilingData.get_numPerCore();
     tilingData.set_tailNum(tailNum);
-    OP_CHECK_IF(
-        SetTilingDataForLinSpace(context_, tilingData, outputDtype) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "set TilingKey fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(SetTilingDataForLinSpace(context_, tilingData, outputDtype) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context_->GetNodeName(), "set TilingKey fail."), return ge::GRAPH_FAILED);
     OP_LOGD(context_->GetNodeName(), "Tiling4LinSpace exit.");
     return ge::GRAPH_SUCCESS;
 }

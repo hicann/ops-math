@@ -118,7 +118,7 @@ static bool CheckMinMaxIsInfNan(float minValue, float maxValue)
 static bool CheckValueRange(int64_t bins, const aclScalar* min, const aclScalar* max, op::DataType selfDType)
 {
     if (bins <= 0) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The value of bins can not less or equal 0.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The value of bins must be greater than 0.");
         return false;
     }
 
@@ -126,14 +126,14 @@ static bool CheckValueRange(int64_t bins, const aclScalar* min, const aclScalar*
         int32_t minValue = min->ToInt32();
         int32_t maxValue = max->ToInt32();
         if (minValue > maxValue) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The value of max should greater than or equal to min.");
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The value of max should be greater than or equal to min.");
             return false;
         }
     } else {
         float minValue = min->ToFloat();
         float maxValue = max->ToFloat();
         if (minValue > maxValue) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The value of max should greater than or equal to min.");
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The value of max should be greater than or equal to min.");
             return false;
         }
     }

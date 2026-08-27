@@ -1042,7 +1042,7 @@ TEST_F(FusedMulAddNTiling, core_cap_depends_on_elem_byte_size)
     // cap 用 elemByteSize：4 字节 minElems 更小 -> 用核更多（>=）
     EXPECT_EQ(bnFp32, ExpectEffCoreNum(total, 4, SOC_CORE_NUM_910B));
     EXPECT_EQ(bnFp16, ExpectEffCoreNum(total, 2, SOC_CORE_NUM_910B));
-    EXPECT_GT(bnFp32, bnFp16) << "fp32(4B) 应比 fp16(2B) 用更多核（minElemsPerCore 更小）";
+    EXPECT_GT(bnFp32, bnFp16) << "fp32(4B) should use more cores than fp16 (2B) because minElemsPerCore is smaller";
     // 各自切分自洽
     EXPECT_EQ(Field(infoFp32, IDX_BLOCK_FORMER) * (bnFp32 - 1) + Field(infoFp32, IDX_BLOCK_TAIL), total);
     EXPECT_EQ(Field(infoFp16, IDX_BLOCK_FORMER) * (bnFp16 - 1) + Field(infoFp16, IDX_BLOCK_TAIL), total);

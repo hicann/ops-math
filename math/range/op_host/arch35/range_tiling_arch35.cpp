@@ -44,49 +44,44 @@ static inline int64_t Align128FloorSize(int64_t value)
     return static_cast<int64_t>((value / CORE_MINEST_NUM) * CORE_MINEST_NUM);
 }
 
-static ge::graphStatus CheckDtypeIsInvalid(
-    gert::TilingContext* context, ge::DataType start, ge::DataType limit, ge::DataType delta, ge::DataType output)
+static ge::graphStatus CheckDtypeIsInvalid(gert::TilingContext* context, ge::DataType start, ge::DataType limit,
+                                           ge::DataType delta, ge::DataType output)
 {
     std::set<ge::DataType> outputDtype = {ge::DT_INT32, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16, ge::DT_INT64};
     std::set<ge::DataType> inputDtype = {ge::DT_INT32, ge::DT_FLOAT, ge::DT_FLOAT16,
                                          ge::DT_BF16,  ge::DT_INT64, ge::DT_DOUBLE};
 
-    OP_CHECK_IF(
-        inputDtype.count(start) == 0,
-        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "start", Ops::Base::ToString(start).c_str(),
-            "int32, int64, float32, float16, bfloat16 or double"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        inputDtype.count(limit) == 0,
-        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "limit", Ops::Base::ToString(limit).c_str(),
-            "int32, int64, float32, float16, bfloat16 or double"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        inputDtype.count(delta) == 0,
-        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "delta", Ops::Base::ToString(delta).c_str(),
-            "int32, int64, float32, float16, bfloat16 or double"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        outputDtype.count(output) == 0,
-        OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "y", Ops::Base::ToString(output).c_str(),
-            "int32, int64, float32, float16 or bfloat16"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputDtype.count(start) == 0,
+                OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "start", Ops::Base::ToString(start).c_str(),
+                                          "int32, int64, float32, float16, bfloat16 or double"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputDtype.count(limit) == 0,
+                OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "limit", Ops::Base::ToString(limit).c_str(),
+                                          "int32, int64, float32, float16, bfloat16 or double"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputDtype.count(delta) == 0,
+                OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "delta", Ops::Base::ToString(delta).c_str(),
+                                          "int32, int64, float32, float16, bfloat16 or double"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(outputDtype.count(output) == 0,
+                OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "y", Ops::Base::ToString(output).c_str(),
+                                          "int32, int64, float32, float16 or bfloat16"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus CalcRangeTilingParam(
-    const gert::TilingContext* context, RangeTilingParam& tilingParam, DataType dataType)
+static ge::graphStatus CalcRangeTilingParam(const gert::TilingContext* context, RangeTilingParam& tilingParam,
+                                            DataType dataType)
 {
-    OP_LOGD("[CalcRangeTilingParam]", "TilingRange Enter CalcRangeTilingParam funtion.");
+    OP_LOGD("[CalcRangeTilingParam]", "TilingRange Enter CalcRangeTilingParam function.");
 
     int64_t numOfPerCore = tilingParam.totalElementNum;
     int64_t usedCoreNum = 1;
     if (tilingParam.totalElementNum > CORE_MINEST_NUM) {
-        numOfPerCore =
-            Align128CeilSize((tilingParam.totalElementNum + tilingParam.totalCoreNum - 1) / tilingParam.totalCoreNum);
-        OP_CHECK_IF(
-            numOfPerCore == 0, OP_LOGE(context->GetNodeName(), "numOfPerCore should not be zero."),
-            return ge::GRAPH_FAILED);
+        numOfPerCore = Align128CeilSize((tilingParam.totalElementNum + tilingParam.totalCoreNum - 1) /
+                                        tilingParam.totalCoreNum);
+        OP_CHECK_IF(numOfPerCore == 0, OP_LOGE(context->GetNodeName(), "numOfPerCore should not be zero."),
+                    return ge::GRAPH_FAILED);
         usedCoreNum = min((tilingParam.totalElementNum + numOfPerCore - 1) / numOfPerCore, tilingParam.totalCoreNum);
     }
     int64_t numOfTailCore = tilingParam.totalElementNum - (usedCoreNum - 1) * numOfPerCore;
@@ -154,21 +149,18 @@ ge::graphStatus RangeRegBaseTilingClass::DoOpTiling()
     switch (outDataType_) {
         case ge::DT_INT32:
         case ge::DT_INT64: {
-            OP_CHECK_IF(
-                CalculateOutputSize<int64_t>(context_, start, limit, delta, outSize) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context_->GetNodeName(), "CalculateOutputSize fail."), return ge::GRAPH_FAILED);
+            OP_CHECK_IF(CalculateOutputSize<int64_t>(context_, start, limit, delta, outSize) != ge::GRAPH_SUCCESS,
+                        OP_LOGE(context_->GetNodeName(), "CalculateOutputSize fail."), return ge::GRAPH_FAILED);
             break;
         }
         case ge::DT_FLOAT: {
-            OP_CHECK_IF(
-                CalculateOutputSize<double>(context_, start, limit, delta, outSize) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context_->GetNodeName(), "CalculateOutputSize fail."), return ge::GRAPH_FAILED);
+            OP_CHECK_IF(CalculateOutputSize<double>(context_, start, limit, delta, outSize) != ge::GRAPH_SUCCESS,
+                        OP_LOGE(context_->GetNodeName(), "CalculateOutputSize fail."), return ge::GRAPH_FAILED);
             break;
         }
         default: {
-            OP_CHECK_IF(
-                CalculateOutputSize<float>(context_, start, limit, delta, outSize) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context_->GetNodeName(), "append tiling args fail."), return ge::GRAPH_FAILED);
+            OP_CHECK_IF(CalculateOutputSize<float>(context_, start, limit, delta, outSize) != ge::GRAPH_SUCCESS,
+                        OP_LOGE(context_->GetNodeName(), "append tiling args fail."), return ge::GRAPH_FAILED);
             break;
         }
     }
@@ -176,9 +168,8 @@ ge::graphStatus RangeRegBaseTilingClass::DoOpTiling()
     tilingParam_.totalElementNum = static_cast<int64_t>(outSize);
 
     // 设置Range算子中的参数
-    OP_CHECK_IF(
-        CalcRangeTilingParam(context_, tilingParam_, outDataType_) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "SetRangeTilingParam fail"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcRangeTilingParam(context_, tilingParam_, outDataType_) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context_->GetNodeName(), "SetRangeTilingParam fail"), return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }

@@ -38,7 +38,7 @@ static ge::graphStatus HistogramV2InferDataTypeFunc(gert::InferDataTypeContext* 
         }
     }
 
-    OP_LOGD(context, "befer set y dtype: %s", Ops::Base::ToString(context->GetOutputDataType(0)).c_str());
+    OP_LOGD(context, "before set y dtype: %s", Ops::Base::ToString(context->GetOutputDataType(0)).c_str());
     context->SetOutputDataType(0, outDtype);
     OP_LOGD(context, "after set y dtype: %s", Ops::Base::ToString(context->GetOutputDataType(0)).c_str());
     OP_LOGD(context, "End to do HistogramV2InferDataTypeFunc end");

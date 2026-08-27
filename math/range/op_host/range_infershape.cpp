@@ -67,8 +67,8 @@ static bool IsTensorNull(const gert::InferShapeContext* context, const gert::Ten
 }
 
 template <typename T>
-static ge::graphStatus RangeGetConstValue(
-    gert::InferShapeContext* context, const gert::Tensor* tensor, std::vector<T>& value)
+static ge::graphStatus RangeGetConstValue(gert::InferShapeContext* context, const gert::Tensor* tensor,
+                                          std::vector<T>& value)
 {
     if (tensor->GetDataType() == ge::DT_INT32) {
         const int32_t* constDataPtr = tensor->GetData<int32_t>();
@@ -114,47 +114,41 @@ static ge::graphStatus RangeGetConstValue(
 template <typename T>
 static ge::graphStatus CheckParam(gert::InferShapeContext* context, T start, T limit, T delta)
 {
-    OP_CHECK_IF(
-        !(delta > (static_cast<T>(0)) || delta < (static_cast<T>(0))),
-        OP_LOGE(context->GetNodeName(), "delta is zero."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        ((limit > start) && (delta < 0)),
-        OP_LOGE(context->GetNodeName(), "increate is positive, but delta is negative"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        ((limit < start) && (delta > 0)),
-        OP_LOGE(context->GetNodeName(), "increate is negative, but delta is positive"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(!(delta > (static_cast<T>(0)) || delta < (static_cast<T>(0))),
+                OP_LOGE(context->GetNodeName(), "delta is zero."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(((limit > start) && (delta < 0)),
+                OP_LOGE(context->GetNodeName(), "increase is positive, but delta is negative"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(((limit < start) && (delta > 0)),
+                OP_LOGE(context->GetNodeName(), "increase is negative, but delta is positive"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 template <typename T>
-static ge::graphStatus CalculateOutputNum(
-    gert::InferShapeContext* context, const gert::Tensor* tensorStart, const gert::Tensor* tensorLimit,
-    const gert::Tensor* tensorDelta, uint64_t& totalNum)
+static ge::graphStatus CalculateOutputNum(gert::InferShapeContext* context, const gert::Tensor* tensorStart,
+                                          const gert::Tensor* tensorLimit, const gert::Tensor* tensorDelta,
+                                          uint64_t& totalNum)
 {
     std::vector<T> startMultiples;
     std::vector<T> limitMultiples;
     std::vector<T> deltaMultiples;
-    OP_CHECK_IF(
-        RangeGetConstValue<T>(context, tensorStart, startMultiples) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "get start const value fail."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        RangeGetConstValue<T>(context, tensorLimit, limitMultiples) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "get limit const value fail."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        RangeGetConstValue<T>(context, tensorDelta, deltaMultiples) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "get delta const value fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(RangeGetConstValue<T>(context, tensorStart, startMultiples) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "get start const value fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(RangeGetConstValue<T>(context, tensorLimit, limitMultiples) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "get limit const value fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(RangeGetConstValue<T>(context, tensorDelta, deltaMultiples) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "get delta const value fail."), return ge::GRAPH_FAILED);
     if (startMultiples.empty() || limitMultiples.empty() || deltaMultiples.empty()) {
         totalNum = -1;
         return ge::GRAPH_SUCCESS;
     }
 
-    OP_CHECK_IF(
-        CheckParam(context, startMultiples[0], limitMultiples[0], deltaMultiples[0]) != ge::GRAPH_SUCCESS,
-        OP_LOGE(
-            context->GetNodeName(), "CheckParam fail, start: %lf, limit: %lf, delta: %lf",
-            static_cast<double>(startMultiples[0]), static_cast<double>(limitMultiples[0]),
-            static_cast<double>(deltaMultiples[0])),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckParam(context, startMultiples[0], limitMultiples[0], deltaMultiples[0]) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "CheckParam fail, start: %lf, limit: %lf, delta: %lf",
+                        static_cast<double>(startMultiples[0]), static_cast<double>(limitMultiples[0]),
+                        static_cast<double>(deltaMultiples[0])),
+                return ge::GRAPH_FAILED);
 
     const gert::RuntimeAttrs* attrs = context->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
@@ -164,29 +158,25 @@ static ge::graphStatus CalculateOutputNum(
         totalNum = static_cast<uint64_t>((limitMultiples[0] - startMultiples[0]) / deltaMultiples[0] + 1);
     } else {
         if (std::is_same<T, int64_t>::value) {
-            totalNum = static_cast<uint64_t>(Ops::Base::CeilDiv(
-                static_cast<int64_t>(limitMultiples[0]) - static_cast<int64_t>(startMultiples[0]),
-                static_cast<int64_t>(deltaMultiples[0])));
+            totalNum = static_cast<uint64_t>(
+                Ops::Base::CeilDiv(static_cast<int64_t>(limitMultiples[0]) - static_cast<int64_t>(startMultiples[0]),
+                                   static_cast<int64_t>(deltaMultiples[0])));
         } else {
             std::vector<double> startDouble;
             std::vector<double> limitDouble;
             std::vector<double> deltaDouble;
-            OP_CHECK_IF(
-                RangeGetConstValue<double>(context, tensorStart, startDouble) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "get start const value fail."), return ge::GRAPH_FAILED);
-            OP_CHECK_IF(
-                RangeGetConstValue<double>(context, tensorLimit, limitDouble) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "get limit const value fail."), return ge::GRAPH_FAILED);
-            OP_CHECK_IF(
-                RangeGetConstValue<double>(context, tensorDelta, deltaDouble) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "get delta const value fail."), return ge::GRAPH_FAILED);
+            OP_CHECK_IF(RangeGetConstValue<double>(context, tensorStart, startDouble) != ge::GRAPH_SUCCESS,
+                        OP_LOGE(context->GetNodeName(), "get start const value fail."), return ge::GRAPH_FAILED);
+            OP_CHECK_IF(RangeGetConstValue<double>(context, tensorLimit, limitDouble) != ge::GRAPH_SUCCESS,
+                        OP_LOGE(context->GetNodeName(), "get limit const value fail."), return ge::GRAPH_FAILED);
+            OP_CHECK_IF(RangeGetConstValue<double>(context, tensorDelta, deltaDouble) != ge::GRAPH_SUCCESS,
+                        OP_LOGE(context->GetNodeName(), "get delta const value fail."), return ge::GRAPH_FAILED);
             totalNum = static_cast<uint64_t>(std::ceil((limitDouble[0] - startDouble[0]) / deltaDouble[0]));
         }
     }
-    OP_LOGD(
-        context->GetNodeName(), "CalculateOutputNum: start: %lf, limit: %lf, delta: %lf, total_num: %lu",
-        static_cast<double>(startMultiples[0]), static_cast<double>(limitMultiples[0]),
-        static_cast<double>(deltaMultiples[0]), totalNum);
+    OP_LOGD(context->GetNodeName(), "CalculateOutputNum: start: %lf, limit: %lf, delta: %lf, total_num: %lu",
+            static_cast<double>(startMultiples[0]), static_cast<double>(limitMultiples[0]),
+            static_cast<double>(deltaMultiples[0]), totalNum);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -217,23 +207,23 @@ static ge::graphStatus RangeInferShapeFunc(gert::InferShapeContext* context)
 
     switch (outDtype) {
         case ge::DT_FLOAT:
-            OP_CHECK_IF(
-                CalculateOutputNum<double>(context, startTensor, limitTensor, deltaTensor, totalNum) !=
-                    ge::GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "calculate output_total_num value fail."), return ge::GRAPH_FAILED);
+            OP_CHECK_IF(CalculateOutputNum<double>(context, startTensor, limitTensor, deltaTensor, totalNum) !=
+                            ge::GRAPH_SUCCESS,
+                        OP_LOGE(context->GetNodeName(), "calculate output_total_num value fail."),
+                        return ge::GRAPH_FAILED);
             break;
         case ge::DT_INT32:
         case ge::DT_INT64:;
-            OP_CHECK_IF(
-                CalculateOutputNum<int64_t>(context, startTensor, limitTensor, deltaTensor, totalNum) !=
-                    ge::GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "calculate output_total_num value fail."), return ge::GRAPH_FAILED);
+            OP_CHECK_IF(CalculateOutputNum<int64_t>(context, startTensor, limitTensor, deltaTensor, totalNum) !=
+                            ge::GRAPH_SUCCESS,
+                        OP_LOGE(context->GetNodeName(), "calculate output_total_num value fail."),
+                        return ge::GRAPH_FAILED);
             break;
         default:
-            OP_CHECK_IF(
-                CalculateOutputNum<float>(context, startTensor, limitTensor, deltaTensor, totalNum) !=
-                    ge::GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "calculate output_total_num value fail."), return ge::GRAPH_FAILED);
+            OP_CHECK_IF(CalculateOutputNum<float>(context, startTensor, limitTensor, deltaTensor, totalNum) !=
+                            ge::GRAPH_SUCCESS,
+                        OP_LOGE(context->GetNodeName(), "calculate output_total_num value fail."),
+                        return ge::GRAPH_FAILED);
             break;
     }
 

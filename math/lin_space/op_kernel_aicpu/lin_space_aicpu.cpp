@@ -65,7 +65,8 @@ uint32_t LinSpaceParaCheck(const CpuKernelContext& ctx, int64_t& num_value)
             KERNEL_LOG_ERROR("num datatype[%d] must be DT_INT32 or DT_INT64 fail.", num_type);
             return KERNEL_STATUS_PARAM_INVALID;
     }
-    KERNEL_CHECK_FALSE((num_value > 0), KERNEL_STATUS_PARAM_INVALID, "Input[num] <= 0 fail.")
+    KERNEL_CHECK_FALSE((num_value > 0), KERNEL_STATUS_PARAM_INVALID,
+                       "Input[num] must be greater than 0, but got [%ld].", num_value)
     return KERNEL_STATUS_OK;
 }
 

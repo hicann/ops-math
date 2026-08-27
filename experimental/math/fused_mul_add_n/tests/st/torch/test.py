@@ -58,6 +58,7 @@ INT_DTYPES = (torch.int32, torch.int16)
 # 输入数据合成（确定性：固定 seed，便于复现 / determinism 重复执行）
 # ============================================================================
 
+
 def _make_tensor(shape, dtype, pattern, seed):
     """根据 pattern 合成 CPU 输入 tensor。"""
     g = torch.Generator().manual_seed(seed)
@@ -89,7 +90,9 @@ def _make_tensor(shape, dtype, pattern, seed):
     if pattern in ("random", "random_int"):
         if dtype in INT_DTYPES:
             # 落在 [-32, 32)，避免常规用例直算溢出（溢出语义由专门用例覆盖）
-            t = torch.randint(-32, 32, shape if shape != () else (1,), generator=g, dtype=torch.int64)
+            t = torch.randint(
+                -32, 32, shape if shape != () else (1,), generator=g, dtype=torch.int64
+            )
             t = t.to(dtype)
             return t.reshape(shape) if shape != () else t.reshape(())
         # 浮点随机 [-2, 2)
@@ -115,12 +118,31 @@ def _make_x3(x3_shape, dtype, x3_value):
 #     seed
 # ============================================================================
 
-def _c(cid, level, dtype, shape, x3_value, x1p="random", x2p="random",
-       x3_shape=(1,), check="oracle", seed=1234):
+
+def _c(
+    cid,
+    level,
+    dtype,
+    shape,
+    x3_value,
+    x1p="random",
+    x2p="random",
+    x3_shape=(1,),
+    check="oracle",
+    seed=1234,
+):
     return {
-        "id": cid, "level": level, "dtype": DTYPE_MAP[dtype], "dtype_name": dtype,
-        "shape": shape, "x3_shape": x3_shape, "x3_value": x3_value,
-        "x1_pattern": x1p, "x2_pattern": x2p, "check": check, "seed": seed,
+        "id": cid,
+        "level": level,
+        "dtype": DTYPE_MAP[dtype],
+        "dtype_name": dtype,
+        "shape": shape,
+        "x3_shape": x3_shape,
+        "x3_value": x3_value,
+        "x1_pattern": x1p,
+        "x2_pattern": x2p,
+        "check": check,
+        "seed": seed,
     }
 
 
@@ -162,51 +184,159 @@ def get_test_cases():
         _c("L1_019", "L1", "int32", (), 3, "random_int", "random_int", seed=219),
         _c("L1_020", "L1", "float32", (1,), 1.0, seed=220),
         _c("L1_021", "L1", "bfloat16", (1,), 2.0, seed=221),
-        _c("L1_022", "L1", "float32", (1, 1), 2.0, x3_shape=(1, 1), seed=222),  # x3 形态 [1,1]
+        _c(
+            "L1_022", "L1", "float32", (1, 1), 2.0, x3_shape=(1, 1), seed=222
+        ),  # x3 形态 [1,1]
         _c("L1_023", "L1", "float32", (4096, 1024), 2.0, seed=223),
         _c("L1_024", "L1", "float16", (4096, 1024), 2.0, seed=224),
-        _c("L1_025", "L1", "int32", (4096, 1024), 2, "random_int", "random_int", seed=225),
+        _c(
+            "L1_025",
+            "L1",
+            "int32",
+            (4096, 1024),
+            2,
+            "random_int",
+            "random_int",
+            seed=225,
+        ),
     ]
 
     # ---------------- L1: x3=0 不变量 / x3=1 退化（L1_026~030）----------------
     cases += [
         _c("L1_026", "L1", "float32", (4, 5), 0.0, check="invariant_x2", seed=226),
         _c("L1_027", "L1", "float16", (4, 5), 0.0, check="invariant_x2", seed=227),
-        _c("L1_028", "L1", "int32", (4, 5), 0, "random_int", "random_int", check="invariant_x2", seed=228),
-        _c("L1_029", "L1", "float32", (4, 5), 1.0, seed=229),  # x3=1 ⇒ y==x1+x2 (oracle)
+        _c(
+            "L1_028",
+            "L1",
+            "int32",
+            (4, 5),
+            0,
+            "random_int",
+            "random_int",
+            check="invariant_x2",
+            seed=228,
+        ),
+        _c(
+            "L1_029", "L1", "float32", (4, 5), 1.0, seed=229
+        ),  # x3=1 ⇒ y==x1+x2 (oracle)
         _c("L1_030", "L1", "bfloat16", (4, 5), 1.0, seed=230),
     ]
 
     # ---------------- L1: 空 tensor returns_empty（L1_031~032）----------------
     cases += [
-        _c("L1_031", "L1", "float32", (0, 3), 2.0, "empty", "empty", check="empty", seed=231),
-        _c("L1_032", "L1", "int32", (0, 3), 2, "empty", "empty", check="empty", seed=232),
+        _c(
+            "L1_031",
+            "L1",
+            "float32",
+            (0, 3),
+            2.0,
+            "empty",
+            "empty",
+            check="empty",
+            seed=231,
+        ),
+        _c(
+            "L1_032",
+            "L1",
+            "int32",
+            (0, 3),
+            2,
+            "empty",
+            "empty",
+            check="empty",
+            seed=232,
+        ),
     ]
 
     # ---------------- L1: 极端输入 NaN/Inf/全零/上界（L1_033~040）----------------
     cases += [
-        _c("L1_033", "L1", "float32", (8,), 2.0, "inject_nan_one", "random", check="nan", seed=233),
-        _c("L1_034", "L1", "float16", (8,), 2.0, "inject_nan_one", "random", check="nan", seed=234),
-        _c("L1_035", "L1", "bfloat16", (8,), 2.0, "inject_nan_one", "random", check="nan", seed=235),
+        _c(
+            "L1_033",
+            "L1",
+            "float32",
+            (8,),
+            2.0,
+            "inject_nan_one",
+            "random",
+            check="nan",
+            seed=233,
+        ),
+        _c(
+            "L1_034",
+            "L1",
+            "float16",
+            (8,),
+            2.0,
+            "inject_nan_one",
+            "random",
+            check="nan",
+            seed=234,
+        ),
+        _c(
+            "L1_035",
+            "L1",
+            "bfloat16",
+            (8,),
+            2.0,
+            "inject_nan_one",
+            "random",
+            check="nan",
+            seed=235,
+        ),
         _c("L1_036", "L1", "float32", (1,), 2.0, "pos_inf", "random", seed=236),
         _c("L1_037", "L1", "float16", (1,), 2.0, "pos_inf", "random", seed=237),
         _c("L1_038", "L1", "float32", (8,), 0.0, "all_zero", "all_zero", seed=238),
         _c("L1_039", "L1", "int32", (8,), 0, "all_zero", "all_zero", seed=239),
-        _c("L1_040", "L1", "float16", (1,), 1.0, "all_same:60000.0", "all_same:60000.0", seed=240),
+        _c(
+            "L1_040",
+            "L1",
+            "float16",
+            (1,),
+            1.0,
+            "all_same:60000.0",
+            "all_same:60000.0",
+            seed=240,
+        ),
     ]
 
     # ---------------- L1: 整数上下界回绕（L1_041~044）----------------
     cases += [
-        _c("L1_041", "L1", "int32", (1,), 1, "all_same:2147483647", "all_same:1", seed=241),
+        _c(
+            "L1_041",
+            "L1",
+            "int32",
+            (1,),
+            1,
+            "all_same:2147483647",
+            "all_same:1",
+            seed=241,
+        ),
         _c("L1_042", "L1", "int16", (1,), 1, "all_same:32767", "all_same:1", seed=242),
-        _c("L1_043", "L1", "int32", (8,), 1, "all_same:-2147483648", "all_zero", seed=243),
+        _c(
+            "L1_043",
+            "L1",
+            "int32",
+            (8,),
+            1,
+            "all_same:-2147483648",
+            "all_zero",
+            seed=243,
+        ),
         _c("L1_044", "L1", "int16", (8,), 1, "all_same:-32768", "all_zero", seed=244),
     ]
 
     # ---------------- L1: 确定性（L1_045~046）----------------
     cases += [
         _c("L1_045", "L1", "float32", (2, 3), 2.0, check="deterministic", seed=245),
-        _c("L1_046", "L1", "float16", (4096, 1024), 2.0, check="deterministic", seed=246),
+        _c(
+            "L1_046",
+            "L1",
+            "float16",
+            (4096, 1024),
+            2.0,
+            check="deterministic",
+            seed=246,
+        ),
     ]
 
     return cases
@@ -215,6 +345,7 @@ def get_test_cases():
 # ============================================================================
 # 单条 NPU 执行：构造输入 -> 算子 -> 取回结果
 # ============================================================================
+
 
 def _build_inputs_cpu(tc):
     x1 = _make_tensor(tc["shape"], tc["dtype"], tc["x1_pattern"], tc["seed"])
@@ -232,18 +363,21 @@ def _run_op_npu(x1_cpu, x2_cpu, x3_cpu):
 
 
 def run_test(tc):
-    print(f"\n[{tc['id']}] {tc['dtype_name']} shape={tuple(tc['shape'])} "
-          f"x3={tc['x3_value']} check={tc['check']}")
+    print(
+        f"\n[{tc['id']}] {tc['dtype_name']} shape={tuple(tc['shape'])} "
+        f"x3={tc['x3_value']} check={tc['check']}"
+    )
 
     x1_cpu, x2_cpu, x3_cpu = _build_inputs_cpu(tc)
-    assert tuple(x1_cpu.shape) == tuple(tc["shape"]) and tuple(x2_cpu.shape) == tuple(tc["shape"]), \
-        f"{tc['id']}: 输入 shape 不匹配"
+    assert tuple(x1_cpu.shape) == tuple(tc["shape"]) and tuple(x2_cpu.shape) == tuple(
+        tc["shape"]
+    ), f"{tc['id']}: 输入 shape 不匹配"
     assert x3_cpu.numel() == 1, f"{tc['id']}: x3 必须单元素"
 
     golden = compute_golden_fused_mul_add_n(x1_cpu, x2_cpu, x3_cpu)
 
     if not torch.npu.is_available():
-        print("  [SKIP] NPU 不可用")
+        print("  [SKIP] NPU unavailable")
         return None
 
     actual = _run_op_npu(x1_cpu, x2_cpu, x3_cpu)
@@ -256,16 +390,20 @@ def run_test(tc):
         shape_ok = tuple(actual.shape) == tuple(tc["shape"])
         empty_ok = actual.numel() == 0
         passed = shape_ok and empty_ok
-        print(f"  returns_empty: shape={tuple(actual.shape)} numel={actual.numel()} "
-              f"{'PASS' if passed else 'FAIL'}")
+        print(
+            f"  returns_empty: shape={tuple(actual.shape)} numel={actual.numel()} "
+            f"{'PASS' if passed else 'FAIL'}"
+        )
 
     elif check == "invariant_x2":
         # x3=0 ⇒ y == x2（zero_multiplier_yields_x2）。先验证 golden 满足不变量，再对拍 NPU。
         inv_golden = bool(
-            torch.equal(golden, x2_cpu) if tc["dtype"] in INT_DTYPES
-            else torch.allclose(golden.float(), x2_cpu.float(), rtol=1e-6, atol=1e-6))
+            torch.equal(golden, x2_cpu)
+            if tc["dtype"] in INT_DTYPES
+            else torch.allclose(golden.float(), x2_cpu.float(), rtol=1e-6, atol=1e-6)
+        )
         if not inv_golden:
-            print("  [FAIL] golden 未满足不变量 y==x2")
+            print("  [FAIL] golden does not satisfy invariant y==x2")
         passed = inv_golden and compare_results(golden, actual)
 
     elif check == "nan":
@@ -274,7 +412,9 @@ def run_test(tc):
         a_nan = torch.isnan(actual.float())
         nan_pos_ok = bool(torch.equal(g_nan, a_nan)) and bool(g_nan.any())
         if not nan_pos_ok:
-            print(f"  [FAIL] NaN 位置不一致 golden_nan={g_nan.tolist()} actual_nan={a_nan.tolist()}")
+            print(
+                f"  [FAIL] NaN positions differ golden_nan={g_nan.tolist()} actual_nan={a_nan.tolist()}"
+            )
         passed = nan_pos_ok and compare_results(golden, actual)
 
     elif check == "deterministic":
@@ -289,7 +429,7 @@ def run_test(tc):
     else:  # "oracle"
         passed = compare_results(golden, actual)
 
-    print(f"  结果: {'PASS' if passed else 'FAIL'}")
+    print(f"  Result: {'PASS' if passed else 'FAIL'}")
 
     if CASE_COOLDOWN_MS > 0:
         time.sleep(CASE_COOLDOWN_MS / 1000.0)
@@ -300,41 +440,50 @@ def run_test(tc):
 # 主函数
 # ============================================================================
 
+
 def main():
-    parser = argparse.ArgumentParser(description="ST 测试 - FusedMulAddN ACLNN 两段式 PyTorch 接入")
+    parser = argparse.ArgumentParser(
+        description="ST 测试 - FusedMulAddN ACLNN 两段式 PyTorch 接入"
+    )
     parser.add_argument("--lib", default=None, help="共享库路径 (libtorch_adapter.so)")
-    parser.add_argument("--case", type=str, default=None, help="执行指定用例 id（如 L1_023）")
-    parser.add_argument("--level", type=str, default=None, choices=["L0", "L1"], help="只跑指定级别")
-    parser.add_argument("--golden-only", action="store_true", help="仅 CPU golden 自测，不上 NPU")
+    parser.add_argument(
+        "--case", type=str, default=None, help="执行指定用例 id（如 L1_023）"
+    )
+    parser.add_argument(
+        "--level", type=str, default=None, choices=["L0", "L1"], help="只跑指定级别"
+    )
+    parser.add_argument(
+        "--golden-only", action="store_true", help="仅 CPU golden 自测，不上 NPU"
+    )
     args = parser.parse_args()
 
     print("=" * 64)
-    print("CPU Golden 自测 (y = x1*x3[0] + x2)")
+    print("CPU Golden self-test (y = x1*x3[0] + x2)")
     print("=" * 64)
     golden_passed = test_golden_correctness()
-    print(f"\nGolden 自测: {'PASS' if golden_passed else 'FAIL'}")
+    print(f"\nGolden self-test: {'PASS' if golden_passed else 'FAIL'}")
     if not golden_passed:
-        print("Golden 自测失败，终止。")
+        print("Golden self-test failed; stopping.")
         return 1
 
     if args.golden_only:
-        print("\n[--golden-only] 跳过 NPU 测试。")
+        print("\n[--golden-only] Skipping NPU tests.")
         return 0
 
     if not args.lib:
-        print("\n错误: 非 --golden-only 模式需提供 --lib")
+        print("\nError: --lib is required unless --golden-only is used")
         return 2
     lib = os.path.realpath(args.lib)
     if not os.path.exists(lib):
-        print(f"错误: 文件不存在 {lib}")
+        print(f"Error: file does not exist {lib}")
         return 2
-    print(f"\n加载共享库: {lib}")
+    print(f"\nLoading shared library: {lib}")
     try:
         import torch_npu  # noqa: F401  确保 NPU 后端注册
     except Exception as e:  # pragma: no cover
-        print(f"警告: 导入 torch_npu 失败: {e}")
+        print(f"Warning: failed to import torch_npu: {e}")
     torch.ops.load_library(lib)
-    print("共享库加载成功")
+    print("Shared library loaded successfully")
 
     test_cases = get_test_cases()
     if args.level:
@@ -342,11 +491,11 @@ def main():
     if args.case:
         test_cases = [tc for tc in test_cases if tc["id"] == args.case]
         if not test_cases:
-            print(f"错误: 未找到用例 {args.case}")
+            print(f"Error: case not found {args.case}")
             return 2
 
     print(f"\n{'=' * 64}")
-    print(f"设备: NPU | 用例数: {len(test_cases)}")
+    print(f"Device: NPU | case count: {len(test_cases)}")
     print(f"{'=' * 64}")
 
     passed_count = failed_count = skipped_count = 0
@@ -362,11 +511,13 @@ def main():
             failed_ids.append(tc["id"])
 
     print(f"\n{'=' * 64}")
-    print("总体测试报告")
+    print("Overall test report")
     print(f"{'=' * 64}")
-    print(f"总计: {len(test_cases)}  通过: {passed_count}  失败: {failed_count}  跳过: {skipped_count}")
+    print(
+        f"Total: {len(test_cases)}  passed: {passed_count}  failed: {failed_count}  skipped: {skipped_count}"
+    )
     if failed_ids:
-        print("失败用例:")
+        print("Failed cases:")
         for cid in failed_ids:
             print(f"  - {cid}")
     print(f"{'=' * 64}")
