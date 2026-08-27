@@ -73,18 +73,18 @@ public:
     __aicore__ inline DataCompareKernel() {}
     __aicore__ inline void Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, const DataCompareTilingData* td);
     __aicore__ inline void Process();
-    __aicore__ inline void InitGroup(
-        GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR workspace, const DataCompareTilingData* td);
+    __aicore__ inline void InitGroup(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR workspace,
+                                     const DataCompareTilingData* td);
     __aicore__ inline void ProcessGroup();
 
 private:
     __aicore__ inline void DoOneAChunk(int64_t outerGmOff, int64_t aLen);
     __aicore__ inline void PostElewiseAndCopyOut(int64_t outerOutOff, int64_t aLen);
     __aicore__ inline int32_t BuildUBAxes(int64_t aLen, int64_t rLen, UBAxisDesc out[]);
-    __aicore__ inline void DoCopyInTile(
-        int64_t baseGmOff, int64_t aLen, int64_t rLen, AscendC::LocalTensor<D_T>& preInLocal, GlobalTensor<D_T>& srcGm);
-    __aicore__ inline void PreElewiseVf(
-        AscendC::LocalTensor<D_T>& x1Buf, AscendC::LocalTensor<D_T>& x2Buf, uint32_t slot);
+    __aicore__ inline void DoCopyInTile(int64_t baseGmOff, int64_t aLen, int64_t rLen,
+                                        AscendC::LocalTensor<D_T>& preInLocal, GlobalTensor<D_T>& srcGm);
+    __aicore__ inline void PreElewiseVf(AscendC::LocalTensor<D_T>& x1Buf, AscendC::LocalTensor<D_T>& x2Buf,
+                                        uint32_t slot);
     __aicore__ inline void ClearChunkExtensionVf(uint32_t slot, int64_t rLen);
     __aicore__ inline void MergeTmpBufVf();
     __aicore__ inline void ReduceRPattern();
@@ -208,8 +208,8 @@ __aicore__ inline int64_t DataCompareKernel<DType>::RLenOfChunk(int64_t rChunkId
     return (start + rUbFactor_ > rAxisSize) ? (rAxisSize - start) : rUbFactor_;
 }
 template <typename DType>
-__aicore__ inline int64_t DataCompareKernel<DType>::UnravelOuterR(
-    int64_t rIdx, int64_t& rChunkIdxOut, int64_t& rLenOut) const
+__aicore__ inline int64_t DataCompareKernel<DType>::UnravelOuterR(int64_t rIdx, int64_t& rChunkIdxOut,
+                                                                  int64_t& rLenOut) const
 {
     const int64_t rChunksOnSplit = (axisShape_[rSplit_] + rUbFactor_ - 1) / rUbFactor_;
     rChunkIdxOut = rIdx % rChunksOnSplit;
@@ -231,8 +231,8 @@ __aicore__ inline int64_t DataCompareKernel<DType>::UnravelOuterR(
 // Init
 // ════════════════════════════════════════════════════════════════════════════
 template <typename DType>
-__aicore__ inline void DataCompareKernel<DType>::Init(
-    GM_ADDR x1, GM_ADDR x2, GM_ADDR y, const DataCompareTilingData* td)
+__aicore__ inline void DataCompareKernel<DType>::Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y,
+                                                      const DataCompareTilingData* td)
 {
     axisNum_ = td->axisNum;
     for (int32_t i = 0; i < MAX_PATTERN_RANK; ++i) {
@@ -441,8 +441,8 @@ __aicore__ inline int32_t DataCompareKernel<DType>::BuildUBAxes(int64_t aLen, in
     for (int32_t i = axisNum_ - 1; i >= aSplit_; --i) {
         if (i % 2 != 0)
             continue;
-        out[k] = {
-            i, (i == aSplit_) ? aLen : axisShape_[i], (i == aSplit_) ? aUbFactor_ : axisShape_[i], axisStride_[i]};
+        out[k] = {i, (i == aSplit_) ? aLen : axisShape_[i], (i == aSplit_) ? aUbFactor_ : axisShape_[i],
+                  axisStride_[i]};
         ++k;
     }
     return k;
@@ -452,8 +452,9 @@ __aicore__ inline int32_t DataCompareKernel<DType>::BuildUBAxes(int64_t aLen, in
 // DoCopyInTile
 // ════════════════════════════════════════════════════════════════════════════
 template <typename DType>
-__aicore__ inline void DataCompareKernel<DType>::DoCopyInTile(
-    int64_t baseGmOff, int64_t aLen, int64_t rLen, AscendC::LocalTensor<D_T>& preInLocal, GlobalTensor<D_T>& srcGm)
+__aicore__ inline void DataCompareKernel<DType>::DoCopyInTile(int64_t baseGmOff, int64_t aLen, int64_t rLen,
+                                                              AscendC::LocalTensor<D_T>& preInLocal,
+                                                              GlobalTensor<D_T>& srcGm)
 {
     UBAxisDesc ubAxes[MAX_PATTERN_RANK];
     const int32_t K = BuildUBAxes(aLen, rLen, ubAxes);
@@ -475,15 +476,15 @@ __aicore__ inline void DataCompareKernel<DType>::DoCopyInTile(
         rPad = static_cast<uint8_t>((kBlockBytes - misalign) / static_cast<uint32_t>(dtBytes));
     DataCopyPadExtParams<D_T> padParams{true, 0, rPad, static_cast<D_T>(0)};
 
-    const int64_t copyPadBytes =
-        (static_cast<int64_t>(extParams.blockLen) + kBlockBytes - 1) / kBlockBytes * kBlockBytes;
-    extParams.dstStride =
-        static_cast<uint32_t>((ubAxes[0].paddedSize * dtBytes - copyPadBytes) / static_cast<int64_t>(kBlockBytes));
+    const int64_t copyPadBytes = (static_cast<int64_t>(extParams.blockLen) + kBlockBytes - 1) / kBlockBytes *
+                                 kBlockBytes;
+    extParams.dstStride = static_cast<uint32_t>((ubAxes[0].paddedSize * dtBytes - copyPadBytes) /
+                                                static_cast<int64_t>(kBlockBytes));
 
     if (K >= 2) {
         extParams.blockCount = static_cast<uint16_t>(ubAxes[1].ubSize);
-        extParams.srcStride =
-            static_cast<uint32_t>(ubAxes[1].gmStride * dtBytes - static_cast<int64_t>(extParams.blockLen));
+        extParams.srcStride = static_cast<uint32_t>(ubAxes[1].gmStride * dtBytes -
+                                                    static_cast<int64_t>(extParams.blockLen));
     } else {
         extParams.blockCount = 1;
         extParams.srcStride = 0;
@@ -533,8 +534,8 @@ __aicore__ inline void DataCompareKernel<DType>::DoCopyInTile(
 // PreElewiseVf: dual-input comparison chain → tmpBuf[slot]
 // ════════════════════════════════════════════════════════════════════════════
 template <typename DType>
-__aicore__ inline void DataCompareKernel<DType>::PreElewiseVf(
-    AscendC::LocalTensor<D_T>& x1Buf, AscendC::LocalTensor<D_T>& x2Buf, uint32_t slot)
+__aicore__ inline void DataCompareKernel<DType>::PreElewiseVf(AscendC::LocalTensor<D_T>& x1Buf,
+                                                              AscendC::LocalTensor<D_T>& x2Buf, uint32_t slot)
 {
     auto tmpAll = tmpBuf_.Get<float>();
     auto tmpSlot = tmpAll[static_cast<int32_t>(slot) * static_cast<int32_t>(tmpSlotElems_)];
@@ -542,8 +543,8 @@ __aicore__ inline void DataCompareKernel<DType>::PreElewiseVf(
     __ubuf__ D_T* x2Ptr = reinterpret_cast<__ubuf__ D_T*>(x2Buf.GetPhyAddr());
     __ubuf__ float* dstPtr = reinterpret_cast<__ubuf__ float*>(tmpSlot.GetPhyAddr());
 
-    const uint32_t totalElems =
-        static_cast<uint32_t>(aUbFactorAlign_ * innerAProdAlign_ * rUbFactorAlign_ * innerRProdAlign_);
+    const uint32_t totalElems = static_cast<uint32_t>(aUbFactorAlign_ * innerAProdAlign_ * rUbFactorAlign_ *
+                                                      innerRProdAlign_);
     const uint16_t repeatTime = static_cast<uint16_t>((totalElems + kRepF32U - 1) / kRepF32U);
     const float atolVal = atol_;
     const float rtolVal = rtol_;
@@ -630,8 +631,8 @@ __aicore__ inline void DataCompareKernel<DType>::ClearChunkExtensionVf(uint32_t 
             int32_t aOff = static_cast<int32_t>(a) * static_cast<int32_t>(aStride);
             uint32_t remaining = extLanes;
             for (uint16_t r = 0; r < static_cast<uint16_t>(repPerA); ++r) {
-                int32_t off =
-                    aOff + static_cast<int32_t>(extStart) + static_cast<int32_t>(r) * static_cast<int32_t>(kRepF32);
+                int32_t off = aOff + static_cast<int32_t>(extStart) +
+                              static_cast<int32_t>(r) * static_cast<int32_t>(kRepF32);
                 auto mask = AscendC::Reg::UpdateMask<float>(remaining);
                 AscendC::Reg::StoreAlign(base + off, idReg, mask);
             }
@@ -648,8 +649,8 @@ __aicore__ inline void DataCompareKernel<DType>::MergeTmpBufVf()
     auto tmpAll = tmpBuf_.Get<float>();
     __ubuf__ float* p0 = reinterpret_cast<__ubuf__ float*>(tmpAll.GetPhyAddr());
     __ubuf__ float* p1 = p0 + tmpSlotElems_;
-    const uint32_t totalElems =
-        static_cast<uint32_t>(aUbFactorAlign_ * innerAProdAlign_ * rUbFactorAlign_ * innerRProdAlign_);
+    const uint32_t totalElems = static_cast<uint32_t>(aUbFactorAlign_ * innerAProdAlign_ * rUbFactorAlign_ *
+                                                      innerRProdAlign_);
     const uint16_t repeatTime = static_cast<uint16_t>((totalElems + kRepF32U - 1) / kRepF32U);
 
     __VEC_SCOPE__
@@ -713,8 +714,8 @@ template <typename DType>
 __aicore__ inline void DataCompareKernel<DType>::DoCachingVf(uint16_t cacheID)
 {
     auto tmpAll = tmpBuf_.Get<float>();
-    __ubuf__ float* srcPtr =
-        reinterpret_cast<__ubuf__ float*>(tmpAll[static_cast<int32_t>(tmpSlotElems_)].GetPhyAddr());
+    __ubuf__ float* srcPtr = reinterpret_cast<__ubuf__ float*>(
+        tmpAll[static_cast<int32_t>(tmpSlotElems_)].GetPhyAddr());
     __ubuf__ float* cachePtr = reinterpret_cast<__ubuf__ float*>(cacheBuf_.Get<float>().GetPhyAddr());
 
     const uint32_t laneN = static_cast<uint32_t>(aUbFactorAlign_ * innerAProdAlign_);
@@ -786,8 +787,8 @@ __aicore__ inline void DataCompareKernel<DType>::PostElewiseAndCopyOut(int64_t o
 // Group template
 // ════════════════════════════════════════════════════════════════════════════
 template <typename DType>
-__aicore__ inline void DataCompareKernel<DType>::InitGroup(
-    GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR workspace, const DataCompareTilingData* td)
+__aicore__ inline void DataCompareKernel<DType>::InitGroup(GM_ADDR x1, GM_ADDR x2, GM_ADDR y, GM_ADDR workspace,
+                                                           const DataCompareTilingData* td)
 {
     Init(x1, x2, y, td);
     wsGm_.SetGlobalBuffer(reinterpret_cast<__gm__ float*>(workspace));
@@ -809,13 +810,22 @@ __aicore__ inline void DataCompareKernel<DType>::ProcessGroup()
     int64_t aChunkIdx = blockIdx / rGroupCnt_;
     int64_t rChunkIdx = blockIdx % rGroupCnt_;
 
-    int64_t rPerCore = (rOuter + rGroupCnt_ - 1) / rGroupCnt_;
-    int64_t rStart = rChunkIdx * rPerCore;
-    int64_t rEnd = rStart + rPerCore;
-    if (rEnd > rOuter)
-        rEnd = rOuter;
+    // R 方向大小核式均匀分配：rGroupCnt ≤ rOuter 恒成立（tiling 保证），每组 ≥1 chunk，无空组
+    int64_t rSmallGroupLoopCnt = rOuter / rGroupCnt_;
+    int64_t rBigGroupCnt = rOuter % rGroupCnt_;
+    int64_t rBigGroupLoopCnt = rSmallGroupLoopCnt + (rBigGroupCnt > 0 ? 1 : 0);
+    int64_t rStart = 0;
+    int64_t rCount = 0;
+    if (rChunkIdx < rBigGroupCnt) {
+        rStart = rChunkIdx * rBigGroupLoopCnt;
+        rCount = rBigGroupLoopCnt;
+    } else {
+        rStart = rBigGroupCnt * rBigGroupLoopCnt + (rChunkIdx - rBigGroupCnt) * rSmallGroupLoopCnt;
+        rCount = rSmallGroupLoopCnt;
+    }
+    int64_t rEnd = rStart + rCount;
     if (rStart >= rOuter)
-        return;
+        return; // 防御性早退（理论上不可达）
 
     int64_t aLoopIdx = aChunkIdx;
     int64_t rem = aLoopIdx;
@@ -830,14 +840,13 @@ __aicore__ inline void DataCompareKernel<DType>::ProcessGroup()
         chunkOutOff += ix * outStride_[k];
     }
     const int64_t aChunkStart = aSplitChunkIdx * aUbFactor_;
-    const int64_t aLen =
-        (aChunkStart + aUbFactor_ > axisShape_[aSplit_]) ? (axisShape_[aSplit_] - aChunkStart) : aUbFactor_;
+    const int64_t aLen = (aChunkStart + aUbFactor_ > axisShape_[aSplit_]) ? (axisShape_[aSplit_] - aChunkStart) :
+                                                                            aUbFactor_;
     if (aLen <= 0)
         return;
     chunkGmOff += aChunkStart * axisStride_[aSplit_];
     chunkOutOff += aChunkStart * outStride_[aSplit_];
 
-    int64_t rCount = rEnd - rStart;
     DoOneAChunkGroup(chunkGmOff, aLen, rStart, rEnd);
     Phase1OutputToWorkspace(chunkOutOff, aLen, rChunkIdx, rCount);
     SyncAll();
@@ -845,8 +854,8 @@ __aicore__ inline void DataCompareKernel<DType>::ProcessGroup()
 }
 
 template <typename DType>
-__aicore__ inline void DataCompareKernel<DType>::DoOneAChunkGroup(
-    int64_t outerGmOff, int64_t aLen, int64_t rStart, int64_t rEnd)
+__aicore__ inline void DataCompareKernel<DType>::DoOneAChunkGroup(int64_t outerGmOff, int64_t aLen, int64_t rStart,
+                                                                  int64_t rEnd)
 {
     ClearCacheTreeVf();
     int64_t localRCnt = rEnd - rStart;
@@ -914,8 +923,8 @@ __aicore__ inline void DataCompareKernel<DType>::DoOneAChunkGroup(
 }
 
 template <typename DType>
-__aicore__ inline void DataCompareKernel<DType>::Phase1OutputToWorkspace(
-    int64_t wsOff, int64_t aLen, int64_t rChunkIdx, int64_t rCount)
+__aicore__ inline void DataCompareKernel<DType>::Phase1OutputToWorkspace(int64_t wsOff, int64_t aLen, int64_t rChunkIdx,
+                                                                         int64_t rCount)
 {
     // V → MTE3 fence
     AscendC::TEventID ev = GetTPipePtr()->FetchEventID(HardEvent::V_MTE3);
