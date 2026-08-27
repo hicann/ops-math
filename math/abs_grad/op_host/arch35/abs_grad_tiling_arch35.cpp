@@ -49,24 +49,62 @@ ge::graphStatus AbsGradTiling::CalcOutputDtype()
     auto outputDesc = tilingContext->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     this->outputDtype = outputDesc->GetDataType();
-    if (this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_FLOAT && this->inputDtype != ge::DT_BF16) {
-        OP_LOGE(tilingContext, "AbsGrad op input y dtype must be float16 or float or bfloat16, check fail");
-        return ge::GRAPH_FAILED;
-    }
-    if (inputDtypeDy != ge::DT_FLOAT16 && inputDtypeDy != ge::DT_FLOAT && inputDtypeDy != ge::DT_BF16) {
-        OP_LOGE(tilingContext, "AbsGrad op input dy dtype must be float16 or float or bfloat16, check fail");
-        return ge::GRAPH_FAILED;
-    }
+    OP_CHECK_IF(
+        this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_FLOAT && this->inputDtype != ge::DT_BF16,
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y",
+                                  ge::TypeUtils::DataTypeToSerialString(this->inputDtype),
+                                  "DT_FLOAT16, DT_FLOAT, DT_BF16"),
+        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        inputDtypeDy != ge::DT_FLOAT16 && inputDtypeDy != ge::DT_FLOAT && inputDtypeDy != ge::DT_BF16,
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "dy",
+                                  ge::TypeUtils::DataTypeToSerialString(inputDtypeDy), "DT_FLOAT16, DT_FLOAT, DT_BF16"),
+        return ge::GRAPH_FAILED);
     OP_CHECK_IF(this->inputDtype != inputDtypeDy || this->inputDtype != this->outputDtype,
-                OP_LOGE(tilingContext, "AbsGrad op all inputs and outputs dtype must be consistent, check fail"),
+                OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "y, dy, z",
+                                                       ge::TypeUtils::DataTypeToSerialString(this->inputDtype) + ", " +
+                                                           ge::TypeUtils::DataTypeToSerialString(inputDtypeDy) + ", " +
+                                                           ge::TypeUtils::DataTypeToSerialString(this->outputDtype),
+                                                       "The dtypes of y, dy and z must be the same"),
                 return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus AbsGradTiling::CheckShape()
+{
+    auto yShapePtr = tilingContext->GetInputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, yShapePtr);
+    const gert::Shape& yShape = yShapePtr->GetStorageShape();
+    auto dyShapePtr = tilingContext->GetInputShape(1);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, dyShapePtr);
+    const gert::Shape& dyShape = dyShapePtr->GetStorageShape();
+    auto zShapePtr = tilingContext->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, zShapePtr);
+    const gert::Shape& zShape = zShapePtr->GetStorageShape();
+
+    OP_CHECK_IF(
+        yShape != dyShape || yShape != zShape,
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+            tilingContext->GetNodeName(), "y, dy, z",
+            Ops::Base::ToString(yShape) + ", " + Ops::Base::ToString(dyShape) + ", " + Ops::Base::ToString(zShape),
+            "The shapes of y, dy and z must be the same"),
+        return ge::GRAPH_FAILED);
+
+    auto yShapeSize = yShape.GetShapeSize();
+    OP_CHECK_IF(yShapeSize == 0,
+                OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(tilingContext->GetNodeName(), "y", "0",
+                                                          "y does not support empty tensor"),
+                return ge::GRAPH_FAILED);
+
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus AbsGradTiling::RunTiling()
 {
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
-    OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
+    OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "CalcOutputDtype failed."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "CheckShape failed."),
                 return ge::GRAPH_FAILED);
     ge::graphStatus res = ge::GRAPH_FAILED;
     tiling = tilingContext->GetTilingData<AbsGradTilingData>();
@@ -78,9 +116,15 @@ ge::graphStatus AbsGradTiling::RunTiling()
     } else if (this->inputDtype == ge::DT_BF16) {
         res = elewiseBaseTiling.DoTiling<AbsGradOp::AbsGradDag<bfloat16_t>::OpDag>(tiling->baseTiling);
     } else {
-        OP_LOGE(tilingContext, "data type check failed. dtype:%u", static_cast<uint32_t>(this->inputDtype));
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y",
+                                  ge::TypeUtils::DataTypeToSerialString(this->inputDtype),
+                                  "DT_FLOAT16, DT_FLOAT, DT_BF16");
+        return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(res == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "DoTiling failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(res == ge::GRAPH_FAILED,
+                OP_LOGE(tilingContext->GetNodeName(), "DoTiling failed, input dtype: %s.",
+                        ge::TypeUtils::DataTypeToSerialString(this->inputDtype).c_str()),
+                return ge::GRAPH_FAILED);
     ge::graphStatus result = SetTilingData();
     return result;
 }
@@ -89,7 +133,6 @@ static ge::graphStatus TilingForAbsGrad(gert::TilingContext* context)
 {
     OP_LOGD("AbsGradTiling", "Enter TilingForAbsGrad");
     OP_CHECK_IF(context == nullptr, OP_LOGE(context, "Tiling context is null"), return ge::GRAPH_FAILED);
-    OP_LOGD("AbsGradTiling", "Enter new AbsGradTiling");
     AbsGradTiling absgradTiling(context);
     return absgradTiling.RunTiling();
 }

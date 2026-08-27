@@ -20,17 +20,18 @@
 namespace ge {
 /**
  * @brief Computes gradients for absolute operation.
-
  *
  * @par Inputs:
- * @li y: A tensor of type float16 or float32 or bfloat16. Support broadcasting operations.
- * @li dy: A tensor of the same dtype as "y".
+ * @li y: A tensor of type float16 or float32 or bfloat16.
+ * @li dy: A tensor of the same dtype and shape as "y".
  *
  * @attention Constraints:
- * "dy" has the same dtype as "y".
+ * @li "dy" must have the same dtype and shape as "y".
+ * @li "z" must have the same dtype and shape as "y" and "dy".
+ * @li The shape of all inputs and outputs must not contain 0 (empty tensor is not supported).
  *
  * @par Outputs:
- * z: A tensor. Has the same dtype as "y".
+ * z: A tensor. Has the same dtype and shape as "y".
  *
  * @par Third-party framework compatibility
  * Compatible with the TensorFlow operator AbsGrad.

@@ -35,6 +35,7 @@ public:
 
 protected:
     ge::graphStatus CalcOutputDtype();
+    ge::graphStatus CheckShape();
     ge::graphStatus SetTilingData();
 
 private:

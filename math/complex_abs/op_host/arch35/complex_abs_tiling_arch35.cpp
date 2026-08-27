@@ -81,7 +81,10 @@ ge::graphStatus ComplexAbsTiling::RunTiling()
         return ge::GRAPH_FAILED;
     }
 
-    OP_CHECK_IF(res == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "DoTiling failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(res == ge::GRAPH_FAILED,
+                OP_LOGE(tilingContext->GetNodeName(), "DoTiling failed, input dtype: %s.",
+                        ge::TypeUtils::DataTypeToSerialString(this->inputDtype).c_str()),
+                return ge::GRAPH_FAILED);
 
     ge::graphStatus result = SetTilingData();
     return result;
@@ -92,8 +95,6 @@ static ge::graphStatus TilingForComplexAbs(gert::TilingContext* context)
     OP_LOGD("ComplexAbsTiling", "Enter TilingForComplexAbs");
     OP_CHECK_IF(context == nullptr, OP_LOGE(context, "Tiling context is null"), return ge::GRAPH_FAILED);
 
-    // 走新的模板tiling
-    OP_LOGD("ComplexAbsTiling", "Enter new ComplexAbsTiling");
     ComplexAbsTiling complexabsTiling(context);
     return complexabsTiling.RunTiling();
 }

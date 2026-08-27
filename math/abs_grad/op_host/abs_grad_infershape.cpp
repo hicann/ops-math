@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "infershape_broadcast_util.h"
+#include "infershape_elewise_util.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 
@@ -16,8 +16,8 @@ using namespace ge;
 namespace ops {
 static ge::graphStatus InferShapeForAbsGrad(gert::InferShapeContext* context)
 {
-    OP_LOGI(context->GetNodeName(), "Begin InferShapeForAbsGrad");
-    return Ops::Base::InferShape4Broadcast(context);
+    OP_LOGD(context->GetNodeName(), "Begin InferShapeForAbsGrad");
+    return Ops::Base::InferShape4Elewise(context);
 }
 
 IMPL_OP_INFERSHAPE(AbsGrad).InferShape(InferShapeForAbsGrad);

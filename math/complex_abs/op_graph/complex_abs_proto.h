@@ -19,23 +19,26 @@
 
 namespace ge {
 /**
-* @brief Computes the complex absolute value of a tensor.
-
-* @par Inputs:
-* x: x of complex numbers, this operation returns a tensor of type
-  float that is the absolute value of each element in x .
-* A Tensor of type complex32, complex64.
-
-* @par Attributes:
-* Tout: a Type attr, representing the type of output, donot use. default is DT_FLOAT
-
-* @par Outputs:
-* y:A tensor of type `float` that is the absolute value of each element in `x`.
-* A Tensor of type float16(when x is complex32), float32(when x is complex64).
-
-* @par Third-party framework compatibility.
-* Compatible with tensorflow ComplexAbs operator.
-*/
+ * @brief Computes the complex absolute value of a tensor.
+ *
+ * @par Inputs:
+ * x: A tensor of complex numbers. A Tensor of type complex32, complex64, or complex128.
+ *
+ * @par Attributes:
+ * Tout: A Type attr, representing the type of output, do not use. Default is DT_FLOAT.
+ *
+ * @par Outputs:
+ * y: A tensor that is the absolute value of each element in x.
+ * A Tensor of type float16 (when x is complex32), float32 (when x is complex64),
+ * or double (when x is complex128).
+ *
+ * @attention Constraints:
+ * @li The shape of output "y" must be the same as the shape of input "x".
+ * @li Empty tensor (shape contains 0) is not supported.
+ *
+ * @par Third-party framework compatibility
+ * Compatible with TensorFlow ComplexAbs operator.
+ */
 #ifndef OPS_PROTO_DEF_COMPLEXABS
 #define OPS_PROTO_DEF_COMPLEXABS
 REG_OP(ComplexAbs)
