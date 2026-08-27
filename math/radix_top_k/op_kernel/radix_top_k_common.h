@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
@@ -26,24 +26,28 @@ using namespace AscendC;
  * @brief PingPong tile 循环前导：选取 curBuf/nextBuf，预取下一 tile，WaitFlag
  *        展开后定义 curBuf, nextBuf, curTileLen 三个局部变量供后处理使用。
  */
-#define PINGPONG_TILE_BEGIN(tileId, blockOffset)                                                    \
-    uint64_t curTileLen = (tileId == this->tileNum_ - 1) ? this->tailTileLen_ : this->tileLen_;     \
-    TBuf<TPosition::VECIN>& curBuf = this->pingPongFlag ? this->xBufPing_ : this->xBufPong_;        \
-    TBuf<TPosition::VECIN>& nextBuf = this->pingPongFlag ? this->xBufPong_ : this->xBufPing_;       \
-    if (tileId < this->tileNum_ - 1) {                                                              \
-        this->CopyIn(nextBuf, (tileId == this->tileNum_ - 2) ? this->tailTileLen_ : this->tileLen_, \
-                     blockOffset + (tileId + 1) * this->tileLen_);                                  \
-    }                                                                                               \
-    WaitFlag<HardEvent::MTE2_V>(this->eventIDMTE2ToVForX_);
+#define PINGPONG_TILE_BEGIN(tileId, blockOffset)                                                        \
+    uint64_t curTileLen = (tileId == this->tileNum_ - 1) ? this->tailTileLen_ : this->tileLen_;         \
+    TBuf<TPosition::VECIN>& curBuf = this->pingPongFlag ? this->xBufPing_ : this->xBufPong_;            \
+    TBuf<TPosition::VECIN>& nextBuf = this->pingPongFlag ? this->xBufPong_ : this->xBufPing_;           \
+    do {                                                                                                \
+        if (tileId < this->tileNum_ - 1) {                                                              \
+            this->CopyIn(nextBuf, (tileId == this->tileNum_ - 2) ? this->tailTileLen_ : this->tileLen_, \
+                         blockOffset + (tileId + 1) * this->tileLen_);                                  \
+        }                                                                                               \
+        WaitFlag<HardEvent::MTE2_V>(this->eventIDMTE2ToVForX_);                                         \
+    } while (0)
 
 /**
  * @brief PingPong tile 循环结尾：SetFlag 预取下一 tile，翻转 pingPongFlag
  */
-#define PINGPONG_TILE_END(tileId)                              \
-    if (tileId < this->tileNum_ - 1) {                         \
-        SetFlag<HardEvent::MTE2_V>(this->eventIDMTE2ToVForX_); \
-    }                                                          \
-    this->pingPongFlag = !this->pingPongFlag;
+#define PINGPONG_TILE_END(tileId)                                  \
+    do {                                                           \
+        if (tileId < this->tileNum_ - 1) {                         \
+            SetFlag<HardEvent::MTE2_V>(this->eventIDMTE2ToVForX_); \
+        }                                                          \
+        this->pingPongFlag = !this->pingPongFlag;                  \
+    } while (0)
 
 /**
  * @brief 处理单个 tile 的 TopK：xLocal/cmpMaskTensor 初始化、bf16/half 分发、

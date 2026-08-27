@@ -43,7 +43,7 @@ public:
         pipe->InitBuffer(zeroBuf, this->tileLength * sizeof(float));
         pipe->InitBuffer(piBuf, this->tileLength * sizeof(float));
         pipe->InitBuffer(nanBuf, this->tileLength * sizeof(float));
-        pipe->InitBuffer(castBuf, this->tileLength * sizeof(float) * 2);
+        pipe->InitBuffer(castBuf, this->tileLength * sizeof(float) * COEFFICENT);
     }
 
     __aicore__ inline void Process()

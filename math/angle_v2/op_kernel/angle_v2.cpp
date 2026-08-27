@@ -31,11 +31,11 @@ using namespace AngleV2N;
 #define KEY_DTYPE_BF16 10
 
 #define RUN_ANGLE_OP(...)                  \
-    {                                      \
+    do {                                   \
         __VA_ARGS__ op;                    \
         op.Init(x, y, &tilingData, &pipe); \
         op.Process();                      \
-    }
+    } while (0)
 
 extern "C" __global__ __aicore__ void angle_v2(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
