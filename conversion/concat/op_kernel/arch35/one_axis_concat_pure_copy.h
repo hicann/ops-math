@@ -88,7 +88,8 @@ __aicore__ inline void OneAxisConcatPureCopy<TILINGDATA>::Init(GM_ADDR x, GM_ADD
     }
     if constexpr (IsSame<TILINGDATA, ConcatTilingDataNoArray>::value) {
         blockOffset_ = static_cast<int64_t>(blockIdx_) * tilingData_.ubFactorDim0;
-        dstGlobal_.SetGlobalBuffer((__gm__ int8_t*)dst + tilingData_.catDim1 * tilingData_.dtypeSize * static_cast<int64_t>(blockOffset_));
+        dstGlobal_.SetGlobalBuffer(
+            (__gm__ int8_t*)dst + tilingData_.catDim1 * tilingData_.dtypeSize * static_cast<int64_t>(blockOffset_));
     } else {
         blockOffset_ = blockIdxInRow_ * tilingData_.ubFactorDim0;
         int64_t colOffset = static_cast<int64_t>(blockIdxInCol_) * tilingData_.ubFactorDim1 * tilingData_.dtypeSize;
@@ -189,7 +190,7 @@ __aicore__ inline void OneAxisConcatPureCopy<TILINGDATA>::ProcessSingleTensor(
     int64_t tensorIdx, int64_t tensorDim1, int64_t totalRows, int64_t totalCols, int64_t globalSrcOffset,
     int64_t globalDstOffset)
 {
-    if (tensorDim1 == 0 || totalRows == 0 || totalCols == 0) {
+    if (totalRows == 0 || totalCols == 0) {
         return;
     }
     srcGlobal_.SetGlobalBuffer(GetTensorAddr(tensorIdx, globalSrcOffset * tilingData_.dtypeSize));
@@ -258,7 +259,8 @@ __aicore__ inline int64_t OneAxisConcatPureCopy<TILINGDATA>::GetTensorDim1(int64
     if (idx < PRELOAD_DIM1_SIZE) {
         return tilingData_.arrays.preLoadDim1[idx];
     }
-    int64_t dim1 = GetNonConDimSize<TILINGDATA, int8_t>(tilingData_, idx, inputList_, desc_) * tilingData_.sameShapeTensorDim1;
+    int64_t dim1 =
+        GetNonConDimSize<TILINGDATA, int8_t>(tilingData_, idx, inputList_, desc_) * tilingData_.sameShapeTensorDim1;
     if (tilingData_.isFP4Type) {
         dim1 /= 2;
     }
