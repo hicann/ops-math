@@ -27,7 +27,7 @@
 
 ## 功能说明
 
-完成伪量化Matmul（包括QuantBatchMatmulV5、GroupedMatmul-伪量化）的参数预处理：主要将weight从ND格式转换为FRACTAL_NZ格式，并在需要时对weightScale、weightOffsetOptional、biasOptional进行同步处理。
+完成伪量化Matmul（包括QuantBatchMatmulV5、GroupedMatmul-伪量化、WeightQuantBatchMatmulV2）的参数预处理：主要将weight从ND格式转换为FRACTAL_NZ格式（MM_A16S4数据流的pertensor及perchannel/pergroup转置场景为ND直拷透传），并在需要时对weightScale、weightOffsetOptional、biasOptional进行同步处理。
 
 ## 函数原型
 
@@ -40,19 +40,19 @@
 
 ```c++
 aclnnStatus aclnnWeightQuantPreprocessGetWorkspaceSize(
-    const aclTensor *weight,
-    const aclTensor *weightScale,
-    const aclTensor *weightOffsetOptional,
-    const aclTensor *biasOptional,
-    aclDataType      xDtype,
-    aclDataType      xScaleDtype,
-    int64_t          kGroupSize,
-    aclTensor       *outWeight,
-    aclTensor       *outWeightScale,
-    aclTensor       *outWeightOffsetOptional,
-    aclTensor       *outBiasOptional,
-    uint64_t        *workspaceSize,
-    aclOpExecutor  **executor)
+    const aclTensor  *weight,
+    const aclTensor  *weightScale,
+    const aclTensor  *weightOffsetOptional,
+    const aclTensor  *biasOptional,
+    const aclDataType xDtype,
+    const aclDataType xScaleDtype,
+    const int64_t     kGroupSize,
+    aclTensor        *outWeight,
+    aclTensor        *outWeightScale,
+    aclTensor        *outWeightOffsetOptional,
+    aclTensor        *outBiasOptional,
+    uint64_t         *workspaceSize,
+    aclOpExecutor   **executor)
 
 aclnnStatus aclnnWeightQuantPreprocess(
     void          *workspace,
@@ -93,7 +93,7 @@ aclnnStatus aclnnWeightQuantPreprocess(
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">Matmul的权重矩阵</td>
       <td class="tg-0pky">不支持空tensor</td>
-      <td class="tg-0pky">float4_e2m1</td>
+      <td class="tg-0pky">float4_e2m1/int4</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">2-3</td>
       <td class="tg-0pky">仅转置场景支持</td>
@@ -103,17 +103,17 @@ aclnnStatus aclnnWeightQuantPreprocess(
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">权重的反量化scale参数</td>
       <td class="tg-0pky">不支持空tensor</td>
-      <td class="tg-0pky">float8_e8m0</td>
+      <td class="tg-0pky">float8_e8m0/float16/bfloat16</td>
       <td class="tg-0pky">ND/NCL/NCHW</td>
-      <td class="tg-0pky">3-4</td>
+      <td class="tg-0pky">1-4</td>
       <td class="tg-0pky">仅转置场景支持</td>
     </tr>
     <tr>
       <td class="tg-0pky">weightOffsetOptional(aclTensor *)</td>
       <td class="tg-0pky">可选输入</td>
       <td class="tg-0pky">权重的反量化offset参数</td>
-      <td class="tg-0pky">当前MM_MX_A8W4/GMM_MX_A8W4数据流不支持，必须为nullptr</td>
-      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">MM_A16S4数据流支持透传（要求与weightScale同viewShape、同数据类型）；其余数据流不支持，必须为nullptr</td>
+      <td class="tg-0pky">float16/bfloat16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-2</td>
       <td class="tg-0pky">仅转置场景支持</td>
@@ -151,7 +151,7 @@ aclnnStatus aclnnWeightQuantPreprocess(
     <tr>
       <td class="tg-0pky">kGroupSize(int64_t)</td>
       <td class="tg-0pky">输入</td>
-      <td class="tg-0pky">权重在per-group量化时K维度的group的大小</td>
+      <td class="tg-0pky">权重在pergroup量化时K维度的group的大小</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">int64</td>
       <td class="tg-0pky">-</td>
@@ -164,7 +164,7 @@ aclnnStatus aclnnWeightQuantPreprocess(
       <td class="tg-0pky">预处理后的weight</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">int8/int4/fp8_e4m3/hif8/fp4_e2m1</td>
-      <td class="tg-0pky">NZ</td>
+      <td class="tg-0pky">ND/NZ</td>
       <td class="tg-0pky">2-5</td>
       <td class="tg-0pky">仅转置场景支持</td>
     </tr>
@@ -175,14 +175,14 @@ aclnnStatus aclnnWeightQuantPreprocess(
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">float16/bfloat16/fp8_e8m0</td>
       <td class="tg-0pky">ND/NCL/NCHW</td>
-      <td class="tg-0pky">3-4</td>
+      <td class="tg-0pky">1-4</td>
       <td class="tg-0pky">仅转置场景支持</td>
     </tr>
     <tr>
       <td class="tg-0pky">outWeightOffsetOptional(aclTensor *)</td>
       <td class="tg-0pky">输出</td>
       <td class="tg-0pky">预处理后的weightOffset</td>
-      <td class="tg-0pky">当前MM_MX_A8W4/GMM_MX_A8W4数据流不支持，必须为nullptr</td>
+      <td class="tg-0pky">weightOffsetOptional非空时不可为nullptr，且要求与weightOffsetOptional同viewShape、同storageShape、同数据类型；其余场景必须为nullptr</td>
       <td class="tg-0pky">float16/bfloat16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">1-2</td>
@@ -246,7 +246,7 @@ aclnnStatus aclnnWeightQuantPreprocess(
     <tr>
       <td class="tg-0pky" rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
       <td class="tg-0pky" rowspan="6">161002</td>
-      <td class="tg-0pky">输入的数据类型组合不支持，无法匹配当前支持的MM_MX_A8W4/GMM_MX_A8W4数据流。</td>
+      <td class="tg-0pky">输入的数据类型组合不支持，无法匹配当前支持的任何数据流（MM_MX_A8W4/GMM_MX_A8W4/MM_A16S4）。</td>
     </tr>
     <tr>
       <td class="tg-0lax">weight、weightScale、outWeight或outWeightScale是空tensor；或biasOptional/outBiasOptional在提供时为空tensor。</td>
@@ -261,7 +261,7 @@ aclnnStatus aclnnWeightQuantPreprocess(
       <td class="tg-0lax">weight或weightScale的stride不满足转置要求，或biasOptional/outBiasOptional在提供时不连续。</td>
     </tr>
     <tr>
-      <td class="tg-0lax">weightOffsetOptional或outWeightOffsetOptional非空，或kGroupSize不等于32。</td>
+      <td class="tg-0lax">weightOffsetOptional或outWeightOffsetOptional非空（MM_MX_A8W4/GMM_MX_A8W4数据流；MM_A16S4数据流支持透传，要求与weightScale同viewShape、同数据类型），或kGroupSize不等于32（MM_MX_A8W4/GMM_MX_A8W4数据流）；MM_A16S4数据流还要求kGroupSize与weightScale的量化粒度匹配。</td>
     </tr>
     <tr>
       <td class="tg-0pky">ACLNN_ERR_RUNTIME_ERROR</td>
@@ -420,13 +420,76 @@ aclnnStatus aclnnWeightQuantPreprocess(
 
 </details>
 
-- 其余数据类型与shape组合为预留接口，当前调用将返回ACLNN_ERR_PARAM_INVALID
+<!-- npu="950" id7 -->
+<details>
+<summary><strong>MM_A16S4数据流</strong>（MM表示Matmul；A16S4表示x的数据类型为FLOAT16/BFLOAT16，weight的数据类型为INT4（紧凑4-bit，每字节打包2个值），支持pertensor/perchannel/pergroup量化模式）</summary>
+
+- **weight**
+  - 数据类型：INT4
+  - 格式：ND
+  - view shape：2-D `{K, N}`（K为reduction维，N为输出维）
+  - 支持连续或末两维严格转置（stride `[1, K]`）
+  - 紧凑4-bit打包维（连续维）必须为偶数：非转置时N为偶数，转置时K为偶数
+  - 不支持空tensor
+
+- **weightScale**
+  - 数据类型：FLOAT16/BFLOAT16
+  - 格式：ND
+  - view shape按量化粒度区分：
+    - pertensor：单元素，`{1}`或`{1, 1}`
+    - perchannel：`{N}`或`{1, N}`
+    - pergroup：2-D `{ceildiv(K, kGroupSize), N}`，且分组数大于1；weight转置输入时，weightScale需与weight布局一致（同为转置视图）
+  - 不支持空tensor
+
+- **weightOffsetOptional**
+  - 可选；若提供，数据类型与view shape必须与weightScale相同，格式为ND，不支持空tensor
+  - outWeightOffsetOptional同步要求：与weightOffsetOptional同view shape、同storage shape、同数据类型
+
+- **biasOptional**
+  - 格式：ND
+  - view shape：`{N}`或`{1, N}`
+  - 必须为contiguous
+  - 不支持空tensor（若提供）
+
+- **kGroupSize**
+  - pertensor/perchannel：必须等于 0
+  - pergroup：必须大于 0，且weightScale第0维等于ceildiv(K, kGroupSize)
+
+- **xDtype**
+  - FLOAT16/BFLOAT16
+
+- **xScaleDtype**
+  - 必须为ACL_DT_UNDEFINED
+
+- **outWeight**
+  - 数据类型：与weight相同
+  - 格式：pertensor（转置/非转置）与perchannel/pergroup转置场景为ND直拷（物理透传）；perchannel/pergroup非转置场景为FRACTAL_NZ_C0_16（ND→NZ分形转换）
+  - view shape：与weight view shape相同 `{K, N}`
+  - storage shape：FRACTAL_NZ_C0_16时为4-D `{ceildiv(N, 16), ceildiv(K, 16), 16, 16}`（N块在前，区别于A8W4 NZ_C0_32的K块在前）；ND直拷场景与输入weight保持相同的view shape/strides（属纯透传）
+
+- **outWeightScale**
+  - 数据类型：与weightScale相同
+  - 格式：ND
+  - view shape：与weightScale view shape相同
+  - storage shape：与weightScale storage shape相同
+
+- **outBiasOptional**
+  - 数据类型：与biasOptional相同
+  - 格式：ND
+  - 必须为contiguous
+  - view shape：与biasOptional相同
+  - storage shape：与biasOptional相同
+
+</details>
+<!-- end id7 -->
+
+- 除上述数据流外的数据类型与shape组合为预留接口，当前调用将返回ACLNN_ERR_PARAM_INVALID
 
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
-**注意**：用户需自行计算并构造输出张量shape，参考约束说明中的公式：
+**注意**：用户需自行计算并构造输出张量shape，参考约束说明中的公式。以下示例为MM_MX_A8W4数据流：
 
 - outWeight viewShape：与weight viewShape相同
 - outWeight storageShape：`{CeilDiv(K, 32), CeilDiv(N, 16), 16, 32}`
@@ -627,3 +690,242 @@ int main()
 }
 
 ```
+
+<!-- npu="950" id8 -->
+MM_A16S4数据流调用示例如下（x为FLOAT16，weight为INT4紧凑排布；包含perchannel非转置NZ_C0_16输出与pertensor ND直拷两个场景）：
+
+- outWeight viewShape：与weight viewShape相同
+- outWeight storageShape：FRACTAL_NZ_C0_16输出场景为`{CeilDiv(N, 16), CeilDiv(K, 16), 16, 16}`（N块在前，区别于MM_MX_A8W4的`{CeilDiv(K, 32), CeilDiv(N, 16), 16, 32}`）；ND直拷场景与输入weight保持相同的view shape/strides
+- outWeight format：perchannel/pergroup非转置场景为`ACL_FORMAT_FRACTAL_NZ_C0_16`，pertensor及perchannel/pergroup转置场景为`ACL_FORMAT_ND`
+
+```cpp
+#include <iostream>
+#include <memory>
+#include <vector>
+#include "acl/acl.h"
+#include "aclnnop/aclnn_weight_quant_preprocess.h"
+
+#define CHECK_RET(cond, return_expr) \
+    do {                             \
+        if (!(cond)) {               \
+            return_expr;             \
+        }                            \
+    } while (0)
+
+#define CEIL_DIV(x, y) (((x) + (y) - 1) / (y))
+
+int64_t GetShapeSize(const std::vector<int64_t>& shape)
+{
+    int64_t size = 1;
+    for (auto d : shape)
+        size *= d;
+    return size;
+}
+
+class AclRuntimeGuard {
+public:
+    explicit AclRuntimeGuard(int32_t deviceId) : deviceId_(deviceId) {}
+
+    ~AclRuntimeGuard()
+    {
+        if (stream_ != nullptr) {
+            aclrtDestroyStream(stream_);
+            stream_ = nullptr;
+        }
+        if (deviceSet_) {
+            aclrtResetDevice(deviceId_);
+            deviceSet_ = false;
+        }
+        if (aclInited_) {
+            aclFinalize();
+            aclInited_ = false;
+        }
+    }
+
+    int Init(aclrtStream* stream)
+    {
+        auto ret = aclInit(nullptr);
+        CHECK_RET(ret == ACL_SUCCESS, return ret);
+        aclInited_ = true;
+
+        ret = aclrtSetDevice(deviceId_);
+        CHECK_RET(ret == ACL_SUCCESS, return ret);
+        deviceSet_ = true;
+
+        ret = aclrtCreateStream(stream);
+        CHECK_RET(ret == ACL_SUCCESS, return ret);
+        stream_ = *stream;
+        return ACL_SUCCESS;
+    }
+
+private:
+    int32_t deviceId_;
+    aclrtStream stream_ = nullptr;
+    bool aclInited_ = false;
+    bool deviceSet_ = false;
+};
+
+// 设备侧 Tensor 持有者：析构时按创建逆序自动释放 tensor 与 device 内存
+class DeviceTensor {
+public:
+    // bytesPerElem=0.5 表示 4-bit 紧凑打包（INT4/FP4，每字节 2 个值），内存按 numel/2 字节申请
+    DeviceTensor(const std::vector<int64_t>& viewShape, const std::vector<int64_t>& storageShape,
+                 const std::vector<int64_t>& strides, aclDataType dtype, aclFormat format, double bytesPerElem)
+    {
+        int64_t storageSize = GetShapeSize(storageShape);
+        bytes_ = static_cast<int64_t>(storageSize * bytesPerElem);
+
+        std::vector<int8_t> hostData(bytes_, 0);
+        auto ret = aclrtMalloc(&deviceAddr_, bytes_, ACL_MEM_MALLOC_HUGE_FIRST);
+        CHECK_RET(ret == ACL_SUCCESS, std::cout << "Malloc device memory failed" << std::endl; return);
+        ret = aclrtMemcpy(deviceAddr_, bytes_, hostData.data(), bytes_, ACL_MEMCPY_HOST_TO_DEVICE);
+        CHECK_RET(ret == ACL_SUCCESS, std::cout << "Memcpy H2D failed" << std::endl; return);
+        const int64_t* stridesData = strides.empty() ? nullptr : strides.data();
+        tensor_ = aclCreateTensor(viewShape.data(), viewShape.size(), dtype, stridesData, 0, format,
+                                  storageShape.data(), storageShape.size(), deviceAddr_);
+        CHECK_RET(tensor_ != nullptr, std::cout << "Create tensor failed" << std::endl; return);
+    }
+
+    ~DeviceTensor()
+    {
+        if (tensor_ != nullptr) {
+            aclDestroyTensor(tensor_);
+            tensor_ = nullptr;
+        }
+        if (deviceAddr_ != nullptr) {
+            aclrtFree(deviceAddr_);
+            deviceAddr_ = nullptr;
+        }
+    }
+
+    aclTensor* Get() const { return tensor_; }
+    bool IsValid() const { return tensor_ != nullptr && deviceAddr_ != nullptr; }
+
+private:
+    aclTensor* tensor_ = nullptr;
+    void* deviceAddr_ = nullptr;
+    int64_t bytes_ = 0;
+};
+
+int RunPreprocess(aclTensor* weight, aclTensor* weightScale, aclTensor* weightOffset, aclDataType xDtype,
+                  int64_t kGroupSize, aclTensor* outWeight, aclTensor* outWeightScale, aclTensor* outWeightOffset,
+                  aclrtStream stream)
+{
+    // A16W4 数据流无 xScale 语义，xScaleDtype 固定传 ACL_DT_UNDEFINED
+    aclDataType xScaleDtype = ACL_DT_UNDEFINED;
+
+    // 1. 获取 workspace 与执行器
+    uint64_t workspaceSize = 0;
+    aclOpExecutor* executor = nullptr;
+    auto ret = aclnnWeightQuantPreprocessGetWorkspaceSize(weight, weightScale, weightOffset, nullptr, // biasOptional
+                                                          xDtype, xScaleDtype, kGroupSize, outWeight, outWeightScale,
+                                                          outWeightOffset, nullptr, // outBiasOptional
+                                                          &workspaceSize, &executor);
+    CHECK_RET(ret == ACL_SUCCESS, std::cout << "GetWorkspaceSize failed, ret=" << ret << std::endl; return ret);
+
+    void* workspaceAddr = nullptr;
+    std::unique_ptr<void, aclError (*)(void*)> workspaceAddrPtr(nullptr, aclrtFree);
+    if (workspaceSize > 0) {
+        ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
+        CHECK_RET(ret == ACL_SUCCESS, std::cout << "Malloc workspace failed" << std::endl; return ret);
+        workspaceAddrPtr.reset(workspaceAddr);
+    }
+
+    // 2. 执行计算
+    ret = aclnnWeightQuantPreprocess(workspaceAddr, workspaceSize, executor, stream);
+    CHECK_RET(ret == ACL_SUCCESS, std::cout << "Preprocess failed, ret=" << ret << std::endl; return ret);
+
+    ret = aclrtSynchronizeStream(stream);
+    CHECK_RET(ret == ACL_SUCCESS, std::cout << "Synchronize failed" << std::endl; return ret);
+    return ACL_SUCCESS;
+}
+
+// 场景一：MM_A16S4_PERCHANNEL（INT4 perchannel，非转置 weight -> FRACTAL_NZ_C0_16 输出，offset 直拷透传）
+int TestA16S4PerChannelNz(aclrtStream stream)
+{
+    int64_t k = 256;
+    int64_t n = 256;
+
+    // weight: INT4，非转置连续 [K, N]；紧凑 4-bit 打包维（N）须为偶数
+    DeviceTensor weight({k, n}, {k, n}, {n, 1}, ACL_INT4, ACL_FORMAT_ND, 0.5);
+    CHECK_RET(weight.IsValid(), return ACL_ERROR_FAILURE);
+
+    // weightScale: perchannel {N}，FP16；perchannel 场景 kGroupSize 必须为 0
+    DeviceTensor weightScale({n}, {n}, {1}, ACL_FLOAT16, ACL_FORMAT_ND, 2);
+    CHECK_RET(weightScale.IsValid(), return ACL_ERROR_FAILURE);
+
+    // weightOffsetOptional: A16S4 各数据流支持透传，要求与 weightScale 同形同 dtype
+    DeviceTensor weightOffset({n}, {n}, {1}, ACL_FLOAT16, ACL_FORMAT_ND, 2);
+    CHECK_RET(weightOffset.IsValid(), return ACL_ERROR_FAILURE);
+
+    // outWeight: 用户自行构造，viewShape 与 weight 相同；NZ_C0_16 的 storageShape 为
+    // {ceildiv(N, 16), ceildiv(K, 16), 16, 16}（N 块在前，区别于 A8W4 NZ_C0_32 的 K 块在前）
+    std::vector<int64_t> outStorageShape = {CEIL_DIV(n, 16), CEIL_DIV(k, 16), 16, 16};
+    DeviceTensor outWeight({k, n}, outStorageShape, {}, ACL_INT4, ACL_FORMAT_FRACTAL_NZ_C0_16, 0.5);
+    CHECK_RET(outWeight.IsValid(), return ACL_ERROR_FAILURE);
+
+    // outWeightScale/outWeightOffset: viewShape、storageShape、dtype 均与输入相同（直拷）
+    DeviceTensor outWeightScale({n}, {n}, {1}, ACL_FLOAT16, ACL_FORMAT_ND, 2);
+    CHECK_RET(outWeightScale.IsValid(), return ACL_ERROR_FAILURE);
+    DeviceTensor outWeightOffset({n}, {n}, {1}, ACL_FLOAT16, ACL_FORMAT_ND, 2);
+    CHECK_RET(outWeightOffset.IsValid(), return ACL_ERROR_FAILURE);
+
+    auto ret = RunPreprocess(weight.Get(), weightScale.Get(), weightOffset.Get(), ACL_FLOAT16, 0, outWeight.Get(),
+                             outWeightScale.Get(), outWeightOffset.Get(), stream);
+    CHECK_RET(ret == ACL_SUCCESS, std::cout << "TestA16S4PerChannelNz failed" << std::endl; return ret);
+    std::cout << "TestA16S4PerChannelNz success" << std::endl;
+    return ACL_SUCCESS;
+}
+
+// 场景二：MM_A16S4_PERTENSOR（INT4 pertensor，一律 ND 直拷，与转置无关）
+int TestA16S4PerTensorNd(aclrtStream stream)
+{
+    int64_t k = 256;
+    int64_t n = 256;
+
+    // weight: INT4，连续 [K, N]（pertensor 对转置/非转置均按字节直拷）
+    DeviceTensor weight({k, n}, {k, n}, {n, 1}, ACL_INT4, ACL_FORMAT_ND, 0.5);
+    CHECK_RET(weight.IsValid(), return ACL_ERROR_FAILURE);
+
+    // weightScale: pertensor 单元素 {1}，FP16；kGroupSize 必须为 0
+    DeviceTensor weightScale({1}, {1}, {1}, ACL_FLOAT16, ACL_FORMAT_ND, 2);
+    CHECK_RET(weightScale.IsValid(), return ACL_ERROR_FAILURE);
+    DeviceTensor weightOffset({1}, {1}, {1}, ACL_FLOAT16, ACL_FORMAT_ND, 2);
+    CHECK_RET(weightOffset.IsValid(), return ACL_ERROR_FAILURE);
+
+    // outWeight: ND 直拷，format 为 ND，storageShape 与 viewShape 相同
+    DeviceTensor outWeight({k, n}, {k, n}, {}, ACL_INT4, ACL_FORMAT_ND, 0.5);
+    CHECK_RET(outWeight.IsValid(), return ACL_ERROR_FAILURE);
+
+    DeviceTensor outWeightScale({1}, {1}, {1}, ACL_FLOAT16, ACL_FORMAT_ND, 2);
+    CHECK_RET(outWeightScale.IsValid(), return ACL_ERROR_FAILURE);
+    DeviceTensor outWeightOffset({1}, {1}, {1}, ACL_FLOAT16, ACL_FORMAT_ND, 2);
+    CHECK_RET(outWeightOffset.IsValid(), return ACL_ERROR_FAILURE);
+
+    auto ret = RunPreprocess(weight.Get(), weightScale.Get(), weightOffset.Get(), ACL_FLOAT16, 0, outWeight.Get(),
+                             outWeightScale.Get(), outWeightOffset.Get(), stream);
+    CHECK_RET(ret == ACL_SUCCESS, std::cout << "TestA16S4PerTensorNd failed" << std::endl; return ret);
+    std::cout << "TestA16S4PerTensorNd success" << std::endl;
+    return ACL_SUCCESS;
+}
+
+// WeightQuantPreprocess currently supports Ascend 950 only.
+int main()
+{
+    int32_t deviceId = 0;
+    aclrtStream stream = nullptr;
+    AclRuntimeGuard aclGuard(deviceId);
+    auto ret = aclGuard.Init(&stream);
+    CHECK_RET(ret == ACL_SUCCESS, std::cout << "Init failed" << std::endl; return ret);
+
+    ret = TestA16S4PerChannelNz(stream);
+    CHECK_RET(ret == ACL_SUCCESS, return ret);
+
+    ret = TestA16S4PerTensorNd(stream);
+    CHECK_RET(ret == ACL_SUCCESS, return ret);
+
+    std::cout << "All A16S4 examples run success" << std::endl;
+    return 0;
+}
+```
+<!-- end id8 -->
