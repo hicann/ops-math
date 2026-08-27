@@ -71,7 +71,7 @@
 
 ## 约束说明
 
-在算子实现过程中，feeds_repeat_times需搬入ub并做精度转换和累加，故feeds_repeat_times数据规模不能超过ub大小的四分之一。
+在算子实现过程中，feeds_repeat_times需搬入ub并做精度转换和累加，故feeds_repeat_times取值在Atlas A2/A3系列产品不能超过48 kb, 在Ascend 950PR/Ascend 950DT系列产品不能超过64 kb。
 
 ## 调用说明
 
