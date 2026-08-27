@@ -59,7 +59,7 @@
 | [aclnnAsinh&aclnnInplaceAsinh](../../math/asinh/docs/aclnnAsinh&aclnnInplaceAsinh.md) | 对输入Tensor中的每个元素进行反双曲正弦操作后输出。           | 默认确定性实现| 默认确定性实现 |
 | [aclnnAtan&aclnnInplaceAtan](../../math/atan/docs/aclnnAtan&aclnnInplaceAtan.md) | 对输入矩阵的每个元素进行反正切操作后输出。                   | 默认确定性实现| 默认确定性实现|
 | [aclnnAtan2&aclnnInplaceAtan2](../../math/atan2/docs/aclnnAtan2&aclnnInplaceAtan2.md) | 对输入张量self和other进行逐元素的反正切运算。                | 默认确定性实现| 默认确定性实现  |
-| [aclnnAtanh&aclnnInplaceAtanh](../../math/atanh/docs/aclnnAtanh&aclnnInplaceAtanh.md) | 对输入Tensor中的每个元素进行反双曲正切操作后输出。           | 默认确定性实现| - |
+| [aclnnAtanh&aclnnInplaceAtanh](../../math/atanh/docs/aclnnAtanh&aclnnInplaceAtanh.md) | 对输入Tensor中的每个元素进行反双曲正切操作后输出。           | 默认确定性实现| 默认确定性实现 |
 | [aclnnBatchNormStats](../../math/reduce_std_with_mean/docs/aclnnBatchNormStats.md) | 计算单卡输入数据的均值和标准差的倒数。                       | 默认确定性实现| 默认确定性实现|
 | [aclnnBernoulli&aclnnInplaceBernoulli](../../random/stateless_bernoulli/docs/aclnnBernoulli&aclnnInplaceBernoulli.md) | 从伯努利分布中提取二进制随机数（0或1），prob为生成二进制随机数的概率，输入的张量用于指定shape。  | 默认确定性实现|  默认确定性实现 |
 | [aclnnBernoulliTensor&aclnnInplaceBernoulliTensor](../../random/stateless_bernoulli/docs/aclnnBernoulliTensor&aclnnInplaceBernoulliTensor.md) | 从伯努利分布中提取二进制随机数（0或1），prob为生成二进制随机数的概率，输入的张量用于指定shape。   | 默认确定性实现| 默认确定性实现 |
@@ -285,7 +285,7 @@
 | [aclnnSimThreadExponential](../../random/sim_thread_exponential/docs/aclnnSimThreadExponential.md) | 生成服从参数为lambda的指数分布随机数，并将其填充到selfRef张量中。                                    | 默认确定性实现| 默认确定性实现 |
 | [aclnnSin&aclnnInplaceSin](../../math/sin/docs/aclnnSin&aclnnInplaceSin.md) | 对输入Tensor完成sin运算。                                    | 默认确定性实现| 默认确定性实现|
 | [aclnnSinc&aclnnInplaceSinc](../../math/sinc/docs/aclnnSinc&aclnnInplaceSinc.md) | 对输入Tensor完成sinc运算。                                   | 默认确定性实现| 默认确定性实现 |
-| [aclnnSinh&aclnnInplaceSinh](../../math/sinh/docs/aclnnSinh&aclnnInplaceSinh.md) | 对输入Tensor完成sinh运算。                                   | 默认确定性实现| - |
+| [aclnnSinh&aclnnInplaceSinh](../../math/sinh/docs/aclnnSinh&aclnnInplaceSinh.md) | 对输入Tensor完成sinh运算。                                   | 默认确定性实现| 默认确定性实现 |
 | [aclnnSinkhorn](../../math/sinkhorn/docs/aclnnSinkhorn.md)      | 计算Sinkhorn距离，可以用于MoE模型中的专家路由。              | 默认确定性实现| - |
 | [aclnnSlice](../../conversion/slice/docs/aclnnSlice.md) | 在指定维度dim上，根据给定的范围[start,end]和步长step，从输入张量self中提取子张量out。 | 默认确定性实现| 默认确定性实现|
 | [aclnnSliceV2](../../conversion/strided_slice_v3/docs/aclnnSliceV2.md) | 根据给定的维度axes、范围[starts,ends]和步长steps，从输入张量self中提取张量out。 | 默认确定性实现| 默认确定性实现|
