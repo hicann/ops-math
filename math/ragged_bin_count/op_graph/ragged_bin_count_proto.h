@@ -26,7 +26,8 @@ namespace ge {
  * @par Inputs:
  * @li splits: A 1D int64 tensor. Adjacent entries delimit each ragged row in values.
  * @li values: An int32 or int64 tensor containing bin indices.
- * @li size: A non-negative scalar tensor with the same dtype as values. It specifies the number of bins.
+ * @li size: A non-negative 1D tensor with shape [1] and the same dtype as values. Its only element specifies
+ *     the number of bins.
  * @li weights: A tensor of rank at most 2, interpreted in flattened ND order. Zero elements mean unit weights;
  *     otherwise its element count must equal values. Rank and individual dimensions need not match values.
  *
@@ -34,7 +35,10 @@ namespace ge {
  * @li binary_output: If true, every bin that occurs at least once is written as one. Defaults to false.
  *
  * @par Outputs:
- * @li output: A tensor with shape [numel(splits) - 1, size] and the same dtype as weights.
+ * @li output: A float32 tensor with shape [numel(splits) - 1, size[0]].
+ *
+ * @attention The public REG_OP retains the historical broad weights/output dtype declarations for IR compatibility.
+ *     The supported native implementations accept float32 weights and produce float32 output.
  *
  * @par Third-party framework compatibility
  * Compatible with the TensorFlow RaggedBincount operator.

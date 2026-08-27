@@ -61,7 +61,6 @@ constexpr int64_t MAX_VECTOR_CHUNKS = std::numeric_limits<uint16_t>::max();
 constexpr uint64_t LEGACY_TILING_KEY = 0;
 constexpr uint64_t GPU_ALIGNED_TILING_KEY = 1;
 constexpr size_t WORKSPACE_COUNT = 1;
-constexpr bool PRIVATE_FORMATS_ENABLED = false;
 
 struct SquareSumAllCompileInfo {};
 
@@ -75,19 +74,13 @@ struct KernelPlan {
 
 int64_t CeilDivPositive(int64_t value, int64_t divisor) { return value / divisor + (value % divisor != 0); }
 
-// 私有格式的注册、binary 与 Kernel 能力暂时保留，便于后续放开；当前版本在
-// ValidateDtypeAndFormat 中提前拦截，不进入 shape 校验和 Kernel 执行。
+// 私有格式未在 Ascend 950 OpDef 中注册；这里保留显式拒绝，防止异常描述绕过注册层。
 bool IsPrivateFormat(ge::Format format)
 {
     return format == ge::FORMAT_NC1HWC0 || format == ge::FORMAT_FRACTAL_Z || format == ge::FORMAT_C1HWNCoC0;
 }
 
-// 已登记的同格式元组能力保持不变；四维公有格式输出统一为 ND 标量。
-bool IsExistingFormat(ge::Format format)
-{
-    return format == ge::FORMAT_ND || format == ge::FORMAT_NC1HWC0 || format == ge::FORMAT_FRACTAL_Z ||
-           format == ge::FORMAT_C1HWNCoC0;
-}
+bool IsNdFormat(ge::Format format) { return format == ge::FORMAT_ND; }
 
 bool IsFourDimPublicInputFormat(ge::Format format) { return format == ge::FORMAT_NCHW || format == ge::FORMAT_NHWC; }
 
@@ -96,7 +89,7 @@ bool IsSupportedFormatTuple(ge::Format x1Format, ge::Format x2Format, ge::Format
     if (x1Format != x2Format || y1Format != y2Format) {
         return false;
     }
-    return (IsExistingFormat(x1Format) && y1Format == x1Format) ||
+    return (IsNdFormat(x1Format) && y1Format == ge::FORMAT_ND) ||
            (IsFourDimPublicInputFormat(x1Format) && y1Format == ge::FORMAT_ND);
 }
 
@@ -134,12 +127,12 @@ ge::graphStatus ValidateDtypeAndFormat(gert::TilingContext* context, ge::Format&
                                       std::to_string(static_cast<int32_t>(x2Format)) + ", " +
                                       std::to_string(static_cast<int32_t>(y1Format)) + ", " +
                                       std::to_string(static_cast<int32_t>(y2Format));
-    OP_CHECK_IF(!PRIVATE_FORMATS_ENABLED && (IsPrivateFormat(x1Format) || IsPrivateFormat(x2Format) ||
-                                             IsPrivateFormat(y1Format) || IsPrivateFormat(y2Format)),
-                OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(
-                    context->GetNodeName(), "x1, x2, y1, y2", actualFormats,
-                    "FRACTAL_Z, C1HWNCoC0 and NC1HWC0 are temporarily disabled on Ascend 950"),
-                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        IsPrivateFormat(x1Format) || IsPrivateFormat(x2Format) || IsPrivateFormat(y1Format) ||
+            IsPrivateFormat(y2Format),
+        OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(context->GetNodeName(), "x1, x2, y1, y2", actualFormats,
+                                                "FRACTAL_Z, C1HWNCoC0 and NC1HWC0 are not supported on Ascend 950"),
+        return ge::GRAPH_FAILED);
     OP_CHECK_IF(!IsSupportedFormatTuple(x1Format, x2Format, y1Format, y2Format),
                 OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(context->GetNodeName(), "x1, x2, y1, y2", actualFormats,
                                                         "supported formats are ND, NCHW and NHWC; NCHW/NHWC inputs "

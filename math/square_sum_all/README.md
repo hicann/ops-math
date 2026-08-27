@@ -45,40 +45,39 @@ $$
     <tr>
       <td>x1</td>
       <td>输入</td>
-      <td><ul><li>表示第一路待求平方和的张量，对应公式中的x1。</li><li>不支持空Tensor，每一维长度必须大于0。</li><li>NCHW、NHWC格式的rank必须为4；ND格式的rank取值范围[0, 8]（rank为0表示标量输入，按1个元素处理）。执行期shape需与x2逐维相同。</li></ul></td>
+      <td><ul><li>表示第一路待求平方和的张量，对应公式中的x1。</li><li>不支持空Tensor，每一维长度必须大于0。</li><li>Ascend 950：NCHW、NHWC格式的rank必须为4；ND格式的rank取值范围[0, 8]（rank为0表示标量输入，按1个元素处理）。其他产品的rank范围以对应产品实现为准。执行期shape需与x2逐维相同。</li></ul></td>
       <td>FLOAT</td>
-      <td>ND、NCHW、NHWC</td>
+      <td>Ascend 950：ND、NCHW、NHWC<br>其他产品：ND；静态shape还支持FRACTAL_Z、C1HWNCoC0、NC1HWC0</td>
     </tr>
     <tr>
       <td>x2</td>
       <td>输入</td>
-      <td><ul><li>表示第二路待求平方和的张量，对应公式中的x2。</li><li>不支持空Tensor，每一维长度必须大于0。</li><li>NCHW、NHWC格式的rank必须为4；ND格式的rank取值范围[0, 8]（rank为0表示标量输入，按1个元素处理）。执行期shape需与x1逐维相同。</li></ul></td>
+      <td><ul><li>表示第二路待求平方和的张量，对应公式中的x2。</li><li>不支持空Tensor，每一维长度必须大于0。</li><li>Ascend 950：NCHW、NHWC格式的rank必须为4；ND格式的rank取值范围[0, 8]（rank为0表示标量输入，按1个元素处理）。其他产品的rank范围以对应产品实现为准。执行期shape需与x1逐维相同。</li></ul></td>
       <td>FLOAT</td>
-      <td>ND、NCHW、NHWC</td>
+      <td>Ascend 950：ND、NCHW、NHWC<br>其他产品：ND；静态shape还支持FRACTAL_Z、C1HWNCoC0、NC1HWC0</td>
     </tr>
     <tr>
       <td>y1</td>
       <td>输出</td>
       <td><ul><li>表示x1全部元素的平方和，对应公式中的y1。</li><li>输出为0维Tensor（rank为0），含1个FLOAT元素。</li></ul></td>
       <td>FLOAT</td>
-      <td>ND</td>
+      <td>Ascend 950：ND<br>其他产品：与输入格式相同</td>
     </tr>
     <tr>
       <td>y2</td>
       <td>输出</td>
       <td><ul><li>表示x2全部元素的平方和，对应公式中的y2。</li><li>数据类型、shape与输出y1保持一致。</li></ul></td>
       <td>FLOAT</td>
-      <td>ND</td>
+      <td>Ascend 950：ND<br>其他产品：与输入格式相同</td>
     </tr>
   </tbody></table>
 
 ## 约束说明
 
 - x1与x2的执行期rank及每一维长度必须完全相同，不支持广播。shape`[2,3]`与`[6]`即使元素数相同也不合法。
-- x1与x2必须使用相同格式。ND输入对应ND输出；NCHW、NHWC输入均对应ND标量输出。除此之外的混合格式组合不支持。
+- x1与x2必须使用相同格式。Ascend 950上，ND输入对应ND输出，NCHW、NHWC输入均对应ND标量输出；其他产品上，输出格式与输入格式相同，其中FRACTAL_Z、C1HWNCoC0、NC1HWC0仅支持静态shape，动态shape仅支持ND。除此之外的混合格式组合不支持。
 - 本算子不做隐式数据类型转换与输入数据格式转换，四个参数的数据类型和数据格式必须与上述合法组合一致。
 - NaN、Inf及有限值平方上溢按FLOAT语义自然传播；两路累加器与两个输出互不污染，`x1`中的非有限值不会影响`y2`，反之亦然。
-- ND、NCHW、NHWC输入走同一条按元素总数展平的归约路径，Kernel侧无格式分支，因此结果与轴顺序无关。
 - 本算子仅提供GE图模式注册，构建配置为`aclnn_exclude`，不提供aclnn接口。
 
 ## 调用说明

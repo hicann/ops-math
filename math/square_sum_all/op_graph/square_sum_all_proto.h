@@ -24,12 +24,13 @@ namespace ge {
  * @brief Computes the sum of squares for two independent tensors.
  *
  * @par Inputs:
- * @li x1: A non-empty 1D to 8D ND tensor of type float32.
- * @li x2: A non-empty 1D to 8D ND tensor with the same shape as x1 and type float32.
+ * @li x1: A non-empty tensor of type float32. On Ascend 950, ND supports 0D to 8D, while NCHW and NHWC
+ *          require 4D.
+ * @li x2: A non-empty tensor with the same shape and format as x1 and type float32.
  *
  * @par Outputs:
- * @li y1: A scalar ND tensor of type float32. y1 = sum(x1 * x1).
- * @li y2: A scalar ND tensor of type float32. y2 = sum(x2 * x2).
+ * @li y1: A scalar tensor of type float32. On Ascend 950, its format is ND. y1 = sum(x1 * x1).
+ * @li y2: A scalar tensor of type float32. On Ascend 950, its format is ND. y2 = sum(x2 * x2).
  */
 #ifndef OPS_PROTO_DEF_SQUARESUMALL
 #define OPS_PROTO_DEF_SQUARESUMALL

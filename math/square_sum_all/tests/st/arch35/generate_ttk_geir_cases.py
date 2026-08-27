@@ -26,7 +26,7 @@ InferShape 与 InferDataType 唯一的端到端看护点。
   元素走 GPU 对齐的 key 1；更大的合法 shape 因 UB 容量回退 key 0。ND、NCHW、NHWC
   共用同一套规模路由规则。
 - **类型组合恒为 float32**：op_def四个参数都只声明DT_FLOAT。正向格式覆盖为ND输入到ND输出，
-  以及NCHW/NHWC输入到ND输出；私有格式由Host Tiling提前拒绝，不进入GEIR正向用例。
+  以及NCHW/NHWC输入到ND输出；Ascend 950 OpDef不注册私有格式，Host Tiling另保留防御性拒绝。
 
 因此基础150条投给真正变化的轴，新增24条专门验证公有格式选路及其边界行为：
 

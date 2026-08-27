@@ -299,8 +299,8 @@ TEST_F(SquareSumAllTilingTest, AcceptsNdFormatTuple)
     EXPECT_TRUE(ExecuteTiling(MakeContext({64}, {64}), tilingInfo));
 }
 
-// 私有格式实现资产暂时保留，但 Ascend 950 当前必须在 Host Tiling 阶段拒绝。
-TEST_F(SquareSumAllTilingTest, RejectsTemporarilyDisabledPrivateFormatTuples)
+// 私有格式未在 Ascend 950 OpDef 中注册；Host Tiling 仍需防御异常描述绕过注册层。
+TEST_F(SquareSumAllTilingTest, RejectsUnsupportedPrivateFormatTuples)
 {
     for (const ge::Format format : {ge::FORMAT_FRACTAL_Z, ge::FORMAT_C1HWNCoC0, ge::FORMAT_NC1HWC0}) {
         ContextOptions options;

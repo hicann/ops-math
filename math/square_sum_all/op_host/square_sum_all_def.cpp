@@ -22,35 +22,27 @@ public:
     {
         this->Input("x1")
             .ParamType(REQUIRED)
-            .DataType({ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
-            .Format({ge::FORMAT_FRACTAL_Z, ge::FORMAT_C1HWNCoC0, ge::FORMAT_NC1HWC0, ge::FORMAT_ND, ge::FORMAT_NCHW,
-                     ge::FORMAT_NHWC})
-            .UnknownShapeFormat({ge::FORMAT_FRACTAL_Z, ge::FORMAT_C1HWNCoC0, ge::FORMAT_NC1HWC0, ge::FORMAT_ND,
-                                 ge::FORMAT_NCHW, ge::FORMAT_NHWC})
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
+            .Format({ge::FORMAT_ND, ge::FORMAT_NCHW, ge::FORMAT_NHWC})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_NCHW, ge::FORMAT_NHWC})
             .AutoContiguous();
         this->Input("x2")
             .ParamType(REQUIRED)
-            .DataType({ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
-            .Format({ge::FORMAT_FRACTAL_Z, ge::FORMAT_C1HWNCoC0, ge::FORMAT_NC1HWC0, ge::FORMAT_ND, ge::FORMAT_NCHW,
-                     ge::FORMAT_NHWC})
-            .UnknownShapeFormat({ge::FORMAT_FRACTAL_Z, ge::FORMAT_C1HWNCoC0, ge::FORMAT_NC1HWC0, ge::FORMAT_ND,
-                                 ge::FORMAT_NCHW, ge::FORMAT_NHWC})
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
+            .Format({ge::FORMAT_ND, ge::FORMAT_NCHW, ge::FORMAT_NHWC})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_NCHW, ge::FORMAT_NHWC})
             .AutoContiguous();
         this->Output("y1")
             .ParamType(REQUIRED)
-            .DataType({ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
-            .Format({ge::FORMAT_FRACTAL_Z, ge::FORMAT_C1HWNCoC0, ge::FORMAT_NC1HWC0, ge::FORMAT_ND, ge::FORMAT_ND,
-                     ge::FORMAT_ND})
-            .UnknownShapeFormat({ge::FORMAT_FRACTAL_Z, ge::FORMAT_C1HWNCoC0, ge::FORMAT_NC1HWC0, ge::FORMAT_ND,
-                                 ge::FORMAT_ND, ge::FORMAT_ND})
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .AutoContiguous();
         this->Output("y2")
             .ParamType(REQUIRED)
-            .DataType({ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
-            .Format({ge::FORMAT_FRACTAL_Z, ge::FORMAT_C1HWNCoC0, ge::FORMAT_NC1HWC0, ge::FORMAT_ND, ge::FORMAT_ND,
-                     ge::FORMAT_ND})
-            .UnknownShapeFormat({ge::FORMAT_FRACTAL_Z, ge::FORMAT_C1HWNCoC0, ge::FORMAT_NC1HWC0, ge::FORMAT_ND,
-                                 ge::FORMAT_ND, ge::FORMAT_ND})
+            .DataType({ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT})
+            .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .AutoContiguous();
 
         OpAICoreConfig aicoreConfig;
