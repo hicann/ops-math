@@ -30,51 +30,182 @@
 using namespace Ops::Base;
 using namespace AscendC;
 
-#ifndef INFINITY
-#define INFINITY (__builtin_inff())
+namespace LogAddExpOp {
+#ifdef __CCE_AICORE__
+constexpr static MicroAPI::CastTrait CAST_B16_TO_B32_TRAIT = {MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::SAT,
+                                                              MicroAPI::MaskMergeMode::ZEROING, RoundMode::UNKNOWN};
+constexpr static MicroAPI::CastTrait CAST_B32_TO_B16_TRAIT = {MicroAPI::RegLayout::ZERO, MicroAPI::SatMode::SAT,
+                                                              MicroAPI::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
 #endif
 
-namespace LogAddExpOp {
-constexpr int CAST_NONE_MODE = 0;
-constexpr int CAST_RINT_MODE = 1;
-constexpr int CMP_EQ_MODE = 2;   // AscendC::CMPMODE::EQ
-constexpr int CMP_NE_MODE = 5;   // AscendC::CMPMODE::NE
-constexpr int SEL_TT_MODE = 2;   // AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE
-constexpr float POS_INF = INFINITY;
-constexpr float NEG_INF = -INFINITY;
+// Keep the complete arithmetic chain in registers.  Besides removing UB round trips between
+// individual DAG nodes, comparing the inputs directly handles both equal infinities with one
+// compare/select pair.  A NaN never compares equal, so NaN propagation is unchanged.
+template <typename StorageT, typename ComputeT = StorageT>
+struct LogAddExpSimplifiedCustom : public Vec::ElemwiseBinaryOP<StorageT, StorageT, StorageT> {
+    __aicore__ inline LogAddExpSimplifiedCustom(LocalTensor<StorageT>& dst, LocalTensor<StorageT>& src1,
+                                                LocalTensor<StorageT>& src2, uint32_t count)
+    {
+#ifdef __CCE_AICORE__
+        const uint32_t vectorLength = VECTOR_REG_WIDTH / sizeof(ComputeT);
+        const uint16_t loopNum = CeilDivision(count, vectorLength);
+        __ubuf__ StorageT* src1Addr = (__ubuf__ StorageT*)src1.GetPhyAddr();
+        __ubuf__ StorageT* src2Addr = (__ubuf__ StorageT*)src2.GetPhyAddr();
+        __ubuf__ StorageT* dstAddr = (__ubuf__ StorageT*)dst.GetPhyAddr();
 
-// inf 修正：x1、x2 同为 ±inf 时 x1-x2=NaN，将差值置 0，使结果回到 max+ln(2)=±inf。
-template <typename CT, typename In1, typename In2>
-struct InfGuardedSub {
-    using OpMax = Bind<Vec::Max<CT>, In1, In2>;
-    using OpMin = Bind<Vec::Min<CT>, In1, In2>;
-    using OpSub = Bind<Vec::Sub<CT>, In1, In2>;
-    using ConstZero = MAKE_CONST(CT, 0);
-    using DupZero = Bind<Vec::Duplicate<CT>, ConstZero>;
-    using ConstPosInf = MAKE_CONST(CT, POS_INF);
-    using ConstNegInf = MAKE_CONST(CT, NEG_INF);
-    using MaskBothPos = Bind<Vec::Compare<uint8_t, CT, CMP_EQ_MODE>, OpMin, ConstPosInf>;
-    using SubFixPos = Bind<Vec::Select<uint8_t, CT, SEL_TT_MODE>, MaskBothPos, DupZero, OpSub>;
-    using MaskBothNeg = Bind<Vec::Compare<uint8_t, CT, CMP_EQ_MODE>, OpMax, ConstNegInf>;
-    using SubFixed = Bind<Vec::Select<uint8_t, CT, SEL_TT_MODE>, MaskBothNeg, DupZero, SubFixPos>;
+        MicroAPI::RegTensor<StorageT, MicroAPI::RegTraitNumOne> input1StorageReg;
+        MicroAPI::RegTensor<StorageT, MicroAPI::RegTraitNumOne> input2StorageReg;
+        MicroAPI::RegTensor<StorageT, MicroAPI::RegTraitNumOne> outputStorageReg;
+        MicroAPI::RegTensor<ComputeT, MicroAPI::RegTraitNumOne> input1Reg;
+        MicroAPI::RegTensor<ComputeT, MicroAPI::RegTraitNumOne> input2Reg;
+        MicroAPI::RegTensor<ComputeT, MicroAPI::RegTraitNumOne> maxReg;
+        MicroAPI::RegTensor<ComputeT, MicroAPI::RegTraitNumOne> workReg;
+        MicroAPI::RegTensor<ComputeT, MicroAPI::RegTraitNumOne> resultReg;
+        MicroAPI::RegTensor<ComputeT, MicroAPI::RegTraitNumOne> addOneReg;
+        MicroAPI::RegTensor<ComputeT, MicroAPI::RegTraitNumOne> correctionReg;
+        MicroAPI::MaskReg mask;
+        MicroAPI::MaskReg compareMask;
+        const ComputeT negOne = static_cast<ComputeT>(-1.0f);
+        const ComputeT one = static_cast<ComputeT>(1.0f);
+        const ComputeT posInf = static_cast<ComputeT>(__builtin_inff());
+
+        __VEC_SCOPE__
+        {
+            for (uint16_t loopIdx = 0; loopIdx < loopNum; ++loopIdx) {
+                mask = MicroAPI::UpdateMask<ComputeT, MicroAPI::RegTraitNumOne>(count);
+                MicroAPI::Duplicate(resultReg, static_cast<ComputeT>(0.0f), mask);
+                if constexpr (std::is_same_v<StorageT, ComputeT>) {
+                    MicroAPI::DataCopy(input1Reg, src1Addr + loopIdx * vectorLength);
+                    MicroAPI::DataCopy(input2Reg, src2Addr + loopIdx * vectorLength);
+                } else {
+                    MicroAPI::DataCopy<StorageT, MicroAPI::LoadDist::DIST_UNPACK_B16>(
+                        input1StorageReg, src1Addr + loopIdx * vectorLength);
+                    MicroAPI::DataCopy<StorageT, MicroAPI::LoadDist::DIST_UNPACK_B16>(
+                        input2StorageReg, src2Addr + loopIdx * vectorLength);
+                    MicroAPI::Cast<ComputeT, StorageT, CAST_B16_TO_B32_TRAIT>(input1Reg, input1StorageReg, mask);
+                    MicroAPI::Cast<ComputeT, StorageT, CAST_B16_TO_B32_TRAIT>(input2Reg, input2StorageReg, mask);
+                }
+
+                MicroAPI::Max(maxReg, input1Reg, input2Reg, mask);
+                MicroAPI::Sub(workReg, input1Reg, input2Reg, mask);
+                MicroAPI::Compare<ComputeT, CMPMODE::EQ>(compareMask, input1Reg, input2Reg, mask);
+                MicroAPI::Select(workReg, resultReg, workReg, compareMask);
+                MicroAPI::Abs(workReg, workReg, mask);
+                MicroAPI::Muls(workReg, workReg, negOne, mask);
+                MicroAPI::Exp(workReg, workReg, mask);
+
+                // Stable log1p(exp(x)): preserve tiny exp values rounded away by 1 + exp(x),
+                // and repair the inf / inf correction path when exp(x) overflows.
+                MicroAPI::Adds(addOneReg, workReg, one, mask);
+                MicroAPI::Adds(correctionReg, addOneReg, negOne, mask);
+                MicroAPI::Div(correctionReg, workReg, correctionReg, mask);
+                MicroAPI::Log(resultReg, addOneReg, mask);
+                MicroAPI::Mul(resultReg, resultReg, correctionReg, mask);
+                MicroAPI::CompareScalar<ComputeT, CMPMODE::NE>(compareMask, addOneReg, one, mask);
+                MicroAPI::Select(resultReg, resultReg, workReg, compareMask);
+                MicroAPI::CompareScalar<ComputeT, CMPMODE::NE>(compareMask, addOneReg, posInf, mask);
+                MicroAPI::Duplicate(correctionReg, posInf, mask);
+                MicroAPI::Select(resultReg, resultReg, correctionReg, compareMask);
+                MicroAPI::Add(workReg, maxReg, resultReg, mask);
+
+                if constexpr (std::is_same_v<StorageT, ComputeT>) {
+                    MicroAPI::DataCopy(dstAddr + loopIdx * vectorLength, workReg, mask);
+                } else {
+                    MicroAPI::Cast<StorageT, ComputeT, CAST_B32_TO_B16_TRAIT>(outputStorageReg, workReg, mask);
+                    MicroAPI::DataCopy<StorageT, MicroAPI::StoreDist::DIST_PACK_B32>(dstAddr + loopIdx * vectorLength,
+                                                                                     outputStorageReg, mask);
+                }
+            }
+        }
+#endif
+    }
 };
 
-// 稳定计算 log1p(x)，避免 x 很小时 1+x 舍入为 1 导致结果变 0。
-template <typename CT, typename In>
-struct StableLog1p {
-    using ConstOne = MAKE_CONST(CT, 1);
-    using ConstNegOne = MAKE_CONST(CT, -1);
-    using OpAddOne = Bind<Vec::Adds<CT>, In, ConstOne>;
-    using OpMid = Bind<Vec::Adds<CT>, OpAddOne, ConstNegOne>;
-    using OpRatio = Bind<Vec::Div<CT>, In, OpMid>;
-    using OpLog = Bind<Vec::Log<CT>, OpAddOne>;
-    using OpMul = Bind<Vec::Mul<CT>, OpLog, OpRatio>;
-    using MaskNotOne = Bind<Vec::Compare<uint8_t, CT, CMP_NE_MODE>, OpAddOne, ConstOne>;
-    using FixSmall = Bind<Vec::Select<uint8_t, CT, SEL_TT_MODE>, MaskNotOne, OpMul, In>;
-    using ConstPosInf = MAKE_CONST(CT, POS_INF);
-    using DupPosInf = Bind<Vec::Duplicate<CT>, ConstPosInf>;
-    using MaskNotInf = Bind<Vec::Compare<uint8_t, CT, CMP_NE_MODE>, OpAddOne, ConstPosInf>;
-    using OpOut = Bind<Vec::Select<uint8_t, CT, SEL_TT_MODE>, MaskNotInf, FixSmall, DupPosInf>;
+template <typename StorageT, typename ComputeT = StorageT>
+struct LogAddExpFullCustom : public Vec::Elemwise6OP<StorageT, StorageT, StorageT, float, float, float, float> {
+    __aicore__ inline LogAddExpFullCustom(LocalTensor<StorageT>& dst, LocalTensor<StorageT>& src1,
+                                          LocalTensor<StorageT>& src2, float negScale, float shift, float lnBase,
+                                          float invLnBase, uint32_t count)
+    {
+#ifdef __CCE_AICORE__
+        const uint32_t vectorLength = VECTOR_REG_WIDTH / sizeof(ComputeT);
+        const uint16_t loopNum = CeilDivision(count, vectorLength);
+        __ubuf__ StorageT* src1Addr = (__ubuf__ StorageT*)src1.GetPhyAddr();
+        __ubuf__ StorageT* src2Addr = (__ubuf__ StorageT*)src2.GetPhyAddr();
+        __ubuf__ StorageT* dstAddr = (__ubuf__ StorageT*)dst.GetPhyAddr();
+
+        MicroAPI::RegTensor<StorageT, MicroAPI::RegTraitNumOne> input1StorageReg;
+        MicroAPI::RegTensor<StorageT, MicroAPI::RegTraitNumOne> input2StorageReg;
+        MicroAPI::RegTensor<StorageT, MicroAPI::RegTraitNumOne> outputStorageReg;
+        MicroAPI::RegTensor<ComputeT, MicroAPI::RegTraitNumOne> input1Reg;
+        MicroAPI::RegTensor<ComputeT, MicroAPI::RegTraitNumOne> input2Reg;
+        MicroAPI::RegTensor<ComputeT, MicroAPI::RegTraitNumOne> maxReg;
+        MicroAPI::RegTensor<ComputeT, MicroAPI::RegTraitNumOne> workReg;
+        MicroAPI::RegTensor<ComputeT, MicroAPI::RegTraitNumOne> resultReg;
+        MicroAPI::RegTensor<ComputeT, MicroAPI::RegTraitNumOne> addOneReg;
+        MicroAPI::RegTensor<ComputeT, MicroAPI::RegTraitNumOne> correctionReg;
+        MicroAPI::MaskReg mask;
+        MicroAPI::MaskReg compareMask;
+        const ComputeT negScaleValue = static_cast<ComputeT>(negScale);
+        const ComputeT shiftValue = static_cast<ComputeT>(shift);
+        const ComputeT lnBaseValue = static_cast<ComputeT>(lnBase);
+        const ComputeT invLnBaseValue = static_cast<ComputeT>(invLnBase);
+        const ComputeT negOne = static_cast<ComputeT>(-1.0f);
+        const ComputeT one = static_cast<ComputeT>(1.0f);
+        const ComputeT posInf = static_cast<ComputeT>(__builtin_inff());
+
+        __VEC_SCOPE__
+        {
+            for (uint16_t loopIdx = 0; loopIdx < loopNum; ++loopIdx) {
+                mask = MicroAPI::UpdateMask<ComputeT, MicroAPI::RegTraitNumOne>(count);
+                MicroAPI::Duplicate(resultReg, static_cast<ComputeT>(0.0f), mask);
+                if constexpr (std::is_same_v<StorageT, ComputeT>) {
+                    MicroAPI::DataCopy(input1Reg, src1Addr + loopIdx * vectorLength);
+                    MicroAPI::DataCopy(input2Reg, src2Addr + loopIdx * vectorLength);
+                } else {
+                    MicroAPI::DataCopy<StorageT, MicroAPI::LoadDist::DIST_UNPACK_B16>(
+                        input1StorageReg, src1Addr + loopIdx * vectorLength);
+                    MicroAPI::DataCopy<StorageT, MicroAPI::LoadDist::DIST_UNPACK_B16>(
+                        input2StorageReg, src2Addr + loopIdx * vectorLength);
+                    MicroAPI::Cast<ComputeT, StorageT, CAST_B16_TO_B32_TRAIT>(input1Reg, input1StorageReg, mask);
+                    MicroAPI::Cast<ComputeT, StorageT, CAST_B16_TO_B32_TRAIT>(input2Reg, input2StorageReg, mask);
+                }
+
+                MicroAPI::Max(maxReg, input1Reg, input2Reg, mask);
+                MicroAPI::Sub(workReg, input1Reg, input2Reg, mask);
+                MicroAPI::Compare<ComputeT, CMPMODE::EQ>(compareMask, input1Reg, input2Reg, mask);
+                MicroAPI::Select(workReg, resultReg, workReg, compareMask);
+                MicroAPI::Abs(workReg, workReg, mask);
+                MicroAPI::Muls(workReg, workReg, negScaleValue, mask);
+                MicroAPI::Adds(workReg, workReg, shiftValue, mask);
+                MicroAPI::Muls(workReg, workReg, lnBaseValue, mask);
+                MicroAPI::Exp(workReg, workReg, mask);
+
+                // Stable log1p(exp(x)), matching the latest origin/master precision path.
+                MicroAPI::Adds(addOneReg, workReg, one, mask);
+                MicroAPI::Adds(correctionReg, addOneReg, negOne, mask);
+                MicroAPI::Div(correctionReg, workReg, correctionReg, mask);
+                MicroAPI::Log(resultReg, addOneReg, mask);
+                MicroAPI::Mul(resultReg, resultReg, correctionReg, mask);
+                MicroAPI::CompareScalar<ComputeT, CMPMODE::NE>(compareMask, addOneReg, one, mask);
+                MicroAPI::Select(resultReg, resultReg, workReg, compareMask);
+                MicroAPI::CompareScalar<ComputeT, CMPMODE::NE>(compareMask, addOneReg, posInf, mask);
+                MicroAPI::Duplicate(correctionReg, posInf, mask);
+                MicroAPI::Select(resultReg, resultReg, correctionReg, compareMask);
+                MicroAPI::Muls(resultReg, resultReg, invLnBaseValue, mask);
+                MicroAPI::Add(workReg, maxReg, resultReg, mask);
+
+                if constexpr (std::is_same_v<StorageT, ComputeT>) {
+                    MicroAPI::DataCopy(dstAddr + loopIdx * vectorLength, workReg, mask);
+                } else {
+                    MicroAPI::Cast<StorageT, ComputeT, CAST_B32_TO_B16_TRAIT>(outputStorageReg, workReg, mask);
+                    MicroAPI::DataCopy<StorageT, MicroAPI::StoreDist::DIST_PACK_B32>(dstAddr + loopIdx * vectorLength,
+                                                                                     outputStorageReg, mask);
+                }
+            }
+        }
+#endif
+    }
 };
 
 // ==================== Simplified (base=-1, scale=1.0, shift=0.0) ====================
@@ -84,16 +215,8 @@ struct LogAddExpSimplifiedCompute {
     using OpInputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
     using OpInputX2 = Bind<Vec::CopyInBrc<T>, Placeholder::In1<T>>;
 
-    using Guard = InfGuardedSub<T, OpInputX1, OpInputX2>;
-    using OpMax = typename Guard::OpMax;
-    using OpAbs = Bind<Vec::Abs<T>, typename Guard::SubFixed>;
-    using ConstNegOne = MAKE_CONST(T, -1);
-    using OpNeg = Bind<Vec::Muls<T>, OpAbs, ConstNegOne>;
-    using OpExp = Bind<Vec::Exp<T>, OpNeg>;
-    using OpLog = typename StableLog1p<T, OpExp>::OpOut;
-    using OpAdd = Bind<Vec::Add<T>, OpMax, OpLog>;
-
-    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpAdd>;
+    using OpCompute = Bind<LogAddExpSimplifiedCustom<T>, OpInputX1, OpInputX2>;
+    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpCompute>;
 
     using Outputs = Elems<OpCopyOut>;
     using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
@@ -105,20 +228,8 @@ struct LogAddExpSimplifiedWithCastCompute {
     using OpInputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
     using OpInputX2 = Bind<Vec::CopyInBrc<T>, Placeholder::In1<T>>;
 
-    using OpCastX1 = Bind<Vec::Cast<float, T, CAST_NONE_MODE>, OpInputX1>;
-    using OpCastX2 = Bind<Vec::Cast<float, T, CAST_NONE_MODE>, OpInputX2>;
-
-    using Guard = InfGuardedSub<float, OpCastX1, OpCastX2>;
-    using OpMax = typename Guard::OpMax;
-    using OpAbs = Bind<Vec::Abs<float>, typename Guard::SubFixed>;
-    using ConstNegOne = MAKE_CONST(float, -1);
-    using OpNeg = Bind<Vec::Muls<float>, OpAbs, ConstNegOne>;
-    using OpExp = Bind<Vec::Exp<float>, OpNeg>;
-    using OpLog = typename StableLog1p<float, OpExp>::OpOut;
-    using OpAdd = Bind<Vec::Add<float>, OpMax, OpLog>;
-
-    using OpCastRes = Bind<Vec::Cast<T, float, CAST_RINT_MODE>, OpAdd>;
-    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpCastRes>;
+    using OpCompute = Bind<LogAddExpSimplifiedCustom<T, float>, OpInputX1, OpInputX2>;
+    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpCompute>;
 
     using Outputs = Elems<OpCopyOut>;
     using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
@@ -133,22 +244,9 @@ struct LogAddExpFullCompute {
     using OpInputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
     using OpInputX2 = Bind<Vec::CopyInBrc<T>, Placeholder::In1<T>>;
 
-    using Guard = InfGuardedSub<T, OpInputX1, OpInputX2>;
-    using OpMax = typename Guard::OpMax;
-    using OpAbs = Bind<Vec::Abs<T>, typename Guard::SubFixed>;
-    using VarNegScale = Placeholder::Var<float, 0>;
-    using OpNegScale = Bind<Vec::Muls<T>, OpAbs, VarNegScale>;
-    using VarShift = Placeholder::Var<float, 1>;
-    using OpShift = Bind<Vec::Adds<T>, OpNegScale, VarShift>;
-    using VarLnBase = Placeholder::Var<float, 2>;
-    using OpMulLnBase = Bind<Vec::Muls<T>, OpShift, VarLnBase>;
-    using OpExp = Bind<Vec::Exp<T>, OpMulLnBase>;
-    using OpLog = typename StableLog1p<T, OpExp>::OpOut;
-    using VarInvLnBase = Placeholder::Var<float, 3>;
-    using OpMulInvLnBase = Bind<Vec::Muls<T>, OpLog, VarInvLnBase>;
-    using OpAdd = Bind<Vec::Add<T>, OpMax, OpMulInvLnBase>;
-
-    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpAdd>;
+    using OpCompute = Bind<LogAddExpFullCustom<T>, OpInputX1, OpInputX2, Placeholder::Var<float, 0>,
+                           Placeholder::Var<float, 1>, Placeholder::Var<float, 2>, Placeholder::Var<float, 3>>;
+    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpCompute>;
 
     using Outputs = Elems<OpCopyOut>;
     using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
@@ -160,26 +258,9 @@ struct LogAddExpFullWithCastCompute {
     using OpInputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
     using OpInputX2 = Bind<Vec::CopyInBrc<T>, Placeholder::In1<T>>;
 
-    using OpCastX1 = Bind<Vec::Cast<float, T, CAST_NONE_MODE>, OpInputX1>;
-    using OpCastX2 = Bind<Vec::Cast<float, T, CAST_NONE_MODE>, OpInputX2>;
-
-    using Guard = InfGuardedSub<float, OpCastX1, OpCastX2>;
-    using OpMax = typename Guard::OpMax;
-    using OpAbs = Bind<Vec::Abs<float>, typename Guard::SubFixed>;
-    using VarNegScale = Placeholder::Var<float, 0>;
-    using OpNegScale = Bind<Vec::Muls<float>, OpAbs, VarNegScale>;
-    using VarShift = Placeholder::Var<float, 1>;
-    using OpShift = Bind<Vec::Adds<float>, OpNegScale, VarShift>;
-    using VarLnBase = Placeholder::Var<float, 2>;
-    using OpMulLnBase = Bind<Vec::Muls<float>, OpShift, VarLnBase>;
-    using OpExp = Bind<Vec::Exp<float>, OpMulLnBase>;
-    using OpLog = typename StableLog1p<float, OpExp>::OpOut;
-    using VarInvLnBase = Placeholder::Var<float, 3>;
-    using OpMulInvLnBase = Bind<Vec::Muls<float>, OpLog, VarInvLnBase>;
-    using OpAdd = Bind<Vec::Add<float>, OpMax, OpMulInvLnBase>;
-
-    using OpCastRes = Bind<Vec::Cast<T, float, CAST_RINT_MODE>, OpAdd>;
-    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpCastRes>;
+    using OpCompute = Bind<LogAddExpFullCustom<T, float>, OpInputX1, OpInputX2, Placeholder::Var<float, 0>,
+                           Placeholder::Var<float, 1>, Placeholder::Var<float, 2>, Placeholder::Var<float, 3>>;
+    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpCompute>;
 
     using Outputs = Elems<OpCopyOut>;
     using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
