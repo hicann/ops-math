@@ -17,6 +17,16 @@ add_optiling_ut_modules(${OP_TILING_MODULE_NAME})
 ## add opinfershape ut cases static lib: libmath_op_infershape_ut_cases.a
 add_infershape_ut_modules(${OP_INFERSHAPE_MODULE_NAME})
 
+## add onnx framework ut cases static lib: libmath_op_framework_ut_cases.a
+add_framework_ut_modules(${OP_FRAMEWORK_MODULE_NAME})
+
+if(EXISTS ${OPS_MATH_DIR}/common/tests/ut/framework/CMakeLists.txt)
+    if(NOT ASCEND_OP_NAME)
+        add_subdirectory(${OPS_MATH_DIR}/common/tests/ut/framework
+                         ${CMAKE_CURRENT_BINARY_DIR}/common_op_framework)
+    endif()
+endif()
+
 ## add ophost source so: libophost_math_ut.so
 add_library(${OPHOST_NAME}_ut SHARED
     $<$<TARGET_EXISTS:${OPHOST_NAME}_infer_obj>:$<TARGET_OBJECTS:${OPHOST_NAME}_infer_obj>>
@@ -52,6 +62,7 @@ target_link_libraries(${OP_HOST_UT_EXE} PRIVATE
     -Wl,--whole-archive
         ${OP_TILING_MODULE_NAME}_cases
         ${OP_INFERSHAPE_MODULE_NAME}_cases
+        ${OP_FRAMEWORK_MODULE_NAME}_cases
     -Wl,--no-whole-archive
     -Wl,--no-as-needed
         metadef
@@ -60,6 +71,7 @@ target_link_libraries(${OP_HOST_UT_EXE} PRIVATE
     register
     opp_registry
     graph
+    graph_base
     platform
     dl
     GTest::gtest
@@ -92,7 +104,7 @@ if(ENABLE_UT_EXEC)
     if(NOT stdc_result EQUAL 0)
       message(FATAL_ERROR "not find libstdc++.so, please confirm.")
     endif()
-    
+
     add_custom_command(
       TARGET ${OP_HOST_UT_EXE}
       POST_BUILD

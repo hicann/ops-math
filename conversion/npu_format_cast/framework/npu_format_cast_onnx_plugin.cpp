@@ -8,19 +8,15 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "onnx_common.h"
+#include "graph/operator.h"
+#include "register/register.h"
 
 namespace domi {
-using NodeProto = ge::onnx::NodeProto;
-
-static Status ParseParamsNpuFormatCast(const Message* op_src, ge::Operator& op_dest)
+static Status ParseParamsNpuFormatCast(const ge::Operator& op_src, ge::Operator& op_dest)
 {
-    const NodeProto* node = dynamic_cast<const NodeProto*>(op_src);
-    if (node == nullptr) {
-        OP_LOGE(GetOpName(op_dest).c_str(), "Dynamic cast op_src to NodeProto failed.");
-        return FAILED;
-    }
-
+    // 无属性需要解析,仅保持签名兼容
+    (void)op_src;
+    (void)op_dest;
     return SUCCESS;
 }
 
@@ -31,6 +27,6 @@ REGISTER_CUSTOM_OP("Identity")
                    ge::AscendString("ai.onnx::14::NPUFormatCast"), ge::AscendString("ai.onnx::15::NPUFormatCast"),
                    ge::AscendString("ai.onnx::16::NPUFormatCast"), ge::AscendString("ai.onnx::17::NPUFormatCast"),
                    ge::AscendString("ai.onnx::18::NPUFormatCast")})
-    .ParseParamsFn(ParseParamsNpuFormatCast)
+    .ParseParamsByOperatorFn(ParseParamsNpuFormatCast)
     .ImplyType(ImplyType::TVM);
 } // namespace domi

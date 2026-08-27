@@ -735,6 +735,7 @@ macro(add_all_ut_sources)
   if(UT_TEST_ALL OR OP_HOST_UT)
     add_modules_ut_sources(UT_NAME ${OP_TILING_MODULE_NAME} MODE PRIVATE DIR ${SOURCE_DIR}/tests/ut/op_host TILING_DIR ${MODULE_UT_TILING_DIR})
     add_modules_ut_sources(UT_NAME ${OP_INFERSHAPE_MODULE_NAME} MODE PRIVATE DIR ${SOURCE_DIR}/tests/ut/op_host TILING_DIR ${MODULE_UT_TILING_DIR})
+    add_modules_ut_sources(UT_NAME ${OP_FRAMEWORK_MODULE_NAME} MODE PRIVATE DIR ${SOURCE_DIR}/tests/ut/framework TILING_DIR ${MODULE_UT_TILING_DIR})
   endif()
 
   if(UT_TEST_ALL OR OP_GRAPH_UT)

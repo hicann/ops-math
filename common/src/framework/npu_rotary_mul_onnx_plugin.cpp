@@ -8,30 +8,25 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "onnx_common.h"
+#include "graph/operator.h"
+#include "register/register.h"
 
 namespace domi {
-using NodeProto = ge::onnx::NodeProto;
-
-static Status ParseParamsNpuRotaryMul(const Message* op_src, ge::Operator& op_dest)
+static Status ParseParamsNpuRotaryMul(const ge::Operator& op_src, ge::Operator& op_dest)
 {
-    const NodeProto* node = dynamic_cast<const NodeProto*>(op_src);
-    if (node == nullptr) {
-        OP_LOGE(GetOpName(op_dest).c_str(), "Dynamic cast op_src to NodeProto failed.");
-        return FAILED;
-    }
-
+    // 无属性需要解析,仅保持签名兼容
+    (void)op_src;
+    (void)op_dest;
     return SUCCESS;
 }
 
 REGISTER_CUSTOM_OP("RotaryMul")
     .FrameworkType(ONNX)
-    .OriginOpType(
-        {ge::AscendString("npu::1::NPURotaryMul"), ge::AscendString("ai.onnx::11::NPURotaryMul"),
-         ge::AscendString("ai.onnx::12::NPURotaryMul"), ge::AscendString("ai.onnx::13::NPURotaryMul"),
-         ge::AscendString("ai.onnx::14::NPURotaryMul"), ge::AscendString("ai.onnx::15::NPURotaryMul"),
-         ge::AscendString("ai.onnx::16::NPURotaryMul"), ge::AscendString("ai.onnx::17::NPURotaryMul"),
-         ge::AscendString("ai.onnx::18::NPURotaryMul")})
-    .ParseParamsFn(ParseParamsNpuRotaryMul)
+    .OriginOpType({ge::AscendString("npu::1::NPURotaryMul"), ge::AscendString("ai.onnx::11::NPURotaryMul"),
+                   ge::AscendString("ai.onnx::12::NPURotaryMul"), ge::AscendString("ai.onnx::13::NPURotaryMul"),
+                   ge::AscendString("ai.onnx::14::NPURotaryMul"), ge::AscendString("ai.onnx::15::NPURotaryMul"),
+                   ge::AscendString("ai.onnx::16::NPURotaryMul"), ge::AscendString("ai.onnx::17::NPURotaryMul"),
+                   ge::AscendString("ai.onnx::18::NPURotaryMul")})
+    .ParseParamsByOperatorFn(ParseParamsNpuRotaryMul)
     .ImplyType(ImplyType::TVM);
 } // namespace domi

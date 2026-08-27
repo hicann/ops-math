@@ -37,6 +37,10 @@ set(OP_GRAPH_MODULE_NAME
     ${PKG_NAME}_op_graph_ut
     CACHE STRING "op_graph ut module name" FORCE)
 
+set(OP_FRAMEWORK_MODULE_NAME
+    ${PKG_NAME}_op_framework_ut
+    CACHE STRING "op_framework ut module name" FORCE)
+
 function(add_optiling_ut_modules OP_TILING_MODULE_NAME)
   # add optiling ut common object: math_op_tiling_ut_common_obj
   add_library(${OP_TILING_MODULE_NAME}_common_obj OBJECT)
@@ -139,7 +143,7 @@ function(add_op_graph_ut_modules OP_GRAPH_MODULE_NAME)
   endif()
 
   add_library(${OP_GRAPH_MODULE_NAME}_cases_obj OBJECT)
-  
+
   target_include_directories(
     ${OP_GRAPH_MODULE_NAME}_cases_obj PRIVATE
     ${UT_COMMON_INC}
@@ -174,6 +178,32 @@ function(add_op_graph_ut_modules OP_GRAPH_MODULE_NAME)
   )
   add_dependencies(${OP_GRAPH_MODULE_NAME}_static_lib build_es_math)
   target_link_libraries(${OP_GRAPH_MODULE_NAME}_static_lib PRIVATE es_math)
+endfunction()
+
+function(add_framework_ut_modules OP_FRAMEWORK_MODULE_NAME)
+  if(TARGET ${OP_FRAMEWORK_MODULE_NAME}_cases)
+    return()
+  endif()
+
+  if(NOT TARGET ${OP_FRAMEWORK_MODULE_NAME}_cases_obj)
+    add_library(${OP_FRAMEWORK_MODULE_NAME}_cases_obj OBJECT
+                ${UT_PATH}/empty.cpp)
+  endif()
+
+  target_include_directories(
+    ${OP_FRAMEWORK_MODULE_NAME}_cases_obj
+    PRIVATE ${UT_COMMON_INC} ${ONNX_PLUGIN_COMMON_INCLUDE} ${JSON_INCLUDE_DIR}
+            ${GTEST_INCLUDE} ${OP_PROTO_INCLUDE} ${ASCEND_DIR}/include
+            ${ASCEND_DIR}/pkg_inc ${ASCEND_DIR}/include/base/context_builder)
+  target_link_libraries(
+    ${OP_FRAMEWORK_MODULE_NAME}_cases_obj
+    PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17>
+            $<BUILD_INTERFACE:dlog_headers> graph register GTest::gtest)
+
+  add_library(${OP_FRAMEWORK_MODULE_NAME}_cases STATIC)
+  target_link_libraries(
+    ${OP_FRAMEWORK_MODULE_NAME}_cases
+    PRIVATE ${OP_FRAMEWORK_MODULE_NAME}_cases_obj)
 endfunction()
 
 function(add_aicpu_opkernel_ut_modules AICPU_OP_KERNEL_MODULE_NAME)
@@ -371,6 +401,28 @@ function(add_modules_ut_sources)
       add_op_graph_ut_modules(${OP_GRAPH_MODULE_NAME})
     endif()
     target_sources(${MODULE_UT_NAME}_cases_obj ${MODULE_MODE} ${OPGRAPH_CASES_SRC})
+  endif()
+
+  if("${MODULE_UT_NAME}" STREQUAL "${OP_FRAMEWORK_MODULE_NAME}")
+    get_filename_component(UT_DIR ${MODULE_DIR} DIRECTORY)
+    get_filename_component(TESTS_DIR ${UT_DIR} DIRECTORY)
+    get_filename_component(OP_NAME_DIR ${TESTS_DIR} DIRECTORY)
+    get_filename_component(OP_NAME ${OP_NAME_DIR} NAME)
+    list(FIND ASCEND_OP_NAME ${OP_NAME} INDEX)
+    if(NOT "${ASCEND_OP_NAME}" STREQUAL "" AND INDEX EQUAL -1)
+      return()
+    endif()
+
+    file(GLOB OPFRAMEWORK_CASES_SRC ${MODULE_DIR}/test_*_onnx_plugin.cpp)
+    if(NOT OPFRAMEWORK_CASES_SRC)
+      return()
+    endif()
+
+    if(NOT TARGET ${MODULE_UT_NAME}_cases_obj)
+      add_framework_ut_modules(${OP_FRAMEWORK_MODULE_NAME})
+    endif()
+    target_sources(${MODULE_UT_NAME}_cases_obj ${MODULE_MODE}
+                   ${OPFRAMEWORK_CASES_SRC})
   endif()
 
 endfunction()
