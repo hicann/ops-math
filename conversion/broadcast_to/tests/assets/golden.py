@@ -10,11 +10,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-"""BroadcastTo 算子 Kernel/GEIR 和 E2E 流程的 golden 编写。
-
-Kernel/GEIR 的 golden 收到 numpy.ndarray，需手动转 torch 计算后转回 numpy；
-E2E 的 golden 直接收到 torch.Tensor，无需转换。
-"""
+"""Golden for BroadcastTo operator (Kernel/GEIR and E2E)."""
 
 __spec__ = {
     "broadcast_to": "BroadcastToKernelSpec",
@@ -33,15 +29,42 @@ def _parse_shape(shape):
     return list(shape)
 
 
-class BroadcastToKernelSpec:
-    """Kernel / GEIR 流程 — golden 收到 numpy.ndarray，third_party 收到 torch.Tensor"""
-
-    def golden(x, shape, **kwargs):
-        x_t = torch.from_numpy(x)
+class BroadcastToImpl:
+    def __call__(self, x, shape):
         shape_val = _parse_shape(shape)
-        return [torch.broadcast_to(x_t, tuple(shape_val)).contiguous().numpy()]
+        return torch.broadcast_to(x, tuple(shape_val))
 
-    third_party = {"torch": "torch.broadcast_to"}
+
+class BroadcastToKernelSpec:
+    def golden(x, shape, **kwargs):
+        dtype = x.dtype
+        dtype_str = str(dtype)
+
+        if "bfloat16" in dtype_str or "float16" in dtype_str:
+            x = x.astype("float32")
+        elif (
+            "hifloat8" in dtype_str
+            or "float8_e5m2" in dtype_str
+            or "float8_e4m3fn" in dtype_str
+        ):
+            x = x.view(np.int8)
+        x_t = torch.from_numpy(x)
+
+        shape_val = _parse_shape(shape)
+        result = torch.broadcast_to(x_t, tuple(shape_val)).contiguous()
+
+        result_np = result.numpy()
+        if (
+            "hifloat8" in dtype_str
+            or "float8_e5m2" in dtype_str
+            or "float8_e4m3fn" in dtype_str
+        ):
+            result_np = result_np.view(dtype)
+        else:
+            result_np = result_np.astype(dtype)
+        return [result_np]
+
+    third_party = {"torch": BroadcastToImpl}
     tolerance = {
         "float32": {"standard": "binary_equal"},
         "float16": {"standard": "binary_equal"},
@@ -60,13 +83,11 @@ class BroadcastToKernelSpec:
 
 
 class TorchBroadcastToSpec:
-    """E2E 流程 — golden / third_party 均收到 torch.Tensor（已在设备上）"""
-
     def golden(x, shape, **kwargs):
         shape_val = _parse_shape(shape)
         return [torch.broadcast_to(x, tuple(shape_val)).contiguous()]
 
-    third_party = {"torch": "torch.broadcast_to"}
+    third_party = {"torch": BroadcastToImpl}
     tolerance = {
         "float32": {"standard": "binary_equal"},
         "float16": {"standard": "binary_equal"},
