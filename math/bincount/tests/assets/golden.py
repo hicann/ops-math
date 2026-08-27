@@ -13,14 +13,14 @@
 import numpy as np
 
 __golden__ = {
-    "kernel": {
-        "bincount": "bincount_golden"
-    }
+    "kernel": {"bincount": "bincount_golden"},
+    "aclnn": {"aclnnBincount": "aclnn_bincount_golden"},
 }
 
 
 def numpy_to_torch_tensor(np_array):
     import torch
+
     if np_array is None:
         return None
     np_dtype = np_array.dtype.name
@@ -34,6 +34,7 @@ def numpy_to_torch_tensor(np_array):
 
 def torch_to_numpy_tensor(torch_tensor):
     import torch
+
     if torch_tensor is None:
         return None
     if not isinstance(torch_tensor, torch.Tensor):
@@ -48,7 +49,7 @@ def torch_to_numpy_tensor(torch_tensor):
 
 
 def bincount_golden(array, size, weight, **kwargs):
-    '''
+    """
     Golden function for bincount.
     All the parameters (names and order) follow @bincount_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
@@ -59,7 +60,7 @@ def bincount_golden(array, size, weight, **kwargs):
 
     Returns:
         Output tensor
-    '''
+    """
     import torch
 
     array_tensor = numpy_to_torch_tensor(array)
@@ -72,3 +73,28 @@ def bincount_golden(array, size, weight, **kwargs):
         res = torch.bincount(array_tensor, weights=weight_tensor, minlength=size)
 
     return torch_to_numpy_tensor(res)
+
+
+def aclnn_bincount_golden(self, weights, minlength, out, **kwargs):
+    """
+    Aclnn golden for aclnnBincount.
+    All the parameters (name & order) follow \
+        function `aclnnBincountGetWorkspaceSize` in @aclnn_bincount.h \
+        without `workspaceSize` & `executor`.
+    When all dtypes are natively supported by torch, \
+        the Tensors in the parameters are all torch.Tensor. \
+        Conversely, when not, the Tensors in the parameters are all numpy.ndarray.
+
+    Args:
+        kwargs: tensor_{dtypes, formats}, scalar_dtypes, short_soc_version, testcase_name
+
+    Returns:
+        Output tensors.
+    """
+    import torch
+
+    if weights is None:
+        res = torch.bincount(self, minlength=minlength)
+    else:
+        res = torch.bincount(self, weights=weights, minlength=minlength)
+    return res.to(out.dtype)

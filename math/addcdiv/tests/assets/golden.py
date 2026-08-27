@@ -13,29 +13,49 @@ import numpy
 import torch
 
 __golden__ = {
-  	"kernel": {
-  	    "addcdiv": "addcdiv_golden"
-  	}
+    "kernel": {"addcdiv": "addcdiv_golden"},
+    "aclnn": {"aclnnAddcdiv": "aclnn_addcdiv_golden"},
 }
 
-def addcdiv_golden(input_data, x1, x2, value,
-                   **kwargs):
-    '''
+
+def addcdiv_golden(input_data, x1, x2, value, **kwargs):
+    """
     Kernel golden for addcdiv.
     All the parameters follow @addcdiv_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
-    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes, 
+    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
         input_formats, output_formats, input_ori_formats, output_ori_formats,
         input_dtypes, output_dtypes.
-    '''
+    """
     data_type = input_data.dtype
     input_data = torch.from_numpy(input_data.astype(numpy.float32))
     x1 = torch.from_numpy(x1.astype(numpy.float32))
     x2 = torch.from_numpy(x2.astype(numpy.float32))
-    value = value.item() 
-    
+    value = value.item()
+
     res = torch.addcdiv(input_data, x1, x2, value=value)
     res_np = res.numpy()
     res_np = res_np.astype(data_type, copy=False)
 
     return res_np
+
+
+def aclnn_addcdiv_golden(self, tensor1, tensor2, value, out, **kwargs):
+    """
+    Aclnn golden for aclnnAddcdiv.
+    All the parameters (name & order) follow \
+        function `aclnnAddcdivGetWorkspaceSize` in @aclnn_addcdiv.h \
+        without `workspaceSize` & `executor`.
+    When all dtypes are natively supported by torch, \
+        the Tensors in the parameters are all torch.Tensor. \
+        Conversely, when not, the Tensors in the parameters are all numpy.ndarray.
+
+    Args:
+        kwargs: tensor_{dtypes, formats}, scalar_dtypes, short_soc_version, testcase_name
+
+    Returns:
+        Output tensors.
+    """
+    import torch
+
+    return torch.addcdiv(self, tensor1, tensor2, value=value)

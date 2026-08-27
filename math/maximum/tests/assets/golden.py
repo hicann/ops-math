@@ -9,30 +9,28 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
-import numpy as np
 import torch
 
 __golden__ = {
-  	"kernel": {
-  	    "maximum": "maximum_golden"
-  	}
+    "kernel": {"maximum": "maximum_golden"},
+    "aclnn": {"aclnnMaximum": "aclnn_maximum_golden"},
 }
-  	
-def maximum_golden(x1, x2,
-                   **kwargs):
-    '''
+
+
+def maximum_golden(x1, x2, **kwargs):
+    """
     Kernel golden for maximum.
     All the parameters follow @maximum_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
-    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes, 
-  	    input_formats, output_formats, input_ori_formats, output_ori_formats,
-  	    input_dtypes, output_dtypes.
-    '''
+    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
+              input_formats, output_formats, input_ori_formats, output_ori_formats,
+              input_dtypes, output_dtypes.
+    """
     dtype = x1.dtype
     if "bfloat16" in str(dtype):
         x1 = x1.astype("float32")
         x2 = x2.astype("float32")
-    
+
     x = torch.from_numpy(x1)
     y = torch.from_numpy(x2)
     res = torch.maximum(x, y).numpy()
@@ -40,3 +38,24 @@ def maximum_golden(x1, x2,
     if "bfloat16" in str(dtype):
         res = res.astype(dtype)
     return res
+
+
+def aclnn_maximum_golden(self, other, out, **kwargs):
+    """
+    Aclnn golden for aclnnMaximum.
+    All the parameters (name & order) follow \
+        function `aclnnMaximumGetWorkspaceSize` in @aclnn_maximum.h \
+        without `workspaceSize` & `executor`.
+    When all dtypes are natively supported by torch, \
+        the Tensors in the parameters are all torch.Tensor. \
+        Conversely, when not, the Tensors in the parameters are all numpy.ndarray.
+
+    Args:
+        kwargs: tensor_{dtypes, formats}, scalar_dtypes, short_soc_version, testcase_name
+
+    Returns:
+        Output tensors.
+    """
+    import torch
+
+    return torch.maximum(self, other)

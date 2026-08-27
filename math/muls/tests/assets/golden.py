@@ -12,13 +12,14 @@
 import numpy
 
 __golden__ = {
-  	"kernel": {
-  	    "muls": "muls_golden"
-  	}
+    "kernel": {"muls": "muls_golden"},
+    "aclnn": {"aclnnMuls": "aclnn_muls_golden"},
 }
+
 
 def numpy_to_torch_tensor(np_array):
     import torch
+
     if np_array is None:
         return None
     np_dtype = np_array.dtype.name
@@ -32,6 +33,7 @@ def numpy_to_torch_tensor(np_array):
 
 def torch_to_numpy_tensor(torch_tensor):
     import torch
+
     if torch_tensor is None:
         return None
     if not isinstance(torch_tensor, torch.Tensor):
@@ -42,15 +44,16 @@ def torch_to_numpy_tensor(torch_tensor):
     else:
         return torch_tensor.numpy()
 
+
 def muls_golden(x, value, **kwargs):
-    '''
+    """
     Kernel golden for muls.
     All the parameters follow @muls_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
-	    input_formats, output_formats, input_ori_formats, output_ori_formats,
-	    input_dtypes, output_dtypes.
-    '''
+            input_formats, output_formats, input_ori_formats, output_ori_formats,
+            input_dtypes, output_dtypes.
+    """
     import torch
 
     x_torch = numpy_to_torch_tensor(x)
@@ -60,3 +63,24 @@ def muls_golden(x, value, **kwargs):
     res_np = torch_to_numpy_tensor(res)
 
     return res_np.astype(x.dtype, copy=False)
+
+
+def aclnn_muls_golden(self, other, out, **kwargs):
+    """
+    Aclnn golden for aclnnMuls.
+    All the parameters (name & order) follow \
+        function `aclnnMulsGetWorkspaceSize` in @aclnn_muls.h \
+        without `workspaceSize` & `executor`.
+    When all dtypes are natively supported by torch, \
+        the Tensors in the parameters are all torch.Tensor. \
+        Conversely, when not, the Tensors in the parameters are all numpy.ndarray.
+
+    Args:
+        kwargs: tensor_{dtypes, formats}, scalar_dtypes, short_soc_version, testcase_name
+
+    Returns:
+        Output tensors.
+    """
+    import torch
+
+    return torch.mul(self, other)

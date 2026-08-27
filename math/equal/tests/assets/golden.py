@@ -11,43 +11,18 @@
 # ----------------------------------------------------------------------------
 
 __golden__ = {
-    "kernel": {"sub": "sub_golden"},
-    "aclnn": {"aclnnSub": "aclnn_sub_golden"},
+    "aclnn": {
+        "aclnnEqTensor": "aclnn_eq_tensor_golden",
+        "aclnnEqScalar": "aclnn_eq_scalar_golden",
+    }
 }
 
 
-def sub_golden(x1, x2, **kwargs):
+def aclnn_eq_tensor_golden(self, other, out, **kwargs):
     """
-    Kernel golden for sub.
-    All the parameters follow @sub_def.cpp without outputs.
-    All the input Tensors are numpy.ndarray.
-    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
-            input_formats, output_formats, input_ori_formats, output_ori_formats,
-            input_dtypes, output_dtypes.
-    """
-    import torch
-
-    dtype = x1.dtype
-    if "bfloat16" in str(dtype):
-        x1 = x1.astype("float32")
-        x2 = x2.astype("float32")
-    x = torch.from_numpy(x1)
-    y = torch.from_numpy(x2)
-    if "bool" in str(dtype):
-        res = torch.logical_xor(x, y).numpy()
-    else:
-        res = torch.sub(x, y).numpy()
-    if "bfloat16" in str(dtype):
-        res = res.astype(dtype)
-
-    return res
-
-
-def aclnn_sub_golden(self, other, alpha, out, **kwargs):
-    """
-    Aclnn golden for aclnnSub.
+    Aclnn golden for aclnnEqTensor.
     All the parameters (name & order) follow \
-        function `aclnnSubGetWorkspaceSize` in @aclnn_sub.h \
+        function `aclnnEqTensorGetWorkspaceSize` in @aclnn_eq_tensor.h \
         without `workspaceSize` & `executor`.
     When all dtypes are natively supported by torch, \
         the Tensors in the parameters are all torch.Tensor. \
@@ -61,4 +36,25 @@ def aclnn_sub_golden(self, other, alpha, out, **kwargs):
     """
     import torch
 
-    return torch.sub(self, other, alpha=alpha)
+    return torch.eq(self, other)
+
+
+def aclnn_eq_scalar_golden(self, other, out, **kwargs):
+    """
+    Aclnn golden for aclnnEqScalar.
+    All the parameters (name & order) follow \
+        function `aclnnEqScalarGetWorkspaceSize` in @aclnn_eq_scalar.h \
+        without `workspaceSize` & `executor`.
+    When all dtypes are natively supported by torch, \
+        the Tensors in the parameters are all torch.Tensor. \
+        Conversely, when not, the Tensors in the parameters are all numpy.ndarray.
+
+    Args:
+        kwargs: tensor_{dtypes, formats}, scalar_dtypes, short_soc_version, testcase_name
+
+    Returns:
+        Output tensors.
+    """
+    import torch
+
+    return torch.eq(self, other)

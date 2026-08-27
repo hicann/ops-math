@@ -13,9 +13,8 @@
 import numpy
 
 __golden__ = {
-    "kernel": {
-        "div": "div_golden"
-    }
+    "kernel": {"div": "div_golden"},
+    "aclnn": {"aclnnDiv": "aclnn_div_golden"},
 }
 
 
@@ -27,10 +26,13 @@ def broadcast_to_maxshape(shapes: list):
         else:
             max_value = no_one_shape[0]
         return max_value
+
     max_dim_length = max(len(list(shape)) for shape in shapes)
     input_shapes = []
     for shape in shapes:
-        input_shapes.append([1 for _ in range(max_dim_length - len(shape))] + list(shape))
+        input_shapes.append(
+            [1 for _ in range(max_dim_length - len(shape))] + list(shape)
+        )
     input_shapes = list(map(list, zip(*input_shapes)))
     max_shape = [_max(shape) for shape in input_shapes]
     input_shapes = list(map(list, zip(*input_shapes)))
@@ -38,7 +40,7 @@ def broadcast_to_maxshape(shapes: list):
 
 
 def div_golden(x1, x2, **kwargs):
-    '''
+    """
     Golden function for div.
     All the parameters (names and order) follow @div_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
@@ -49,11 +51,11 @@ def div_golden(x1, x2, **kwargs):
 
     Returns:
         Output tensor
-    '''
+    """
     ori_dtype = x1.dtype
-    input_dtypes = kwargs.get('input_dtypes', [ori_dtype.name, ori_dtype.name])
-    
-    if "float16" in str(ori_dtype): #include bfloat16 & float16
+    input_dtypes = kwargs.get("input_dtypes", [ori_dtype.name, ori_dtype.name])
+
+    if "float16" in str(ori_dtype):  # include bfloat16 & float16
         x1, x2 = x1.astype("float32"), x2.astype("float32")
 
     if "complex32" in input_dtypes:
@@ -98,7 +100,9 @@ def div_golden(x1, x2, **kwargs):
         zreal = torch.zeros_like(input_xr)
         zimag = torch.zeros_like(input_xr)
         for i in range(len(input_xr)):
-            zreal[i], zimag[i] = complex32_div(input_xr[i],input_xi[i], input_yr[i], input_yi[i])
+            zreal[i], zimag[i] = complex32_div(
+                input_xr[i], input_xi[i], input_yr[i], input_yi[i]
+            )
 
         zreal = zreal.numpy()
         zimag = zimag.numpy()
@@ -108,6 +112,7 @@ def div_golden(x1, x2, **kwargs):
         return res
     else:
         import tensorflow as tf
+
         tf.compat.v1.disable_eager_execution()
         _, _, shape_max = broadcast_to_maxshape([x1.shape, x2.shape])
         x1 = numpy.broadcast_to(x1, shape_max)
@@ -122,3 +127,24 @@ def div_golden(x1, x2, **kwargs):
             sess.run(init_op)
             res = sess.run(out, feed_dict=feed_dict)
         return res.astype(ori_dtype, copy=False)
+
+
+def aclnn_div_golden(self, other, out, **kwargs):
+    """
+    Aclnn golden for aclnnDiv.
+    All the parameters (name & order) follow \
+        function `aclnnDivGetWorkspaceSize` in @aclnn_div.h \
+        without `workspaceSize` & `executor`.
+    When all dtypes are natively supported by torch, \
+        the Tensors in the parameters are all torch.Tensor. \
+        Conversely, when not, the Tensors in the parameters are all numpy.ndarray.
+
+    Args:
+        kwargs: tensor_{dtypes, formats}, scalar_dtypes, short_soc_version, testcase_name
+
+    Returns:
+        Output tensors.
+    """
+    import torch
+
+    return torch.div(self, other)

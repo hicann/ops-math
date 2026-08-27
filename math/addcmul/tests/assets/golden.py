@@ -12,21 +12,20 @@
 import numpy
 
 __golden__ = {
-  	"kernel": {
-  	    "addcmul": "addcmul_golden"
-  	}
+    "kernel": {"addcmul": "addcmul_golden"},
+    "aclnn": {"aclnnAddcmul": "aclnn_addcmul_golden"},
 }
 
-def addcmul_golden(input_data, x1, x2, value,
-                   **kwargs):
-    '''
+
+def addcmul_golden(input_data, x1, x2, value, **kwargs):
+    """
     Kernel golden for addcmul.
     All the parameters follow @addcmul_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
-    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes, 
-  	    input_formats, output_formats, input_ori_formats, output_ori_formats,
-  	    input_dtypes, output_dtypes.
-    '''
+    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
+              input_formats, output_formats, input_ori_formats, output_ori_formats,
+              input_dtypes, output_dtypes.
+    """
     import torch
     from ml_dtypes import bfloat16
 
@@ -35,7 +34,7 @@ def addcmul_golden(input_data, x1, x2, value,
         input_data = torch.from_numpy(input_data.astype(numpy.float32))
         x1 = torch.from_numpy(x1.astype(numpy.float32))
         x2 = torch.from_numpy(x2.astype(numpy.float32))
-    else :
+    else:
         input_data = torch.from_numpy(input_data)
         x1 = torch.from_numpy(x1)
         x2 = torch.from_numpy(x2)
@@ -46,3 +45,23 @@ def addcmul_golden(input_data, x1, x2, value,
 
     return res_np
 
+
+def aclnn_addcmul_golden(self, tensor1, tensor2, value, out, **kwargs):
+    """
+    Aclnn golden for aclnnAddcmul.
+    All the parameters (name & order) follow \
+        function `aclnnAddcmulGetWorkspaceSize` in @aclnn_addcmul.h \
+        without `workspaceSize` & `executor`.
+    When all dtypes are natively supported by torch, \
+        the Tensors in the parameters are all torch.Tensor. \
+        Conversely, when not, the Tensors in the parameters are all numpy.ndarray.
+
+    Args:
+        kwargs: tensor_{dtypes, formats}, scalar_dtypes, short_soc_version, testcase_name
+
+    Returns:
+        Output tensors.
+    """
+    import torch
+
+    return torch.addcmul(self, tensor1, tensor2, value=value)

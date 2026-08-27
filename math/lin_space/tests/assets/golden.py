@@ -10,44 +10,14 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-__golden__ = {
-    "kernel": {"sub": "sub_golden"},
-    "aclnn": {"aclnnSub": "aclnn_sub_golden"},
-}
+__golden__ = {"aclnn": {"aclnnLinspace": "aclnn_linspace_golden"}}
 
 
-def sub_golden(x1, x2, **kwargs):
+def aclnn_linspace_golden(start, end, steps, out, **kwargs):
     """
-    Kernel golden for sub.
-    All the parameters follow @sub_def.cpp without outputs.
-    All the input Tensors are numpy.ndarray.
-    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
-            input_formats, output_formats, input_ori_formats, output_ori_formats,
-            input_dtypes, output_dtypes.
-    """
-    import torch
-
-    dtype = x1.dtype
-    if "bfloat16" in str(dtype):
-        x1 = x1.astype("float32")
-        x2 = x2.astype("float32")
-    x = torch.from_numpy(x1)
-    y = torch.from_numpy(x2)
-    if "bool" in str(dtype):
-        res = torch.logical_xor(x, y).numpy()
-    else:
-        res = torch.sub(x, y).numpy()
-    if "bfloat16" in str(dtype):
-        res = res.astype(dtype)
-
-    return res
-
-
-def aclnn_sub_golden(self, other, alpha, out, **kwargs):
-    """
-    Aclnn golden for aclnnSub.
+    Aclnn golden for aclnnLinspace.
     All the parameters (name & order) follow \
-        function `aclnnSubGetWorkspaceSize` in @aclnn_sub.h \
+        function `aclnnLinspaceGetWorkspaceSize` in @aclnn_linspace.h \
         without `workspaceSize` & `executor`.
     When all dtypes are natively supported by torch, \
         the Tensors in the parameters are all torch.Tensor. \
@@ -61,4 +31,4 @@ def aclnn_sub_golden(self, other, alpha, out, **kwargs):
     """
     import torch
 
-    return torch.sub(self, other, alpha=alpha)
+    return torch.linspace(start, end, steps, dtype=out.dtype)

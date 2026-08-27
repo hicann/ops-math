@@ -12,24 +12,44 @@
 import numpy as np
 
 __golden__ = {
-  	"kernel": {
-  	    "logical_and": "logical_and_golden"
-  	}
+    "kernel": {"logical_and": "logical_and_golden"},
+    "aclnn": {"aclnnLogicalAnd": "aclnn_logical_and_golden"},
 }
-  	
-def logical_and_golden(x1, x2,
-                      **kwargs):
-    '''
+
+
+def logical_and_golden(x1, x2, **kwargs):
+    """
     Kernel golden for logical_and.
     All the parameters follow @logical_and_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
-    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes, 
-  	    input_formats, output_formats, input_ori_formats, output_ori_formats,
-  	    input_dtypes, output_dtypes.
-    '''
+    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
+              input_formats, output_formats, input_ori_formats, output_ori_formats,
+              input_dtypes, output_dtypes.
+    """
     shape_list = np.broadcast_shapes(x1.shape, x2.shape)
     x1 = x1.astype("float16")
     x2 = x2.astype("float16")
     x1 = np.broadcast_to(x1, shape_list)
     x2 = np.broadcast_to(x2, shape_list)
     return np.multiply(x1, x2).astype("int8")
+
+
+def aclnn_logical_and_golden(self, other, out, **kwargs):
+    """
+    Aclnn golden for aclnnLogicalAnd.
+    All the parameters (name & order) follow \
+        function `aclnnLogicalAndGetWorkspaceSize` in @aclnn_logical_and.h \
+        without `workspaceSize` & `executor`.
+    When all dtypes are natively supported by torch, \
+        the Tensors in the parameters are all torch.Tensor. \
+        Conversely, when not, the Tensors in the parameters are all numpy.ndarray.
+
+    Args:
+        kwargs: tensor_{dtypes, formats}, scalar_dtypes, short_soc_version, testcase_name
+
+    Returns:
+        Output tensors.
+    """
+    import torch
+
+    return torch.logical_and(self, other)
