@@ -103,7 +103,7 @@
 | [aclnnCumsum](../../math/cumsum/docs/aclnnCumsum.md)            | 对输入张量self的元素，按照指定维度dim依次进行累加，并将结果保存到输出张量out中。 | 默认确定性实现| 默认确定性实现|
 | [aclnnCumsumV2](../../math/cumsum/docs/aclnnCumsumV2.md)        | 对输入张量self的元素，按照指定维度dim依次进行累加，并将结果保存到输出张量out中。 | 默认确定性实现| 默认确定性实现|
 | [aclnnDiag](../../conversion/diag_v2/docs/aclnnDiag.md) | 如果输入是向量（一维向量），则返回二维矩阵张量，其中input元素为对角线;如果输入是二维张量，则输出一维向量，取值为diagonal指定的输入矩阵的对角线元素。 | 默认确定性实现|  默认确定性实现 |
-| [aclnnDiagFlat](../../conversion/diag_flat/docs/aclnnDiagFlat.md) | 生成对角线张量。如果输入self为一维张量，则返回二维张量，self里元素为对角线值；如果输入self是二维及以上张量，则先进行扁平化（化简为一维张量），再转化为第一种场景处理。 | 默认确定性实现| - |
+| [aclnnDiagFlat](../../conversion/diag_flat/docs/aclnnDiagFlat.md) | 生成对角线张量。如果输入self为一维张量，则返回二维张量，self里元素为对角线值；如果输入self是二维及以上张量，则先进行扁平化（化简为一维张量），再转化为第一种场景处理。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnDigamma](../../math/digamma/docs/aclnnDigamma.md) | 为输入张量的每一个元素进行digamma数学运算。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnDiv&aclnnInplaceDiv](../../math/div/docs/aclnnDiv&aclnnInplaceDiv.md) | 完成除法计算。                                               | 默认确定性实现| 默认确定性实现 |
 | [aclnnDivMod&aclnnInplaceDivMod](../../math/div/docs/aclnnDivMod&aclnnInplaceDivMod.md) | 完成除法计算，并根据mode参数选择舍入操作。    | 默认确定性实现| 默认确定性实现 |
