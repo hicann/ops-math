@@ -57,6 +57,7 @@ public:
     static constexpr uint32_t kVlBytes = 256;
     static constexpr uint32_t kRepF32 = kVlBytes / sizeof(float); // = 64
     static constexpr uint16_t kRepF32U = static_cast<uint16_t>(kRepF32);
+    static constexpr uint8_t kOutputBufferNum = 2;
     // UpdateMask updates its scalar argument by reference; do not decrement it again.
 
     __aicore__ inline ReduceStdV2UpdateEmptyKernel() {}
@@ -76,7 +77,7 @@ public:
         outputGm_.SetGlobalBuffer(reinterpret_cast<__gm__ D_T*>(output));
         // 仅 outBuf + tmpBuf：N_out=1, N_tmp=1（fp32 中转）
         // postReduceUbSize = CeilAlign(aUbFactor × sizeof(D_T), blockSize)
-        pipe_.InitBuffer(outQue_, /*bufNum=*/2, td->postReduceUbSize);
+        pipe_.InitBuffer(outQue_, kOutputBufferNum, td->postReduceUbSize);
         pipe_.InitBuffer(tmpBuf_, td->tmpBufUbSize);
     }
 

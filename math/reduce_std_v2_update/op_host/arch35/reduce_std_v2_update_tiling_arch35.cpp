@@ -33,6 +33,7 @@
  */
 
 #include <algorithm>
+#include <array>
 #include <set>
 #include <vector>
 #include <cstring>
@@ -69,6 +70,8 @@ static constexpr size_t kAttrCorrectionIdx = 4;
 static constexpr int32_t kMinAxisNum = 2;
 static constexpr int32_t kMaxAxisNum = MAX_PATTERN_RANK;
 static constexpr size_t kMaxSupportedRank = 8; // README 接口约束：x 为 0-8 维 ND
+static constexpr int32_t kAxisTypeCycle = 2;   // pattern 按 A/R 两类轴交替
+static constexpr int32_t kReduceAxisOffset = 1;
 
 // UB 分配预算常量
 static constexpr int64_t kCacheBufBytes = 16 * 1024; // cacheBuf 固定 16 KB
@@ -78,6 +81,7 @@ static constexpr int64_t kNPreReuse = 0;    // 双输入并行载入，无复用
 static constexpr int64_t kNPreParallel = 2; // x + mean 双输入并行槽
 static constexpr int64_t kNOut = 1;         // output_var 单输出
 static constexpr int64_t kTmpBufCopies = 2; // 主+尾共 2 份 fp32（isReuseSource=true）
+static constexpr int64_t kGroupCoreDivisor = 2;
 
 // 空 tensor 分类；优先级 EMPTY_A > EMPTY_R > NORMAL
 enum class ReduceStdV2UpdateEmptyKind {
@@ -277,7 +281,7 @@ static ge::graphStatus GetShapeDtypeAndAttrs(gert::TilingContext* context, Reduc
         }
     } else {
         const int64_t dimNum = static_cast<int64_t>(dimVec->GetSize());
-        const int64_t* dimData = reinterpret_cast<const int64_t*>(dimVec->GetData());
+        const int64_t* dimData = static_cast<const int64_t*>(dimVec->GetData());
         std::set<int64_t> seen;
         for (int64_t i = 0; i < dimNum; ++i) {
             int64_t v = dimData[i];
@@ -433,20 +437,22 @@ static ge::graphStatus PreprocessPattern(gert::TilingContext* context, ReduceStd
                 return ge::GRAPH_FAILED);
 
     for (int32_t i = 0; i < ctx.axisNum; ++i) {
-        const bool wantR = (i % 2 == 1);
+        const bool wantR = (i % kAxisTypeCycle == kReduceAxisOffset);
         OP_CHECK_IF(ctx.isReduceAxis[static_cast<size_t>(i)] != wantR,
                     OP_LOGE(context, "axis[%d] type mismatch after preprocessing (isR=%d, want=%d)", i,
                             static_cast<int>(ctx.isReduceAxis[i]), static_cast<int>(wantR)),
                     return ge::GRAPH_FAILED);
     }
-    ctx.isTailR = (ctx.axisNum % 2 == 0);
+    ctx.isTailR = (ctx.axisNum % kAxisTypeCycle == 0);
     return ge::GRAPH_SUCCESS;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 4) Axis stride
 // ─────────────────────────────────────────────────────────────────────────────
-static void ComputeAxisStrides(const ReduceStdV2UpdateCtx& ctx, int64_t outStride[])
+using AxisStrideArray = std::array<int64_t, MAX_PATTERN_RANK>;
+
+static void ComputeAxisStrides(const ReduceStdV2UpdateCtx& ctx, AxisStrideArray& outStride)
 {
     int64_t acc = 1;
     for (int32_t i = ctx.axisNum - 1; i >= 0; --i) {
@@ -712,7 +718,7 @@ static ge::graphStatus ExpandAIfRFullyLoaded(gert::TilingContext* context, Reduc
 static void ComputeFusedALoopSplit(ReduceStdV2UpdateCtx& ctx)
 {
     int64_t outerAProd = 1;
-    for (int32_t i = 0; i < ctx.aSplitAxisIdx; i += 2) {
+    for (int32_t i = 0; i < ctx.aSplitAxisIdx; i += kAxisTypeCycle) {
         outerAProd *= ctx.axisShape[static_cast<size_t>(i)];
     }
     const int64_t aSplitAxisSize = ctx.axisShape[static_cast<size_t>(ctx.aSplitAxisIdx)];
@@ -747,7 +753,7 @@ static void ComputeUbSizes(ReduceStdV2UpdateCtx& ctx)
     const int64_t aTotal = ctx.aUbFactorAlign * ctx.innerAProdAlign;
     // preReduceUbSize ×2：x+mean 各一份（双输入并行槽，不开 DB）
     ctx.preReduceUbSize = (unit * ctx.dtypeSize + ctx.blockSize - 1) / ctx.blockSize * ctx.blockSize;
-    ctx.preReduceUbSize *= 2;
+    ctx.preReduceUbSize *= kNPreParallel;
     ctx.tmpBufUbSize = (unit * kFp32Bytes + ctx.blockSize - 1) / ctx.blockSize * ctx.blockSize;
     int64_t outRaw = aTotal * ctx.dtypeSize;
     outRaw = std::max(outRaw, kNOut * ctx.blockSize);
@@ -776,7 +782,7 @@ static void ComputeCof(ReduceStdV2UpdateCtx& ctx)
 // ─────────────────────────────────────────────────────────────────────────────
 static bool ShouldUseGroup(const ReduceStdV2UpdateCtx& ctx)
 {
-    if (ctx.aLoopCntTotal > ctx.coreNum / 2) {
+    if (ctx.aLoopCntTotal > ctx.coreNum / kGroupCoreDivisor) {
         return false;
     }
     if (ctx.rLoopCntTotal <= 1) {
@@ -839,7 +845,7 @@ static ge::graphStatus FillAndLogTilingData(gert::TilingContext* context, const 
     OP_CHECK_IF(memset_s(td, sizeof(ReduceStdV2UpdateTilingData), 0, sizeof(ReduceStdV2UpdateTilingData)) != EOK,
                 OP_LOGE(context, "memset tilingdata error"), return ge::GRAPH_FAILED);
 
-    int64_t axisStride[MAX_PATTERN_RANK] = {0};
+    AxisStrideArray axisStride{};
     ComputeAxisStrides(ctx, axisStride);
 
     td->axisNum = ctx.axisNum;

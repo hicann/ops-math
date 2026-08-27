@@ -57,7 +57,7 @@ static std::vector<int64_t> ParseAndNormalizeDim(const gert::InferShapeContext* 
         return reduceAxes;
     }
     const int64_t dimNum = static_cast<int64_t>(dimVec->GetSize());
-    const int64_t* dimData = reinterpret_cast<const int64_t*>(dimVec->GetData());
+    const int64_t* dimData = static_cast<const int64_t*>(dimVec->GetData());
     std::set<int64_t> seen;
     for (int64_t i = 0; i < dimNum; ++i) {
         int64_t v = dimData[i];
