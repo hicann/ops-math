@@ -65,7 +65,6 @@ namespace ge {
  */
 #ifndef OPS_PROTO_DEF_SCALE
 #define OPS_PROTO_DEF_SCALE
-
 REG_OP(Scale)
     .INPUT(x, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16}))
     .INPUT(scale, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16}))
@@ -75,7 +74,6 @@ REG_OP(Scale)
     .ATTR(num_axes, Int, 1)
     .ATTR(scale_from_blob, Bool, true)
     .OP_END_FACTORY_REG(Scale)
-
 #endif
 
 } // namespace ge
