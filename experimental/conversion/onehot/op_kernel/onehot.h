@@ -1,21 +1,11 @@
 /**
- * This file is part of the OpenBOAT project at Harbin Institute of Technology (HIT)
- * and is contributed to the CANN Open Software.
- *
- * Copyright (c) 2025 AISS Group, Harbin Institute of Technology (HIT).
- * All Rights Reserved.
- *
- * Authors (accounts):
- * - Liu Jun <@kbryantttt>
- * - Su Tonghua <@sutonghua>
- *
- * This program is free software: you can redistribute it and/or modify it.
- * Licensed under the CANN Open Software License Agreement Version 2.0 (the "License").
- * You may not use this file except in compliance with the License.
- * See the LICENSE file at the root of the repository for the full text of the License.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED,
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 /*!
@@ -111,8 +101,8 @@ template <typename T>
 __aicore__ inline void Onehot<T>::CopyOut(int32_t progress, int32_t j)
 {
     AscendC::LocalTensor<T> zLocal = outQueueZ.DeQue<T>();
-    AscendC::DataCopyExtParams copyParams{
-        static_cast<uint16_t>(1), static_cast<uint32_t>(this->depth * sizeof(T)), 0, 0, 0};
+    AscendC::DataCopyExtParams copyParams{static_cast<uint16_t>(1), static_cast<uint32_t>(this->depth * sizeof(T)), 0,
+                                          0, 0};
     AscendC::DataCopyPad(zGm[(progress * this->tileDataNum + j) * this->depth], zLocal, copyParams);
     outQueueZ.FreeTensor(zLocal);
 }
@@ -122,10 +112,10 @@ __aicore__ inline void Onehot<T>::Compute(int32_t progress, int32_t j)
 {
     AscendC::LocalTensor<T> xLocal = inQueueX.DeQue<T>();
     AscendC::LocalTensor<T> zLocal = outQueueZ.AllocTensor<T>();
-    AscendC::LocalTensor<uint8_t> cmp = cmpBuf.AllocTensor<uint8_t>();
-    AscendC::LocalTensor<float> zfloat = zBuf.AllocTensor<float>();
-    AscendC::LocalTensor<float> oneLocal = oneBuf.AllocTensor<float>();
-    AscendC::LocalTensor<T> dLocal = dBuf.AllocTensor<T>();
+    AscendC::LocalTensor<uint8_t> cmp = cmpBuf.Get<uint8_t>();
+    AscendC::LocalTensor<float> zfloat = zBuf.Get<float>();
+    AscendC::LocalTensor<float> oneLocal = oneBuf.Get<float>();
+    AscendC::LocalTensor<T> dLocal = dBuf.Get<T>();
     AscendC::Duplicate(oneLocal, 1.0f, depthAlign);
     AscendC::PipeBarrier<PIPE_V>();
     for (int i = 0; i < this->depth; i++) {
@@ -136,15 +126,11 @@ __aicore__ inline void Onehot<T>::Compute(int32_t progress, int32_t j)
     }
     int32_t xVal = xLocal.GetValue(j);
     AscendC::CompareScalar(cmp, dLocal, xVal, AscendC::CMPMODE::EQ, maskCmp, repeat, repeatParams);
-    AscendC::LocalTensor<uint16_t> mask_Dup = cmpBuf.AllocTensor<uint16_t>();
+    AscendC::LocalTensor<uint16_t> mask_Dup = cmpBuf.Get<uint16_t>();
     AscendC::Select(zfloat, mask_Dup[0], oneLocal, 0.0f, AscendC::SELMODE::VSEL_TENSOR_SCALAR_MODE, this->depth);
     AscendC::Cast(zLocal, zfloat, AscendC::RoundMode::CAST_CEIL, this->depth);
     outQueueZ.EnQue<T>(zLocal);
     inQueueX.FreeTensor(xLocal);
-    cmpBuf.FreeTensor(cmp);
-    oneBuf.FreeTensor(oneLocal);
-    zBuf.FreeTensor(zfloat);
-    dBuf.FreeTensor(dLocal);
 }
 
 template <typename T>
