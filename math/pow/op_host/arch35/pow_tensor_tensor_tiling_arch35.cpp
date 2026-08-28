@@ -17,8 +17,7 @@
 #include "tiling/math/power_tiling.h"
 #include "op_host/math_tiling_templates_registry.h"
 
-namespace optiling
-{
+namespace optiling {
 using namespace ge;
 using namespace Ops::Base;
 static constexpr uint64_t OP_KEY_INVALID = 0;
@@ -35,10 +34,7 @@ static constexpr uint64_t INDEX_2 = 2;
 static constexpr int64_t BYTE2BITS = 8;
 static constexpr int64_t BUFFER_DIVISOR_SIZE = 2;
 
-bool PowTensorTensorTiling::IsCapable()
-{
-    return true;
-}
+bool PowTensorTensorTiling::IsCapable() { return true; }
 
 void PowTensorTensorTiling::SetOpKey()
 {
@@ -120,9 +116,8 @@ ge::graphStatus PowTensorTensorTiling::DoOpTiling()
 {
     SetOpKey();
     opKey_ = GetOpKey(params_.baseDtype, params_.expDtype, params_.powDtype);
-    OP_CHECK_IF((opKey_ == OP_KEY_INVALID),
-                    OP_LOGE(context_->GetNodeName(), "can not get opKey_"),
-                    return ge::GRAPH_FAILED);
+    OP_CHECK_IF((opKey_ == OP_KEY_INVALID), OP_LOGE(context_->GetNodeName(), "can not get opKey_"),
+                return ge::GRAPH_FAILED);
 
     BroadcastTilingParams broadcastTilingParams;
     for (uint64_t i = 0; i < context_->GetComputeNodeInputNum(); i++) {
@@ -138,10 +133,8 @@ ge::graphStatus PowTensorTensorTiling::DoOpTiling()
 
     uint32_t powApiNode;
     uint32_t powApiTmpBuffer;
-    bool isTypeInt = ((params_.baseDtype == ge::DT_UINT8)
-                      || (params_.baseDtype == ge::DT_INT8)
-                      || (params_.baseDtype == ge::DT_INT16)
-                      || (params_.baseDtype == ge::DT_INT32));
+    bool isTypeInt = ((params_.baseDtype == ge::DT_UINT8) || (params_.baseDtype == ge::DT_INT8) ||
+                      (params_.baseDtype == ge::DT_INT16) || (params_.baseDtype == ge::DT_INT32));
     uint32_t baseTypeSize = static_cast<uint32_t>(params_.baseDtypeSize);
     AscendC::GetPowerTmpBufferFactorSize(true, true, isTypeInt, baseTypeSize, powApiNode, powApiTmpBuffer);
     OP_LOGD(context_->GetNodeName(),
@@ -149,16 +142,15 @@ ge::graphStatus PowTensorTensorTiling::DoOpTiling()
             isTypeInt, baseTypeSize, powApiNode, powApiTmpBuffer);
     broadcastTilingParams.ubSize = broadcastTilingParams.ubSize - static_cast<int64_t>(powApiTmpBuffer);
 
-    if ((broadcastTilingParams.computeMap.count(1) > 0)
-        && (broadcastTilingParams.computeMap[1].bufferDivisor.size() == BUFFER_DIVISOR_SIZE))
-    {
+    if ((broadcastTilingParams.computeMap.count(1) > 0) &&
+        (broadcastTilingParams.computeMap[1].bufferDivisor.size() == BUFFER_DIVISOR_SIZE)) {
         int64_t bufferDivisorApiValue = static_cast<int64_t>(powApiNode) * params_.baseDtypeSize * BYTE2BITS;
-        broadcastTilingParams.computeMap[1].bufferDivisor[0]
-            = broadcastTilingParams.computeMap[1].bufferDivisor[0] + bufferDivisorApiValue;
-        broadcastTilingParams.computeMap[1].bufferDivisor[1]
-            = broadcastTilingParams.computeMap[1].bufferDivisor[1] + bufferDivisorApiValue;
+        broadcastTilingParams.computeMap[1].bufferDivisor[0] = broadcastTilingParams.computeMap[1].bufferDivisor[0] +
+                                                               bufferDivisorApiValue;
+        broadcastTilingParams.computeMap[1].bufferDivisor[1] = broadcastTilingParams.computeMap[1].bufferDivisor[1] +
+                                                               bufferDivisorApiValue;
     } else {
-        OP_LOGE(context_->GetNodeName(), "broadcast tiling get computeMap faild.");
+        OP_LOGE(context_->GetNodeName(), "broadcast tiling get computeMap failed.");
         return ge::GRAPH_FAILED;
     }
 
@@ -197,10 +189,7 @@ ge::graphStatus PowTensorTensorTiling::DoOpTiling()
     return ge::GRAPH_SUCCESS;
 }
 
-uint64_t PowTensorTensorTiling::GetTilingKey() const
-{
-    return tilingKey_;
-}
+uint64_t PowTensorTensorTiling::GetTilingKey() const { return tilingKey_; }
 
 ge::graphStatus PowTensorTensorTiling::PostTiling()
 {
@@ -211,4 +200,4 @@ ge::graphStatus PowTensorTensorTiling::PostTiling()
 }
 
 REGISTER_OPS_TILING_TEMPLATE(Pow, PowTensorTensorTiling, 1);
-}  // namespace optiling
+} // namespace optiling

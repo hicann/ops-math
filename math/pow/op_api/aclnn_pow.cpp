@@ -286,7 +286,7 @@ static bool CheckPowTensorScalarExponet(const DataType inputDtype, const aclScal
 {
     // promoteType为整形的情况，exponent需要大于0
     if (IsIntegralType(inputDtype) && (exponent->ToInt64() < 0)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Base dtype is intergal and exponent negative integers is not allowed.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Base dtype is integral and exponent negative integers is not allowed.");
         return false;
     }
     return true;

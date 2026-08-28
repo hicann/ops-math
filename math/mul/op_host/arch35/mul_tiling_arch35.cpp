@@ -22,8 +22,7 @@
 #include "math/mul/op_kernel/arch35/mul_dag.h"
 #include "math/mul/op_kernel/arch35/mul_struct.h"
 
-namespace optiling
-{
+namespace optiling {
 using namespace AscendC;
 using namespace ge;
 using namespace MulDag;
@@ -38,13 +37,12 @@ constexpr static std::size_t HASH_SHIFT_5 = 5;
 
 // 封装分块操作逻辑，将参数类型改为 gert::TilingContext*
 template <typename OpDag>
-ge::graphStatus DoTiling(gert::TilingContext* context, uint64_t& tilingKey,
-                         int64_t extraSize = 0, int64_t extraBufferNum = 0)
+ge::graphStatus DoTiling(gert::TilingContext* context, uint64_t& tilingKey, int64_t extraSize = 0,
+                         int64_t extraBufferNum = 0)
 {
     BroadcastBaseTiling<OpDag> brcBaseTiling(context);
     OP_CHECK_IF((brcBaseTiling.DoTiling(extraSize, extraBufferNum) != ge::GRAPH_SUCCESS),
-        OP_LOGE(context->GetNodeName(), "Broadcast template do base tiling failed."),
-        return ge::GRAPH_FAILED);
+                OP_LOGE(context->GetNodeName(), "Broadcast template do base tiling failed."), return ge::GRAPH_FAILED);
     tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     return ge::GRAPH_SUCCESS;
 }
@@ -57,14 +55,16 @@ struct DtypeCombination {
     ge::DataType output;
 
     // 重载相等运算符，用于哈希表的查找
-    bool operator==(const DtypeCombination& other) const {
+    bool operator==(const DtypeCombination& other) const
+    {
         return input0 == other.input0 && input1 == other.input1 && output == other.output;
     }
 };
 
 // 自定义哈希函数
 struct DtypeCombinationHash {
-    std::size_t operator()(const DtypeCombination& comb) const {
+    std::size_t operator()(const DtypeCombination& comb) const
+    {
         const std::size_t prime = HASH_PRIME;
         std::size_t hash = HASH_INIT;
         hash = hash * prime + std::hash<ge::DataType>()(comb.input0);
@@ -152,22 +152,18 @@ const std::unordered_map<DtypeCombination, TilingFunc, DtypeCombinationHash> DTY
          OP_LOGD("MulTiling", "Enter complex32 branch.");
          return DoTiling<MulComplex32Op<int32_t, int64_t>::OpDag>(tiling->GetContext(), tiling->tilingKey_);
      }},
-    {{ge::DT_COMPLEX64, ge::DT_COMPLEX64, ge::DT_COMPLEX64},
-     [](MulTiling* tiling) {
+    {{ge::DT_COMPLEX64, ge::DT_COMPLEX64, ge::DT_COMPLEX64}, [](MulTiling* tiling) {
          OP_LOGD("MulTiling", "Enter complex64 branch.");
          return DoTiling<MulOp<int64_t>::OpDag>(tiling->GetContext(), tiling->tilingKey_);
      }}};
-}  // 匿名命名空间结束
+} // namespace
 
-ge::graphStatus MulTiling::GetShapeAttrsInfo() {
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus MulTiling::GetShapeAttrsInfo() { return ge::GRAPH_SUCCESS; }
 
-bool MulTiling::IsCapable() {
-    return true;
-}
+bool MulTiling::IsCapable() { return true; }
 
-ge::graphStatus MulTiling::DoOpTiling() {
+ge::graphStatus MulTiling::DoOpTiling()
+{
     auto input0Desc = context_->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, input0Desc);
     ge::DataType input0DType = input0Desc->GetDataType();
@@ -200,41 +196,39 @@ ge::graphStatus MulTiling::DoOpTiling() {
     return ge::GRAPH_FAILED;
 }
 
-ge::graphStatus MulTiling::DoLibApiTiling() {
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus MulTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t MulTiling::GetTilingKey() const {
-    return tilingKey_;
-}
+uint64_t MulTiling::GetTilingKey() const { return tilingKey_; }
 
-ge::graphStatus MulTiling::GetWorkspaceSize() {
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus MulTiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus MulTiling::PostTiling() {
+ge::graphStatus MulTiling::PostTiling()
+{
     context_->SetLocalMemorySize(static_cast<uint32_t>(ubSize_ - DCACHE_SIZE));
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus MulTiling::GetPlatformInfo() {
+ge::graphStatus MulTiling::GetPlatformInfo()
+{
     auto platformInfo = context_->GetPlatformInfo();
     if (platformInfo == nullptr) {
         auto compileInfoPtr = reinterpret_cast<const BroadcastCompileInfo*>(context_->GetCompileInfo());
-        OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_->GetNodeName(), "compile info is null"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_->GetNodeName(), "compile info is null"),
+                    return ge::GRAPH_FAILED);
         ubSize_ = compileInfoPtr->ubSize;
-        OP_LOGD(context_->GetNodeName(), "Get ubSize form compileInfo is: %ld", ubSize_);
+        OP_LOGD(context_->GetNodeName(), "Get ubSize from compileInfo is: %ld", ubSize_);
     } else {
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
         uint64_t ubSizePlatform;
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatform);
         ubSize_ = static_cast<int64_t>(ubSizePlatform);
-        OP_LOGD(context_->GetNodeName(), "Get ubSize form ascendcPlatform is: %ld", ubSize_);
+        OP_LOGD(context_->GetNodeName(), "Get ubSize from ascendcPlatform is: %ld", ubSize_);
     }
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus TilingForMul(gert::TilingContext* context) {
+ge::graphStatus TilingForMul(gert::TilingContext* context)
+{
     OP_LOGD("MulTiling", "Enter TilingForMul");
     if (context == nullptr) {
         OP_LOGE("MulTiling", "Tiling context is nullptr");
@@ -245,11 +239,9 @@ ge::graphStatus TilingForMul(gert::TilingContext* context) {
     return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 
-ge::graphStatus TilingPrepareForMul([[maybe_unused]] gert::TilingParseContext *context) {
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus TilingPrepareForMul([[maybe_unused]] gert::TilingParseContext* context) { return ge::GRAPH_SUCCESS; }
 
 IMPL_OP_OPTILING(Mul).Tiling(TilingForMul).TilingParse<BroadcastCompileInfo>(TilingPrepareForMul);
 
 REGISTER_OPS_TILING_TEMPLATE(Mul, MulTiling, MUL_COMMON_TILING_PRIORITY);
-}  // namespace optiling
+} // namespace optiling

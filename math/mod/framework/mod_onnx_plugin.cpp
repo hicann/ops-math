@@ -24,7 +24,7 @@ static Status ParseParamsMod(const Message* op_src, ge::Operator& op_dest)
 
     for (const auto& attr : node->attribute()) {
         if (attr.name() == "fmod") {
-            OP_LOGW(GetOpName(op_dest).c_str(), "Current optype not surpport fmod, please ignore");
+            OP_LOGW(GetOpName(op_dest).c_str(), "Current optype not support fmod, please ignore");
         }
     }
     return SUCCESS;
@@ -32,15 +32,11 @@ static Status ParseParamsMod(const Message* op_src, ge::Operator& op_dest)
 
 REGISTER_CUSTOM_OP("Mod")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::10::Mod"),
-                   ge::AscendString("ai.onnx::11::Mod"),
-                   ge::AscendString("ai.onnx::12::Mod"),
-                   ge::AscendString("ai.onnx::13::Mod"),
-                   ge::AscendString("ai.onnx::14::Mod"),
-                   ge::AscendString("ai.onnx::15::Mod"),
-                   ge::AscendString("ai.onnx::16::Mod"),
-                   ge::AscendString("ai.onnx::17::Mod"),
+    .OriginOpType({ge::AscendString("ai.onnx::10::Mod"), ge::AscendString("ai.onnx::11::Mod"),
+                   ge::AscendString("ai.onnx::12::Mod"), ge::AscendString("ai.onnx::13::Mod"),
+                   ge::AscendString("ai.onnx::14::Mod"), ge::AscendString("ai.onnx::15::Mod"),
+                   ge::AscendString("ai.onnx::16::Mod"), ge::AscendString("ai.onnx::17::Mod"),
                    ge::AscendString("ai.onnx::18::Mod")})
     .ParseParamsFn(ParseParamsMod)
     .ImplyType(ImplyType::TVM);
-}  // namespace domi
+} // namespace domi

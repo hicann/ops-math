@@ -33,25 +33,19 @@ namespace optiling {
 using namespace Ops::Base;
 constexpr static uint64_t MOD_COMMON_TILING_PRIORITY = 0;
 constexpr static uint64_t DCACHE_SIZE = 32 * 1024;
-ge::graphStatus ModTiling::GetShapeAttrsInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus ModTiling::GetShapeAttrsInfo() { return ge::GRAPH_SUCCESS; }
 
-bool ModTiling::IsCapable()
-{
-    return true;
-}
+bool ModTiling::IsCapable() { return true; }
 
-bool ModTiling::CheckDtype(
-    const ge::DataType& inputX1Dtype, const ge::DataType& inputX2Dtype, const ge::DataType& outputDtype) const
+bool ModTiling::CheckDtype(const ge::DataType& inputX1Dtype, const ge::DataType& inputX2Dtype,
+                           const ge::DataType& outputDtype) const
 {
     if (inputX1Dtype != inputX2Dtype || inputX1Dtype != outputDtype) {
         std::string dtypesStr = ge::TypeUtils::DataTypeToSerialString(inputX1Dtype) + ", " +
                                 ge::TypeUtils::DataTypeToSerialString(inputX2Dtype) + " and " +
                                 ge::TypeUtils::DataTypeToSerialString(outputDtype);
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1, x2 and y",
-            dtypesStr.c_str(), "The dtypes of x1, x2 and y must be the same");
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1, x2 and y", dtypesStr.c_str(),
+                                               "The dtypes of x1, x2 and y must be the same");
         return false;
     }
     return true;
@@ -109,33 +103,24 @@ ge::graphStatus ModTiling::DoOpTiling()
     } else if (input0Dtype == ge::DT_INT64) {
         BroadcastBaseTiling<ModOp::ModIntOp<int64_t>::OpDag> brcBaseTiling(
             context_, static_cast<uint32_t>(BROADCAST_KERNEL_TYPE::KERNEL_TYPE_NDDMA));
-        extraBuf = DCACHE_SIZE; 
+        extraBuf = DCACHE_SIZE;
         ret = brcBaseTiling.DoTiling(extraBuf, 0, true);
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else {
         std::string dtypeStr = ge::TypeUtils::DataTypeToSerialString(input0Dtype);
         OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1", dtypeStr.c_str(),
-            "fp16, bf16, fp32, int8, uint8, int32 or int64");
+                                  "fp16, bf16, fp32, int8, uint8, int32 or int64");
         return ge::GRAPH_FAILED;
     }
 
     return ret;
 }
 
-ge::graphStatus ModTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus ModTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t ModTiling::GetTilingKey() const
-{
-    return tilingKey;
-}
+uint64_t ModTiling::GetTilingKey() const { return tilingKey; }
 
-ge::graphStatus ModTiling::GetWorkspaceSize()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus ModTiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus ModTiling::PostTiling()
 {
@@ -143,19 +128,20 @@ ge::graphStatus ModTiling::PostTiling()
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus ModTiling::GetPlatformInfo() {
+ge::graphStatus ModTiling::GetPlatformInfo()
+{
     auto platformInfo = context_->GetPlatformInfo();
     if (platformInfo == nullptr) {
         auto compileInfoPtr = reinterpret_cast<const BroadcastCompileInfo*>(context_->GetCompileInfo());
         OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_, "compile info is null"), return ge::GRAPH_FAILED);
         ubSize_ = compileInfoPtr->ubSize;
-        OP_LOGD(context_->GetNodeName(), "Get ubSize form compileInfo is: %ld", ubSize_);
+        OP_LOGD(context_->GetNodeName(), "Get ubSize from compileInfo is: %ld", ubSize_);
     } else {
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
         uint64_t ubSizePlatform;
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatform);
         ubSize_ = static_cast<int64_t>(ubSizePlatform);
-        OP_LOGD(context_->GetNodeName(), "Get ubSize form ascendcPlatform is: %ld", ubSize_);
+        OP_LOGD(context_->GetNodeName(), "Get ubSize from ascendcPlatform is: %ld", ubSize_);
     }
     return ge::GRAPH_SUCCESS;
 }
@@ -174,10 +160,7 @@ ge::graphStatus TilingForMod(gert::TilingContext* context)
     return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 
-ge::graphStatus TilingPrepareForMod([[maybe_unused]] gert::TilingParseContext* context)
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus TilingPrepareForMod([[maybe_unused]] gert::TilingParseContext* context) { return ge::GRAPH_SUCCESS; }
 
 REGISTER_OPS_TILING_TEMPLATE(Mod, ModTiling, MOD_COMMON_TILING_PRIORITY);
 IMPL_OP_OPTILING(Mod).Tiling(TilingForMod).TilingParse<BroadcastCompileInfo>(TilingPrepareForMod);

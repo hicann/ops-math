@@ -81,13 +81,13 @@ static bool isBroadcastTemplateNonContiguousSupport(const aclTensor* input)
 
     // dim > 4 不支持
     if (shapeDim > DIM_FOUR) {
-        OP_LOGI("Broadcast Template NonContiguous UnSupported. shapeDim: %d > 4", shapeDim);
+        OP_LOGI("Broadcast Template NonContiguous Unsupported. shapeDim: %d > 4", shapeDim);
         return false;
     }
 
     // 仅regbase类的芯片支持
     if (!IsRegBase()) {
-        OP_LOGI("Broadcast Template NonContiguous UnSupported. not RegBase");
+        OP_LOGI("Broadcast Template NonContiguous Unsupported. not RegBase");
         return false;
     }
 
@@ -159,7 +159,7 @@ const aclTensor* MulInplace(const aclTensor* self, const aclTensor* rfRes, aclOp
     // 校验输出tensor的shape和rfRes tensor一致
     if (broadcastShape != rfRes->GetViewShape()) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "self and rfRes broadcastShape [%s] not equal to rfRes shape [%s], do no support inplace from the "
+                "self and rfRes broadcastShape [%s] not equal to rfRes shape [%s], do not support inplace from the "
                 "'rfRes' tensor!",
                 op::ToString(broadcastShape).GetString(), op::ToString(rfRes->GetViewShape()).GetString());
         return nullptr;
@@ -172,7 +172,7 @@ const aclTensor* MulInplace(const aclTensor* self, const aclTensor* rfRes, aclOp
                          (self->GetDataType() == DataType::DT_FLOAT && rfRes->GetDataType() == DataType::DT_BF16);
     if (isMixDataType && (rfRes->GetDataType() == DataType::DT_FLOAT16 || rfRes->GetDataType() == DataType::DT_BF16)) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "out dtype DataType::DT_FLOAT not equal to rfRes dtype [%s], do no support inplace from the 'rfRes' "
+                "out dtype DataType::DT_FLOAT not equal to rfRes dtype [%s], do not support inplace from the 'rfRes' "
                 "tensor!",
                 op::ToString(rfRes->GetDataType()).GetString());
         return nullptr;
