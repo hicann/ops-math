@@ -23,15 +23,17 @@ extern "C" {
  * @brief aclnnNpuFormatCast的第一段接口，用于获取计算所需workspace大小以及包含了算子计算流程的执行器。
  * @domain aclnn_ops_infer
  * @param [in] srcTensor:
- * 输入的数据，数据格式支持ND、ACL_FORMAT_FRACTAL_NZ(29)、ACL_FORMAT_FRACTAL_NZ_C0_2(52)、ACL_FORMAT_FRACTAL_NZ_C0_4(53)、ACL_FORMAT_FRACTAL_NZ_C0_16(50)、ACL_FORMAT_FRACTAL_NZ_C0_32(51)。不支持非连续的Tensor, 支持的数据类型：FLOAT4_E2M1、INT8、UINT8、INT32、FLOAT16、BFLOAT16、FLOAT。
+ * 输入的数据，数据格式支持ND、ACL_FORMAT_FRACTAL_NZ(29)、ACL_FORMAT_FRACTAL_NZ_C0_2(52)、ACL_FORMAT_FRACTAL_NZ_C0_4(53)、ACL_FORMAT_FRACTAL_NZ_C0_16(50)、ACL_FORMAT_FRACTAL_NZ_C0_32(51)。不支持非连续的Tensor,
+ * 支持的数据类型：FLOAT4_E2M1、INT8、UINT8、INT32、FLOAT16、BFLOAT16、FLOAT、FLOAT8_E8M0。其中FLOAT8_E8M0仅支持ND到FRACTAL_NZ的MX
+ * scale昇腾亲和格式转换场景。
  * @param [in]
  * dstTensor：转换后的目标数据，数据格式支持ND、ACL_FORMAT_FRACTAL_NZ(29)、ACL_FORMAT_FRACTAL_NZ_C0_16(50)、ACL_FORMAT_FRACTAL_NZ_C0_32(51)。数据类型支持FLOAT4_E2M1、INT8、UINT8、INT32、FLOAT16、BFLOAT16、FLOAT。
  * @param [in] workspaceSize：需要在Device侧申请的workspace的大小。
  * @param [in] executor：包含算子计算流程的op执行器。
  * @return aclnnStatus: 返回状态码
  */
-ACLNN_API aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(
-    const aclTensor* srcTensor, aclTensor* dstTensor, uint64_t* workspaceSize, aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(const aclTensor* srcTensor, aclTensor* dstTensor,
+                                                         uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief aclnnNpuFormatCast的第二段接口，用于执行计算。
@@ -42,16 +44,17 @@ ACLNN_API aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(
  * @return aclnnStatus: 返回状态码
  */
 
-ACLNN_API aclnnStatus
-aclnnNpuFormatCast(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
+ACLNN_API aclnnStatus aclnnNpuFormatCast(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                         aclrtStream stream);
 
 /**
  * @brief 用于计算转换目标数据的shape和数据格式
- * @param [in] srcTensor: 
- * 输入的数据，数据格式支持ND、ACL_FORMAT_FRACTAL_NZ(29)、ACL_FORMAT_FRACTAL_NZ_C0_2(52)、ACL_FORMAT_FRACTAL_NZ_C0_4(53)、ACL_FORMAT_FRACTAL_NZ_C0_16(50)、ACL_FORMAT_FRACTAL_NZ_C0_32(51)。支持的数据类型：FLOAT4_E2M1、INT8、UINT8、INT32、FLOAT16、BFLOAT16、FLOAT。
+ * @param [in] srcTensor:
+ * 输入的数据，数据格式支持ND、ACL_FORMAT_FRACTAL_NZ(29)、ACL_FORMAT_FRACTAL_NZ_C0_2(52)、ACL_FORMAT_FRACTAL_NZ_C0_4(53)、ACL_FORMAT_FRACTAL_NZ_C0_16(50)、ACL_FORMAT_FRACTAL_NZ_C0_32(51)。支持的数据类型：FLOAT4_E2M1、INT8、UINT8、INT32、FLOAT16、BFLOAT16、FLOAT、FLOAT8_E8M0。其中FLOAT8_E8M0仅支持ND到FRACTAL_NZ的MX
+ * scale昇腾亲和格式转换场景。
  * @param [in] dstFormat: 转换的目标数据格式。支持的数据格式：ND、ACL_FORMAT_FRACTAL_NZ(29)。
  * @param [in] additionalDtype:
- * 转换成NZ格式推断C0大小时，使用的数据类型的枚举值。支持的数据类型：ACL_FLOAT16(1)、ACL_BF16(27)、INT8(2)、ACL_FLOAT(0)。
+ * 转换成NZ格式推断C0大小时，使用的数据类型的枚举值。支持的数据类型：ACL_FLOAT16(1)、ACL_BF16(27)、INT8(2)、ACL_FLOAT(0)、ACL_FLOAT8_E8M0。
  * @param [in] dstShape: 指向目标数组Shape数组的指针，在非报错场景下指向的内存由调用者释放。
  * @param [in] dstShapeSize: 指向目标数据Shape数组的大小的指针。
  * @param [in] actualFormat:
@@ -59,9 +62,9 @@ aclnnNpuFormatCast(void* workspace, uint64_t workspaceSize, aclOpExecutor* execu
  * @return aclnnStatus: 返回状态码
  */
 
-ACLNN_API aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(
-    const aclTensor* srcTensor, const int dstFormat, int additionalDtype, int64_t** dstShape,
-    uint64_t* dstShapeSize, int* actualFormat);
+ACLNN_API aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(const aclTensor* srcTensor, const int dstFormat,
+                                                               int additionalDtype, int64_t** dstShape,
+                                                               uint64_t* dstShapeSize, int* actualFormat);
 
 #ifdef __cplusplus
 }

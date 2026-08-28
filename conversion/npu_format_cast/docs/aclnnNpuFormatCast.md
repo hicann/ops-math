@@ -31,6 +31,7 @@
   - <term>Ascend 950PR/Ascend 950DT</term>：
     - 完成ND[数据格式](../../../docs/zh/context/data_format.md)到指定C0大小的FRACTAL_NZ[数据格式](../../../docs/zh/context/data_format.md)的转换功能，C0是FRACTAL_NZ[数据格式](../../../docs/zh/context/data_format.md)最后一维的大小，C0由`additionalDtype`确定。
     - 完成指定C0大小的FRACTAL_NZ[数据格式](../../../docs/zh/context/data_format.md)到ND[数据格式](../../../docs/zh/context/data_format.md)的转换功能，其中支持的NZ格式包括：FRACTAL_NZ、FRACTAL_NZ_C0_2、FRACTAL_NZ_C0_4、FRACTAL_NZ_C0_16、FRACTAL_NZ_C0_32。
+    - 当srcTensor数据类型为FLOAT8_E8M0、srcTensor格式为ND/NCL/NCHW、dstFormat为FRACTAL_NZ时，支持MX scale转换为昇腾亲和存储shape。
   <!-- end id7 -->
   <!-- npu="A3,910b" id8 -->
   - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
@@ -409,6 +410,7 @@ aclnnStatus aclnnNpuFormatCast(
       | FLOAT16      | ACL_FORMAT_ND(2) | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT16(1) | ACL_FORMAT_FRACTAL_NZ(29) |
       | BFLOAT16     | ACL_FORMAT_ND(2) | ACL_FORMAT_FRACTAL_NZ(29) | ACL_BF16(27)   | ACL_FORMAT_FRACTAL_NZ(29) |
       | FLOAT8_E4M3FN     | ACL_FORMAT_ND(2) | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT8_E4M3FN(36)   | ACL_FORMAT_FRACTAL_NZ(29) |
+      | FLOAT8_E8M0     | ACL_FORMAT_ND(2)/ACL_FORMAT_NCL(47)/ACL_FORMAT_NCHW(0) | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT8_E8M0   | ACL_FORMAT_FRACTAL_NZ(29) |
       | FLOAT4_E2M1 | ACL_FORMAT_ND(2) | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT8_E4M3FN(36)   | ACL_FORMAT_FRACTAL_NZ(29) |
       | FLOAT4_E2M1 | ACL_FORMAT_ND(2) | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT4_E2M1(40)   | ACL_FORMAT_FRACTAL_NZ(29) |
       | FLOAT4_E1M2 | ACL_FORMAT_ND(2) | ACL_FORMAT_FRACTAL_NZ(29) | ACL_FLOAT4_E1M2(41)   | ACL_FORMAT_FRACTAL_NZ(29) |
@@ -445,6 +447,7 @@ aclnnStatus aclnnNpuFormatCast(
       | FLOAT16   | FLOAT16           | ACL_FORMAT_ND(2) | ACL_FORMAT_FRACTAL_NZ(29)       |
       | BFLOAT16  | BFLOAT16          | ACL_FORMAT_ND(2) | ACL_FORMAT_FRACTAL_NZ(29)       |
       | FLOAT8_E4M3FN  | FLOAT8_E4M3FN   | ACL_FORMAT_ND(2)  | ACL_FORMAT_FRACTAL_NZ(29)       |
+      | FLOAT8_E8M0  | FLOAT8_E8M0   | ACL_FORMAT_ND(2)/ACL_FORMAT_NCL(47)/ACL_FORMAT_NCHW(0)  | ACL_FORMAT_FRACTAL_NZ(29)       |
       | FLOAT4_E2M1  | FLOAT4_E2M1       | ACL_FORMAT_ND(2)  | ACL_FORMAT_FRACTAL_NZ_C0_32(51)       |
       | FLOAT4_E2M1  | FLOAT4_E2M1       | ACL_FORMAT_ND(2)  | ACL_FORMAT_FRACTAL_NZ(29)       |
       | FLOAT4_E1M2  | FLOAT4_E1M2       | ACL_FORMAT_ND(2)  | ACL_FORMAT_FRACTAL_NZ(29)       |
@@ -480,6 +483,10 @@ aclnnStatus aclnnNpuFormatCast(
       | ACL_BF16(27)    | 16 |
       | ACL_FLOAT8_E4M3FN(36)    | 32 |
       | ACL_HIFLOAT8(34)    | 32 |
+
+  - FLOAT8_E8M0特殊场景:
+    - srcTensor数据类型为FLOAT8_E8M0，srcTensor格式为ND/NCL/NCHW，dstFormat为FRACTAL_NZ时，仅支持3维或4维scale输入。转换后的storage shape分别为`(ceil(N/16), ceil(K/64), 16, 2)`或`(g, ceil(N/16), ceil(K/64), 16, 2)`。
+    - FLOAT8_E8M0 scale转换为昇腾亲和存储shape的能力不支持图模式，仅支持单算子模式和aclnn直调场景。
 
   - 当前不支持的特殊场景:
     - srcTensor的数据类型和additionalDtype相同，srcTensor格式为ND且类型为FLOAT16或BFLOAT16时，若维度表示为[k, n]，则k为1场景暂不支持。

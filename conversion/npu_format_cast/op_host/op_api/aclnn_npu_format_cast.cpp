@@ -13,6 +13,7 @@
 #include <set>
 #include <string>
 #include <utility>
+#include <vector>
 #include "securec.h"
 
 #include "graph/types.h"
@@ -28,6 +29,7 @@
 
 #include "aclnn_kernels/common/op_error_check.h"
 #include "aclnn_kernels/contiguous.h"
+#include "aclnn_kernels/pad.h"
 #include "aclnn_kernels/reshape.h"
 #include "aclnn_kernels/transdata.h"
 #include "aclnn_kernels/transpose.h"
@@ -61,6 +63,7 @@ static constexpr size_t FRACTAL_NZ_C0_4B = 64;
 static constexpr int64_t C0_SIZE = 16;
 static constexpr int64_t N0_SIZE = 16;
 static constexpr int64_t NUM_ONE = 1;
+static constexpr int64_t NUM_TWO = 2;
 static constexpr int64_t NUM_SIXTEEN = 16;
 static constexpr int NUM_FOUR = 4;
 static constexpr const char* ACLNN_NAME = "aclnnNpuFormatCast";
@@ -92,12 +95,12 @@ const std::set<std::pair<op::Format, op::Format>> kTransdataForwardFormatPairs91
 static const std::initializer_list<DataType> ASCEND950_WEIGHT_DTYPE_SUPPORT_LIST = {
     DataType::DT_INT8,  DataType::DT_FLOAT,         DataType::DT_FLOAT16,     DataType::DT_BF16,
     DataType::DT_INT32, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT4_E2M1, DataType::DT_HIFLOAT8,
-    DataType::DT_UINT8, DataType::DT_FLOAT4_E1M2};
+    DataType::DT_UINT8, DataType::DT_FLOAT4_E1M2,   DataType::DT_FLOAT8_E8M0};
 
 static const std::initializer_list<DataType> WEIGHT_DTYPE_SUPPORT_LIST = {
-    DataType::DT_INT8,        DataType::DT_UINT8,    DataType::DT_FLOAT,      DataType::DT_FLOAT16,
-    DataType::DT_BF16,        DataType::DT_INT32,    DataType::DT_UINT32,     DataType::DT_FLOAT8_E4M3FN,
-    DataType::DT_FLOAT4_E2M1, DataType::DT_HIFLOAT8, DataType::DT_FLOAT4_E1M2};
+    DataType::DT_INT8,        DataType::DT_UINT8,    DataType::DT_FLOAT,       DataType::DT_FLOAT16,
+    DataType::DT_BF16,        DataType::DT_INT32,    DataType::DT_UINT32,      DataType::DT_FLOAT8_E4M3FN,
+    DataType::DT_FLOAT4_E2M1, DataType::DT_HIFLOAT8, DataType::DT_FLOAT4_E1M2, DataType::DT_FLOAT8_E8M0};
 
 static const std::initializer_list<DataType> ASCEND910B_DTYPE_SUPPORT_LIST = {
     DataType::DT_INT8, DataType::DT_UINT8, DataType::DT_FLOAT, DataType::DT_FLOAT16,
@@ -159,15 +162,6 @@ static bool CheckInputFormatSupportedToNz(const op::Format inputFormat)
            INPUT_FORMAT_TO_NZ_SUPPORT_LIST.end();
 }
 
-inline int64_t Ceil(int64_t x, int64_t y)
-{
-    if (y == 0) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The y is zero");
-        return INT64_MIN;
-    }
-    return ((x + y - 1) / y) * y;
-}
-
 inline int64_t CeilDiv(int64_t x, int64_t y)
 {
     if (y == 0) {
@@ -175,6 +169,84 @@ inline int64_t CeilDiv(int64_t x, int64_t y)
         return INT64_MIN;
     }
     return (x + y - 1) / y;
+}
+
+static bool IsFloat8E8m0NnSrcFormat(op::Format srcFormat)
+{
+    return srcFormat == op::Format::FORMAT_ND || srcFormat == op::Format::FORMAT_NCL ||
+           srcFormat == op::Format::FORMAT_NCHW;
+}
+
+static bool IsFloat8E8m0NdToNn(DataType srcDtype, int additionalDtype, op::Format srcFormat, op::Format dstFormat)
+{
+    return srcDtype == ge::DT_FLOAT8_E8M0 && additionalDtype == ge::DT_FLOAT8_E8M0 &&
+           IsFloat8E8m0NnSrcFormat(srcFormat) && dstFormat == op::Format::FORMAT_FRACTAL_NZ;
+}
+
+static aclnnStatus CheckFloat8E8m0NnShape(const gert::Shape& viewShape)
+{
+    auto viewShapeDim = viewShape.GetDimNum();
+    OP_CHECK(viewShapeDim == DIMS_THREE || viewShapeDim == DIMS_FOUR,
+             OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+                 ACLNN_NAME, "srcTensor", std::to_string(viewShapeDim),
+                 "FLOAT8_E8M0 ND to Ascend affinity format only supports 3D or 4D scale shape"),
+             return ACLNN_ERR_PARAM_INVALID);
+    for (size_t i = 0; i < viewShapeDim; ++i) {
+        OP_CHECK(viewShape.GetDim(i) > 0,
+                 OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(ACLNN_NAME, "srcTensor", op::ToString(viewShape).GetString(),
+                                                       "Dims of FLOAT8_E8M0 scale must be greater than 0"),
+                 return ACLNN_ERR_PARAM_INVALID);
+    }
+    OP_CHECK(viewShape.GetDim(viewShapeDim - NUM_ONE) == NUM_TWO,
+             OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(ACLNN_NAME, "srcTensor", op::ToString(viewShape).GetString(),
+                                                   "The last dim of FLOAT8_E8M0 scale must be 2"),
+             return ACLNN_ERR_PARAM_INVALID);
+    return ACLNN_SUCCESS;
+}
+
+static bool ValidFloat8E8m0NnDstShape(const gert::Shape& srcViewShape, const gert::Shape& dstStorageShape)
+{
+    auto srcDimNum = srcViewShape.GetDimNum();
+    auto dstDimNum = dstStorageShape.GetDimNum();
+    OP_CHECK(dstDimNum == srcDimNum + NUM_ONE,
+             OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
+                 ACLNN_NAME, "srcTensor, dstTensor", std::to_string(srcDimNum) + ", " + std::to_string(dstDimNum),
+                 "The StorageShape dim of dstTensor must be srcTensor dim plus 1 for FLOAT8_E8M0 Ascend affinity "
+                 "format"),
+             return false);
+
+    for (uint64_t i = 0; i < srcDimNum - DIMS_THREE; ++i) {
+        OP_CHECK(
+            srcViewShape.GetDim(i) == dstStorageShape.GetDim(i),
+            OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                ACLNN_NAME, "srcTensor, dstTensor",
+                std::string(op::ToString(srcViewShape).GetString()) + ", " + op::ToString(dstStorageShape).GetString(),
+                "Prefix dims of FLOAT8_E8M0 Ascend affinity format must keep unchanged"),
+            return false);
+    }
+
+    int64_t kScale = srcViewShape.GetDim(srcDimNum - DIMS_THREE);
+    int64_t n = srcViewShape.GetDim(srcDimNum - DIMS_TWO);
+    int64_t n1 = CeilDiv(n, NUM_SIXTEEN);
+    uint64_t n1Axis = srcDimNum - DIMS_THREE;
+    OP_CHECK(dstStorageShape.GetDim(n1Axis) == n1 && dstStorageShape.GetDim(n1Axis + NUM_ONE) == kScale &&
+                 dstStorageShape.GetDim(n1Axis + DIMS_TWO) == NUM_SIXTEEN &&
+                 dstStorageShape.GetDim(n1Axis + DIMS_THREE) == NUM_TWO,
+             OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                 ACLNN_NAME, "srcTensor, dstTensor",
+                 std::string(op::ToString(srcViewShape).GetString()) + ", " + op::ToString(dstStorageShape).GetString(),
+                 "FLOAT8_E8M0 Ascend affinity format storage shape must be (..., ceil(N/16), KScale, 16, 2)"),
+             return false);
+    return true;
+}
+
+inline int64_t Ceil(int64_t x, int64_t y)
+{
+    if (y == 0) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The y is zero");
+        return INT64_MIN;
+    }
+    return ((x + y - 1) / y) * y;
 }
 
 static aclnnStatus ValidateNonQuantMatmulParams([[maybe_unused]] int32_t additionalDtype, const gert::Shape& viewShape,
@@ -304,6 +376,9 @@ static aclnnStatus Check95NdToNzCalculateSizeAndFormatInputs(const aclTensor* sr
     auto srcDtype = srcTensor->GetDataType();
     auto viewShape = srcTensor->GetViewShape();
     auto viewShapeDim = viewShape.GetDimNum();
+    if (IsFloat8E8m0NdToNn(srcDtype, additionalDtype, srcFormat, static_cast<op::Format>(dstFormat))) {
+        return CheckFloat8E8m0NnShape(viewShape);
+    }
     for (size_t i = 0; i < viewShapeDim; i++) {
         OP_CHECK(
             viewShape.GetDim(i) != 0,
@@ -411,6 +486,16 @@ static aclnnStatus Check95NdToNzGetWorkSpaceSizeInputs(const aclTensor* srcTenso
     op::Format dstFormat = dstTensor->GetStorageFormat();
     auto storageShape = dstTensor->GetStorageShape();
     auto storageShapeDim = storageShape.GetDimNum();
+    if (IsFloat8E8m0NdToNn(srcDtype, static_cast<int>(dstDtype), srcFormat, dstFormat)) {
+        auto ret = CheckFloat8E8m0NnShape(srcViewShape);
+        if (ret != ACLNN_SUCCESS) {
+            return ret;
+        }
+        OP_CHECK(ValidFloat8E8m0NnDstShape(srcViewShape, storageShape),
+                 OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The shape of output Ascend affinity format tensor is invalid."),
+                 return ACLNN_ERR_PARAM_INVALID);
+        return ACLNN_SUCCESS;
+    }
     if (!CheckFormatValid(srcDtype, dstDtype, srcFormat, dstFormat)) {
         return ACLNN_ERR_PARAM_INVALID;
     }
@@ -661,6 +746,42 @@ aclnnStatus CalcNdToNz(const aclTensor* srcTensor, int additionalDtype, int64_t*
         (*dstShape)[i] = viewShape.GetDim(i);
     }
 
+    return ACLNN_SUCCESS;
+}
+
+aclnnStatus CalcFloat8E8m0NdToNn(const aclTensor* srcTensor, int64_t** dstShape, uint64_t* dstShapeSize,
+                                 int* actualFormat)
+{
+    auto viewShape = srcTensor->GetViewShape();
+    auto viewShapeDim = viewShape.GetDimNum();
+    auto ret = CheckFloat8E8m0NnShape(viewShape);
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGW("Failed to check FLOAT8_E8M0 Ascend affinity format shape"), return ret);
+
+    int64_t kScale = viewShape.GetDim(viewShapeDim - DIMS_THREE);
+    int64_t n = viewShape.GetDim(viewShapeDim - DIMS_TWO);
+    int64_t n1 = CeilDiv(n, NUM_SIXTEEN);
+    *dstShapeSize = static_cast<uint64_t>(viewShapeDim + NUM_ONE);
+    try {
+        *dstShape = new int64_t[*dstShapeSize]();
+    } catch (std::bad_alloc& e) {
+        OP_LOGE(ACLNN_ERR_RUNTIME_ERROR, "Failed to allocate memory for the Ascend affinity format");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+
+    for (uint64_t i = 0; i < *dstShapeSize; ++i) {
+        if (i < viewShapeDim - DIMS_THREE) {
+            (*dstShape)[i] = viewShape.GetDim(i);
+        } else if (i == viewShapeDim - DIMS_THREE) {
+            (*dstShape)[i] = n1;
+        } else if (i == viewShapeDim - DIMS_TWO) {
+            (*dstShape)[i] = kScale;
+        } else if (i == viewShapeDim - NUM_ONE) {
+            (*dstShape)[i] = NUM_SIXTEEN;
+        } else {
+            (*dstShape)[i] = NUM_TWO;
+        }
+    }
+    *actualFormat = op::Format::FORMAT_FRACTAL_NZ;
     return ACLNN_SUCCESS;
 }
 
@@ -1016,6 +1137,56 @@ aclnnStatus CalcToNDHWC(const aclTensor* srcTensor, [[maybe_unused]] int additio
     return ACLNN_SUCCESS;
 }
 
+const aclTensor* TransFloat8E8m0NdToNn(const aclTensor* srcTensor, aclOpExecutor* executor)
+{
+    auto viewShape = srcTensor->GetViewShape();
+    auto viewShapeDim = viewShape.GetDimNum();
+    int64_t kScale = viewShape.GetDim(viewShapeDim - DIMS_THREE);
+    int64_t n = viewShape.GetDim(viewShapeDim - DIMS_TWO);
+    int64_t n1 = CeilDiv(n, NUM_SIXTEEN);
+    int64_t alignedN = n1 * NUM_SIXTEEN;
+    auto srcByteView = executor->CreateView(const_cast<aclTensor*>(srcTensor), viewShape, srcTensor->GetViewOffset());
+    CHECK_RET(srcByteView != nullptr, nullptr);
+    srcByteView->SetDataType(op::DataType::DT_INT8);
+    const aclTensor* tensorToReshape = srcByteView;
+    if (alignedN != n) {
+        std::vector<int64_t> paddings(viewShapeDim * DIMS_TWO, 0);
+        size_t nAxis = viewShapeDim - DIMS_TWO;
+        paddings[nAxis * DIMS_TWO + NUM_ONE] = alignedN - n;
+        auto paddingsArray = executor->AllocIntArray(paddings.data(), paddings.size());
+        auto paddingsTensor = executor->ConvertToTensor(paddingsArray, op::DataType::DT_INT64);
+        CHECK_RET(paddingsTensor != nullptr, nullptr);
+        tensorToReshape = l0op::Pad(srcByteView, paddingsTensor, executor);
+        CHECK_RET(tensorToReshape != nullptr, nullptr);
+    }
+
+    std::vector<int64_t> reshapeShape;
+    reshapeShape.reserve(viewShapeDim + NUM_ONE);
+    for (size_t i = 0; i < viewShapeDim - DIMS_THREE; ++i) {
+        reshapeShape.emplace_back(viewShape.GetDim(i));
+    }
+    reshapeShape.emplace_back(kScale);
+    reshapeShape.emplace_back(n1);
+    reshapeShape.emplace_back(NUM_SIXTEEN);
+    reshapeShape.emplace_back(NUM_TWO);
+
+    auto reshapeArray = executor->AllocIntArray(reshapeShape.data(), reshapeShape.size());
+    auto reshapeTensor = l0op::Reshape(tensorToReshape, reshapeArray, executor);
+    CHECK_RET(reshapeTensor != nullptr, nullptr);
+
+    std::vector<int64_t> perm(reshapeShape.size());
+    for (size_t i = 0; i < perm.size(); ++i) {
+        perm[i] = static_cast<int64_t>(i);
+    }
+    size_t kScaleAxis = viewShapeDim - DIMS_THREE;
+    size_t n1Axis = viewShapeDim - DIMS_TWO;
+    std::swap(perm[kScaleAxis], perm[n1Axis]);
+    auto permArray = executor->AllocIntArray(perm.data(), perm.size());
+    auto transposeTensor = const_cast<aclTensor*>(l0op::Transpose(reshapeTensor, permArray, executor));
+    CHECK_RET(transposeTensor != nullptr, nullptr);
+    return transposeTensor;
+}
+
 aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(const aclTensor* srcTensor, const int dstFormat,
                                                      int additionalDtype, int64_t** dstShape, uint64_t* dstShapeSize,
                                                      int* actualFormat)
@@ -1025,6 +1196,14 @@ aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(const aclTensor* srcTensor,
     op::Format srcFormat = srcTensor->GetStorageFormat();
     if (additionalDtype == -1) {
         additionalDtype = static_cast<int>(srcTensor->GetDataType());
+    }
+    if (IsFloat8E8m0NdToNn(srcTensor->GetDataType(), additionalDtype, srcFormat, static_cast<op::Format>(dstFormat))) {
+        OP_CHECK(IsRegBase(),
+                 OP_LOGE(ACLNN_ERR_PARAM_INVALID, "FLOAT8_E8M0 ND to Ascend affinity format only supports Ascend950."),
+                 return ACLNN_ERR_PARAM_INVALID);
+        auto retNdToNn = Check95NdToNzCalculateSizeAndFormatInputs(srcTensor, dstFormat, additionalDtype);
+        OP_CHECK(retNdToNn == ACLNN_SUCCESS, OP_LOGW("Failed to check inputs"), return ACLNN_ERR_PARAM_INVALID);
+        return CalcFloat8E8m0NdToNn(srcTensor, dstShape, dstShapeSize, actualFormat);
     }
     if (dstFormat == op::Format::FORMAT_FRACTAL_NZ &&
         ((srcFormat == op::Format::FORMAT_ND || srcFormat == op::Format::FORMAT_NCL) ||
@@ -1097,6 +1276,8 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(const aclTensor* srcTensor, aclTe
     auto ret = CheckGetWorkSpaceSizeInputs(srcTensor, dstTensor);
     op::Format srcFormat = srcTensor->GetStorageFormat();
     op::Format dstFormat = dstTensor->GetStorageFormat();
+    bool isFloat8E8m0Nn = IsFloat8E8m0NdToNn(srcTensor->GetDataType(), static_cast<int>(dstTensor->GetDataType()),
+                                             srcFormat, dstFormat);
     // ASCEND950校验特殊场景
     if (IsRegBase()) {
         if (dstFormat == op::Format::FORMAT_FRACTAL_NZ &&
@@ -1118,9 +1299,20 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(const aclTensor* srcTensor, aclTe
     if (IsRegBase()) {
         formatTensor = const_cast<aclTensor*>(srcTensor);
         // 适配srcFormat为NCL的场景
-        if ((IsQuantMatmulDtype(srcTensor->GetDataType(), dstTensor->GetDataType()) &&
-             dstFormat == op::Format::FORMAT_FRACTAL_NZ) ||
-            srcFormat == op::Format::FORMAT_NCL) {
+        if (isFloat8E8m0Nn) {
+            formatTensor->SetViewFormat(op::Format::FORMAT_ND);
+            formatTensor->SetOriginalFormat(op::Format::FORMAT_ND);
+            formatTensor->SetStorageFormat(op::Format::FORMAT_ND);
+            formatTensor->SetOriginalShape(srcTensor->GetViewShape());
+            formatTensor->SetStorageShape(srcTensor->GetViewShape());
+
+            dstTensor->SetViewFormat(op::Format::FORMAT_ND);
+            dstTensor->SetViewShape(srcTensor->GetViewShape());
+            dstTensor->SetOriginalFormat(op::Format::FORMAT_ND);
+            dstTensor->SetOriginalShape(srcTensor->GetOriginalShape());
+        } else if ((IsQuantMatmulDtype(srcTensor->GetDataType(), dstTensor->GetDataType()) &&
+                    dstFormat == op::Format::FORMAT_FRACTAL_NZ) ||
+                   srcFormat == op::Format::FORMAT_NCL) {
             formatTensor->SetViewFormat(op::Format::FORMAT_ND);
             formatTensor->SetOriginalFormat(op::Format::FORMAT_ND);
             formatTensor->SetStorageFormat(op::Format::FORMAT_ND);
@@ -1194,8 +1386,10 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(const aclTensor* srcTensor, aclTe
     }
     aclTensor* outTensor;
     int64_t dstDimNum = dstTensor->GetStorageShape().GetDimNum();
-    if (dstTensor->GetStorageShape().GetDim(dstDimNum - NUM_ONE) == NUM_SIXTEEN &&
-        ge::GetSizeByDataType(srcTensor->GetDataType()) >= NUM_FOUR && !IsRegBase()) {
+    if (isFloat8E8m0Nn) {
+        outTensor = const_cast<aclTensor*>(TransFloat8E8m0NdToNn(formatTensor, uniqueExecutor.get()));
+    } else if (dstTensor->GetStorageShape().GetDim(dstDimNum - NUM_ONE) == NUM_SIXTEEN &&
+               ge::GetSizeByDataType(srcTensor->GetDataType()) >= NUM_FOUR && !IsRegBase()) {
         outTensor = const_cast<aclTensor*>(
             l0op::TransDataSpecial(formatTensor, dstTensor->GetStorageFormat(), 1, uniqueExecutor.get()));
     } else {
@@ -1204,9 +1398,25 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(const aclTensor* srcTensor, aclTe
     }
     CHECK_RET(outTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
     outTensor->SetViewFormat(dstTensor->GetViewFormat());
+    outTensor->SetViewShape(dstTensor->GetViewShape());
     outTensor->SetOriginalFormat(dstTensor->GetOriginalFormat());
+    outTensor->SetOriginalShape(dstTensor->GetOriginalShape());
     outTensor->SetStorageFormat(dstTensor->GetStorageFormat());
-    auto viewCopyResult = l0op::ViewCopy(outTensor, dstTensor, uniqueExecutor.get());
+    outTensor->SetStorageShape(dstTensor->GetStorageShape());
+    aclTensor* dstCopyTensor = dstTensor;
+    if (isFloat8E8m0Nn) {
+        dstCopyTensor = uniqueExecutor.get()->CreateView(dstTensor, dstTensor->GetViewShape(),
+                                                         dstTensor->GetViewOffset());
+        CHECK_RET(dstCopyTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        dstCopyTensor->SetDataType(op::DataType::DT_INT8);
+        dstCopyTensor->SetViewFormat(dstTensor->GetViewFormat());
+        dstCopyTensor->SetViewShape(dstTensor->GetViewShape());
+        dstCopyTensor->SetOriginalFormat(dstTensor->GetOriginalFormat());
+        dstCopyTensor->SetOriginalShape(dstTensor->GetOriginalShape());
+        dstCopyTensor->SetStorageFormat(dstTensor->GetStorageFormat());
+        dstCopyTensor->SetStorageShape(dstTensor->GetStorageShape());
+    }
+    auto viewCopyResult = l0op::ViewCopy(outTensor, dstCopyTensor, uniqueExecutor.get());
     CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 固定写法，获取计算过程中需要使用的workspace大小

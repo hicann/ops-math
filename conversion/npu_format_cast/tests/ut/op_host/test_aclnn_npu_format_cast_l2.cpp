@@ -45,30 +45,16 @@ struct NpuFormatCastTestParam {
     aclnnStatus expectRet;
 };
 
-class l2_npu_format_cast_test_950 : public testing::TestWithParam<NpuFormatCastTestParam>
-{
+class l2_npu_format_cast_test_950 : public testing::TestWithParam<NpuFormatCastTestParam> {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "l2_npu_format_cast_test_950 SetUp" << endl;
-    }
-    static void TearDownTestCase()
-    {
-        cout << "l2_npu_format_cast_test_950 S" << endl;
-    }
+    static void SetUpTestCase() { cout << "l2_npu_format_cast_test_950 SetUp" << endl; }
+    static void TearDownTestCase() { cout << "l2_npu_format_cast_test_950 S" << endl; }
 };
 
-class l2_npu_format_cast_test_910_93 : public testing::TestWithParam<NpuFormatCastTestParam>
-{
+class l2_npu_format_cast_test_910_93 : public testing::TestWithParam<NpuFormatCastTestParam> {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "l2_npu_format_cast_test_910_93 SetUp" << endl;
-    }
-    static void TearDownTestCase()
-    {
-        cout << "l2_npu_format_cast_test_910_93 S" << endl;
-    }
+    static void SetUpTestCase() { cout << "l2_npu_format_cast_test_910_93 SetUp" << endl; }
+    static void TearDownTestCase() { cout << "l2_npu_format_cast_test_910_93 S" << endl; }
 };
 
 static void TestOneParamCase(const NpuFormatCastTestParam& param)
@@ -81,9 +67,9 @@ static void TestOneParamCase(const NpuFormatCastTestParam& param)
         strides[i] = param.srcTensor[i + 1] * strides[i + 1];
     }
 
-    aclTensor* srctensor = aclCreateTensor(
-        param.srcTensor.data(), param.srcTensor.size(), param.srcDtype, strides.data(), 0, param.srcFormat,
-        param.storageShape.data(), param.storageShape.size(), srcDeviceAddr);
+    aclTensor* srctensor = aclCreateTensor(param.srcTensor.data(), param.srcTensor.size(), param.srcDtype,
+                                           strides.data(), 0, param.srcFormat, param.storageShape.data(),
+                                           param.storageShape.size(), srcDeviceAddr);
 
     const int AdditionalDtype = param.additionalDtype;
     int dstFormat = static_cast<int>(param.dstFormat);
@@ -92,18 +78,17 @@ static void TestOneParamCase(const NpuFormatCastTestParam& param)
     int ActualFormat = 0;
 
     // dstformat支持FRACTAL_NZ(用29表示)或ND(用2表示)
-    auto ret = aclnnNpuFormatCastCalculateSizeAndFormat(
-        srctensor, dstFormat, AdditionalDtype, &DstShape, &DstShapeSize,
-        &ActualFormat); // 参数待修改
+    auto ret = aclnnNpuFormatCastCalculateSizeAndFormat(srctensor, dstFormat, AdditionalDtype, &DstShape, &DstShapeSize,
+                                                        &ActualFormat); // 参数待修改
 
     if (ret != ACL_SUCCESS) {
         LOG_PRINT("aclnnNpuFormatCastCalculateSizeAndFormat failed. ERROR: %d\n", ret);
         EXPECT_EQ(ret, param.expectRet);
         return;
     }
-    aclTensor* dsttensor = aclCreateTensor(
-        param.srcTensor.data(), param.srcTensor.size(), param.srcDtype, strides.data(), 0,
-        static_cast<aclFormat>(ActualFormat), DstShape, DstShapeSize, dstDeviceAddr);
+    aclTensor* dsttensor = aclCreateTensor(param.srcTensor.data(), param.srcTensor.size(), param.srcDtype,
+                                           strides.data(), 0, static_cast<aclFormat>(ActualFormat), DstShape,
+                                           DstShapeSize, dstDeviceAddr);
 
     uint64_t workspaceSize = 0U;
     aclOpExecutor* exe = nullptr;
@@ -261,6 +246,38 @@ static NpuFormatCastTestParam casesParamsAscend950[] = {
      ACL_FORMAT_ND,
      ACL_FORMAT_FRACTAL_NZ,
      ACL_FLOAT8_E4M3FN,
+     ACLNN_SUCCESS},
+    {"ascend950_test_NpuformatCast_scale_float8_e8m0_ND_Nn_4D",
+     {48, 24, 4096, 2},
+     {48, 24, 4096, 2},
+     ACL_FLOAT8_E8M0,
+     ACL_FORMAT_ND,
+     ACL_FORMAT_FRACTAL_NZ,
+     ACL_FLOAT8_E8M0,
+     ACLNN_SUCCESS},
+    {"ascend950_test_NpuformatCast_scale_float8_e8m0_ND_Nn_3D",
+     {24, 4096, 2},
+     {24, 4096, 2},
+     ACL_FLOAT8_E8M0,
+     ACL_FORMAT_ND,
+     ACL_FORMAT_FRACTAL_NZ,
+     ACL_FLOAT8_E8M0,
+     ACLNN_SUCCESS},
+    {"ascend950_test_NpuformatCast_scale_float8_e8m0_ND_Nn_N_Not_Align",
+     {48, 24, 4097, 2},
+     {48, 24, 4097, 2},
+     ACL_FLOAT8_E8M0,
+     ACL_FORMAT_ND,
+     ACL_FORMAT_FRACTAL_NZ,
+     ACL_FLOAT8_E8M0,
+     ACLNN_SUCCESS},
+    {"ascend950_test_NpuformatCast_scale_float8_e8m0_NCHW_Nn_N_Not_Align",
+     {5, 1, 29, 2},
+     {5, 1, 29, 2},
+     ACL_FLOAT8_E8M0,
+     ACL_FORMAT_NCHW,
+     ACL_FORMAT_FRACTAL_NZ,
+     ACL_FLOAT8_E8M0,
      ACLNN_SUCCESS},
     {"ascend950_test_NpuformatCast_NZ_ND_B4",
      {64, 128},
@@ -632,11 +649,10 @@ static NpuFormatCastTestParam casesParamsAscend910_93[] = {
      ACLNN_ERR_PARAM_INVALID},
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    Ascend950_NpuFormatCast, l2_npu_format_cast_test_950, testing::ValuesIn(casesParamsAscend950));
+INSTANTIATE_TEST_SUITE_P(Ascend950_NpuFormatCast, l2_npu_format_cast_test_950, testing::ValuesIn(casesParamsAscend950));
 
-INSTANTIATE_TEST_SUITE_P(
-    Ascend910_93_NpuFormatCast, l2_npu_format_cast_test_910_93, testing::ValuesIn(casesParamsAscend910_93));
+INSTANTIATE_TEST_SUITE_P(Ascend910_93_NpuFormatCast, l2_npu_format_cast_test_910_93,
+                         testing::ValuesIn(casesParamsAscend910_93));
 
 static void ThreadFunc(const NpuFormatCastTestParam* params, size_t testcase_num, size_t thread_idx, size_t thread_num)
 {
