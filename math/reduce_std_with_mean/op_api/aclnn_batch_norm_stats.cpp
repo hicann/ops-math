@@ -180,22 +180,22 @@ static aclnnStatus aclnnBatchNormStatsImplUnify(const aclTensor* input, const ac
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnBatchNormStatsGetWorkspaceSize(const aclTensor* input, double eps, aclTensor* meanOut,
-                                                aclTensor* invstdOut, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnBatchNormStatsGetWorkspaceSize(const aclTensor* input, double eps, aclTensor* mean, aclTensor* invstd,
+                                                uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
-    L2_DFX_PHASE_1(aclnnBatchNormStats, DFX_IN(input, eps), DFX_OUT(meanOut, invstdOut));
+    L2_DFX_PHASE_1(aclnnBatchNormStats, DFX_IN(input, eps), DFX_OUT(mean, invstd));
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
-    auto ret = CheckParams(input, meanOut, invstdOut);
+    auto ret = CheckParams(input, mean, invstd);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
     if (input != nullptr && input->IsEmpty()) {
-        ret = ProcessEmptyTensorWithValue(meanOut, 0, uniqueExecutor.get());
+        ret = ProcessEmptyTensorWithValue(mean, 0, uniqueExecutor.get());
         CHECK_RET(ret == ACLNN_SUCCESS, ret);
-        ret = ProcessEmptyTensorWithValue(invstdOut, std::numeric_limits<float>::quiet_NaN(), uniqueExecutor.get());
+        ret = ProcessEmptyTensorWithValue(invstd, std::numeric_limits<float>::quiet_NaN(), uniqueExecutor.get());
         CHECK_RET(ret == ACLNN_SUCCESS, ret);
         *workspaceSize = uniqueExecutor->GetWorkspaceSize();
         uniqueExecutor.ReleaseTo(executor);
@@ -224,14 +224,13 @@ aclnnStatus aclnnBatchNormStatsGetWorkspaceSize(const aclTensor* input, double e
     CHECK_RET(axes != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     if (IsRegBase()) {
-        return aclnnBatchNormStatsImplUnify(reformat, axes, eps, meanOut, invstdOut, workspaceSize, uniqueExecutor,
-                                            executor);
+        return aclnnBatchNormStatsImplUnify(reformat, axes, eps, mean, invstd, workspaceSize, uniqueExecutor, executor);
     }
 
     auto reduceMeanResult = l0op::ReduceMean(reformat, axes, false, uniqueExecutor.get());
     CHECK_RET(reduceMeanResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    auto view_copy_mean = l0op::ViewCopy(reduceMeanResult, meanOut, uniqueExecutor.get());
+    auto view_copy_mean = l0op::ViewCopy(reduceMeanResult, mean, uniqueExecutor.get());
     CHECK_RET(view_copy_mean != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     auto unsqueeze = l0op::UnsqueezeNd(reduceMeanResult, axes, uniqueExecutor.get());
@@ -246,7 +245,7 @@ aclnnStatus aclnnBatchNormStatsGetWorkspaceSize(const aclTensor* input, double e
                                                            static_cast<float>(eps), uniqueExecutor.get());
     CHECK_RET(reduceStdWithMeanResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    auto view_copy_invstd = l0op::ViewCopy(reduceStdWithMeanResult, invstdOut, uniqueExecutor.get());
+    auto view_copy_invstd = l0op::ViewCopy(reduceStdWithMeanResult, invstd, uniqueExecutor.get());
     CHECK_RET(view_copy_invstd != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();

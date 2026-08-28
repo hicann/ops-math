@@ -79,9 +79,9 @@ static const aclTensor* ReduceMinAiCpu(const aclTensor* self, const aclTensor* d
     return minOut;
 }
 
-const aclTensor* ReduceMin(const aclTensor* self, const aclIntArray* dim, bool keepDim, aclOpExecutor* executor)
+const aclTensor* ReduceMin(const aclTensor* self, const aclIntArray* dims, bool keepDim, aclOpExecutor* executor)
 {
-    auto dimList = executor->ConvertToTensor(dim, op::DataType::DT_INT64);
+    auto dimList = executor->ConvertToTensor(dims, op::DataType::DT_INT64);
     auto minOut = executor->AllocTensor(self->GetViewShape(), self->GetDataType());
 
     // dim为空时，默认保留所有轴
