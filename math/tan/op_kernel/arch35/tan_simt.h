@@ -29,30 +29,11 @@ namespace NsTan {
 
 using namespace AscendC;
 
-// 常量定义
-static constexpr float TWO_OVER_PI = 0.6366197723675814f;
-static constexpr float PI_OVER_2 = 1.5707963267948966f;
-// 3-part Cody-Waite 要求 |fn| ≤ 2^20 ≈ 1e6，取 1e7 留余量；超过此值精度不可控，直接返回 NaN
+// |x| >= 1e7 保持算子既有语义，直接返回 NaN
 static constexpr float LARGE_THRESHOLD = 1e7f;
 
-// 3-part Cody-Waite: pi/2 = PIO2_1 + PIO2_2 + PIO2_3
-// PIO2_1 = 1.5 (2 sig bits → fn*PIO2_1 exact for |fn| ≤ 2^22)
-// PIO2_2 = 9/128 (4 sig bits → fn*PIO2_2 exact for |fn| ≤ 2^20)
-static constexpr float PIO2_1 = 1.5f;
-static constexpr float PIO2_2 = 0.0703125f;
-static constexpr float PIO2_3 = 4.83826794896619e-04f;
-
-// float32 路径的多项式系数（[-pi/4,pi/4] minimax 拟合，替代原泰勒展开以满足 FP32 rtol=1.3e-6）
-static constexpr float C0 = 3.3333349758e-01f;
-static constexpr float C1 = 1.3332663237e-01f;
-static constexpr float C2 = 5.4059927854e-02f;
-static constexpr float C3 = 2.1282127874e-02f;
-static constexpr float C4 = 1.0835969442e-02f;
-static constexpr float C5 = 8.9335614893e-05f;
-static constexpr float C6 = 4.3763746355e-03f;
-
 // Rule 006: LAUNCH_BOUND 按索引位宽模板化
-// tan 算子寄存器压力中等（多项式计算变量多），uint32_t 开 1024，uint64_t 开 512
+// 沿用既有 launch 配置：uint32_t 开 1024，uint64_t 开 512
 template <typename IDX_T>
 static constexpr uint32_t THREAD_NUM = (sizeof(IDX_T) == 4) ? 1024 : 512;
 
@@ -73,36 +54,8 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM<IDX_T>) inline void OpTanSimtKern
         bool is_special = (abs_x >= LARGE_THRESHOLD) || isinf(x) || isnan(x);
         float special_result = ASCRT_INF_F / ASCRT_INF_F; // NaN
 
-        // 3-part Cody-Waite range reduction (float-only)
-        float fn = roundf(x * TWO_OVER_PI);
-        int32_t k = static_cast<int32_t>(fn);
-        float t1 = x - fn * PIO2_1;
-        float t2 = t1 - fn * PIO2_2;
-        float s3 = fn * PIO2_3;
-        float e3 = fmaf(fn, PIO2_3, -s3);
-        float r = (t2 - s3) - e3;
-
-        // 多项式逼近 tan(r) ≈ r + r³ * P(r²)
-        float r2 = r * r;
-        float r3 = r2 * r;
-
-        // Horner 方法计算多项式（7阶）
-        float p = C6;
-        p = fmaf(p, r2, C5);
-        p = fmaf(p, r2, C4);
-        p = fmaf(p, r2, C3);
-        p = fmaf(p, r2, C2);
-        p = fmaf(p, r2, C1);
-        p = fmaf(p, r2, C0);
-
-        float tan_r = r + r3 * p;
-
-        // Rule 001: 象限调整使用 select 替代 if-else
-        // 奇数象限：tan(x) = -1/tan(r)，偶数象限：tan(x) = tan(r)
-        int32_t k_odd = k & 1;
-        float odd_result = -1.0f / tan_r;
-        float normal_result = tan_r;
-        float result = (k_odd != 0) ? odd_result : normal_result;
+        // 使用 SIMT 数学库的高精度规约与奇数象限倒数误差补偿，避免接近 pi/2 时误差被放大。
+        float result = tanf(x);
 
         // Rule 001: 最终结果选择（特殊值 vs 正常计算）
         float final_result = is_special ? special_result : result;
