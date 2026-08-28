@@ -1,5 +1,5 @@
 /**
-  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -172,16 +172,15 @@ static bool CheckDtypeValidScalar(const aclTensor* self, const aclScalar* other)
     return true;
 }
 
-static bool CheckPromoteType(
-    const op::DataType selfDtype, const op::DataType otherDtype, const op::DataType outDtype, const bool isOtherScalar)
+static bool CheckPromoteType(const op::DataType selfDtype, const op::DataType otherDtype, const op::DataType outDtype,
+                             const bool isOtherScalar)
 {
-    auto promoteType =
-        isOtherScalar ? InferFloorDivTensorScalarDtype(selfDtype, otherDtype) : op::PromoteType(selfDtype, otherDtype);
+    auto promoteType = isOtherScalar ? InferFloorDivTensorScalarDtype(selfDtype, otherDtype) :
+                                       op::PromoteType(selfDtype, otherDtype);
     // 检查self和other能否做数据类型推导
     if (promoteType == DataType::DT_UNDEFINED) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
-            op::ToString(selfDtype).GetString(), op::ToString(otherDtype).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
+                op::ToString(selfDtype).GetString(), op::ToString(otherDtype).GetString());
         return false;
     }
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
@@ -189,11 +188,10 @@ static bool CheckPromoteType(
         // 增加cast能力检查
         auto supportList = GetDtypeSupportList();
         if (!CheckType(promoteType, supportList)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID,
-                "aclnnFloorDivide not implemented for input dtype %s,"
-                "should be in dtype support list %s.",
-                ToString(promoteType).GetString(), op::ToString(supportList).GetString());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                    "aclnnFloorDivide not implemented for input dtype %s, "
+                    "should be in dtype support list %s.",
+                    ToString(promoteType).GetString(), op::ToString(supportList).GetString());
             return false;
         }
         OP_CHECK_RESULT_DTYPE_CAST_FAILED(selfDtype, promoteType, return false);
@@ -224,16 +222,16 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other, co
 
     CHECK_RET(CheckDtypeValid(self, other), ACLNN_ERR_PARAM_INVALID);
 
-    CHECK_RET(
-        CheckPromoteType(self->GetDataType(), other->GetDataType(), y->GetDataType(), false), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckPromoteType(self->GetDataType(), other->GetDataType(), y->GetDataType(), false),
+              ACLNN_ERR_PARAM_INVALID);
 
     CHECK_RET(CheckShape(self, other, y), ACLNN_ERR_PARAM_INVALID);
 
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus CalcFloorDivide(
-    const aclTensor* self, const aclTensor* other, aclTensor* out, aclOpExecutor* executor)
+static aclnnStatus CalcFloorDivide(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                   aclOpExecutor* executor)
 {
     auto ret = CheckParams(self, other, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
@@ -268,8 +266,8 @@ static aclnnStatus CalcFloorDivide(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnFloorDivideGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnFloorDivideGetWorkspaceSize(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                             uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnFloorDivide, DFX_IN(self, other), DFX_OUT(out));
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -302,9 +300,8 @@ static bool CheckShapeScalar(const aclTensor* self, const aclTensor* y)
     OP_CHECK_MAX_DIM(self, MAX_SUPPORT_DIMS_NUMS, return false);
 
     if (self->GetViewShape() != y->GetViewShape()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
-            op::ToString(self->GetViewShape()).GetString(), op::ToString(y->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
+                op::ToString(self->GetViewShape()).GetString(), op::ToString(y->GetViewShape()).GetString());
         return false;
     }
     return true;
@@ -316,16 +313,16 @@ static aclnnStatus CheckParamsScalar(const aclTensor* self, const aclScalar* oth
 
     CHECK_RET(CheckDtypeValidScalar(self, other), ACLNN_ERR_PARAM_INVALID);
 
-    CHECK_RET(
-        CheckPromoteType(self->GetDataType(), other->GetDataType(), y->GetDataType(), true), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckPromoteType(self->GetDataType(), other->GetDataType(), y->GetDataType(), true),
+              ACLNN_ERR_PARAM_INVALID);
 
     CHECK_RET(CheckShapeScalar(self, y), ACLNN_ERR_PARAM_INVALID);
 
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus CalcFloorDivides(
-    const aclTensor* self, const aclScalar* other, aclTensor* out, aclOpExecutor* executor)
+static aclnnStatus CalcFloorDivides(const aclTensor* self, const aclScalar* other, aclTensor* out,
+                                    aclOpExecutor* executor)
 {
     // 调用适配aclScalar参数检查
     auto ret = CheckParamsScalar(self, other, out);
@@ -359,8 +356,8 @@ static aclnnStatus CalcFloorDivides(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnFloorDividesGetWorkspaceSize(
-    const aclTensor* self, const aclScalar* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnFloorDividesGetWorkspaceSize(const aclTensor* self, const aclScalar* other, aclTensor* out,
+                                              uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnFloorDivides, DFX_IN(self, other), DFX_OUT(out));
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -382,30 +379,25 @@ aclnnStatus aclnnFloorDivides(void* workspace, uint64_t workspaceSize, aclOpExec
 
 static inline aclnnStatus CheckInplace(const aclTensor* selfRef, const aclTensor* other)
 {
-    OP_CHECK(
-        selfRef != nullptr, OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "Expected selfRef not to be null."),
-        return ACLNN_ERR_PARAM_NULLPTR);
-    OP_CHECK(
-        other != nullptr, OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "Expected other not to be null."),
-        return ACLNN_ERR_PARAM_NULLPTR);
+    OP_CHECK(selfRef != nullptr, OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "Expected selfRef not to be null."),
+             return ACLNN_ERR_PARAM_NULLPTR);
+    OP_CHECK(other != nullptr, OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "Expected other not to be null."),
+             return ACLNN_ERR_PARAM_NULLPTR);
     op::Shape broadcastShape;
     OP_CHECK(
         BroadcastInferShape(selfRef->GetViewShape(), other->GetViewShape(), broadcastShape),
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Shape of selfRef and other can't broadcast, got %s, %s.",
-            op::ToString(selfRef->GetViewShape()).GetString(), op::ToString(other->GetViewShape()).GetString()),
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of selfRef and other can't broadcast, got %s, %s.",
+                op::ToString(selfRef->GetViewShape()).GetString(), op::ToString(other->GetViewShape()).GetString()),
         return ACLNN_ERR_PARAM_INVALID);
-    OP_CHECK(
-        selfRef->GetViewShape() == broadcastShape,
-        OP_LOGE(
-            ACLNN_ERR_PARAM_NULLPTR, "Expected shape of selfRef should be %s, but got %s.",
-            op::ToString(broadcastShape).GetString(), op::ToString(selfRef->GetViewShape()).GetString()),
-        return ACLNN_ERR_PARAM_INVALID);
+    OP_CHECK(selfRef->GetViewShape() == broadcastShape,
+             OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "Expected shape of selfRef should be %s, but got %s.",
+                     op::ToString(broadcastShape).GetString(), op::ToString(selfRef->GetViewShape()).GetString()),
+             return ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceFloorDivideGetWorkspaceSize(
-    aclTensor* selfRef, const aclTensor* other, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceFloorDivideGetWorkspaceSize(aclTensor* selfRef, const aclTensor* other, uint64_t* workspaceSize,
+                                                    aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceFloorDivide, DFX_IN(selfRef, other), DFX_OUT(selfRef));
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -423,15 +415,15 @@ aclnnStatus aclnnInplaceFloorDivideGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceFloorDivide(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+aclnnStatus aclnnInplaceFloorDivide(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                    aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnInplaceFloorDivide);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnInplaceFloorDividesGetWorkspaceSize(
-    aclTensor* selfRef, const aclScalar* other, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceFloorDividesGetWorkspaceSize(aclTensor* selfRef, const aclScalar* other,
+                                                     uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceFloorDivides, DFX_IN(selfRef, other), DFX_OUT(selfRef));
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -446,8 +438,8 @@ aclnnStatus aclnnInplaceFloorDividesGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceFloorDivides(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+aclnnStatus aclnnInplaceFloorDivides(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                     aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnInplaceFloorDivides);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
