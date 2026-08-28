@@ -38,6 +38,7 @@ static constexpr size_t TOPK_PQ_DISTANCE_OUTPUT_NUM = 3;
 
 // REG_OP(TopKPQDistance) 属性顺序：order(0), k(1), group_size(2)
 static constexpr size_t ATTR_IDX_K = 1;
+static constexpr size_t ATTR_IDX_GROUP_SIZE = 2;
 
 // 默认 dynamic input 实例索引
 static constexpr size_t DYNAMIC_INSTANCE_ZERO = 0;
@@ -49,7 +50,16 @@ static ge::graphStatus InferShape4TopKPQDistance(gert::InferShapeContext* contex
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
     const int64_t* k_ptr = attrs->GetInt(ATTR_IDX_K);
     OP_CHECK_NULL_WITH_CONTEXT(context, k_ptr);
-    int64_t topK = *k_ptr;
+    const int64_t topK = *k_ptr;
+    const int64_t* group_size_ptr = attrs->GetInt(ATTR_IDX_GROUP_SIZE);
+    OP_CHECK_NULL_WITH_CONTEXT(context, group_size_ptr);
+    const int64_t groupSize = *group_size_ptr;
+
+    OP_CHECK_IF(topK <= 0, OP_LOGE(context, "k should be bigger than zero, but got k[%ld].", topK),
+                return GRAPH_FAILED);
+    OP_CHECK_IF(groupSize <= 0,
+                OP_LOGE(context, "group_size should be bigger than zero, but got group_size[%ld].", groupSize),
+                return GRAPH_FAILED);
 
     // 三个输出 shape 均为 {topK}
     for (size_t i = 0; i < TOPK_PQ_DISTANCE_OUTPUT_NUM; i++) {

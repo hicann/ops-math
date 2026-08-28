@@ -23,13 +23,17 @@ static constexpr int INPUT_X_INDEX = 0;
 using namespace ge;
 namespace ops {
 
-static bool InferShapeForTopKCommon(gert::InferShapeContext* context, int64_t k, const int64_t* dim)
+static graphStatus InferShapeForTopKCommon(gert::InferShapeContext* context, int64_t k, const int64_t* dim)
 {
     const gert::Shape* input_x_shape = context->GetInputShape(INPUT_X_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context, input_x_shape);
     size_t dim_size = input_x_shape->GetDimNum();
     if (dim_size <= 0) {
         OP_LOGE(context->GetNodeName(), "The dims_in size should more than 0!");
+        return GRAPH_FAILED;
+    }
+    if (k < 0) {
+        OP_LOGE(context->GetNodeName(), "k must be >= 0, got %ld.", k);
         return GRAPH_FAILED;
     }
     int64_t sorted_axis = dim_size - 1;
@@ -39,10 +43,16 @@ static bool InferShapeForTopKCommon(gert::InferShapeContext* context, int64_t k,
         if (sorted_axis < 0) {
             sorted_axis += dim_size;
         }
-        if (sorted_axis >= static_cast<int64_t>(dim_size)) {
+        if (sorted_axis < 0 || sorted_axis >= static_cast<int64_t>(dim_size)) {
             OP_LOGE(context->GetNodeName(), "Dim is out of shape size.");
             return GRAPH_FAILED;
         }
+    }
+
+    int64_t dim_size_on_axis = input_x_shape->GetDim(sorted_axis);
+    if (dim_size_on_axis >= 0 && k > dim_size_on_axis) {
+        OP_LOGE(context->GetNodeName(), "k must be <= size of dim, got k=%ld, size=%ld.", k, dim_size_on_axis);
+        return GRAPH_FAILED;
     }
 
     gert::Shape* output_values_shape = context->GetOutputShape(OUTPUT_VALUES_INDEX);
