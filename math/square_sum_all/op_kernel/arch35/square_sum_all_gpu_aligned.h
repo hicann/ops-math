@@ -349,10 +349,10 @@ private:
             Reg::Muls(gatherIndex, gatherIndex, static_cast<int32_t>(FLOATS_PER_BLOCK), indexMask);
             for (uint16_t group = 0; group < groupCount; ++group) {
                 const int64_t offset = static_cast<int64_t>(group) * CUDA_BLOCK_ELEMENTS * FLOATS_PER_BLOCK;
-                Reg::DataCopyGather(current, partialAddress + offset, (Reg::RegTensor<uint32_t>&)gatherIndex, allMask);
+                Reg::Gather(current, partialAddress + offset, (Reg::RegTensor<uint32_t>&)gatherIndex, allMask);
                 Reg::Add(low, low, current, allMask);
-                Reg::DataCopyGather(current, partialAddress + offset + VECTOR_ELEMENTS * FLOATS_PER_BLOCK,
-                                    (Reg::RegTensor<uint32_t>&)gatherIndex, allMask);
+                Reg::Gather(current, partialAddress + offset + VECTOR_ELEMENTS * FLOATS_PER_BLOCK,
+                            (Reg::RegTensor<uint32_t>&)gatherIndex, allMask);
                 Reg::Add(high, high, current, allMask);
             }
             Reg::Add(low, low, high, allMask);

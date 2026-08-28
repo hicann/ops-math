@@ -26,12 +26,12 @@ $$
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+<table style="undefined;table-layout: fixed; width: 1200px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
-  <col style="width: 380px">
-  <col style="width: 230px">
+  <col style="width: 420px">
   <col style="width: 120px">
+  <col style="width: 410px">
   </colgroup>
   <thead>
     <tr>
@@ -45,38 +45,47 @@ $$
     <tr>
       <td>x1</td>
       <td>输入</td>
-      <td><ul><li>表示第一路待求平方和的张量，对应公式中的x1。</li><li>不支持空Tensor，每一维长度必须大于0。</li><li>Ascend 950：NCHW、NHWC格式的rank必须为4；ND格式的rank取值范围[0, 8]（rank为0表示标量输入，按1个元素处理）。其他产品的rank范围以对应产品实现为准。执行期shape需与x2逐维相同。</li></ul></td>
+      <td>表示第一路待求平方和的张量，对应公式中的x1。</td>
       <td>FLOAT</td>
-      <td>Ascend 950：ND、NCHW、NHWC<br>其他产品：ND；静态shape还支持FRACTAL_Z、C1HWNCoC0、NC1HWC0</td>
+      <td>FRACTAL_Z、C1HWNCoC0、NC1HWC0、ND、NCHW、NHWC</td>
     </tr>
     <tr>
       <td>x2</td>
       <td>输入</td>
-      <td><ul><li>表示第二路待求平方和的张量，对应公式中的x2。</li><li>不支持空Tensor，每一维长度必须大于0。</li><li>Ascend 950：NCHW、NHWC格式的rank必须为4；ND格式的rank取值范围[0, 8]（rank为0表示标量输入，按1个元素处理）。其他产品的rank范围以对应产品实现为准。执行期shape需与x1逐维相同。</li></ul></td>
+      <td>表示第二路待求平方和的张量，对应公式中的x2。</td>
       <td>FLOAT</td>
-      <td>Ascend 950：ND、NCHW、NHWC<br>其他产品：ND；静态shape还支持FRACTAL_Z、C1HWNCoC0、NC1HWC0</td>
+      <td>FRACTAL_Z、C1HWNCoC0、NC1HWC0、ND、NCHW、NHWC</td>
     </tr>
     <tr>
       <td>y1</td>
       <td>输出</td>
       <td><ul><li>表示x1全部元素的平方和，对应公式中的y1。</li><li>输出为0维Tensor（rank为0），含1个FLOAT元素。</li></ul></td>
       <td>FLOAT</td>
-      <td>Ascend 950：ND<br>其他产品：与输入格式相同</td>
+      <td>FRACTAL_Z、C1HWNCoC0、NC1HWC0、ND</td>
     </tr>
     <tr>
       <td>y2</td>
       <td>输出</td>
       <td><ul><li>表示x2全部元素的平方和，对应公式中的y2。</li><li>数据类型、shape与输出y1保持一致。</li></ul></td>
       <td>FLOAT</td>
-      <td>Ascend 950：ND<br>其他产品：与输入格式相同</td>
+      <td>FRACTAL_Z、C1HWNCoC0、NC1HWC0、ND</td>
     </tr>
   </tbody></table>
 
+### 产品差异说明
+
+下表中的“输入格式→输出格式”同时适用于x1→y1和x2→y2，两路输入必须使用相同的数据格式。
+
+| 产品 | 静态shape格式组合 | 动态shape格式组合 | rank限制 |
+| :--- | :--- | :--- | :--- |
+| <term>Ascend 950PR/Ascend 950DT</term> | ND→ND、NCHW→ND、NHWC→ND | ND→ND、NCHW→ND、NHWC→ND | ND输入的rank取值范围为[0, 8]；NCHW、NHWC输入的rank必须为4。 |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term><br><term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term><br><term>Atlas 200I/500 A2 推理产品</term><br><term>Atlas 推理系列产品</term><br><term>Atlas 训练系列产品</term> | FRACTAL_Z→FRACTAL_Z、C1HWNCoC0→C1HWNCoC0、NC1HWC0→NC1HWC0、ND→ND | ND→ND | 输入的rank取值范围为[0, 8]。 |
+
 ## 约束说明
 
-- x1与x2的执行期rank及每一维长度必须完全相同，不支持广播。shape`[2,3]`与`[6]`即使元素数相同也不合法。
-- x1与x2必须使用相同格式。Ascend 950上，ND输入对应ND输出，NCHW、NHWC输入均对应ND标量输出；其他产品上，输出格式与输入格式相同，其中FRACTAL_Z、C1HWNCoC0、NC1HWC0仅支持静态shape，动态shape仅支持ND。除此之外的混合格式组合不支持。
-- 本算子不做隐式数据类型转换与输入数据格式转换，四个参数的数据类型和数据格式必须与上述合法组合一致。
+- x1与x2不支持空Tensor；rank为0时表示含1个元素的标量输入，rank大于0时每一维长度必须大于0。
+- x1与x2的执行期rank及每一维长度必须完全相同，不支持广播。shape`[2, 3]`与`[6]`即使元素数相同也不合法。
+- 本算子不做隐式数据类型转换与输入数据格式转换，四个参数的数据类型和数据格式必须满足产品差异说明中的合法组合。
 - NaN、Inf及有限值平方上溢按FLOAT语义自然传播；两路累加器与两个输出互不污染，`x1`中的非有限值不会影响`y2`，反之亦然。
 - 本算子仅提供GE图模式注册，构建配置为`aclnn_exclude`，不提供aclnn接口。
 
