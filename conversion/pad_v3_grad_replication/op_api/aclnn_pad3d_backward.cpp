@@ -183,7 +183,7 @@ static aclnnStatus InputPreprocess(const aclTensor*& gradOutput, const aclTensor
     CHECK_RET(self != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 如果tensor为4维, 需要扩展成5维
-    if (dimCp == 4) {
+    if (dimCp == 4 && GetCurrentPlatformInfo().GetCurNpuArch() < NpuArch::DAV_3510) {
         // 0 is index
         const int64_t appendDim[] = {0};
         // 1 is the dim num to be unsqueezed
@@ -253,7 +253,7 @@ static aclnnStatus CommonPad3dBackward(const aclTensor* gradOutput, const aclTen
     CHECK_RET(pad3dbackwardResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 如果tensor为4维, 需要扩展成5维
-    if (dimCp == 4) {
+    if (dimCp == 4 && GetCurrentPlatformInfo().GetCurNpuArch() < NpuArch::DAV_3510) {
         // 0 is index
         const int64_t appendDim[] = {0};
         // 1 is the dim num to be squeezed
