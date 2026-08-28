@@ -29,14 +29,8 @@ static ge::graphStatus InferShapeRange4ReduceMax(gert::InferShapeRangeContext* c
     return InferShapeRange4ReduceCommon(context, "InferShapeRange4ReduceMax");
 }
 
-static ge::graphStatus InferDataTypeForReduceMax(gert::InferDataTypeContext* context)
-{
-    return InferDataType4ReduceCommon(context, "InferDataTypeForReduceMax");
-}
-
 IMPL_OP_INFERSHAPE(ReduceMax)
     .InferShape(InferShape4ReduceMax)
     .InferShapeRange(InferShapeRange4ReduceMax)
-    .InferDataType(InferDataTypeForReduceMax)
     .InputsDataDependency({1});
 } // namespace ops

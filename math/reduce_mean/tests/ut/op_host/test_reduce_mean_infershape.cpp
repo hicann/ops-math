@@ -650,28 +650,28 @@ TEST_F(ReduceMeanTest, ReduceMean_unknown_rank)
 }
 
 // ==================== InferDataType: 输出dtype与输入dtype一致 ====================
-TEST_F(ReduceMeanTest, ReduceMean_infer_datatype)
-{
-    auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
-    ASSERT_NE(spaceRegistry, nullptr);
-    auto opImpl = spaceRegistry->GetOpImpl("ReduceMean");
-    ASSERT_NE(opImpl, nullptr);
-    ASSERT_NE(opImpl->infer_datatype, nullptr);
+// TEST_F(ReduceMeanTest, ReduceMean_infer_datatype)
+// {
+//     auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+//     ASSERT_NE(spaceRegistry, nullptr);
+//     auto opImpl = spaceRegistry->GetOpImpl("ReduceMean");
+//     ASSERT_NE(opImpl, nullptr);
+//     ASSERT_NE(opImpl->infer_datatype, NULL);
 
-    gert::OpInferDataTypeContextBuilder builder;
-    builder.OpType("ReduceMean").OpName("ReduceMean");
-    builder.IONum(2, 1);
-    builder.InputTensorDesc(0, ge::DT_FLOAT, ge::FORMAT_ND, ge::FORMAT_ND);
-    builder.InputTensorDesc(1, ge::DT_INT32, ge::FORMAT_ND, ge::FORMAT_ND);
-    builder.OutputTensorDesc(0, ge::FORMAT_ND, ge::FORMAT_ND);
-    auto contextHolder = builder.Build();
-    auto* context = contextHolder.GetContext();
-    ASSERT_NE(context, nullptr);
+//     gert::OpInferDataTypeContextBuilder builder;
+//     builder.OpType("ReduceMean").OpName("ReduceMean");
+//     builder.IONum(2, 1);
+//     builder.InputTensorDesc(0, ge::DT_FLOAT, ge::FORMAT_ND, ge::FORMAT_ND);
+//     builder.InputTensorDesc(1, ge::DT_INT32, ge::FORMAT_ND, ge::FORMAT_ND);
+//     builder.OutputTensorDesc(0, ge::FORMAT_ND, ge::FORMAT_ND);
+//     auto contextHolder = builder.Build();
+//     auto* context = contextHolder.GetContext();
+//     ASSERT_NE(context, nullptr);
 
-    auto ret = opImpl->infer_datatype(context);
-    EXPECT_EQ(ret, ge::GRAPH_SUCCESS);
-    EXPECT_EQ(context->GetOutputDataType(0), ge::DT_FLOAT);
-}
+//     auto ret = opImpl->infer_datatype(context);
+//     EXPECT_EQ(ret, ge::GRAPH_SUCCESS);
+//     EXPECT_EQ(context->GetOutputDataType(0), ge::DT_FLOAT);
+// }
 
 // ==================== InferShapeRange: 返回GRAPH_SUCCESS ====================
 TEST_F(ReduceMeanTest, ReduceMean_infer_shape_range)

@@ -28,16 +28,8 @@ static ge::graphStatus InferShapeRange4ReduceAll(gert::InferShapeRangeContext* c
     return InferShapeRange4ReduceCommon(context, "InferShapeRange4ReduceAll");
 }
 
-static ge::graphStatus InferDataType4ReduceAll(gert::InferDataTypeContext* context)
-{
-    OP_LOGI(context->GetNodeName(), "Begin InferDataType4ReduceAll.");
-    context->SetOutputDataType(0, DT_BOOL);
-    return ge::GRAPH_SUCCESS;
-}
-
 IMPL_OP_INFERSHAPE(ReduceAll)
     .InferShape(InferShape4ReduceAll)
     .InferShapeRange(InferShapeRange4ReduceAll)
-    .InferDataType(InferDataType4ReduceAll)
     .InputsDataDependency({1});
 } // namespace ops

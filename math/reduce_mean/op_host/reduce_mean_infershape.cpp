@@ -12,7 +12,6 @@
  * \file reduce_mean_infershape.cpp
  * \brief
  */
-
 #include "common/inc/op_host/infershape_reduce_util.h"
 #include "register/op_impl_registry.h"
 
@@ -31,14 +30,8 @@ static ge::graphStatus InferShapeRange4ReduceMean(gert::InferShapeRangeContext* 
     return InferShapeRange4ReduceCommon(context, "InferShapeRange4ReduceMean");
 }
 
-static ge::graphStatus InferDataTypeForReduceMean(gert::InferDataTypeContext* context)
-{
-    return InferDataType4ReduceCommon(context, "InferDataTypeForReduceMean");
-}
-
 IMPL_OP_INFERSHAPE(ReduceMean)
     .InferShape(InferShape4ReduceMean)
     .InferShapeRange(InferShapeRange4ReduceMean)
-    .InferDataType(InferDataTypeForReduceMean)
     .InputsDataDependency({1});
 } // namespace ops

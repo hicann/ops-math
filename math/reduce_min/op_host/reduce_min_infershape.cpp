@@ -29,14 +29,8 @@ static ge::graphStatus InferShapeRange4ReduceMin(gert::InferShapeRangeContext* c
     return InferShapeRange4ReduceCommon(context, "InferShapeRange4ReduceMin");
 }
 
-static ge::graphStatus InferDataTypeForReduceMin(gert::InferDataTypeContext* context)
-{
-    return InferDataType4ReduceCommon(context, "InferDataTypeForReduceMin");
-}
-
 IMPL_OP_INFERSHAPE(ReduceMin)
     .InferShape(InferShape4ReduceMin)
     .InferShapeRange(InferShapeRange4ReduceMin)
-    .InferDataType(InferDataTypeForReduceMin)
     .InputsDataDependency({1});
 } // namespace ops

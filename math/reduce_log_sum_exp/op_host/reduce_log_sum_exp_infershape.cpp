@@ -28,14 +28,8 @@ static ge::graphStatus InferShapeRange4ReduceLogSumExp(gert::InferShapeRangeCont
     return InferShapeRange4ReduceCommon(context, "InferShapeRange4ReduceLogSumExp");
 }
 
-static ge::graphStatus InferDataType4ReduceLogSumExp(gert::InferDataTypeContext* context)
-{
-    return InferDataType4ReduceCommon(context, "InferDataType4ReduceLogSumExp");
-}
-
 IMPL_OP_INFERSHAPE(ReduceLogSumExp)
     .InferShape(InferShape4ReduceLogSumExp)
     .InferShapeRange(InferShapeRange4ReduceLogSumExp)
-    .InferDataType(InferDataType4ReduceLogSumExp)
     .InputsDataDependency({1});
 } // namespace ops

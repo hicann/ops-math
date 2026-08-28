@@ -30,14 +30,8 @@ static ge::graphStatus InferShapeRange4ReduceProd(gert::InferShapeRangeContext* 
     return InferShapeRange4ReduceCommon(context, "InferShapeRange4ReduceProd");
 }
 
-static ge::graphStatus InferDataTypeForReduceProd(gert::InferDataTypeContext* context)
-{
-    return InferDataType4ReduceCommon(context, "InferDataTypeForReduceProd");
-}
-
 IMPL_OP_INFERSHAPE(ReduceProd)
     .InferShape(InferShape4ReduceProd)
     .InferShapeRange(InferShapeRange4ReduceProd)
-    .InferDataType(InferDataTypeForReduceProd)
     .InputsDataDependency({1});
 } // namespace ops

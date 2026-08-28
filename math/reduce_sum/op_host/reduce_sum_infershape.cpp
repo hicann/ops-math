@@ -12,7 +12,6 @@
  * \file reduce_sum_infershape.cpp
  * \brief
  */
-
 #include "common/inc/op_host/infershape_reduce_util.h"
 #include "register/op_impl_registry.h"
 
@@ -30,14 +29,8 @@ static ge::graphStatus InferShapeRange4ReduceSum(gert::InferShapeRangeContext* c
     return InferShapeRange4ReduceCommon(context, "InferShapeRange4ReduceSum");
 }
 
-static ge::graphStatus InferDataType4ReduceSum(gert::InferDataTypeContext* context)
-{
-    return InferDataType4ReduceCommon(context, "InferDataType4ReduceSum");
-}
-
 IMPL_OP_INFERSHAPE(ReduceSum)
     .InferShape(InferShape4ReduceSum)
     .InferShapeRange(InferShapeRange4ReduceSum)
-    .InferDataType(InferDataType4ReduceSum)
     .InputsDataDependency({1});
 } // namespace ops
