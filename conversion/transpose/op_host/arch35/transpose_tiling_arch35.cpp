@@ -82,7 +82,7 @@ ge::graphStatus TransposeNddmaTiling::Init(const int64_t& coreNum, const int64_t
 ge::graphStatus TransposeNddmaTiling::RunTranposelTiling()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Start running Tiling4Transpose.");
-    if (!isReleatedTranspsoe_) {
+    if (!isRelatedTranspose_) {
         OP_CHECK_IF(GetShapeInfo() != ge::GRAPH_SUCCESS,
                     OP_LOGE(tilingContext_->GetNodeName(), "Failed to get shape info!"), return ge::GRAPH_FAILED);
     }
@@ -102,7 +102,7 @@ ge::graphStatus TransposeNddmaTiling::RunTranposelTiling()
                 return ge::GRAPH_SUCCESS);
 
     SetIsLastAxisTranspose();
-    if (!isReleatedTranspsoe_ && shapeInfo_.isLastAxisTranspose) {
+    if (!isRelatedTranspose_ && shapeInfo_.isLastAxisTranspose) {
         TransWithGather::PlatInfo platInfo{coreNum_, ubSize_, cacheLineSize_, ubBlockSize_};
         TransWithGather::TransposeGatherTiling gatherTiling(tilingContext_, platInfo, shapeInfo_);
         OP_CHECK_IF(gatherTiling.DoTiling() == ge::GRAPH_SUCCESS,
@@ -151,7 +151,7 @@ ge::graphStatus TransposeNddmaTiling::TryVCONVTiling()
     auto platformInfo = tilingContext_->GetPlatformInfo();
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     auto arch = ascendcPlatform.GetCurNpuArch();
-    if (!isReleatedTranspsoe_ && arch == NpuArch::DAV_5102) {
+    if (!isRelatedTranspose_ && arch == NpuArch::DAV_5102) {
         SMALL_SHAPE_BYTES_THRES_HOLD = SMALL_SHAPE_BYTES_THRES_HOLD_DAV_5102;
         if (shapeInfo_.reducedPerm[0] == 1 && shapeInfo_.reducedPerm[1] == 0 && shapeInfo_.dim == VCONV_DIM_NUM &&
             shapeInfo_.eleLenInBytes == VCONV_DSIZE && shapeInfo_.reducedInShape[0] > DIM_FIVE) {
@@ -1646,7 +1646,7 @@ void TransposeNddmaTiling::FillTilingData()
     tilingData_.transposeOpTiling.set_inUbTailSrcShape(inUbTailSrcShape_);
     tilingData_.transposeOpTiling.set_inUbTailDstShape(inUbTailDstShape_);
 
-    if (!isReleatedTranspsoe_) {
+    if (!isRelatedTranspose_) {
         tilingData_.SaveToBuffer(tilingContext_->GetRawTilingData()->GetData(),
                                  tilingContext_->GetRawTilingData()->GetCapacity());
         tilingContext_->GetRawTilingData()->SetDataSize(tilingData_.GetDataSize());
@@ -1678,23 +1678,22 @@ void TransposeNddmaTiling::PrintTilingData()
             tilingData_.transposeOpTiling.get_ubSize(), tilingData_.transposeOpTiling.get_totalNddmaNum());
 }
 
-ge::graphStatus TransposeNddmaTiling::TilingForReleatedTranspose(gert::TilingContext* context,
-                                                                 TransposeOpTilingData* tilingData,
-                                                                 TransposeCompilerInfo* compilerInfo,
-                                                                 ShapeInfo& opInput)
+ge::graphStatus TransposeNddmaTiling::TilingForRelatedTranspose(gert::TilingContext* context,
+                                                                TransposeOpTilingData* tilingData,
+                                                                TransposeCompilerInfo* compilerInfo, ShapeInfo& opInput)
 {
-    OP_LOGD(context->GetNodeName(), "Start TilingForReleatedTranspose.");
+    OP_LOGD(context->GetNodeName(), "Start TilingForRelatedTranspose.");
     TransposeNddmaTiling tilingObject(context);
     OP_CHECK_NULL_WITH_CONTEXT(context, tilingData);
     tilingObject.tilingContext_ = context;
     tilingObject.tilingData_.transposeOpTiling = *tilingData;
     tilingObject.shapeInfo_ = opInput;
 
-    tilingObject.isReleatedTranspsoe_ = true;
+    tilingObject.isRelatedTranspose_ = true;
     if (tilingObject.Init(compilerInfo->coreNum, compilerInfo->ubSize) != ge::GRAPH_SUCCESS) {
         return ge::GRAPH_FAILED;
     }
-    OP_LOGD(context->GetNodeName(), "tilingObject.isReleatedTranspsoe_: %d", tilingObject.isReleatedTranspsoe_);
+    OP_LOGD(context->GetNodeName(), "tilingObject.isRelatedTranspose_: %d", tilingObject.isRelatedTranspose_);
     return tilingObject.RunTranposelTiling();
 }
 

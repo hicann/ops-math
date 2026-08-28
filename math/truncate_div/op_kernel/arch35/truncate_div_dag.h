@@ -60,7 +60,7 @@ struct TruncCustom : public Vec::ElemwiseUnaryOP<T, T> {
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                     mask = Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
                     // OpCopyIn
-                    Reg::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
+                    Reg::LoadAlign(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
 
                     Reg::Truncate<T, RoundMode::CAST_TRUNC, Reg::MaskMergeMode::ZEROING>(vregOutput, vregInput, mask);
                     Reg::Duplicate(vregOutInt, UINT32_SIGN, mask);
@@ -68,7 +68,7 @@ struct TruncCustom : public Vec::ElemwiseUnaryOP<T, T> {
                     Reg::Or(vregOutInt, vregOutInt, (Reg::RegTensor<uint32_t>&)vregOutput, mask);
 
                     // OpCopyOut
-                    Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), (Reg::RegTensor<T>&)vregOutInt, mask);
+                    Reg::StoreAlign((__ubuf__ T*)(dstAddr + loopIdx * vlSize), (Reg::RegTensor<T>&)vregOutInt, mask);
                 }
             }
         } else {
@@ -78,7 +78,7 @@ struct TruncCustom : public Vec::ElemwiseUnaryOP<T, T> {
                 for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                     mask = Reg::UpdateMask<T, Reg::RegTraitNumOne>(count);
                     // OpCopyIn
-                    Reg::DataCopy(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
+                    Reg::LoadAlign(vregInput, (__ubuf__ T*)(srcAddr + loopIdx * vlSize));
 
                     Reg::Truncate<T, RoundMode::CAST_TRUNC, Reg::MaskMergeMode::ZEROING>(vregOutput, vregInput, mask);
                     Reg::Duplicate(vregOutInt, UINT16_SIGN, mask);
@@ -86,7 +86,7 @@ struct TruncCustom : public Vec::ElemwiseUnaryOP<T, T> {
                     Reg::Or(vregOutInt, vregOutInt, (Reg::RegTensor<uint16_t>&)vregOutput, mask);
 
                     // OpCopyOut
-                    Reg::DataCopy((__ubuf__ T*)(dstAddr + loopIdx * vlSize), (Reg::RegTensor<T>&)vregOutInt, mask);
+                    Reg::StoreAlign((__ubuf__ T*)(dstAddr + loopIdx * vlSize), (Reg::RegTensor<T>&)vregOutInt, mask);
                 }
             }
         }
@@ -110,14 +110,14 @@ struct CastOverFlow : public Vec::ElemwiseUnaryOP<R, T> {
             Reg::MaskReg preg0;
             uint32_t size = count;
             uint16_t vfLoopNum = (size + (VECTOR_REG_WIDTH / sizeof(T)) - 1) / (VECTOR_REG_WIDTH / sizeof(T));
-            __local_mem__ T* bufferIn0Addr = (__local_mem__ T*)src.GetPhyAddr();
-            __local_mem__ R* bufferOut0Addr = (__local_mem__ R*)dst.GetPhyAddr();
+            __ubuf__ T* bufferIn0Addr = (__ubuf__ T*)src.GetPhyAddr();
+            __ubuf__ R* bufferOut0Addr = (__ubuf__ R*)dst.GetPhyAddr();
             for (uint16_t i = 0; i < vfLoopNum; i++) {
                 preg0 = Reg::UpdateMask<T>(size);
-                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(vreg0, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(T)));
+                Reg::LoadAlign<T, Reg::LoadDist::DIST_NORM>(vreg0, bufferIn0Addr + i * (VECTOR_REG_WIDTH / sizeof(T)));
                 Reg::Cast<R, T, castTrait3>(vreg1, vreg0, preg0);
-                Reg::DataCopy<R, Reg::StoreDist::DIST_PACK_B16>(bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(T)),
-                                                                vreg1, preg0);
+                Reg::StoreAlign<R, Reg::StoreDist::DIST_PACK_B16>(bufferOut0Addr + i * (VECTOR_REG_WIDTH / sizeof(T)),
+                                                                  vreg1, preg0);
             }
         }
         SetCtrlSpr<SAT_POS, SAT_POS>(1);
@@ -134,10 +134,10 @@ struct TruncIntPostCompute : public Vec::ElemwiseTernaryOP<T, T, T, T> {
 #ifdef __CCE_AICORE__
         constexpr uint32_t VECTOR_LENGTH = GetVRegSize();
         constexpr uint32_t VL_T = VECTOR_LENGTH / sizeof(T);
-        __local_mem__ T* input1Addr = (__local_mem__ T*)input1.GetPhyAddr();
-        __local_mem__ T* input2Addr = (__local_mem__ T*)input2.GetPhyAddr();
-        __local_mem__ T* divAddr = (__local_mem__ T*)div.GetPhyAddr();
-        __local_mem__ T* dstAddr = (__local_mem__ T*)dst.GetPhyAddr();
+        __ubuf__ T* input1Addr = (__ubuf__ T*)input1.GetPhyAddr();
+        __ubuf__ T* input2Addr = (__ubuf__ T*)input2.GetPhyAddr();
+        __ubuf__ T* divAddr = (__ubuf__ T*)div.GetPhyAddr();
+        __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
         uint16_t loopTimes = CeilDiv(count, VL_T);
 
         __VEC_SCOPE__
@@ -157,12 +157,12 @@ struct TruncIntPostCompute : public Vec::ElemwiseTernaryOP<T, T, T, T> {
 
             for (uint16_t j = 0; j < loopTimes; j++) {
                 preg = Reg::UpdateMask<T>(sregMask);
-                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(input2Value, input2Addr + VL_T * j);
-                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(divValue, divAddr + VL_T * j);
-                Reg::DataCopy<T, Reg::LoadDist::DIST_NORM>(input1Value, input1Addr + VL_T * j);
+                Reg::LoadAlign<T, Reg::LoadDist::DIST_NORM>(input2Value, input2Addr + VL_T * j);
+                Reg::LoadAlign<T, Reg::LoadDist::DIST_NORM>(divValue, divAddr + VL_T * j);
+                Reg::LoadAlign<T, Reg::LoadDist::DIST_NORM>(input1Value, input1Addr + VL_T * j);
                 Reg::Compare<T, CMPMODE::NE>(cmpValue, input2Value, zeroValue, preg);
                 Reg::Select(resValue, divValue, defaultValue, cmpValue);
-                Reg::DataCopy<T, Reg::StoreDist::DIST_NORM>(dstAddr + VL_T * j, resValue, preg);
+                Reg::StoreAlign<T, Reg::StoreDist::DIST_NORM>(dstAddr + VL_T * j, resValue, preg);
             }
         }
 #endif

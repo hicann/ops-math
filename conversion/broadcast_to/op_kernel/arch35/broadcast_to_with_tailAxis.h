@@ -23,7 +23,6 @@ namespace BrcTo {
 using namespace AscendC;
 
 using AscendC::Reg::CreateMask;
-using AscendC::Reg::DataCopy;
 using AscendC::Reg::MaskReg;
 using AscendC::Reg::RegTensor;
 using AscendC::Reg::UpdateMask;
@@ -176,8 +175,8 @@ template <typename T, typename U>
 __aicore__ inline void BrcToWithTailAxis<T, U>::VFBrcTo(LocalTensor<T> outTensor, LocalTensor<T> inTensor,
                                                         int64_t inputOffset, int64_t elemIdx, uint32_t brcCnt)
 {
-    __local_mem__ T* inputAddr = (__local_mem__ T*)inTensor.GetPhyAddr();
-    __local_mem__ T* outputAddr = (__local_mem__ T*)outTensor.GetPhyAddr();
+    __ubuf__ T* inputAddr = (__ubuf__ T*)inTensor.GetPhyAddr();
+    __ubuf__ T* outputAddr = (__ubuf__ T*)outTensor.GetPhyAddr();
 
     uint32_t VL_CNT = Ops::Base::GetVRegSize() / sizeof(T);
     uint16_t brcLoopCnt = Ops::Base::CeilDiv(brcCnt, VL_CNT);
@@ -195,17 +194,17 @@ __aicore__ inline void BrcToWithTailAxis<T, U>::VFBrcTo(LocalTensor<T> outTensor
         MaskReg pregGather;
         MaskReg pregLoopB;
 
-        DataCopy(tmpIn, inputAddr + inputOffset);
+        Reg::LoadAlign(tmpIn, inputAddr + inputOffset);
         uint32_t sregTmp = uint32_t(elemIdx * sizeof(T));
         pregTmp = UpdateMask<uint8_t>(sregTmp);
-        AscendC::Reg::MaskSel(pregGather, pregAllFB8, pregAllB8, pregTmp);
-        GatherMask((Reg::RegTensor<uint8_t>&)tmpOut, (Reg::RegTensor<uint8_t>&)tmpIn, pregGather);
+        AscendC::Reg::Select(pregGather, pregAllFB8, pregAllB8, pregTmp);
+        AscendC::Reg::Squeeze((Reg::RegTensor<uint8_t>&)tmpOut, (Reg::RegTensor<uint8_t>&)tmpIn, pregGather);
         Duplicate(tmpOut, tmpOut, pregAll);
 
         uint32_t sregB = brcCnt;
         for (uint16_t vIdx = 0; vIdx < brcLoopCnt; vIdx++) {
             pregLoopB = AscendC::Reg::UpdateMask<T>(sregB);
-            AscendC::Reg::DataCopy(outputAddr + outputOffset, tmpOut, pregLoopB);
+            AscendC::Reg::StoreAlign(outputAddr + outputOffset, tmpOut, pregLoopB);
             outputOffset += VL_CNT;
         }
     }

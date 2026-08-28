@@ -304,14 +304,13 @@ private:
                     maskReg = AscendC::Reg::UpdateMask<CastType>(leftUbCopyLenVF);
                     Reg::Arange<RangeType, AscendC::Reg::IndexOrder::DECREASE_ORDER>(
                         idxReg, (RangeType)(leftIdxStart - rangeStart - k * oneRepeatSize));
-                    Reg::DataCopyGather((Reg::RegTensor<CastType>&)dataReg, srcAddr, (Reg::RegTensor<IdxType>&)idxReg,
-                                        maskReg);
+                    Reg::Gather((Reg::RegTensor<CastType>&)dataReg, srcAddr, (Reg::RegTensor<IdxType>&)idxReg, maskReg);
                     if constexpr (sizeof(T) != 1) {
-                        Reg::DataCopy(ubLeftAddr + k * oneRepeatSize, dataReg, maskReg);
+                        Reg::StoreAlign(ubLeftAddr + k * oneRepeatSize, dataReg, maskReg);
                     } else {
                         maskRegLowHalf = AscendC::Reg::UpdateMask<T>(leftUbCopyLenVFB8);
                         Reg::Pack(dataB16ToB8Reg, (Reg::RegTensor<CastType>&)dataReg);
-                        Reg::DataCopy(ubLeftAddr + k * oneRepeatSize, dataB16ToB8Reg, maskRegLowHalf);
+                        Reg::StoreAlign(ubLeftAddr + k * oneRepeatSize, dataB16ToB8Reg, maskRegLowHalf);
                     }
                 }
             }
@@ -323,14 +322,13 @@ private:
                     maskReg = AscendC::Reg::UpdateMask<CastType>(rightUbCopyLenVF);
                     Reg::Arange<RangeType, AscendC::Reg::IndexOrder::DECREASE_ORDER>(
                         idxReg, (RangeType)(rightIdxStart - rangeStart - k * oneRepeatSize));
-                    Reg::DataCopyGather((Reg::RegTensor<CastType>&)dataReg, srcAddr, (Reg::RegTensor<IdxType>&)idxReg,
-                                        maskReg);
+                    Reg::Gather((Reg::RegTensor<CastType>&)dataReg, srcAddr, (Reg::RegTensor<IdxType>&)idxReg, maskReg);
                     if constexpr (sizeof(T) != 1) {
-                        Reg::DataCopy(ubRightAddr + k * oneRepeatSize, dataReg, maskReg);
+                        Reg::StoreAlign(ubRightAddr + k * oneRepeatSize, dataReg, maskReg);
                     } else {
                         maskRegLowHalf = AscendC::Reg::UpdateMask<T>(rightUbCopyLenVFB8);
                         Reg::Pack(dataB16ToB8Reg, (Reg::RegTensor<CastType>&)dataReg);
-                        Reg::DataCopy(ubRightAddr + k * oneRepeatSize, dataB16ToB8Reg, maskRegLowHalf);
+                        Reg::StoreAlign(ubRightAddr + k * oneRepeatSize, dataB16ToB8Reg, maskRegLowHalf);
                     }
                 }
             }

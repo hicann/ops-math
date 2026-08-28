@@ -289,8 +289,8 @@ private:
         uint32_t alignRed = copyStartOffset % BLOCK_NUM;
         uint32_t alignOffset = 0;
         if (alignRed != 0) {
-            __local_mem__ T* inAddrTmp = (__local_mem__ T*)outLocalReal.GetPhyAddr() + copyStartOffset;
-            __local_mem__ T* outAddrTmp = (__local_mem__ T*)outLocalTmp.GetPhyAddr();
+            __ubuf__ T* inAddrTmp = (__ubuf__ T*)outLocalReal.GetPhyAddr() + copyStartOffset;
+            __ubuf__ T* outAddrTmp = (__ubuf__ T*)outLocalTmp.GetPhyAddr();
 
             alignOffset = BLOCK_NUM - alignRed;
             copyStartOffset = copyStartOffset + alignOffset;
@@ -356,21 +356,21 @@ private:
         }
     }
 
-    __aicore__ inline void CopyTmpUnAlign(__local_mem__ T* inAddrTmp, __local_mem__ T* outAddrTmp, uint32_t alignOffset)
+    __aicore__ inline void CopyTmpUnAlign(__ubuf__ T* inAddrTmp, __ubuf__ T* outAddrTmp, uint32_t alignOffset)
     {
         uint32_t newCnt = (sizeof(T) != sizeof(OutType)) ? CONST2 * alignOffset : alignOffset;
-        auto newInAddr = reinterpret_cast<__local_mem__ OutType*>(inAddrTmp);
-        auto newOutAddr = reinterpret_cast<__local_mem__ OutType*>(outAddrTmp);
+        auto newInAddr = reinterpret_cast<__ubuf__ OutType*>(inAddrTmp);
+        auto newOutAddr = reinterpret_cast<__ubuf__ OutType*>(outAddrTmp);
 
         __VEC_SCOPE__
         {
             Reg::RegTensor<OutType> regData;
-            Reg::UnalignReg uReg;
+            Reg::UnalignRegForLoad uReg;
             Reg::MaskReg maskIdx = Reg::UpdateMask<OutType>(newCnt);
 
-            Reg::DataCopyUnAlignPre(uReg, newInAddr);
-            Reg::DataCopyUnAlign(regData, uReg, newInAddr, newCnt);
-            Reg::DataCopy(newOutAddr, regData, maskIdx);
+            Reg::LoadUnAlignPre(uReg, newInAddr);
+            Reg::LoadUnAlign(regData, uReg, newInAddr, newCnt);
+            Reg::StoreAlign(newOutAddr, regData, maskIdx);
         }
     }
 
@@ -401,7 +401,7 @@ private:
         int32_t lastLeftPadNum = tdPtr_->leftPad[dimNum_ - 1];
         uint32_t lastOutDimSize = tdPtr_->outShape[dimNum_ - 1];
         uint16_t lastDimsLeft = vlSplitIn_;
-        __local_mem__ RangeType* idxAddr = (__local_mem__ RangeType*)idxTensor.GetPhyAddr();
+        __ubuf__ RangeType* idxAddr = (__ubuf__ RangeType*)idxTensor.GetPhyAddr();
 
         __VEC_SCOPE__
         {
@@ -409,31 +409,31 @@ private:
             Reg::RegTensor<RangeType> lineRange, lineRangeNew;
             Reg::MaskReg leftMask, rightMask;
             Reg::RegTensor<RangeType> leftPadIdxReg, rightPadIdxReg;
-            Reg::UnalignReg uRegIn;
+            Reg::UnalignRegForStore uRegIn;
 
             // 先拼好-1轴的索引
             Reg::Arange(lineRange, 0);
             // 先拷出去，防止索引尾部脏数据
-            Reg::DataCopy(idxAddr, lineRange, maskIdx);
+            Reg::StoreAlign(idxAddr, lineRange, maskIdx);
             Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_STORE>();
 
             Reg::Adds(lineRange, lineRange, ((RangeType)-1) * lastLeftPadNum, maskIdx);
-            Reg::CompareScalar<RangeType, CMPMODE::LT>(leftMask, lineRange, 0, maskIdx);
+            Reg::Compares<RangeType, CMPMODE::LT>(leftMask, lineRange, 0, maskIdx);
             Reg::Arange(leftPadIdxReg, lastInDimSize - lastLeftPadNum);
-            Reg::Copy<RangeType, Reg::MaskMergeMode::MERGING>(lineRange, leftPadIdxReg, leftMask);
+            Reg::Move<RangeType, Reg::MaskMergeMode::MERGING>(lineRange, leftPadIdxReg, leftMask);
 
             Reg::Arange(rightPadIdxReg, ((RangeType)-1) * (lastLeftPadNum + lastInDimSize));
-            Reg::CompareScalar<RangeType, CMPMODE::GE>(rightMask, rightPadIdxReg, 0, maskIdx);
-            Reg::Copy<RangeType, Reg::MaskMergeMode::MERGING>(lineRange, rightPadIdxReg, rightMask);
+            Reg::Compares<RangeType, CMPMODE::GE>(rightMask, rightPadIdxReg, 0, maskIdx);
+            Reg::Move<RangeType, Reg::MaskMergeMode::MERGING>(lineRange, rightPadIdxReg, rightMask);
 
             // -2轴有效输入的索引
-            __local_mem__ RangeType* idxAddrTmp2 = idxAddr;
+            __ubuf__ RangeType* idxAddrTmp2 = idxAddr;
             for (uint16_t i = 0; i < lastDimsLeft; i++) {
                 RangeType loopStride = (RangeType)lastInDimSize * i;
                 Reg::Adds(lineRangeNew, lineRange, loopStride, maskIdx);
-                Reg::DataCopyUnAlign(idxAddrTmp2, lineRangeNew, uRegIn, lastOutDimSize);
+                Reg::StoreUnAlign(idxAddrTmp2, lineRangeNew, uRegIn, lastOutDimSize);
             }
-            Reg::DataCopyUnAlignPost(idxAddrTmp2, uRegIn, 0);
+            Reg::StoreUnAlignPost(idxAddrTmp2, uRegIn, 0);
         }
     }
 
@@ -450,7 +450,7 @@ private:
         int32_t lastLeftPadNum = tdPtr_->leftPad[dimNum_ - 1];
         uint16_t last2LeftPadNum = tdPtr_->leftPad[dimNum_ - CONST2];
         uint16_t last2RightPadNum = tdPtr_->outShape[dimNum_ - CONST2] - lastSecInDimSize - last2LeftPadNum;
-        __local_mem__ RangeType* idxAddr = (__local_mem__ RangeType*)idxTensor.GetPhyAddr();
+        __ubuf__ RangeType* idxAddr = (__ubuf__ RangeType*)idxTensor.GetPhyAddr();
 
         __VEC_SCOPE__
         {
@@ -458,106 +458,103 @@ private:
             Reg::RegTensor<RangeType> lineRange, lineRangeNew, lineRangeBk;
             Reg::MaskReg leftMask, rightMask;
             Reg::RegTensor<RangeType> leftPadIdxReg, rightPadIdxReg;
-            Reg::UnalignReg uReg;
+            Reg::UnalignRegForStore uReg;
 
             // 先拼好-1轴的索引
             Reg::Arange(lineRange, 0);
             // 先拷出去，防止索引尾部脏数据
-            Reg::DataCopy(idxAddr, lineRange, maskIdx);
+            Reg::StoreAlign(idxAddr, lineRange, maskIdx);
             Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_STORE>();
 
             Reg::Adds(lineRange, lineRange, ((RangeType)-1) * lastLeftPadNum, maskIdx);
-            Reg::CompareScalar<RangeType, CMPMODE::LT>(leftMask, lineRange, 0, maskIdx);
+            Reg::Compares<RangeType, CMPMODE::LT>(leftMask, lineRange, 0, maskIdx);
             Reg::Arange(leftPadIdxReg, lastInDimSize - lastLeftPadNum);
-            Reg::Copy<RangeType, Reg::MaskMergeMode::MERGING>(lineRange, leftPadIdxReg, leftMask);
+            Reg::Move<RangeType, Reg::MaskMergeMode::MERGING>(lineRange, leftPadIdxReg, leftMask);
 
             Reg::Arange(rightPadIdxReg, ((RangeType)-1) * (lastLeftPadNum + lastInDimSize));
-            Reg::CompareScalar<RangeType, CMPMODE::GE>(rightMask, rightPadIdxReg, 0, maskIdx);
-            Reg::Copy<RangeType, Reg::MaskMergeMode::MERGING>(lineRange, rightPadIdxReg, rightMask);
+            Reg::Compares<RangeType, CMPMODE::GE>(rightMask, rightPadIdxReg, 0, maskIdx);
+            Reg::Move<RangeType, Reg::MaskMergeMode::MERGING>(lineRange, rightPadIdxReg, rightMask);
 
             // -3轴有效输入的索引
             for (uint16_t i = 0; i < lastTwoDimLoops; i++) {
                 Reg::Adds(lineRangeBk, lineRange, (RangeType)(i * inStride1), maskIdx);
                 // -2轴leftpad行数, 索引取H轴下部
-                __local_mem__ RangeType* idxAddrTmp = idxAddr + i * outStride1;
+                __ubuf__ RangeType* idxAddrTmp = idxAddr + i * outStride1;
                 for (uint16_t j = 0; j < last2LeftPadNum; j++) {
                     Reg::Adds(lineRangeNew, lineRangeBk,
                               (RangeType)((lastSecInDimSize - last2LeftPadNum + j) * lastInDimSize), maskIdx);
-                    Reg::DataCopyUnAlign(idxAddrTmp, lineRangeNew, uReg, outStride2);
+                    Reg::StoreUnAlign(idxAddrTmp, lineRangeNew, uReg, outStride2);
                 }
-                Reg::DataCopyUnAlignPost(idxAddrTmp, uReg, 0);
+                Reg::StoreUnAlignPost(idxAddrTmp, uReg, 0);
 
                 // -2 轴inputshape, 索引递增
-                __local_mem__ RangeType* idxAddrTmp1 = idxAddr + i * outStride1 + last2LeftPadNum * outStride2;
+                __ubuf__ RangeType* idxAddrTmp1 = idxAddr + i * outStride1 + last2LeftPadNum * outStride2;
                 for (uint16_t j = 0; j < lastSecInDimSize; j++) {
                     Reg::Adds(lineRangeNew, lineRangeBk, (RangeType)(j * lastInDimSize), maskIdx);
-                    Reg::DataCopyUnAlign(idxAddrTmp1, lineRangeNew, uReg, outStride2);
+                    Reg::StoreUnAlign(idxAddrTmp1, lineRangeNew, uReg, outStride2);
                 }
-                Reg::DataCopyUnAlignPost(idxAddrTmp1, uReg, 0);
+                Reg::StoreUnAlignPost(idxAddrTmp1, uReg, 0);
 
                 // -2轴rightpad行数, 索引取H轴上部
-                __local_mem__ RangeType* idxAddrTmp2 = idxAddr + i * outStride1 + last2LeftPadNum * outStride2 +
-                                                       lastSecInDimSize * outStride2;
+                __ubuf__ RangeType* idxAddrTmp2 = idxAddr + i * outStride1 + last2LeftPadNum * outStride2 +
+                                                  lastSecInDimSize * outStride2;
                 for (uint16_t j = 0; j < last2RightPadNum; j++) {
                     Reg::Adds(lineRangeNew, lineRangeBk, (RangeType)(j * lastInDimSize), maskIdx);
-                    Reg::DataCopyUnAlign(idxAddrTmp2, lineRangeNew, uReg, outStride2);
+                    Reg::StoreUnAlign(idxAddrTmp2, lineRangeNew, uReg, outStride2);
                 }
-                Reg::DataCopyUnAlignPost(idxAddrTmp2, uReg, 0);
+                Reg::StoreUnAlignPost(idxAddrTmp2, uReg, 0);
             }
         }
     }
 
     __aicore__ inline void VlInCopyProc(uint16_t inLoops, uint16_t lastInLoops, RangeType idxOffset, uint32_t maskValue,
-                                        uint32_t lastInMaskValue, __local_mem__ T* curInAddr,
-                                        __local_mem__ T* curOutAddr, Reg::RegTensor<RangeType>& regIdx,
-                                        uint32_t idxPadOffset)
+                                        uint32_t lastInMaskValue, __ubuf__ T* curInAddr, __ubuf__ T* curOutAddr,
+                                        Reg::RegTensor<RangeType>& regIdx, uint32_t idxPadOffset)
     {
         Reg::RegTensor<T> regData;
         Reg::RegTensor<T> regDataT;
         Reg::RegTensor<RangeType> regIdxBk;
         Reg::RegTensor<RangeType> regNewIdx;
-        Reg::UnalignReg uReg;
+        Reg::UnalignRegForStore uReg;
         uint32_t validMask = maskValue;
         if constexpr (sizeof(T) == 8) {
             validMask = maskValue * 2;
         }
         Reg::MaskReg maskIdx = Reg::UpdateMask<RangeType>(validMask);
 
-        __local_mem__ T* outAddrTmp = curOutAddr;
+        __ubuf__ T* outAddrTmp = curOutAddr;
         Reg::Adds(regIdxBk, regIdx, idxPadOffset, maskIdx);
         for (uint16_t cpIdx = 0; cpIdx < inLoops; cpIdx++) {
             Reg::Adds(regNewIdx, regIdxBk, cpIdx * idxOffset, maskIdx);
-            Reg::DataCopyGather((Reg::RegTensor<CastType>&)regData, curInAddr, (Reg::RegTensor<IdxType>&)regNewIdx,
-                                maskIdx);
+            Reg::Gather((Reg::RegTensor<CastType>&)regData, curInAddr, (Reg::RegTensor<IdxType>&)regNewIdx, maskIdx);
             if constexpr (sizeof(T) != 1) {
-                Reg::DataCopyUnAlign(outAddrTmp, regData, uReg, maskValue);
+                Reg::StoreUnAlign(outAddrTmp, regData, uReg, maskValue);
             } else {
                 Reg::Pack(regDataT, (Reg::RegTensor<CastType>&)regData);
-                Reg::DataCopyUnAlign(outAddrTmp, regDataT, uReg, maskValue);
+                Reg::StoreUnAlign(outAddrTmp, regDataT, uReg, maskValue);
             }
         }
-        Reg::DataCopyUnAlignPost(outAddrTmp, uReg, 0);
+        Reg::StoreUnAlignPost(outAddrTmp, uReg, 0);
         for (uint16_t cpTailIdx = 0; cpTailIdx < lastInLoops; cpTailIdx++) {
             outAddrTmp = curOutAddr + inLoops * maskValue;
             Reg::Adds(regNewIdx, regIdxBk, inLoops * idxOffset, maskIdx);
-            Reg::DataCopyGather((Reg::RegTensor<CastType>&)regData, curInAddr, (Reg::RegTensor<IdxType>&)regNewIdx,
-                                maskIdx);
+            Reg::Gather((Reg::RegTensor<CastType>&)regData, curInAddr, (Reg::RegTensor<IdxType>&)regNewIdx, maskIdx);
             if constexpr (sizeof(T) != 1) {
-                Reg::DataCopyUnAlign(outAddrTmp, regData, uReg, lastInMaskValue);
+                Reg::StoreUnAlign(outAddrTmp, regData, uReg, lastInMaskValue);
             } else {
                 Reg::Pack(regDataT, (Reg::RegTensor<CastType>&)regData);
-                Reg::DataCopyUnAlign(outAddrTmp, regDataT, uReg, lastInMaskValue);
+                Reg::StoreUnAlign(outAddrTmp, regDataT, uReg, lastInMaskValue);
             }
-            Reg::DataCopyUnAlignPost(outAddrTmp, uReg, 0);
+            Reg::StoreUnAlignPost(outAddrTmp, uReg, 0);
         }
     }
 
     __aicore__ inline void GatherProcessUb2DFw(const LocalTensor<RangeType>& idxTensor, LocalTensor<T>& inTensor,
                                                LocalTensor<T>& outTensor, uint16_t ubAxisInCopyNum)
     {
-        __local_mem__ RangeType* idxAddrFw = (__local_mem__ RangeType*)idxTensor.GetPhyAddr();
-        __local_mem__ T* inAddr = (__local_mem__ T*)inTensor.GetPhyAddr();
-        __local_mem__ T* outAddr = (__local_mem__ T*)outTensor.GetPhyAddr() + BLOCK_NUM;
+        __ubuf__ RangeType* idxAddrFw = (__ubuf__ RangeType*)idxTensor.GetPhyAddr();
+        __ubuf__ T* inAddr = (__ubuf__ T*)inTensor.GetPhyAddr();
+        __ubuf__ T* outAddr = (__ubuf__ T*)outTensor.GetPhyAddr() + BLOCK_NUM;
 
         uint16_t vlSplitLoopIn = vlSplitIn_;
         RangeType idxOffset = tdPtr_->inStride[dimNum_ - CONST2] * vlSplitLoopIn;
@@ -571,7 +568,7 @@ private:
         __VEC_SCOPE__
         {
             Reg::RegTensor<RangeType> regIdx;
-            Reg::DataCopy(regIdx, idxAddrFw);
+            Reg::LoadAlign(regIdx, idxAddrFw);
             VlInCopyProc(copyInPadLoops, lastCopyInPadLoops, idxOffset, maskValue, lastCopyInMaskValue, inAddr, outAddr,
                          regIdx, 0);
         }
@@ -580,9 +577,9 @@ private:
     __aicore__ inline void GatherProcessUb3DFw(const LocalTensor<RangeType>& idxTensor, LocalTensor<T>& inTensor,
                                                LocalTensor<T>& outTensor, uint16_t ubAxisInCopyNum)
     {
-        __local_mem__ RangeType* idxAddrFw = (__local_mem__ RangeType*)idxTensor.GetPhyAddr();
-        __local_mem__ T* inAddr = (__local_mem__ T*)inTensor.GetPhyAddr();
-        __local_mem__ T* outAddr = (__local_mem__ T*)outTensor.GetPhyAddr() + BLOCK_NUM;
+        __ubuf__ RangeType* idxAddrFw = (__ubuf__ RangeType*)idxTensor.GetPhyAddr();
+        __ubuf__ T* inAddr = (__ubuf__ T*)inTensor.GetPhyAddr();
+        __ubuf__ T* outAddr = (__ubuf__ T*)outTensor.GetPhyAddr() + BLOCK_NUM;
 
         uint16_t vlSplitLoopIn = vlSplitIn_;
         uint32_t strideInVl = tdPtr_->inStride[dimNum_ - CONST2];
@@ -633,13 +630,13 @@ private:
         __VEC_SCOPE__
         {
             Reg::RegTensor<RangeType> regIdx;
-            Reg::DataCopy(regIdx, idxAddrFw);
+            Reg::LoadAlign(regIdx, idxAddrFw);
 
             // 该次Ub内C轴上的copyIn, VL切3维时退化为0
             for (uint16_t uiIdx = 0; uiIdx < ubAxisInCopyLoops; uiIdx++) {
                 // H轴左pad
                 uint32_t idxPadOffset = uiIdx * strideInVlO1 + leftPadInVlOffset;
-                __local_mem__ T* curInOutAddr = outAddr + uiIdx * strideOutVlO1;
+                __ubuf__ T* curInOutAddr = outAddr + uiIdx * strideOutVlO1;
                 VlInCopyProc(leftPadLoops, lastLeftPadLoops, idxOffset, maskValue, lastLeftPadMaskValue, inAddr,
                              curInOutAddr, regIdx, idxPadOffset);
 
@@ -658,9 +655,9 @@ private:
     __aicore__ inline void GatherProcessUb4DFw(const LocalTensor<RangeType>& idxTensor, LocalTensor<T>& inTensor,
                                                LocalTensor<T>& outTensor, uint16_t ubAxisInCopyNum)
     {
-        __local_mem__ RangeType* idxAddr = (__local_mem__ RangeType*)idxTensor.GetPhyAddr();
-        __local_mem__ T* inAddr = (__local_mem__ T*)inTensor.GetPhyAddr();
-        __local_mem__ T* outAddr = (__local_mem__ T*)outTensor.GetPhyAddr() + BLOCK_NUM;
+        __ubuf__ RangeType* idxAddr = (__ubuf__ RangeType*)idxTensor.GetPhyAddr();
+        __ubuf__ T* inAddr = (__ubuf__ T*)inTensor.GetPhyAddr();
+        __ubuf__ T* outAddr = (__ubuf__ T*)outTensor.GetPhyAddr() + BLOCK_NUM;
 
         uint16_t vlSplitLoopIn = vlSplitIn_;
         uint16_t ubAxisLeftPadLoops = 0;              // ubAxisLeftPadNum; 当前不支持N轴的pad, 只会为0
@@ -728,7 +725,7 @@ private:
         __VEC_SCOPE__
         {
             Reg::RegTensor<RangeType> regIdx;
-            Reg::DataCopy(regIdx, idxAddr);
+            Reg::LoadAlign(regIdx, idxAddr);
 
             for (uint16_t nIdx = 0; nIdx < ubAxisInCopyLoops; nIdx++) {
                 // C轴左pad, VL切3维时退化为1
@@ -737,13 +734,12 @@ private:
                 for (uint16_t i = 0; i < vlO1LeftPadNum; i++) {
                     // H轴左pad, VL切3维时退化为C轴左pad
                     uint32_t idxPadOffset = curInOffset + i * strideInVlO1 + leftPadInVlOffset;
-                    __local_mem__ T* curPadOutAddr = outAddr + curOutOffset + i * strideOutVlO1;
+                    __ubuf__ T* curPadOutAddr = outAddr + curOutOffset + i * strideOutVlO1;
                     VlInCopyProc(leftPadLoops, lastLeftPadLoops, idxOffset, maskValue, lastLeftPadMaskValue, inAddr,
                                  curPadOutAddr, regIdx, idxPadOffset);
 
                     // H轴输入个数, VL切3维时退化为C轴输入个数
-                    __local_mem__ T* curOutAddr = outAddr + curOutOffset + i * strideOutVlO1 +
-                                                  vlLeftPadNum * strideOutVl;
+                    __ubuf__ T* curOutAddr = outAddr + curOutOffset + i * strideOutVlO1 + vlLeftPadNum * strideOutVl;
                     idxPadOffset = curInOffset + i * strideInVlO1;
                     VlInCopyProc(copyInPadLoops, lastCopyInPadLoops, idxOffset, maskValue, lastCopyInMaskValue, inAddr,
                                  curOutAddr, regIdx, idxPadOffset);
@@ -760,13 +756,12 @@ private:
                 for (uint16_t i = 0; i < vlO1InNum; i++) {
                     // H轴左pad
                     uint32_t idxPadOffset = curInOffset + i * strideInVlO1 + leftPadInVlOffset;
-                    __local_mem__ T* curPadOutAddr = outAddr + curOutOffset + i * strideOutVlO1;
+                    __ubuf__ T* curPadOutAddr = outAddr + curOutOffset + i * strideOutVlO1;
                     VlInCopyProc(leftPadLoops, lastLeftPadLoops, idxOffset, maskValue, lastLeftPadMaskValue, inAddr,
                                  curPadOutAddr, regIdx, idxPadOffset);
 
                     // H轴输入有效个数
-                    __local_mem__ T* curOutAddr = outAddr + curOutOffset + i * strideOutVlO1 +
-                                                  vlLeftPadNum * strideOutVl;
+                    __ubuf__ T* curOutAddr = outAddr + curOutOffset + i * strideOutVlO1 + vlLeftPadNum * strideOutVl;
                     idxPadOffset = curInOffset + i * strideInVlO1;
                     VlInCopyProc(copyInPadLoops, lastCopyInPadLoops, idxOffset, maskValue, lastCopyInMaskValue, inAddr,
                                  curOutAddr, regIdx, idxPadOffset);
@@ -782,12 +777,11 @@ private:
                 curOutOffset = nIdx * strideOutN + vlO1LeftPadNum * strideOutVlO1 + vlO1InNum * strideOutVlO1;
                 for (uint16_t i = 0; i < vlO1RightPadNum; i++) {
                     uint32_t idxPadOffset = curInOffset + i * strideInVlO1 + leftPadInVlOffset;
-                    __local_mem__ T* curPadOutAddr = outAddr + curOutOffset + i * strideOutVlO1;
+                    __ubuf__ T* curPadOutAddr = outAddr + curOutOffset + i * strideOutVlO1;
                     VlInCopyProc(leftPadLoops, lastLeftPadLoops, idxOffset, maskValue, lastLeftPadMaskValue, inAddr,
                                  curPadOutAddr, regIdx, idxPadOffset);
 
-                    __local_mem__ T* curOutAddr = outAddr + curOutOffset + i * strideOutVlO1 +
-                                                  vlLeftPadNum * strideOutVl;
+                    __ubuf__ T* curOutAddr = outAddr + curOutOffset + i * strideOutVlO1 + vlLeftPadNum * strideOutVl;
                     idxPadOffset = curInOffset + i * strideInVlO1;
                     VlInCopyProc(copyInPadLoops, lastCopyInPadLoops, idxOffset, maskValue, lastCopyInMaskValue, inAddr,
                                  curOutAddr, regIdx, idxPadOffset);

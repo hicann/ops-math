@@ -320,7 +320,7 @@ private:
         {
             AscendC::Reg::RegTensor<T, Trait> vReg;
             AscendC::Reg::RegTensor<T, Trait> vRegTmp;
-            AscendC::Reg::UnalignReg uReg;
+            AscendC::Reg::UnalignRegForStore uReg;
             AscendC::Reg::MaskReg pMask;
             AscendC::Reg::MaskReg outMask;
             AscendC::Reg::MaskReg maskAll = AscendC::Reg::CreateMask<T, AscendC::Reg::MaskPattern::ALL, Trait>();
@@ -329,9 +329,9 @@ private:
             for (uint16_t k = 0; k < needPadLeft; k++) {
                 for (uint16_t n = 0; n < totalHNum; n++) {
                     __ubuf__ T* outAddr = dstAddr + dstOffset + padWLOffset + n * padW;
-                    AscendC::Reg::DataCopy(vReg, additionAddr + n * additionLen);
-                    AscendC::Reg::DataCopyUnAlign(outAddr, vReg, uReg, padLen);
-                    AscendC::Reg::DataCopyUnAlignPost(outAddr, uReg, 0);
+                    AscendC::Reg::LoadAlign(vReg, additionAddr + n * additionLen);
+                    AscendC::Reg::StoreUnAlign(outAddr, vReg, uReg, padLen);
+                    AscendC::Reg::StoreUnAlignPost(outAddr, uReg, 0);
                 }
             }
 
@@ -339,14 +339,14 @@ private:
                 uint32_t noPadLen = noPadRightSize;
                 uint32_t outLen = BLK_ELEMS;
                 pMask = AscendC::Reg::UpdateMask<T, Trait>(noPadLen);
-                AscendC::Reg::MaskNot(pMask, pMask, maskAll);
+                AscendC::Reg::Not(pMask, pMask, maskAll);
                 outMask = AscendC::Reg::UpdateMask<T, Trait>(outLen);
                 for (uint16_t n = 0; n < totalHNum; n++) {
-                    AscendC::Reg::DataCopy(vReg, dstAddr + dstOffset + padRigthFloorAlign + n * padW);
+                    AscendC::Reg::LoadAlign(vReg, dstAddr + dstOffset + padRigthFloorAlign + n * padW);
                     vRegTmp = vReg;
                     Duplicate<T, AscendC::Reg::MaskMergeMode::ZEROING, T>(vRegTmp, value, pMask);
-                    Copy(vReg, vRegTmp, pMask);
-                    AscendC::Reg::DataCopy(dstAddr + dstOffset + padRigthFloorAlign + n * padW, vReg, outMask);
+                    AscendC::Reg::Move(vReg, vRegTmp, pMask);
+                    AscendC::Reg::StoreAlign(dstAddr + dstOffset + padRigthFloorAlign + n * padW, vReg, outMask);
                 }
             }
         }

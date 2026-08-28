@@ -295,7 +295,7 @@ private:
     // 3. Right pad mirror: grad_y[2*outW + leftPad - 2 - w + modeOffset_] if applicable
     __aicore__ inline void GradGatherProcess(const LocalTensor<T>& dst)
     {
-        __local_mem__ T* dstAddr = reinterpret_cast<__local_mem__ T*>(dst.GetPhyAddr());
+        __ubuf__ T* dstAddr = reinterpret_cast<__ubuf__ T*>(dst.GetPhyAddr());
         const uint32_t outW = tilingData_->outShape[dimNum_ - 1]; // grad_x W
         const uint32_t inW = tilingData_->inShape[dimNum_ - 1];   // grad_y W
         const uint32_t leftPad = padParam_.padLeft;
@@ -330,7 +330,7 @@ private:
             GradAccumulateHRelatedToTmpBuf(tmpLocal, dimHIn, padWI);
 
             // Step 3: W 维度梯度累加
-            __local_mem__ PromoteDataT* tmpAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr());
+            __ubuf__ PromoteDataT* tmpAddr = reinterpret_cast<__ubuf__ PromoteDataT*>(tmpLocal.GetPhyAddr());
             for (uint32_t h = 0; h < dimHIn; h++) {
                 GradProcessLineFromTmpBuf(dstAddr + h * padWO, tmpAddr + h * padWI, outW, inW, leftPad, rightPad);
             }
@@ -338,7 +338,7 @@ private:
             // axisNumInUb_=3: UB 内包含 inCopyLen_[C] × inShape[H] × inShape[W]
             // C 是切分轴，UB 内只有部分 C slice
             LocalTensor<PromoteDataT> tmpLocal = tmpBuf_.Get<PromoteDataT>();
-            __local_mem__ PromoteDataT* tmpAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr());
+            __ubuf__ PromoteDataT* tmpAddr = reinterpret_cast<__ubuf__ PromoteDataT*>(tmpLocal.GetPhyAddr());
             const uint32_t leftPadH = tilingData_->leftPad[dimNum_ - CONST2];
             const uint32_t sliceSize = dimHIn * padWI; // 一个 C slice 在 tmpLocal 中的元素数
 
@@ -365,7 +365,7 @@ private:
             // axisNumInUb_=4: UB 内包含 inCopyLen_[N] × inShape[C] × inShape[H] × inShape[W]
             // N 是切分轴，C/H/W 完整在 UB 内
             LocalTensor<PromoteDataT> tmpLocal = tmpBuf_.Get<PromoteDataT>();
-            __local_mem__ PromoteDataT* tmpAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr());
+            __ubuf__ PromoteDataT* tmpAddr = reinterpret_cast<__ubuf__ PromoteDataT*>(tmpLocal.GetPhyAddr());
             const uint32_t leftPadH = tilingData_->leftPad[dimNum_ - CONST2];
             const uint32_t leftPadC = tilingData_->leftPad[dimNum_ - CONST3];
             const uint32_t hSliceSize = dimHIn * padWI;       // 一个 H slice (一个 C plane)
@@ -411,11 +411,11 @@ private:
     {
         const uint32_t inW = tilingData_->inShape[dimNum_ - 1];
         const uint32_t globalHStart = outIndex_[dimNum_ - CONST2];
-        __local_mem__ PromoteDataT* tmpAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr());
+        __ubuf__ PromoteDataT* tmpAddr = reinterpret_cast<__ubuf__ PromoteDataT*>(tmpLocal.GetPhyAddr());
 
         for (uint32_t h = 0; h < dimHNum; h++) {
             uint32_t globalH = globalHStart + h;
-            __local_mem__ PromoteDataT* lineAddr = tmpAddr + h * padWI;
+            __ubuf__ PromoteDataT* lineAddr = tmpAddr + h * padWI;
 
             // 1. 纯 H 镜像
             if (has2DPadding) {
@@ -440,7 +440,7 @@ private:
     }
 
     // 副pad: C×H 组合 — 对每个 mirrorC 位置，处理 H 镜像
-    __aicore__ inline void ProcessCxHSubPad(__local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
+    __aicore__ inline void ProcessCxHSubPad(__ubuf__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
     {
         const uint32_t globalC = outIndex_[dimNum_ - CONST3];
         MirrorList cList = CollectMirrorPositions(globalC, tilingData_->outShape[dimNum_ - CONST3],
@@ -453,7 +453,7 @@ private:
     }
 
     // 副pad: N×H 相关组合 — 对每个 mirrorN 位置，处理 N×H 和 N×C×H
-    __aicore__ inline void ProcessNxHSubPad(__local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
+    __aicore__ inline void ProcessNxHSubPad(__ubuf__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
     {
         const uint32_t globalN = outIndex_[dimNum_ - CONST4];
         MirrorList nList = CollectMirrorPositions(globalN, tilingData_->outShape[dimNum_ - CONST4],
@@ -471,7 +471,7 @@ private:
     }
 
     // 副pad: N×C×H 组合 — 对给定 mirrorN，检查 C 镜像条件，处理 N×C×H
-    __aicore__ inline void ProcessNxCxHSubPad(__local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t mirrorN,
+    __aicore__ inline void ProcessNxCxHSubPad(__ubuf__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t mirrorN,
                                               uint32_t inW)
     {
         const uint32_t globalC = outIndex_[dimNum_ - CONST3];
@@ -485,7 +485,7 @@ private:
     }
 
     // 副pad: D5×H 相关组合 — 对每个 mirrorD5，处理 D5×H, D5×C×H, D5×N×H, D5×N×C×H
-    __aicore__ inline void ProcessD5xHSubPad(__local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
+    __aicore__ inline void ProcessD5xHSubPad(__ubuf__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
     {
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
         MirrorList d5List = CollectMirrorPositions(globalD5, tilingData_->outShape[dimNum_ - CONST5],
@@ -507,7 +507,7 @@ private:
     }
 
     // D5×H 组合镜像: 给定 mirrorD5，检查 H 镜像条件
-    __aicore__ inline void ProcessD5xHCombinedMirror(__local_mem__ PromoteDataT* lineAddr, uint32_t globalH,
+    __aicore__ inline void ProcessD5xHCombinedMirror(__ubuf__ PromoteDataT* lineAddr, uint32_t globalH,
                                                      uint32_t mirrorD5, uint32_t inW)
     {
         if (!has2DPadding) {
@@ -532,8 +532,8 @@ private:
     }
 
     // D5×C×H 副pad: 给定 mirrorD5，检查 C 镜像条件，对每个 mirrorC 处理 H 镜像
-    __aicore__ inline void ProcessD5xCxHSubPad(__local_mem__ PromoteDataT* lineAddr, uint32_t globalH,
-                                               uint32_t mirrorD5, uint32_t inW)
+    __aicore__ inline void ProcessD5xCxHSubPad(__ubuf__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t mirrorD5,
+                                               uint32_t inW)
     {
         const uint32_t globalC = outIndex_[dimNum_ - CONST3];
         const uint32_t outH = tilingData_->outShape[dimNum_ - CONST2];
@@ -558,8 +558,8 @@ private:
     }
 
     // D5×N×H 副pad (含 D5×N×C×H): 给定 mirrorD5，检查 N 镜像条件
-    __aicore__ inline void ProcessD5xNxHSubPad(__local_mem__ PromoteDataT* lineAddr, uint32_t globalH,
-                                               uint32_t mirrorD5, uint32_t inW)
+    __aicore__ inline void ProcessD5xNxHSubPad(__ubuf__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t mirrorD5,
+                                               uint32_t inW)
     {
         const uint32_t globalN = outIndex_[dimNum_ - CONST4];
         const uint32_t outH = tilingData_->outShape[dimNum_ - CONST2];
@@ -589,8 +589,8 @@ private:
     }
 
     // D5×N×C×H 副pad: 给定 mirrorD5 和 mirrorN，检查 C 和 H 镜像条件
-    __aicore__ inline void ProcessD5xNxCxHSubPad(__local_mem__ PromoteDataT* lineAddr, uint32_t globalH,
-                                                 uint32_t mirrorD5, uint32_t mirrorN, uint32_t inW)
+    __aicore__ inline void ProcessD5xNxCxHSubPad(__ubuf__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t mirrorD5,
+                                                 uint32_t mirrorN, uint32_t inW)
     {
         const uint32_t globalC = outIndex_[dimNum_ - CONST3];
         const uint32_t outH = tilingData_->outShape[dimNum_ - CONST2];
@@ -615,7 +615,7 @@ private:
     }
 
     // H 维度镜像处理 (高维索引不变，只改变 H 索引)
-    __aicore__ inline void ProcessHDimMirrorAtCurrentHighDim(__local_mem__ PromoteDataT* lineAddr, uint32_t globalH,
+    __aicore__ inline void ProcessHDimMirrorAtCurrentHighDim(__ubuf__ PromoteDataT* lineAddr, uint32_t globalH,
                                                              uint32_t inW)
     {
         const uint32_t outH = tilingData_->outShape[dimNum_ - CONST2];
@@ -642,7 +642,7 @@ private:
     }
 
     // C 维度镜像处理
-    __aicore__ inline void ProcessCDimMirror(__local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
+    __aicore__ inline void ProcessCDimMirror(__ubuf__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
     {
         const uint32_t globalC = outIndex_[dimNum_ - CONST3];
         const uint32_t outC = tilingData_->outShape[dimNum_ - CONST3];
@@ -682,8 +682,8 @@ private:
     }
 
     // C×H 组合镜像处理
-    __aicore__ inline void ProcessCxHCombinedMirror(__local_mem__ PromoteDataT* lineAddr, uint32_t globalH,
-                                                    uint32_t mirrorC, uint32_t inW)
+    __aicore__ inline void ProcessCxHCombinedMirror(__ubuf__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t mirrorC,
+                                                    uint32_t inW)
     {
         const uint32_t outH = tilingData_->outShape[dimNum_ - CONST2];
         const uint32_t leftPadH = tilingData_->leftPad[dimNum_ - CONST2];
@@ -712,8 +712,8 @@ private:
     }
 
     // N×H 组合镜像
-    __aicore__ inline void ProcessNxHCombinedMirror(__local_mem__ PromoteDataT* lineAddr, uint32_t globalH,
-                                                    uint32_t mirrorN, uint32_t inW)
+    __aicore__ inline void ProcessNxHCombinedMirror(__ubuf__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t mirrorN,
+                                                    uint32_t inW)
     {
         if (!has2DPadding)
             return;
@@ -743,8 +743,8 @@ private:
     }
 
     // N×C 组合镜像 (包含 N×C×H)
-    __aicore__ inline void ProcessNxCCombinedMirror(__local_mem__ PromoteDataT* lineAddr, uint32_t globalH,
-                                                    uint32_t mirrorN, uint32_t inW)
+    __aicore__ inline void ProcessNxCCombinedMirror(__ubuf__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t mirrorN,
+                                                    uint32_t inW)
     {
         const uint32_t globalC = outIndex_[dimNum_ - CONST3];
         const uint32_t outC = tilingData_->outShape[dimNum_ - CONST3];
@@ -782,7 +782,7 @@ private:
     }
 
     // N×C×H 组合镜像
-    __aicore__ inline void ProcessNxCxHCombinedMirror(__local_mem__ PromoteDataT* lineAddr, uint32_t globalH,
+    __aicore__ inline void ProcessNxCxHCombinedMirror(__ubuf__ PromoteDataT* lineAddr, uint32_t globalH,
                                                       uint32_t mirrorN, uint32_t mirrorC, uint32_t inW)
     {
         const uint32_t outH = tilingData_->outShape[dimNum_ - CONST2];
@@ -810,7 +810,7 @@ private:
     }
 
     // 第5维镜像处理 (简化版，只处理单维度镜像)
-    __aicore__ inline void ProcessDim5Mirror(__local_mem__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
+    __aicore__ inline void ProcessDim5Mirror(__ubuf__ PromoteDataT* lineAddr, uint32_t globalH, uint32_t inW)
     {
         const uint32_t globalD5 = outIndex_[dimNum_ - CONST5];
         const uint32_t outD5 = tilingData_->outShape[dimNum_ - CONST5];
@@ -841,8 +841,7 @@ private:
 
     // 从 GM 拷贝镜像行到 srcLocal (inQueue_)，然后整行累加到目标行
     // 使用当前高维索引 (inIndex_)，只改变 H 索引
-    __aicore__ inline void CopyAndAddMirrorLineFromGM(__local_mem__ PromoteDataT* dstLineAddr, uint32_t hIdx,
-                                                      uint32_t inW)
+    __aicore__ inline void CopyAndAddMirrorLineFromGM(__ubuf__ PromoteDataT* dstLineAddr, uint32_t hIdx, uint32_t inW)
     {
         // 计算 GM 地址：使用当前高维索引，只改变 H
         uint64_t mirrorAddr = 0;
@@ -855,7 +854,7 @@ private:
     }
 
     // 从 GM 拷贝镜像行，指定 C 索引
-    __aicore__ inline void CopyAndAddMirrorLineFromGMWithC(__local_mem__ PromoteDataT* dstLineAddr, uint32_t cIdx,
+    __aicore__ inline void CopyAndAddMirrorLineFromGMWithC(__ubuf__ PromoteDataT* dstLineAddr, uint32_t cIdx,
                                                            uint32_t hIdx, uint32_t inW)
     {
         uint64_t mirrorAddr = 0;
@@ -872,7 +871,7 @@ private:
     }
 
     // 从 GM 拷贝镜像行，指定 N 和 C 索引
-    __aicore__ inline void CopyAndAddMirrorLineFromGMWithNC(__local_mem__ PromoteDataT* dstLineAddr, uint32_t nIdx,
+    __aicore__ inline void CopyAndAddMirrorLineFromGMWithNC(__ubuf__ PromoteDataT* dstLineAddr, uint32_t nIdx,
                                                             uint32_t cIdx, uint32_t hIdx, uint32_t inW)
     {
         uint64_t mirrorAddr = 0;
@@ -891,7 +890,7 @@ private:
     }
 
     // 从 GM 拷贝镜像行，指定第5维、N 和 C 索引
-    __aicore__ inline void CopyAndAddMirrorLineFromGMWithD5NC(__local_mem__ PromoteDataT* dstLineAddr, uint32_t d5Idx,
+    __aicore__ inline void CopyAndAddMirrorLineFromGMWithD5NC(__ubuf__ PromoteDataT* dstLineAddr, uint32_t d5Idx,
                                                               uint32_t nIdx, uint32_t cIdx, uint32_t hIdx, uint32_t inW)
     {
         uint64_t mirrorAddr = 0;
@@ -908,8 +907,8 @@ private:
     }
 
     // tmpLocal 内两行 PromoteDataT (float32) 相加: dstLine[i] += srcLine[i]
-    __aicore__ inline void AddLocalLineInTmpBuf(__local_mem__ PromoteDataT* dstLineAddr,
-                                                __local_mem__ PromoteDataT* srcLineAddr, uint32_t inW)
+    __aicore__ inline void AddLocalLineInTmpBuf(__ubuf__ PromoteDataT* dstLineAddr, __ubuf__ PromoteDataT* srcLineAddr,
+                                                uint32_t inW)
     {
         constexpr uint32_t VL_ELEMS_FLOAT = VL_SIZE / sizeof(PromoteDataT);
         constexpr uint32_t BL_ELEMS_FLOAT = UB_BLOCK / sizeof(T);
@@ -925,17 +924,17 @@ private:
 
             for (uint16_t i = 0; i < loopCount; i++) {
                 mask = AscendC::Reg::UpdateMask<PromoteDataT>(remainLen);
-                AscendC::Reg::DataCopy(dstReg, dstLineAddr + i * VL_ELEMS_FLOAT);
-                AscendC::Reg::DataCopy(srcReg, srcLineAddr + i * VL_ELEMS_FLOAT);
+                AscendC::Reg::LoadAlign(dstReg, dstLineAddr + i * VL_ELEMS_FLOAT);
+                AscendC::Reg::LoadAlign(srcReg, srcLineAddr + i * VL_ELEMS_FLOAT);
                 AscendC::Reg::Add(dstReg, dstReg, srcReg, mask);
-                AscendC::Reg::DataCopy(dstLineAddr + i * VL_ELEMS_FLOAT, dstReg, mask);
+                AscendC::Reg::StoreAlign(dstLineAddr + i * VL_ELEMS_FLOAT, dstReg, mask);
             }
         }
     }
     // tmpLocal 内两行 PromoteDataT (float32) 相加: dstLine[i] = dstLine[i] + srcLine[i] + srcLine[j]
-    __aicore__ inline void AddLocalUpAndDownLineInTmpBuf(__local_mem__ PromoteDataT* dstLineAddr,
-                                                         __local_mem__ PromoteDataT* srcUpLineAddr,
-                                                         __local_mem__ PromoteDataT* srcDownLineAddr, uint32_t inW)
+    __aicore__ inline void AddLocalUpAndDownLineInTmpBuf(__ubuf__ PromoteDataT* dstLineAddr,
+                                                         __ubuf__ PromoteDataT* srcUpLineAddr,
+                                                         __ubuf__ PromoteDataT* srcDownLineAddr, uint32_t inW)
     {
         constexpr uint32_t VL_ELEMS_FLOAT = VL_SIZE / sizeof(PromoteDataT);
         constexpr uint32_t BL_ELEMS_FLOAT = UB_BLOCK / sizeof(T);
@@ -952,12 +951,12 @@ private:
 
             for (uint16_t i = 0; i < loopCount; i++) {
                 mask = AscendC::Reg::UpdateMask<PromoteDataT>(remainLen);
-                AscendC::Reg::DataCopy(dstReg, dstLineAddr + i * VL_ELEMS_FLOAT);
-                AscendC::Reg::DataCopy(srcUpReg, srcUpLineAddr + i * VL_ELEMS_FLOAT);
-                AscendC::Reg::DataCopy(srcDownReg, srcDownLineAddr + i * VL_ELEMS_FLOAT);
+                AscendC::Reg::LoadAlign(dstReg, dstLineAddr + i * VL_ELEMS_FLOAT);
+                AscendC::Reg::LoadAlign(srcUpReg, srcUpLineAddr + i * VL_ELEMS_FLOAT);
+                AscendC::Reg::LoadAlign(srcDownReg, srcDownLineAddr + i * VL_ELEMS_FLOAT);
                 AscendC::Reg::Add(dstReg, dstReg, srcUpReg, mask);
                 AscendC::Reg::Add(dstReg, dstReg, srcDownReg, mask);
-                AscendC::Reg::DataCopy(dstLineAddr + i * VL_ELEMS_FLOAT, dstReg, mask);
+                AscendC::Reg::StoreAlign(dstLineAddr + i * VL_ELEMS_FLOAT, dstReg, mask);
             }
         }
     }
@@ -978,11 +977,10 @@ private:
             return;
         }
 
-        __local_mem__ PromoteDataT* tmpAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr()) +
-                                              cOffset;
+        __ubuf__ PromoteDataT* tmpAddr = reinterpret_cast<__ubuf__ PromoteDataT*>(tmpLocal.GetPhyAddr()) + cOffset;
 
         for (uint32_t h = 0; h < outH; h++) {
-            __local_mem__ PromoteDataT* selfAddr = tmpAddr + (h + leftPadH) * padWI;
+            __ubuf__ PromoteDataT* selfAddr = tmpAddr + (h + leftPadH) * padWI;
             bool hasTopMirror = (modeOffset_ == 0) ? (h > 0 && h <= leftPadH) : (h < leftPadH);
             bool hasBottomMirror = (modeOffset_ == 0) ? (rightPadH > 0 && h >= outH - rightPadH - 1 && h <= outH - 2) :
                                                         (rightPadH > 0 && h >= outH - rightPadH);
@@ -1022,10 +1020,10 @@ private:
             return;
         }
 
-        __local_mem__ PromoteDataT* tmpAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr());
+        __ubuf__ PromoteDataT* tmpAddr = reinterpret_cast<__ubuf__ PromoteDataT*>(tmpLocal.GetPhyAddr());
 
         for (uint32_t c = 0; c < outC; c++) {
-            __local_mem__ PromoteDataT* selfAddr = tmpAddr + (c + leftPadC) * cSliceSize;
+            __ubuf__ PromoteDataT* selfAddr = tmpAddr + (c + leftPadC) * cSliceSize;
 
             bool hasTopMirror = (modeOffset_ == 0) ? (c > 0 && c <= leftPadC) : (c < leftPadC);
             bool hasBottomMirror = (modeOffset_ == 0) ? (rightPadC > 0 && c >= outC - rightPadC - 1 && c <= outC - 2) :
@@ -1578,8 +1576,7 @@ private:
     }
 
     // 通用的从 GM 地址拷贝并累加一行数据
-    __aicore__ inline void CopyAndAddLineFromGMAddr(__local_mem__ PromoteDataT* dstLineAddr, uint64_t gmAddr,
-                                                    uint32_t inW)
+    __aicore__ inline void CopyAndAddLineFromGMAddr(__ubuf__ PromoteDataT* dstLineAddr, uint64_t gmAddr, uint32_t inW)
     {
         // Step 1: 从 GM 拷贝镜像行到 srcLocal
         LocalTensor<T> inUbLocal = inQueue_.AllocTensor<T>();
@@ -1596,7 +1593,7 @@ private:
         // Step 2: 使用 VF 指令进行 Cast 和累加
         LocalTensor<T> inUbLocal2 = inQueue_.DeQue<T>();
         constexpr uint32_t VL_ELEMS_FLOAT = VL_SIZE / sizeof(PromoteDataT);
-        __local_mem__ T* srcAddr = reinterpret_cast<__local_mem__ T*>(inUbLocal2.GetPhyAddr());
+        __ubuf__ T* srcAddr = reinterpret_cast<__ubuf__ T*>(inUbLocal2.GetPhyAddr());
         uint16_t loopCount = CeilDiv(inWAlign, VL_ELEMS_FLOAT);
 
         if constexpr (IsSameType<T, PromoteDataT>::value) {
@@ -1610,10 +1607,10 @@ private:
 
                 for (uint16_t i = 0; i < loopCount; i++) {
                     mask = AscendC::Reg::UpdateMask<PromoteDataT>(remainLen);
-                    AscendC::Reg::DataCopy(dstReg, dstLineAddr + i * VL_ELEMS_FLOAT);
-                    AscendC::Reg::DataCopy(srcReg, srcAddr + i * VL_ELEMS_FLOAT);
+                    AscendC::Reg::LoadAlign(dstReg, dstLineAddr + i * VL_ELEMS_FLOAT);
+                    AscendC::Reg::LoadAlign(srcReg, srcAddr + i * VL_ELEMS_FLOAT);
                     AscendC::Reg::Add(dstReg, dstReg, srcReg, mask);
-                    AscendC::Reg::DataCopy(dstLineAddr + i * VL_ELEMS_FLOAT, dstReg, mask);
+                    AscendC::Reg::StoreAlign(dstLineAddr + i * VL_ELEMS_FLOAT, dstReg, mask);
                 }
             }
         } else {
@@ -1629,14 +1626,14 @@ private:
                 for (uint16_t i = 0; i < loopCount; i++) {
                     mask = AscendC::Reg::UpdateMask<PromoteDataT>(remainLen);
                     // 使用 DIST_UNPACK_B16 模式读取 B16 类型数据到寄存器
-                    AscendC::Reg::DataCopy<T, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(srcReg,
-                                                                                       srcAddr + i * VL_ELEMS_FLOAT);
+                    AscendC::Reg::LoadAlign<T, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(srcReg,
+                                                                                        srcAddr + i * VL_ELEMS_FLOAT);
                     // Cast 到 PromoteDataT (float)
                     AscendC::Reg::Cast<PromoteDataT, T, CAST_TRAIT_0>(srcCastReg, srcReg, mask);
                     // 读取目标数据并累加
-                    AscendC::Reg::DataCopy(dstReg, dstLineAddr + i * VL_ELEMS_FLOAT);
+                    AscendC::Reg::LoadAlign(dstReg, dstLineAddr + i * VL_ELEMS_FLOAT);
                     AscendC::Reg::Add(dstReg, dstReg, srcCastReg, mask);
-                    AscendC::Reg::DataCopy(dstLineAddr + i * VL_ELEMS_FLOAT, dstReg, mask);
+                    AscendC::Reg::StoreAlign(dstLineAddr + i * VL_ELEMS_FLOAT, dstReg, mask);
                 }
             }
         }
@@ -1650,8 +1647,8 @@ private:
         LocalTensor<T> inUbLocal = inQueue_.DeQue<T>();
         constexpr uint32_t VL_ELEMS_FLOAT = VL_SIZE / sizeof(PromoteDataT);
         uint16_t loopCount = CeilDiv(totalLen, VL_ELEMS_FLOAT);
-        __local_mem__ PromoteDataT* tmpAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpLocal.GetPhyAddr());
-        __local_mem__ T* srcAddr = reinterpret_cast<__local_mem__ T*>(inUbLocal.GetPhyAddr());
+        __ubuf__ PromoteDataT* tmpAddr = reinterpret_cast<__ubuf__ PromoteDataT*>(tmpLocal.GetPhyAddr());
+        __ubuf__ T* srcAddr = reinterpret_cast<__ubuf__ T*>(inUbLocal.GetPhyAddr());
 
         if constexpr (IsSameType<T, PromoteDataT>::value) {
             __VEC_SCOPE__
@@ -1662,10 +1659,10 @@ private:
                 AscendC::Reg::RegTensor<PromoteDataT> srcReg;
                 for (uint16_t i = 0; i < loopCount; i++) {
                     mask = AscendC::Reg::UpdateMask<PromoteDataT>(remainLen);
-                    AscendC::Reg::DataCopy(dstReg, tmpAddr + i * VL_ELEMS_FLOAT);
-                    AscendC::Reg::DataCopy(srcReg, srcAddr + i * VL_ELEMS_FLOAT);
+                    AscendC::Reg::LoadAlign(dstReg, tmpAddr + i * VL_ELEMS_FLOAT);
+                    AscendC::Reg::LoadAlign(srcReg, srcAddr + i * VL_ELEMS_FLOAT);
                     AscendC::Reg::Add(dstReg, dstReg, srcReg, mask);
-                    AscendC::Reg::DataCopy(tmpAddr + i * VL_ELEMS_FLOAT, dstReg, mask);
+                    AscendC::Reg::StoreAlign(tmpAddr + i * VL_ELEMS_FLOAT, dstReg, mask);
                 }
             }
         } else {
@@ -1678,12 +1675,12 @@ private:
                 AscendC::Reg::RegTensor<T> srcReg;
                 for (uint16_t i = 0; i < loopCount; i++) {
                     mask = AscendC::Reg::UpdateMask<PromoteDataT>(remainLen);
-                    AscendC::Reg::DataCopy<T, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(srcReg,
-                                                                                       srcAddr + i * VL_ELEMS_FLOAT);
+                    AscendC::Reg::LoadAlign<T, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(srcReg,
+                                                                                        srcAddr + i * VL_ELEMS_FLOAT);
                     AscendC::Reg::Cast<PromoteDataT, T, CAST_TRAIT_0>(srcCastReg, srcReg, mask);
-                    AscendC::Reg::DataCopy(dstReg, tmpAddr + i * VL_ELEMS_FLOAT);
+                    AscendC::Reg::LoadAlign(dstReg, tmpAddr + i * VL_ELEMS_FLOAT);
                     AscendC::Reg::Add(dstReg, dstReg, srcCastReg, mask);
-                    AscendC::Reg::DataCopy(tmpAddr + i * VL_ELEMS_FLOAT, dstReg, mask);
+                    AscendC::Reg::StoreAlign(tmpAddr + i * VL_ELEMS_FLOAT, dstReg, mask);
                 }
             }
         }
@@ -1833,8 +1830,8 @@ private:
     // tmpAddr: PromoteDataT 类型 (float)，包含原始 grad_y 数据 + 高维镜像累加结果
     // dstAddr: 输出 grad_x (T 类型)
     // 使用 VF 指令和 gather 进行向量化处理
-    __aicore__ inline void GradProcessLineFromTmpBuf(__local_mem__ T* dstAddr, __local_mem__ PromoteDataT* tmpAddr,
-                                                     uint32_t outW, uint32_t inW, uint32_t leftPad, uint32_t rightPad)
+    __aicore__ inline void GradProcessLineFromTmpBuf(__ubuf__ T* dstAddr, __ubuf__ PromoteDataT* tmpAddr, uint32_t outW,
+                                                     uint32_t inW, uint32_t leftPad, uint32_t rightPad)
     {
         constexpr uint32_t VL_ELEMS_FLOAT = VL_SIZE / sizeof(PromoteDataT);
         // using IdxType = uint32_t;  // float 对应 uint32_t 索引
@@ -1861,10 +1858,10 @@ private:
 
             uint32_t mainMaskLen = VL_ELEMS_FLOAT;
             uint32_t tailMaskLen = leftTailLen;
-            __local_mem__ PromoteDataT* srcStartAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(
-                tmpAddr + leftStart + leftPad);
-            __local_mem__ PromoteDataT* dstStartAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(
-                tmpAddr + leftStart + leftPad);
+            __ubuf__ PromoteDataT* srcStartAddr = reinterpret_cast<__ubuf__ PromoteDataT*>(tmpAddr + leftStart +
+                                                                                           leftPad);
+            __ubuf__ PromoteDataT* dstStartAddr = reinterpret_cast<__ubuf__ PromoteDataT*>(tmpAddr + leftStart +
+                                                                                           leftPad);
             __VEC_SCOPE__
             {
                 AscendC::Reg::RegTensor<PromoteDataT> selfReg;
@@ -1873,39 +1870,39 @@ private:
                 AscendC::Reg::RegTensor<uint32_t> idxReg;
                 AscendC::Reg::RegTensor<int32_t> arangeReg;
                 AscendC::Reg::RegTensor<uint32_t> baseIdxReg;
-                AscendC::Reg::UnalignReg uSrc;
-                AscendC::Reg::UnalignReg uDst;
+                AscendC::Reg::UnalignRegForLoad uSrc;
+                AscendC::Reg::UnalignRegForStore uDst;
 
                 AscendC::Reg::MaskReg maskMain = AscendC::Reg::UpdateMask<PromoteDataT>(mainMaskLen);
                 AscendC::Reg::MaskReg maskTail = AscendC::Reg::UpdateMask<PromoteDataT>(tailMaskLen);
 
                 AscendC::Reg::Arange(arangeReg, 0);
                 idxReg = reinterpret_cast<AscendC::Reg::RegTensor<uint32_t>&>(arangeReg);
-                AscendC::Reg::DataCopyUnAlignPre(uSrc, srcStartAddr);
+                AscendC::Reg::LoadUnAlignPre(uSrc, srcStartAddr);
 
                 for (uint16_t i = 0; i < leftMainLoops; i++) {
                     uint32_t curStart = leftStart + i * VL_ELEMS_FLOAT;
-                    AscendC::Reg::DataCopyUnAlign(selfReg, uSrc, srcStartAddr, VL_ELEMS_FLOAT);
+                    AscendC::Reg::LoadUnAlign(selfReg, uSrc, srcStartAddr, VL_ELEMS_FLOAT);
 
                     uint32_t baseIdx = static_cast<uint32_t>(leftPad - modeOffset_ - curStart);
                     AscendC::Reg::Duplicate(baseIdxReg, baseIdx);
                     AscendC::Reg::Sub(baseIdxReg, baseIdxReg, idxReg, maskMain);
-                    AscendC::Reg::DataCopyGather(mirrorReg, tmpAddr, baseIdxReg, maskMain);
+                    AscendC::Reg::Gather(mirrorReg, tmpAddr, baseIdxReg, maskMain);
 
                     AscendC::Reg::Add(resultReg, selfReg, mirrorReg, maskMain);
-                    AscendC::Reg::DataCopyUnAlign(dstStartAddr, resultReg, uDst, VL_ELEMS_FLOAT);
+                    AscendC::Reg::StoreUnAlign(dstStartAddr, resultReg, uDst, VL_ELEMS_FLOAT);
                 }
                 uint32_t curStart = leftStart + leftMainLoops * VL_ELEMS_FLOAT;
-                AscendC::Reg::DataCopyUnAlign(selfReg, uSrc, srcStartAddr, leftTailLen);
+                AscendC::Reg::LoadUnAlign(selfReg, uSrc, srcStartAddr, leftTailLen);
 
                 uint32_t baseIdx = static_cast<uint32_t>(leftPad - modeOffset_ - curStart);
                 AscendC::Reg::Duplicate(baseIdxReg, baseIdx);
                 AscendC::Reg::Sub(baseIdxReg, baseIdxReg, idxReg, maskTail);
-                AscendC::Reg::DataCopyGather(mirrorReg, tmpAddr, baseIdxReg, maskTail);
+                AscendC::Reg::Gather(mirrorReg, tmpAddr, baseIdxReg, maskTail);
 
                 AscendC::Reg::Add(resultReg, selfReg, mirrorReg, maskTail);
-                AscendC::Reg::DataCopyUnAlign(dstStartAddr, resultReg, uDst, leftTailLen);
-                AscendC::Reg::DataCopyUnAlignPost(dstStartAddr, uDst, 0);
+                AscendC::Reg::StoreUnAlign(dstStartAddr, resultReg, uDst, leftTailLen);
+                AscendC::Reg::StoreUnAlignPost(dstStartAddr, uDst, 0);
             }
         }
 
@@ -1917,10 +1914,10 @@ private:
 
             uint32_t mainMaskLen = VL_ELEMS_FLOAT;
             uint32_t tailMaskLen = rightTailLen;
-            __local_mem__ PromoteDataT* srcStartAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(
-                tmpAddr + rightStart + leftPad);
-            __local_mem__ PromoteDataT* dstStartAddr = reinterpret_cast<__local_mem__ PromoteDataT*>(
-                tmpAddr + rightStart + leftPad);
+            __ubuf__ PromoteDataT* srcStartAddr = reinterpret_cast<__ubuf__ PromoteDataT*>(tmpAddr + rightStart +
+                                                                                           leftPad);
+            __ubuf__ PromoteDataT* dstStartAddr = reinterpret_cast<__ubuf__ PromoteDataT*>(tmpAddr + rightStart +
+                                                                                           leftPad);
             __VEC_SCOPE__
             {
                 AscendC::Reg::RegTensor<PromoteDataT> selfReg;
@@ -1929,47 +1926,47 @@ private:
                 AscendC::Reg::RegTensor<uint32_t> idxReg;
                 AscendC::Reg::RegTensor<int32_t> arangeReg;
                 AscendC::Reg::RegTensor<uint32_t> baseIdxReg;
-                AscendC::Reg::UnalignReg uSrc;
-                AscendC::Reg::UnalignReg uDst;
+                AscendC::Reg::UnalignRegForLoad uSrc;
+                AscendC::Reg::UnalignRegForStore uDst;
 
                 AscendC::Reg::MaskReg maskMain = AscendC::Reg::UpdateMask<PromoteDataT>(mainMaskLen);
                 AscendC::Reg::MaskReg maskTail = AscendC::Reg::UpdateMask<PromoteDataT>(tailMaskLen);
 
                 AscendC::Reg::Arange(arangeReg, 0);
                 idxReg = reinterpret_cast<AscendC::Reg::RegTensor<uint32_t>&>(arangeReg);
-                AscendC::Reg::DataCopyUnAlignPre(uSrc, srcStartAddr);
+                AscendC::Reg::LoadUnAlignPre(uSrc, srcStartAddr);
 
                 for (uint16_t i = 0; i < rightMainLoops; i++) {
                     uint32_t curStart = rightStart + i * VL_ELEMS_FLOAT;
-                    AscendC::Reg::DataCopyUnAlign(selfReg, uSrc, srcStartAddr, VL_ELEMS_FLOAT);
+                    AscendC::Reg::LoadUnAlign(selfReg, uSrc, srcStartAddr, VL_ELEMS_FLOAT);
 
                     uint32_t baseIdx = static_cast<uint32_t>(2 * outW + leftPad - 2 + modeOffset_ - curStart);
                     AscendC::Reg::Duplicate(baseIdxReg, baseIdx);
                     AscendC::Reg::Sub(baseIdxReg, baseIdxReg, idxReg, maskMain);
-                    AscendC::Reg::DataCopyGather(mirrorReg, tmpAddr, baseIdxReg, maskMain);
+                    AscendC::Reg::Gather(mirrorReg, tmpAddr, baseIdxReg, maskMain);
 
                     AscendC::Reg::Add(resultReg, selfReg, mirrorReg, maskMain);
-                    AscendC::Reg::DataCopyUnAlign(dstStartAddr, resultReg, uDst, VL_ELEMS_FLOAT);
+                    AscendC::Reg::StoreUnAlign(dstStartAddr, resultReg, uDst, VL_ELEMS_FLOAT);
                 }
                 uint32_t curStart = rightStart + rightMainLoops * VL_ELEMS_FLOAT;
-                AscendC::Reg::DataCopyUnAlign(selfReg, uSrc, srcStartAddr, rightTailLen);
+                AscendC::Reg::LoadUnAlign(selfReg, uSrc, srcStartAddr, rightTailLen);
 
                 uint32_t baseIdx = static_cast<uint32_t>(2 * outW + leftPad - 2 + modeOffset_ - curStart);
                 AscendC::Reg::Duplicate(baseIdxReg, baseIdx);
                 AscendC::Reg::Sub(baseIdxReg, baseIdxReg, idxReg, maskTail);
-                AscendC::Reg::DataCopyGather(mirrorReg, tmpAddr, baseIdxReg, maskTail);
+                AscendC::Reg::Gather(mirrorReg, tmpAddr, baseIdxReg, maskTail);
 
                 AscendC::Reg::Add(resultReg, selfReg, mirrorReg, maskTail);
-                AscendC::Reg::DataCopyUnAlign(dstStartAddr, resultReg, uDst, rightTailLen);
-                AscendC::Reg::DataCopyUnAlignPost(dstStartAddr, uDst, 0);
+                AscendC::Reg::StoreUnAlign(dstStartAddr, resultReg, uDst, rightTailLen);
+                AscendC::Reg::StoreUnAlignPost(dstStartAddr, uDst, 0);
             }
         }
 
         // ========== 阶段2: 从 tmpAddr+leftPad 非对齐读 outW 个元素，对齐搬出到 dstAddr ==========
 
         uint16_t outLoopCount = CeilDiv(outW, VL_ELEMS_FLOAT);
-        __local_mem__ PromoteDataT* srcAddr2 = reinterpret_cast<__local_mem__ PromoteDataT*>(tmpAddr + leftPad);
-        __local_mem__ T* dstAddr2 = reinterpret_cast<__local_mem__ T*>(dstAddr);
+        __ubuf__ PromoteDataT* srcAddr2 = reinterpret_cast<__ubuf__ PromoteDataT*>(tmpAddr + leftPad);
+        __ubuf__ T* dstAddr2 = reinterpret_cast<__ubuf__ T*>(dstAddr);
 
         if constexpr (IsSameType<T, PromoteDataT>::value) {
             // float: 非对齐读 → DataCopy 对齐写
@@ -1978,12 +1975,12 @@ private:
                 uint32_t remainLen = outW;
                 AscendC::Reg::MaskReg mask;
                 AscendC::Reg::RegTensor<PromoteDataT> dataReg;
-                AscendC::Reg::UnalignReg uSrc;
-                AscendC::Reg::DataCopyUnAlignPre(uSrc, srcAddr2);
+                AscendC::Reg::UnalignRegForLoad uSrc;
+                AscendC::Reg::LoadUnAlignPre(uSrc, srcAddr2);
                 for (uint16_t i = 0; i < outLoopCount; i++) {
                     mask = AscendC::Reg::UpdateMask<PromoteDataT>(remainLen);
-                    AscendC::Reg::DataCopyUnAlign(dataReg, uSrc, srcAddr2, VL_ELEMS_FLOAT);
-                    AscendC::Reg::DataCopy(dstAddr2 + i * VL_ELEMS_FLOAT, dataReg, mask);
+                    AscendC::Reg::LoadUnAlign(dataReg, uSrc, srcAddr2, VL_ELEMS_FLOAT);
+                    AscendC::Reg::StoreAlign(dstAddr2 + i * VL_ELEMS_FLOAT, dataReg, mask);
                 }
             }
         } else {
@@ -1994,14 +1991,14 @@ private:
                 AscendC::Reg::MaskReg mask;
                 AscendC::Reg::RegTensor<PromoteDataT> dataReg;
                 AscendC::Reg::RegTensor<T> outReg;
-                AscendC::Reg::UnalignReg uSrc;
-                AscendC::Reg::DataCopyUnAlignPre(uSrc, srcAddr2);
+                AscendC::Reg::UnalignRegForLoad uSrc;
+                AscendC::Reg::LoadUnAlignPre(uSrc, srcAddr2);
                 for (uint16_t i = 0; i < outLoopCount; i++) {
                     mask = AscendC::Reg::UpdateMask<PromoteDataT>(remainLen);
-                    AscendC::Reg::DataCopyUnAlign(dataReg, uSrc, srcAddr2, VL_ELEMS_FLOAT);
+                    AscendC::Reg::LoadUnAlign(dataReg, uSrc, srcAddr2, VL_ELEMS_FLOAT);
                     AscendC::Reg::Cast<T, PromoteDataT, CAST_TRAIT_1>(outReg, dataReg, mask);
-                    AscendC::Reg::DataCopy<T, AscendC::Reg::StoreDist::DIST_PACK_B32>(dstAddr2 + i * VL_ELEMS_FLOAT,
-                                                                                      outReg, mask);
+                    AscendC::Reg::StoreAlign<T, AscendC::Reg::StoreDist::DIST_PACK_B32>(dstAddr2 + i * VL_ELEMS_FLOAT,
+                                                                                        outReg, mask);
                 }
             }
         }

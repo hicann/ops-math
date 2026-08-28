@@ -217,7 +217,7 @@ ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& in
         OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
-    OP_LOGI(context->GetNodeName(), "The input and output is: %s and %s", Shape2String(inShape).c_str(),
+    OP_LOGI(context->GetNodeName(), "The input and output are: %s and %s", Shape2String(inShape).c_str(),
             Shape2String(outShape).c_str());
 
     if (DeleteOneSizeAxis(context, inShape, outShape) != ge::GRAPH_SUCCESS) {
@@ -226,7 +226,7 @@ ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& in
         OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
-    OP_LOGI(context->GetNodeName(), "The reshaped input and output is: %s and %s", Shape2String(inShape).c_str(),
+    OP_LOGI(context->GetNodeName(), "The reshaped input and output are: %s and %s", Shape2String(inShape).c_str(),
             Shape2String(outShape).c_str());
 
     if (MergeAxis(context, inShape, outShape) != ge::GRAPH_SUCCESS) {
@@ -235,7 +235,7 @@ ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& in
         OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
-    OP_LOGI(context->GetNodeName(), "The merged input and output is: %s and %s", Shape2String(inShape).c_str(),
+    OP_LOGI(context->GetNodeName(), "The merged input and output are: %s and %s", Shape2String(inShape).c_str(),
             Shape2String(outShape).c_str());
 
     return ge::GRAPH_SUCCESS;

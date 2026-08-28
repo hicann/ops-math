@@ -171,7 +171,7 @@ int main()
     std::vector<float> expectData = {1.0, 0.157299, 0.004678, 0.000022};
     for (int64_t i = 0; i < size; i++) {
         if (std::fabs(resultData[i] - expectData[i]) > 1e-6) {
-            LOG_PRINT("result[%ld] check failed: got %f, expect %f\n", i, resultData[i], expectData[i]);
+            LOG_PRINT("result[%ld] check failed: got %f, expected %f\n", i, resultData[i], expectData[i]);
             return 1;
         }
     }
@@ -186,7 +186,7 @@ int main()
     }
     for (int64_t i = 0; i < inplaceSize; i++) {
         if (std::fabs(inplaceResultData[i] - expectData[i]) > 1e-6) {
-            LOG_PRINT("inplaceResult[%ld] check failed: got %f, expect %f\n", i, inplaceResultData[i], expectData[i]);
+            LOG_PRINT("inplaceResult[%ld] check failed: got %f, expected %f\n", i, inplaceResultData[i], expectData[i]);
             return 1;
         }
     }

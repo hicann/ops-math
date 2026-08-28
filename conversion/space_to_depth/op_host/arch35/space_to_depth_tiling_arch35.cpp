@@ -184,9 +184,9 @@ ge::graphStatus SpaceToDepthTilingForAscendC(gert::TilingContext* context,
     compileInfo.transposeCompilerInfo.ubSize = transposeCompileInfo->ubSize;
 
     TransposeNddmaTiling transposeTilingObject(context);
-    OP_CHECK_IF((transposeTilingObject.TilingForReleatedTranspose(context, &tilingData.transposeOpTiling,
-                                                                  &compileInfo.transposeCompilerInfo,
-                                                                  inputShapeInfo) == ge::GRAPH_FAILED),
+    OP_CHECK_IF((transposeTilingObject.TilingForRelatedTranspose(context, &tilingData.transposeOpTiling,
+                                                                 &compileInfo.transposeCompilerInfo,
+                                                                 inputShapeInfo) == ge::GRAPH_FAILED),
                 OP_LOGE(context->GetNodeName(), "Transpose Tiling failed"), return ge::GRAPH_FAILED);
 
     tilingData.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());

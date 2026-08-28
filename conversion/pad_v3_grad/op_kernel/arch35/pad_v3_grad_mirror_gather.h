@@ -162,17 +162,17 @@ private:
     __aicore__ inline void ProcessOneFactor(int64_t* posIdx, int64_t factor);
 
     // 通用 Cast 操作（T -> PromoteDataT）
-    __aicore__ inline void CastToPromote(__local_mem__ T* srcAddr, __local_mem__ PromoteDataT* dstAddr, int64_t count,
+    __aicore__ inline void CastToPromote(__ubuf__ T* srcAddr, __ubuf__ PromoteDataT* dstAddr, int64_t count,
                                          bool addMode);
 
     // 数据搬入与 cast
-    __aicore__ inline void CopyInAndCast(int64_t gmOffset, int64_t copySize, __local_mem__ PromoteDataT* dstAddr,
+    __aicore__ inline void CopyInAndCast(int64_t gmOffset, int64_t copySize, __ubuf__ PromoteDataT* dstAddr,
                                          bool addMode);
 
     // 外轴折叠（通用）
     __aicore__ inline void ComputeAxisMappings(int64_t* posIdx, AxisMappingInfo* mappings);
     __aicore__ inline void FoldOuterAxis(int64_t* posIdx, int64_t ubAxisPos, int64_t count,
-                                         __local_mem__ PromoteDataT* dstAddr);
+                                         __ubuf__ PromoteDataT* dstAddr);
     __aicore__ inline int64_t ComputeGmOffsetForAxis(int64_t* posIdx, int64_t axis, int64_t axisInIdx);
 
     // 切分轴 pad 处理
@@ -180,26 +180,21 @@ private:
                                             LocalTensor<PromoteDataT>& padLocal);
 
     // 通用 Gather+Add+Store/Scatter 操作
-    __aicore__ inline void GatherAddStore(__local_mem__ PromoteDataT* srcAddr, __local_mem__ PromoteDataT* dstAddr,
-                                          __local_mem__ GatherRangeType* idxAddr, uint64_t dstOffset,
-                                          uint64_t curElements);
-    __aicore__ inline void GatherAddScatter(__local_mem__ PromoteDataT* dataAddr,
-                                            __local_mem__ GatherRangeType* srcIdxAddr,
-                                            __local_mem__ GatherRangeType* dstIdxAddr, uint64_t curElements);
+    __aicore__ inline void GatherAddStore(__ubuf__ PromoteDataT* srcAddr, __ubuf__ PromoteDataT* dstAddr,
+                                          __ubuf__ GatherRangeType* idxAddr, uint64_t dstOffset, uint64_t curElements);
+    __aicore__ inline void GatherAddScatter(__ubuf__ PromoteDataT* dataAddr, __ubuf__ GatherRangeType* srcIdxAddr,
+                                            __ubuf__ GatherRangeType* dstIdxAddr, uint64_t curElements);
 
     // 切分轴内折叠
     __aicore__ inline void FoldInnerAxis(int64_t factor, LocalTensor<PromoteDataT>& midLocal,
                                          LocalTensor<PromoteDataT>& outputLocal);
     __aicore__ inline void FoldWAxis(int64_t factor, int64_t width, LocalTensor<PromoteDataT>& midLocal,
                                      LocalTensor<PromoteDataT>& outputLocal);
-    __aicore__ inline void GenerateFoldWAxisIndices(uint16_t rowsPerBatch, uint16_t innerWidth, int64_t width,
-                                                    int64_t leftPadW, int64_t rightPadW, GatherRangeType rowWidthOffset,
-                                                    __local_mem__ GatherRangeType* midIdxAddr,
-                                                    __local_mem__ GatherRangeType* leftIdxAddr,
-                                                    __local_mem__ GatherRangeType* rightIdxAddr,
-                                                    __local_mem__ GatherRangeType* midOffsetAddr,
-                                                    __local_mem__ GatherRangeType* leftOffsetAddr,
-                                                    __local_mem__ GatherRangeType* rightOffsetAddr);
+    __aicore__ inline void GenerateFoldWAxisIndices(
+        uint16_t rowsPerBatch, uint16_t innerWidth, int64_t width, int64_t leftPadW, int64_t rightPadW,
+        GatherRangeType rowWidthOffset, __ubuf__ GatherRangeType* midIdxAddr, __ubuf__ GatherRangeType* leftIdxAddr,
+        __ubuf__ GatherRangeType* rightIdxAddr, __ubuf__ GatherRangeType* midOffsetAddr,
+        __ubuf__ GatherRangeType* leftOffsetAddr, __ubuf__ GatherRangeType* rightOffsetAddr);
     __aicore__ inline void FoldHWAxis(int64_t factor, LocalTensor<PromoteDataT>& midLocal,
                                       LocalTensor<PromoteDataT>& outputLocal);
     __aicore__ inline void FoldCHWAxis(int64_t factor, LocalTensor<PromoteDataT>& midLocal,
@@ -208,11 +203,10 @@ private:
     // ========== FoldCHWAxis 辅助函数 ==========
     __aicore__ inline void FoldWAxisForCHWAxis(int64_t factor, int64_t outC, uint64_t hwSize, int64_t width,
                                                int64_t leftPadC, int64_t leftPadH, int64_t leftPadW, int64_t rightPadW,
-                                               int64_t outH, int64_t outW, __local_mem__ PromoteDataT* midAddr,
-                                               __local_mem__ PromoteDataT* outputAddr,
-                                               __local_mem__ GatherRangeType* midIdxAddr,
-                                               __local_mem__ GatherRangeType* leftIdxAddr,
-                                               __local_mem__ GatherRangeType* rightIdxAddr);
+                                               int64_t outH, int64_t outW, __ubuf__ PromoteDataT* midAddr,
+                                               __ubuf__ PromoteDataT* outputAddr, __ubuf__ GatherRangeType* midIdxAddr,
+                                               __ubuf__ GatherRangeType* leftIdxAddr,
+                                               __ubuf__ GatherRangeType* rightIdxAddr);
 
     // ========== FoldHWAxis 辅助函数 ==========
     /**
@@ -251,20 +245,20 @@ private:
      */
     __aicore__ inline void GenerateWAxisIndices(uint64_t cOffset, uint16_t rowsPerBatch, uint16_t outW, uint16_t width,
                                                 int64_t leftPadW, int64_t rightPadW, int64_t leftPadH,
-                                                GatherRangeType batchOffset, __local_mem__ GatherRangeType* midIdxAddr,
-                                                __local_mem__ GatherRangeType* leftIdxAddr,
-                                                __local_mem__ GatherRangeType* rightIdxAddr,
-                                                __local_mem__ GatherRangeType* midOffsetAddr,
-                                                __local_mem__ GatherRangeType* leftOffsetAddr,
-                                                __local_mem__ GatherRangeType* rightOffsetAddr);
+                                                GatherRangeType batchOffset, __ubuf__ GatherRangeType* midIdxAddr,
+                                                __ubuf__ GatherRangeType* leftIdxAddr,
+                                                __ubuf__ GatherRangeType* rightIdxAddr,
+                                                __ubuf__ GatherRangeType* midOffsetAddr,
+                                                __ubuf__ GatherRangeType* leftOffsetAddr,
+                                                __ubuf__ GatherRangeType* rightOffsetAddr);
 
     // 跨 C 通道生成 W 轴索引
     __aicore__ inline void GenerateCrossChannelWAxisIndices(uint32_t totalRows, uint16_t outW, uint16_t outH,
                                                             int64_t width, uint64_t hwSize, int64_t leftPadW,
                                                             int64_t rightPadW, int64_t leftPadH,
-                                                            __local_mem__ GatherRangeType* midIdxAddr,
-                                                            __local_mem__ GatherRangeType* leftIdxAddr,
-                                                            __local_mem__ GatherRangeType* rightIdxAddr);
+                                                            __ubuf__ GatherRangeType* midIdxAddr,
+                                                            __ubuf__ GatherRangeType* leftIdxAddr,
+                                                            __ubuf__ GatherRangeType* rightIdxAddr);
 
     // 由 padRow 计算 H 轴 pad 折叠的 srcRowOffset / dstRowOffset
     __aicore__ inline void CalcHAxisPadRowOffset(int64_t padRow, int64_t padCount, bool isLeftPad, int64_t leftPadH,
@@ -312,9 +306,8 @@ private:
      */
     __aicore__ inline void FoldHAxisPad(int64_t factor, uint64_t hwSize, int64_t width, int64_t padCount,
                                         bool isLeftPad, int64_t leftPadH, int64_t outH, int64_t nFactor,
-                                        uint64_t nStride, __local_mem__ PromoteDataT* baseAddr,
-                                        __local_mem__ GatherRangeType* srcIdxAddr,
-                                        __local_mem__ GatherRangeType* dstIdxAddr);
+                                        uint64_t nStride, __ubuf__ PromoteDataT* baseAddr,
+                                        __ubuf__ GatherRangeType* srcIdxAddr, __ubuf__ GatherRangeType* dstIdxAddr);
 
     /**
      * @brief 折叠 C 轴的 pad 数据（GatherAddScatter 方式）
@@ -341,9 +334,8 @@ private:
      * @param dstIdxAddr  目标索引数组地址
      */
     __aicore__ inline void FoldCAxisPad(uint64_t hwSize, int64_t padCount, bool isLeftPad, int64_t leftPadC,
-                                        int64_t outC, int64_t factor, uint64_t nStride,
-                                        __local_mem__ PromoteDataT* baseAddr, __local_mem__ GatherRangeType* srcIdxAddr,
-                                        __local_mem__ GatherRangeType* dstIdxAddr);
+                                        int64_t outC, int64_t factor, uint64_t nStride, __ubuf__ PromoteDataT* baseAddr,
+                                        __ubuf__ GatherRangeType* srcIdxAddr, __ubuf__ GatherRangeType* dstIdxAddr);
 
     // 输出
     __aicore__ inline void CopyOutToGm(int64_t* posIdx, int64_t factor);
@@ -524,7 +516,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::ProcessOneFactor(int64_t* p
     // 初始化 tempMidBuf 前 ZERO_PAD_CNT 个元素为 0，为折叠W轴时做准备
     AscendC::Duplicate<PromoteDataT>(midLocal, 0, ZERO_PAD_CNT);
 
-    __local_mem__ PromoteDataT* midAddr = (__local_mem__ PromoteDataT*)midLocal.GetPhyAddr();
+    __ubuf__ PromoteDataT* midAddr = (__ubuf__ PromoteDataT*)midLocal.GetPhyAddr();
 
     // Step 1: 搬入中间区域数据
     int64_t gmOffset = 0;
@@ -565,9 +557,8 @@ __aicore__ inline void PadV3GradGather<T, modeName>::ProcessOneFactor(int64_t* p
  *                true:  dstAddr = dstAddr + Cast(srcAddr)
  */
 template <typename T, uint8_t modeName>
-__aicore__ inline void PadV3GradGather<T, modeName>::CastToPromote(__local_mem__ T* srcAddr,
-                                                                   __local_mem__ PromoteDataT* dstAddr, int64_t count,
-                                                                   bool addMode)
+__aicore__ inline void PadV3GradGather<T, modeName>::CastToPromote(__ubuf__ T* srcAddr, __ubuf__ PromoteDataT* dstAddr,
+                                                                   int64_t count, bool addMode)
 {
     uint32_t vlCount = VL_COMPUTE_CNT;
 
@@ -581,23 +572,23 @@ __aicore__ inline void PadV3GradGather<T, modeName>::CastToPromote(__local_mem__
 
             AscendC::Reg::RegTensor<PromoteDataT> newReg;
             if constexpr (IsSameType<PromoteDataT, T>::value) {
-                AscendC::Reg::DataCopy(newReg, srcAddr + offset);
+                AscendC::Reg::LoadAlign(newReg, srcAddr + offset);
             } else {
                 AscendC::Reg::RegTensor<T> srcReg;
-                AscendC::Reg::DataCopy<T, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(srcReg, srcAddr + offset);
+                AscendC::Reg::LoadAlign<T, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(srcReg, srcAddr + offset);
                 AscendC::Reg::Cast<PromoteDataT, T, CAST_TRAIT_0>(newReg, srcReg, mask);
             }
 
             if (addMode) {
                 AscendC::Reg::RegTensor<PromoteDataT> existReg;
-                AscendC::Reg::DataCopy(existReg, dstAddr + offset);
+                AscendC::Reg::LoadAlign(existReg, dstAddr + offset);
                 AscendC::Reg::RegTensor<PromoteDataT> resultReg;
 
                 AscendC::Reg::Add(resultReg, existReg, newReg, mask);
 
-                AscendC::Reg::DataCopy(dstAddr + offset, resultReg, mask);
+                AscendC::Reg::StoreAlign(dstAddr + offset, resultReg, mask);
             } else {
-                AscendC::Reg::DataCopy(dstAddr + offset, newReg, mask);
+                AscendC::Reg::StoreAlign(dstAddr + offset, newReg, mask);
             }
         }
     }
@@ -618,7 +609,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::CastToPromote(__local_mem__
  */
 template <typename T, uint8_t modeName>
 __aicore__ inline void PadV3GradGather<T, modeName>::CopyInAndCast(int64_t gmOffset, int64_t copySize,
-                                                                   __local_mem__ PromoteDataT* dstAddr, bool addMode)
+                                                                   __ubuf__ PromoteDataT* dstAddr, bool addMode)
 {
     LocalTensor<T> inputLocal = inputQue_.AllocTensor<T>();
     uint32_t dataSize = static_cast<uint32_t>(copySize) * sizeof(T);
@@ -629,7 +620,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::CopyInAndCast(int64_t gmOff
     inputQue_.EnQue<T>(inputLocal);
     inputLocal = inputQue_.DeQue<T>();
 
-    __local_mem__ T* srcAddr = (__local_mem__ T*)inputLocal.GetPhyAddr();
+    __ubuf__ T* srcAddr = (__ubuf__ T*)inputLocal.GetPhyAddr();
 
     // VF中cast并copy/cast到midLocal，addMode判断是否是加到midLocal
     CastToPromote(srcAddr, dstAddr, copySize, addMode);
@@ -725,7 +716,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::ComputeAxisMappings(int64_t
  */
 template <typename T, uint8_t modeName>
 __aicore__ inline void PadV3GradGather<T, modeName>::FoldOuterAxis(int64_t* posIdx, int64_t ubAxisPos, int64_t count,
-                                                                   __local_mem__ PromoteDataT* dstAddr)
+                                                                   __ubuf__ PromoteDataT* dstAddr)
 {
     if (ubAxis_ == 0) {
         // 切分到第0轴，没有外轴，直接返回
@@ -840,13 +831,13 @@ __aicore__ inline int64_t PadV3GradGather<T, modeName>::ComputeGmOffsetForAxis(i
  * @param curElements 处理的元素数量
  */
 template <typename T, uint8_t modeName>
-__aicore__ inline void PadV3GradGather<T, modeName>::GatherAddStore(__local_mem__ PromoteDataT* srcAddr,
-                                                                    __local_mem__ PromoteDataT* dstAddr,
-                                                                    __local_mem__ GatherRangeType* idxAddr,
+__aicore__ inline void PadV3GradGather<T, modeName>::GatherAddStore(__ubuf__ PromoteDataT* srcAddr,
+                                                                    __ubuf__ PromoteDataT* dstAddr,
+                                                                    __ubuf__ GatherRangeType* idxAddr,
                                                                     uint64_t dstOffset, uint64_t curElements)
 {
     uint64_t vlCount = VL_COMPUTE_CNT;
-    __local_mem__ GatherIdxType* idxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(idxAddr);
+    __ubuf__ GatherIdxType* idxAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(idxAddr);
 
     __VEC_SCOPE__
     {
@@ -856,7 +847,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::GatherAddStore(__local_mem_
 
         dstAddr = dstAddr + dstOffset;
 
-        __local_mem__ PromoteDataT* copyOutDstAddr = dstAddr;
+        __ubuf__ PromoteDataT* copyOutDstAddr = dstAddr;
 
         AscendC::Reg::UnalignRegForLoad uSrc;
         AscendC::Reg::UnalignRegForStore uDst;
@@ -867,10 +858,10 @@ __aicore__ inline void PadV3GradGather<T, modeName>::GatherAddStore(__local_mem_
             uint32_t offset = i * vlCount;
             AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<GatherIdxType>(sregCurElements);
             AscendC::Reg::RegTensor<GatherIdxType> idxReg;
-            AscendC::Reg::DataCopy(idxReg, idxAddrU + offset);
+            AscendC::Reg::LoadAlign(idxReg, idxAddrU + offset);
 
             AscendC::Reg::RegTensor<PromoteDataT> gatherReg;
-            AscendC::Reg::DataCopyGather(gatherReg, srcAddr, idxReg, mask);
+            AscendC::Reg::Gather(gatherReg, srcAddr, idxReg, mask);
 
             AscendC::Reg::RegTensor<PromoteDataT> dstReg;
             AscendC::Reg::LoadUnAlign(dstReg, uSrc, dstAddr, vlCount);
@@ -888,10 +879,10 @@ __aicore__ inline void PadV3GradGather<T, modeName>::GatherAddStore(__local_mem_
         AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<GatherIdxType>(lastElemets);
 
         AscendC::Reg::RegTensor<GatherIdxType> idxReg;
-        AscendC::Reg::DataCopy(idxReg, idxAddrU + offset);
+        AscendC::Reg::LoadAlign(idxReg, idxAddrU + offset);
 
         AscendC::Reg::RegTensor<PromoteDataT> gatherReg;
-        AscendC::Reg::DataCopyGather(gatherReg, srcAddr, idxReg, mask);
+        AscendC::Reg::Gather(gatherReg, srcAddr, idxReg, mask);
 
         AscendC::Reg::RegTensor<PromoteDataT> dstReg;
         AscendC::Reg::LoadUnAlign(dstReg, uSrc, dstAddr, tempLastElements);
@@ -919,14 +910,14 @@ __aicore__ inline void PadV3GradGather<T, modeName>::GatherAddStore(__local_mem_
  * @param curElements 处理的元素数量
  */
 template <typename T, uint8_t modeName>
-__aicore__ inline void PadV3GradGather<T, modeName>::GatherAddScatter(__local_mem__ PromoteDataT* dataAddr,
-                                                                      __local_mem__ GatherRangeType* srcIdxAddr,
-                                                                      __local_mem__ GatherRangeType* dstIdxAddr,
+__aicore__ inline void PadV3GradGather<T, modeName>::GatherAddScatter(__ubuf__ PromoteDataT* dataAddr,
+                                                                      __ubuf__ GatherRangeType* srcIdxAddr,
+                                                                      __ubuf__ GatherRangeType* dstIdxAddr,
                                                                       uint64_t curElements)
 {
     uint64_t vlCount = VL_COMPUTE_CNT;
-    __local_mem__ GatherIdxType* srcIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(srcIdxAddr);
-    __local_mem__ GatherIdxType* dstIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(dstIdxAddr);
+    __ubuf__ GatherIdxType* srcIdxAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(srcIdxAddr);
+    __ubuf__ GatherIdxType* dstIdxAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(dstIdxAddr);
 
     __VEC_SCOPE__
     {
@@ -939,21 +930,21 @@ __aicore__ inline void PadV3GradGather<T, modeName>::GatherAddScatter(__local_me
             AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<PromoteDataT>(curCount);
 
             AscendC::Reg::RegTensor<GatherIdxType> srcIdxReg;
-            AscendC::Reg::DataCopy(srcIdxReg, srcIdxAddrU + offset);
+            AscendC::Reg::LoadAlign(srcIdxReg, srcIdxAddrU + offset);
 
             AscendC::Reg::RegTensor<PromoteDataT> srcDataReg;
-            AscendC::Reg::DataCopyGather(srcDataReg, dataAddr, srcIdxReg, mask);
+            AscendC::Reg::Gather(srcDataReg, dataAddr, srcIdxReg, mask);
 
             AscendC::Reg::RegTensor<GatherIdxType> dstIdxReg;
-            AscendC::Reg::DataCopy(dstIdxReg, dstIdxAddrU + offset);
+            AscendC::Reg::LoadAlign(dstIdxReg, dstIdxAddrU + offset);
 
             AscendC::Reg::RegTensor<PromoteDataT> dstDataReg;
-            AscendC::Reg::DataCopyGather(dstDataReg, dataAddr, dstIdxReg, mask);
+            AscendC::Reg::Gather(dstDataReg, dataAddr, dstIdxReg, mask);
 
             AscendC::Reg::RegTensor<PromoteDataT> resultReg;
             AscendC::Reg::Add(resultReg, srcDataReg, dstDataReg, mask);
 
-            AscendC::Reg::DataCopyScatter(dataAddr, resultReg, dstIdxReg, mask);
+            AscendC::Reg::Scatter(dataAddr, resultReg, dstIdxReg, mask);
         }
     }
 }
@@ -989,8 +980,8 @@ __aicore__ inline void PadV3GradGather<T, modeName>::ProcessUbAxisPad(int64_t* p
     int64_t innerLen = outShape_[ubAxis_];
     int64_t curPos = posIdx[ubAxis_];
 
-    __local_mem__ PromoteDataT* midAddr = (__local_mem__ PromoteDataT*)midLocal.GetPhyAddr() + ZERO_PAD_CNT;
-    __local_mem__ PromoteDataT* padAddr = (__local_mem__ PromoteDataT*)padLocal.GetPhyAddr();
+    __ubuf__ PromoteDataT* midAddr = (__ubuf__ PromoteDataT*)midLocal.GetPhyAddr() + ZERO_PAD_CNT;
+    __ubuf__ PromoteDataT* padAddr = (__ubuf__ PromoteDataT*)padLocal.GetPhyAddr();
 
     // 计算 W 轴宽度和 H 轴高度（用于大 innerSize_ 情况）
     int64_t width = inShape_[dimNum_ - 1];
@@ -1050,7 +1041,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::ProcessUbAxisPad(int64_t* p
 
         // 翻转 gather 并累加到 midLocal
         LocalTensor<GatherRangeType> idxLocal = leftPadIdx_.Get<GatherRangeType>();
-        __local_mem__ GatherRangeType* idxAddr = (__local_mem__ GatherRangeType*)idxLocal.GetPhyAddr();
+        __ubuf__ GatherRangeType* idxAddr = (__ubuf__ GatherRangeType*)idxLocal.GetPhyAddr();
 
         // 对每个切分轴上的 pad 行进行翻转
         int64_t offsetLen = rowsPerBatch * width;
@@ -1067,7 +1058,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::ProcessUbAxisPad(int64_t* p
                 AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<GatherRangeType>(idxLen);
 
                 AscendC::Reg::Arange(leftIdxReg, idxStart);
-                AscendC::Reg::DataCopy(idxAddr, leftIdxReg, mask);
+                AscendC::Reg::StoreAlign(idxAddr, leftIdxReg, mask);
             }
 
             for (int64_t hStart = 0; hStart < heightPerInner; hStart += rowsPerBatch) {
@@ -1154,7 +1145,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::ProcessUbAxisPad(int64_t* p
 
         // 翻转 gather 并累加到 midLocal
         LocalTensor<GatherRangeType> idxLocal = rightPadIdx_.Get<GatherRangeType>();
-        __local_mem__ GatherRangeType* idxAddr = (__local_mem__ GatherRangeType*)idxLocal.GetPhyAddr();
+        __ubuf__ GatherRangeType* idxAddr = (__ubuf__ GatherRangeType*)idxLocal.GetPhyAddr();
 
         int64_t offsetLen = rowsPerBatch * width;
         for (int64_t padRow = 0; padRow < rightPadCount; padRow++) {
@@ -1169,7 +1160,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::ProcessUbAxisPad(int64_t* p
                 AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<GatherRangeType>(idxLen);
 
                 AscendC::Reg::Arange(rightIdxReg, idxStart);
-                AscendC::Reg::DataCopy(idxAddr, rightIdxReg, mask);
+                AscendC::Reg::StoreAlign(idxAddr, rightIdxReg, mask);
             }
 
             for (int64_t hStart = 0; hStart < heightPerInner; hStart += rowsPerBatch) {
@@ -1262,17 +1253,17 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxis(int64_t factor, i
     int64_t rightPadW = rightPad_[dimNum_ - 1];
     uint32_t innerWidth = static_cast<uint32_t>(outShape_[dimNum_ - 1]);
 
-    __local_mem__ PromoteDataT* midAddr = (__local_mem__ PromoteDataT*)midLocal.GetPhyAddr();
-    __local_mem__ PromoteDataT* outputAddr = (__local_mem__ PromoteDataT*)outputLocal.GetPhyAddr();
+    __ubuf__ PromoteDataT* midAddr = (__ubuf__ PromoteDataT*)midLocal.GetPhyAddr();
+    __ubuf__ PromoteDataT* outputAddr = (__ubuf__ PromoteDataT*)outputLocal.GetPhyAddr();
 
     // 获取三个索引缓冲区（每个 256B）
     LocalTensor<GatherRangeType> leftIdxLocal = leftPadIdx_.Get<GatherRangeType>();
     LocalTensor<GatherRangeType> midIdxLocal = midIdx_.Get<GatherRangeType>();
     LocalTensor<GatherRangeType> rightIdxLocal = rightPadIdx_.Get<GatherRangeType>();
 
-    __local_mem__ GatherRangeType* leftIdxAddr = (__local_mem__ GatherRangeType*)leftIdxLocal.GetPhyAddr();
-    __local_mem__ GatherRangeType* midIdxAddr = (__local_mem__ GatherRangeType*)midIdxLocal.GetPhyAddr();
-    __local_mem__ GatherRangeType* rightIdxAddr = (__local_mem__ GatherRangeType*)rightIdxLocal.GetPhyAddr();
+    __ubuf__ GatherRangeType* leftIdxAddr = (__ubuf__ GatherRangeType*)leftIdxLocal.GetPhyAddr();
+    __ubuf__ GatherRangeType* midIdxAddr = (__ubuf__ GatherRangeType*)midIdxLocal.GetPhyAddr();
+    __ubuf__ GatherRangeType* rightIdxAddr = (__ubuf__ GatherRangeType*)rightIdxLocal.GetPhyAddr();
 
     // 1. 计算一次能处理多少行（基于 innerWidth）
     int64_t maxElements = VL_RANGE_CNT;
@@ -1287,9 +1278,9 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxis(int64_t factor, i
     LocalTensor<GatherRangeType> midOffsetLocal = midOffset_.Get<GatherRangeType>();
     LocalTensor<GatherRangeType> rightOffsetLocal = rightPadOffset_.Get<GatherRangeType>();
 
-    __local_mem__ GatherRangeType* leftOffsetAddr = (__local_mem__ GatherRangeType*)leftOffsetLocal.GetPhyAddr();
-    __local_mem__ GatherRangeType* midOffsetAddr = (__local_mem__ GatherRangeType*)midOffsetLocal.GetPhyAddr();
-    __local_mem__ GatherRangeType* rightOffsetAddr = (__local_mem__ GatherRangeType*)rightOffsetLocal.GetPhyAddr();
+    __ubuf__ GatherRangeType* leftOffsetAddr = (__ubuf__ GatherRangeType*)leftOffsetLocal.GetPhyAddr();
+    __ubuf__ GatherRangeType* midOffsetAddr = (__ubuf__ GatherRangeType*)midOffsetLocal.GetPhyAddr();
+    __ubuf__ GatherRangeType* rightOffsetAddr = (__ubuf__ GatherRangeType*)rightOffsetLocal.GetPhyAddr();
 
     // 2. 生成索引和偏移数组（只生成一次，基于前 rowsPerBatch 行）
     GenerateFoldWAxisIndices(static_cast<uint16_t>(rowsPerBatch), static_cast<uint16_t>(innerWidth), width, leftPadW,
@@ -1297,13 +1288,13 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxis(int64_t factor, i
                              leftOffsetAddr, rightOffsetAddr);
 
     // 3. 循环处理所有行
-    __local_mem__ GatherIdxType* midIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(midIdxAddr);
-    __local_mem__ GatherIdxType* leftIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(leftIdxAddr);
-    __local_mem__ GatherIdxType* rightIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(rightIdxAddr);
+    __ubuf__ GatherIdxType* midIdxAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(midIdxAddr);
+    __ubuf__ GatherIdxType* leftIdxAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(leftIdxAddr);
+    __ubuf__ GatherIdxType* rightIdxAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(rightIdxAddr);
 
-    __local_mem__ GatherIdxType* midOffsetAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(midOffsetAddr);
-    __local_mem__ GatherIdxType* leftOffsetAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(leftOffsetAddr);
-    __local_mem__ GatherIdxType* rightOffsetAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(rightOffsetAddr);
+    __ubuf__ GatherIdxType* midOffsetAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(midOffsetAddr);
+    __ubuf__ GatherIdxType* leftOffsetAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(leftOffsetAddr);
+    __ubuf__ GatherIdxType* rightOffsetAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(rightOffsetAddr);
 
     int64_t totalLoops = (factor + rowsPerBatch - 1) / rowsPerBatch;
     uint32_t curElements = static_cast<uint32_t>(rowsPerBatch * innerWidth);
@@ -1314,27 +1305,27 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxis(int64_t factor, i
 
     __VEC_SCOPE__
     {
-        __local_mem__ PromoteDataT* tempOutputAddr = outputAddr;
+        __ubuf__ PromoteDataT* tempOutputAddr = outputAddr;
 
         // 加载索引到 RegTensor（只加载一次）
         AscendC::Reg::RegTensor<GatherIdxType> midIdxReg;
-        AscendC::Reg::DataCopy(midIdxReg, midIdxAddrU);
+        AscendC::Reg::LoadAlign(midIdxReg, midIdxAddrU);
 
         AscendC::Reg::RegTensor<GatherIdxType> leftIdxReg;
-        AscendC::Reg::DataCopy(leftIdxReg, leftIdxAddrU);
+        AscendC::Reg::LoadAlign(leftIdxReg, leftIdxAddrU);
 
         AscendC::Reg::RegTensor<GatherIdxType> rightIdxReg;
-        AscendC::Reg::DataCopy(rightIdxReg, rightIdxAddrU);
+        AscendC::Reg::LoadAlign(rightIdxReg, rightIdxAddrU);
 
         // 加载偏移到 RegTensor
         AscendC::Reg::RegTensor<GatherIdxType> midOffsetReg;
-        AscendC::Reg::DataCopy(midOffsetReg, midOffsetAddrU);
+        AscendC::Reg::LoadAlign(midOffsetReg, midOffsetAddrU);
 
         AscendC::Reg::RegTensor<GatherIdxType> leftOffsetReg;
-        AscendC::Reg::DataCopy(leftOffsetReg, leftOffsetAddrU);
+        AscendC::Reg::LoadAlign(leftOffsetReg, leftOffsetAddrU);
 
         AscendC::Reg::RegTensor<GatherIdxType> rightOffsetReg;
-        AscendC::Reg::DataCopy(rightOffsetReg, rightOffsetAddrU);
+        AscendC::Reg::LoadAlign(rightOffsetReg, rightOffsetAddrU);
 
         AscendC::Reg::UnalignRegForStore ureg1; // 非对齐搬出
         uint32_t elementsPerBatch = static_cast<uint32_t>(rowsPerBatch * innerWidth);
@@ -1347,13 +1338,13 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxis(int64_t factor, i
 
             // Gather 三个区域的数据
             AscendC::Reg::RegTensor<PromoteDataT> midDataReg;
-            AscendC::Reg::DataCopyGather(midDataReg, midAddr, midIdxReg, mask);
+            AscendC::Reg::Gather(midDataReg, midAddr, midIdxReg, mask);
 
             AscendC::Reg::RegTensor<PromoteDataT> leftDataReg;
-            AscendC::Reg::DataCopyGather(leftDataReg, midAddr, leftIdxReg, mask);
+            AscendC::Reg::Gather(leftDataReg, midAddr, leftIdxReg, mask);
 
             AscendC::Reg::RegTensor<PromoteDataT> rightDataReg;
-            AscendC::Reg::DataCopyGather(rightDataReg, midAddr, rightIdxReg, mask);
+            AscendC::Reg::Gather(rightDataReg, midAddr, rightIdxReg, mask);
 
             // 三个数据相加
             AscendC::Reg::RegTensor<PromoteDataT> sumReg;
@@ -1375,13 +1366,13 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxis(int64_t factor, i
 
         // Gather 三个区域的数据
         AscendC::Reg::RegTensor<PromoteDataT> midDataReg;
-        AscendC::Reg::DataCopyGather(midDataReg, midAddr, midIdxReg, mask);
+        AscendC::Reg::Gather(midDataReg, midAddr, midIdxReg, mask);
 
         AscendC::Reg::RegTensor<PromoteDataT> leftDataReg;
-        AscendC::Reg::DataCopyGather(leftDataReg, midAddr, leftIdxReg, mask);
+        AscendC::Reg::Gather(leftDataReg, midAddr, leftIdxReg, mask);
 
         AscendC::Reg::RegTensor<PromoteDataT> rightDataReg;
-        AscendC::Reg::DataCopyGather(rightDataReg, midAddr, rightIdxReg, mask);
+        AscendC::Reg::Gather(rightDataReg, midAddr, rightIdxReg, mask);
 
         // 三个数据相加
         AscendC::Reg::RegTensor<PromoteDataT> sumReg;
@@ -1422,10 +1413,9 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxis(int64_t factor, i
 template <typename T, uint8_t modeName>
 __aicore__ inline void PadV3GradGather<T, modeName>::GenerateFoldWAxisIndices(
     uint16_t rowsPerBatch, uint16_t innerWidth, int64_t width, int64_t leftPadW, int64_t rightPadW,
-    GatherRangeType rowWidthOffset, __local_mem__ GatherRangeType* midIdxAddr,
-    __local_mem__ GatherRangeType* leftIdxAddr, __local_mem__ GatherRangeType* rightIdxAddr,
-    __local_mem__ GatherRangeType* midOffsetAddr, __local_mem__ GatherRangeType* leftOffsetAddr,
-    __local_mem__ GatherRangeType* rightOffsetAddr)
+    GatherRangeType rowWidthOffset, __ubuf__ GatherRangeType* midIdxAddr, __ubuf__ GatherRangeType* leftIdxAddr,
+    __ubuf__ GatherRangeType* rightIdxAddr, __ubuf__ GatherRangeType* midOffsetAddr,
+    __ubuf__ GatherRangeType* leftOffsetAddr, __ubuf__ GatherRangeType* rightOffsetAddr)
 {
     __VEC_SCOPE__
     {
@@ -1456,7 +1446,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::GenerateFoldWAxisIndices(
         // ===== midIdx = chanHBase + col（恒有效）=====
         AscendC::Reg::RegTensor<GatherRangeType> midIdxReg;
         AscendC::Reg::Add(midIdxReg, chanHBaseReg, colReg, mask);
-        AscendC::Reg::DataCopy(midIdxAddr, midIdxReg, mask);
+        AscendC::Reg::StoreAlign(midIdxAddr, midIdxReg, mask);
 
         // ===== leftIdx =====
         // Reflect:   leftIdx = chanHBase - col，有效 col ∈ [1, leftPadW]
@@ -1494,7 +1484,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::GenerateFoldWAxisIndices(
             AscendC::Reg::Duplicate<GatherRangeType, Reg::MaskMergeMode::MERGING, GatherRangeType>(
                 leftIdxReg, static_cast<GatherRangeType>(0), colGeLPWMask);
         }
-        AscendC::Reg::DataCopy(leftIdxAddr, leftIdxReg, mask);
+        AscendC::Reg::StoreAlign(leftIdxAddr, leftIdxReg, mask);
 
         // ===== rightIdx =====
         // Reflect:   rightIdx = chanHBase + (2*innerWidth-2) - col，有效 col ∈ [innerWidth-rightPadW-1, innerWidth-2]
@@ -1538,13 +1528,13 @@ __aicore__ inline void PadV3GradGather<T, modeName>::GenerateFoldWAxisIndices(
             AscendC::Reg::Duplicate<GatherRangeType, Reg::MaskMergeMode::MERGING, GatherRangeType>(
                 rightIdxReg, static_cast<GatherRangeType>(0), colLtLow2Mask);
         }
-        AscendC::Reg::DataCopy(rightIdxAddr, rightIdxReg, mask);
+        AscendC::Reg::StoreAlign(rightIdxAddr, rightIdxReg, mask);
 
         // ===== 偏移数组 =====
         // midOffset: 所有位置均为 rowWidthOffset（mid 索引始终有效）
         AscendC::Reg::RegTensor<GatherRangeType> midOffsetReg;
         AscendC::Reg::Duplicate(midOffsetReg, static_cast<GatherRangeType>(rowWidthOffset), mask);
-        AscendC::Reg::DataCopy(midOffsetAddr, midOffsetReg, mask);
+        AscendC::Reg::StoreAlign(midOffsetAddr, midOffsetReg, mask);
 
         // leftOffset: 有效位置（leftIdx > 0）为 rowWidthOffset，ZERO_PAD 位置（leftIdx == 0）为 0
         AscendC::Reg::RegTensor<GatherRangeType> zeroReg;
@@ -1554,7 +1544,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::GenerateFoldWAxisIndices(
         AscendC::Reg::MaskReg leftOffMask;
         AscendC::Reg::Compare<GatherRangeType, CMPMODE::GT>(leftOffMask, leftIdxReg, zeroReg, mask);
         AscendC::Reg::Duplicate(leftOffsetReg, static_cast<GatherRangeType>(rowWidthOffset), leftOffMask);
-        AscendC::Reg::DataCopy(leftOffsetAddr, leftOffsetReg, mask);
+        AscendC::Reg::StoreAlign(leftOffsetAddr, leftOffsetReg, mask);
 
         // rightOffset: 有效位置（rightIdx > 0）为 rowWidthOffset，ZERO_PAD 位置为 0
         AscendC::Reg::RegTensor<GatherRangeType> rightOffsetReg;
@@ -1562,7 +1552,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::GenerateFoldWAxisIndices(
         AscendC::Reg::MaskReg rightOffMask;
         AscendC::Reg::Compare<GatherRangeType, CMPMODE::GT>(rightOffMask, rightIdxReg, zeroReg, mask);
         AscendC::Reg::Duplicate(rightOffsetReg, static_cast<GatherRangeType>(rowWidthOffset), rightOffMask);
-        AscendC::Reg::DataCopy(rightOffsetAddr, rightOffsetReg, mask);
+        AscendC::Reg::StoreAlign(rightOffsetAddr, rightOffsetReg, mask);
     }
 }
 
@@ -1582,8 +1572,8 @@ __aicore__ inline void PadV3GradGather<T, modeName>::GenerateFoldWAxisIndices(
 template <typename T, uint8_t modeName>
 __aicore__ inline void PadV3GradGather<T, modeName>::GenerateCrossChannelWAxisIndices(
     uint32_t totalRows, uint16_t outW, uint16_t outH, int64_t width, uint64_t hwSize, int64_t leftPadW,
-    int64_t rightPadW, int64_t leftPadH, __local_mem__ GatherRangeType* midIdxAddr,
-    __local_mem__ GatherRangeType* leftIdxAddr, __local_mem__ GatherRangeType* rightIdxAddr)
+    int64_t rightPadW, int64_t leftPadH, __ubuf__ GatherRangeType* midIdxAddr, __ubuf__ GatherRangeType* leftIdxAddr,
+    __ubuf__ GatherRangeType* rightIdxAddr)
 {
     __VEC_SCOPE__
     {
@@ -1623,7 +1613,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::GenerateCrossChannelWAxisIn
         // ===== midIdx = chanHBase + col =====
         AscendC::Reg::RegTensor<GatherRangeType> midIdxReg;
         AscendC::Reg::Add(midIdxReg, chanHBaseReg, colReg, mask);
-        AscendC::Reg::DataCopy(midIdxAddr, midIdxReg, mask);
+        AscendC::Reg::StoreAlign(midIdxAddr, midIdxReg, mask);
 
         // ===== leftIdx（与 GenerateFoldWAxisIndices 相同的清零逻辑）=====
         // 注意：清零时必须使用 MERGING 模式，仅将指定位置置 0，保留其余有效索引
@@ -1654,7 +1644,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::GenerateCrossChannelWAxisIn
             AscendC::Reg::Duplicate<GatherRangeType, Reg::MaskMergeMode::MERGING, GatherRangeType>(
                 leftIdxReg, static_cast<GatherRangeType>(0), colGeLPWMask);
         }
-        AscendC::Reg::DataCopy(leftIdxAddr, leftIdxReg, mask);
+        AscendC::Reg::StoreAlign(leftIdxAddr, leftIdxReg, mask);
 
         // ===== rightIdx（与 GenerateFoldWAxisIndices 相同的清零逻辑）=====
         // 注意：清零时必须使用 MERGING 模式，仅将指定位置置 0，保留其余有效索引
@@ -1692,7 +1682,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::GenerateCrossChannelWAxisIn
             AscendC::Reg::Duplicate<GatherRangeType, Reg::MaskMergeMode::MERGING, GatherRangeType>(
                 rightIdxReg, static_cast<GatherRangeType>(0), colLtLow2Mask);
         }
-        AscendC::Reg::DataCopy(rightIdxAddr, rightIdxReg, mask);
+        AscendC::Reg::StoreAlign(rightIdxAddr, rightIdxReg, mask);
     }
 }
 
@@ -1719,10 +1709,10 @@ __aicore__ inline void PadV3GradGather<T, modeName>::GenerateCrossChannelWAxisIn
 template <typename T, uint8_t modeName>
 __aicore__ inline void PadV3GradGather<T, modeName>::GenerateWAxisIndices(
     uint64_t cOffset, uint16_t rowsPerBatch, uint16_t outW, uint16_t width, int64_t leftPadW, int64_t rightPadW,
-    int64_t leftPadH, GatherRangeType batchOffset, __local_mem__ GatherRangeType* midIdxAddr,
-    __local_mem__ GatherRangeType* leftIdxAddr, __local_mem__ GatherRangeType* rightIdxAddr,
-    __local_mem__ GatherRangeType* midOffsetAddr, __local_mem__ GatherRangeType* leftOffsetAddr,
-    __local_mem__ GatherRangeType* rightOffsetAddr)
+    int64_t leftPadH, GatherRangeType batchOffset, __ubuf__ GatherRangeType* midIdxAddr,
+    __ubuf__ GatherRangeType* leftIdxAddr, __ubuf__ GatherRangeType* rightIdxAddr,
+    __ubuf__ GatherRangeType* midOffsetAddr, __ubuf__ GatherRangeType* leftOffsetAddr,
+    __ubuf__ GatherRangeType* rightOffsetAddr)
 {
     for (uint16_t r = 0; r < rowsPerBatch; r++) {
         // rowOffset = 当前 C 通道偏移 + (leftPadH + r) 行的起始位置 + ZERO_PAD_CNT
@@ -1824,9 +1814,9 @@ template <typename T, uint8_t modeName>
 __aicore__ inline void PadV3GradGather<T, modeName>::FoldHAxisPad(int64_t factor, uint64_t hwSize, int64_t width,
                                                                   int64_t padCount, bool isLeftPad, int64_t leftPadH,
                                                                   int64_t outH, int64_t nFactor, uint64_t nStride,
-                                                                  __local_mem__ PromoteDataT* baseAddr,
-                                                                  __local_mem__ GatherRangeType* srcIdxAddr,
-                                                                  __local_mem__ GatherRangeType* dstIdxAddr)
+                                                                  __ubuf__ PromoteDataT* baseAddr,
+                                                                  __ubuf__ GatherRangeType* srcIdxAddr,
+                                                                  __ubuf__ GatherRangeType* dstIdxAddr)
 {
     if (padCount <= 0 || nFactor <= 0) {
         return;
@@ -1898,8 +1888,8 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHAxisPad(int64_t factor
                         AscendC::Reg::Add(dstIdxReg, dstIdxReg, dstBaseReg, mask);
                         AscendC::Reg::Add(dstIdxReg, dstIdxReg, colReg, mask);
 
-                        AscendC::Reg::DataCopy(srcIdxAddr, srcIdxReg, mask);
-                        AscendC::Reg::DataCopy(dstIdxAddr, dstIdxReg, mask);
+                        AscendC::Reg::StoreAlign(srcIdxAddr, srcIdxReg, mask);
+                        AscendC::Reg::StoreAlign(dstIdxAddr, dstIdxReg, mask);
                     }
                 } else {
                     // 后续批：src 和 dst 同向递增 nPerVF*nStride（N 轴两端方向一致）
@@ -1909,13 +1899,13 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHAxisPad(int64_t factor
                         uint32_t vLen = static_cast<uint32_t>(totalElems);
                         AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<GatherRangeType>(vLen);
                         AscendC::Reg::RegTensor<GatherRangeType> srcIdxReg, dstIdxReg, stepReg;
-                        AscendC::Reg::DataCopy(srcIdxReg, srcIdxAddr);
-                        AscendC::Reg::DataCopy(dstIdxReg, dstIdxAddr);
+                        AscendC::Reg::LoadAlign(srcIdxReg, srcIdxAddr);
+                        AscendC::Reg::LoadAlign(dstIdxReg, dstIdxAddr);
                         AscendC::Reg::Duplicate(stepReg, nStep, mask);
                         AscendC::Reg::Add(srcIdxReg, srcIdxReg, stepReg, mask);
                         AscendC::Reg::Add(dstIdxReg, dstIdxReg, stepReg, mask);
-                        AscendC::Reg::DataCopy(srcIdxAddr, srcIdxReg, mask);
-                        AscendC::Reg::DataCopy(dstIdxAddr, dstIdxReg, mask);
+                        AscendC::Reg::StoreAlign(srcIdxAddr, srcIdxReg, mask);
+                        AscendC::Reg::StoreAlign(dstIdxAddr, dstIdxReg, mask);
                     }
                 }
                 GatherAddScatter(baseAddr + ZERO_PAD_CNT, srcIdxAddr, dstIdxAddr, static_cast<uint64_t>(totalElems));
@@ -1932,7 +1922,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHAxisPad(int64_t factor
             factorsPerVF = 1;
 
         for (int64_t n = 0; n < nFactor; n++) {
-            __local_mem__ PromoteDataT* nBaseAddr = baseAddr + n * static_cast<int64_t>(nStride);
+            __ubuf__ PromoteDataT* nBaseAddr = baseAddr + n * static_cast<int64_t>(nStride);
 
             for (int64_t padRow = 0; padRow < padCount; ++padRow) {
                 int64_t srcRowOffset, dstRowOffset;
@@ -1976,8 +1966,8 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHAxisPad(int64_t factor
                     AscendC::Reg::Add(srcIdxReg, srcIdxReg, colReg, mask);
                     AscendC::Reg::Add(dstIdxReg, dstIdxReg, colReg, mask);
 
-                    AscendC::Reg::DataCopy(srcIdxAddr, srcIdxReg, mask);
-                    AscendC::Reg::DataCopy(dstIdxAddr, dstIdxReg, mask);
+                    AscendC::Reg::StoreAlign(srcIdxAddr, srcIdxReg, mask);
+                    AscendC::Reg::StoreAlign(dstIdxAddr, dstIdxReg, mask);
                 }
 
                 GatherAddScatter(nBaseAddr + ZERO_PAD_CNT, srcIdxAddr, dstIdxAddr, static_cast<uint64_t>(curElements));
@@ -2002,14 +1992,14 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHAxisPad(int64_t factor
                         AscendC::Reg::Duplicate(stepReg, static_cast<GatherRangeType>(cStep), mask);
 
                         AscendC::Reg::RegTensor<GatherRangeType> srcIdxReg, dstIdxReg;
-                        AscendC::Reg::DataCopy(srcIdxReg, srcIdxAddr);
-                        AscendC::Reg::DataCopy(dstIdxReg, dstIdxAddr);
+                        AscendC::Reg::LoadAlign(srcIdxReg, srcIdxAddr);
+                        AscendC::Reg::LoadAlign(dstIdxReg, dstIdxAddr);
 
                         AscendC::Reg::Add(srcIdxReg, srcIdxReg, stepReg, mask);
                         AscendC::Reg::Add(dstIdxReg, dstIdxReg, stepReg, mask);
 
-                        AscendC::Reg::DataCopy(srcIdxAddr, srcIdxReg, mask);
-                        AscendC::Reg::DataCopy(dstIdxAddr, dstIdxReg, mask);
+                        AscendC::Reg::StoreAlign(srcIdxAddr, srcIdxReg, mask);
+                        AscendC::Reg::StoreAlign(dstIdxAddr, dstIdxReg, mask);
                     }
 
                     GatherAddScatter(nBaseAddr + ZERO_PAD_CNT, srcIdxAddr, dstIdxAddr,
@@ -2061,10 +2051,9 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHAxisPad(int64_t factor
 template <typename T, uint8_t modeName>
 __aicore__ inline void PadV3GradGather<T, modeName>::FoldCAxisPad(uint64_t hwSize, int64_t padCount, bool isLeftPad,
                                                                   int64_t leftPadC, int64_t outC, int64_t factor,
-                                                                  uint64_t nStride,
-                                                                  __local_mem__ PromoteDataT* baseAddr,
-                                                                  __local_mem__ GatherRangeType* srcIdxAddr,
-                                                                  __local_mem__ GatherRangeType* dstIdxAddr)
+                                                                  uint64_t nStride, __ubuf__ PromoteDataT* baseAddr,
+                                                                  __ubuf__ GatherRangeType* srcIdxAddr,
+                                                                  __ubuf__ GatherRangeType* dstIdxAddr)
 {
     if (padCount <= 0 || factor <= 0)
         return;
@@ -2151,8 +2140,8 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldCAxisPad(uint64_t hwSiz
                     AscendC::Reg::Add(dstIdxReg, dstIdxReg, eReg, mask);
                     AscendC::Reg::Add(dstIdxReg, dstIdxReg, nOffsetReg, mask);
 
-                    AscendC::Reg::DataCopy(srcIdxAddr, srcIdxReg, mask);
-                    AscendC::Reg::DataCopy(dstIdxAddr, dstIdxReg, mask);
+                    AscendC::Reg::StoreAlign(srcIdxAddr, srcIdxReg, mask);
+                    AscendC::Reg::StoreAlign(dstIdxAddr, dstIdxReg, mask);
                 }
             } else {
                 // 后续批次：N 轴移动，srcIdx 和 dstIdx 均加 nPerVF * nStride（方向相同）
@@ -2164,13 +2153,13 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldCAxisPad(uint64_t hwSiz
                     AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<GatherRangeType>(vLen);
 
                     AscendC::Reg::RegTensor<GatherRangeType> srcIdxReg, dstIdxReg, stepReg;
-                    AscendC::Reg::DataCopy(srcIdxReg, srcIdxAddr);
-                    AscendC::Reg::DataCopy(dstIdxReg, dstIdxAddr);
+                    AscendC::Reg::LoadAlign(srcIdxReg, srcIdxAddr);
+                    AscendC::Reg::LoadAlign(dstIdxReg, dstIdxAddr);
                     AscendC::Reg::Duplicate(stepReg, nStep, mask);
                     AscendC::Reg::Add(srcIdxReg, srcIdxReg, stepReg, mask);
                     AscendC::Reg::Add(dstIdxReg, dstIdxReg, stepReg, mask);
-                    AscendC::Reg::DataCopy(srcIdxAddr, srcIdxReg, mask);
-                    AscendC::Reg::DataCopy(dstIdxAddr, dstIdxReg, mask);
+                    AscendC::Reg::StoreAlign(srcIdxAddr, srcIdxReg, mask);
+                    AscendC::Reg::StoreAlign(dstIdxAddr, dstIdxReg, mask);
                 }
             }
 
@@ -2188,7 +2177,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldCAxisPad(uint64_t hwSiz
         LocalTensor<GatherRangeType> dstIdxLocal = midIdx_.Get<GatherRangeType>();
 
         for (int64_t n = 0; n < factor; n++) {
-            __local_mem__ PromoteDataT* nMidAddr = baseAddr + n * static_cast<int64_t>(nStride);
+            __ubuf__ PromoteDataT* nMidAddr = baseAddr + n * static_cast<int64_t>(nStride);
 
             for (int64_t cIdx = 0; cIdx < padCount; cIdx++) {
                 int64_t srcC, dstC;
@@ -2211,11 +2200,11 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldCAxisPad(uint64_t hwSiz
 
                     AscendC::Reg::RegTensor<GatherRangeType> srcReg;
                     AscendC::Reg::Arange(srcReg, static_cast<GatherRangeType>(srcOffset));
-                    AscendC::Reg::DataCopy(srcIdxAddr, srcReg, mask);
+                    AscendC::Reg::StoreAlign(srcIdxAddr, srcReg, mask);
 
                     AscendC::Reg::RegTensor<GatherRangeType> dstReg;
                     AscendC::Reg::Arange(dstReg, static_cast<GatherRangeType>(dstOffset));
-                    AscendC::Reg::DataCopy(dstIdxAddr, dstReg, mask);
+                    AscendC::Reg::StoreAlign(dstIdxAddr, dstReg, mask);
                 }
 
                 // 分批处理 hwSize 个元素，后续批次 Adds 递增索引
@@ -2285,17 +2274,17 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHWAxis(int64_t factor, 
     int64_t outW = outShape_[dimNum_ - 1]; // 输出宽度
 
     // ===== 2. 获取数据地址 =====
-    __local_mem__ PromoteDataT* midAddr = (__local_mem__ PromoteDataT*)midLocal.GetPhyAddr();
-    __local_mem__ PromoteDataT* outputAddr = (__local_mem__ PromoteDataT*)outputLocal.GetPhyAddr();
+    __ubuf__ PromoteDataT* midAddr = (__ubuf__ PromoteDataT*)midLocal.GetPhyAddr();
+    __ubuf__ PromoteDataT* outputAddr = (__ubuf__ PromoteDataT*)outputLocal.GetPhyAddr();
 
     // 获取索引缓冲区（用于 H 轴折叠和 W 轴折叠）
     LocalTensor<GatherRangeType> leftIdxLocal = leftPadIdx_.Get<GatherRangeType>();
     LocalTensor<GatherRangeType> midIdxLocal = midIdx_.Get<GatherRangeType>();
     LocalTensor<GatherRangeType> rightIdxLocal = rightPadIdx_.Get<GatherRangeType>();
 
-    __local_mem__ GatherRangeType* leftIdxAddr = (__local_mem__ GatherRangeType*)leftIdxLocal.GetPhyAddr();
-    __local_mem__ GatherRangeType* midIdxAddr = (__local_mem__ GatherRangeType*)midIdxLocal.GetPhyAddr();
-    __local_mem__ GatherRangeType* rightIdxAddr = (__local_mem__ GatherRangeType*)rightIdxLocal.GetPhyAddr();
+    __ubuf__ GatherRangeType* leftIdxAddr = (__ubuf__ GatherRangeType*)leftIdxLocal.GetPhyAddr();
+    __ubuf__ GatherRangeType* midIdxAddr = (__ubuf__ GatherRangeType*)midIdxLocal.GetPhyAddr();
+    __ubuf__ GatherRangeType* rightIdxAddr = (__ubuf__ GatherRangeType*)rightIdxLocal.GetPhyAddr();
 
     // ===== 3. 折叠 H 轴 pad =====
     // 对每个 C 通道（factor 个）折叠 H 轴的 pad（nFactor=1 退化为原逻辑）
@@ -2347,25 +2336,25 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHWAxis(int64_t factor, 
 
         __VEC_SCOPE__
         {
-            __local_mem__ PromoteDataT* sregOutAddr = outputAddr;
-            __local_mem__ PromoteDataT* sregMiddAddr = midAddr;
+            __ubuf__ PromoteDataT* sregOutAddr = outputAddr;
+            __ubuf__ PromoteDataT* sregMiddAddr = midAddr;
             uint32_t tempElementsPerBatch = elementsPerBatch;
             AscendC::Reg::MaskReg idxMask = AscendC::Reg::UpdateMask<GatherIdxType>(elementsPerBatch);
 
-            __local_mem__ GatherIdxType* midIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(midIdxAddr);
-            __local_mem__ GatherIdxType* leftIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(leftIdxAddr);
-            __local_mem__ GatherIdxType* rightIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(rightIdxAddr);
+            __ubuf__ GatherIdxType* midIdxAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(midIdxAddr);
+            __ubuf__ GatherIdxType* leftIdxAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(leftIdxAddr);
+            __ubuf__ GatherIdxType* rightIdxAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(rightIdxAddr);
 
             AscendC::Reg::UnalignRegForStore ureg1;
 
             AscendC::Reg::RegTensor<GatherIdxType> midIdxReg;
-            AscendC::Reg::DataCopy(midIdxReg, midIdxAddrU);
+            AscendC::Reg::LoadAlign(midIdxReg, midIdxAddrU);
 
             AscendC::Reg::RegTensor<GatherIdxType> leftIdxReg;
-            AscendC::Reg::DataCopy(leftIdxReg, leftIdxAddrU);
+            AscendC::Reg::LoadAlign(leftIdxReg, leftIdxAddrU);
 
             AscendC::Reg::RegTensor<GatherIdxType> rightIdxReg;
-            AscendC::Reg::DataCopy(rightIdxReg, rightIdxAddrU);
+            AscendC::Reg::LoadAlign(rightIdxReg, rightIdxAddrU);
 
             AscendC::Reg::RegTensor<GatherIdxType> midBatchOffsetReg;
             AscendC::Reg::Duplicate(midBatchOffsetReg, batchDelta, idxMask);
@@ -2393,13 +2382,13 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHWAxis(int64_t factor, 
                 AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<PromoteDataT>(maskElementsPerBatch);
 
                 AscendC::Reg::RegTensor<PromoteDataT> midDataReg;
-                AscendC::Reg::DataCopyGather(midDataReg, sregMiddAddr, midIdxReg, mask);
+                AscendC::Reg::Gather(midDataReg, sregMiddAddr, midIdxReg, mask);
 
                 AscendC::Reg::RegTensor<PromoteDataT> leftDataReg;
-                AscendC::Reg::DataCopyGather(leftDataReg, sregMiddAddr, leftIdxReg, mask);
+                AscendC::Reg::Gather(leftDataReg, sregMiddAddr, leftIdxReg, mask);
 
                 AscendC::Reg::RegTensor<PromoteDataT> rightDataReg;
-                AscendC::Reg::DataCopyGather(rightDataReg, sregMiddAddr, rightIdxReg, mask);
+                AscendC::Reg::Gather(rightDataReg, sregMiddAddr, rightIdxReg, mask);
 
                 AscendC::Reg::RegTensor<PromoteDataT> sumReg;
                 AscendC::Reg::Add(sumReg, midDataReg, leftDataReg, mask);
@@ -2415,11 +2404,11 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHWAxis(int64_t factor, 
             uint32_t tempTailElements = tailElements;
             AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<PromoteDataT>(tailElements);
             AscendC::Reg::RegTensor<PromoteDataT> midDataReg;
-            AscendC::Reg::DataCopyGather(midDataReg, sregMiddAddr, midIdxReg, mask);
+            AscendC::Reg::Gather(midDataReg, sregMiddAddr, midIdxReg, mask);
             AscendC::Reg::RegTensor<PromoteDataT> leftDataReg;
-            AscendC::Reg::DataCopyGather(leftDataReg, sregMiddAddr, leftIdxReg, mask);
+            AscendC::Reg::Gather(leftDataReg, sregMiddAddr, leftIdxReg, mask);
             AscendC::Reg::RegTensor<PromoteDataT> rightDataReg;
-            AscendC::Reg::DataCopyGather(rightDataReg, sregMiddAddr, rightIdxReg, mask);
+            AscendC::Reg::Gather(rightDataReg, sregMiddAddr, rightIdxReg, mask);
 
             AscendC::Reg::RegTensor<PromoteDataT> sumReg;
             AscendC::Reg::Add(sumReg, midDataReg, leftDataReg, mask);
@@ -2457,24 +2446,24 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHWAxis(int64_t factor, 
 
         __VEC_SCOPE__
         {
-            __local_mem__ PromoteDataT* sregMiddAddr = midAddr;
+            __ubuf__ PromoteDataT* sregMiddAddr = midAddr;
             // UpdateMask 会修改参数，用临时副本传入
             uint32_t idxMaskCount = storeElemPerBatch;
             AscendC::Reg::MaskReg idxMask = AscendC::Reg::UpdateMask<GatherIdxType>(idxMaskCount);
 
-            __local_mem__ GatherIdxType* midIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(midIdxAddr);
-            __local_mem__ GatherIdxType* leftIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(leftIdxAddr);
-            __local_mem__ GatherIdxType* rightIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(rightIdxAddr);
+            __ubuf__ GatherIdxType* midIdxAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(midIdxAddr);
+            __ubuf__ GatherIdxType* leftIdxAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(leftIdxAddr);
+            __ubuf__ GatherIdxType* rightIdxAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(rightIdxAddr);
 
             AscendC::Reg::UnalignRegForStore ureg1;
 
             // 加载 C0 基准索引（GenerateCrossChannelWAxisIndices 生成 C0-r0..r(actualRowsPerVF-1)）
             AscendC::Reg::RegTensor<GatherIdxType> baseMidIdxReg;
-            AscendC::Reg::DataCopy(baseMidIdxReg, midIdxAddrU);
+            AscendC::Reg::LoadAlign(baseMidIdxReg, midIdxAddrU);
             AscendC::Reg::RegTensor<GatherIdxType> baseLeftIdxReg;
-            AscendC::Reg::DataCopy(baseLeftIdxReg, leftIdxAddrU);
+            AscendC::Reg::LoadAlign(baseLeftIdxReg, leftIdxAddrU);
             AscendC::Reg::RegTensor<GatherIdxType> baseRightIdxReg;
-            AscendC::Reg::DataCopy(baseRightIdxReg, rightIdxAddrU);
+            AscendC::Reg::LoadAlign(baseRightIdxReg, rightIdxAddrU);
 
             AscendC::Reg::RegTensor<GatherIdxType> zeroReg;
             AscendC::Reg::Duplicate(zeroReg, static_cast<GatherIdxType>(0), idxMask);
@@ -2526,11 +2515,11 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHWAxis(int64_t factor, 
                     AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<PromoteDataT>(tempLoopElem);
 
                     AscendC::Reg::RegTensor<PromoteDataT> midDataReg;
-                    AscendC::Reg::DataCopyGather(midDataReg, sregMiddAddr, midIdxReg, mask);
+                    AscendC::Reg::Gather(midDataReg, sregMiddAddr, midIdxReg, mask);
                     AscendC::Reg::RegTensor<PromoteDataT> leftDataReg;
-                    AscendC::Reg::DataCopyGather(leftDataReg, sregMiddAddr, leftIdxReg, mask);
+                    AscendC::Reg::Gather(leftDataReg, sregMiddAddr, leftIdxReg, mask);
                     AscendC::Reg::RegTensor<PromoteDataT> rightDataReg;
-                    AscendC::Reg::DataCopyGather(rightDataReg, sregMiddAddr, rightIdxReg, mask);
+                    AscendC::Reg::Gather(rightDataReg, sregMiddAddr, rightIdxReg, mask);
 
                     AscendC::Reg::RegTensor<PromoteDataT> sumReg;
                     AscendC::Reg::Add(sumReg, midDataReg, leftDataReg, mask);
@@ -2549,11 +2538,11 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHWAxis(int64_t factor, 
                     uint32_t tempTailElem = storeTailElemInC;
                     AscendC::Reg::MaskReg mask = AscendC::Reg::UpdateMask<PromoteDataT>(tempTailElem);
                     AscendC::Reg::RegTensor<PromoteDataT> midDataReg;
-                    AscendC::Reg::DataCopyGather(midDataReg, sregMiddAddr, midIdxReg, mask);
+                    AscendC::Reg::Gather(midDataReg, sregMiddAddr, midIdxReg, mask);
                     AscendC::Reg::RegTensor<PromoteDataT> leftDataReg;
-                    AscendC::Reg::DataCopyGather(leftDataReg, sregMiddAddr, leftIdxReg, mask);
+                    AscendC::Reg::Gather(leftDataReg, sregMiddAddr, leftIdxReg, mask);
                     AscendC::Reg::RegTensor<PromoteDataT> rightDataReg;
-                    AscendC::Reg::DataCopyGather(rightDataReg, sregMiddAddr, rightIdxReg, mask);
+                    AscendC::Reg::Gather(rightDataReg, sregMiddAddr, rightIdxReg, mask);
 
                     AscendC::Reg::RegTensor<PromoteDataT> sumReg;
                     AscendC::Reg::Add(sumReg, midDataReg, leftDataReg, mask);
@@ -2589,22 +2578,21 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldHWAxis(int64_t factor, 
 template <typename T, uint8_t modeName>
 __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxisForCHWAxis(
     int64_t factor, int64_t outC, uint64_t hwSize, int64_t width, int64_t leftPadC, int64_t leftPadH, int64_t leftPadW,
-    int64_t rightPadW, int64_t outH, int64_t outW, __local_mem__ PromoteDataT* midAddr,
-    __local_mem__ PromoteDataT* outputAddr, __local_mem__ GatherRangeType* midIdxAddr,
-    __local_mem__ GatherRangeType* leftIdxAddr, __local_mem__ GatherRangeType* rightIdxAddr)
+    int64_t rightPadW, int64_t outH, int64_t outW, __ubuf__ PromoteDataT* midAddr, __ubuf__ PromoteDataT* outputAddr,
+    __ubuf__ GatherRangeType* midIdxAddr, __ubuf__ GatherRangeType* leftIdxAddr, __ubuf__ GatherRangeType* rightIdxAddr)
 {
     // 获取偏移缓冲区
     LocalTensor<GatherRangeType> leftOffsetLocal = leftPadOffset_.Get<GatherRangeType>();
     LocalTensor<GatherRangeType> midOffsetLocal = midOffset_.Get<GatherRangeType>();
     LocalTensor<GatherRangeType> rightOffsetLocal = rightPadOffset_.Get<GatherRangeType>();
 
-    __local_mem__ GatherRangeType* leftOffsetAddr = (__local_mem__ GatherRangeType*)leftOffsetLocal.GetPhyAddr();
-    __local_mem__ GatherRangeType* midOffsetAddr = (__local_mem__ GatherRangeType*)midOffsetLocal.GetPhyAddr();
-    __local_mem__ GatherRangeType* rightOffsetAddr = (__local_mem__ GatherRangeType*)rightOffsetLocal.GetPhyAddr();
+    __ubuf__ GatherRangeType* leftOffsetAddr = (__ubuf__ GatherRangeType*)leftOffsetLocal.GetPhyAddr();
+    __ubuf__ GatherRangeType* midOffsetAddr = (__ubuf__ GatherRangeType*)midOffsetLocal.GetPhyAddr();
+    __ubuf__ GatherRangeType* rightOffsetAddr = (__ubuf__ GatherRangeType*)rightOffsetLocal.GetPhyAddr();
 
-    __local_mem__ GatherIdxType* midOffsetAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(midOffsetAddr);
-    __local_mem__ GatherIdxType* leftOffsetAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(leftOffsetAddr);
-    __local_mem__ GatherIdxType* rightOffsetAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(rightOffsetAddr);
+    __ubuf__ GatherIdxType* midOffsetAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(midOffsetAddr);
+    __ubuf__ GatherIdxType* leftOffsetAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(leftOffsetAddr);
+    __ubuf__ GatherIdxType* rightOffsetAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(rightOffsetAddr);
 
     // 每个 (n,c) 对应的输出元素数
     int64_t elemPerNC = outH * outW;
@@ -2651,7 +2639,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxisForCHWAxis(
 
         __VEC_SCOPE__
         {
-            __local_mem__ PromoteDataT* sregOutputAddr = outputAddr;
+            __ubuf__ PromoteDataT* sregOutputAddr = outputAddr;
 
             AscendC::Reg::UnalignRegForStore ureg1;
 
@@ -2797,22 +2785,22 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxisForCHWAxis(
             }
 
             // 存到 GatherRangeType* 内存缓冲区
-            AscendC::Reg::DataCopy(midIdxAddr, midIdxR, fullMask);
-            AscendC::Reg::DataCopy(leftIdxAddr, leftIdxR, fullMask);
-            AscendC::Reg::DataCopy(rightIdxAddr, rightIdxR, fullMask);
+            AscendC::Reg::StoreAlign(midIdxAddr, midIdxR, fullMask);
+            AscendC::Reg::StoreAlign(leftIdxAddr, leftIdxR, fullMask);
+            AscendC::Reg::StoreAlign(rightIdxAddr, rightIdxR, fullMask);
 
             // reinterpret 为 GatherIdxType*，加载为 GatherIdxType 寄存器后做数据 Gather
-            __local_mem__ GatherIdxType* midIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(midIdxAddr);
-            __local_mem__ GatherIdxType* leftIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(leftIdxAddr);
-            __local_mem__ GatherIdxType* rightIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(rightIdxAddr);
+            __ubuf__ GatherIdxType* midIdxAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(midIdxAddr);
+            __ubuf__ GatherIdxType* leftIdxAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(leftIdxAddr);
+            __ubuf__ GatherIdxType* rightIdxAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(rightIdxAddr);
 
             AscendC::Reg::RegTensor<GatherIdxType> midIdxFull;
             AscendC::Reg::RegTensor<GatherIdxType> leftIdxFull;
             AscendC::Reg::RegTensor<GatherIdxType> rightIdxFull;
 
-            AscendC::Reg::DataCopy(midIdxFull, midIdxAddrU);
-            AscendC::Reg::DataCopy(leftIdxFull, leftIdxAddrU);
-            AscendC::Reg::DataCopy(rightIdxFull, rightIdxAddrU);
+            AscendC::Reg::LoadAlign(midIdxFull, midIdxAddrU);
+            AscendC::Reg::LoadAlign(leftIdxFull, leftIdxAddrU);
+            AscendC::Reg::LoadAlign(rightIdxFull, rightIdxAddrU);
 
             AscendC::Reg::MaskReg dataMask = AscendC::Reg::UpdateMask<PromoteDataT>(maskLen);
 
@@ -2821,9 +2809,9 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxisForCHWAxis(
             AscendC::Reg::RegTensor<PromoteDataT> rightD;
             AscendC::Reg::RegTensor<PromoteDataT> sumD;
 
-            AscendC::Reg::DataCopyGather(midD, midAddr, midIdxFull, dataMask);
-            AscendC::Reg::DataCopyGather(leftD, midAddr, leftIdxFull, dataMask);
-            AscendC::Reg::DataCopyGather(rightD, midAddr, rightIdxFull, dataMask);
+            AscendC::Reg::Gather(midD, midAddr, midIdxFull, dataMask);
+            AscendC::Reg::Gather(leftD, midAddr, leftIdxFull, dataMask);
+            AscendC::Reg::Gather(rightD, midAddr, rightIdxFull, dataMask);
 
             AscendC::Reg::Add(sumD, midD, leftD, dataMask);
             AscendC::Reg::Add(sumD, sumD, rightD, dataMask);
@@ -2895,9 +2883,9 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxisForCHWAxis(
                         AscendC::Reg::RegTensor<PromoteDataT> rightD2;
                         AscendC::Reg::RegTensor<PromoteDataT> sumD2;
 
-                        AscendC::Reg::DataCopyGather(midD2, midAddr, curMidIdx, dataMask2);
-                        AscendC::Reg::DataCopyGather(leftD2, midAddr, curLeftIdx, dataMask2);
-                        AscendC::Reg::DataCopyGather(rightD2, midAddr, curRightIdx, dataMask2);
+                        AscendC::Reg::Gather(midD2, midAddr, curMidIdx, dataMask2);
+                        AscendC::Reg::Gather(leftD2, midAddr, curLeftIdx, dataMask2);
+                        AscendC::Reg::Gather(rightD2, midAddr, curRightIdx, dataMask2);
 
                         AscendC::Reg::Add(sumD2, midD2, leftD2, dataMask2);
                         AscendC::Reg::Add(sumD2, sumD2, rightD2, dataMask2);
@@ -3055,33 +3043,31 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxisForCHWAxis(
                         }
 
                         // 转换为 GatherIdxType 并执行 Gather
-                        AscendC::Reg::DataCopy(midIdxAddr, midIdxR2, fullMask2);
-                        AscendC::Reg::DataCopy(leftIdxAddr, leftIdxR2, fullMask2);
-                        AscendC::Reg::DataCopy(rightIdxAddr, rightIdxR2, fullMask2);
+                        AscendC::Reg::StoreAlign(midIdxAddr, midIdxR2, fullMask2);
+                        AscendC::Reg::StoreAlign(leftIdxAddr, leftIdxR2, fullMask2);
+                        AscendC::Reg::StoreAlign(rightIdxAddr, rightIdxR2, fullMask2);
 
-                        __local_mem__ GatherIdxType* midIdxAddrU2 = reinterpret_cast<__local_mem__ GatherIdxType*>(
-                            midIdxAddr);
-                        __local_mem__ GatherIdxType* leftIdxAddrU2 = reinterpret_cast<__local_mem__ GatherIdxType*>(
-                            leftIdxAddr);
-                        __local_mem__ GatherIdxType* rightIdxAddrU2 = reinterpret_cast<__local_mem__ GatherIdxType*>(
+                        __ubuf__ GatherIdxType* midIdxAddrU2 = reinterpret_cast<__ubuf__ GatherIdxType*>(midIdxAddr);
+                        __ubuf__ GatherIdxType* leftIdxAddrU2 = reinterpret_cast<__ubuf__ GatherIdxType*>(leftIdxAddr);
+                        __ubuf__ GatherIdxType* rightIdxAddrU2 = reinterpret_cast<__ubuf__ GatherIdxType*>(
                             rightIdxAddr);
 
                         AscendC::Reg::RegTensor<GatherIdxType> midIdxFull2;
                         AscendC::Reg::RegTensor<GatherIdxType> leftIdxFull2;
                         AscendC::Reg::RegTensor<GatherIdxType> rightIdxFull2;
 
-                        AscendC::Reg::DataCopy(midIdxFull2, midIdxAddrU2);
-                        AscendC::Reg::DataCopy(leftIdxFull2, leftIdxAddrU2);
-                        AscendC::Reg::DataCopy(rightIdxFull2, rightIdxAddrU2);
+                        AscendC::Reg::LoadAlign(midIdxFull2, midIdxAddrU2);
+                        AscendC::Reg::LoadAlign(leftIdxFull2, leftIdxAddrU2);
+                        AscendC::Reg::LoadAlign(rightIdxFull2, rightIdxAddrU2);
 
                         AscendC::Reg::RegTensor<PromoteDataT> midD2;
                         AscendC::Reg::RegTensor<PromoteDataT> leftD2;
                         AscendC::Reg::RegTensor<PromoteDataT> rightD2;
                         AscendC::Reg::RegTensor<PromoteDataT> sumD2;
 
-                        AscendC::Reg::DataCopyGather(midD2, midAddr, midIdxFull2, dataMask2);
-                        AscendC::Reg::DataCopyGather(leftD2, midAddr, leftIdxFull2, dataMask2);
-                        AscendC::Reg::DataCopyGather(rightD2, midAddr, rightIdxFull2, dataMask2);
+                        AscendC::Reg::Gather(midD2, midAddr, midIdxFull2, dataMask2);
+                        AscendC::Reg::Gather(leftD2, midAddr, leftIdxFull2, dataMask2);
+                        AscendC::Reg::Gather(rightD2, midAddr, rightIdxFull2, dataMask2);
 
                         AscendC::Reg::Add(sumD2, midD2, leftD2, dataMask2);
                         AscendC::Reg::Add(sumD2, sumD2, rightD2, dataMask2);
@@ -3116,31 +3102,29 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxisForCHWAxis(
             uint32_t maskLen = elementsPerBatch;
             AscendC::Reg::MaskReg idxMask = AscendC::Reg::UpdateMask<GatherIdxType>(maskLen);
 
-            __local_mem__ GatherIdxType* midIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(midIdxAddr);
-            __local_mem__ GatherIdxType* leftIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(leftIdxAddr);
-            __local_mem__ GatherIdxType* rightIdxAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(rightIdxAddr);
+            __ubuf__ GatherIdxType* midIdxAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(midIdxAddr);
+            __ubuf__ GatherIdxType* leftIdxAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(leftIdxAddr);
+            __ubuf__ GatherIdxType* rightIdxAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(rightIdxAddr);
 
-            __local_mem__ GatherIdxType* midOffsetAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(midOffsetAddr);
-            __local_mem__ GatherIdxType* leftOffsetAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(
-                leftOffsetAddr);
-            __local_mem__ GatherIdxType* rightOffsetAddrU = reinterpret_cast<__local_mem__ GatherIdxType*>(
-                rightOffsetAddr);
+            __ubuf__ GatherIdxType* midOffsetAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(midOffsetAddr);
+            __ubuf__ GatherIdxType* leftOffsetAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(leftOffsetAddr);
+            __ubuf__ GatherIdxType* rightOffsetAddrU = reinterpret_cast<__ubuf__ GatherIdxType*>(rightOffsetAddr);
 
             AscendC::Reg::RegTensor<GatherIdxType> baseMidIdxReg;
             AscendC::Reg::RegTensor<GatherIdxType> baseLeftIdxReg;
             AscendC::Reg::RegTensor<GatherIdxType> baseRightIdxReg;
 
-            AscendC::Reg::DataCopy(baseMidIdxReg, midIdxAddrU);
-            AscendC::Reg::DataCopy(baseLeftIdxReg, leftIdxAddrU);
-            AscendC::Reg::DataCopy(baseRightIdxReg, rightIdxAddrU);
+            AscendC::Reg::LoadAlign(baseMidIdxReg, midIdxAddrU);
+            AscendC::Reg::LoadAlign(baseLeftIdxReg, leftIdxAddrU);
+            AscendC::Reg::LoadAlign(baseRightIdxReg, rightIdxAddrU);
 
             AscendC::Reg::RegTensor<GatherIdxType> midOffsetReg;
             AscendC::Reg::RegTensor<GatherIdxType> leftOffsetReg;
             AscendC::Reg::RegTensor<GatherIdxType> rightOffsetReg;
 
-            AscendC::Reg::DataCopy(midOffsetReg, midOffsetAddrU);
-            AscendC::Reg::DataCopy(leftOffsetReg, leftOffsetAddrU);
-            AscendC::Reg::DataCopy(rightOffsetReg, rightOffsetAddrU);
+            AscendC::Reg::LoadAlign(midOffsetReg, midOffsetAddrU);
+            AscendC::Reg::LoadAlign(leftOffsetReg, leftOffsetAddrU);
+            AscendC::Reg::LoadAlign(rightOffsetReg, rightOffsetAddrU);
 
             GatherIdxType hwSizeU = static_cast<GatherIdxType>(hwSize);
             GatherIdxType nStride_ = static_cast<GatherIdxType>(nStride);
@@ -3192,9 +3176,9 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxisForCHWAxis(
                         AscendC::Reg::RegTensor<PromoteDataT> rightDataReg;
                         AscendC::Reg::RegTensor<PromoteDataT> sumReg;
 
-                        AscendC::Reg::DataCopyGather(midDataReg, midAddr, midIdxReg, mask);
-                        AscendC::Reg::DataCopyGather(leftDataReg, midAddr, leftIdxReg, mask);
-                        AscendC::Reg::DataCopyGather(rightDataReg, midAddr, rightIdxReg, mask);
+                        AscendC::Reg::Gather(midDataReg, midAddr, midIdxReg, mask);
+                        AscendC::Reg::Gather(leftDataReg, midAddr, leftIdxReg, mask);
+                        AscendC::Reg::Gather(rightDataReg, midAddr, rightIdxReg, mask);
 
                         AscendC::Reg::Add(sumReg, midDataReg, leftDataReg, mask);
                         AscendC::Reg::Add(sumReg, sumReg, rightDataReg, mask);
@@ -3218,9 +3202,9 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxisForCHWAxis(
                     AscendC::Reg::RegTensor<PromoteDataT> rightDataReg;
                     AscendC::Reg::RegTensor<PromoteDataT> sumReg;
 
-                    AscendC::Reg::DataCopyGather(midDataReg, midAddr, midIdxReg, mask);
-                    AscendC::Reg::DataCopyGather(leftDataReg, midAddr, leftIdxReg, mask);
-                    AscendC::Reg::DataCopyGather(rightDataReg, midAddr, rightIdxReg, mask);
+                    AscendC::Reg::Gather(midDataReg, midAddr, midIdxReg, mask);
+                    AscendC::Reg::Gather(leftDataReg, midAddr, leftIdxReg, mask);
+                    AscendC::Reg::Gather(rightDataReg, midAddr, rightIdxReg, mask);
 
                     AscendC::Reg::Add(sumReg, midDataReg, leftDataReg, mask);
                     AscendC::Reg::Add(sumReg, sumReg, rightDataReg, mask);
@@ -3293,22 +3277,22 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldCHWAxis(int64_t factor,
     int64_t outW = outShape_[dimNum_ - 1];
 
     // ===== 2. 获取数据地址 =====
-    __local_mem__ PromoteDataT* midAddr = (__local_mem__ PromoteDataT*)midLocal.GetPhyAddr();
-    __local_mem__ PromoteDataT* outputAddr = (__local_mem__ PromoteDataT*)outputLocal.GetPhyAddr();
+    __ubuf__ PromoteDataT* midAddr = (__ubuf__ PromoteDataT*)midLocal.GetPhyAddr();
+    __ubuf__ PromoteDataT* outputAddr = (__ubuf__ PromoteDataT*)outputLocal.GetPhyAddr();
 
     // 获取索引及偏移缓冲区
     LocalTensor<GatherRangeType> leftIdxLocal = leftPadIdx_.Get<GatherRangeType>();
     LocalTensor<GatherRangeType> dstIdxLocal = midIdx_.Get<GatherRangeType>();
     LocalTensor<GatherRangeType> rightIdxLocal = rightPadIdx_.Get<GatherRangeType>();
 
-    __local_mem__ GatherRangeType* leftIdxAddr = (__local_mem__ GatherRangeType*)leftIdxLocal.GetPhyAddr();
-    __local_mem__ GatherRangeType* midIdxAddr = (__local_mem__ GatherRangeType*)dstIdxLocal.GetPhyAddr();
-    __local_mem__ GatherRangeType* rightIdxAddr = (__local_mem__ GatherRangeType*)rightIdxLocal.GetPhyAddr();
+    __ubuf__ GatherRangeType* leftIdxAddr = (__ubuf__ GatherRangeType*)leftIdxLocal.GetPhyAddr();
+    __ubuf__ GatherRangeType* midIdxAddr = (__ubuf__ GatherRangeType*)dstIdxLocal.GetPhyAddr();
+    __ubuf__ GatherRangeType* rightIdxAddr = (__ubuf__ GatherRangeType*)rightIdxLocal.GetPhyAddr();
 
     // ===== 3. 折叠 C 轴 pad =====
     // N 轴已合并进 FoldCAxisPad：当 padCount*hwSize <= VL_RANGE_CNT 时一次 VF 处理多个 N
     uint64_t cNStride = static_cast<uint64_t>(cHeight) * hwSize;
-    __local_mem__ PromoteDataT* cBaseAddr = midAddr + ZERO_PAD_CNT;
+    __ubuf__ PromoteDataT* cBaseAddr = midAddr + ZERO_PAD_CNT;
 
     FoldCAxisPad(hwSize, leftPadC, true, leftPadC, outC, factor, cNStride, cBaseAddr, leftIdxAddr, midIdxAddr);
     FoldCAxisPad(hwSize, rightPadC, false, leftPadC, outC, factor, cNStride, cBaseAddr, leftIdxAddr, midIdxAddr);
@@ -3316,7 +3300,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldCHWAxis(int64_t factor,
     // ===== 4. 折叠 H 轴 pad =====
     // N 轴已合并进 FoldHAxisPad：当 outC*width <= VL_RANGE_CNT 时一次 VF 处理多个 N
     uint64_t hNStride = static_cast<uint64_t>(cHeight) * hwSize;
-    __local_mem__ PromoteDataT* hBaseAddr = midAddr + leftPadC * hwSize;
+    __ubuf__ PromoteDataT* hBaseAddr = midAddr + leftPadC * hwSize;
 
     FoldHAxisPad(outC, hwSize, width, leftPadH, true, leftPadH, outH, factor, hNStride, hBaseAddr, leftIdxAddr,
                  midIdxAddr);

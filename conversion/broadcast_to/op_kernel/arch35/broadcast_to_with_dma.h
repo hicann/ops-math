@@ -24,7 +24,7 @@ using namespace AscendC;
 
 constexpr uint8_t bufferNum = 1;
 constexpr int32_t queDepth = 1;
-constexpr MultiCopyConfig copyCfg{false, 0, 0, false};
+constexpr NdDmaConfig copyCfg{false, 0, 0, false};
 
 template <typename T, typename U, uint8_t maxDim = 4>
 class BrcToWithNDDMA : public BrcToBase<U> {
@@ -53,8 +53,8 @@ private:
     int64_t gmOutOffset;
     int64_t inBlockOffset = 0;
     int64_t outBlockOffset = 0;
-    AscendC::MultiCopyLoopInfo<maxDim> copyLpInfo;
-    AscendC::MultiCopyParams<T, maxDim> mCopyParams;
+    AscendC::NdDmaLoopInfo<maxDim> copyLpInfo;
+    AscendC::NdDmaParams<T, maxDim> mCopyParams;
     AscendC::DataCopyExtParams copyParams{1, 0, 0, 0, 0};
     uint32_t outLen = sizeof(T);
     uint8_t copySwitch = 1; // to avoid repeat copy in for U is broadcast axis

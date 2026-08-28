@@ -343,25 +343,25 @@ private:
         int32_t leftPadNum = tdPtr_->leftPad[dimNum_ - CONST2] * tdPtr_->outStride[dimNum_ - CONST2] +
                              tdPtr_->leftPad[dimNum_ - 1];
 
-        __local_mem__ RangeType* idxAddr = (__local_mem__ RangeType*)idxTensor.GetPhyAddr();
+        __ubuf__ RangeType* idxAddr = (__ubuf__ RangeType*)idxTensor.GetPhyAddr();
 
         __VEC_SCOPE__
         {
             Reg::MaskReg maskMain = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
             Reg::RegTensor<RangeType> indexReg;
             Reg::RegTensor<RangeType> validReg;
-            Reg::UnalignReg uReg;
+            Reg::UnalignRegForStore uReg;
 
             Reg::Arange(indexReg, 0); // 0-128
-            Reg::DataCopy(idxAddr, indexReg, maskMain);
+            Reg::StoreAlign(idxAddr, indexReg, maskMain);
             Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_STORE>();
 
             for (uint16_t i = 0; i < lastTwoDimLoops; i++) {
                 for (uint16_t j = 0; j < lastSecInDimSize; j++) {
-                    __local_mem__ RangeType* idxAddrTmp = idxAddr + leftPadNum + i * outStride1 + j * outStride2;
+                    __ubuf__ RangeType* idxAddrTmp = idxAddr + leftPadNum + i * outStride1 + j * outStride2;
                     Reg::Arange(validReg, validBeginIdx + i * inStride1 + j * inStride2);
-                    Reg::DataCopyUnAlign(idxAddrTmp, validReg, uReg, lastInDimSize);
-                    Reg::DataCopyUnAlignPost(idxAddrTmp, uReg, 0);
+                    Reg::StoreUnAlign(idxAddrTmp, validReg, uReg, lastInDimSize);
+                    Reg::StoreUnAlignPost(idxAddrTmp, uReg, 0);
                 }
             }
         }
@@ -376,7 +376,7 @@ private:
         int32_t scatBeginIdx = lastLeftPadNum + (vlSplitInGather_ - 1) * allPadNum;
         uint32_t scatterNum = vlSplitInGather_ * lastInDimSize;
         uint16_t lastDimsLeft = vlSplitInGather_ - 1;
-        __local_mem__ RangeType* idxAddr = (__local_mem__ RangeType*)idxTensor.GetPhyAddr();
+        __ubuf__ RangeType* idxAddr = (__ubuf__ RangeType*)idxTensor.GetPhyAddr();
 
         /*
         1. 生成 (0,1,2,,,,127) -> ub  假设 vlSplitInGather_=3
@@ -397,7 +397,7 @@ private:
             Reg::RegTensor<RangeType> scatIdxReg;
             Reg::RegTensor<RangeType> tmpScatIdxReg;
             Reg::Arange(indexReg, 0); // b16:0-128; b64:0-32
-            Reg::DataCopy(idxAddr, indexReg, maskMain);
+            Reg::StoreAlign(idxAddr, indexReg, maskMain);
             Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_STORE>();
 
             Reg::Arange(validReg, beginIdx); // 128 129 ..
@@ -406,20 +406,20 @@ private:
                 uint32_t sreg0 = lastInDimSize * (lastDimsLeft - i);
                 mask = Reg::UpdateMask<RangeType>(sreg0);
                 Reg::Arange(tmpScatIdxReg, lastLeftPadNum + (lastDimsLeft - 1 - i) * allPadNum);
-                Reg::Copy<RangeType, Reg::MaskMergeMode::MERGING>(scatIdxReg, tmpScatIdxReg, mask);
+                Reg::Move<RangeType, Reg::MaskMergeMode::MERGING>(scatIdxReg, tmpScatIdxReg, mask);
             }
 
             mask = Reg::UpdateMask<RangeType>(scatterNum);
-            Reg::DataCopyScatter(idxAddr, validReg, (Reg::RegTensor<IdxType>&)scatIdxReg, mask);
+            Reg::Scatter(idxAddr, validReg, (Reg::RegTensor<IdxType>&)scatIdxReg, mask);
         }
     }
 
     __aicore__ inline void GatherProcess(const PadGatherParam& gatherParam, const LocalTensor<RangeType>& idxTensor,
                                          LocalTensor<T>& inTensor, LocalTensor<T>& outTensor, uint32_t outUbStart)
     {
-        __local_mem__ RangeType* idxAddr = (__local_mem__ RangeType*)idxTensor.GetPhyAddr();
-        __local_mem__ T* inAddr = (__local_mem__ T*)inTensor.GetPhyAddr();
-        __local_mem__ T* outAddr = (__local_mem__ T*)outTensor.GetPhyAddr() + outUbStart;
+        __ubuf__ RangeType* idxAddr = (__ubuf__ RangeType*)idxTensor.GetPhyAddr();
+        __ubuf__ T* inAddr = (__ubuf__ T*)inTensor.GetPhyAddr();
+        __ubuf__ T* outAddr = (__ubuf__ T*)outTensor.GetPhyAddr() + outUbStart;
 
         RangeType validBegin = VL_CNT;
         uint32_t vlSplitLoopIn = vlSplitInGather_;
@@ -455,46 +455,46 @@ private:
             Reg::MaskReg maskIdx = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
             Reg::MaskReg maskData;
             Reg::MaskReg pregT;
-            Reg::UnalignReg uReg;
+            Reg::UnalignRegForStore uReg;
 
-            Reg::DataCopy(regIdx, idxAddr);
+            Reg::LoadAlign(regIdx, idxAddr);
 
             Reg::Arange(regNewIdx, 0);
-            Reg::CompareScalar<RangeType, CMPMODE::GE>(pregT, regIdx, validBegin, maskIdx);
+            Reg::Compares<RangeType, CMPMODE::GE>(pregT, regIdx, validBegin, maskIdx);
 
             for (uint16_t nIdx = 0; nIdx < axisVlO2; nIdx++) {
                 for (uint16_t cIdx = 0; cIdx < axisVlO1; cIdx++) {
-                    __local_mem__ T* outAddrTmp = outAddr + nIdx * strideOutVlO2 + cIdx * strideOutVlO1;
+                    __ubuf__ T* outAddrTmp = outAddr + nIdx * strideOutVlO2 + cIdx * strideOutVlO1;
                     RangeType addsScale = nIdx * strideInVlO2 + cIdx * strideInVlO1;
                     for (uint16_t hIdx = 0; hIdx < vlSplitLoopCnt; hIdx++) {
                         Reg::Adds(regIdxBK, regIdx, hIdx * idxOffset + addsScale, pregT);
-                        Reg::Copy<RangeType, Reg::MaskMergeMode::MERGING>(regNewIdx, regIdxBK, pregT);
+                        Reg::Move<RangeType, Reg::MaskMergeMode::MERGING>(regNewIdx, regIdxBK, pregT);
 
-                        Reg::DataCopyGather((Reg::RegTensor<CastType>&)regData, inAddr,
-                                            (Reg::RegTensor<IdxType>&)regNewIdx, maskIdx);
+                        Reg::Gather((Reg::RegTensor<CastType>&)regData, inAddr, (Reg::RegTensor<IdxType>&)regNewIdx,
+                                    maskIdx);
                         if constexpr (sizeof(T) != 1) {
                             // Reg::DataCopy(outAddr + hIdx * maskValue, regData, maskData);
-                            Reg::DataCopyUnAlign(outAddrTmp, regData, uReg, maskValue);
+                            Reg::StoreUnAlign(outAddrTmp, regData, uReg, maskValue);
                         } else {
                             Reg::Pack(regDataT, (Reg::RegTensor<CastType>&)regData);
-                            Reg::DataCopyUnAlign(outAddrTmp, regDataT, uReg, maskValue);
+                            Reg::StoreUnAlign(outAddrTmp, regDataT, uReg, maskValue);
                         }
                     }
-                    Reg::DataCopyUnAlignPost(outAddrTmp, uReg, 0);
+                    Reg::StoreUnAlignPost(outAddrTmp, uReg, 0);
                     for (uint16_t hTail = 0; hTail < vlSplitTailLoopCnt; hTail++) {
                         outAddrTmp = outAddr + nIdx * strideOutVlO2 + cIdx * strideOutVlO1 + vlSplitLoopCnt * maskValue;
                         Reg::Adds(regIdxBK, regIdx, vlSplitLoopCnt * idxOffset + addsScale, pregT);
-                        Reg::Copy<RangeType, Reg::MaskMergeMode::MERGING>(regNewIdx, regIdxBK, pregT);
+                        Reg::Move<RangeType, Reg::MaskMergeMode::MERGING>(regNewIdx, regIdxBK, pregT);
 
-                        Reg::DataCopyGather((Reg::RegTensor<CastType>&)regData, inAddr,
-                                            (Reg::RegTensor<IdxType>&)regNewIdx, maskIdx);
+                        Reg::Gather((Reg::RegTensor<CastType>&)regData, inAddr, (Reg::RegTensor<IdxType>&)regNewIdx,
+                                    maskIdx);
                         if constexpr (sizeof(T) != 1) {
-                            Reg::DataCopyUnAlign(outAddrTmp, regData, uReg, maskValueTail);
+                            Reg::StoreUnAlign(outAddrTmp, regData, uReg, maskValueTail);
                         } else {
                             Reg::Pack(regDataT, (Reg::RegTensor<CastType>&)regData);
-                            Reg::DataCopyUnAlign(outAddrTmp, regDataT, uReg, maskValueTail);
+                            Reg::StoreUnAlign(outAddrTmp, regDataT, uReg, maskValueTail);
                         }
-                        Reg::DataCopyUnAlignPost(outAddrTmp, uReg, 0);
+                        Reg::StoreUnAlignPost(outAddrTmp, uReg, 0);
                     }
                 }
             }

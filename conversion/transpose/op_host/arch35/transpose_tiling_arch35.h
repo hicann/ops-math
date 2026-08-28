@@ -197,8 +197,8 @@ public:
     explicit TransposeNddmaTiling(gert::TilingContext* context) : tilingContext_(context) {};
     ge::graphStatus Init(const int64_t& coreNum, const int64_t& ubSize);
     ge::graphStatus RunTranposelTiling();
-    ge::graphStatus TilingForReleatedTranspose(gert::TilingContext* context, TransposeOpTilingData* tilingData,
-                                               TransposeCompilerInfo* compilerInfo, ShapeInfo& opInput);
+    ge::graphStatus TilingForRelatedTranspose(gert::TilingContext* context, TransposeOpTilingData* tilingData,
+                                              TransposeCompilerInfo* compilerInfo, ShapeInfo& opInput);
 
 private:
     template <typename T>
@@ -286,7 +286,7 @@ private:
     int64_t inUbTailSrcShape_[NDDMA_MAX_DIM_NUM] = {0};
     int64_t inUbTailDstShape_[NDDMA_MAX_DIM_NUM] = {0};
 
-    bool isReleatedTranspsoe_ = false;
+    bool isRelatedTranspose_ = false;
 };
 } // namespace optiling
 

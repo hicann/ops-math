@@ -267,13 +267,13 @@ private:
         __VEC_SCOPE__
         {
             AscendC::Reg::RegTensor<T> vReg;
-            AscendC::Reg::UnalignReg uReg;
-            AscendC::Reg::UnalignReg uReg1;
+            AscendC::Reg::UnalignRegForLoad uReg;
+            AscendC::Reg::UnalignRegForStore uReg1;
 
-            AscendC::Reg::DataCopyUnAlignPre(uReg, srcLeftDataAddr);
-            AscendC::Reg::DataCopyUnAlign(vReg, uReg, srcLeftDataAddr);
-            AscendC::Reg::DataCopyUnAlign(srcAddr, vReg, uReg1, leftUnalignLen);
-            AscendC::Reg::DataCopyUnAlignPost(srcAddr, uReg1, 0);
+            AscendC::Reg::LoadUnAlignPre(uReg, srcLeftDataAddr);
+            AscendC::Reg::LoadUnAlign(vReg, uReg, srcLeftDataAddr);
+            AscendC::Reg::StoreUnAlign(srcAddr, vReg, uReg1, leftUnalignLen);
+            AscendC::Reg::StoreUnAlignPost(srcAddr, uReg1, 0);
         }
     }
 

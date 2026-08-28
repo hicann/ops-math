@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
     map<AscendString, AscendString> globalOptions = {{"ge.exec.deviceId", "0"}, {"ge.graphRunMode", "1"}};
     Status ret = ge::GEInitialize(globalOptions);
     if (ret != SUCCESS) {
-        printf("%s - INFO - [XIR]: Initialize ge using ge global options failed\n", GetTime().c_str());
+        printf("%s - ERROR - [XIR]: Initialize ge using ge global options failed\n", GetTime().c_str());
         return FAILED;
     }
     printf("%s - INFO - [XIR]: Initialize ge using ge global options success\n", GetTime().c_str());
@@ -241,7 +241,7 @@ int main(int argc, char* argv[])
     printf("%s - INFO - [XIR]: Start to add compute graph to ir session\n", GetTime().c_str());
     ret = session->AddGraph(graphId, graph, graphOptions);
     if (ret != SUCCESS) {
-        printf("%s - INFO - [XIR]: Add graph failed\n", GetTime().c_str());
+        printf("%s - ERROR - [XIR]: Add graph failed\n", GetTime().c_str());
         delete session;
         ge::GEFinalize();
         return FAILED;
@@ -256,7 +256,7 @@ int main(int argc, char* argv[])
     vector<Tensor> output;
     ret = session->RunGraph(graphId, input, output);
     if (ret != SUCCESS) {
-        printf("%s - INFO - [XIR]: Run graph failed\n", GetTime().c_str());
+        printf("%s - ERROR - [XIR]: Run graph failed\n", GetTime().c_str());
         delete session;
         ge::GEFinalize();
         return FAILED;
@@ -274,7 +274,7 @@ int main(int argc, char* argv[])
     delete session;
     ret = ge::GEFinalize();
     if (ret != SUCCESS) {
-        printf("%s - INFO - [XIR]: Finalize ir graph session failed\n", GetTime().c_str());
+        printf("%s - ERROR - [XIR]: Finalize ir graph session failed\n", GetTime().c_str());
         return FAILED;
     }
     printf("%s - INFO - [XIR]: Finalize ir graph session success\n", GetTime().c_str());

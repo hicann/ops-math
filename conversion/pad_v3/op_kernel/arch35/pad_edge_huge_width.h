@@ -285,13 +285,13 @@ private:
         __VEC_SCOPE__
         {
             AscendC::Reg::RegTensor<T, Trait> vReg;
-            AscendC::Reg::UnalignReg uReg;
+            AscendC::Reg::UnalignRegForStore uReg;
 
             for (uint16_t k = 0; k < needPadLeft; k++) {
                 __ubuf__ T* outAddr = dstAddr + padWLOffset;
-                AscendC::Reg::DataCopy(vReg, additionAddr);
-                AscendC::Reg::DataCopyUnAlign(outAddr, vReg, uReg, padLeftSize);
-                AscendC::Reg::DataCopyUnAlignPost(outAddr, uReg, 0);
+                AscendC::Reg::LoadAlign(vReg, additionAddr);
+                AscendC::Reg::StoreUnAlign(outAddr, vReg, uReg, padLeftSize);
+                AscendC::Reg::StoreUnAlignPost(outAddr, uReg, 0);
             }
 
             for (uint16_t j = 0; j < needPadRight; j++) {
@@ -299,14 +299,14 @@ private:
                 AscendC::Reg::Duplicate(vReg, padRightValue);
 
                 for (uint16_t k = 0; k < repeatTimes; k++) {
-                    AscendC::Reg::DataCopyUnAlign(outAddr, vReg, uReg, additionLen);
+                    AscendC::Reg::StoreUnAlign(outAddr, vReg, uReg, additionLen);
                 }
 
                 for (uint16_t k = 0; k < needPadRightSurplus; k++) {
                     outAddr = dstAddr + padWROffset + repeatTimes * additionLen;
-                    AscendC::Reg::DataCopyUnAlign(outAddr, vReg, uReg, padRightLen);
+                    AscendC::Reg::StoreUnAlign(outAddr, vReg, uReg, padRightLen);
                 }
-                AscendC::Reg::DataCopyUnAlignPost(outAddr, uReg, 0);
+                AscendC::Reg::StoreUnAlignPost(outAddr, uReg, 0);
             }
         }
     }

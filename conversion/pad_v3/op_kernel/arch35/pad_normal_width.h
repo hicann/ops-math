@@ -385,52 +385,52 @@ private:
             uint32_t noPadLen = noPadRightSize;
             uint32_t outLen = BLK_ELEMS;
             pMask = AscendC::Reg::UpdateMask<T, Trait>(noPadLen);
-            AscendC::Reg::MaskNot(pMask, pMask, maskAll);
+            AscendC::Reg::Not(pMask, pMask, maskAll);
             outMask = AscendC::Reg::UpdateMask<T, Trait>(outLen);
             if constexpr (UB_AXES == 2) {
                 for (uint16_t n = 0; n < dimNNum / 2; n++) {
-                    AscendC::Reg::DataCopy(vReg, dstAddr + ubInOffset + padRigthFloorAlign + 2 * n * padCHW);
+                    AscendC::Reg::LoadAlign(vReg, dstAddr + ubInOffset + padRigthFloorAlign + 2 * n * padCHW);
                     vRegTmp = vReg;
                     Duplicate<T, AscendC::Reg::MaskMergeMode::ZEROING, T>(vRegTmp, value, pMask);
-                    Copy(vReg, vRegTmp, pMask);
-                    AscendC::Reg::DataCopy(dstAddr + ubInOffset + padRigthFloorAlign + 2 * n * padCHW, vReg, outMask);
-                    AscendC::Reg::DataCopy(vReg, dstAddr + ubInOffset + padRigthFloorAlign + (2 * n + 1) * padCHW);
+                    AscendC::Reg::Move(vReg, vRegTmp, pMask);
+                    AscendC::Reg::StoreAlign(dstAddr + ubInOffset + padRigthFloorAlign + 2 * n * padCHW, vReg, outMask);
+                    AscendC::Reg::LoadAlign(vReg, dstAddr + ubInOffset + padRigthFloorAlign + (2 * n + 1) * padCHW);
                     vRegTmp = vReg;
                     Duplicate<T, AscendC::Reg::MaskMergeMode::ZEROING, T>(vRegTmp, value, pMask);
-                    Copy(vReg, vRegTmp, pMask);
-                    AscendC::Reg::DataCopy(dstAddr + ubInOffset + padRigthFloorAlign + (2 * n + 1) * padCHW, vReg,
-                                           outMask);
+                    AscendC::Reg::Move(vReg, vRegTmp, pMask);
+                    AscendC::Reg::StoreAlign(dstAddr + ubInOffset + padRigthFloorAlign + (2 * n + 1) * padCHW, vReg,
+                                             outMask);
                 }
                 for (uint16_t i = 0; i < dimNNum % 2; i++) {
-                    AscendC::Reg::DataCopy(vReg, dstAddr + ubInOffset + padRigthFloorAlign + (dimNNum - 1) * padCHW);
+                    AscendC::Reg::LoadAlign(vReg, dstAddr + ubInOffset + padRigthFloorAlign + (dimNNum - 1) * padCHW);
                     vRegTmp = vReg;
                     Duplicate<T, AscendC::Reg::MaskMergeMode::ZEROING, T>(vRegTmp, value, pMask);
-                    Copy(vReg, vRegTmp, pMask);
-                    AscendC::Reg::DataCopy(dstAddr + ubInOffset + padRigthFloorAlign + (dimNNum - 1) * padCHW, vReg,
-                                           outMask);
+                    AscendC::Reg::Move(vReg, vRegTmp, pMask);
+                    AscendC::Reg::StoreAlign(dstAddr + ubInOffset + padRigthFloorAlign + (dimNNum - 1) * padCHW, vReg,
+                                             outMask);
                 }
             } else if constexpr (UB_AXES == 3) {
                 for (uint16_t n = 0; n < dimNNum; n++) {
                     for (uint16_t c = 0; c < dimCNum; c++) {
-                        AscendC::Reg::DataCopy(vReg,
-                                               dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW + c * padHW);
+                        AscendC::Reg::LoadAlign(vReg,
+                                                dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW + c * padHW);
                         vRegTmp = vReg;
                         Duplicate<T, AscendC::Reg::MaskMergeMode::ZEROING, T>(vRegTmp, value, pMask);
-                        Copy(vReg, vRegTmp, pMask);
-                        AscendC::Reg::DataCopy(dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW + c * padHW, vReg,
-                                               outMask);
+                        AscendC::Reg::Move(vReg, vRegTmp, pMask);
+                        AscendC::Reg::StoreAlign(dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW + c * padHW,
+                                                 vReg, outMask);
                     }
                 }
             } else {
                 for (uint16_t n = 0; n < dimNNum; n++) {
                     for (uint16_t c = 0; c < dimCNum; c++) {
                         for (uint16_t h = 0; h < dimHNum; h++) {
-                            AscendC::Reg::DataCopy(
+                            AscendC::Reg::LoadAlign(
                                 vReg, dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW + c * padHW + h * padW);
                             vRegTmp = vReg;
                             Duplicate<T, AscendC::Reg::MaskMergeMode::ZEROING, T>(vRegTmp, value, pMask);
-                            Copy(vReg, vRegTmp, pMask);
-                            AscendC::Reg::DataCopy(
+                            AscendC::Reg::Move(vReg, vRegTmp, pMask);
+                            AscendC::Reg::StoreAlign(
                                 dstAddr + ubInOffset + padRigthFloorAlign + n * padCHW + c * padHW + h * padW, vReg,
                                 outMask);
                         }

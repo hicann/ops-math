@@ -291,24 +291,24 @@ private:
                 maskB16 = Reg::UpdateMask<T>(tail16);
                 maskLo = Reg::UpdateMask<PromoteT>(tailLo);
                 maskHi = Reg::UpdateMask<PromoteT>(tailHi);
-                Reg::DataCopy(vregB16, b16Ptr + off);
+                Reg::LoadAlign(vregB16, b16Ptr + off);
                 Reg::Cast<PromoteT, T, CAST_TRAIT_PROMOTE_ZERO>(vregF1, vregB16, maskB16);
                 Reg::Cast<PromoteT, T, CAST_TRAIT_PROMOTE_ONE>(vregF2, vregB16, maskB16);
                 Reg::Interleave(vregF32Lo, vregF32Hi, vregF1, vregF2);
-                Reg::DataCopy(f32Ptr + off, vregF32Lo, maskLo);
-                Reg::DataCopy(f32Ptr + off + VL_F32, vregF32Hi, maskHi);
+                Reg::StoreAlign(f32Ptr + off, vregF32Lo, maskLo);
+                Reg::StoreAlign(f32Ptr + off + VL_F32, vregF32Hi, maskHi);
             }
             // Step 2: non-tail chunks backward (loops-2 ... 0)
             maskB16 = Reg::CreateMask<T, Reg::MaskPattern::ALL>();
             for (uint16_t i = 0; i < nonTailCnt; i++) {
                 uint32_t off = (uint32_t)(loops - 1 - i - hasTail) * FULL;
 
-                Reg::DataCopy(vregB16, b16Ptr + off);
+                Reg::LoadAlign(vregB16, b16Ptr + off);
                 Reg::Cast<PromoteT, T, CAST_TRAIT_PROMOTE_ZERO>(vregF1, vregB16, maskB16);
                 Reg::Cast<PromoteT, T, CAST_TRAIT_PROMOTE_ONE>(vregF2, vregB16, maskB16);
                 Reg::Interleave(vregF32Lo, vregF32Hi, vregF1, vregF2);
-                Reg::DataCopy(f32Ptr + off, vregF32Lo, maskB16);
-                Reg::DataCopy(f32Ptr + off + VL_F32, vregF32Hi, maskB16);
+                Reg::StoreAlign(f32Ptr + off, vregF32Lo, maskB16);
+                Reg::StoreAlign(f32Ptr + off + VL_F32, vregF32Hi, maskB16);
             }
         }
     }
@@ -657,7 +657,7 @@ private:
         if (srcCnt == 0 || sliceElems == 0)
             return;
 
-        auto baseAddr = reinterpret_cast<__local_mem__ DType*>(data.GetPhyAddr());
+        auto baseAddr = reinterpret_cast<__ubuf__ DType*>(data.GetPhyAddr());
         constexpr uint32_t VL = VREG_BYTES / sizeof(DType);
         const uint16_t loopCount = (uint16_t)CeilDiv((uint32_t)sliceElems, VL);
 
@@ -668,12 +668,12 @@ private:
             Reg::RegTensor<DType> vregDst, vregSrc;
             for (uint16_t i = 0; i < loopCount; i++) {
                 mask = Reg::UpdateMask<DType>(remain);
-                Reg::DataCopy(vregDst, baseAddr + dstOffsetElems + i * VL);
+                Reg::LoadAlign(vregDst, baseAddr + dstOffsetElems + i * VL);
                 for (uint16_t j = 0; j < (uint16_t)srcCnt; j++) {
-                    Reg::DataCopy(vregSrc, baseAddr + srcStartElems + j * srcStrideElems + i * VL);
+                    Reg::LoadAlign(vregSrc, baseAddr + srcStartElems + j * srcStrideElems + i * VL);
                     Reg::Add(vregDst, vregDst, vregSrc, mask);
                 }
-                Reg::DataCopy(baseAddr + dstOffsetElems + i * VL, vregDst, mask);
+                Reg::StoreAlign(baseAddr + dstOffsetElems + i * VL, vregDst, mask);
             }
         }
     }
@@ -834,7 +834,7 @@ private:
                     Reg::Sub<Idx32>(ik, quot, tmpReg, maskF32);
                     Reg::Muls(tmpReg, ik, eS0, maskF32);
                     Reg::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
-                    Reg::Copy(quot, qNext);
+                    Reg::Move(quot, qNext);
                     if constexpr (kEffAxes >= 3) {
                         Reg::Duplicate(dExt, eE1, maskF32);
                         Reg::Div<Idx32>(qNext, quot, dExt, maskF32);
@@ -842,7 +842,7 @@ private:
                         Reg::Sub<Idx32>(ik, quot, tmpReg, maskF32);
                         Reg::Muls(tmpReg, ik, eS1, maskF32);
                         Reg::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
-                        Reg::Copy(quot, qNext);
+                        Reg::Move(quot, qNext);
                         if constexpr (kEffAxes >= 4) {
                             Reg::Duplicate(dExt, eE2, maskF32);
                             Reg::Div<Idx32>(qNext, quot, dExt, maskF32);
@@ -850,7 +850,7 @@ private:
                             Reg::Sub<Idx32>(ik, quot, tmpReg, maskF32);
                             Reg::Muls(tmpReg, ik, eS2, maskF32);
                             Reg::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
-                            Reg::Copy(quot, qNext);
+                            Reg::Move(quot, qNext);
                             if constexpr (kEffAxes >= 5) {
                                 Reg::Duplicate(dExt, eE3, maskF32);
                                 Reg::Div<Idx32>(qNext, quot, dExt, maskF32);
@@ -858,7 +858,7 @@ private:
                                 Reg::Sub<Idx32>(ik, quot, tmpReg, maskF32);
                                 Reg::Muls(tmpReg, ik, eS3, maskF32);
                                 Reg::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
-                                Reg::Copy(quot, qNext);
+                                Reg::Move(quot, qNext);
                                 Reg::Muls(tmpReg, quot, eS4, maskF32);
                                 Reg::Add<Idx32>(baseIdx, baseIdx, tmpReg, maskF32);
                             } else {
@@ -880,10 +880,10 @@ private:
 
                 // ======== Phase A: 左边界 ========
                 Reg::Adds(idxF32, baseIdx, (Idx32)pL, maskF32);
-                Reg::DataCopyGather(vregF32, dataAddr, idxF32, maskF32);
+                Reg::Gather(vregF32, dataAddr, idxF32, maskF32);
                 for (uint16_t k = 0; k < phaseA_pLu; k++) {
                     Reg::Adds(idxF32, baseIdx, (Idx32)k, maskF32);
-                    Reg::DataCopyGather(vregPadF32, dataAddr, idxF32, maskF32);
+                    Reg::Gather(vregPadF32, dataAddr, idxF32, maskF32);
                     Reg::Add(vregF32, vregF32, vregPadF32, maskF32);
                 }
                 // F32→B16 cast + Select
@@ -897,13 +897,13 @@ private:
                                 (Reg::RegTensor<Idx16>&)tmpHalf, maskB16);
                 Reg::Muls(idxB16, (Reg::RegTensor<Idx16>&)tmpRange16, (Idx16)dN1, maskB16);
                 Reg::Adds(idxB16, idxB16, (Idx16)((Rng16)b * (Rng16)VL_F32 * (Rng16)dN1), maskB16);
-                Reg::DataCopyScatter(outputAddr, vregScatter, idxB16, maskB16);
+                Reg::Scatter(outputAddr, vregScatter, idxB16, maskB16);
 
                 // ======== Phase B: 中间 ========
                 for (uint16_t i = 0; i < midCount; i++) {
                     const uint16_t iN1 = i + 1;
                     Reg::Adds(idxF32, baseIdx, (Idx32)((Rng32)iN1 + (Rng32)pL), maskF32);
-                    Reg::DataCopyGather(vregF32, dataAddr, idxF32, maskF32);
+                    Reg::Gather(vregF32, dataAddr, idxF32, maskF32);
                     Reg::Cast<T, PromoteT, CAST_TRAIT_DOWN_ZERO>(vregB16Lo, vregF32, maskB16);
                     Reg::Cast<T, PromoteT, CAST_TRAIT_DOWN_ONE>(vregB16Hi, vregF32, maskB16);
                     Reg::Select(vregScatter, vregB16Lo, vregB16Hi, selMaskLo);
@@ -913,20 +913,20 @@ private:
                                     (Reg::RegTensor<Idx16>&)tmpHalf, maskB16);
                     Reg::Muls(idxB16, (Reg::RegTensor<Idx16>&)tmpRange16, (Idx16)dN1, maskB16);
                     Reg::Adds(idxB16, idxB16, (Idx16)((Rng16)b * (Rng16)VL_F32 * (Rng16)dN1 + (Rng16)iN1), maskB16);
-                    Reg::DataCopyScatter(outputAddr, vregScatter, idxB16, maskB16);
+                    Reg::Scatter(outputAddr, vregScatter, idxB16, maskB16);
                 }
 
                 // ======== Phase C: 右边界 ========
                 Reg::Adds(idxF32, baseIdx, (Idx32)((Rng32)pL + (Rng32)iRight), maskF32);
-                Reg::DataCopyGather(vregF32, dataAddr, idxF32, maskF32);
+                Reg::Gather(vregF32, dataAddr, idxF32, maskF32);
                 for (uint16_t k = 0; k < combPadCnt; k++) {
                     Reg::Adds(idxF32, baseIdx, (Idx32)k, maskF32);
-                    Reg::DataCopyGather(vregPadF32, dataAddr, idxF32, maskF32);
+                    Reg::Gather(vregPadF32, dataAddr, idxF32, maskF32);
                     Reg::Add(vregF32, vregF32, vregPadF32, maskF32);
                 }
                 for (uint16_t k = 0; k < pRu; k++) {
                     Reg::Adds(idxF32, baseIdx, (Idx32)(rightPadStart + (Rng32)k), maskF32);
-                    Reg::DataCopyGather(vregPadF32, dataAddr, idxF32, maskF32);
+                    Reg::Gather(vregPadF32, dataAddr, idxF32, maskF32);
                     Reg::Add(vregF32, vregF32, vregPadF32, maskF32);
                 }
                 Reg::Cast<T, PromoteT, CAST_TRAIT_DOWN_ZERO>(vregB16Lo, vregF32, maskB16);
@@ -938,7 +938,7 @@ private:
                                 (Reg::RegTensor<Idx16>&)tmpHalf, maskB16);
                 Reg::Muls(idxB16, (Reg::RegTensor<Idx16>&)tmpRange16, (Idx16)dN1, maskB16);
                 Reg::Adds(idxB16, idxB16, (Idx16)((Rng16)b * (Rng16)VL_F32 * (Rng16)dN1 + (Rng16)iRight), maskB16);
-                Reg::DataCopyScatter(outputAddr, vregScatter, idxB16, maskB16);
+                Reg::Scatter(outputAddr, vregScatter, idxB16, maskB16);
             }
         }
     }
@@ -1031,7 +1031,7 @@ private:
                     Reg::Sub<IndexT>(ik, quot, tmpReg, mask);
                     Reg::Muls(tmpReg, ik, eS0, mask);
                     Reg::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
-                    Reg::Copy(quot, qNext);
+                    Reg::Move(quot, qNext);
                     if constexpr (kEffAxes >= 3) {
                         Reg::Duplicate(dExt, eE1, mask);
                         Reg::Div<IndexT>(qNext, quot, dExt, mask);
@@ -1039,7 +1039,7 @@ private:
                         Reg::Sub<IndexT>(ik, quot, tmpReg, mask);
                         Reg::Muls(tmpReg, ik, eS1, mask);
                         Reg::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
-                        Reg::Copy(quot, qNext);
+                        Reg::Move(quot, qNext);
                         if constexpr (kEffAxes >= 4) {
                             Reg::Duplicate(dExt, eE2, mask);
                             Reg::Div<IndexT>(qNext, quot, dExt, mask);
@@ -1047,7 +1047,7 @@ private:
                             Reg::Sub<IndexT>(ik, quot, tmpReg, mask);
                             Reg::Muls(tmpReg, ik, eS2, mask);
                             Reg::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
-                            Reg::Copy(quot, qNext);
+                            Reg::Move(quot, qNext);
                             if constexpr (kEffAxes >= 5) {
                                 Reg::Duplicate(dExt, eE3, mask);
                                 Reg::Div<IndexT>(qNext, quot, dExt, mask);
@@ -1055,7 +1055,7 @@ private:
                                 Reg::Sub<IndexT>(ik, quot, tmpReg, mask);
                                 Reg::Muls(tmpReg, ik, eS3, mask);
                                 Reg::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
-                                Reg::Copy(quot, qNext);
+                                Reg::Move(quot, qNext);
                                 Reg::Muls(tmpReg, quot, eS4, mask);
                                 Reg::Add<IndexT>(baseIdx, baseIdx, tmpReg, mask);
                             } else {
@@ -1078,19 +1078,19 @@ private:
                 // ======== Phase A: 左边界（iN1=0） ========
                 Reg::Adds(idx, baseIdx, (IndexT)pL, mask);
                 if constexpr (sizeof(T) == 1) {
-                    Reg::DataCopyGather((Reg::RegTensor<CastT>&)vregT, dataAddr, idx, mask);
+                    Reg::Gather((Reg::RegTensor<CastT>&)vregT, dataAddr, idx, mask);
                 } else {
-                    Reg::DataCopyGather(vregT, dataAddr, idx, mask);
+                    Reg::Gather(vregT, dataAddr, idx, mask);
                 }
 
                 for (uint16_t k = 0; k < phaseA_pLu; k++) {
                     Reg::Adds(idx, baseIdx, (IndexT)k, mask);
                     if constexpr (sizeof(T) == 1) {
-                        Reg::DataCopyGather((Reg::RegTensor<CastT>&)vregPadT, dataAddr, idx, mask);
+                        Reg::Gather((Reg::RegTensor<CastT>&)vregPadT, dataAddr, idx, mask);
                         Reg::Add((Reg::RegTensor<CastT>&)vregT, (Reg::RegTensor<CastT>&)vregT,
                                  (Reg::RegTensor<CastT>&)vregPadT, mask);
                     } else {
-                        Reg::DataCopyGather(vregPadT, dataAddr, idx, mask);
+                        Reg::Gather(vregPadT, dataAddr, idx, mask);
                         Reg::Add(vregT, vregT, vregPadT, mask);
                     }
                 }
@@ -1102,9 +1102,9 @@ private:
                 if constexpr (sizeof(T) == 1) {
                     Reg::Pack(vregOut, (Reg::RegTensor<CastT>&)vregT);
                     Reg::UnPack((Reg::RegTensor<CastT>&)vregScatter, vregOut);
-                    Reg::DataCopyScatter(outputAddr, vregScatter, idx, mask);
+                    Reg::Scatter(outputAddr, vregScatter, idx, mask);
                 } else {
-                    Reg::DataCopyScatter(outputAddr, vregT, idx, mask);
+                    Reg::Scatter(outputAddr, vregT, idx, mask);
                 }
 
                 // ======== Phase B: 中间（iN1 ∈ [1, dN1-1)） ========
@@ -1112,9 +1112,9 @@ private:
                     const uint16_t iN1 = (uint16_t)(i + 1);
                     Reg::Adds(idx, baseIdx, (IndexT)((RangeT)iN1 + (RangeT)pL), mask);
                     if constexpr (sizeof(T) == 1) {
-                        Reg::DataCopyGather((Reg::RegTensor<CastT>&)vregT, dataAddr, idx, mask);
+                        Reg::Gather((Reg::RegTensor<CastT>&)vregT, dataAddr, idx, mask);
                     } else {
-                        Reg::DataCopyGather(vregT, dataAddr, idx, mask);
+                        Reg::Gather(vregT, dataAddr, idx, mask);
                     }
 
                     Reg::Arange(tmpRange, (RangeT)0);
@@ -1123,29 +1123,29 @@ private:
                     if constexpr (sizeof(T) == 1) {
                         Reg::Pack(vregOut, (Reg::RegTensor<CastT>&)vregT);
                         Reg::UnPack((Reg::RegTensor<CastT>&)vregScatter, vregOut);
-                        Reg::DataCopyScatter(outputAddr, vregScatter, idx, mask);
+                        Reg::Scatter(outputAddr, vregScatter, idx, mask);
                     } else {
-                        Reg::DataCopyScatter(outputAddr, vregT, idx, mask);
+                        Reg::Scatter(outputAddr, vregT, idx, mask);
                     }
                 }
 
                 // ======== Phase C: 右边界（iN1 = dN1-1） ========
                 Reg::Adds(idx, baseIdx, (IndexT)((RangeT)pL + (RangeT)iRight), mask);
                 if constexpr (sizeof(T) == 1) {
-                    Reg::DataCopyGather((Reg::RegTensor<CastT>&)vregT, dataAddr, idx, mask);
+                    Reg::Gather((Reg::RegTensor<CastT>&)vregT, dataAddr, idx, mask);
                 } else {
-                    Reg::DataCopyGather(vregT, dataAddr, idx, mask);
+                    Reg::Gather(vregT, dataAddr, idx, mask);
                 }
 
                 // dN1==1: re-accumulate left padding (otherwise lost by Phase C overwrite)
                 for (uint16_t k = 0; k < combPadCnt; k++) {
                     Reg::Adds(idx, baseIdx, (IndexT)k, mask);
                     if constexpr (sizeof(T) == 1) {
-                        Reg::DataCopyGather((Reg::RegTensor<CastT>&)vregPadT, dataAddr, idx, mask);
+                        Reg::Gather((Reg::RegTensor<CastT>&)vregPadT, dataAddr, idx, mask);
                         Reg::Add((Reg::RegTensor<CastT>&)vregT, (Reg::RegTensor<CastT>&)vregT,
                                  (Reg::RegTensor<CastT>&)vregPadT, mask);
                     } else {
-                        Reg::DataCopyGather(vregPadT, dataAddr, idx, mask);
+                        Reg::Gather(vregPadT, dataAddr, idx, mask);
                         Reg::Add(vregT, vregT, vregPadT, mask);
                     }
                 }
@@ -1153,11 +1153,11 @@ private:
                 for (uint16_t k = 0; k < pRu; k++) {
                     Reg::Adds(idx, baseIdx, (IndexT)(rightPadStart + (RangeT)k), mask);
                     if constexpr (sizeof(T) == 1) {
-                        Reg::DataCopyGather((Reg::RegTensor<CastT>&)vregPadT, dataAddr, idx, mask);
+                        Reg::Gather((Reg::RegTensor<CastT>&)vregPadT, dataAddr, idx, mask);
                         Reg::Add((Reg::RegTensor<CastT>&)vregT, (Reg::RegTensor<CastT>&)vregT,
                                  (Reg::RegTensor<CastT>&)vregPadT, mask);
                     } else {
-                        Reg::DataCopyGather(vregPadT, dataAddr, idx, mask);
+                        Reg::Gather(vregPadT, dataAddr, idx, mask);
                         Reg::Add(vregT, vregT, vregPadT, mask);
                     }
                 }
@@ -1168,9 +1168,9 @@ private:
                 if constexpr (sizeof(T) == 1) {
                     Reg::Pack(vregOut, (Reg::RegTensor<CastT>&)vregT);
                     Reg::UnPack((Reg::RegTensor<CastT>&)vregScatter, vregOut);
-                    Reg::DataCopyScatter(outputAddr, vregScatter, idx, mask);
+                    Reg::Scatter(outputAddr, vregScatter, idx, mask);
                 } else {
-                    Reg::DataCopyScatter(outputAddr, vregT, idx, mask);
+                    Reg::Scatter(outputAddr, vregT, idx, mask);
                 }
             }
         }

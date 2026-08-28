@@ -333,20 +333,20 @@ private:
         int32_t outStride0 = lastThirdDimInVL_ ? tdPtr_->outStride[dimNum_ - CONST3] : 1;
         int32_t outStride1 = tdPtr_->outStride[dimNum_ - CONST2];
 
-        __local_mem__ RangeType* idxAddr = (__local_mem__ RangeType*)idxTensor.GetPhyAddr();
+        __ubuf__ RangeType* idxAddr = (__ubuf__ RangeType*)idxTensor.GetPhyAddr();
 
         __VEC_SCOPE__
         {
             Reg::RegTensor<RangeType> indexReg;
             Reg::RegTensor<RangeType> validReg;
-            Reg::UnalignReg uReg;
+            Reg::UnalignRegForStore uReg;
 
             for (uint16_t i = 0; i < loop0; i++) {
                 for (uint16_t j = 0; j < loop1; j++) {
-                    __local_mem__ RangeType* idxAddrTmp = idxAddr + i * inStride0 + j * inStride1;
+                    __ubuf__ RangeType* idxAddrTmp = idxAddr + i * inStride0 + j * inStride1;
                     Reg::Arange(validReg, startValue + i * outStride0 + j * outStride1);
-                    Reg::DataCopyUnAlign(idxAddrTmp, validReg, uReg, lastDimIn);
-                    Reg::DataCopyUnAlignPost(idxAddrTmp, uReg, 0);
+                    Reg::StoreUnAlign(idxAddrTmp, validReg, uReg, lastDimIn);
+                    Reg::StoreUnAlignPost(idxAddrTmp, uReg, 0);
                 }
             }
         }
@@ -355,9 +355,9 @@ private:
     __aicore__ inline void ScatterProcess(const PadScatterParam& scatterParam, const LocalTensor<RangeType>& idxTensor,
                                           LocalTensor<T>& inTensor, LocalTensor<T>& outTensor, uint32_t outUbStart)
     {
-        __local_mem__ RangeType* idxAddr = (__local_mem__ RangeType*)idxTensor.GetPhyAddr();
-        __local_mem__ T* inAddr = (__local_mem__ T*)inTensor.GetPhyAddr();
-        __local_mem__ T* outAddr = (__local_mem__ T*)outTensor.GetPhyAddr();
+        __ubuf__ RangeType* idxAddr = (__ubuf__ RangeType*)idxTensor.GetPhyAddr();
+        __ubuf__ T* inAddr = (__ubuf__ T*)inTensor.GetPhyAddr();
+        __ubuf__ T* outAddr = (__ubuf__ T*)outTensor.GetPhyAddr();
 
         uint32_t vlSplitLoopIn = vlSplitIn_;
         if constexpr (sizeof(T) == 1) {
@@ -396,38 +396,38 @@ private:
             Reg::MaskReg maskIdx = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
             Reg::MaskReg maskData;
             Reg::MaskReg pregT;
-            Reg::UnalignReg uReg;
+            Reg::UnalignRegForLoad uReg;
 
-            Reg::DataCopy(regIdx, idxAddr);
+            Reg::LoadAlign(regIdx, idxAddr);
 
             for (uint16_t nIdx = 0; nIdx < axisVlO2; nIdx++) {
                 for (uint16_t cIdx = 0; cIdx < axisVlO1; cIdx++) {
-                    __local_mem__ T* inAddrTmp = inAddr + nIdx * strideInVlO2 + cIdx * strideInVlO1;
+                    __ubuf__ T* inAddrTmp = inAddr + nIdx * strideInVlO2 + cIdx * strideInVlO1;
                     RangeType addsScale = nIdx * strideOutVlO2 + cIdx * strideOutVlO1 + outUbStart;
-                    Reg::DataCopyUnAlignPre(uReg, inAddrTmp);
+                    Reg::LoadUnAlignPre(uReg, inAddrTmp);
                     for (uint16_t hIdx = 0; hIdx < vlSplitLoopCnt; hIdx++) {
                         Reg::Adds(regIdxBK, regIdx, (RangeType)(hIdx * idxOffset + addsScale), maskIdx);
 
-                        Reg::DataCopyUnAlign(regData, uReg, inAddrTmp, maskValue); // maskValue 实际搬入的长度
+                        Reg::LoadUnAlign(regData, uReg, inAddrTmp, maskValue); // maskValue 实际搬入的长度
                         if constexpr (sizeof(T) != 1) {
-                            Reg::DataCopyScatter(outAddr, regData, (Reg::RegTensor<IdxType>&)regIdxBK, maskMain);
+                            Reg::Scatter(outAddr, regData, (Reg::RegTensor<IdxType>&)regIdxBK, maskMain);
                         } else {
                             Reg::UnPack((Reg::RegTensor<CastType>&)regDataT, regData);
-                            Reg::DataCopyScatter(outAddr, regDataT, (Reg::RegTensor<IdxType>&)regIdxBK, maskMain);
+                            Reg::Scatter(outAddr, regDataT, (Reg::RegTensor<IdxType>&)regIdxBK, maskMain);
                         }
                     }
 
                     for (uint16_t hTail = 0; hTail < vlSplitTailLoopCnt; hTail++) {
                         inAddrTmp = inAddr + nIdx * strideInVlO2 + cIdx * strideInVlO1 + vlSplitLoopCnt * maskValue;
-                        Reg::DataCopyUnAlignPre(uReg, inAddrTmp);
+                        Reg::LoadUnAlignPre(uReg, inAddrTmp);
                         Reg::Adds(regIdxBK, regIdx, (RangeType)(vlSplitLoopCnt * idxOffset + addsScale), maskIdx);
-                        Reg::DataCopyUnAlign(regData, uReg, inAddrTmp,
-                                             maskValueTail); // maskValueTail 实际搬入的长度
+                        Reg::LoadUnAlign(regData, uReg, inAddrTmp,
+                                         maskValueTail); // maskValueTail 实际搬入的长度
                         if constexpr (sizeof(T) != 1) {
-                            Reg::DataCopyScatter(outAddr, regData, (Reg::RegTensor<IdxType>&)regIdxBK, maskTail);
+                            Reg::Scatter(outAddr, regData, (Reg::RegTensor<IdxType>&)regIdxBK, maskTail);
                         } else {
                             Reg::UnPack((Reg::RegTensor<CastType>&)regDataT, regData);
-                            Reg::DataCopyScatter(outAddr, regDataT, (Reg::RegTensor<IdxType>&)regIdxBK, maskTail);
+                            Reg::Scatter(outAddr, regDataT, (Reg::RegTensor<IdxType>&)regIdxBK, maskTail);
                         }
                     }
                 }

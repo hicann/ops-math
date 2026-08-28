@@ -88,7 +88,7 @@ static ge::graphStatus InferShape4Tile(gert::InferShapeContext* context)
     DataType data_type = multiples_tensor->GetDataType();
     OP_CHECK_IF(
         (data_type != DT_INT32) && (data_type != DT_INT64),
-        OP_LOGE(context->GetNodeName(), "multiples's dtype %s must be in (int32,int64)!", ToString(data_type).c_str()),
+        OP_LOGE(context->GetNodeName(), "multiples' dtype %s must be in (int32,int64)!", ToString(data_type).c_str()),
         return ge::GRAPH_FAILED);
 
     if (data_type == DT_INT32) {

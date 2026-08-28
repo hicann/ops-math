@@ -292,8 +292,8 @@ public:
                                             PadCircNormalParam& padParam)
     {
         const int8_t dimNum = tilingData_->dimNum;
-        auto dstAddr = reinterpret_cast<__local_mem__ T*>(dst.GetPhyAddr());
-        auto srcAddr = reinterpret_cast<__local_mem__ T*>(src.GetPhyAddr());
+        auto dstAddr = reinterpret_cast<__ubuf__ T*>(dst.GetPhyAddr());
+        auto srcAddr = reinterpret_cast<__ubuf__ T*>(src.GetPhyAddr());
         const uint32_t moveLen = tilingData_->leftPad[dimNum - 1];
         const uint32_t InOffset = tilingData_->inShape[dimNum - 1] - tilingData_->leftPad[dimNum - 1];
         const uint16_t padVLNum = moveLen / VL_ELEMS;
@@ -306,20 +306,20 @@ public:
             uint32_t endLen = padBLNum;
             endMask = AscendC::Reg::UpdateMask<T>(endLen);
             AscendC::Reg::RegTensor<T> vRegTmp;
-            AscendC::Reg::UnalignReg uReg;
+            AscendC::Reg::UnalignRegForLoad uReg;
             AscendC::Reg::MaskReg maskAll = AscendC::Reg::CreateMask<T, AscendC::Reg::MaskPattern::ALL>();
 
             for (uint16_t i = 0; i < padVLNum; i++) {
                 __ubuf__ T* Addr6 = srcAddr + InOffset + i * VL_ELEMS;
-                AscendC::Reg::DataCopyUnAlignPre(uReg, Addr6);
-                AscendC::Reg::DataCopyUnAlign(vRegTmp, uReg, Addr6);
-                AscendC::Reg::DataCopy(dstAddr + i * VL_ELEMS, vRegTmp, maskAll);
+                AscendC::Reg::LoadUnAlignPre(uReg, Addr6);
+                AscendC::Reg::LoadUnAlign(vRegTmp, uReg, Addr6);
+                AscendC::Reg::StoreAlign(dstAddr + i * VL_ELEMS, vRegTmp, maskAll);
             }
             for (uint16_t i = 0; i < BLNum; i++) {
                 __ubuf__ T* Addr7 = srcAddr + InOffset + padVLNum * VL_ELEMS;
-                AscendC::Reg::DataCopyUnAlignPre(uReg, Addr7);
-                AscendC::Reg::DataCopyUnAlign(vRegTmp, uReg, Addr7);
-                AscendC::Reg::DataCopy(dstAddr + padVLNum * VL_ELEMS, vRegTmp, endMask);
+                AscendC::Reg::LoadUnAlignPre(uReg, Addr7);
+                AscendC::Reg::LoadUnAlign(vRegTmp, uReg, Addr7);
+                AscendC::Reg::StoreAlign(dstAddr + padVLNum * VL_ELEMS, vRegTmp, endMask);
             }
         }
     }
@@ -331,7 +331,7 @@ public:
             return;
         }
         const int8_t dimNum = tilingData_->dimNum;
-        auto dstAddr = reinterpret_cast<__local_mem__ T*>(dst.GetPhyAddr());
+        auto dstAddr = reinterpret_cast<__ubuf__ T*>(dst.GetPhyAddr());
         const uint32_t InOffset = tilingData_->inShape[dimNum - 1] - tilingData_->leftPad[dimNum - 1];
         const uint16_t padVLNum = padParam.padLeft / VL_ELEMS;
         const uint16_t padBLNum = padParam.padLeft % VL_ELEMS;
@@ -356,7 +356,7 @@ public:
             uint32_t nolPadLen = VL_ELEMS - padBLNum;
             AscendC::Reg::MaskReg maskAll = AscendC::Reg::CreateMask<T, AscendC::Reg::MaskPattern::ALL>();
             lMask = AscendC::Reg::UpdateMask<T>(nolPadLen);
-            AscendC::Reg::MaskNot(lMask, lMask, maskAll);
+            AscendC::Reg::Not(lMask, lMask, maskAll);
 
             if constexpr (UB_AXES == CONST2) {
                 for (uint16_t h = 0; h < dimHNum; h++) {
@@ -382,26 +382,26 @@ public:
         }
     }
 
-    __aicore__ inline void PadLeftSideOne(__local_mem__ T* srcAddr, uint32_t firstOffset, uint32_t InOffset,
+    __aicore__ inline void PadLeftSideOne(__ubuf__ T* srcAddr, uint32_t firstOffset, uint32_t InOffset,
                                           uint16_t padVLNum, uint16_t padBLNum, uint16_t BLNum, Reg::MaskReg endMask)
     {
         __VEC_SCOPE__
         {
             AscendC::Reg::RegTensor<T> vRegTmp;
-            AscendC::Reg::UnalignReg uReg;
+            AscendC::Reg::UnalignRegForLoad uReg;
             AscendC::Reg::MaskReg maskAll = AscendC::Reg::CreateMask<T, AscendC::Reg::MaskPattern::ALL>();
 
             for (uint16_t i = 0; i < padVLNum; i++) {
                 __ubuf__ T* Addr0 = srcAddr + firstOffset + InOffset + padBLNum + i * VL_ELEMS;
-                AscendC::Reg::DataCopyUnAlignPre(uReg, Addr0);
-                AscendC::Reg::DataCopyUnAlign(vRegTmp, uReg, Addr0);
-                AscendC::Reg::DataCopy(srcAddr + firstOffset - (padVLNum - i) * VL_ELEMS, vRegTmp, maskAll);
+                AscendC::Reg::LoadUnAlignPre(uReg, Addr0);
+                AscendC::Reg::LoadUnAlign(vRegTmp, uReg, Addr0);
+                AscendC::Reg::StoreAlign(srcAddr + firstOffset - (padVLNum - i) * VL_ELEMS, vRegTmp, maskAll);
             }
             for (uint16_t i = 0; i < BLNum; i++) {
                 __ubuf__ T* Addr2 = srcAddr + firstOffset + InOffset + padBLNum - VL_ELEMS;
-                AscendC::Reg::DataCopyUnAlignPre(uReg, Addr2);
-                AscendC::Reg::DataCopyUnAlign(vRegTmp, uReg, Addr2);
-                AscendC::Reg::DataCopy(srcAddr + firstOffset - (padVLNum + 1) * VL_ELEMS, vRegTmp, endMask);
+                AscendC::Reg::LoadUnAlignPre(uReg, Addr2);
+                AscendC::Reg::LoadUnAlign(vRegTmp, uReg, Addr2);
+                AscendC::Reg::StoreAlign(srcAddr + firstOffset - (padVLNum + 1) * VL_ELEMS, vRegTmp, endMask);
             }
         }
     }
@@ -412,7 +412,7 @@ public:
             return;
         }
         const int8_t dimNum = tilingData_->dimNum;
-        auto dstAddr = reinterpret_cast<__local_mem__ T*>(dst.GetPhyAddr());
+        auto dstAddr = reinterpret_cast<__ubuf__ T*>(dst.GetPhyAddr());
         const uint32_t OutOffset = tilingData_->inShape[dimNum - 1];
         const uint16_t padVLNum = padParam.padRight / VL_ELEMS;
         const uint16_t padBLNum = padParam.padRight % VL_ELEMS;
@@ -451,27 +451,27 @@ public:
         }
     }
 
-    __aicore__ inline void PadRightSideOne(__local_mem__ T* srcAddr, uint32_t firstOffset, uint32_t OutOffset,
+    __aicore__ inline void PadRightSideOne(__ubuf__ T* srcAddr, uint32_t firstOffset, uint32_t OutOffset,
                                            uint16_t padVLNum, uint16_t padBLNum, uint16_t BLNum)
     {
         __VEC_SCOPE__
         {
             AscendC::Reg::RegTensor<T> vRegTmp;
-            AscendC::Reg::UnalignReg uReg;
+            AscendC::Reg::UnalignRegForStore uReg;
             uint32_t padLen = padBLNum;
             uint32_t allLen = VL_ELEMS;
 
             for (uint16_t i = 0; i < padVLNum; i++) {
                 __ubuf__ T* Addr3 = srcAddr + firstOffset + OutOffset + i * VL_ELEMS;
-                AscendC::Reg::DataCopy(vRegTmp, srcAddr + firstOffset + i * VL_ELEMS);
-                AscendC::Reg::DataCopyUnAlign(Addr3, vRegTmp, uReg, allLen);
-                AscendC::Reg::DataCopyUnAlignPost(Addr3, uReg, 0);
+                AscendC::Reg::LoadAlign(vRegTmp, srcAddr + firstOffset + i * VL_ELEMS);
+                AscendC::Reg::StoreUnAlign(Addr3, vRegTmp, uReg, allLen);
+                AscendC::Reg::StoreUnAlignPost(Addr3, uReg, 0);
             }
             for (uint16_t i = 0; i < BLNum; i++) {
                 __ubuf__ T* Addr4 = srcAddr + firstOffset + OutOffset + padVLNum * VL_ELEMS;
-                AscendC::Reg::DataCopy(vRegTmp, srcAddr + firstOffset + padVLNum * VL_ELEMS);
-                AscendC::Reg::DataCopyUnAlign(Addr4, vRegTmp, uReg, padLen);
-                AscendC::Reg::DataCopyUnAlignPost(Addr4, uReg, 0);
+                AscendC::Reg::LoadAlign(vRegTmp, srcAddr + firstOffset + padVLNum * VL_ELEMS);
+                AscendC::Reg::StoreUnAlign(Addr4, vRegTmp, uReg, padLen);
+                AscendC::Reg::StoreUnAlignPost(Addr4, uReg, 0);
             }
         }
     }
@@ -481,7 +481,7 @@ public:
     {
         const int8_t ubAxis = tilingData_->ubAxis;
         const int8_t dimNum = tilingData_->dimNum;
-        auto dstAddr = reinterpret_cast<__local_mem__ T*>(dst.GetPhyAddr());
+        auto dstAddr = reinterpret_cast<__ubuf__ T*>(dst.GetPhyAddr());
         const uint32_t padHW = padParam.padStride[curAxis - ubAxis - 1];
         const uint32_t padCHW = (curAxis - ubAxis <= 1) ? 0 : padParam.padStride[curAxis - ubAxis - 2];
         const uint32_t padW = padParam.padStride[curAxis - ubAxis];
@@ -514,13 +514,13 @@ public:
                 for (uint16_t c = 0; c < dimCNum; c++) {
                     uint32_t tempOffset = startOffset + c * padHW + n * padCHW;
                     for (uint16_t i = 0; i < padVLNum; i++) {
-                        AscendC::Reg::DataCopy(vRegTmp, dstAddr + tempOffset + InOffset + i * VL_ELEMS);
-                        AscendC::Reg::DataCopy(dstAddr + tempOffset + OutOffset + i * VL_ELEMS, vRegTmp, maskAll);
+                        AscendC::Reg::LoadAlign(vRegTmp, dstAddr + tempOffset + InOffset + i * VL_ELEMS);
+                        AscendC::Reg::StoreAlign(dstAddr + tempOffset + OutOffset + i * VL_ELEMS, vRegTmp, maskAll);
                     }
                     for (uint16_t i = 0; i < BLNum; i++) {
-                        AscendC::Reg::DataCopy(vRegTmp, dstAddr + tempOffset + InOffset + padVLNum * VL_ELEMS);
-                        AscendC::Reg::DataCopy(dstAddr + tempOffset + OutOffset + padVLNum * VL_ELEMS, vRegTmp,
-                                               endMask);
+                        AscendC::Reg::LoadAlign(vRegTmp, dstAddr + tempOffset + InOffset + padVLNum * VL_ELEMS);
+                        AscendC::Reg::StoreAlign(dstAddr + tempOffset + OutOffset + padVLNum * VL_ELEMS, vRegTmp,
+                                                 endMask);
                     }
                 }
             }

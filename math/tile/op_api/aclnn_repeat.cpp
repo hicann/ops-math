@@ -205,7 +205,7 @@ aclnnStatus aclnnRepeatGetWorkspaceSize(const aclTensor* self, const aclIntArray
         return ACLNN_SUCCESS;
     }
     if (self->GetStorageFormat() != Format::FORMAT_ND) {
-        OP_LOGW("Format only support ND");
+        OP_LOGW("Format only supports ND");
     }
     if (repeats->Size() == 0) {
         auto viewCopyOut = l0op::ViewCopy(self, out, uniqueExecutor.get());

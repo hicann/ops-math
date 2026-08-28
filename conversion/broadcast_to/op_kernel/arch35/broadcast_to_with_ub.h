@@ -25,7 +25,6 @@ namespace BrcTo {
 using namespace AscendC;
 
 using AscendC::Reg::CreateMask;
-using AscendC::Reg::DataCopy;
 using AscendC::Reg::MaskReg;
 using AscendC::Reg::RegTensor;
 using AscendC::Reg::UpdateMask;
@@ -49,9 +48,9 @@ private:
     __aicore__ inline void CalcInnerShape();
     __aicore__ inline void SetOutputParams(uint32_t uLen);
     __aicore__ inline void SetInputParams(uint32_t uLen);
-    __aicore__ inline void VFBroadcastOneElemLB(__local_mem__ T* inputAddr, __local_mem__ T* outputAddr);
-    __aicore__ inline void VFBroadcastOneElemLBB64(__local_mem__ T* inputAddr, __local_mem__ T* outputAddr);
-    __aicore__ inline void VFBroadcastOneElemOB(__local_mem__ T* outputAddr);
+    __aicore__ inline void VFBroadcastOneElemLB(__ubuf__ T* inputAddr, __ubuf__ T* outputAddr);
+    __aicore__ inline void VFBroadcastOneElemLBB64(__ubuf__ T* inputAddr, __ubuf__ T* outputAddr);
+    __aicore__ inline void VFBroadcastOneElemOB(__ubuf__ T* outputAddr);
     __aicore__ inline void VFInnerBroadcastToB(LocalTensor<T>& outputTensor, LocalTensor<T>& inputTensor);
     __aicore__ inline void VFInnerBroadcastToA(LocalTensor<T>& outputTensor, LocalTensor<T>& inputTensor);
     __aicore__ inline void VFInnerBrcLastDimLEBlock(LocalTensor<T>& outputTensor, LocalTensor<T>& inputTensor);
@@ -153,8 +152,8 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::SetInputParams(uint3
 }
 
 template <typename T, typename U, bool isLastDimSmall>
-__aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFBroadcastOneElemLB(__local_mem__ T* inputAddr,
-                                                                                 __local_mem__ T* outputAddr)
+__aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFBroadcastOneElemLB(__ubuf__ T* inputAddr,
+                                                                                 __ubuf__ T* outputAddr)
 {
     uint32_t axis3OutOffset = Ops::Base::CeilAlign(innerAxis4, dataAlignCnt);
     uint32_t axis1OutOffset = innerAxis2 * innerAxis3 * axis3OutOffset;
@@ -172,15 +171,15 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFBroadcastOneElemLB
                 for (uint16_t axis3Idx = 0; axis3Idx < static_cast<uint16_t>(innerAxis3); axis3Idx++) {
                     auto aregI = Reg::CreateAddrReg<T>(axis1Idx, innerAxis3, axis3Idx, 1);
                     if constexpr (sizeof(T) == sizeof(uint8_t)) {
-                        DataCopy<T, Reg::LoadDist::DIST_BRC_B8>(tmpIn, inputAddr, aregI);
+                        Reg::LoadAlign<T, Reg::LoadDist::DIST_BRC_B8>(tmpIn, inputAddr, aregI);
                     } else if constexpr (sizeof(T) == sizeof(uint16_t)) {
-                        DataCopy<T, Reg::LoadDist::DIST_BRC_B16>(tmpIn, inputAddr, aregI);
+                        Reg::LoadAlign<T, Reg::LoadDist::DIST_BRC_B16>(tmpIn, inputAddr, aregI);
                     } else {
-                        DataCopy<T, Reg::LoadDist::DIST_BRC_B32>(tmpIn, inputAddr, aregI);
+                        Reg::LoadAlign<T, Reg::LoadDist::DIST_BRC_B32>(tmpIn, inputAddr, aregI);
                     }
                     auto aregO = Reg::CreateAddrReg<T>(axis4LpIdx, axis4Offset, axis1Idx, axis1OutOffset, axis3Idx,
                                                        axis3OutOffset);
-                    DataCopy(outputAddr, tmpIn, aregO, mask);
+                    Reg::StoreAlign(outputAddr, tmpIn, aregO, mask);
                 }
             }
         }
@@ -188,8 +187,8 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFBroadcastOneElemLB
 }
 
 template <typename T, typename U, bool isLastDimSmall>
-__aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFBroadcastOneElemLBB64(__local_mem__ T* inputAddr,
-                                                                                    __local_mem__ T* outputAddr)
+__aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFBroadcastOneElemLBB64(__ubuf__ T* inputAddr,
+                                                                                    __ubuf__ T* outputAddr)
 {
     uint32_t axis1InOffset = innerAxis3 * nTwo;
     uint32_t axis3OutOffset = Ops::Base::CeilAlign(innerAxis4, dataAlignCnt) * nTwo;
@@ -197,8 +196,8 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFBroadcastOneElemLB
     uint16_t axis4LpCnt = Ops::Base::CeilDiv(innerAxis4, VL_CNT);
     uint16_t axis4Offset = VL_CNT * nTwo;
     uint32_t maskValue = axis3OutOffset;
-    auto reInAddr = reinterpret_cast<__local_mem__ RT*>(inputAddr);
-    auto reOutAddr = reinterpret_cast<__local_mem__ RT*>(outputAddr);
+    auto reInAddr = reinterpret_cast<__ubuf__ RT*>(inputAddr);
+    auto reOutAddr = reinterpret_cast<__ubuf__ RT*>(outputAddr);
 
     __VEC_SCOPE__
     {
@@ -212,12 +211,12 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFBroadcastOneElemLB
             for (uint16_t axis1Idx = 0; axis1Idx < static_cast<uint16_t>(innerAxis1); axis1Idx++) {
                 for (uint16_t axis3Idx = 0; axis3Idx < static_cast<uint16_t>(innerAxis3); axis3Idx++) {
                     auto regI = Reg::CreateAddrReg<RT>(axis1Idx, axis1InOffset, axis3Idx, nTwo);
-                    DataCopy<RT, Reg::LoadDist::DIST_BRC_B32>(tmpIn, reInAddr, regI);
-                    DataCopy<RT, Reg::LoadDist::DIST_BRC_B32>(tmpIn1, reInAddr + 1, regI);
+                    Reg::LoadAlign<RT, Reg::LoadDist::DIST_BRC_B32>(tmpIn, reInAddr, regI);
+                    Reg::LoadAlign<RT, Reg::LoadDist::DIST_BRC_B32>(tmpIn1, reInAddr + 1, regI);
                     Reg::Interleave(tmpOut, tmpOut1, tmpIn, tmpIn1);
                     auto aregO = Reg::CreateAddrReg<RT>(axis4LpIdx, axis4Offset, axis1Idx, axis1OutOffset, axis3Idx,
                                                         axis3OutOffset);
-                    DataCopy(reOutAddr, tmpOut, aregO, mask);
+                    Reg::StoreAlign(reOutAddr, tmpOut, aregO, mask);
                 }
             }
         }
@@ -225,7 +224,7 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFBroadcastOneElemLB
 }
 
 template <typename T, typename U, bool isLastDimSmall>
-__aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFBroadcastOneElemOB(__local_mem__ T* outputAddr)
+__aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFBroadcastOneElemOB(__ubuf__ T* outputAddr)
 {
     uint32_t axis4BA = Ops::Base::CeilAlign(innerAxis4, dataAlignCnt);
     uint32_t axis2Offset = innerAxis3 * axis4BA;
@@ -238,7 +237,7 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFBroadcastOneElemOB
         iAxis34Size *= nTwo;
     }
     uint32_t axis1OutOffset = innerAxis2 * axis2Offset;
-    auto reOutAddr = reinterpret_cast<__local_mem__ RT*>(outputAddr);
+    auto reOutAddr = reinterpret_cast<__ubuf__ RT*>(outputAddr);
     // ABA
     __VEC_SCOPE__
     {
@@ -247,11 +246,11 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFBroadcastOneElemOB
             MaskReg mask = UpdateMask<RT>(iAxis34Size);
             for (uint16_t axis1Idx = 0; axis1Idx < static_cast<uint16_t>(innerAxis1); axis1Idx++) {
                 auto aregI = Reg::CreateAddrReg<RT>(axis34LpIdx, axis34Offset, axis1Idx, axis1OutOffset);
-                DataCopy(tmpIn, reOutAddr, aregI);
+                Reg::LoadAlign(tmpIn, reOutAddr, aregI);
                 for (uint16_t axis2Idx = 0; axis2Idx < static_cast<uint16_t>(innerAxis2 - 1); axis2Idx++) {
                     auto aregO = Reg::CreateAddrReg<RT>(axis34LpIdx, axis34Offset, axis1Idx, axis1OutOffset, axis2Idx,
                                                         axis2Offset);
-                    DataCopy(reOutAddr + axis2Offset, tmpIn, aregO, mask);
+                    Reg::StoreAlign(reOutAddr + axis2Offset, tmpIn, aregO, mask);
                 }
             }
         }
@@ -262,8 +261,8 @@ template <typename T, typename U, bool isLastDimSmall>
 __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFInnerBroadcastToB(LocalTensor<T>& outputTensor,
                                                                                 LocalTensor<T>& inputTensor)
 {
-    __local_mem__ T* inputAddr = (__local_mem__ T*)inputTensor.GetPhyAddr();
-    __local_mem__ T* outputAddr = (__local_mem__ T*)outputTensor.GetPhyAddr();
+    __ubuf__ T* inputAddr = (__ubuf__ T*)inputTensor.GetPhyAddr();
+    __ubuf__ T* outputAddr = (__ubuf__ T*)outputTensor.GetPhyAddr();
 
     if constexpr (sizeof(T) == sizeof(RT)) {
         VFBroadcastOneElemLB(inputAddr, outputAddr);
@@ -281,10 +280,10 @@ template <typename T, typename U, bool isLastDimSmall>
 __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFInnerBroadcastToA(LocalTensor<T>& outputTensor,
                                                                                 LocalTensor<T>& inputTensor)
 {
-    __local_mem__ T* inputAddr = (__local_mem__ T*)inputTensor.GetPhyAddr();
-    __local_mem__ T* outputAddr = (__local_mem__ T*)outputTensor.GetPhyAddr();
-    auto reInAddr = reinterpret_cast<__local_mem__ RT*>(inputAddr);
-    auto reOutAddr = reinterpret_cast<__local_mem__ RT*>(outputAddr);
+    __ubuf__ T* inputAddr = (__ubuf__ T*)inputTensor.GetPhyAddr();
+    __ubuf__ T* outputAddr = (__ubuf__ T*)outputTensor.GetPhyAddr();
+    auto reInAddr = reinterpret_cast<__ubuf__ RT*>(inputAddr);
+    auto reOutAddr = reinterpret_cast<__ubuf__ RT*>(outputAddr);
 
     uint32_t axis4BA = Ops::Base::CeilAlign(innerAxis4, dataAlignCnt);
     uint32_t axis4Offset = VL_CNT;
@@ -307,12 +306,12 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFInnerBroadcastToA(
                 MaskReg mask = UpdateMask<RT>(lastASize);
                 for (uint16_t axis2Idx = 0; axis2Idx < static_cast<uint16_t>(innerAxis2); axis2Idx++) {
                     auto aregI = Reg::CreateAddrReg<RT>(axis4LpIdx, axis4Offset, axis2Idx, axis2InOffset);
-                    DataCopy(tmpIn, reInAddr, aregI);
+                    Reg::LoadAlign(tmpIn, reInAddr, aregI);
                     for (uint16_t axis1Idx = 0; axis1Idx < static_cast<uint16_t>(innerAxis1); axis1Idx++) {
                         for (uint16_t axis3Idx = 0; axis3Idx < static_cast<uint16_t>(innerAxis3); axis3Idx++) {
                             auto aregO = Reg::CreateAddrReg<RT>(axis4LpIdx, axis4Offset, axis2Idx, axis2Offset,
                                                                 axis1Idx, axis1Offset, axis3Idx, axis3Offset);
-                            DataCopy(reOutAddr, tmpIn, aregO, mask);
+                            Reg::StoreAlign(reOutAddr, tmpIn, aregO, mask);
                         }
                     }
                 }
@@ -326,11 +325,11 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFInnerBroadcastToA(
                 MaskReg mask = UpdateMask<RT>(lastASize);
                 for (uint16_t axis2Idx = 0; axis2Idx < static_cast<uint16_t>(innerAxis2); axis2Idx++) {
                     auto aregI = Reg::CreateAddrReg<RT>(axis4LpIdx, axis4Offset, axis2Idx, axis2InOffset);
-                    DataCopy(tmpIn, reInAddr, aregI);
+                    Reg::LoadAlign(tmpIn, reInAddr, aregI);
                     for (uint16_t axis3Idx = 0; axis3Idx < static_cast<uint16_t>(innerAxis3); axis3Idx++) {
                         auto aregO = Reg::CreateAddrReg<RT>(axis4LpIdx, axis4Offset, axis2Idx, axis2Offset, axis3Idx,
                                                             axis3Offset);
-                        DataCopy(reOutAddr, tmpIn, aregO, mask);
+                        Reg::StoreAlign(reOutAddr, tmpIn, aregO, mask);
                     }
                 }
             }
@@ -342,10 +341,10 @@ template <typename T, typename U, bool isLastDimSmall>
 __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFInnerBrcLastDimLEBlock(LocalTensor<T>& outputTensor,
                                                                                      LocalTensor<T>& inputTensor)
 {
-    __local_mem__ T* inputAddr = (__local_mem__ T*)inputTensor.GetPhyAddr();
-    __local_mem__ T* outputAddr = (__local_mem__ T*)outputTensor.GetPhyAddr();
-    auto reInAddr = reinterpret_cast<__local_mem__ RT*>(inputAddr);
-    auto reOutAddr = reinterpret_cast<__local_mem__ RT*>(outputAddr);
+    __ubuf__ T* inputAddr = (__ubuf__ T*)inputTensor.GetPhyAddr();
+    __ubuf__ T* outputAddr = (__ubuf__ T*)outputTensor.GetPhyAddr();
+    auto reInAddr = reinterpret_cast<__ubuf__ RT*>(inputAddr);
+    auto reOutAddr = reinterpret_cast<__ubuf__ RT*>(outputAddr);
 
     uint32_t axis4BA = Ops::Base::CeilAlign(innerAxis4, dataAlignCnt);
     if constexpr (sizeof(T) != sizeof(RT)) {
@@ -362,9 +361,9 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFInnerBrcLastDimLEB
             AscendC::Reg::RegTensor<RT> tmpIn;
             MaskReg mask = UpdateMask<RT>(lastASize);
             for (uint16_t axis2Idx = 0; axis2Idx < static_cast<uint16_t>(innerAxis2); axis2Idx++) {
-                DataCopy<RT, Reg::LoadDist::DIST_BLK>(tmpIn, reInAddr + axis2Idx * axis2InOffset);
+                Reg::LoadAlign<RT, Reg::LoadDist::DIST_BLK>(tmpIn, reInAddr + axis2Idx * axis2InOffset);
                 for (uint16_t axis1Idx = 0; axis1Idx < static_cast<uint16_t>(innerAxis1); axis1Idx++) {
-                    DataCopy(reOutAddr + axis2Idx * axis2Offset + axis1Idx * axis1Offset, tmpIn, mask);
+                    Reg::StoreAlign(reOutAddr + axis2Idx * axis2Offset + axis1Idx * axis1Offset, tmpIn, mask);
                 }
             }
         }
@@ -374,8 +373,8 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFInnerBrcLastDimLEB
             AscendC::Reg::RegTensor<RT> tmpIn;
             MaskReg mask = UpdateMask<RT>(lastASize);
             for (uint16_t axis2Idx = 0; axis2Idx < static_cast<uint16_t>(innerAxis2); axis2Idx++) {
-                DataCopy<RT, Reg::LoadDist::DIST_BLK>(tmpIn, reInAddr + axis2Idx * axis2InOffset);
-                DataCopy(reOutAddr + axis2Idx * axis2Offset, tmpIn, mask);
+                Reg::LoadAlign<RT, Reg::LoadDist::DIST_BLK>(tmpIn, reInAddr + axis2Idx * axis2InOffset);
+                Reg::StoreAlign(reOutAddr + axis2Idx * axis2Offset, tmpIn, mask);
             }
         }
     }
@@ -399,10 +398,10 @@ template <typename T, typename U, bool isLastDimSmall>
 __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFInnerBrcLastDimGTBlock(LocalTensor<T>& outputTensor,
                                                                                      LocalTensor<T>& inputTensor)
 {
-    __local_mem__ T* inputAddr = (__local_mem__ T*)inputTensor.GetPhyAddr();
-    __local_mem__ T* outputAddr = (__local_mem__ T*)outputTensor.GetPhyAddr();
-    auto reInAddr = reinterpret_cast<__local_mem__ int32_t*>(inputAddr);
-    auto reOutAddr = reinterpret_cast<__local_mem__ int32_t*>(outputAddr);
+    __ubuf__ T* inputAddr = (__ubuf__ T*)inputTensor.GetPhyAddr();
+    __ubuf__ T* outputAddr = (__ubuf__ T*)outputTensor.GetPhyAddr();
+    auto reInAddr = reinterpret_cast<__ubuf__ int32_t*>(inputAddr);
+    auto reOutAddr = reinterpret_cast<__ubuf__ int32_t*>(outputAddr);
 
     uint32_t axis4BA = Ops::Base::CeilAlign(innerAxis4, dataAlignCnt);
     if constexpr (sizeof(T) == sizeof(int64_t)) {
@@ -426,10 +425,10 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFInnerBrcLastDimGTB
             GenGatherIdx(gatherIdx, static_cast<int32_t>(axis4BA));
             MaskReg mask = UpdateMask<int32_t>(lastASize);
             for (uint16_t axis2Idx = 0; axis2Idx < static_cast<uint16_t>(innerAxis2); axis2Idx++) {
-                DataCopy(tmpIn, reInAddr + axis2Idx * axis2InOffset);
+                Reg::LoadAlign(tmpIn, reInAddr + axis2Idx * axis2InOffset);
                 Reg::Gather(tmpOut, tmpIn, (Reg::RegTensor<uint32_t>&)gatherIdx);
                 for (uint16_t axis1Idx = 0; axis1Idx < static_cast<uint16_t>(innerAxis1); axis1Idx++) {
-                    DataCopy(reOutAddr + axis2Idx * axis2Offset + axis1Idx * axis1Offset, tmpOut, mask);
+                    Reg::StoreAlign(reOutAddr + axis2Idx * axis2Offset + axis1Idx * axis1Offset, tmpOut, mask);
                 }
             }
         }
@@ -442,9 +441,9 @@ __aicore__ inline void BroadcastToUb<T, U, isLastDimSmall>::VFInnerBrcLastDimGTB
             GenGatherIdx(gatherIdx, static_cast<int32_t>(axis4BA));
             MaskReg mask = UpdateMask<int32_t>(lastASize);
             for (uint16_t axis2Idx = 0; axis2Idx < static_cast<uint16_t>(innerAxis2); axis2Idx++) {
-                DataCopy(tmpIn, reInAddr + axis2Idx * axis2InOffset);
+                Reg::LoadAlign(tmpIn, reInAddr + axis2Idx * axis2InOffset);
                 Reg::Gather(tmpOut, tmpIn, (Reg::RegTensor<uint32_t>&)gatherIdx);
-                DataCopy(reOutAddr + axis2Idx * axis2Offset, tmpOut, mask);
+                Reg::StoreAlign(reOutAddr + axis2Idx * axis2Offset, tmpOut, mask);
             }
         }
     }

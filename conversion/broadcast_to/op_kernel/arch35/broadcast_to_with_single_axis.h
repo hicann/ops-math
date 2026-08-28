@@ -28,7 +28,7 @@
 namespace BrcSA {
 using namespace AscendC;
 
-constexpr MultiCopyConfig copyCfg{false, 0, 0, false};
+constexpr NdDmaConfig copyCfg{false, 0, 0, false};
 
 template <typename T, bool IsBrc>
 class BroadcastSingleAxis {

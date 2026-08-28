@@ -142,7 +142,7 @@ void PadV3GradACTiling::GetOptimizeTiling(const PadV3GradUbTileInfo& oldTilingIn
     // ubPerCoreCnt 不发生变化为前提时，最多循环coreNum+dimNum_次就可以找到最优解, 这里仅做防死循环保护
     uint32_t maxLoop = coreNum_ + dimNum_;
     uint32_t loops = 0;
-    bool finded = false;
+    bool found = false;
     for (uint8_t iDim = oldTilingInfo.ubSplitAxis; iDim < dimNum_; iDim++) {
         if (iDim != oldTilingInfo.ubSplitAxis) {
             outCount *= tilingData_->outShape[iDim - 1];
@@ -153,7 +153,7 @@ void PadV3GradACTiling::GetOptimizeTiling(const PadV3GradUbTileInfo& oldTilingIn
         for (int64_t factor = iDimFactor; factor > 0;) {
             loops++;
             if (loops > maxLoop) {
-                finded = true;
+                found = true;
                 OP_LOGD(context_, "loops:%u is bigger than maxLoop:%u", loops, maxLoop);
                 break;
             }
@@ -172,14 +172,14 @@ void PadV3GradACTiling::GetOptimizeTiling(const PadV3GradUbTileInfo& oldTilingIn
             if (oldTilingInfo.ubPerCoreCnt != tmpPerCount) {
                 OP_LOGD(context_, "iDim:%u factor:%ld tmpPerCount:%ld not equal ubPerCoreCnt:%ld", iDim, factor,
                         tmpPerCount, oldTilingInfo.ubPerCoreCnt);
-                finded = true;
+                found = true;
                 break;
             }
 
             if (factor * tilingData_->inStride[iDim] * dtypeBytes_ < MIN_PER_UB_SIZE ||
                 tmpFactor * tilingData_->inStride[iDim] * dtypeBytes_ < MIN_PER_UB_SIZE) {
                 OP_LOGD(context_, "iDim:%u factor:%ld tmpFactor:%ld in ubSize is too small", iDim, factor, tmpFactor);
-                finded = true;
+                found = true;
                 break;
             }
 
@@ -193,16 +193,16 @@ void PadV3GradACTiling::GetOptimizeTiling(const PadV3GradUbTileInfo& oldTilingIn
             OP_LOGD(context_, "current iDim:%u factor:%ld iDimOuter:%ld tmpFactor:%ld tmpCoreNum:%ld usedRate:%f", iDim,
                     factor, iDimOuter, tmpFactor, tmpCoreNum, usedRate);
             if (usedRate >= MIN_USED_CORES_RATIO) {
-                finded = true;
+                found = true;
                 break;
             }
             factor = tmpFactor - 1;
         }
 
-        OP_LOGD(context_, "iDim:%u ubSplitAxis:%u ubSplitFactor:%u loops:%u finded:%d", iDim, newTilingInfo.ubSplitAxis,
-                newTilingInfo.ubSplitFactor, loops, finded);
+        OP_LOGD(context_, "iDim:%u ubSplitAxis:%u ubSplitFactor:%u loops:%u found:%d", iDim, newTilingInfo.ubSplitAxis,
+                newTilingInfo.ubSplitFactor, loops, found);
 
-        if (finded) {
+        if (found) {
             break;
         }
     }

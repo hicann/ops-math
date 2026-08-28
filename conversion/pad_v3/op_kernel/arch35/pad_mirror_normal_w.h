@@ -291,7 +291,7 @@ private:
 
     __aicore__ inline void GenIndex(const LocalTensor<RT>& dst, PadMirrNormalParam& padParam)
     {
-        auto dstAddr = reinterpret_cast<__local_mem__ RT*>(dst.GetPhyAddr());
+        auto dstAddr = reinterpret_cast<__ubuf__ RT*>(dst.GetPhyAddr());
         const int8_t dimNum = tilingData_->dimNum;
         const uint16_t hasRight = rightNum > 0 ? 1 : 0;
         const uint16_t noLastRight = rightNum > 1 ? rightNum - 1 : 0;
@@ -335,44 +335,44 @@ private:
             Reg::Arange<RT, AscendC::Reg::IndexOrder::DECREASE_ORDER>(rightIdx, firstIndexRight + 1);
 
             for (uint16_t i = 0; i < leftNum; i++) {
-                AscendC::Reg::DataCopy(dstAddr + idOffset * VL_ELEMS_R, tempIdx, maskAll);
+                AscendC::Reg::StoreAlign(dstAddr + idOffset * VL_ELEMS_R, tempIdx, maskAll);
                 Adds(tempIdx, tempIdx, -1 * addsScale, maskAll);
                 idOffset += 1;
             }
             for (uint16_t i = 0; i < leftCrossNum; i++) {
                 maskReg = AscendC::Reg::UpdateMask<RT>(leftLen);
-                AscendC::Reg::MaskNot(maskReg, maskReg, maskAll);
-                Copy(tempIdx, middleIdx, maskReg);
+                AscendC::Reg::Not(maskReg, maskReg, maskAll);
+                AscendC::Reg::Move(tempIdx, middleIdx, maskReg);
                 maskReg = AscendC::Reg::UpdateMask<RT>(endLLen);
-                AscendC::Reg::DataCopy(dstAddr + idOffset * VL_ELEMS_R, tempIdx, maskReg);
+                AscendC::Reg::StoreAlign(dstAddr + idOffset * VL_ELEMS_R, tempIdx, maskReg);
                 AscendC::Reg::Adds(middleIdx, middleIdx, addsScale, maskAll);
                 idOffset += (1 - middleOffset);
             }
             maskReg = AscendC::Reg::UpdateMask<RT>(midLen);
             // leftcross和rightcross在同一block时，不copy mid
-            Copy(tempIdx, middleIdx, maskReg);
+            AscendC::Reg::Move(tempIdx, middleIdx, maskReg);
             for (uint16_t i = 0; i < middleNum; i++) {
-                AscendC::Reg::DataCopy(dstAddr + idOffset * VL_ELEMS_R, tempIdx, maskAll);
+                AscendC::Reg::StoreAlign(dstAddr + idOffset * VL_ELEMS_R, tempIdx, maskAll);
                 AscendC::Reg::Adds(tempIdx, tempIdx, addsScale, maskAll);
                 idOffset += 1;
             }
             for (uint16_t i = 0; i < rightCrossNum; i++) {
                 maskReg = AscendC::Reg::UpdateMask<RT>(rightLen);
-                AscendC::Reg::MaskNot(maskReg, maskReg, maskAll);
-                Copy(tempIdx, rightIdx, maskReg);
+                AscendC::Reg::Not(maskReg, maskReg, maskAll);
+                AscendC::Reg::Move(tempIdx, rightIdx, maskReg);
                 maskReg = AscendC::Reg::UpdateMask<RT>(endRLen);
-                AscendC::Reg::DataCopy(dstAddr + idOffset * VL_ELEMS_R, tempIdx, maskReg);
+                AscendC::Reg::StoreAlign(dstAddr + idOffset * VL_ELEMS_R, tempIdx, maskReg);
                 idOffset += 1;
             }
             for (uint16_t i = 0; i < noLastRight; i++) {
                 AscendC::Reg::Adds(rightIdx, rightIdx, -1 * addsScale, maskAll);
-                AscendC::Reg::DataCopy(dstAddr + idOffset * VL_ELEMS_R, rightIdx, maskAll);
+                AscendC::Reg::StoreAlign(dstAddr + idOffset * VL_ELEMS_R, rightIdx, maskAll);
                 idOffset += 1;
             }
             for (uint16_t i = 0; i < hasRight; i++) {
                 maskReg = AscendC::Reg::UpdateMask<RT>(endLen);
                 AscendC::Reg::Adds(rightIdx, rightIdx, -1 * addsScale, maskReg);
-                AscendC::Reg::DataCopy(dstAddr + idOffset * VL_ELEMS_R, rightIdx, maskReg);
+                AscendC::Reg::StoreAlign(dstAddr + idOffset * VL_ELEMS_R, rightIdx, maskReg);
             }
         }
     }
@@ -380,9 +380,9 @@ private:
     __aicore__ inline void GatherProcess(const LocalTensor<T>& dst, const LocalTensor<T>& src,
                                          const LocalTensor<RT>& idx, PadMirrNormalParam& padParam)
     {
-        auto dstAddr = reinterpret_cast<__local_mem__ T*>(dst.GetPhyAddr());
-        auto srcAddr = reinterpret_cast<__local_mem__ T*>(src.GetPhyAddr());
-        auto idxAddr = reinterpret_cast<__local_mem__ RT*>(idx.GetPhyAddr());
+        auto dstAddr = reinterpret_cast<__ubuf__ T*>(dst.GetPhyAddr());
+        auto srcAddr = reinterpret_cast<__ubuf__ T*>(src.GetPhyAddr());
+        auto idxAddr = reinterpret_cast<__ubuf__ RT*>(idx.GetPhyAddr());
         const int8_t dimNum = tilingData_->dimNum;
         const uint16_t padVLNum = tilingData_->outShape[dimNum - 1] / VL_ELEMS_C;
         const uint16_t endMaskLen = tilingData_->outShape[dimNum - 1] % VL_ELEMS_C;
@@ -429,9 +429,9 @@ private:
         }
     }
 
-    __aicore__ inline void GatherProcessLine(__local_mem__ T* dstAddr, __local_mem__ T* srcAddr,
-                                             __local_mem__ RT* idxAddr, uint16_t padVLNum, uint16_t padBLNum,
-                                             Reg::MaskReg endMask, Reg::MaskReg maskAll)
+    __aicore__ inline void GatherProcessLine(__ubuf__ T* dstAddr, __ubuf__ T* srcAddr, __ubuf__ RT* idxAddr,
+                                             uint16_t padVLNum, uint16_t padBLNum, Reg::MaskReg endMask,
+                                             Reg::MaskReg maskAll)
     {
         __VEC_SCOPE__
         {
@@ -440,25 +440,25 @@ private:
             AscendC::Reg::RegTensor<T> dataT;
 
             for (uint16_t i = 0; i < padVLNum; i++) {
-                AscendC::Reg::DataCopy(idxTmp, idxAddr + i * VL_ELEMS_C);
-                AscendC::Reg::DataCopyGather((Reg::RegTensor<CastType>&)dataTmp, srcAddr,
-                                             (Reg::RegTensor<IdxType>&)idxTmp, maskAll);
+                AscendC::Reg::LoadAlign(idxTmp, idxAddr + i * VL_ELEMS_C);
+                AscendC::Reg::Gather((Reg::RegTensor<CastType>&)dataTmp, srcAddr, (Reg::RegTensor<IdxType>&)idxTmp,
+                                     maskAll);
                 if constexpr (sizeof(T) != 1) {
-                    Reg::DataCopy(dstAddr + i * VL_ELEMS_C, dataTmp, maskAll);
+                    Reg::StoreAlign(dstAddr + i * VL_ELEMS_C, dataTmp, maskAll);
                 } else {
                     Reg::Pack(dataT, (Reg::RegTensor<CastType>&)dataTmp);
-                    Reg::DataCopy(dstAddr + i * VL_ELEMS_C, dataT, maskAll);
+                    Reg::StoreAlign(dstAddr + i * VL_ELEMS_C, dataT, maskAll);
                 }
             }
             for (uint16_t i = 0; i < padBLNum; i++) {
-                AscendC::Reg::DataCopy(idxTmp, idxAddr + padVLNum * VL_ELEMS_C);
-                AscendC::Reg::DataCopyGather((Reg::RegTensor<CastType>&)dataTmp, srcAddr,
-                                             (Reg::RegTensor<IdxType>&)idxTmp, endMask);
+                AscendC::Reg::LoadAlign(idxTmp, idxAddr + padVLNum * VL_ELEMS_C);
+                AscendC::Reg::Gather((Reg::RegTensor<CastType>&)dataTmp, srcAddr, (Reg::RegTensor<IdxType>&)idxTmp,
+                                     endMask);
                 if constexpr (sizeof(T) != 1) {
-                    Reg::DataCopy(dstAddr + padVLNum * VL_ELEMS_C, dataTmp, endMask);
+                    Reg::StoreAlign(dstAddr + padVLNum * VL_ELEMS_C, dataTmp, endMask);
                 } else {
                     Reg::Pack(dataT, (Reg::RegTensor<CastType>&)dataTmp);
-                    Reg::DataCopy(dstAddr + padVLNum * VL_ELEMS_C, dataT, endMask);
+                    Reg::StoreAlign(dstAddr + padVLNum * VL_ELEMS_C, dataT, endMask);
                 }
             }
         }
@@ -467,8 +467,8 @@ private:
     __aicore__ inline void MoveProcess(const LocalTensor<T>& dst, const LocalTensor<T>& src,
                                        PadMirrNormalParam& padParam)
     {
-        auto dstAddr = reinterpret_cast<__local_mem__ T*>(dst.GetPhyAddr());
-        auto srcAddr = reinterpret_cast<__local_mem__ T*>(src.GetPhyAddr());
+        auto dstAddr = reinterpret_cast<__ubuf__ T*>(dst.GetPhyAddr());
+        auto srcAddr = reinterpret_cast<__ubuf__ T*>(src.GetPhyAddr());
         const int8_t dimNum = tilingData_->dimNum;
         const uint16_t dimNNum = (UB_AXES < CONST4) ? 1 : inCopyLen_[dimNum - CONST4];
         const uint16_t dimCNum = (UB_AXES < CONST3) ? 1 : inCopyLen_[dimNum - CONST3];
@@ -505,27 +505,27 @@ private:
         }
     }
 
-    __aicore__ inline void MoveLine(__local_mem__ T* dstAddr, __local_mem__ T* srcAddr, uint16_t padVLNum,
-                                    uint16_t padBLNum, Reg::MaskReg endMask)
+    __aicore__ inline void MoveLine(__ubuf__ T* dstAddr, __ubuf__ T* srcAddr, uint16_t padVLNum, uint16_t padBLNum,
+                                    Reg::MaskReg endMask)
     {
         __VEC_SCOPE__
         {
             AscendC::Reg::RegTensor<T> vRegTmp;
             AscendC::Reg::MaskReg maskAll = AscendC::Reg::CreateMask<T, AscendC::Reg::MaskPattern::ALL>();
             for (uint16_t i = 0; i < padVLNum; i++) {
-                AscendC::Reg::DataCopy(vRegTmp, srcAddr + i * VL_ELEMS);
-                AscendC::Reg::DataCopy(dstAddr + i * VL_ELEMS, vRegTmp, maskAll);
+                AscendC::Reg::LoadAlign(vRegTmp, srcAddr + i * VL_ELEMS);
+                AscendC::Reg::StoreAlign(dstAddr + i * VL_ELEMS, vRegTmp, maskAll);
             }
             for (uint16_t i = 0; i < padBLNum; i++) {
-                AscendC::Reg::DataCopy(vRegTmp, srcAddr + padVLNum * VL_ELEMS);
-                AscendC::Reg::DataCopy(dstAddr + padVLNum * VL_ELEMS, vRegTmp, endMask);
+                AscendC::Reg::LoadAlign(vRegTmp, srcAddr + padVLNum * VL_ELEMS);
+                AscendC::Reg::StoreAlign(dstAddr + padVLNum * VL_ELEMS, vRegTmp, endMask);
             }
         }
     }
 
     __aicore__ inline void Pad2DProcess(const LocalTensor<T>& dst, PadMirrNormalParam& padParam)
     {
-        auto dstAddr = reinterpret_cast<__local_mem__ T*>(dst.GetPhyAddr());
+        auto dstAddr = reinterpret_cast<__ubuf__ T*>(dst.GetPhyAddr());
         const int8_t dimNum = tilingData_->dimNum;
         const uint16_t modeOffset = MODE <= 1 ? 0 : 1;
         const uint16_t dimNNum = (UB_AXES < CONST4) ? 1 : inCopyLen_[dimNum - CONST4];
@@ -582,7 +582,7 @@ private:
 
     __aicore__ inline void Pad3DProcess(const LocalTensor<T>& dst, PadMirrNormalParam& padParam)
     {
-        auto dstAddr = reinterpret_cast<__local_mem__ T*>(dst.GetPhyAddr());
+        auto dstAddr = reinterpret_cast<__ubuf__ T*>(dst.GetPhyAddr());
         const int8_t dimNum = tilingData_->dimNum;
         const uint16_t modeOffset = MODE <= 1 ? 0 : 1;
         const uint16_t dimNNum = inCopyLen_[dimNum - CONST4];
@@ -622,8 +622,8 @@ private:
     __aicore__ inline void FlipProcess(const LocalTensor<T>& dst, const LocalTensor<T>& src,
                                        PadMirrNormalParam& padParam)
     {
-        auto dstAddr = reinterpret_cast<__local_mem__ T*>(dst.GetPhyAddr());
-        auto srcAddr = reinterpret_cast<__local_mem__ T*>(src.GetPhyAddr());
+        auto dstAddr = reinterpret_cast<__ubuf__ T*>(dst.GetPhyAddr());
+        auto srcAddr = reinterpret_cast<__ubuf__ T*>(src.GetPhyAddr());
         const int8_t dimNum = tilingData_->dimNum;
         const uint16_t dimNNum = (UB_AXES < CONST4) ? 1 : inCopyLen_[dimNum - CONST4];
         const uint16_t dimCNum = (UB_AXES < CONST3) ? 1 : inCopyLen_[dimNum - CONST3];
