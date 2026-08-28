@@ -14,7 +14,6 @@
 | <term>Atlas 推理系列产品</term>                       |     √    |
 | <term>Atlas 训练系列产品</term>                       |     √    |
 
-> 说明：Asinh仅在Ascend950平台（arch35 / DAV_3510）落地，不向下兼容Atlas A2 / A3 / Ascend910等其他平台。
 
 ## 功能说明
 
