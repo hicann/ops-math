@@ -8,6 +8,7 @@
             "functionName":"RunCpuKernel",
             "kernelSo":"libmath_aicpu_kernels.so",
             "opKernelLib":"CUSTAICPUKernel",
+            "opsFlag":"OPS_FLAG_OPEN",
             "userDefined":"True",
             "workspaceSize":"100"
         },

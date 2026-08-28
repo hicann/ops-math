@@ -19,7 +19,7 @@ if(UT_TEST_ALL OR OP_GRAPH_UT)
 
     ## add opgraph ut exe:  math_op_graph_ut
     set(OP_GRAPH_UT_EXE ${PKG_NAME}_op_graph_ut)
-    
+
     add_executable(${OP_GRAPH_UT_EXE}
             test_op_graph_main.cpp
     )
@@ -47,6 +47,7 @@ if(UT_TEST_ALL OR OP_GRAPH_UT)
         -Wl,--no-whole-archive
         -Wl,--no-as-needed
         metadef
+        unified_dlog
         -Wl,--as-needed
         error_manager
         exe_graph
@@ -55,7 +56,6 @@ if(UT_TEST_ALL OR OP_GRAPH_UT)
         graph
         register
         platform
-        unified_dlog
         opp_registry
         c_sec
         ge_common
@@ -78,7 +78,7 @@ if(UT_TEST_ALL OR OP_GRAPH_UT)
             if(NOT result EQUAL 0)
                 message(FATAL_ERROR "compiler not support asan, please disable asan")
             endif()
-        
+
             execute_process(
                 COMMAND ${CMAKE_C_COMPILER} -print-file-name=libstdc++.so
                 OUTPUT_VARIABLE LIBSTDC_PATH

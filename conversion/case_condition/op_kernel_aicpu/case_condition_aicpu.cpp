@@ -10,6 +10,7 @@
 
 #include "case_condition_aicpu.h"
 
+#include "aicpu/math_aicpu_register.h"
 #include "cpu_kernel_utils.h"
 #include "cpu_types.h"
 #include "log.h"
@@ -101,5 +102,5 @@ uint32_t CaseConditionCpuKernel::Compute(CpuKernelContext& ctx)
     return ret;
 }
 
-REGISTER_CPU_KERNEL(kCaseCondition, CaseConditionCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kCaseCondition, CaseConditionCpuKernel);
 } // namespace aicpu

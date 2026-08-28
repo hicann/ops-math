@@ -13,6 +13,7 @@
 #include <map>
 #include <vector>
 
+#include "aicpu/math_aicpu_register.h"
 #include "cpu_kernel_utils.h"
 #include "log.h"
 #include "utils/kernel_util.h"
@@ -245,5 +246,5 @@ uint32_t ReduceAllCpuKernel::Compute(CpuKernelContext& ctx)
     return ret;
 }
 
-REGISTER_CPU_KERNEL(kReduceAll, ReduceAllCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kReduceAll, ReduceAllCpuKernel);
 } // namespace aicpu

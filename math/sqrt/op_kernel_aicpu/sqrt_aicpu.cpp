@@ -11,23 +11,25 @@
 
 #include <complex>
 
+#include "aicpu/math_aicpu_register.h"
 #include "cpu_kernel_utils.h"
 #include "utils/kernel_util.h"
 
 using namespace std;
 
 namespace {
-const char *const kSqrt = "Sqrt";
+const char* const kSqrt = "Sqrt";
 const uint32_t kInputNum = 1;
 const uint32_t kOutputNum = 1;
 constexpr int64_t kParallelDataNums = 8 * 1024;
-}  // namespace
+} // namespace
 
 namespace aicpu {
 template <typename T>
-uint32_t SqrtCpuKernel::DoComputeReal(const CpuKernelContext &ctx) {
-    auto *input = reinterpret_cast<T *>(ctx.Input(0)->GetData());
-    auto *output = reinterpret_cast<T *>(ctx.Output(0)->GetData());
+uint32_t SqrtCpuKernel::DoComputeReal(const CpuKernelContext& ctx)
+{
+    auto* input = reinterpret_cast<T*>(ctx.Input(0)->GetData());
+    auto* output = reinterpret_cast<T*>(ctx.Output(0)->GetData());
     int64_t data_num = ctx.Input(0)->NumElements();
 
     if (data_num <= kParallelDataNums) {
@@ -51,9 +53,10 @@ uint32_t SqrtCpuKernel::DoComputeReal(const CpuKernelContext &ctx) {
 }
 
 template <typename T>
-uint32_t SqrtCpuKernel::DoComputeComplex(const CpuKernelContext &ctx) {
-    auto *input = reinterpret_cast<T *>(ctx.Input(0)->GetData());
-    auto *output = reinterpret_cast<T *>(ctx.Output(0)->GetData());
+uint32_t SqrtCpuKernel::DoComputeComplex(const CpuKernelContext& ctx)
+{
+    auto* input = reinterpret_cast<T*>(ctx.Input(0)->GetData());
+    auto* output = reinterpret_cast<T*>(ctx.Output(0)->GetData());
     int64_t data_num = ctx.Input(0)->NumElements();
 
     auto shard_sqrt = [&input, &output](int64_t begin, int64_t end) {
@@ -74,17 +77,18 @@ uint32_t SqrtCpuKernel::DoComputeComplex(const CpuKernelContext &ctx) {
     return KERNEL_STATUS_OK;
 }
 
-uint32_t SqrtCpuKernel::Compute(CpuKernelContext &ctx) {
+uint32_t SqrtCpuKernel::Compute(CpuKernelContext& ctx)
+{
     KERNEL_HANDLE_ERROR(NormalCheck(ctx, kInputNum, kOutputNum), "Check Sqrt params failed.");
 
     DataType input_type = ctx.Input(0)->GetDataType();
     DataType output_type = ctx.Output(0)->GetDataType();
     KERNEL_CHECK_FALSE((input_type == output_type), KERNEL_STATUS_PARAM_INVALID,
-                       "The data type of input [%s] must be the same as output [%s].",
-                       DTypeStr(input_type).c_str(), DTypeStr(output_type).c_str());
+                       "The data type of input [%s] must be the same as output [%s].", DTypeStr(input_type).c_str(),
+                       DTypeStr(output_type).c_str());
     KERNEL_CHECK_FALSE((ctx.Input(0)->GetDataSize() == ctx.Output(0)->GetDataSize()), KERNEL_STATUS_PARAM_INVALID,
-                       "The data size of input [%lu] must be the same as output [%lu].",
-                       ctx.Input(0)->GetDataSize(), ctx.Output(0)->GetDataSize());
+                       "The data size of input [%lu] must be the same as output [%lu].", ctx.Input(0)->GetDataSize(),
+                       ctx.Output(0)->GetDataSize());
 
     KERNEL_LOG_DEBUG("%s op input[x] data type is [%s].", kSqrt, DTypeStr(input_type).c_str());
     switch (input_type) {
@@ -104,5 +108,5 @@ uint32_t SqrtCpuKernel::Compute(CpuKernelContext &ctx) {
     }
 }
 
-REGISTER_CPU_KERNEL(kSqrt, SqrtCpuKernel);
-}  // namespace aicpu
+OPS_MATH_REGISTER_CPU_KERNELV2(kSqrt, SqrtCpuKernel);
+} // namespace aicpu
