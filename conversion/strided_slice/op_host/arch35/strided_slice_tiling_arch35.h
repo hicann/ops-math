@@ -29,7 +29,6 @@
 #include "op_api/op_util.h"
 #include "../strided_slice_util.h"
 
-
 namespace optiling {
 constexpr int64_t MAX_TWO_DIM_UB_SPLIT_AXIS_NUM = 2;
 constexpr int64_t MAX_AXIS_NUM_FOR_STRIDESLICE = 8;
@@ -111,9 +110,9 @@ struct SliceParametersRuntime2 {
     }
 };
 
-ge::graphStatus StrideSliceTilingForAscendC(
-    gert::TilingContext* context, int64_t coreNum, int64_t ubSize, int64_t cachelineSize,
-    SliceParametersRuntime2& param, const ge::DataType& dtype);
+ge::graphStatus StrideSliceTilingForAscendC(gert::TilingContext* tilingContext, int64_t coreNum, int64_t ubSize,
+                                            int64_t cachelineSize, SliceParametersRuntime2& sliceParam,
+                                            const ge::DataType& dtype);
 
 struct MoveAlignV2Info {
     uint16_t blockCount = 0;
@@ -279,9 +278,8 @@ REGISTER_TILING_DATA_CLASS(StridedSlice, StridedSliceTilingData)
 class StrideSliceTiling {
 public:
     explicit StrideSliceTiling(gert::TilingContext* tilingContext) : tilingContext_(tilingContext) {};
-    ge::graphStatus Init(
-        int64_t coreNum, int64_t ubSize, int64_t cacheLineSize, SliceParametersRuntime2& sliceParam,
-        const ge::DataType& dtype);
+    ge::graphStatus Init(int64_t coreNum, int64_t ubSize, int64_t cacheLineSize, SliceParametersRuntime2& sliceParam,
+                         const ge::DataType& dtype);
     ge::graphStatus RunStrideSliceTiling();
 
 protected:
