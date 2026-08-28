@@ -55,8 +55,8 @@ static const std::initializer_list<DataType> ASCEND910_DTYPE_SELFREF_LIST_ATANH 
 static bool CheckDtypeValid(const aclTensor* input, const aclTensor* out)
 {
     // 检查输入的数据类型是否在算子的支持列表内
-    auto supportList =
-        GetDtypeSupportListV2(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST_ATANH, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST_ATANH);
+    auto supportList = GetDtypeSupportListV2(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST_ATANH,
+                                             ASCEND910_DTYPE_DTYPE_SUPPORT_LIST_ATANH);
     OP_CHECK_DTYPE_NOT_SUPPORT(input, supportList, return false);
 
     // 检查输出的数据类型是否在算子的支持列表内
@@ -67,11 +67,25 @@ static bool CheckDtypeValid(const aclTensor* input, const aclTensor* out)
 
 static bool CheckInplaceDtypeValid(aclTensor* selfRef)
 {
-    auto inplaceSupportList =
-        GetDtypeSupportListV2(OUTPUT_DTYPE_SUPPORT_LIST_ATANH, ASCEND910_DTYPE_SELFREF_LIST_ATANH);
+    auto inplaceSupportList = GetDtypeSupportListV2(OUTPUT_DTYPE_SUPPORT_LIST_ATANH,
+                                                    ASCEND910_DTYPE_SELFREF_LIST_ATANH);
     // 检查selfRef的数据类型是否在inplace atanh算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(selfRef, inplaceSupportList, return false);
 
+    return true;
+}
+
+static bool CheckFormat(const aclTensor* input, const aclTensor* out)
+{
+    const auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (!IsRegBase(curArch)) {
+        return true;
+    }
+    if (op::IsPrivateFormat(input->GetStorageFormat()) || op::IsPrivateFormat(out->GetStorageFormat())) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Private format is not supported, input [%s], out [%s].",
+                op::ToString(input->GetStorageFormat()).GetString(), op::ToString(out->GetStorageFormat()).GetString());
+        return false;
+    }
     return true;
 }
 
@@ -82,9 +96,12 @@ static aclnnStatus CheckParamsAtanh(const aclTensor* input, const aclTensor* out
     // 检查输入和输出的shape是否满足约束
     CHECK_RET(CheckSameShape1In1Out(input, out), ACLNN_ERR_PARAM_INVALID);
 
+    // 检查私有格式
     if (input->GetStorageFormat() != Format::FORMAT_ND) {
         OP_LOGW("Only support ND format for atanh/inplaceAtanh operator.");
     }
+
+    CHECK_RET(CheckFormat(input, out), ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
 }
 
@@ -94,11 +111,12 @@ static aclnnStatus CheckInplaceParamsAtanh(aclTensor* selfRef)
 
     // 检查selfRef的数据类型是否在inplace atanh算子的支持列表内
     CHECK_RET(CheckInplaceDtypeValid(selfRef), ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckFormat(selfRef, selfRef), ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus ExecAtanhGetWorkspaceSize(
-    const aclTensor* input, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus ExecAtanhGetWorkspaceSize(const aclTensor* input, aclTensor* out, uint64_t* workspaceSize,
+                                             aclOpExecutor** executor)
 {
     CHECK_NOT_NULL(input, out);
     // 创建OpExecutor
@@ -146,8 +164,8 @@ static aclnnStatus ExecAtanhGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnAtanhGetWorkspaceSize(
-    const aclTensor* input, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnAtanhGetWorkspaceSize(const aclTensor* input, aclTensor* out, uint64_t* workspaceSize,
+                                       aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnAtanh, DFX_IN(input), DFX_OUT(out));
     return ExecAtanhGetWorkspaceSize(input, out, workspaceSize, executor);
