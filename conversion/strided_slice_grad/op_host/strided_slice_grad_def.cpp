@@ -14,10 +14,8 @@
  */
 #include "register/op_def_registry.h"
 
-namespace ops
-{
-class StridedSliceGrad : public OpDef
-{
+namespace ops {
+class StridedSliceGrad : public OpDef {
 public:
     explicit StridedSliceGrad(const char* name) : OpDef(name)
     {
@@ -115,7 +113,8 @@ public:
                                  ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
                                  ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
                                  ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
+                                 ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
+            .AutoContiguous();
         this->Output("output")
             .ParamType(REQUIRED)
             .DataType({ge::DT_BF16,    ge::DT_FLOAT16,   ge::DT_FLOAT,     ge::DT_INT64,     ge::DT_UINT64,
@@ -153,4 +152,4 @@ public:
     }
 };
 OP_ADD(StridedSliceGrad);
-}  // namespace ops
+} // namespace ops

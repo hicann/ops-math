@@ -26,34 +26,33 @@
 #include "op_api/op_util.h"
 #include "conversion/strided_slice/op_host/strided_slice_util.h"
 
-namespace optiling
-{
+namespace optiling {
 constexpr int64_t TILING_ARRAY_LEN_EIGHT = 8;
 
 BEGIN_TILING_DATA_DEF(StridedSliceGradTilingData)
-TILING_DATA_FIELD_DEF(int64_t, usedCoreNumForClear);           // 清零使用核数
-TILING_DATA_FIELD_DEF(int64_t, normalCoreProcessNumForClear);  // 清零物理总核数
-TILING_DATA_FIELD_DEF(int64_t, tailCoreProcessNumForClear);    // 清零物理总核数
-TILING_DATA_FIELD_DEF(int64_t, normalCoreProcessNum);          // 非尾核的元素个数
-TILING_DATA_FIELD_DEF(int64_t, tailCoreProcessNum);            // 尾核的元素个数
-TILING_DATA_FIELD_DEF(int64_t, tailAxisOuter);                 // 尾轴的次数
-TILING_DATA_FIELD_DEF(int64_t, tailAxisInner);                 // 尾轴的非尾loop
-TILING_DATA_FIELD_DEF(int64_t, tailAxisTail);                  // 尾轴的尾loop
-TILING_DATA_FIELD_DEF(int64_t, inputDimNum);                   // 输入的元素个数
-TILING_DATA_FIELD_DEF(int64_t, usedCoreNum);                   // 使用核数
-TILING_DATA_FIELD_DEF(int64_t, totalCoreNum);                  // 物理总核数
-TILING_DATA_FIELD_DEF(int64_t, bufferSize);                    // ub中可用buffer大小
+TILING_DATA_FIELD_DEF(int64_t, usedCoreNumForClear);          // 清零使用核数
+TILING_DATA_FIELD_DEF(int64_t, normalCoreProcessNumForClear); // 清零物理总核数
+TILING_DATA_FIELD_DEF(int64_t, tailCoreProcessNumForClear);   // 清零物理总核数
+TILING_DATA_FIELD_DEF(int64_t, normalCoreProcessNum);         // 非尾核的元素个数
+TILING_DATA_FIELD_DEF(int64_t, tailCoreProcessNum);           // 尾核的元素个数
+TILING_DATA_FIELD_DEF(int64_t, tailAxisOuter);                // 尾轴的次数
+TILING_DATA_FIELD_DEF(int64_t, tailAxisInner);                // 尾轴的非尾loop
+TILING_DATA_FIELD_DEF(int64_t, tailAxisTail);                 // 尾轴的尾loop
+TILING_DATA_FIELD_DEF(int64_t, inputDimNum);                  // 输入的元素个数
+TILING_DATA_FIELD_DEF(int64_t, usedCoreNum);                  // 使用核数
+TILING_DATA_FIELD_DEF(int64_t, totalCoreNum);                 // 物理总核数
+TILING_DATA_FIELD_DEF(int64_t, bufferSize);                   // ub中可用buffer大小
 TILING_DATA_FIELD_DEF(int64_t, splitUbAxisNum);
 TILING_DATA_FIELD_DEF(int64_t, bytesForOneData);
-TILING_DATA_FIELD_DEF(int64_t, tilingKey);                                          // tilingKey的大小
-TILING_DATA_FIELD_DEF(int64_t, workspaceSize);                                      // 总workspace的大小
-TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_ARRAY_LEN_EIGHT, begin);                  // 输入begin的vector
-TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_ARRAY_LEN_EIGHT, end);                    // 输入end的vector
-TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_ARRAY_LEN_EIGHT, strides);                // 输入strides的vector
-TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_ARRAY_LEN_EIGHT, inputShape);             // 输入dyShape的vector
-TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_ARRAY_LEN_EIGHT, outputShape);            // 输出inShape的vector
-TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_ARRAY_LEN_EIGHT, fusedOutputInnerShape);  // 输出inshape的融合轴vector
-TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_ARRAY_LEN_EIGHT, fusedSliceInnerShape);   // 输入dyShape的融合轴vector
+TILING_DATA_FIELD_DEF(int64_t, tilingKey);                                         // tilingKey的大小
+TILING_DATA_FIELD_DEF(int64_t, workspaceSize);                                     // 总workspace的大小
+TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_ARRAY_LEN_EIGHT, begin);                 // 输入begin的vector
+TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_ARRAY_LEN_EIGHT, end);                   // 输入end的vector
+TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_ARRAY_LEN_EIGHT, strides);               // 输入strides的vector
+TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_ARRAY_LEN_EIGHT, inputShape);            // 输入dyShape的vector
+TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_ARRAY_LEN_EIGHT, outputShape);           // 输出inShape的vector
+TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_ARRAY_LEN_EIGHT, fusedOutputInnerShape); // 输出inshape的融合轴vector
+TILING_DATA_FIELD_DEF_ARR(int64_t, TILING_ARRAY_LEN_EIGHT, fusedSliceInnerShape);  // 输入dyShape的融合轴vector
 END_TILING_DATA_DEF;
 REGISTER_TILING_DATA_CLASS(StridedSliceGrad, StridedSliceGradTilingData)
 
@@ -92,6 +91,7 @@ struct StridedSliceGradParamList {
     int64_t splitUbAxisNum;
     int64_t u_o;
     int64_t caluMode;
+    bool isEmptyTensor; // 依据降维前的原始 dy 判定是否空张量（避免 input==1 降维把 dy 的 0 维一并删除）
     size_t realUbDim;
     int64_t ubFactor;
     int64_t fusedBlockDims;
@@ -115,8 +115,8 @@ struct StridedSliceGradParamList {
 };
 
 struct StridedSliceGradCompileInfo {
-  int64_t coreNum = 0;
-  int64_t ubSize = 0;
+    int64_t coreNum = 0;
+    int64_t ubSize = 0;
 };
 
 struct SliceParametersRuntime {
@@ -137,5 +137,5 @@ struct SliceParametersRuntime {
     }
 };
 
-}  // namespace optiling
-#endif  // AIR_CXX_RUNTIME_V2_OP_IMPL_STRIDEDSLICEGRAD_H_
+} // namespace optiling
+#endif // AIR_CXX_RUNTIME_V2_OP_IMPL_STRIDEDSLICEGRAD_H_

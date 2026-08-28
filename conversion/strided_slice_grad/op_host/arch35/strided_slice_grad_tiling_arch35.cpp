@@ -163,8 +163,8 @@ static inline bool CheckTypeIsInvalid(ge::DataType& inShape, ge::DataType& begin
 {
     std::set<ge::DataType> supportedIndexDtype = {ge::DT_INT32, ge::DT_INT64};
     std::set<ge::DataType> supportedDtype = {
-        ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16, ge::DT_INT64, ge::DT_UINT64, ge::DT_INT32,    ge::DT_UINT32,
-        ge::DT_INT16, ge::DT_UINT16,  ge::DT_INT8, ge::DT_UINT8, ge::DT_DOUBLE, ge::DT_COMPLEX64};
+        ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16, ge::DT_INT64, ge::DT_UINT64, ge::DT_INT32,     ge::DT_UINT32,
+        ge::DT_INT16, ge::DT_UINT16,  ge::DT_INT8, ge::DT_UINT8, ge::DT_DOUBLE, ge::DT_COMPLEX32, ge::DT_COMPLEX64};
 
     bool inShapeInValid = (supportedIndexDtype.count(inShape) == 0);
     bool beginInValid = (supportedIndexDtype.count(begin) == 0);
@@ -215,8 +215,19 @@ static void MakePerformanceSliceParams(SliceParametersRuntime& param)
     const auto beginLastDim = param.beginList[th - 1];
     const auto strideLastDim = param.strideList[th - 1];
     const auto outputLastDim = param.outputShape[th - 1];
+    // 尾轴拆分会新增一个 stride-1 轴，使秩 +1。若拆分后非 1 轴数超过 MAX_DIM_NUM，
+    // 后续 UpdateParaAlign8Dim（长度固定为 8 的 tiling 数组）会丢掉最外层轴，导致 kernel
+    // 把 dy 连续前置堆放而非按 stride 散射（精度错误）。故拆分前先做秩护栏。
+    int64_t nonOneExceptLast = 0;
+    for (size_t i = 0; i + 1 < th; i++) {
+        if (param.inputShape[i] != 1) {
+            nonOneExceptLast++;
+        }
+    }
+    const int64_t splitNonOne = ((inputLastDim / strideLastDim) > 1 ? 1 : 0) + 1;
+    const bool splitFits = (nonOneExceptLast + splitNonOne) <= static_cast<int64_t>(MAX_DIM_NUM);
     if (strideLastDim > 1 && inputLastDim % strideLastDim == 0 && beginLastDim / strideLastDim == 0 &&
-        outputLastDim == inputLastDim / strideLastDim) {
+        outputLastDim == inputLastDim / strideLastDim && splitFits) {
         param.inputShape[th - 1] = inputLastDim / strideLastDim;
         param.inputShape.AppendDim(strideLastDim);
         param.beginList[th - 1] = beginLastDim / strideLastDim;
@@ -418,6 +429,11 @@ static ge::graphStatus UpdateStructInputParam(const gert::TilingContext* context
         }
     }
 
+    // 依据降维前的原始 dy 判定是否空张量：input==1 的降维会同下标删除 dy 的对应维，
+    // 若 dy 的 0 维恰落在 input==1 位置，降维后 dyShape.GetShapeSize() 会由 0 变非 0，
+    // 使后续空张量判定失效（应清零的 out 走计算分支，残留未初始化脏值）。故此处先判。
+    inputParams.isEmptyTensor = (initParam.dy_shape.GetShapeSize() == 0);
+
     inputParams.inputDimNum = (inputDimNum == 0) ? rank : inputDimNum;
     inputParams.inShape.SetDimNum(inputParams.inputDimNum);
     inputParams.begin.SetDimNum(inputParams.inputDimNum);
@@ -611,7 +627,7 @@ static inline bool JudgeIsMoveAlignMode(StridedSliceGradParamList& inputParams)
 
 static void CaluModeParam(StridedSliceGradParamList& inputParams)
 {
-    if (inputParams.dyShape.GetShapeSize() == 0) {
+    if (inputParams.isEmptyTensor || inputParams.dyShape.GetShapeSize() == 0) {
         inputParams.caluMode = MODE_EMPTY_TENSOR;
         return;
     }
@@ -870,16 +886,21 @@ ge::graphStatus TilingForStridedSliceGrad(gert::TilingContext* context)
                 return ge::GRAPH_FAILED);
     OP_LOGD(context->GetNodeName(), "StridedSliceGradTilingForAscendC running begin.");
 
-    auto compileInfo = reinterpret_cast<const StridedSliceGradCompileInfo*>(context->GetCompileInfo());
-    OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
-
     // 获取 totalCore && hardUbSize
+    // 直接从 PlatformInfo 读取核数与 UB 大小，不依赖 GetCompileInfo()：
     StridedSliceGradParamList inputParams;
-    inputParams.totalCoreNum = static_cast<int64_t>(compileInfo->coreNum);
-    inputParams.hardwareUbSize = static_cast<int64_t>(compileInfo->ubSize);
+    auto platformInfo = context->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    inputParams.totalCoreNum = static_cast<int64_t>(ascendcPlatform.GetCoreNumAiv());
+    uint64_t ubSize = 0;
+    ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
+    inputParams.hardwareUbSize = static_cast<int64_t>(ubSize);
 
     OP_CHECK_IF(inputParams.totalCoreNum == 0, OP_LOGE(context->GetNodeName(), "total_core_num is 0, please check."),
                 return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputParams.hardwareUbSize == 0,
+                OP_LOGE(context->GetNodeName(), "hardware_ub_size is 0, please check."), return ge::GRAPH_FAILED);
 
     // 校验和设置的输入值、属性值和类型校验
     ops::StridedSliceParams initParam;
