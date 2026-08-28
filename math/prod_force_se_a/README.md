@@ -107,7 +107,8 @@ $$
 - nlist 中元素值为-1表示虚拟邻居，跳过不处理。
 - n_a_sel>=0且n_r_sel>=0，且n_a_sel+n_r_sel>0。
 - natoms元素数>=3，natoms[0]=nloc>=0，natoms[1]=nall>=nloc。
-- 邻居力累加使用原子加操作，输出为非确定性结果。
+- natoms为值依赖输入，输出atom_force的shape第1维(nall)由natoms[1]的运行时值决定。
+- 邻居力累加采用帧内串行read-modify-write方式，无原子操作，输出为确定性结果。
 
 ## 调用说明
 
