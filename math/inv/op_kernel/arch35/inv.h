@@ -17,7 +17,7 @@
  * Inv(x) = 1 / x
  *
  * 精度策略：
- *   - float32：直接 Div(ones, x)（不使用 Reciprocal，精度要求）
+ *   - float32：Div(ones, x) 使用 0 ULP、非 FTZ 模式（不使用 Reciprocal，精度要求）
  *   - float16 / bfloat16：Cast to fp32 -> Div(ones, x) -> Cast back
  *   - int32：截断向零整数倒数，等价三值映射 {+1->+1, -1->-1, 其他->0}。
  *            整型 Compare(==1)/Compare(==-1) + 嵌套 Select 实现，禁止对 INT_MIN 取负、不经 fp32 中转。
@@ -169,7 +169,8 @@ __aicore__ inline void Inv<T>::ComputeFloat32(LocalTensor<float>& xLocal, LocalT
                                               int64_t alignedNum)
 {
     LocalTensor<float> ones = tmpBuf2_.template Get<float>();
-    Div(yLocal, ones, xLocal, static_cast<int32_t>(alignedNum));
+    static constexpr AscendC::DivConfig config = {AscendC::DivAlgo::PRECISION_0ULP_FTZ_FALSE};
+    AscendC::Div<float, config>(yLocal, ones, xLocal, static_cast<int32_t>(alignedNum));
 }
 
 template <typename T>
