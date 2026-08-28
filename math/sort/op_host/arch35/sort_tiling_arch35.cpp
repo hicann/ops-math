@@ -559,12 +559,13 @@ static bool ComputeSortNonLastUbLayout(const SortKthTileInfo& sortTileInfo, uint
 // Estimate peak UB consumption for a non-last-axis small-axis sort candidate.
 // innerChunk: number of adjacent inner positions batched into one sort invocation.
 // On success, writes peak UB bytes to peakUb and the chosen layout to candidate.
-static bool EstimateSortNonLastSmallAxisUb(SortKthTileInfo& sortTileInfo, uint32_t innerChunk, uint64_t& peakUb,
-                                           bool useMergeSort, NonLastSmallAxisCandidate& candidate)
+static bool EstimateSortNonLastSmallAxisUb(SortKthTileInfo& sortTileInfo, uint32_t innerChunk, uint64_t usableUb,
+                                           uint64_t& peakUb, bool useMergeSort, NonLastSmallAxisCandidate& candidate)
 {
     if (innerChunk == 0U) {
         return false;
     }
+    sortTileInfo.keyParams4 = 0U;
     uint32_t axisLen = static_cast<uint32_t>(sortTileInfo.lastAxis);
     uint32_t sortCount = GetNonLastSortCount(sortTileInfo.dataType, axisLen);
     SortNonLastUbLayout layout;
@@ -596,19 +597,26 @@ static bool EstimateSortNonLastSmallAxisUb(SortKthTileInfo& sortTileInfo, uint32
         bf16CastBytes = static_cast<uint64_t>(innerChunk) * inputValueAxisBytes;
     }
 
-    // Peak UB breakdown:
-    //   axisLen * inputRowBytes          — input tile (axisLen rows × innerChunk columns)
-    //   innerChunk * valueAxisBytes * 2  — sort input (transposed) + sort output (sorted values)
-    //   innerChunk * indexAxisBytes      — index axis (one per inner position)
-    //   bf16CastBytes                    — BF16 staging rows (0 for non-BF16 or non-merge)
-    peakUb = static_cast<uint64_t>(axisLen) * layout.inputRowBytes +
-             static_cast<uint64_t>(innerChunk) * layout.valueAxisBytes * 2U +
-             static_cast<uint64_t>(innerChunk) * layout.indexAxisBytes + bf16CastBytes;
+    uint64_t sortedIndexBytes = static_cast<uint64_t>(innerChunk) * layout.indexAxisBytes;
+    uint64_t sortPhaseUb = static_cast<uint64_t>(axisLen) * layout.inputRowBytes +
+                           static_cast<uint64_t>(innerChunk) * layout.valueAxisBytes * 2U + sortedIndexBytes +
+                           bf16CastBytes + static_cast<uint64_t>(sortTileInfo.tmpUbSize);
+    peakUb = sortPhaseUb;
     if (innerChunk > 1U) {
-        // outputIndex buffer only needed when batching multiple inner positions
-        peakUb += static_cast<uint64_t>(axisLen) * layout.outputIndexRowBytes;
+        uint64_t outputIndexBytes = static_cast<uint64_t>(axisLen) * layout.outputIndexRowBytes;
+        uint64_t regularPeakUb = sortPhaseUb + outputIndexBytes;
+        if (regularPeakUb <= usableUb) {
+            peakUb = regularPeakUb;
+        } else {
+            // The input/value/tmp region is dead after the value MTE3 copy. Keep sortedIndex at the end of one
+            // allocation and reuse the prefix for the transposed output indices. The phase sizes are derived from
+            // the actual value/index dtypes and aligned row strides, so this layout is independent of dtype and
+            // innerChunk. keyParams4 makes the lifetime-based reuse explicit to the kernel.
+            uint64_t indexPhaseUb = sortedIndexBytes + outputIndexBytes;
+            peakUb = std::max(sortPhaseUb, indexPhaseUb);
+            sortTileInfo.keyParams4 = 1U;
+        }
     }
-    peakUb += static_cast<uint64_t>(sortTileInfo.tmpUbSize);
 
     // Write back layout to both candidate (for comparison) and sortTileInfo (for kernel)
     candidate.inputRowBytes = layout.inputRowBytes;
@@ -683,9 +691,9 @@ bool TryNonLastSmallAxis(gert::TilingContext* context, SortKthTileInfo& sortTile
     SortKthTileInfo selectedInfo = sortTileInfo;
     // Bind useMergeSort into a callback so SearchNonLastSmallAxisPlan can evaluate
     // each innerChunk candidate without knowing the sort-type decision.
-    auto estimateUb = [useMergeSort](SortKthTileInfo& candidateInfo, uint32_t innerChunk, uint64_t& peakUb,
-                                     NonLastSmallAxisCandidate& candidate) -> bool {
-        return EstimateSortNonLastSmallAxisUb(candidateInfo, innerChunk, peakUb, useMergeSort, candidate);
+    auto estimateUb = [useMergeSort, usableUb](SortKthTileInfo& candidateInfo, uint32_t innerChunk, uint64_t& peakUb,
+                                               NonLastSmallAxisCandidate& candidate) -> bool {
+        return EstimateSortNonLastSmallAxisUb(candidateInfo, innerChunk, usableUb, peakUb, useMergeSort, candidate);
     };
     if (!SearchNonLastSmallAxisPlan(sortTileInfo, usableUb, estimateUb, best, &selectedInfo)) {
         OP_LOGI(context->GetNodeName(), "non-last small-axis no-transpose no valid innerChunk");

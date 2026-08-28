@@ -44,6 +44,7 @@ struct SortRegBaseTilingData {
     // radix: 清零 chunk 大小
     // merge_sort(sch0): 队列 buffer 数
     // intra_core(sch4): extract chunk 大小
+    // non-last small-axis radix(sch10): phase-shared UB layout flag
     // non-last small-axis two-stage(sch11): outer slices per batch (0 means ordinary mapping)
     uint32_t keyParams4;
     uint32_t keyParams5;    // radix：清零chunk大小；intra_core(sch4)：最大归并迭代次数

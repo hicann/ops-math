@@ -112,12 +112,14 @@ private:
     GlobalTensor<T> outValueGm_;
     GlobalTensor<OutIdxT> outIndexGm_;
 
+    TBuf<TPosition::VECCALC> sharedUbBuf_;
     TBuf<TPosition::VECCALC> outputIndexBuf_;
 
     LocalTensor<OutIdxT> outputIndex_;
 
     uint32_t outputIndexRowBytes_ = 0;
     uint32_t outputIndexRowElems_ = 0;
+    bool useSharedUb_ = false;
 };
 
 template <typename T, typename OutIdxT, bool IsDescend, bool UseMergeSort>
@@ -143,29 +145,53 @@ __aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>
         return;
     }
 
-    this->pipe_->InitBuffer(this->inputTileBuf_, this->axisLen_ * this->inputRowBytes_);
-    if constexpr (IsBf16Merge_) {
-        this->pipe_->InitBuffer(this->inputCastBuf_, this->innerChunk_ * this->inputValueAxisBytes_);
-        this->inputCast_ = this->inputCastBuf_.template Get<T>();
+    uint32_t inputTileBytes = this->axisLen_ * this->inputRowBytes_;
+    uint32_t inputCastBytes = IsBf16Merge_ ? this->innerChunk_ * this->inputValueAxisBytes_ : 0U;
+    uint32_t sortValueBytes = this->innerChunk_ * this->valueAxisBytes_;
+    uint32_t sortedIndexBytes = this->innerChunk_ * this->indexAxisBytes_;
+    uint32_t outputIndexBytes = this->axisLen_ * outputIndexRowBytes_;
+    useSharedUb_ = this->tilingData_->keyParams4 == 1U;
+    if (useSharedUb_) {
+        uint32_t sortPrefixBytes = inputTileBytes + inputCastBytes + sortValueBytes * 2U + this->tmpUbSize_;
+        uint32_t sortPhaseBytes = sortPrefixBytes + sortedIndexBytes;
+        uint32_t indexPhaseBytes = outputIndexBytes + sortedIndexBytes;
+        uint32_t sharedUbSize = sortPhaseBytes > indexPhaseBytes ? sortPhaseBytes : indexPhaseBytes;
+        this->pipe_->InitBuffer(sharedUbBuf_, sharedUbSize);
+        LocalTensor<uint8_t> sharedUb = sharedUbBuf_.template Get<uint8_t>();
+        uint32_t offset = 0U;
+        this->inputTile_ = sharedUb[offset].template ReinterpretCast<T>();
+        offset += inputTileBytes;
+        if constexpr (IsBf16Merge_) {
+            this->inputCast_ = sharedUb[offset].template ReinterpretCast<T>();
+            offset += inputCastBytes;
+        }
+        this->sortInput_ = sharedUb[offset].template ReinterpretCast<SortT_>();
+        offset += sortValueBytes;
+        this->sortedValue_ = sharedUb[offset].template ReinterpretCast<SortT_>();
+        offset += sortValueBytes;
+        this->tmp_ = sharedUb[offset].template ReinterpretCast<uint8_t>();
+        this->sortedIndex_ = sharedUb[sharedUbSize - sortedIndexBytes].template ReinterpretCast<uint32_t>();
+        outputIndex_ = sharedUb.template ReinterpretCast<OutIdxT>();
+    } else {
+        this->pipe_->InitBuffer(this->inputTileBuf_, inputTileBytes);
+        if constexpr (IsBf16Merge_) {
+            this->pipe_->InitBuffer(this->inputCastBuf_, inputCastBytes);
+            this->inputCast_ = this->inputCastBuf_.template Get<T>();
+        }
+        this->pipe_->InitBuffer(this->sortInputBuf_, sortValueBytes);
+        this->pipe_->InitBuffer(this->sortedValueBuf_, sortValueBytes);
+        this->pipe_->InitBuffer(this->sortedIndexBuf_, sortedIndexBytes);
+        if (this->innerChunk_ > 1) {
+            this->pipe_->InitBuffer(this->outputIndexBuf_, outputIndexBytes);
+            outputIndex_ = this->outputIndexBuf_.template Get<OutIdxT>();
+        }
+        this->pipe_->InitBuffer(this->tmpBuf_, this->tmpUbSize_);
+        this->inputTile_ = this->inputTileBuf_.template Get<T>();
+        this->sortInput_ = this->sortInputBuf_.template Get<SortT_>();
+        this->sortedValue_ = this->sortedValueBuf_.template Get<SortT_>();
+        this->sortedIndex_ = this->sortedIndexBuf_.template Get<uint32_t>();
+        this->tmp_ = this->tmpBuf_.template Get<uint8_t>();
     }
-    this->pipe_->InitBuffer(this->sortInputBuf_, this->innerChunk_ * this->valueAxisBytes_);
-    this->pipe_->InitBuffer(this->sortedValueBuf_, this->innerChunk_ * this->valueAxisBytes_);
-    this->pipe_->InitBuffer(this->sortedIndexBuf_, this->innerChunk_ * this->indexAxisBytes_);
-    // When innerChunk_ == 1: StoreSingleInnerTile writes sorted indices directly
-    // to GM via SIMT lanes, no UB transpose buffer needed.
-    // When innerChunk_ > 1: BuildOutputs + StoreTileOutput need a UB buffer
-    // to hold the transposed index tile before strided DataCopy to GM.
-    if (this->innerChunk_ > 1) {
-        this->pipe_->InitBuffer(this->outputIndexBuf_, this->axisLen_ * outputIndexRowBytes_);
-        outputIndex_ = this->outputIndexBuf_.template Get<OutIdxT>();
-    }
-    this->pipe_->InitBuffer(this->tmpBuf_, this->tmpUbSize_);
-
-    this->inputTile_ = this->inputTileBuf_.template Get<T>();
-    this->sortInput_ = this->sortInputBuf_.template Get<SortT_>();
-    this->sortedValue_ = this->sortedValueBuf_.template Get<SortT_>();
-    this->sortedIndex_ = this->sortedIndexBuf_.template Get<uint32_t>();
-    this->tmp_ = this->tmpBuf_.template Get<uint8_t>();
 }
 
 template <typename T, typename OutIdxT, bool IsDescend, bool UseMergeSort>
@@ -243,6 +269,11 @@ template <typename T, typename OutIdxT, bool IsDescend, bool UseMergeSort>
 __aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>::StoreTileOutput(
     int64_t baseOffset, uint32_t curInnerChunk)
 {
+    if (useSharedUb_) {
+        GatherOutputValues(curInnerChunk);
+    } else {
+        BuildOutputs(curInnerChunk);
+    }
     // Sync: ensure all prior VEC writes (gather transpose) are visible to MTE3
     event_t eventIdVToMte3 = static_cast<event_t>(this->pipe_->FetchEventID(HardEvent::V_MTE3));
     SetFlag<HardEvent::V_MTE3>(eventIdVToMte3);
@@ -259,6 +290,21 @@ __aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>
     DataCopyExtParams valueCopyParam{static_cast<uint16_t>(this->axisLen_), valueBytes, valueSrcStride, valueDstStride,
                                      0};
     DataCopyPad(outValueGm_[baseOffset], this->inputTile_, valueCopyParam);
+
+    if (useSharedUb_) {
+        // MTE3 must finish consuming the restored value tile before the index
+        // transpose overwrites the shared prefix.
+        event_t eventIdMte3ToV = static_cast<event_t>(this->pipe_->FetchEventID(HardEvent::MTE3_V));
+        SetFlag<HardEvent::MTE3_V>(eventIdMte3ToV);
+        WaitFlag<HardEvent::MTE3_V>(eventIdMte3ToV);
+        asc_vf_call<BuildOutputIndexTile<OutIdxT>>(
+            dim3(SmallAxisCommon::NON_LAST_TRANSPOSE_THREAD_NUM), this->axisLen_, curInnerChunk,
+            SmallAxisCommon::NON_LAST_TRANSPOSE_THREAD_NUM, this->indexAxisElems_, outputIndexRowElems_,
+            (__ubuf__ uint32_t*)this->sortedIndex_.GetPhyAddr(), (__ubuf__ OutIdxT*)outputIndex_.GetPhyAddr());
+        eventIdVToMte3 = static_cast<event_t>(this->pipe_->FetchEventID(HardEvent::V_MTE3));
+        SetFlag<HardEvent::V_MTE3>(eventIdVToMte3);
+        WaitFlag<HardEvent::V_MTE3>(eventIdVToMte3);
+    }
 
     uint32_t indexBytes = curInnerChunk * sizeof(OutIdxT);
     uint32_t indexAlignedBytes = ROUND_UP_AGLIN(indexBytes);
@@ -335,7 +381,6 @@ __aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>
         StoreSingleInnerTile(inputOffset);
         return;
     }
-    BuildOutputs(curInnerChunk);
     StoreTileOutput(inputOffset, curInnerChunk);
 }
 

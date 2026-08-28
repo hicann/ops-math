@@ -51,6 +51,7 @@ public:
     __aicore__ inline SortSmallAxisTwoStage() {}
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR idx, GM_ADDR workspace,
                                 const SortRegBaseTilingData* tilingData, TPipe* pipe);
+    __aicore__ inline void Process();
 
     friend Base;
 
@@ -125,6 +126,31 @@ __aicore__ inline bool SortSmallAxisTwoStage<T, OutIdxT, IsDescend>::IsProcessIn
 {
     return blockIdx_ >= blockDim_ || batchSize_ == 0 || segmentLen_ == 0 ||
            (isNonLastAxis_ && (innerLoopNum_ == 0 || outerSize_ <= 0 || innerSize_ <= 0));
+}
+
+template <typename T, typename OutIdxT, bool IsDescend>
+__aicore__ inline void SortSmallAxisTwoStage<T, OutIdxT, IsDescend>::Process()
+{
+    // Keep the generic non-last-axis mapping in the common base, but avoid carrying its batch mapping branches
+    // through the hot loop for contiguous last-axis sorting.
+    if (isNonLastAxis_) {
+        Base::Process();
+        return;
+    }
+    if (blockIdx_ >= blockDim_ || batchSize_ == 0 || segmentLen_ == 0) {
+        return;
+    }
+    for (uint32_t batchId = blockIdx_; batchId < batchNum_; batchId += blockDim_) {
+        uint32_t validSegs = ComputeValidSegs(batchId);
+        if (validSegs == 0U) {
+            continue;
+        }
+        uint32_t totalElems = validSegs * segmentLen_;
+        int64_t segStart = static_cast<int64_t>(batchId) * static_cast<int64_t>(batchSize_);
+        Base::LoadContiguousBatch(inputXGm_, segStart * static_cast<int64_t>(segmentLen_), totalElems);
+        Base::RunTwoStageSort(totalElems);
+        StoreBatch(segStart, totalElems);
+    }
 }
 
 template <typename T, typename OutIdxT, bool IsDescend>
