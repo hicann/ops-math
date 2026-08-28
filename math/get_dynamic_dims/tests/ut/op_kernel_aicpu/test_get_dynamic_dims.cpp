@@ -58,7 +58,11 @@ uint32_t RunGetDynamicDims(const vector<vector<T>>& inputs, vector<T>& dims, Dat
     node_def->AddAttrs("shape_info", shape_attr.get());
 
     auto output_tensor = node_def->AddOutputs();
-    ASSERT_NE(output_tensor, nullptr);
+    // ASSERT_* 宏只能用于 void 函数, 此函数返回 uint32_t, 使用 EXPECT_NE 并显式返回
+    EXPECT_NE(output_tensor, nullptr);
+    if (output_tensor == nullptr) {
+        return KERNEL_STATUS_PARAM_INVALID;
+    }
     output_tensor->GetTensorShape()->SetDimSizes({static_cast<int64_t>(dims.size())});
     output_tensor->SetDataType(output_dtype == DT_UNDEFINED ? dtype : output_dtype);
     output_tensor->SetData(dims.data());

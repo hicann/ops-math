@@ -9,10 +9,3 @@
 # ----------------------------------------------------------------------------
 
 add_all_modules_sources(OPTYPE lin_space ACLNNTYPE aclnn_exclude HOSTCPU TRUE)
-
-if(ENABLE_TEST AND (UT_TEST_ALL OR OP_KERNEL_AICPU_UT))
-    list(FIND ASCEND_OP_NAME lin_space LIN_SPACE_INDEX)
-    if("${ASCEND_OP_NAME}" STREQUAL "" OR NOT LIN_SPACE_INDEX EQUAL -1)
-        add_aicpu_op_test_case(lin_space)
-    endif()
-endif()

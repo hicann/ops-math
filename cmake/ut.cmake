@@ -194,11 +194,22 @@ function(add_framework_ut_modules OP_FRAMEWORK_MODULE_NAME)
     ${OP_FRAMEWORK_MODULE_NAME}_cases_obj
     PRIVATE ${UT_COMMON_INC} ${ONNX_PLUGIN_COMMON_INCLUDE} ${JSON_INCLUDE_DIR}
             ${GTEST_INCLUDE} ${OP_PROTO_INCLUDE} ${ASCEND_DIR}/include
-            ${ASCEND_DIR}/pkg_inc ${ASCEND_DIR}/include/base/context_builder)
+            ${ASCEND_DIR}/pkg_inc ${ASCEND_DIR}/include/base/context_builder
+            ${CMAKE_BINARY_DIR}/proto)
   target_link_libraries(
     ${OP_FRAMEWORK_MODULE_NAME}_cases_obj
     PRIVATE $<BUILD_INTERFACE:intf_llt_pub_asan_cxx17>
             $<BUILD_INTERFACE:dlog_headers> graph register GTest::gtest)
+  # framework ut 用例会 include 生成的 onnx proto 头文件(onnx/proto/ge_onnx.pb.h),
+  # 该头文件由 onnx_plugin_obj 目标的源文件触发生成,需先于用例编译完成
+  if(TARGET ${ONNX_PLUGIN_NAME}_obj)
+    add_dependencies(${OP_FRAMEWORK_MODULE_NAME}_cases_obj ${ONNX_PLUGIN_NAME}_obj)
+  endif()
+  # 生成的 pb.h 依赖 protobuf/absl 头文件,通过 ascend_protobuf_static_headers 提供 include 路径
+  if(TARGET ascend_protobuf_static_headers)
+    target_link_libraries(${OP_FRAMEWORK_MODULE_NAME}_cases_obj
+                          PRIVATE ascend_protobuf_static_headers)
+  endif()
 
   add_library(${OP_FRAMEWORK_MODULE_NAME}_cases STATIC)
   target_link_libraries(

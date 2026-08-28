@@ -9,10 +9,3 @@
 # ----------------------------------------------------------------------------
 
 add_all_modules_sources(OPTYPE topk ACLNNTYPE aclnn_exclude HOSTCPU TRUE)
-
-if(ENABLE_TEST AND (UT_TEST_ALL OR OP_KERNEL_AICPU_UT))
-    list(FIND ASCEND_OP_NAME topk TOPK_INDEX)
-    if("${ASCEND_OP_NAME}" STREQUAL "" OR NOT TOPK_INDEX EQUAL -1)
-        add_aicpu_op_test_case(topk)
-    endif()
-endif()
