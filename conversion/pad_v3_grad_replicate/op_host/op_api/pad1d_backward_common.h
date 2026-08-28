@@ -291,7 +291,10 @@ static aclnnStatus Pad1dBackwardCompute(const aclTensor*& gradOutput, const aclT
     const aclTensor* pad1dbackwardResult = nullptr;
     auto originOutDataType = gradOutput->GetDataType();
     // cast to fp32 from fp16 or bf16
-    if (padFlag && (originOutDataType == op::DataType::DT_FLOAT16 || originOutDataType == op::DataType::DT_BF16)) {
+    // REFLECT: always cast (reconstruct pre-dedup behavior, aicpu needs fp32)
+    // REPLICATE: only cast when padFlag (preserve original behavior)
+    if ((mode == Pad1dBackwardMode::REFLECT || padFlag) &&
+        (originOutDataType == op::DataType::DT_FLOAT16 || originOutDataType == op::DataType::DT_BF16)) {
         gradOutput = l0op::Cast(gradOutput, op::DataType::DT_FLOAT, uniqueExecutor.get());
         OP_LOGD("%s FP16 or BF16 Cast to FP32: true", logTag);
     }
@@ -306,7 +309,8 @@ static aclnnStatus Pad1dBackwardCompute(const aclTensor*& gradOutput, const aclT
     CHECK_RET(pad1dbackwardResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // cast to fp16 or bf16
-    if (padFlag && (originOutDataType == op::DataType::DT_FLOAT16 || originOutDataType == op::DataType::DT_BF16)) {
+    if ((mode == Pad1dBackwardMode::REFLECT || padFlag) &&
+        (originOutDataType == op::DataType::DT_FLOAT16 || originOutDataType == op::DataType::DT_BF16)) {
         pad1dbackwardResult = l0op::Cast(pad1dbackwardResult, originOutDataType, uniqueExecutor.get());
         OP_LOGD("%s FP16 or BF16 Cast to FP32: true", logTag);
     }
