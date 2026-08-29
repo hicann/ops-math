@@ -44,7 +44,7 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_OUT_LIST = {
     op::DataType::DT_FLOAT,     op::DataType::DT_FLOAT16,    op::DataType::DT_DOUBLE,
     op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128, op::DataType::DT_BF16};
 
-static bool CheckInplaceDtypeValid(aclTensor* selfRef)
+static bool CheckInplaceDtypeValid(const aclTensor* selfRef)
 {
     auto inplaceSupportList = GetDtypeSupportListV2(ASCEND910B_DTYPE_OUT_LIST, ASCEND910_DTYPE_OUT_LIST);
     // 检查selfRef的数据类型是否在inplace sinh算子的支持列表内
