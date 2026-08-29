@@ -121,3 +121,4 @@
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
 | 图模式调用 | [test_geir_strided_slice_grad](./examples/test_geir_strided_slice_grad.cpp)   | 通过[算子IR](./op_graph/strided_slice_grad_proto.h)构图方式调用StridedSliceGrad算子。 |
+| aclnn接口 | [test_aclnn_strided_slice_grad](./examples/arch35/test_aclnn_strided_slice_grad.cpp) | 通过[aclnnStridedSliceGrad](./docs/aclnnStridedSliceGrad.md)接口方式调用StridedSliceGrad算子。 |
