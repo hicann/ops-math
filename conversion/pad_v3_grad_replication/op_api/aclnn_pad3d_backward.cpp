@@ -41,6 +41,20 @@ inline static bool isPadSupport(const aclIntArray* padding)
     return true;
 }
 
+// 4维输入是否需要扩展成5维
+inline static bool NeedExpandTo5D(const aclTensor* gradOutput, int64_t dimCp, const aclIntArray* padding)
+{
+    if (dimCp != 4) {
+        return false;
+    }
+    if (GetCurrentPlatformInfo().GetCurNpuArch() < NpuArch::DAV_3510) {
+        return true;
+    }
+    static const std::initializer_list<op::DataType> aicoreDtypeSupportList = {
+        op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
+    return !(isPadSupport(padding) && CheckType(gradOutput->GetDataType(), aicoreDtypeSupportList));
+}
+
 inline static bool CheckNotNull(const aclTensor* gradOutput, const aclTensor* self, const aclIntArray* padding,
                                 const aclTensor* gradInput)
 {
@@ -173,8 +187,8 @@ static const aclTensor* GetPaddingTensor(int64_t dim, const aclIntArray* padding
     return paddingsTensor;
 }
 
-static aclnnStatus InputPreprocess(const aclTensor*& gradOutput, const aclTensor*& self, int64_t dimCp,
-                                   aclOpExecutor* executor)
+static aclnnStatus InputPreprocess(const aclTensor*& gradOutput, const aclTensor*& self, const aclIntArray* padding,
+                                   int64_t dimCp, aclOpExecutor* executor)
 {
     // 如果非连续，需要转连续
     gradOutput = l0op::Contiguous(gradOutput, executor);
@@ -183,7 +197,7 @@ static aclnnStatus InputPreprocess(const aclTensor*& gradOutput, const aclTensor
     CHECK_RET(self != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 如果tensor为4维, 需要扩展成5维
-    if (dimCp == 4 && GetCurrentPlatformInfo().GetCurNpuArch() < NpuArch::DAV_3510) {
+    if (NeedExpandTo5D(gradOutput, dimCp, padding)) {
         // 0 is index
         const int64_t appendDim[] = {0};
         // 1 is the dim num to be unsqueezed
@@ -235,7 +249,7 @@ static aclnnStatus CommonPad3dBackward(const aclTensor* gradOutput, const aclTen
     // 调用l0算子进行计算
     auto dim = self->GetViewShape().GetDimNum();
     auto dimCp = dim;
-    ret = InputPreprocess(gradOutput, self, dimCp, uniqueExecutor.get());
+    ret = InputPreprocess(gradOutput, self, padding, dimCp, uniqueExecutor.get());
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
     dim = self->GetViewShape().GetDimNum();
@@ -253,7 +267,7 @@ static aclnnStatus CommonPad3dBackward(const aclTensor* gradOutput, const aclTen
     CHECK_RET(pad3dbackwardResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 如果tensor为4维, 需要扩展成5维
-    if (dimCp == 4 && GetCurrentPlatformInfo().GetCurNpuArch() < NpuArch::DAV_3510) {
+    if (NeedExpandTo5D(gradOutput, dimCp, padding)) {
         // 0 is index
         const int64_t appendDim[] = {0};
         // 1 is the dim num to be squeezed
