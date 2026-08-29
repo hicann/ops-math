@@ -27,19 +27,22 @@
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
 #include "opdev/op_log.h"
+#include <cmath>
 
 using namespace op;
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-const double SQRT_EXP = 0.5;
-const double NOOP_EXP = 1.0;
-const double SQUARE_EXP = 2.0;
-const double CUBE_EXP = 3.0;
-const double NEGTIVE_SQRT_EXP = -0.5;
-const double NEGTIVE_ONE_EXP = -1.0;
-const double NEGTIVE_SQUARE_EXP = -2.0;
+const float SQRT_EXP = 0.5;
+const float NOOP_EXP = 1.0;
+const float SQUARE_EXP = 2.0;
+const float CUBE_EXP = 3.0;
+const float NEGTIVE_SQRT_EXP = -0.5;
+const float NEGTIVE_ONE_EXP = -1.0;
+const float NEGTIVE_SQUARE_EXP = -2.0;
+
+constexpr float EXP_EPSILON = 1e-6f;
 
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_INT32,     op::DataType::DT_INT64,      op::DataType::DT_FLOAT16,
@@ -378,9 +381,12 @@ static aclnnStatus CheckPowScalarTensorParams(const aclScalar* self, const aclTe
 
 static bool CheckSupportPows(const aclTensor* selfCast, const aclScalar* exponent)
 {
-    if (exponent->ToFloat() != SQRT_EXP && exponent->ToFloat() != SQUARE_EXP && exponent->ToFloat() != CUBE_EXP &&
-        exponent->ToFloat() != NEGTIVE_SQRT_EXP && exponent->ToFloat() != NEGTIVE_ONE_EXP &&
-        exponent->ToFloat() != NEGTIVE_SQUARE_EXP) {
+    if (std::abs(exponent->ToFloat() - SQRT_EXP) > EXP_EPSILON &&
+        std::abs(exponent->ToFloat() - SQUARE_EXP) > EXP_EPSILON &&
+        std::abs(exponent->ToFloat() - CUBE_EXP) > EXP_EPSILON &&
+        std::abs(exponent->ToFloat() - NEGTIVE_SQRT_EXP) > EXP_EPSILON &&
+        std::abs(exponent->ToFloat() - NEGTIVE_ONE_EXP) > EXP_EPSILON &&
+        std::abs(exponent->ToFloat() - NEGTIVE_SQUARE_EXP) > EXP_EPSILON) {
         return false;
     }
 
@@ -442,14 +448,14 @@ aclnnStatus aclnnPowTensorScalarGetWorkspaceSize(const aclTensor* self, const ac
     CHECK_RET(selfCast != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     const aclTensor* powOut = nullptr;
-    bool canUseSquare = exponent->ToFloat() == SQUARE_EXP &&
+    bool canUseSquare = std::abs(exponent->ToFloat() - SQUARE_EXP) < EXP_EPSILON &&
                         (!IsRegBase() || (IsRegBase() && (selfCast->GetDataType() == op::DataType::DT_FLOAT ||
                                                           selfCast->GetDataType() == op::DataType::DT_BF16 ||
                                                           selfCast->GetDataType() == op::DataType::DT_FLOAT16 ||
                                                           selfCast->GetDataType() == op::DataType::DT_INT64 ||
                                                           selfCast->GetDataType() == op::DataType::DT_COMPLEX64 ||
                                                           selfCast->GetDataType() == op::DataType::DT_COMPLEX128)));
-    bool canNoUseOp = exponent->ToFloat() == NOOP_EXP && !IsRegBase();
+    bool canNoUseOp = std::abs(exponent->ToFloat() - NOOP_EXP) < EXP_EPSILON && !IsRegBase();
     if (CheckSupportPows(selfCast, exponent)) {
         auto expTensor = uniqueExecutor.get()->ConvertToTensor(exponent, promoteType);
         CHECK_RET(expTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -590,7 +596,7 @@ aclnnStatus aclnnPowScalarTensorGetWorkspaceSize(const aclScalar* self, const ac
     }
 
     // fill(1) 分支
-    if (IsRegBase() && self->ToFloat() == 1.0 && !IsComplexType(exponent->GetDataType()) &&
+    if (IsRegBase() && std::abs(self->ToFloat() - 1.0f) < EXP_EPSILON && !IsComplexType(exponent->GetDataType()) &&
         !IsComplexType(out->GetDataType())) {
         CHECK_RET(BuildPowScalarTensorFillOne(out, uniqueExecutor.get()) == ACLNN_SUCCESS, ACLNN_ERR_INNER);
         *workspaceSize = uniqueExecutor->GetWorkspaceSize();
