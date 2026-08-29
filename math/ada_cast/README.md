@@ -68,7 +68,6 @@ $$
 - 数据格式仅支持 ND。
 - 输入 x 的 rank 范围为 [1, 4]，输出 y 的 shape 必须与 x 完全一致（element-wise 语义，不支持广播）。
 - 类型组合固定为 UINT16 → FLOAT16，不支持其他 dtype 组合。
-- 属性 pixel 必须为正整数（pixel > 0），否则返回 ACLNN_ERR_PARAM_INVALID。
 - 支持空 Tensor（0 元素），直接返回。
 - 默认确定性实现，相同输入始终产生相同输出。
 
