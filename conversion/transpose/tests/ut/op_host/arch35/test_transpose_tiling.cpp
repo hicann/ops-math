@@ -14,6 +14,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <cstring>
 #include <iostream>
 #include <vector>
 #include "tiling_context_faker.h"
@@ -1032,4 +1033,390 @@ TEST_F(TransposeTiling, transpose_tiling_small_3d_shape_absorb)
     TilingInfo tilingInfo;
     bool success = ExecuteTiling(tilingContextPara, tilingInfo);
     EXPECT_TRUE(success);
+}
+
+// ============================================================================
+// UTs for PR changes:
+//   1. DoSplitUBInput absorption strategy (promote CUT_TWICE to CUT_ONCE)
+//   2. UB out-of-bound safety validation with fallback to the original strategy
+//   3. CalcBlockSplitInfoForSmallShape 128B-aligned core split (CeilAlign/FloorAlign)
+//   4. TransposeGatherTiling MTE gate / bank conflict rejection split
+//
+// TransposeOpTilingData flat int64 field layout (CUT_ONCE/CUT_TWICE/SMALL_SHAPE keys):
+//   [0]permSize [1]inCutIndex [2]outCutIndex [3]inUbFactor [4]outUbFactor
+//   [5]inTailFactor [6]outTailFactor [7]realCoreNum [8]blkFactor [9]blkTailFactor
+// ============================================================================
+namespace transpose_tiling_detail {
+enum OpTilingFieldIdx {
+    IDX_PERM_SIZE = 0,
+    IDX_IN_CUT_INDEX = 1,
+    IDX_OUT_CUT_INDEX = 2,
+    IDX_IN_UB_FACTOR = 3,
+    IDX_OUT_UB_FACTOR = 4,
+    IDX_IN_TAIL_FACTOR = 5,
+    IDX_OUT_TAIL_FACTOR = 6,
+    IDX_REAL_CORE_NUM = 7,
+    IDX_BLK_FACTOR = 8,
+    IDX_BLK_TAIL_FACTOR = 9,
+};
+
+inline int64_t GetOpTilingField(const TilingInfo& tilingInfo, size_t idx)
+{
+    EXPECT_GE(tilingInfo.tilingDataSize, (idx + 1) * sizeof(int64_t));
+    int64_t value = 0;
+    if (tilingInfo.tilingDataSize >= (idx + 1) * sizeof(int64_t)) {
+        std::memcpy(&value, tilingInfo.tilingData.get() + idx * sizeof(int64_t), sizeof(int64_t));
+    }
+    return value;
+}
+} // namespace transpose_tiling_detail
+
+// Absorption success: [4000, 7000, 8] perm [1, 0, 2] with 248K UB. The sqrt budget (251)
+// cannot hold axis 1 (7000) after swallowing axis 2, so the original strategy cuts axis 1
+// (inCutIndex=1, inUbFactor=31) and yields CUT_TWICE. The absorption retry swallows axis 1
+// with the full remaining budget (63488/8=7936 >= 7000) and cuts axis 0 instead with a single
+// element per block (inCutIndex=0, inUbFactor=1). The amplified effective outUbFactor check
+// passes (8 * 1 * 7000 = 56000 <= 63488), so the CUT_ONCE result is kept.
+TEST_F(TransposeTiling, transpose_tiling_absorb_promote_3d_to_cut_once)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 48;
+    compileInfo.ubSize = 253952; // 248K
+
+    int64_t perm_value[3] = {1, 0, 2};
+    gert::TilingContextPara::TensorDescription x({{4000, 7000, 8}, {4000, 7000, 8}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{7000, 4000, 8}, {7000, 4000, 8}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    EXPECT_EQ(tilingInfo.tilingKey, static_cast<uint64_t>(optiling::SplitMode::CUT_ONCE));
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_PERM_SIZE), 3);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_IN_CUT_INDEX), 0);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_IN_UB_FACTOR), 1);
+}
+
+// Absorption CUT_ONCE rejected by the UB safety validation: [8000, 256, 8] perm [1, 0, 2].
+// The retry absorbs axis 1 (256 <= 7936) and cuts axis 0 (inCutIndex=0, inUbFactor=31),
+// reaching CUT_ONCE. But CalcBlockSplitInfoForCutOnce would amplify outUbFactor by inUbFactor
+// on the same axis, and the validated burst 8 * 31 * 31 * 256 (outer output axis 0) exceeds
+// the 63488-element budget, so DoSplitUB restores the original strategy: CUT_TWICE with
+// inCutIndex=1, inUbFactor=31, outUbFactor=217 (3D companion of the 2D revert case above).
+TEST_F(TransposeTiling, transpose_tiling_absorb_validation_fail_3d_revert_to_cut_twice)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 48;
+    compileInfo.ubSize = 253952; // 248K
+
+    int64_t perm_value[3] = {1, 0, 2};
+    gert::TilingContextPara::TensorDescription x({{8000, 256, 8}, {8000, 256, 8}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{256, 8000, 8}, {256, 8000, 8}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    EXPECT_EQ(tilingInfo.tilingKey, static_cast<uint64_t>(optiling::SplitMode::CUT_TWICE));
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_IN_CUT_INDEX), 1);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_IN_UB_FACTOR), 31);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_OUT_CUT_INDEX), 1);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_OUT_UB_FACTOR), 217);
+}
+
+// Absorption budget rejection: axis 1 (100000) of [512, 100000, 8] exceeds the full remaining
+// UB budget (63488 / 8 = 7936 elements), so the absorb candidate check
+// (currentShapeDim <= fullBudgetRemaining) fails. The retry degenerates to the original input
+// split and DoSplitUB restores the original CUT_TWICE result.
+TEST_F(TransposeTiling, transpose_tiling_absorb_full_budget_reject_keeps_cut_twice)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 48;
+    compileInfo.ubSize = 253952; // 248K
+
+    int64_t perm_value[3] = {1, 0, 2};
+    gert::TilingContextPara::TensorDescription x({{512, 100000, 8}, {512, 100000, 8}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{100000, 512, 8}, {100000, 512, 8}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    EXPECT_EQ(tilingInfo.tilingKey, static_cast<uint64_t>(optiling::SplitMode::CUT_TWICE));
+    // The original strategy splits axis 1 with inUbFactor = 251 / 8 = 31; the retry cannot
+    // swallow axis 1 (100000 > 7936), so the reverted split info is identical to the original.
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_IN_CUT_INDEX), 1);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_IN_UB_FACTOR), 31);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_OUT_CUT_INDEX), 1);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_OUT_UB_FACTOR), 256);
+}
+
+// Absorption succeeded in the retry but the result is still CUT_TWICE: [3000, 900, 500, 6]
+// perm [2, 1, 0, 3]. The retry absorbs axis 2 (500) and cuts axis 1 (inCutIndex=1), yet the
+// output scan still has to cut output axis 2 (3000) which is more major than the input cut
+// position (FindOutIndex(1)=1), so tilingKey stays CUT_TWICE and DoSplitUB must restore the
+// original split (axis 2 cut, inCutIndex=2, inUbFactor=41).
+TEST_F(TransposeTiling, transpose_tiling_absorb_still_cut_twice_reverts_original_split)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 48;
+    compileInfo.ubSize = 253952; // 248K
+
+    int64_t perm_value[4] = {2, 1, 0, 3};
+    gert::TilingContextPara::TensorDescription x({{3000, 900, 500, 6}, {3000, 900, 500, 6}}, ge::DT_FLOAT,
+                                                 ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{4}, {4}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{500, 900, 3000, 6}, {500, 900, 3000, 6}}, ge::DT_FLOAT,
+                                                   ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    EXPECT_EQ(tilingInfo.tilingKey, static_cast<uint64_t>(optiling::SplitMode::CUT_TWICE));
+    // If the revert to originalResult were broken, the absorbed retry would leave the input
+    // cut on axis 1 (inCutIndex=1, inUbFactor=21) instead of the original axis 2 split.
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_PERM_SIZE), 4);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_IN_CUT_INDEX), 2);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_IN_UB_FACTOR), 41);
+}
+
+// SMALL_SHAPE with fp32 total elements (28) below the 128B alignment unit (128/4=32):
+// the new early-return branch uses a single core carrying all elements
+// (realCoreNum=1, blkFactor=28, blkTailFactor=0).
+TEST_F(TransposeTiling, transpose_tiling_small_shape_fp32_below_align_single_core)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 48;
+    compileInfo.ubSize = 253952; // 248K
+
+    int64_t perm_value[2] = {1, 0};
+    gert::TilingContextPara::TensorDescription x({{4, 7}, {4, 7}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{7, 4}, {7, 4}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    EXPECT_EQ(tilingInfo.tilingKey, static_cast<uint64_t>(optiling::SplitMode::SMALL_SHAPE));
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_REAL_CORE_NUM), 1);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_BLK_FACTOR), 28);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_BLK_TAIL_FACTOR), 0);
+}
+
+// SMALL_SHAPE with int8: 20*6=120 elements < alignment unit (128/1=128) -> single core,
+// blkFactor = 120 (the whole tensor in one 128B-undersized chunk).
+TEST_F(TransposeTiling, transpose_tiling_small_shape_int8_below_align_single_core)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 48;
+    compileInfo.ubSize = 253952; // 248K
+
+    int64_t perm_value[2] = {1, 0};
+    gert::TilingContextPara::TensorDescription x({{20, 6}, {20, 6}}, ge::DT_INT8, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{6, 20}, {6, 20}}, ge::DT_INT8, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    EXPECT_EQ(tilingInfo.tilingKey, static_cast<uint64_t>(optiling::SplitMode::SMALL_SHAPE));
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_REAL_CORE_NUM), 1);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_BLK_FACTOR), 120);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_BLK_TAIL_FACTOR), 0);
+}
+
+// SMALL_SHAPE with fp16 [5, 8] (shape[0] <= 5 keeps the 2D VCONV path off): 40 elements is
+// below the fp16 alignment unit (128/2=64), so a single core carries all 40 elements.
+TEST_F(TransposeTiling, transpose_tiling_small_shape_fp16_below_align_single_core)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 48;
+    compileInfo.ubSize = 253952; // 248K
+
+    int64_t perm_value[2] = {1, 0};
+    gert::TilingContextPara::TensorDescription x({{5, 8}, {5, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{8, 5}, {8, 5}}, ge::DT_FLOAT16, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    EXPECT_EQ(tilingInfo.tilingKey, static_cast<uint64_t>(optiling::SplitMode::SMALL_SHAPE));
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_REAL_CORE_NUM), 1);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_BLK_FACTOR), 40);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_BLK_TAIL_FACTOR), 0);
+}
+
+// SMALL_SHAPE floor-align branch: [256, 150, 4] fp32 -> 153600 elements, blkFactor=3200 is
+// already 32-element (128B) aligned. total - floorAlign*(coreNum-1) == floorAlign, so all 48
+// cores are used with blkFactor=3200 and an empty tail.
+TEST_F(TransposeTiling, transpose_tiling_small_shape_floor_align_full_cores)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 48;
+    compileInfo.ubSize = 253952; // 248K
+
+    int64_t perm_value[3] = {1, 0, 2};
+    gert::TilingContextPara::TensorDescription x({{256, 150, 4}, {256, 150, 4}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{150, 256, 4}, {150, 256, 4}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    EXPECT_EQ(tilingInfo.tilingKey, static_cast<uint64_t>(optiling::SplitMode::SMALL_SHAPE));
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_REAL_CORE_NUM), 48);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_BLK_FACTOR), 3200);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_BLK_TAIL_FACTOR), 0);
+}
+
+// SMALL_SHAPE ceil-align branch: [200, 200, 4] fp32 -> 160000 elements, raw blkFactor=3333.
+// floorAlign=3328 cannot cover the tail (160000 - 3328*47 = 3584 > 3328), so the ceil-aligned
+// factor CeilAlign(3333, 32)=3360 is used: realCoreNum = CeilDiv(160000, 3360) = 48,
+// tail = 160000 % 3360 = 2080.
+TEST_F(TransposeTiling, transpose_tiling_small_shape_ceil_align_reduced_cores)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 48;
+    compileInfo.ubSize = 253952; // 248K
+
+    int64_t perm_value[3] = {1, 0, 2};
+    gert::TilingContextPara::TensorDescription x({{200, 200, 4}, {200, 200, 4}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{200, 200, 4}, {200, 200, 4}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    EXPECT_EQ(tilingInfo.tilingKey, static_cast<uint64_t>(optiling::SplitMode::SMALL_SHAPE));
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_REAL_CORE_NUM), 48);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_BLK_FACTOR), 3360);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_BLK_TAIL_FACTOR),
+              2080);
+}
+
+// SMALL_SHAPE ceil-align with fp16 alignment unit 64: [16, 60, 4] fp16 -> 3840 elements,
+// blkFactor=80 -> floorAlign=64 leaves a 832-element tail beyond one floor chunk, so the
+// ceil-aligned 128 is used: realCoreNum = CeilDiv(3840, 128) = 30 cores, empty tail.
+TEST_F(TransposeTiling, transpose_tiling_small_shape_fp16_ceil_align)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 48;
+    compileInfo.ubSize = 253952; // 248K
+
+    int64_t perm_value[3] = {1, 0, 2};
+    gert::TilingContextPara::TensorDescription x({{16, 60, 4}, {16, 60, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{60, 16, 4}, {60, 16, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    EXPECT_EQ(tilingInfo.tilingKey, static_cast<uint64_t>(optiling::SplitMode::SMALL_SHAPE));
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_REAL_CORE_NUM), 30);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_BLK_FACTOR), 128);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_BLK_TAIL_FACTOR), 0);
+}
+
+// SMALL_SHAPE with fp64 [3, 5]: 15 elements is below the fp64 alignment unit (128/8=16),
+// so the whole tensor is carried by one core (realCoreNum=1, blkFactor=15).
+TEST_F(TransposeTiling, transpose_tiling_small_shape_fp64_below_align_single_core)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 48;
+    compileInfo.ubSize = 253952; // 248K
+
+    int64_t perm_value[2] = {1, 0};
+    gert::TilingContextPara::TensorDescription x({{3, 5}, {3, 5}}, ge::DT_DOUBLE, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{5, 3}, {5, 3}}, ge::DT_DOUBLE, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    EXPECT_EQ(tilingInfo.tilingKey, static_cast<uint64_t>(optiling::SplitMode::SMALL_SHAPE));
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_REAL_CORE_NUM), 1);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_BLK_FACTOR), 15);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_BLK_TAIL_FACTOR), 0);
+}
+
+// Gather rejected, NDDMA fallback: [1000000, 3] perm [1, 0] (12MB, above the small-shape
+// threshold). The gather candidate block holds only axis1(3) x a small cut of axis0, whose
+// totalSizeInUb stays below the MTE gate (16*1024), so CalcUbAxesInfo rejects gather and the
+// main NDDMA flow serves the transpose with CUT_ONCE on axis 0.
+TEST_F(TransposeTiling, transpose_tiling_gather_mte_gate_reject_fallback_nddma)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 48;
+    compileInfo.ubSize = 253952; // 248K
+
+    int64_t perm_value[2] = {1, 0};
+    gert::TilingContextPara::TensorDescription x({{1000000, 3}, {1000000, 3}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{3, 1000000}, {3, 1000000}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    EXPECT_NE(tilingInfo.tilingKey, static_cast<uint64_t>(optiling::SplitMode::GATHER_TRANSPOSE));
+    EXPECT_NE(tilingInfo.tilingKey, static_cast<uint64_t>(optiling::SplitMode::SMALL_SHAPE));
+}
+
+// Last-axis-transpose 3D whose gather candidate is rejected by the MTE gate / bank conflict
+// checks (the split totalSizeInUb or index step does not meet the hardware constraints).
+// perm [2, 1, 0] has no adjacent ascending pair, so the shape stays 3D after MergeAxis.
+// The tiling must still succeed through the fallback NDDMA/CUT path.
+TEST_F(TransposeTiling, transpose_tiling_gather_reject_3d_fallback)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 48;
+    compileInfo.ubSize = 253952; // 248K
+
+    int64_t perm_value[3] = {2, 1, 0};
+    gert::TilingContextPara::TensorDescription x({{500, 4096, 7}, {500, 4096, 7}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{7, 4096, 500}, {7, 4096, 500}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    EXPECT_NE(tilingInfo.tilingKey, static_cast<uint64_t>(optiling::SplitMode::GATHER_TRANSPOSE));
+}
+
+// Second absorption-success data point in the slack window: [6000, 6000, 8] perm [1, 0, 2].
+// C*B = 8*6000 = 48000 lands in (ubElement/2, ubElement], so after absorbing axis 2 and
+// axis 1 the input factor floor(63488/48000) = 1 and the 32B-aligned validation burst
+// 8 * 1 * 6000 = 48000 fits the budget. First strategy cuts axis 1 (CUT_TWICE), absorption
+// retry keeps CUT_ONCE cutting axis 0 with inUbFactor=1.
+TEST_F(TransposeTiling, transpose_tiling_absorb_3d_slack_window_cut_once)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 48;
+    compileInfo.ubSize = 253952; // 248K
+
+    int64_t perm_value[3] = {1, 0, 2};
+    gert::TilingContextPara::TensorDescription x({{6000, 6000, 8}, {6000, 6000, 8}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{6000, 6000, 8}, {6000, 6000, 8}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    EXPECT_EQ(tilingInfo.tilingKey, static_cast<uint64_t>(optiling::SplitMode::CUT_ONCE));
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_IN_CUT_INDEX), 0);
+    EXPECT_EQ(transpose_tiling_detail::GetOpTilingField(tilingInfo, transpose_tiling_detail::IDX_IN_UB_FACTOR), 1);
 }
