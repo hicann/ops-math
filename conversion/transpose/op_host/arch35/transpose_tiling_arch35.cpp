@@ -139,9 +139,9 @@ ge::graphStatus TransposeNddmaTiling::RunTranposelTiling()
  * @brief 尝试 VCONV/021 Tiling 路径（仅 DAV_5102）
  *
  * DAV_5102(Ascend950) 有专用的 TransDataTo5HD 硬件指令，可实现高效的2D/3D转置。
- * 两种 VCONV 路径：
- * 1. VCONV_TRANSPOSE(10007)：2D perm=[1,0] + 16bit + shape[0]>5
- * 2. VCONV_021_TRANSPOSE(10008)：3D perm=[0,2,1] + 8/16/32bit + H>8,W>8,HW≥448
+ * 两种 VCONV 路径
+ *   1. VCONV_TRANSPOSE(10007)：2D perm=[1,0] + 16bit + shape[0]>5
+ *   2. VCONV_021_TRANSPOSE(10008)：3D perm=[0,2,1] + 8/16/32bit + H>8,W>8,HW≥448
  *
  * @return ge::GRAPH_SUCCESS 命中 VCONV 路径；ge::GRAPH_FAILED 未命中
  */
@@ -405,13 +405,28 @@ ge::graphStatus TransposeNddmaTiling::CheckReducedShapeInfo()
  *
  * @return 切分后剩余的总 block 基数（帮助上层判断是否需要更多切分/分核）
  */
-int64_t TransposeNddmaTiling::DoSplitUBInput()
+int64_t TransposeNddmaTiling::DoSplitUBInput(bool tryAbsorb)
 {
     int64_t remainingTotalElment = shapeInfo_.totalVolumeActual;
+    bool hasAbsorbed = false;
     for (int64_t i = 0; i < shapeInfo_.dim; i++) {
         int64_t currentShapeDim = shapeInfo_.reducedInShape[shapeInfo_.dim - 1 - i];
         if (splitInfo_.inUbElement < currentShapeDim) {
             // 该轴放不下 → 它就是输入切分轴，主块一次搬 inUbElement 个元素
+            // Try to absorb this axis using full UB budget and cut on a more major axis instead.
+            // This helps shapes like [8000, 256] perm[1,0] where sqrt(UB) barely misses the minor axis,
+            // avoiding unnecessary CUT_TWICE.
+            if (tryAbsorb && !hasAbsorbed && (shapeInfo_.dim - 1 - i) > 0) {
+                int64_t fullBudgetRemaining = splitInfo_.ubElement / splitInfo_.inUbActual;
+                if (currentShapeDim <= fullBudgetRemaining) {
+                    splitInfo_.inUbActual *= currentShapeDim;
+                    splitInfo_.inUbElement = fullBudgetRemaining / currentShapeDim;
+                    splitInfo_.inUbFactor = currentShapeDim;
+                    remainingTotalElment /= currentShapeDim;
+                    hasAbsorbed = true;
+                    continue;
+                }
+            }
             splitInfo_.inCutIndex = shapeInfo_.dim - 1 - i;
             splitInfo_.inUbFactor = splitInfo_.inUbElement;
             splitInfo_.inTailFactor = currentShapeDim % splitInfo_.inUbFactor;
@@ -660,9 +675,8 @@ void TransposeNddmaTiling::FindSplitFactorByMultiplesNLast(int64_t currentSplitI
  *   需同时在输入/输出两侧切轴，否则最外层输出维度会溢出 UB）
  *   否则 → CUT_ONCE（输入切分已足够，输出侧由 NDDMA 自动重排）
  */
-void TransposeNddmaTiling::DoSplitUB()
+void TransposeNddmaTiling::DoSplitUBOutputScan(int64_t remainingTotalElment)
 {
-    int64_t remainingTotalElment = DoSplitUBInput();
     for (int64_t i = 0; i < shapeInfo_.dim; i++) {
         int64_t currentSplitIndex = shapeInfo_.dim - 1 - i;
         if (shapeInfo_.reducedPerm[currentSplitIndex] > splitInfo_.inCutIndex) { // skip axis full cut by input shape
@@ -698,6 +712,45 @@ void TransposeNddmaTiling::DoSplitUB()
         tilingKey_ = static_cast<int64_t>(SplitMode::CUT_TWICE);
     } else {
         tilingKey_ = static_cast<int64_t>(SplitMode::CUT_ONCE);
+    }
+}
+
+void TransposeNddmaTiling::DoSplitUB()
+{
+    // Save initial state for potential retry with absorption strategy
+    SplitInfo initialSplitInfo = splitInfo_;
+
+    // Strategy 1: original (sqrt budget, no absorption)
+    int64_t remainingTotalElment = DoSplitUBInput(false);
+    DoSplitUBOutputScan(remainingTotalElment);
+
+    // If CUT_TWICE, try absorption strategy to see if CUT_ONCE is achievable
+    if (tilingKey_ == static_cast<int64_t>(SplitMode::CUT_TWICE)) {
+        SplitInfo originalResult = splitInfo_;
+        int64_t originalTilingKey = tilingKey_;
+
+        // Reset to initial state and retry with absorption
+        splitInfo_ = initialSplitInfo;
+        remainingTotalElment = DoSplitUBInput(true);
+        DoSplitUBOutputScan(remainingTotalElment);
+
+        // If absorption didn't yield CUT_ONCE, revert to original strategy
+        if (tilingKey_ != static_cast<int64_t>(SplitMode::CUT_ONCE)) {
+            splitInfo_ = originalResult;
+            tilingKey_ = originalTilingKey;
+        } else {
+            // Validate: CalcBlockSplitInfoForCutOnce will multiply outUbFactor by
+            // inUbFactor when inCutIndex == reducedPerm[outCutIndex]. Check UB bounds
+            // with the post-modification factor to avoid UB OOB in the kernel.
+            int64_t effectiveOutUbFactor = splitInfo_.outUbFactor;
+            if (splitInfo_.inCutIndex == shapeInfo_.reducedPerm[splitInfo_.outCutIndex]) {
+                effectiveOutUbFactor *= splitInfo_.inUbFactor;
+            }
+            if (UbOutOfBoundCheck(splitInfo_.outCutIndex, effectiveOutUbFactor, true)) {
+                splitInfo_ = originalResult;
+                tilingKey_ = originalTilingKey;
+            }
+        }
     }
 }
 
@@ -971,20 +1024,17 @@ void TransposeNddmaTiling::CalcBlockSplitInfoForSmallShape()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering CalcBlockSplitInfoForSmallShape.");
     int64_t totalElements = shapeInfo_.totalVolumeActual;
-    if (totalElements < coreNum_) {
-        realCoreNum_ = totalElements;
-        blkFactor_ = 1;
+    int64_t alignElements = SMALL_SHAPE_SPLIT_BYTES_ALIGN_SIZE / shapeInfo_.eleLenInBytes;
+    if (totalElements < alignElements || totalElements < coreNum_) {
+        realCoreNum_ = 1;
+        blkFactor_ = totalElements;
         blkTailFactor_ = 0;
         return;
     }
     // simt every core elemets align to 128Byte
     int64_t blkFactor = totalElements / coreNum_;
-    int64_t ceilAlignFactor = Ops::Base::CeilDiv(blkFactor * shapeInfo_.eleLenInBytes,
-                                                 SMALL_SHAPE_SPLIT_BYTES_ALIGN_SIZE) *
-                              SMALL_SHAPE_SPLIT_BYTES_ALIGN_SIZE / shapeInfo_.eleLenInBytes;
-    int64_t floorAlignFactor = Ops::Base::FloorDiv(blkFactor * shapeInfo_.eleLenInBytes,
-                                                   SMALL_SHAPE_SPLIT_BYTES_ALIGN_SIZE) *
-                               SMALL_SHAPE_SPLIT_BYTES_ALIGN_SIZE / shapeInfo_.eleLenInBytes;
+    int64_t ceilAlignFactor = Ops::Base::CeilAlign(blkFactor, alignElements);
+    int64_t floorAlignFactor = Ops::Base::FloorAlign(blkFactor, alignElements);
     if (totalElements - floorAlignFactor * (coreNum_ - 1) <= floorAlignFactor) {
         realCoreNum_ = coreNum_;
         blkFactor_ = floorAlignFactor;

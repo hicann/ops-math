@@ -35,7 +35,7 @@ namespace TransWithGather {
 constexpr int8_t MAX_TRANS_AXIS_NUM = 8;
 constexpr int8_t UB_MAX_DIM_NUM = 6;
 constexpr int8_t UB_MAX_BRW_NUM = 3;
-constexpr int32_t MTE_GATE = 0x8000;
+constexpr int32_t MTE_GATE = 16 * 1024;
 
 BEGIN_TILING_DATA_DEF(GatherTransposeTilingData)
 TILING_DATA_FIELD_DEF(uint64_t, tilingKey);

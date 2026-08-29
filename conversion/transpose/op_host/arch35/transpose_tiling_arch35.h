@@ -226,7 +226,8 @@ private:
     void FillTilingData();
     void PrintTilingData();
     void DoSplitUB();
-    int64_t DoSplitUBInput();
+    int64_t DoSplitUBInput(bool tryAbsorb = false);
+    void DoSplitUBOutputScan(int64_t remainingTotalElment);
     int64_t FindOutIndex(int64_t index);
     bool UbOutOfBoundCheck(int64_t currentSplitIndex, int64_t currentSplitValue, bool calcIn);
     bool UbOutOfBoundCheckNLast(int64_t currentSplitIndex, int64_t currentSplitValue);

@@ -353,7 +353,12 @@ ge::graphStatus TransposeGatherTiling::CalcUbAxesInfo(const int64_t (&tmpInAxes)
         indexStep *= ubSplitInfo_.inUbAxes[i];
     }
     // MTE size must be >= gate
-    if (totalSizeInUb < MTE_GATE || CheckBC(indexStep)) {
+    if (totalSizeInUb < MTE_GATE) {
+        OP_LOGD(context_, "total size too small, totalSizeInUb=%ld", totalSizeInUb);
+        return ge::GRAPH_FAILED;
+    }
+    if (CheckBC(indexStep)) {
+        OP_LOGD(context_, "may bank conflict, indexStep=%ld", indexStep);
         return ge::GRAPH_FAILED;
     }
 

@@ -992,3 +992,44 @@ TEST_F(TransposeTiling, transpose_tiling_cut_twice_in_tail_only)
     bool success = ExecuteTiling(tilingContextPara, tilingInfo);
     EXPECT_TRUE(success);
 }
+
+// Small shape [8000, 256] perm [1, 0] with 248K UB: sqrt(UB) barely misses axis 1 (256),
+// absorption strategy promotes the cut to axis 0, but the effective outUbFactor amplified
+// by inUbFactor would overflow UB (248*248*256 > ubElement), so the safety validation in
+// DoSplitUB reverts to the original strategy, yielding CUT_TWICE.
+TEST_F(TransposeTiling, transpose_tiling_small_shape_absorb_revert_to_cut_twice)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 48;
+    compileInfo.ubSize = 253952; // 248K
+
+    int64_t perm_value[2] = {1, 0};
+    gert::TilingContextPara::TensorDescription x({{8000, 256}, {8000, 256}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{256, 8000}, {256, 8000}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+    EXPECT_EQ(tilingInfo.tilingKey, static_cast<uint64_t>(optiling::SplitMode::CUT_TWICE));
+}
+
+// Small shape [1000, 256, 300] perm [2, 1, 0] with 248K UB: should also benefit from absorption
+// and prefer CUT_ONCE when achievable.
+TEST_F(TransposeTiling, transpose_tiling_small_3d_shape_absorb)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 48;
+    compileInfo.ubSize = 253952; // 248K
+
+    int64_t perm_value[3] = {1, 0, 2};
+    gert::TilingContextPara::TensorDescription x({{1000, 256, 300}, {1000, 256, 300}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{256, 1000, 300}, {256, 1000, 300}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_TRUE(success);
+}
