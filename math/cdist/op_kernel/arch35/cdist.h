@@ -36,9 +36,9 @@ public:
 
 private:
     __aicore__ inline void ParseTilingData(const CdistTilingData* tilingData);
-    __aicore__ inline void CopyInX1(uint32_t Offset);
-    __aicore__ inline void CopyInX2(uint32_t Offset);
-    __aicore__ inline void CopyOut(uint32_t Offset);
+    __aicore__ inline void CopyInX1(uint64_t Offset);
+    __aicore__ inline void CopyInX2(uint64_t Offset);
+    __aicore__ inline void CopyOut(uint64_t Offset);
     __aicore__ inline void CastY();
     __aicore__ inline void CastXToB32();
     __aicore__ inline void Compute();
@@ -208,7 +208,7 @@ __aicore__ inline void Cdist<T>::ParseTilingData(const CdistTilingData* tdPtr)
 }
 
 template <typename T>
-__aicore__ inline void Cdist<T>::CopyInX1(uint32_t Offset)
+__aicore__ inline void Cdist<T>::CopyInX1(uint64_t Offset)
 {
     LocalTensor<T> x1Local = x1Queue_.AllocTensor<T>();
     copyInParamsX1_.blockCount = static_cast<uint16_t>(pSize_);
@@ -218,7 +218,7 @@ __aicore__ inline void Cdist<T>::CopyInX1(uint32_t Offset)
     copyInParamsX1_.dstStride = 0; // unit block(32byte)
     loopParamX1_.loop1Size = static_cast<uint32_t>(bSize_);
     loopParamX1_.loop2Size = 1;
-    loopParamX1_.loop1SrcStride = static_cast<uint64_t>((M_ * P_) * sizeof(T));
+    loopParamX1_.loop1SrcStride = static_cast<uint64_t>((uint64_t)M_ * P_ * sizeof(T));
     loopParamX1_.loop2SrcStride = 0;
     loopParamX1_.loop1DstStride = static_cast<uint64_t>((pSize_ * MAlign_) * sizeof(T));
     loopParamX1_.loop2DstStride = 0;
@@ -229,7 +229,7 @@ __aicore__ inline void Cdist<T>::CopyInX1(uint32_t Offset)
 }
 
 template <typename T>
-__aicore__ inline void Cdist<T>::CopyInX2(uint32_t Offset)
+__aicore__ inline void Cdist<T>::CopyInX2(uint64_t Offset)
 {
     LocalTensor<T> x2Local = x2Queue_.AllocTensor<T>();
     copyInParamsX2_.blockCount = static_cast<uint16_t>(rSize_);
@@ -239,7 +239,7 @@ __aicore__ inline void Cdist<T>::CopyInX2(uint32_t Offset)
     copyInParamsX2_.dstStride = 0; // unit block(32byte)
     loopParamX2_.loop1Size = static_cast<uint32_t>(bSize_);
     loopParamX2_.loop2Size = 1;
-    loopParamX2_.loop1SrcStride = static_cast<uint64_t>((M_ * R_) * sizeof(T));
+    loopParamX2_.loop1SrcStride = static_cast<uint64_t>((uint64_t)M_ * R_ * sizeof(T));
     loopParamX2_.loop2SrcStride = 0;
     loopParamX2_.loop1DstStride = static_cast<uint64_t>((rSize_ * MAlign_) * sizeof(T));
     loopParamX2_.loop2DstStride = 0;
@@ -250,7 +250,7 @@ __aicore__ inline void Cdist<T>::CopyInX2(uint32_t Offset)
 }
 
 template <typename T>
-__aicore__ inline void Cdist<T>::CopyOut(uint32_t Offset)
+__aicore__ inline void Cdist<T>::CopyOut(uint64_t Offset)
 {
     LocalTensor<T> yLocal = yQueue_.DeQue<T>();
     copyOutParams_.blockCount = static_cast<uint16_t>(pSize_);
@@ -261,7 +261,7 @@ __aicore__ inline void Cdist<T>::CopyOut(uint32_t Offset)
     loopParamOut_.loop2Size = 1;
     loopParamOut_.loop1SrcStride = static_cast<uint64_t>((pSize_ * RAlign_) * sizeof(T));
     loopParamOut_.loop2SrcStride = 0;
-    loopParamOut_.loop1DstStride = static_cast<uint64_t>((P_ * R_) * sizeof(T));
+    loopParamOut_.loop1DstStride = static_cast<uint64_t>((uint64_t)P_ * R_ * sizeof(T));
     loopParamOut_.loop2DstStride = 0;
     SetLoopModePara(loopParamOut_, DataCopyMVType::UB_TO_OUT);
     DataCopyPad(yGM_[Offset], yLocal, copyOutParams_);
@@ -699,11 +699,11 @@ template <typename T>
 __aicore__ inline void Cdist<T>::ProcessNoSplitM(uint32_t bOffset, uint32_t pOffset, uint32_t rOffsetBlock,
                                                  uint32_t blockFactorR)
 {
-    uint32_t offsetX1 = 0;
-    uint32_t offsetX2 = 0;
-    uint32_t offsetY = 0;
-    uint32_t rOffset = 0;
-    offsetX1 = bOffset * P_ * M_ + pOffset * M_;
+    uint64_t offsetX1 = 0;
+    uint64_t offsetX2 = 0;
+    uint64_t offsetY = 0;
+    uint64_t rOffset = 0;
+    offsetX1 = (uint64_t)bOffset * P_ * M_ + (uint64_t)pOffset * M_;
     MAlign_ = ((M_ * sizeof(T) + BLOCK_SIZE - 1) / BLOCK_SIZE * BLOCK_SIZE) / sizeof(T);
     CopyInX1(offsetX1);
     for (uint32_t rIdx = 0; rIdx < ubLoopNumR_; rIdx++) {
@@ -713,8 +713,8 @@ __aicore__ inline void Cdist<T>::ProcessNoSplitM(uint32_t bOffset, uint32_t pOff
             continue;
         }
         RAlign_ = ((rSize_ * sizeof(T) + BLOCK_SIZE - 1) / BLOCK_SIZE * BLOCK_SIZE) / sizeof(T);
-        offsetX2 = bOffset * R_ * M_ + rOffset * M_;
-        offsetY = bOffset * P_ * R_ + pOffset * R_ + rOffset;
+        offsetX2 = (uint64_t)bOffset * R_ * M_ + (uint64_t)rOffset * M_;
+        offsetY = (uint64_t)bOffset * P_ * R_ + (uint64_t)pOffset * R_ + rOffset;
         CopyInX2(offsetX2);
         event_t eventID = static_cast<event_t>(GetTPipePtr()->FetchEventID(AscendC::HardEvent::MTE3_V));
         AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(eventID);
@@ -730,12 +730,12 @@ template <typename T>
 __aicore__ inline void Cdist<T>::ProcessSplitM(uint32_t bOffset, uint32_t pOffset, uint32_t rOffsetBlock,
                                                uint32_t blockFactorR)
 {
-    uint32_t offsetX1 = 0;
-    uint32_t offsetX2 = 0;
-    uint32_t offsetY = 0;
+    uint64_t offsetX1 = 0;
+    uint64_t offsetX2 = 0;
+    uint64_t offsetY = 0;
     int32_t processNum = 0;
-    uint32_t mOffset = 0;
-    uint32_t rOffset = 0;
+    uint64_t mOffset = 0;
+    uint64_t rOffset = 0;
     for (uint32_t rIdx = 0; rIdx < ubLoopNumR_; rIdx++) {
         rOffset = rOffsetBlock + rIdx * ubFactorR_;
         rSize_ = (rIdx == ubLoopNumR_ - 1) ? (blockFactorR - ubFactorR_ * rIdx) : ubFactorR_;
@@ -743,7 +743,7 @@ __aicore__ inline void Cdist<T>::ProcessSplitM(uint32_t bOffset, uint32_t pOffse
             continue;
         }
         processNum = bSize_ * pSize_ * rSize_;
-        offsetY = bOffset * P_ * R_ + pOffset * R_ + rOffset;
+        offsetY = (uint64_t)bOffset * P_ * R_ + (uint64_t)pOffset * R_ + rOffset;
         if constexpr (sizeof(T) != sizeof(float)) {
             yFp32_ = yCastQueue_.DeQue<float>();
             Duplicate<float>(yFp32_, (float)0, processNum);
@@ -757,8 +757,8 @@ __aicore__ inline void Cdist<T>::ProcessSplitM(uint32_t bOffset, uint32_t pOffse
             mOffset = mIdx * ubFactorM_;
             mSize_ = (mIdx == ubLoopNumM_ - 1) ? ubTailFactorM_ : ubFactorM_;
             MAlign_ = ((mSize_ * sizeof(T) + BLOCK_SIZE - 1) / BLOCK_SIZE * BLOCK_SIZE) / sizeof(T);
-            offsetX1 = bOffset * P_ * M_ + pOffset * M_ + mOffset;
-            offsetX2 = bOffset * R_ * M_ + rOffset * M_ + mOffset;
+            offsetX1 = (uint64_t)bOffset * P_ * M_ + (uint64_t)pOffset * M_ + mOffset;
+            offsetX2 = (uint64_t)bOffset * R_ * M_ + (uint64_t)rOffset * M_ + mOffset;
             CopyInX1(offsetX1);
             CopyInX2(offsetX2);
             CastXToB32();
