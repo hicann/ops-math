@@ -10,6 +10,7 @@
 
 #include "aclnn_sinkhorn.h"
 #include "sinkhorn.h"
+#include <cmath>
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"
@@ -30,7 +31,9 @@ extern "C" {
 
 constexpr size_t IO_DIM_LEN = 2;
 constexpr int32_t COST_COL_DIM = 1;
+constexpr int32_t COST_ROW_DIM = 0;
 constexpr int32_t MAX_COST_COL = 4096;
+constexpr int32_t MAX_COST_ROW = 10000;
 
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> SELF_DTYPE_SUPPORT_LIST_NOT_SUPPORT_BF16 = {op::DataType::DT_FLOAT,
@@ -42,6 +45,8 @@ static const std::initializer_list<op::DataType> SELF_DTYPE_SUPPORT_LIST_SUPPORT
 static const std::initializer_list<op::DataType> MASK_DTYPE_SUPPORT_LIST = {op::DataType::DT_UINT8,
                                                                             op::DataType::DT_BOOL};
 
+static const std::initializer_list<op::DataType> TOL_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT};
+
 inline static bool CheckNotNull(const aclTensor* cost, const aclTensor* p)
 {
     OP_CHECK_NULL(cost, return false);
@@ -49,10 +54,25 @@ inline static bool CheckNotNull(const aclTensor* cost, const aclTensor* p)
     return true;
 }
 
+static bool CheckTolValid(const aclScalar* tol)
+{
+    if (tol == nullptr) {
+        return true;
+    }
+    OP_CHECK_DTYPE_NOT_SUPPORT(tol, TOL_DTYPE_SUPPORT_LIST, return false);
+    float tolValue = tol->ToFloat();
+    if (std::isinf(tolValue) || std::isnan(tolValue) || tolValue <= 0) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "tol is %f, it must be a positive finite value.", tolValue);
+        return false;
+    }
+    return true;
+}
+
 static const std::initializer_list<op::DataType> CheckSocVersionIsSupportBf16(void)
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-        GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) {
+    auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
+    if (socVersion == SocVersion::ASCEND950 ||
+        (socVersion >= SocVersion::ASCEND910B && socVersion <= SocVersion::ASCEND910E)) {
         return SELF_DTYPE_SUPPORT_LIST_SUPPORT_BF16;
     }
     return SELF_DTYPE_SUPPORT_LIST_NOT_SUPPORT_BF16;
@@ -72,28 +92,41 @@ static bool CheckDtypeValid(const aclTensor* cost, const aclTensor* p)
 static bool CheckShape(const aclTensor* cost, const aclTensor* p)
 {
     OP_CHECK_WRONG_DIMENSION(cost, IO_DIM_LEN, return false);
+    OP_CHECK_WRONG_DIMENSION(p, IO_DIM_LEN, return false);
     OP_CHECK_SHAPE_NOT_EQUAL(cost, p, return false);
 
     int32_t col = cost->GetViewShape().GetDim(COST_COL_DIM);
+    int32_t row = cost->GetViewShape().GetDim(COST_ROW_DIM);
     if (col > MAX_COST_COL) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "the column number of cost is %d, it cannot be larger than %d.", col,
                 MAX_COST_COL);
+        return false;
+    }
+    if (row > MAX_COST_ROW) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "the row number of cost is %d, it cannot be larger than %d.", row,
+                MAX_COST_ROW);
+        return false;
+    }
+    if (row <= 0 || col <= 0) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "the row %d and column %d of cost must be positive.", row, col);
         return false;
     }
 
     return true;
 }
 
-inline static aclnnStatus CheckParams(const aclTensor* cost, const aclTensor* p)
+inline static aclnnStatus CheckParams(const aclTensor* cost, const aclScalar* tol, const aclTensor* p)
 {
-    // 错误码等DFX方案细化后刷新，错误日志在check接口内打印
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(cost, p), ACLNN_ERR_PARAM_NULLPTR);
 
-    // 2. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
+    // 2. 检查输入的数据类型是否在API支持的数据类型范围之内
     CHECK_RET(CheckDtypeValid(cost, p), ACLNN_ERR_PARAM_INVALID);
 
-    // 3. 检查输入形状是否满足
+    // 3. 检查tol属性的数据类型和值域
+    CHECK_RET(CheckTolValid(tol), ACLNN_ERR_PARAM_INVALID);
+
+    // 4. 检查输入形状是否满足
     CHECK_RET(CheckShape(cost, p), ACLNN_ERR_PARAM_INVALID);
 
     return ACLNN_SUCCESS;
@@ -111,7 +144,7 @@ aclnnStatus aclnnSinkhornGetWorkspaceSize(const aclTensor* cost, const aclScalar
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
     // 固定写法，参数检查
-    auto ret = CheckParams(cost, p);
+    auto ret = CheckParams(cost, tol, p);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
     if (cost->IsEmpty() || p->IsEmpty()) {

@@ -26,7 +26,10 @@ namespace AscendC {
             }
             CopyInForExp(ind, length);
             ComputeForExp(length);
-            CopyOutForExp<IT>(ind, length);
+            CopyOutForExp<T>(ind, length);
+            event_t eventIdMte3Mte2 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_MTE2));
+            SetFlag<HardEvent::MTE3_MTE2>(eventIdMte3Mte2);
+            WaitFlag<HardEvent::MTE3_MTE2>(eventIdMte3Mte2);
         }
     }
 
@@ -60,7 +63,7 @@ namespace AscendC {
         LocalTensor<T> costLocal = costOutQueue.DeQue<T>();
         DUMP_LT_2(costLocal, length, " exp: ");
         DataCopyExtParams copyParams{1, static_cast<uint32_t>(length * sizeof(T)), 0, 0, 0};
-        DataCopyPad(pGlobal[ind], costLocal, copyParams);
+        DataCopyPad(pFloatGlobal[ind], costLocal, copyParams);
         costOutQueue.FreeTensor(costLocal);
     }
 
@@ -73,6 +76,9 @@ namespace AscendC {
         DataCopyExtParams copyParams{1, static_cast<uint32_t>(length * sizeof(bfloat16_t)), 0, 0, 0};
         DataCopyPadExtParams<bfloat16_t> padParams{false, 0, 0, 0};
         DataCopyPad(tmpLocal, costGlobal[ind], copyParams, padParams);
+        event_t eventIdMte2V = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
+        SetFlag<HardEvent::MTE2_V>(eventIdMte2V);
+        WaitFlag<HardEvent::MTE2_V>(eventIdMte2V);
         costOutQueue.EnQue(tmpLocal);
 
         // bf16 ==> float
@@ -92,53 +98,24 @@ namespace AscendC {
         DataCopyExtParams copyParams{1, static_cast<uint32_t>(length * sizeof(half)), 0, 0, 0};
         DataCopyPadExtParams<half> padParams{false, 0, 0, 0};
         DataCopyPad(tmpLocal, costGlobal[ind], copyParams, padParams);
+        event_t eventIdMte2V = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
+        SetFlag<HardEvent::MTE2_V>(eventIdMte2V);
+        WaitFlag<HardEvent::MTE2_V>(eventIdMte2V);
         costOutQueue.EnQue(tmpLocal);
 
-        // bf16 ==> float
+        // half ==> float
         tmpLocal = costOutQueue.DeQue<half>();
         LocalTensor<float> costLocal = costInQueue.AllocTensor<float>();
+#if __NPU_ARCH__ == 3510
+        asc_vf_call<SinkhornHalfToFloatVF>(
+            (__ubuf__ float*)costLocal.GetPhyAddr(), (__ubuf__ half*)tmpLocal.GetPhyAddr(), length);
+#else
         Cast(costLocal, tmpLocal, RoundMode::CAST_NONE, length);
+#endif
         costInQueue.EnQue(costLocal);
         costOutQueue.FreeTensor(tmpLocal);
     }
 
-    // 特殊处理 T = float, IT = bfloat16_t
-    template<>
-    template<>
-    __aicore__ inline void KernelSinkhorn<float, bfloat16_t>::CopyOutForExp<bfloat16_t>(uint32_t ind, uint32_t length)
-    {
-        // float ==> bf16
-        LocalTensor<float> costLocal = costOutQueue.DeQue<float>();
-        LocalTensor<bfloat16_t> tmpLocal = costInQueue.AllocTensor<bfloat16_t>();
-        Cast(tmpLocal, costLocal, RoundMode::CAST_TRUNC, length);
-        costInQueue.EnQue(tmpLocal);
-
-        // bf16 ==> pGlobal
-        tmpLocal = costInQueue.DeQue<bfloat16_t>();
-        DataCopyExtParams copyParams{1, static_cast<uint32_t>(length * sizeof(bfloat16_t)), 0, 0, 0};
-        DataCopyPad(pGlobal[ind], tmpLocal, copyParams);
-        costInQueue.FreeTensor(tmpLocal);
-        costOutQueue.FreeTensor(costLocal);
-    }
-
-    // 特殊处理 T = float, IT = half
-    template<>
-    template<>
-    __aicore__ inline void KernelSinkhorn<float, half>::CopyOutForExp<half>(uint32_t ind, uint32_t length)
-    {
-        // float ==> bf16
-        LocalTensor<float> costLocal = costOutQueue.DeQue<float>();
-        LocalTensor<half> tmpLocal = costInQueue.AllocTensor<half>();
-        Cast(tmpLocal, costLocal, RoundMode::CAST_TRUNC, length);
-        costInQueue.EnQue(tmpLocal);
-
-        // bf16 ==> pGlobal
-        tmpLocal = costInQueue.DeQue<half>();
-        DataCopyExtParams copyParams{1, static_cast<uint32_t>(length * sizeof(half)), 0, 0, 0};
-        DataCopyPad(pGlobal[ind], tmpLocal, copyParams);
-        costInQueue.FreeTensor(tmpLocal);
-        costOutQueue.FreeTensor(costLocal);
-    }
 } // namespace AscendC
 
 #endif // SINKHORN_KERNEL_EXP_INC_

@@ -30,7 +30,7 @@ extern "C" __global__ __aicore__ void sinkhorn(GM_ADDR cost, GM_ADDR p, GM_ADDR 
         op.Process();
     } else if (TILING_KEY_IS(1)) {
         // ge::DT_FLOAT16
-        AscendC::KernelSinkhorn<half, half> op;
+        AscendC::KernelSinkhorn<float, half> op;
         op.Init(cost, p, usrWorkspace, &tiling_data);
         op.Process();
     } else if (TILING_KEY_IS(27)) {

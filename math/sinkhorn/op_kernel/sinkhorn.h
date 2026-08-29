@@ -128,6 +128,43 @@ constexpr int PRINT_LEVEL = 0;
 
 namespace AscendC {
 
+#if __NPU_ARCH__ == 3510
+static constexpr Reg::CastTrait SINKHORN_WIDEN_F16_TO_F32 = {Reg::RegLayout::ZERO, Reg::SatMode::UNKNOWN,
+                                                             Reg::MaskMergeMode::ZEROING, RoundMode::UNKNOWN};
+static constexpr Reg::CastTrait SINKHORN_NARROW_F32_TO_F16 = {Reg::RegLayout::ZERO, Reg::SatMode::NO_SAT,
+                                                              Reg::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
+
+__simd_vf__ inline void SinkhornHalfToFloatVF(__ubuf__ float* dst, __ubuf__ half* src, uint32_t count)
+{
+    Reg::RegTensor<half> srcReg;
+    Reg::RegTensor<float> dstReg;
+    Reg::MaskReg mask;
+    constexpr uint32_t elementsPerRepeat = 64;
+    uint16_t repeatTimes = CeilDivision(count, elementsPerRepeat);
+    for (uint16_t i = 0; i < repeatTimes; i++) {
+        mask = Reg::UpdateMask<float>(count);
+        Reg::LoadAlign<half, Reg::LoadDist::DIST_UNPACK_B16>(srcReg, src + i * elementsPerRepeat);
+        Reg::Cast<float, half, SINKHORN_WIDEN_F16_TO_F32>(dstReg, srcReg, mask);
+        Reg::StoreAlign<float>(dst + i * elementsPerRepeat, dstReg, mask);
+    }
+}
+
+__simd_vf__ inline void SinkhornFloatToHalfVF(__ubuf__ half* dst, __ubuf__ float* src, uint32_t count)
+{
+    Reg::RegTensor<float> srcReg;
+    Reg::RegTensor<half> dstReg;
+    Reg::MaskReg mask;
+    constexpr uint32_t elementsPerRepeat = 64;
+    uint16_t repeatTimes = CeilDivision(count, elementsPerRepeat);
+    for (uint16_t i = 0; i < repeatTimes; i++) {
+        mask = Reg::UpdateMask<float>(count);
+        Reg::LoadAlign<float>(srcReg, src + i * elementsPerRepeat);
+        Reg::Cast<half, float, SINKHORN_NARROW_F32_TO_F16>(dstReg, srcReg, mask);
+        Reg::StoreAlign<half, Reg::StoreDist::DIST_PACK_B32>(dst + i * elementsPerRepeat, dstReg, mask);
+    }
+}
+#endif
+
 // 为2会导致一个tiling数据量下降，对性能没有提升，不推荐
 constexpr uint32_t COST_BUFFER_NUM = 1;
 
@@ -140,6 +177,11 @@ constexpr uint32_t OFFSET_SHIFT_BITS = 3;     // offset偏移量移位输，<<3 
 constexpr uint32_t INT64_LENGTH_IN_INT32 = 2; // INT64 相当于 2个int32长
 constexpr uint32_t GATHER_RESULT_STRIDE = 8;
 constexpr uint64_t LOOP_FLAG_INDEX = 0;
+constexpr uint32_t CPU_SUM_GROUP_SIZE = 16;
+constexpr uint32_t CPU_SUM_LEVELS = 4;
+constexpr uint32_t CPU_SUM_ILP = 4;
+constexpr uint32_t CPU_SUM_SCRATCH_SIZE = CPU_SUM_LEVELS * CPU_SUM_ILP * CPU_SUM_GROUP_SIZE;
+constexpr uint32_t MAX_SINKHORN_ITER = 10000;
 
 // T: 表示运算过程中的数据类型
 // IT: 表示输入cost的数据类型
@@ -154,6 +196,7 @@ private:
     __aicore__ inline void InitWS(GM_ADDR workspace, bool isFormer, uint64_t formerNum, uint64_t formerRow,
                                   uint64_t tailRow);
     __aicore__ inline void InitUB();
+    __aicore__ inline void FillConstantResult(float value);
     __aicore__ inline void InitD0GlobalInWS();
     __aicore__ inline void InitD1GlobalInWS();
     __aicore__ inline void InitD1GlobalInWSNew();
@@ -165,13 +208,16 @@ private:
     __aicore__ inline void CopyOutForExp(uint32_t ind, uint32_t length);
     __aicore__ inline void SetLoopFlag(uint64_t loop);
     __aicore__ inline uint64_t GetLoopFlag();
-    __aicore__ inline void ComputeResultCore(int t, uint32_t row, LocalTensor<T> d1Local);
+    __aicore__ inline void ComputeResultCore(uint32_t row, LocalTensor<T> d0Local, LocalTensor<T> d1Local);
     __aicore__ inline void ComputeResult();
     template <typename _IT>
     __aicore__ inline void CopyInFromP(uint16_t row, const GlobalTensor<_IT>& pG);
     template <typename _IT>
     __aicore__ inline void SaveP(uint16_t row, const GlobalTensor<_IT>& pG, const LocalTensor<T>& localTensor);
     __aicore__ inline void ComputeD0(uint32_t row, LocalTensor<T> costSrcLocal, LocalTensor<T> d1InLocal);
+    __aicore__ inline T CpuCascadeRowSum(LocalTensor<T> srcLocal, uint32_t size);
+    __aicore__ inline void ComputeD1CpuPartials();
+    __aicore__ inline void ReduceD1CpuPartials();
     // 计算每个Tile的d1   torch.sum(d0.unsqueeze(1) * cost, 1)
     __aicore__ inline void ComputeD1(uint32_t row, LocalTensor<T> costSrcLocal, LocalTensor<T> d0OutLocal);
     __aicore__ inline void CopyInD1BlockInWS(DataCopyExtParams copyParams, DataCopyPadExtParams<T> padParams);
@@ -187,7 +233,7 @@ private:
     float tol;
 
     // 输出
-    GlobalTensor<IT> pGlobal; // Exp的输出也存放在这里
+    GlobalTensor<IT> pGlobal;
 
     // Workspace空间
     GlobalTensor<uint64_t> headerInWS; // 头，64B对齐，[0]: loopFlag, 控制是否退出循环，其他空间预留
@@ -195,7 +241,9 @@ private:
     GlobalTensor<T> d0BlockInWS;     // Block d0, 这个是前者+offset之后的地址，不额外占用workspace空间
     GlobalTensor<T> d1GlobalInWS;    // Global d1, 大小为totalCol
     GlobalTensor<T> d1GlobalInWSNew; // Global d1 new, 新的d1汇总数据， 大小为totalCol
-    GlobalTensor<T> d1BlockInWS;     // Block d1, 每个Block需要一块，每块大小totalCol
+    GlobalTensor<T> d1BlockInWS;     // PyTorch CPU顺序的16行d1部分和
+    GlobalTensor<T> pFloatGlobal;    // exp(cost)，低精度输入也始终按FP32保存
+    GlobalTensor<T> pFloatAllGlobal; // 完整exp(cost)，用于按CPU行分组计算d1
 
     // 用于Vector计算，存放在UB中
     TPipe pipe;
@@ -208,6 +256,7 @@ private:
         d1OldInQueue; // 旧 d1 搬入空间（收敛判断用），大小 totalCol，专用 VECIN 以 EnQue/DeQue 提供 MTE2->V 同步
     TQue<QuePosition::VECOUT, 1> d0OutQueue, d0OutQueue2, d0OutQueue3; // d0临时输出空间，大小分别为tileRow
     TQue<QuePosition::VECOUT, 1> d1OutQueue, d1OutQueue2, d1OutQueue3; // d1临时输出空间，大小分别为totalCol
+    TBuf<QuePosition::VECCALC> cpuSumScratch;
 
     uint32_t numBlocks;
     uint32_t blockIdx;

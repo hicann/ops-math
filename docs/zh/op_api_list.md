@@ -286,7 +286,7 @@
 | [aclnnSin&aclnnInplaceSin](../../math/sin/docs/aclnnSin&aclnnInplaceSin.md) | 对输入Tensor完成sin运算。                                    | 默认确定性实现| 默认确定性实现|
 | [aclnnSinc&aclnnInplaceSinc](../../math/sinc/docs/aclnnSinc&aclnnInplaceSinc.md) | 对输入Tensor完成sinc运算。                                   | 默认确定性实现| 默认确定性实现 |
 | [aclnnSinh&aclnnInplaceSinh](../../math/sinh/docs/aclnnSinh&aclnnInplaceSinh.md) | 对输入Tensor完成sinh运算。                                   | 默认确定性实现| 默认确定性实现 |
-| [aclnnSinkhorn](../../math/sinkhorn/docs/aclnnSinkhorn.md)      | 计算Sinkhorn距离，可以用于MoE模型中的专家路由。              | 默认确定性实现| - |
+| [aclnnSinkhorn](../../math/sinkhorn/docs/aclnnSinkhorn.md)      | 计算Sinkhorn距离，可以用于MoE模型中的专家路由。              | 默认确定性实现| 默认确定性实现|
 | [aclnnSlice](../../conversion/slice/docs/aclnnSlice.md) | 在指定维度dim上，根据给定的范围[start,end]和步长step，从输入张量self中提取子张量out。 | 默认确定性实现| 默认确定性实现|
 | [aclnnSliceV2](../../conversion/strided_slice_v3/docs/aclnnSliceV2.md) | 根据给定的维度axes、范围[starts,ends]和步长steps，从输入张量self中提取张量out。 | 默认确定性实现| 默认确定性实现|
 | [aclnnSlogdet](../../math/slogdet/docs/aclnnSlogdet.md) | 计算输入self的行列式的符号和自然对数。 | 默认确定性实现|  默认确定性实现 |
