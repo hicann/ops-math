@@ -20,6 +20,40 @@
 #include "op_kernel/math_util.h"
 #include "op_kernel/platform_util.h"
 
+constexpr size_t brctoMaxDMADimNum = 0x5;
+constexpr size_t brctoMaxADimNum = static_cast<size_t>(0x8) * 3;
+constexpr size_t brctoMaxBDimNum = static_cast<size_t>(0x8) * 2;
+
+struct BroadcastToTilingData {
+    int64_t tilingKey;
+    int64_t dFactor;
+    uint8_t doubleMode;
+    uint8_t uAxisCnt;
+    uint8_t bufferCnt;
+    uint8_t blockAxis;
+    uint32_t tensorSize;
+    int64_t usedCoreCnt;
+    int64_t ntcALen;
+    int64_t tcALen;
+    int64_t ntcBLen;
+    int64_t tcBLen;
+    int64_t ntcULen;
+    int64_t tcULen;
+    int64_t aLpUnit;
+    int64_t uLpUnit;
+    int64_t uInOffset;
+    int64_t uOutOffset;
+    int32_t isUNotB;
+    int32_t isLastDimB;
+    int32_t aAxesNum;
+    int32_t bAxesNum;
+    uint64_t xSrcStride[brctoMaxDMADimNum];
+    uint32_t xDstStride[brctoMaxDMADimNum];
+    uint32_t xSize[brctoMaxDMADimNum];
+    int64_t aAxesParams[brctoMaxADimNum];
+    int64_t bAxesParams[brctoMaxBDimNum];
+};
+
 namespace BrcTo {
 using namespace AscendC;
 

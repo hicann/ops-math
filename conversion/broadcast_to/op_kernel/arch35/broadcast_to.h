@@ -57,6 +57,7 @@ __aicore__ void inline broadcast_to_impl(GM_ADDR x, GM_ADDR shape, GM_ADDR y, GM
         DTYPE_X>;
 
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
+    REGISTER_NONE_TILING;
 
     if (TILING_KEY_IS(TILING_MODE_SINGLE_AXIS) || TILING_KEY_IS(TILING_MODE_SINGLE_AXIS_BRC)) {
         GET_TILING_DATA_PTR_WITH_STRUCT(BrcSA::SingleAxisBrcTilingData, saTilingData, tiling);
@@ -69,35 +70,34 @@ __aicore__ void inline broadcast_to_impl(GM_ADDR x, GM_ADDR shape, GM_ADDR y, GM
             op.Init(x, y, saTilingData);
             op.Process();
         }
-        return;
-    }
-
-    TPipe pipe;
-    GET_TILING_DATA(tilingData, tiling);
-    if (TILING_KEY_IS(TILING_MODE_NDDMA)) {
-        BrcToWithNDDMA<DTYPE_X_, BroadcastToTilingData> op;
-        op.Init(x, y, &tilingData, &pipe);
-        op.Process();
-    } else if (TILING_KEY_IS(TILING_MODE_UB_BRC)) {
-        BroadcastToUb<DTYPE_X_, BroadcastToTilingData> op;
-        op.Init(x, y, &tilingData, &pipe);
-        op.Process();
-    } else if (TILING_KEY_IS(TILING_MODE_LAST_DIM_LARGE_A)) {
-        BrcToDataCopyPad<DTYPE_X_, BroadcastToTilingData> op;
-        op.Init(x, y, &tilingData, &pipe);
-        op.Process();
-    } else if (TILING_KEY_IS(TILING_MODE_LAST_DIM_LARGE_B)) {
-        BrcToWithTailAxis<DTYPE_X_, BroadcastToTilingData> op;
-        op.Init(x, y, &tilingData, &pipe);
-        op.Process();
-    } else if (TILING_KEY_IS(TILING_MODE_FULL_NDDMA)) {
-        BrcToWithNDDMA<DTYPE_X_, BroadcastToTilingData, 5U> op;
-        op.Init(x, y, &tilingData, &pipe);
-        op.Process();
-    } else if (TILING_KEY_IS(TILING_MODE_LAST_DIM_SMALL_A)) {
-        BroadcastToUb<DTYPE_X_, BroadcastToTilingData, true> op;
-        op.Init(x, y, &tilingData, &pipe);
-        op.Process();
+    } else {
+        TPipe pipe;
+        GET_TILING_DATA_WITH_STRUCT(BroadcastToTilingData, tilingData, tiling);
+        if (TILING_KEY_IS(TILING_MODE_NDDMA)) {
+            BrcToWithNDDMA<DTYPE_X_, BroadcastToTilingData> op;
+            op.Init(x, y, &tilingData, &pipe);
+            op.Process();
+        } else if (TILING_KEY_IS(TILING_MODE_UB_BRC)) {
+            BroadcastToUb<DTYPE_X_, BroadcastToTilingData> op;
+            op.Init(x, y, &tilingData, &pipe);
+            op.Process();
+        } else if (TILING_KEY_IS(TILING_MODE_LAST_DIM_LARGE_A)) {
+            BrcToDataCopyPad<DTYPE_X_, BroadcastToTilingData> op;
+            op.Init(x, y, &tilingData, &pipe);
+            op.Process();
+        } else if (TILING_KEY_IS(TILING_MODE_LAST_DIM_LARGE_B)) {
+            BrcToWithTailAxis<DTYPE_X_, BroadcastToTilingData> op;
+            op.Init(x, y, &tilingData, &pipe);
+            op.Process();
+        } else if (TILING_KEY_IS(TILING_MODE_FULL_NDDMA)) {
+            BrcToWithNDDMA<DTYPE_X_, BroadcastToTilingData, 5U> op;
+            op.Init(x, y, &tilingData, &pipe);
+            op.Process();
+        } else if (TILING_KEY_IS(TILING_MODE_LAST_DIM_SMALL_A)) {
+            BroadcastToUb<DTYPE_X_, BroadcastToTilingData, true> op;
+            op.Init(x, y, &tilingData, &pipe);
+            op.Process();
+        }
     }
 }
 
