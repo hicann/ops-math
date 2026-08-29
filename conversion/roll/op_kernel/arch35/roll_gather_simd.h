@@ -23,6 +23,8 @@
 namespace Roll {
 using namespace AscendC;
 constexpr int32_t GATHER_REG_SIZE = Ops::Base::GetVRegSize();
+constexpr int32_t THIRD_LAST_DIM_OFFSET = 3;
+constexpr int32_t GATHER_MAX_BYTES = 256;
 template <typename T, bool isShiftW = true>
 class RollGatherSimd {
 public:
@@ -61,7 +63,7 @@ private:
     int64_t curCoreBaseIndex_ = 0;
     int64_t blockIdx_ = 0;
     int64_t inputIndices_[MAX_DIM_NUM] = {0};
-    int32_t gatherKey = 10001;
+    int32_t gatherKey = GATHER_KEY_DEFAULT;
 };
 
 template <typename T, bool isShiftW>
@@ -94,10 +96,10 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::Init(GM_ADDR x, GM_ADDR y, G
     curCoreBaseIndex_ = tilingData_->blockFactor * blockIdx_ * tilingData_->strides[tilingData_->blockSplitAxis];
     xGm_.SetGlobalBuffer((__gm__ T*)x);
     yGm_.SetGlobalBuffer((__gm__ T*)y);
-    if (tilingData_->dimNum < 2) {
+    if (tilingData_->dimNum < CONSTANT_TWO) {
         hwLen = tilingData_->shapes[tilingData_->dimNum - 1];
     } else {
-        hwLen = tilingData_->shapes[tilingData_->dimNum - 2] * tilingData_->shapes[tilingData_->dimNum - 1];
+        hwLen = tilingData_->shapes[tilingData_->dimNum - CONSTANT_TWO] * tilingData_->shapes[tilingData_->dimNum - 1];
     }
 
     pipe_->InitBuffer(xInQue_, BUF_NUM, curCoreUbParam.UbFactor * sizeof(T) + GATHER_REG_SIZE);
@@ -142,33 +144,34 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::Process()
     if constexpr (sizeof(T) == 1) {
         is_b8 = 1;
     }
-    if ((tilingData_->dimNum > 2) &&
-        (tilingData_->shapes[tilingData_->dimNum - 3] * hwLen * sizeof(T) * (is_b8 + 1) <= 256) &&
-        (tilingData_->shifts[tilingData_->dimNum - 3] != 0)) {
-        gatherTmplsplit = tilingData_->dimNum - 3;
-        if constexpr (sizeof(T) <= 2) {
-            if (tilingData_->shifts[tilingData_->dimNum - 2] == 0) {
+    if ((tilingData_->dimNum > CONSTANT_TWO) &&
+        (tilingData_->shapes[tilingData_->dimNum - THIRD_LAST_DIM_OFFSET] * hwLen * sizeof(T) * (is_b8 + 1) <=
+         GATHER_MAX_BYTES) &&
+        (tilingData_->shifts[tilingData_->dimNum - THIRD_LAST_DIM_OFFSET] != 0)) {
+        gatherTmplsplit = tilingData_->dimNum - THIRD_LAST_DIM_OFFSET;
+        if constexpr (sizeof(T) <= CONSTANT_TWO) {
+            if (tilingData_->shifts[tilingData_->dimNum - CONSTANT_TWO] == 0) {
                 CalculateFullCHWIndex<int16_t, uint16_t, false>((__ubuf__ uint16_t*)gatherTmpl.GetPhyAddr(), tmplSize);
             } else {
                 CalculateFullCHWIndex<int16_t, uint16_t, true>((__ubuf__ uint16_t*)gatherTmpl.GetPhyAddr(), tmplSize);
             }
         } else {
-            if (tilingData_->shifts[tilingData_->dimNum - 2] == 0) {
+            if (tilingData_->shifts[tilingData_->dimNum - CONSTANT_TWO] == 0) {
                 CalculateFullCHWIndex<int32_t, uint32_t, false>((__ubuf__ uint32_t*)gatherTmpl.GetPhyAddr(), tmplSize);
             } else {
                 CalculateFullCHWIndex<int32_t, uint32_t, true>((__ubuf__ uint32_t*)gatherTmpl.GetPhyAddr(), tmplSize);
             }
         }
-    } else if (hwLen * sizeof(T) * (is_b8 + 1) > GATHER_REG_SIZE || tilingData_->dimNum < 2) {
+    } else if (hwLen * sizeof(T) * (is_b8 + 1) > GATHER_REG_SIZE || tilingData_->dimNum < CONSTANT_TWO) {
         gatherTmplsplit = tilingData_->dimNum - 1;
-        if constexpr (sizeof(T) <= 2) {
+        if constexpr (sizeof(T) <= CONSTANT_TWO) {
             CalculateFullWIndex<int16_t, uint16_t>((__ubuf__ uint16_t*)gatherTmpl.GetPhyAddr(), tmplSize);
         } else {
             CalculateFullWIndex<int32_t, uint32_t>((__ubuf__ uint32_t*)gatherTmpl.GetPhyAddr(), tmplSize);
         }
     } else {
-        gatherTmplsplit = tilingData_->dimNum - 2;
-        if constexpr (sizeof(T) <= 2) {
+        gatherTmplsplit = tilingData_->dimNum - CONSTANT_TWO;
+        if constexpr (sizeof(T) <= CONSTANT_TWO) {
             CalculateFullHWIndex<int16_t, uint16_t>((__ubuf__ uint16_t*)gatherTmpl.GetPhyAddr(), tmplSize);
         } else {
             CalculateFullHWIndex<int32_t, uint32_t>((__ubuf__ uint32_t*)gatherTmpl.GetPhyAddr(), tmplSize);
@@ -207,7 +210,7 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::Process()
                 if (countLoopSize < Count) {
                     Count = countLoopSize;
                 }
-                if constexpr (sizeof(T) <= 2) {
+                if constexpr (sizeof(T) <= CONSTANT_TWO) {
                     Gather<uint16_t>(xTensor, gatherTmpl, Count, tmplSize, addrShift);
                 } else {
                     Gather<uint32_t>(xTensor, gatherTmpl, Count, tmplSize, addrShift);
@@ -229,17 +232,17 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::CalculateFullCHWIndex(__ubuf
                                                                           uint16_t& tmplSize)
 {
     int32_t shapesW = tilingData_->shapes[tilingData_->dimNum - 1];
-    int32_t shapesH = tilingData_->shapes[tilingData_->dimNum - 2];
-    int32_t shapesC = tilingData_->shapes[tilingData_->dimNum - 3];
+    int32_t shapesH = tilingData_->shapes[tilingData_->dimNum - CONSTANT_TWO];
+    int32_t shapesC = tilingData_->shapes[tilingData_->dimNum - THIRD_LAST_DIM_OFFSET];
     int32_t shiftsW = tilingData_->shifts[tilingData_->dimNum - 1];
-    int32_t shiftsH = tilingData_->shifts[tilingData_->dimNum - 2];
-    int32_t shiftsC = tilingData_->shifts[tilingData_->dimNum - 3];
+    int32_t shiftsH = tilingData_->shifts[tilingData_->dimNum - CONSTANT_TWO];
+    int32_t shiftsC = tilingData_->shifts[tilingData_->dimNum - THIRD_LAST_DIM_OFFSET];
 
     int32_t shapesLen = shapesW * shapesH * shapesC;
 
     uint16_t loopSize = 0;
     if constexpr (sizeof(T) == 1) {
-        loopSize = GATHER_REG_SIZE / sizeof(T) / 2 / shapesLen;
+        loopSize = GATHER_REG_SIZE / sizeof(T) / CONSTANT_TWO / shapesLen;
     } else {
         loopSize = GATHER_REG_SIZE / sizeof(T) / shapesLen;
     }
@@ -300,13 +303,13 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::CalculateFullHWIndex(__ubuf_
                                                                          uint16_t& tmplSize)
 {
     int32_t shapesW = tilingData_->shapes[tilingData_->dimNum - 1];
-    int32_t shapseH = tilingData_->shapes[tilingData_->dimNum - 2];
+    int32_t shapseH = tilingData_->shapes[tilingData_->dimNum - CONSTANT_TWO];
     int32_t shiftsW = tilingData_->shifts[tilingData_->dimNum - 1];
-    int32_t shiftsH = tilingData_->shifts[tilingData_->dimNum - 2];
+    int32_t shiftsH = tilingData_->shifts[tilingData_->dimNum - CONSTANT_TWO];
 
     uint16_t loopSize = GATHER_REG_SIZE / sizeof(T) / hwLen;
     if constexpr (sizeof(T) == 1) {
-        loopSize = GATHER_REG_SIZE / sizeof(T) / 2 / hwLen;
+        loopSize = GATHER_REG_SIZE / sizeof(T) / CONSTANT_TWO / hwLen;
     }
     tmplSize = loopSize * hwLen;
     IndexType copyLenth = hwLen;
@@ -357,7 +360,7 @@ __aicore__ inline void RollGatherSimd<T, isShiftW>::CalculateFullWIndex(__ubuf__
     uint16_t wSize = static_cast<uint16_t>(shapesW);
     uint16_t loopSize = GATHER_REG_SIZE / sizeof(T) / wSize;
     if constexpr (sizeof(T) == 1) {
-        loopSize = GATHER_REG_SIZE / sizeof(T) / 2 / wSize;
+        loopSize = GATHER_REG_SIZE / sizeof(T) / CONSTANT_TWO / wSize;
     }
     tmplSize = loopSize * wSize;
     IndexType copyLenth = wSize;

@@ -18,15 +18,21 @@
 
 constexpr uint32_t MAX_DIM_NUM = 8;
 constexpr uint32_t BUF_NUM = 2;
+constexpr int32_t CONSTANT_TWO = 2;
+constexpr uint32_t MOVE_PARAM_NUM = 4;
+constexpr int32_t GATHER_KEY_DEFAULT = 10001;
+constexpr int32_t GATHER_KEY_UNALIGN_SHIFT = 11000;
+constexpr int32_t GATHER_KEY_ALIGN_SHIFT = 10100;
+constexpr int32_t GATHER_KEY_UNALIGN_NO_SHIFT = 10010;
 
 // tiling侧计算搬运参数
 struct MoveParam {
     int64_t mte3Count = 1;
-    int64_t srcOffset[4] = {0};
-    int64_t blockCount[4] = {0};
-    int64_t blockLen[4] = {0};
-    int64_t srcStride[4] = {0};
-    int64_t dstOffset[4] = {0};
+    int64_t srcOffset[MOVE_PARAM_NUM] = {0};
+    int64_t blockCount[MOVE_PARAM_NUM] = {0};
+    int64_t blockLen[MOVE_PARAM_NUM] = {0};
+    int64_t srcStride[MOVE_PARAM_NUM] = {0};
+    int64_t dstOffset[MOVE_PARAM_NUM] = {0};
 };
 
 // 切UB参数

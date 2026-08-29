@@ -65,7 +65,7 @@ ge::graphStatus RollTilingClass::GetPlatformInfo()
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
         aicoreParams_.ubSize = ubSizePlatForm;
     } else {
-        auto compileInfoPtr = reinterpret_cast<const RollCompileInfoArch35*>(context_->GetCompileInfo());
+        auto compileInfoPtr = static_cast<const RollCompileInfoArch35*>(context_->GetCompileInfo());
         OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfoPtr);
         aicoreParams_.numBlocks = compileInfoPtr->core_num;
         aicoreParams_.ubSize = compileInfoPtr->ub_size;
@@ -145,7 +145,7 @@ ge::graphStatus RollTilingClass::CheckAndGetInputParam()
 
 ge::graphStatus RollTilingClass::CheckAttr()
 {
-    const int64_t* shiftsData = reinterpret_cast<const int64_t*>(shiftsListPtr_->GetData());
+    const int64_t* shiftsData = static_cast<const int64_t*>(shiftsListPtr_->GetData());
     int64_t shiftsSize = shiftsListPtr_->GetSize();
     OP_LOGD(context_, "shiftsSize is: %ld", shiftsSize);
     if (totalEmelents_ == 0) {
@@ -174,7 +174,7 @@ ge::graphStatus RollTilingClass::CheckAttr()
                                                    reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
-        const int64_t* dimsData = reinterpret_cast<const int64_t*>(dimsListPtr_->GetData());
+        const int64_t* dimsData = static_cast<const int64_t*>(dimsListPtr_->GetData());
         for (int32_t i = 0; i < dimsSize; i++) {
             int64_t dimData = dimsData[i];
             int64_t shiftData = shiftsData[i];
@@ -325,8 +325,8 @@ void RollTilingClass::SplitUb(UbParam& ubparam, bool isTail)
         // 公共坐标空间，double buffer，input & output各留一个寄存器空间
         maxElementSize = (aicoreParams_.ubSize - vectorSize_) / BUFFER_NUM / ALIVE_NODE - vectorSize_;
         // maxElementSize不能超过uint16最大值减掉input和output的寄存器空间
-        if (maxElementSize >= (UINT16_MAX_NUM * dtypeSize_ - vectorSize_ * 2)) {
-            maxElementSize = UINT16_MAX_NUM * dtypeSize_ - vectorSize_ * 2;
+        if (maxElementSize >= (UINT16_MAX_NUM * dtypeSize_ - vectorSize_ * CONSTANT_TWO)) {
+            maxElementSize = UINT16_MAX_NUM * dtypeSize_ - vectorSize_ * CONSTANT_TWO;
         }
     } else {
         maxElementSize = aicoreParams_.ubSize / BUFFER_NUM;
@@ -340,7 +340,7 @@ void RollTilingClass::SplitUb(UbParam& ubparam, bool isTail)
     OP_LOGD(context_, "maxElementSize is: %ld", maxElementSize);
 
     // b8的用b16替代
-    int64_t usedDtypeSize_ = 2;
+    int64_t usedDtypeSize_ = CONSTANT_TWO;
     if (dtypeSize_ > usedDtypeSize_) {
         usedDtypeSize_ = dtypeSize_;
     }
@@ -415,10 +415,10 @@ void RollTilingClass::upDateParam(int64_t index, int64_t srcOffset, int64_t bloc
 
 void RollTilingClass::CalMoveParam() // 切在H之前 or H轴满载
 {
-    int64_t h = shapes_[dimNum_ - 2];
+    int64_t h = shapes_[dimNum_ - CONSTANT_TWO];
     int64_t w = shapes_[dimNum_ - 1];
     int64_t wLen = w;
-    int64_t shiftH = shifts_[dimNum_ - 2];
+    int64_t shiftH = shifts_[dimNum_ - CONSTANT_TWO];
     int64_t shiftW = shifts_[dimNum_ - 1];
 
     // w需要对齐
@@ -430,18 +430,18 @@ void RollTilingClass::CalMoveParam() // 切在H之前 or H轴满载
     // 搬入初始参数
     moveparam.mte3Count = 1;
     // H和W维都做shift，dimNum_ - 2表示H维
-    if (shifts_[dimNum_ - 1] > 0 && shifts_[dimNum_ - 2] > 0) {
+    if (shifts_[dimNum_ - 1] > 0 && shifts_[dimNum_ - CONSTANT_TWO] > 0) {
         moveparam.mte3Count = 4; // H&W都shift，4套坐标
         upDateParam(0, 0, h - shiftH, wLen - shiftW, w, shiftH * wLen + shiftW);
         upDateParam(1, wLen - shiftW, h - shiftH, shiftW, w, shiftH * wLen);
-        upDateParam(2, (h - shiftH) * w, shiftH, wLen - shiftW, w, shiftW);     // 第三个坐标
-        upDateParam(3, (h - shiftH) * w + wLen - shiftW, shiftH, shiftW, w, 0); // 第四个坐标
+        upDateParam(CONSTANT_TWO, (h - shiftH) * w, shiftH, wLen - shiftW, w, shiftW); // 第三个坐标
+        upDateParam(3, (h - shiftH) * w + wLen - shiftW, shiftH, shiftW, w, 0);        // 第四个坐标
     } else if (shifts_[dimNum_ - 1] > 0) {
-        moveparam.mte3Count = 2; // W shift，2套坐标
+        moveparam.mte3Count = CONSTANT_TWO; // W shift，2套坐标
         upDateParam(0, 0, h, wLen - shiftW, w, shiftW);
         upDateParam(1, wLen - shiftW, h, shiftW, w, 0);
     } else {
-        moveparam.mte3Count = 2; // H shift，2套坐标
+        moveparam.mte3Count = CONSTANT_TWO; // H shift，2套坐标
         upDateParam(0, 0, h - shiftH, wLen, w, shiftH * wLen);
         upDateParam(1, (h - shiftH) * w, shiftH, wLen, w, 0);
     }
@@ -482,7 +482,7 @@ ge::graphStatus RollTilingClass::DoOpTiling()
     // 一、切UB之前就能判断的场景
     // H*W*数据类型字节小于cacheline,shapes_[dimNum_ - 2]表示H轴的shape
     if ((dimNum_ > 0 && (shapes_[dimNum_ - 1] * dtypeSize_ < SMALL_TAIL_CONDITION) && shifts_[dimNum_ - 1] > 0) ||
-        ((dimNum_ > 1) && (shapes_[dimNum_ - 1] * shapes_[dimNum_ - 2] * dtypeSize_ < cacheLineSize_))) {
+        ((dimNum_ > 1) && (shapes_[dimNum_ - 1] * shapes_[dimNum_ - CONSTANT_TWO] * dtypeSize_ < cacheLineSize_))) {
         // 小尾轴场景
         tilingKey = (shifts_[dimNum_ - 1] > 0) ? TILING_KEY_FOR_SIMD_SMALL_TAIL_SHIFTW :
                                                  TILING_KEY_FOR_SIMD_SMALL_TAIL_NOT_SHIFTW;
@@ -504,7 +504,7 @@ ge::graphStatus RollTilingClass::DoOpTiling()
     SplitUb(tailCoreUbParam_, true);
 
     UbParam ubparam = mainCoreUbParam_;
-    if (ubparam.UbSplitAxis < dimNum_ - 2) {
+    if (ubparam.UbSplitAxis < dimNum_ - CONSTANT_TWO) {
         // dim需要大于2维并且切分的轴在c轴及之前
         tilingKey = TILING_KEY_FOR_SIMD_BEFOR_H;
         // 该场景需要计算搬运参数
@@ -514,9 +514,9 @@ ge::graphStatus RollTilingClass::DoOpTiling()
         tilingKey = TILING_KEY_FOR_SIMD_SPLIT_W;
         // 重新切核
         SplitCoreforSimd();
-    } else if ((ubparam.UbSplitAxis == dimNum_ - 2 &&
+    } else if ((ubparam.UbSplitAxis == dimNum_ - CONSTANT_TWO &&
                 ((shapes_[dimNum_ - 1] - shifts_[dimNum_ - 1]) * dtypeSize_ % ALIGN_BYTE == 0)) ||
-               (ubparam.UbSplitAxis == dimNum_ - 2 && (shifts_[dimNum_ - 1] == 0))) {
+               (ubparam.UbSplitAxis == dimNum_ - CONSTANT_TWO && (shifts_[dimNum_ - 1] == 0))) {
         // 切到H轴且shift W对齐，dimNum_ - 2 表示H轴
         tilingKey = TILING_KEY_FOR_SIMD_AFTER_H_ALIGN;
     } else {
@@ -636,8 +636,7 @@ ge::graphStatus RollTilingArch35(gert::TilingContext* context)
 {
     OP_LOGI(context->GetNodeName(), "tiling running.");
 
-    const RollCompileInfoArch35* compile_info = reinterpret_cast<const RollCompileInfoArch35*>(
-        context->GetCompileInfo());
+    const RollCompileInfoArch35* compile_info = static_cast<const RollCompileInfoArch35*>(context->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context, compile_info);
     OP_LOGD(context->GetNodeName(), "running regbase soc version tiling func");
     RollTilingClass tiling(context);

@@ -27,12 +27,12 @@ template <typename T>
 class RollSimd {
     struct MoveParam {
         int64_t moveNum = 0;
-        int64_t inputIndex[4] = {0};
-        int64_t blockCount[4] = {0};
-        int64_t blockLen[4] = {0};
-        int64_t srcStride[4] = {0};
-        int64_t dstStride[4] = {0};
-        int64_t outputIndex[4] = {0};
+        int64_t inputIndex[MOVE_PARAM_NUM] = {0};
+        int64_t blockCount[MOVE_PARAM_NUM] = {0};
+        int64_t blockLen[MOVE_PARAM_NUM] = {0};
+        int64_t srcStride[MOVE_PARAM_NUM] = {0};
+        int64_t dstStride[MOVE_PARAM_NUM] = {0};
+        int64_t outputIndex[MOVE_PARAM_NUM] = {0};
     };
 
 public:
@@ -40,9 +40,8 @@ public:
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR workspace);
     __aicore__ inline void CopyIn(int64_t index, int64_t count, int64_t loop);
     __aicore__ inline void CopyOut(int64_t index, int64_t count, int64_t loop);
-    __aicore__ inline void setMoveParam(
-        int64_t index, int64_t intputIndex, int64_t blockCount, int64_t blockLen, int64_t srcStride,
-        int64_t dstStride, int64_t outputindex);
+    __aicore__ inline void setMoveParam(int64_t index, int64_t intputIndex, int64_t blockCount, int64_t blockLen,
+                                        int64_t srcStride, int64_t dstStride, int64_t outputindex);
     __aicore__ inline void updataInputIndex(int64_t inputIndex, int64_t& outputIndex);
     __aicore__ inline void ComputeOutIndex(int64_t inputIndex, int64_t& outputIndex, int64_t& count);
     __aicore__ inline void Process();
@@ -137,15 +136,15 @@ __aicore__ inline void RollSimd<T>::updataInputIndex(int64_t inputIndex, int64_t
     for (int64_t dim = 0; dim < tilingData_->dimNum; dim++) {
         inputIndices_[dim] = inputIndex / tilingData_->strides[dim];
         inputIndex = inputIndex % tilingData_->strides[dim];
-        outputIndex +=
-            (inputIndices_[dim] + tilingData_->shifts[dim]) % tilingData_->shapes[dim] * tilingData_->strides[dim];
+        outputIndex += (inputIndices_[dim] + tilingData_->shifts[dim]) % tilingData_->shapes[dim] *
+                       tilingData_->strides[dim];
     }
 }
 
 template <typename T>
-__aicore__ inline void RollSimd<T>::setMoveParam(
-    int64_t index, int64_t inputindex, int64_t blockCount, int64_t blockLen, int64_t srcStride, int64_t dstStride,
-    int64_t outputindex)
+__aicore__ inline void RollSimd<T>::setMoveParam(int64_t index, int64_t inputindex, int64_t blockCount,
+                                                 int64_t blockLen, int64_t srcStride, int64_t dstStride,
+                                                 int64_t outputindex)
 {
     moveparam.inputIndex[index] = inputindex;
     moveparam.blockCount[index] = blockCount;
@@ -171,16 +170,15 @@ __aicore__ inline void RollSimd<T>::ComputeOutIndex(int64_t inputIndex, int64_t&
         // W轴需要shift，优化
         if (inputIndices_[tilingData_->dimNum - 1] != 0) {
             // W轴的index不为0，说明从中间开始的，只搬运这一行
-            count = Std::min(
-                tilingData_->shapes[tilingData_->dimNum - 1] - inputIndices_[tilingData_->dimNum - 1],
-                perUbMaxElements);
-            int64_t shiftIndex =
-                tilingData_->shapes[tilingData_->dimNum - 1] - tilingData_->shifts[tilingData_->dimNum - 1];
+            count = Std::min(tilingData_->shapes[tilingData_->dimNum - 1] - inputIndices_[tilingData_->dimNum - 1],
+                             perUbMaxElements);
+            int64_t shiftIndex = tilingData_->shapes[tilingData_->dimNum - 1] -
+                                 tilingData_->shifts[tilingData_->dimNum - 1];
             int64_t count1 = shiftIndex - inputIndices_[tilingData_->dimNum - 1];
             int64_t count2 = inputIndices_[tilingData_->dimNum - 1] + count - shiftIndex;
             if (shiftIndex > inputIndices_[tilingData_->dimNum - 1] &&
                 shiftIndex < (inputIndices_[tilingData_->dimNum - 1] + count)) { // 分两块搬运
-                moveparam.moveNum = 2;
+                moveparam.moveNum = CONSTANT_TWO;
                 setMoveParam(0, inputIndex, 1, count1, 0, 0, outputIndex);
                 inputIndex += moveparam.blockLen[0];
                 int64_t tempOutputIndex = 0;
@@ -193,20 +191,21 @@ __aicore__ inline void RollSimd<T>::ComputeOutIndex(int64_t inputIndex, int64_t&
             }
         } else {
             // W轴的index从0开始 hLen个 W
-            int64_t wAlign = (tilingData_->shapes[tilingData_->dimNum - 1] * sizeof(T) + ALIGN_NUM - 1) / ALIGN_NUM * ALIGN_NUM / sizeof(T);
+            int64_t wAlign = (tilingData_->shapes[tilingData_->dimNum - 1] * sizeof(T) + ALIGN_NUM - 1) / ALIGN_NUM *
+                             ALIGN_NUM / sizeof(T);
             int64_t hLen = tilingData_->maxElements / wAlign;
             hLen = Std::min(hLen, curCoreElements_ / tilingData_->shapes[tilingData_->dimNum - 1]);
             if (hLen == 0) {
                 // 不足一个 W，处理最后一块
                 count = perUbMaxElements;
-                int64_t shiftIndex =
-                    tilingData_->shapes[tilingData_->dimNum - 1] - tilingData_->shifts[tilingData_->dimNum - 1];
+                int64_t shiftIndex = tilingData_->shapes[tilingData_->dimNum - 1] -
+                                     tilingData_->shifts[tilingData_->dimNum - 1];
                 int64_t count1 = shiftIndex - inputIndices_[tilingData_->dimNum - 1];
                 int64_t count2 = count - count1;
                 if (shiftIndex > inputIndices_[tilingData_->dimNum - 1] &&
                     shiftIndex < (inputIndices_[tilingData_->dimNum - 1] + count)) {
                     // 分两块搬运
-                    moveparam.moveNum = 2;
+                    moveparam.moveNum = CONSTANT_TWO;
                     setMoveParam(0, inputIndex, 1, count1, 0, 0, outputIndex);
                     inputIndex += moveparam.blockLen[0];
                     int64_t tempOutputIndex = 0;
@@ -217,17 +216,17 @@ __aicore__ inline void RollSimd<T>::ComputeOutIndex(int64_t inputIndex, int64_t&
                     setMoveParam(0, inputIndex, 1, count, 0, 0, outputIndex);
                 }
             } else {
-                int64_t curHindex = inputIndices_[tilingData_->dimNum - 2];
-                hLen = Std::min(hLen, tilingData_->shapes[tilingData_->dimNum - 2] - curHindex);
-                int64_t hShift =
-                    tilingData_->shapes[tilingData_->dimNum - 2] - tilingData_->shifts[tilingData_->dimNum - 2];
+                int64_t curHindex = inputIndices_[tilingData_->dimNum - CONSTANT_TWO];
+                hLen = Std::min(hLen, tilingData_->shapes[tilingData_->dimNum - CONSTANT_TWO] - curHindex);
+                int64_t hShift = tilingData_->shapes[tilingData_->dimNum - CONSTANT_TWO] -
+                                 tilingData_->shifts[tilingData_->dimNum - CONSTANT_TWO];
                 if (hShift > curHindex && hShift < (curHindex + hLen)) {
                     // shift轴在中间
-                    moveparam.moveNum = 4;
+                    moveparam.moveNum = MOVE_PARAM_NUM;
                     int64_t hCount1 = hShift - curHindex;
                     int64_t hCount2 = hLen - hCount1;
-                    int64_t wLen1 =
-                        tilingData_->shapes[tilingData_->dimNum - 1] - tilingData_->shifts[tilingData_->dimNum - 1];
+                    int64_t wLen1 = tilingData_->shapes[tilingData_->dimNum - 1] -
+                                    tilingData_->shifts[tilingData_->dimNum - 1];
                     int64_t wLen2 = tilingData_->shifts[tilingData_->dimNum - 1];
                     setMoveParam(0, inputIndex, hCount1, wLen1, wLen2, 0, outputIndex);
                     inputIndex += moveparam.blockLen[0];
@@ -235,13 +234,13 @@ __aicore__ inline void RollSimd<T>::ComputeOutIndex(int64_t inputIndex, int64_t&
                     setMoveParam(1, inputIndex, hCount1, wLen2, wLen1, 0, outputIndex);
                     inputIndex += (tilingData_->shapes[tilingData_->dimNum - 1] * hCount1 - moveparam.blockLen[0]);
                     updataInputIndex(inputIndex, outputIndex);
-                    setMoveParam(2, inputIndex, hCount2, wLen1, wLen2, 0, outputIndex);
+                    setMoveParam(CONSTANT_TWO, inputIndex, hCount2, wLen1, wLen2, 0, outputIndex);
                     inputIndex += wLen1;
                     outputIndex -= tilingData_->shifts[tilingData_->dimNum - 1];
-                    setMoveParam(3, inputIndex, hCount2, wLen2, wLen1, 0, outputIndex);
+                    setMoveParam(MOVE_PARAM_NUM - 1, inputIndex, hCount2, wLen2, wLen1, 0, outputIndex);
                 } else {
                     // 两组参数直接搬完
-                    moveparam.moveNum = 2;
+                    moveparam.moveNum = CONSTANT_TWO;
                     setMoveParam(
                         0, inputIndex, hLen,
                         tilingData_->shapes[tilingData_->dimNum - 1] - tilingData_->shifts[tilingData_->dimNum - 1],
@@ -260,9 +259,10 @@ __aicore__ inline void RollSimd<T>::ComputeOutIndex(int64_t inputIndex, int64_t&
         isBlockMove = true;
     } else {
         // 只shiftH
-        count = tilingData_->shapes[tilingData_->dimNum - 2] - inputIndices_[tilingData_->dimNum - 2];
-        if (count > tilingData_->shifts[tilingData_->dimNum - 2]) {
-            count = count - tilingData_->shifts[tilingData_->dimNum - 2];
+        count = tilingData_->shapes[tilingData_->dimNum - CONSTANT_TWO] -
+                inputIndices_[tilingData_->dimNum - CONSTANT_TWO];
+        if (count > tilingData_->shifts[tilingData_->dimNum - CONSTANT_TWO]) {
+            count = count - tilingData_->shifts[tilingData_->dimNum - CONSTANT_TWO];
         }
         count = count * tilingData_->shapes[tilingData_->dimNum - 1] - inputIndices_[tilingData_->dimNum - 1];
         isBlockMove = false;

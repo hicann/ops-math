@@ -31,26 +31,16 @@ struct RollCompileInfoArch35 {
 
 class RollTilingClass : public Ops::Base::TilingBaseClass {
 public:
-    explicit RollTilingClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit RollTilingClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
-    void Reset(gert::TilingContext* context) override
-    {
-        Ops::Base::TilingBaseClass::Reset(context);
-    }
+    void Reset(gert::TilingContext* context) override { Ops::Base::TilingBaseClass::Reset(context); }
 
 protected:
     ge::graphStatus GetShapeAttrsInfo() override;
     ge::graphStatus GetPlatformInfo() override;
-    bool IsCapable() override
-    {
-        return true;
-    }
+    bool IsCapable() override { return true; }
     ge::graphStatus DoOpTiling() override;
-    ge::graphStatus DoLibApiTiling() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus DoLibApiTiling() override { return ge::GRAPH_SUCCESS; }
     ge::graphStatus GetWorkspaceSize() override;
     ge::graphStatus PostTiling() override;
     uint64_t GetTilingKey() const override;
@@ -66,9 +56,8 @@ private:
     void SplitCoreforSimd();
     void SplitUb(UbParam& ubparam, bool isTail);
     void CalMoveParam();
-    void upDateParam(
-        int64_t index_, int64_t srcOffset_, int64_t blockCount_, int64_t blockLen_, int64_t srcStride_,
-        int64_t dstOffeset_);
+    void upDateParam(int64_t index, int64_t srcOffset, int64_t blockCount, int64_t blockLen, int64_t srcStride,
+                     int64_t dstOffset);
     void PrintTiling() const;
 
     const gert::StorageShape* xShapePtr_ = nullptr;

@@ -59,7 +59,7 @@ private:
     int64_t curCoreBaseIndex_ = 0;
     int64_t blockIdx_ = 0;
     int64_t inputIndices_[MAX_DIM_NUM] = {0};
-    int32_t gatherKey = 10001;
+    int32_t gatherKey = GATHER_KEY_DEFAULT;
 };
 
 template <typename T>
@@ -94,23 +94,23 @@ __aicore__ inline void RollUnaliegnedSimd<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR
     yGm_.SetGlobalBuffer((__gm__ T*)y);
     AlignWLen = (tilingData_->shapes[tilingData_->dimNum - 1] * sizeof(T) + UNALIGN_BYTESIZE - 1) / UNALIGN_BYTESIZE *
                 UNALIGN_BYTESIZE / sizeof(T);
-    AlignHWLen = AlignWLen * tilingData_->shapes[tilingData_->dimNum - 2];
-    HWLen = tilingData_->shapes[tilingData_->dimNum - 2] * tilingData_->shapes[tilingData_->dimNum - 1];
+    AlignHWLen = AlignWLen * tilingData_->shapes[tilingData_->dimNum - CONSTANT_TWO];
+    HWLen = tilingData_->shapes[tilingData_->dimNum - CONSTANT_TWO] * tilingData_->shapes[tilingData_->dimNum - 1];
     UbForHW = curCoreUbParam.UbFactor / HWLen; // 多少个ub
     WAddrShift = tilingData_->shapes[tilingData_->dimNum - 1] - tilingData_->shifts[tilingData_->dimNum - 1];
     pipe_->InitBuffer(xInQue_, BUF_NUM, UbForHW * AlignHWLen * sizeof(T));
     if (tilingData_->shifts[tilingData_->dimNum - 1] != 0) {
         if (WAddrShift * sizeof(T) % UNALIGN_BYTESIZE != 0) {
-            gatherKey = 11000;
+            gatherKey = GATHER_KEY_UNALIGN_SHIFT;
             pipe_->InitBuffer(AlienBuf, BUF_NUM,
-                              UNALIGN_REG_SIZE * UbForHW * tilingData_->shapes[tilingData_->dimNum - 2]);
+                              UNALIGN_REG_SIZE * UbForHW * tilingData_->shapes[tilingData_->dimNum - CONSTANT_TWO]);
         } else {
-            gatherKey = 10100;
+            gatherKey = GATHER_KEY_ALIGN_SHIFT;
         }
     } else if (tilingData_->shapes[tilingData_->dimNum - 1] * sizeof(T) % UNALIGN_BYTESIZE != 0) {
-        gatherKey = 10010;
+        gatherKey = GATHER_KEY_UNALIGN_NO_SHIFT;
     } else {
-        gatherKey = 10001;
+        gatherKey = GATHER_KEY_DEFAULT;
     }
 }
 
@@ -160,7 +160,7 @@ __aicore__ inline void RollUnaliegnedSimd<T>::CopyOutForGather(int64_t srcIndex,
                                                                LocalTensor<T>& alignTensor)
 {
     DataCopyExtParams dataCopyParams;
-    for (int32_t i = 0; i < tilingData_->moveparam.mte3Count; i += 2) {
+    for (int32_t i = 0; i < tilingData_->moveparam.mte3Count; i += CONSTANT_TWO) {
         dataCopyParams.blockCount = tilingData_->moveparam.blockCount[i];
         dataCopyParams.blockLen = tilingData_->moveparam.blockLen[i] * sizeof(T);
         dataCopyParams.srcStride = (tilingData_->moveparam.srcStride[i] - tilingData_->moveparam.blockLen[i]) *
@@ -171,7 +171,7 @@ __aicore__ inline void RollUnaliegnedSimd<T>::CopyOutForGather(int64_t srcIndex,
                     xTensor[srcIndex + tilingData_->moveparam.srcOffset[i]], dataCopyParams);
     }
     if (outKey) {
-        for (int32_t i = 1; i < tilingData_->moveparam.mte3Count; i += 2) {
+        for (int32_t i = 1; i < tilingData_->moveparam.mte3Count; i += CONSTANT_TWO) {
             dataCopyParams.blockCount = tilingData_->moveparam.blockCount[i];
             dataCopyParams.blockLen = (tilingData_->moveparam.blockLen[i] - addr_offset) * sizeof(T);
             dataCopyParams.srcStride = (tilingData_->moveparam.srcStride[i] - tilingData_->moveparam.blockLen[i] +
@@ -184,15 +184,15 @@ __aicore__ inline void RollUnaliegnedSimd<T>::CopyOutForGather(int64_t srcIndex,
                         xTensor[srcIndex + tilingData_->moveparam.srcOffset[i] + addr_offset], dataCopyParams);
         }
     }
-    for (int32_t i = 1; i < tilingData_->moveparam.mte3Count; i += 2) { // aligntensor
+    for (int32_t i = 1; i < tilingData_->moveparam.mte3Count; i += CONSTANT_TWO) { // aligntensor
         dataCopyParams.blockCount = tilingData_->moveparam.blockCount[i];
         dataCopyParams.blockLen = addr_offset * sizeof(T);
         dataCopyParams.srcStride = (UNALIGN_REG_SIZE - addr_offset * sizeof(T)) / UNALIGN_BYTESIZE;
         dataCopyParams.dstStride = (tilingData_->shapes[tilingData_->dimNum - 1] - addr_offset) * sizeof(T);
-        DataCopyPad(
-            yGm_[outIndex + tilingData_->moveparam.dstOffset[i]],
-            alignTensor[alignIndex + (i / 2) * tilingData_->moveparam.blockCount[1] * UNALIGN_REG_SIZE / sizeof(T)],
-            dataCopyParams);
+        DataCopyPad(yGm_[outIndex + tilingData_->moveparam.dstOffset[i]],
+                    alignTensor[alignIndex + (i / CONSTANT_TWO) * tilingData_->moveparam.blockCount[1] *
+                                                 UNALIGN_REG_SIZE / sizeof(T)],
+                    dataCopyParams);
     }
 }
 
@@ -218,7 +218,7 @@ __aicore__ inline void RollUnaliegnedSimd<T>::ComputeOutIndex(int64_t inputIndex
     for (int64_t dim = 0; dim < tilingData_->dimNum; dim++) {
         inputIndices_[dim] = inputIndex / tilingData_->strides[dim];
         inputIndex = inputIndex % tilingData_->strides[dim];
-        if (dim < tilingData_->dimNum - 2) {
+        if (dim < tilingData_->dimNum - CONSTANT_TWO) {
             outputIndex += (inputIndices_[dim] + tilingData_->shifts[dim]) % tilingData_->shapes[dim] *
                            tilingData_->strides[dim];
         }
@@ -228,9 +228,9 @@ __aicore__ inline void RollUnaliegnedSimd<T>::ComputeOutIndex(int64_t inputIndex
 template <typename T>
 __aicore__ inline void RollUnaliegnedSimd<T>::Process()
 {
-    if (gatherKey == 11000) {
+    if (gatherKey == GATHER_KEY_UNALIGN_SHIFT) {
         int32_t dstStride = UNALIGN_REG_SIZE / sizeof(T);
-        int32_t alignSize = dstStride * tilingData_->shapes[tilingData_->dimNum - 2];
+        int32_t alignSize = dstStride * tilingData_->shapes[tilingData_->dimNum - CONSTANT_TWO];
         int32_t maskNum;
         bool outKey = true;
         if (tilingData_->shifts[tilingData_->dimNum - 1] <= UNALIGN_REG_SIZE / sizeof(T)) {
@@ -248,11 +248,11 @@ __aicore__ inline void RollUnaliegnedSimd<T>::Process()
             } else {
                 CopyLoop = UbForHW;
             }
-            CopyIn(curCoreBaseIndex_, CopyLoop * tilingData_->shapes[tilingData_->dimNum - 2],
+            CopyIn(curCoreBaseIndex_, CopyLoop * tilingData_->shapes[tilingData_->dimNum - CONSTANT_TWO],
                    tilingData_->shapes[tilingData_->dimNum - 1]);
             int32_t eventIdToMTE2 = static_cast<int32_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
             SetFlag<HardEvent::MTE2_V>(eventIdToMTE2);
-            GaTher(WAddrShift, CopyLoop * tilingData_->shapes[tilingData_->dimNum - 2], AlignWLen, dstStride,
+            GaTher(WAddrShift, CopyLoop * tilingData_->shapes[tilingData_->dimNum - CONSTANT_TWO], AlignWLen, dstStride,
                    eventIdToMTE2);
             LocalTensor<T> xTensor = xInQue_.DeQue<T>();
             LocalTensor<T> alienTensor = AlienBuf.DeQue<T>();
@@ -265,7 +265,7 @@ __aicore__ inline void RollUnaliegnedSimd<T>::Process()
             AlienBuf.FreeTensor<T>(alienTensor);
             curCoreBaseIndex_ += curCoreUbParam.UbFactor;
         }
-    } else if (gatherKey == 10100 || gatherKey == 10010) {
+    } else if (gatherKey == GATHER_KEY_ALIGN_SHIFT || gatherKey == GATHER_KEY_UNALIGN_NO_SHIFT) {
         for (int32_t loopNum = 0; loopNum < curCoreUbParam.UbCount; loopNum++) {
             int32_t CopyLoop;
             if (loopNum == curCoreUbParam.UbCount - 1) {
@@ -273,7 +273,7 @@ __aicore__ inline void RollUnaliegnedSimd<T>::Process()
             } else {
                 CopyLoop = UbForHW;
             }
-            CopyIn(curCoreBaseIndex_, CopyLoop * tilingData_->shapes[tilingData_->dimNum - 2],
+            CopyIn(curCoreBaseIndex_, CopyLoop * tilingData_->shapes[tilingData_->dimNum - CONSTANT_TWO],
                    tilingData_->shapes[tilingData_->dimNum - 1]);
             LocalTensor<T> xTensor = xInQue_.DeQue<T>();
             for (int32_t i = 0; i < CopyLoop; i++) {

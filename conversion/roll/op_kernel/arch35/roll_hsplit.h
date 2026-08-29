@@ -69,9 +69,9 @@ private:
     int64_t wAlienLen_ = 0;
     int64_t WAddrShift = 0;
     int64_t dstStride = 0;
-    int64_t outIndex[4] = {0};
-    int64_t countSum[4] = {0};
-    int64_t lenSum[4] = {0};
+    int64_t outIndex[MOVE_PARAM_NUM] = {0};
+    int64_t countSum[MOVE_PARAM_NUM] = {0};
+    int64_t lenSum[MOVE_PARAM_NUM] = {0};
     UbParam coreUbParam;
 };
 
@@ -82,10 +82,11 @@ __aicore__ inline void RollHSplitSimd<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR wor
     coreUbParam = (blockIdx_ == tilingData_->blockCount - 1) ? tilingData_->tailCoreUbParam :
                                                                tilingData_->mainCoreUbParam;
     blockFactor = (blockIdx_ == tilingData_->blockCount - 1) ? tilingData_->blockTailFactor : tilingData_->blockFactor;
-    hShapes = tilingData_->shapes[tilingData_->dimNum - 2];
+    hShapes = tilingData_->shapes[tilingData_->dimNum - CONSTANT_TWO];
     wShapes = tilingData_->shapes[tilingData_->dimNum - 1];
-    hLen_ = (tilingData_->blockSplitAxis == coreUbParam.UbSplitAxis) ? blockFactor :
-                                                                       tilingData_->shapes[tilingData_->dimNum - 2];
+    hLen_ = (tilingData_->blockSplitAxis == coreUbParam.UbSplitAxis) ?
+                blockFactor :
+                tilingData_->shapes[tilingData_->dimNum - CONSTANT_TWO];
     wAlienLen_ = (wShapes * sizeof(T) + BTYEALIGNSIZE - 1) / BTYEALIGNSIZE * BTYEALIGNSIZE / sizeof(T);
     dstStride = REG_SIZE / sizeof(T);
     WAddrShift = wShapes - tilingData_->shifts[tilingData_->dimNum - 1];
@@ -188,10 +189,12 @@ __aicore__ inline void RollHSplitSimd<T>::ComputeAllParam(int64_t inputIndex, in
     if (!isCount) {
         return;
     }
-    if (tilingData_->shifts[tilingData_->dimNum - 1] != 0 && tilingData_->shifts[tilingData_->dimNum - 2] != 0) {
-        countSum[index] = tilingData_->shapes[tilingData_->dimNum - 2] - inputIndices_[tilingData_->dimNum - 2];
-        if (countSum[index] > tilingData_->shifts[tilingData_->dimNum - 2]) {
-            countSum[index] -= tilingData_->shifts[tilingData_->dimNum - 2];
+    if (tilingData_->shifts[tilingData_->dimNum - 1] != 0 &&
+        tilingData_->shifts[tilingData_->dimNum - CONSTANT_TWO] != 0) {
+        countSum[index] = tilingData_->shapes[tilingData_->dimNum - CONSTANT_TWO] -
+                          inputIndices_[tilingData_->dimNum - CONSTANT_TWO];
+        if (countSum[index] > tilingData_->shifts[tilingData_->dimNum - CONSTANT_TWO]) {
+            countSum[index] -= tilingData_->shifts[tilingData_->dimNum - CONSTANT_TWO];
         }
         if (countSum[index] > hRe) {
             countSum[index] = hRe;
@@ -201,7 +204,7 @@ __aicore__ inline void RollHSplitSimd<T>::ComputeAllParam(int64_t inputIndex, in
             lenSum[index] -= tilingData_->shifts[tilingData_->dimNum - 1];
         }
     } else {
-        if (tilingData_->shifts[tilingData_->dimNum - 2] == 0) {
+        if (tilingData_->shifts[tilingData_->dimNum - CONSTANT_TWO] == 0) {
             countSum[index] = hRe;
             lenSum[index] = tilingData_->shapes[tilingData_->dimNum - 1] - inputIndices_[tilingData_->dimNum - 1];
             if (lenSum[index] > tilingData_->shifts[tilingData_->dimNum - 1]) {
@@ -209,9 +212,10 @@ __aicore__ inline void RollHSplitSimd<T>::ComputeAllParam(int64_t inputIndex, in
             }
         } else if (tilingData_->shifts[tilingData_->dimNum - 1] == 0) {
             lenSum[index] = wShapes;
-            countSum[index] = tilingData_->shapes[tilingData_->dimNum - 2] - inputIndices_[tilingData_->dimNum - 2];
-            if (countSum[index] > tilingData_->shifts[tilingData_->dimNum - 2]) {
-                countSum[index] -= tilingData_->shifts[tilingData_->dimNum - 2];
+            countSum[index] = tilingData_->shapes[tilingData_->dimNum - CONSTANT_TWO] -
+                              inputIndices_[tilingData_->dimNum - CONSTANT_TWO];
+            if (countSum[index] > tilingData_->shifts[tilingData_->dimNum - CONSTANT_TWO]) {
+                countSum[index] -= tilingData_->shifts[tilingData_->dimNum - CONSTANT_TWO];
             }
             if (countSum[index] > hRe) {
                 countSum[index] = hRe;
@@ -229,15 +233,15 @@ __aicore__ inline void RollHSplitSimd<T>::ComputeAllParamForFour(int64_t inputIn
     }
     hRe -= countSum[0];
     if (isCount) {
-        for (int32_t i = 0; i < 2; i++) {
-            countSum[i + 2] = 0;
-            lenSum[i + 2] = 0;
+        for (int32_t i = 0; i < CONSTANT_TWO; i++) {
+            countSum[i + CONSTANT_TWO] = 0;
+            lenSum[i + CONSTANT_TWO] = 0;
         }
     }
-    if (hRe != 0 && tilingData_->shifts[tilingData_->dimNum - 2] != 0) {
-        ComputeAllParam(inputIndex + countSum[0] * wShapes, 2, hRe, isCount);
+    if (hRe != 0 && tilingData_->shifts[tilingData_->dimNum - CONSTANT_TWO] != 0) {
+        ComputeAllParam(inputIndex + countSum[0] * wShapes, CONSTANT_TWO, hRe, isCount);
         if (tilingData_->shifts[tilingData_->dimNum - 1] != 0) {
-            ComputeAllParam(inputIndex + lenSum[0] + countSum[0] * wShapes, 3, hRe, isCount);
+            ComputeAllParam(inputIndex + lenSum[0] + countSum[0] * wShapes, MOVE_PARAM_NUM - 1, hRe, isCount);
         }
     }
 }
@@ -246,11 +250,12 @@ template <typename T>
 __aicore__ inline void RollHSplitSimd<T>::CopyOut_Align(LocalTensor<T> xTensor, int64_t xTensorAddr, int64_t index,
                                                         int64_t offsetOut, int64_t blockCount)
 {
-    CopyOut(xTensor, xTensorAddr, outIndex[2 * index] + offsetOut, blockCount, lenSum[2 * index],
-            wAlienLen_ - lenSum[2 * index], lenSum[2 * index + 1]);
-    if (lenSum[2 * index] < wShapes) {
-        CopyOut(xTensor, xTensorAddr + lenSum[2 * index], outIndex[2 * index + 1] + offsetOut, blockCount,
-                lenSum[2 * index + 1], wAlienLen_ - lenSum[2 * index + 1], lenSum[2 * index]);
+    CopyOut(xTensor, xTensorAddr, outIndex[CONSTANT_TWO * index] + offsetOut, blockCount, lenSum[CONSTANT_TWO * index],
+            wAlienLen_ - lenSum[CONSTANT_TWO * index], lenSum[CONSTANT_TWO * index + 1]);
+    if (lenSum[CONSTANT_TWO * index] < wShapes) {
+        CopyOut(xTensor, xTensorAddr + lenSum[CONSTANT_TWO * index], outIndex[CONSTANT_TWO * index + 1] + offsetOut,
+                blockCount, lenSum[CONSTANT_TWO * index + 1], wAlienLen_ - lenSum[CONSTANT_TWO * index + 1],
+                lenSum[CONSTANT_TWO * index]);
     }
 }
 
@@ -260,14 +265,15 @@ __aicore__ inline void RollHSplitSimd<T>::CopyOut_UnAlign(LocalTensor<T> xTensor
                                                           int64_t offsetOut, int64_t blockCount, int64_t maskNum,
                                                           bool outKey)
 {
-    CopyOut(xTensor, xTensorAddr, outIndex[2 * index] + offsetOut, blockCount, lenSum[2 * index],
-            wAlienLen_ - lenSum[2 * index], lenSum[2 * index + 1]);
-    CopyOut(alienTensor, alienTensorAddr, outIndex[2 * index + 1] + offsetOut, blockCount, maskNum, dstStride - maskNum,
-            wShapes - maskNum);
+    CopyOut(xTensor, xTensorAddr, outIndex[CONSTANT_TWO * index] + offsetOut, blockCount, lenSum[CONSTANT_TWO * index],
+            wAlienLen_ - lenSum[CONSTANT_TWO * index], lenSum[CONSTANT_TWO * index + 1]);
+    CopyOut(alienTensor, alienTensorAddr, outIndex[CONSTANT_TWO * index + 1] + offsetOut, blockCount, maskNum,
+            dstStride - maskNum, wShapes - maskNum);
     if (outKey) {
-        CopyOut(xTensor, xTensorAddr + lenSum[2 * index] + maskNum, outIndex[2 * index + 1] + offsetOut + maskNum,
-                blockCount, lenSum[2 * index + 1] - maskNum, wAlienLen_ - lenSum[2 * index + 1] + maskNum,
-                lenSum[2 * index] + maskNum);
+        CopyOut(xTensor, xTensorAddr + lenSum[CONSTANT_TWO * index] + maskNum,
+                outIndex[CONSTANT_TWO * index + 1] + offsetOut + maskNum, blockCount,
+                lenSum[CONSTANT_TWO * index + 1] - maskNum, wAlienLen_ - lenSum[CONSTANT_TWO * index + 1] + maskNum,
+                lenSum[CONSTANT_TWO * index] + maskNum);
     }
 }
 
@@ -277,14 +283,14 @@ __aicore__ inline void RollHSplitSimd<T>::CopyInAndOut(int64_t inputIndex, int64
 {
     int64_t hLenRe = hRe;
     int64_t offsetOut = 0;
-    for (int32_t i = 0; i < 2; i++) {
+    for (int32_t i = 0; i < CONSTANT_TWO; i++) {
         int64_t factor = (hLenRe == coreUbParam.UbTailFactor) ? coreUbParam.UbTailFactor : coreUbParam.UbFactor;
         if (hLenRe < coreUbParam.UbFactor) {
             factor = 0;
         }
-        int64_t countloops = countSum[2 * i] / factor;
+        int64_t countloops = countSum[CONSTANT_TWO * i] / factor;
         int64_t perLoopCount = factor;
-        int64_t lastLoopCount = countSum[2 * i] - countloops * perLoopCount;
+        int64_t lastLoopCount = countSum[CONSTANT_TWO * i] - countloops * perLoopCount;
         for (int64_t countloop = 0; countloop < countloops; countloop++) {
             CopyIn(inputIndex + offsetIn, perLoopCount, wShapes);
             if (isAlign) {
@@ -293,7 +299,7 @@ __aicore__ inline void RollHSplitSimd<T>::CopyInAndOut(int64_t inputIndex, int64
                 xInQue_.FreeTensor<T>(xTensor);
             } else {
                 InsertSync(HardEvent::MTE2_V);
-                Gather(lenSum[2 * i], perLoopCount, wAlienLen_);
+                Gather(lenSum[CONSTANT_TWO * i], perLoopCount, wAlienLen_);
                 InsertSync(HardEvent::V_MTE3);
                 LocalTensor<T> xTensor = xInQue_.DeQue<T>();
                 LocalTensor<T> alienTensor = AlienBuf.DeQue<T>();
@@ -316,13 +322,13 @@ __aicore__ inline void RollHSplitSimd<T>::CopyInAndOut(int64_t inputIndex, int64
                 CopyOut_Align(xTensor, 0, i, offsetOut, lastLoopCount);
                 if (lastLoopCount != factor) {
                     CopyOut_Align(xTensor, lastLoopCount * wAlienLen_, i + 1, 0, factor - lastLoopCount);
-                    countSum[2 * i + 2] -= factor - lastLoopCount;
-                    countSum[2 * i + 3] -= factor - lastLoopCount;
+                    countSum[CONSTANT_TWO * i + CONSTANT_TWO] -= factor - lastLoopCount;
+                    countSum[CONSTANT_TWO * i + MOVE_PARAM_NUM - 1] -= factor - lastLoopCount;
                 }
                 xInQue_.FreeTensor<T>(xTensor);
             } else {
                 InsertSync(HardEvent::MTE2_V);
-                Gather(lenSum[2 * i], factor, wAlienLen_);
+                Gather(lenSum[CONSTANT_TWO * i], factor, wAlienLen_);
                 InsertSync(HardEvent::V_MTE3);
                 LocalTensor<T> xTensor = xInQue_.DeQue<T>();
                 LocalTensor<T> alienTensor = AlienBuf.DeQue<T>();
@@ -331,8 +337,8 @@ __aicore__ inline void RollHSplitSimd<T>::CopyInAndOut(int64_t inputIndex, int64
                     InsertSync(HardEvent::V_MTE3);
                     CopyOut_UnAlign(xTensor, alienTensor, lastLoopCount * wAlienLen_, lastLoopCount * dstStride, i + 1,
                                     0, factor - lastLoopCount, maskNum, outKey);
-                    countSum[2 * i + 2] -= factor - lastLoopCount;
-                    countSum[2 * i + 3] -= factor - lastLoopCount;
+                    countSum[CONSTANT_TWO * i + CONSTANT_TWO] -= factor - lastLoopCount;
+                    countSum[CONSTANT_TWO * i + MOVE_PARAM_NUM - 1] -= factor - lastLoopCount;
                 }
                 xInQue_.FreeTensor<T>(xTensor);
                 AlienBuf.FreeTensor<T>(alienTensor);
@@ -378,13 +384,13 @@ __aicore__ inline void RollHSplitSimd<T>::Process_UnAlignAndAlign(int64_t inputI
     if (blockloopCount > 0) {
         ComputeAllParamForFour(inputIndex + offsetIn, hShapes, true);
     }
-    int64_t countSum2 = countSum[2];
-    int64_t countSum3 = countSum[3];
+    int64_t countSum2 = countSum[CONSTANT_TWO];
+    int64_t countSum3 = countSum[MOVE_PARAM_NUM - 1];
     for (int64_t countloop = 0; countloop < blockloopCount; countloop++) {
         CopyInAndOut(inputIndex, offsetIn, hShapes, maskNum, outKey, isAlign);
         ComputeAllParamForFour(inputIndex + offsetIn, hShapes, false);
-        countSum[2] = countSum2;
-        countSum[3] = countSum3;
+        countSum[CONSTANT_TWO] = countSum2;
+        countSum[MOVE_PARAM_NUM - 1] = countSum3;
     }
     if (lastLoopCount > 0) {
         ComputeAllParamForFour(inputIndex + offsetIn, lastLoopCount, true);
