@@ -1047,3 +1047,239 @@ TEST_F(PadV3TilingTest, pad_v3_tiling_constant_1d_input)
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
 }
+
+// Test scenario: constant mode, fp16, last dim bytes > 64K (80004B aligned 80128 > 65536 buffer),
+// expect CONSTANT_CUT_LAST_DIM branch 30010 (huge width kernel, double-buffer optimized)
+TEST_F(PadV3TilingTest, pad_v3_tiling_constant_huge_width_cut_fp16)
+{
+    PadV3CompileInfo compileInfo = {0, 0, 0, 0, 0, false, "constant", 0, 0, 0, false, "ascend950"};
+
+    gert::StorageShape xShape = {{2, 40000}, {2, 40000}};
+    gert::StorageShape padShape = {{4}, {4}};
+    gert::StorageShape constantShape = {{1}, {1}};
+    int64_t pad_value[4] = {0, 0, 1, 1};
+    int64_t constantValue = 0;
+
+    gert::TilingContextPara tilingContextPara(
+        "PadV3",
+        {{xShape, ge::DT_FLOAT16, ge::FORMAT_ND},
+         {padShape, ge::DT_INT64, ge::FORMAT_ND, true, pad_value},
+         {constantShape, ge::DT_FLOAT16, ge::FORMAT_ND, true, &constantValue}},
+        {{{{2, 40002}, {2, 40002}}, ge::DT_FLOAT16, ge::FORMAT_ND}},
+        {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("constant")),
+         gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
+        &compileInfo);
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+    EXPECT_EQ(tilingInfo.tilingKey, 30010);
+}
+
+// Test scenario: constant mode, int32, last dim bytes > 64K, expect CONSTANT_CUT_LAST_DIM branch 30010
+// (huge width kernel with dtype != fp16, exercising CopyIn/PadOneLine per-dtype template)
+TEST_F(PadV3TilingTest, pad_v3_tiling_constant_huge_width_cut_int32)
+{
+    PadV3CompileInfo compileInfo = {0, 0, 0, 0, 0, false, "constant", 0, 0, 0, false, "ascend950"};
+
+    gert::StorageShape xShape = {{2, 20000}, {2, 20000}};
+    gert::StorageShape padShape = {{4}, {4}};
+    gert::StorageShape constantShape = {{1}, {1}};
+    int64_t pad_value[4] = {0, 0, 1, 1};
+    int32_t constantValue = 0;
+
+    gert::TilingContextPara tilingContextPara(
+        "PadV3",
+        {{xShape, ge::DT_INT32, ge::FORMAT_ND},
+         {padShape, ge::DT_INT64, ge::FORMAT_ND, true, pad_value},
+         {constantShape, ge::DT_INT32, ge::FORMAT_ND, true, &constantValue}},
+        {{{{2, 20002}, {2, 20002}}, ge::DT_INT32, ge::FORMAT_ND}},
+        {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("constant")),
+         gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
+        &compileInfo);
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+    EXPECT_EQ(tilingInfo.tilingKey, 30010);
+}
+
+// Test scenario: constant mode, fp16 3D with huge last dim, expect CONSTANT_CUT_LAST_DIM branch 30010
+// (multi-dim indexing loop of huge width kernel)
+TEST_F(PadV3TilingTest, pad_v3_tiling_constant_huge_width_cut_3d)
+{
+    PadV3CompileInfo compileInfo = {0, 0, 0, 0, 0, false, "constant", 0, 0, 0, false, "ascend950"};
+
+    gert::StorageShape xShape = {{2, 2, 40000}, {2, 2, 40000}};
+    gert::StorageShape padShape = {{6}, {6}};
+    gert::StorageShape constantShape = {{1}, {1}};
+    int64_t pad_value[6] = {0, 0, 0, 0, 1, 1};
+    int64_t constantValue = 0;
+
+    gert::TilingContextPara tilingContextPara(
+        "PadV3",
+        {{xShape, ge::DT_FLOAT16, ge::FORMAT_ND},
+         {padShape, ge::DT_INT64, ge::FORMAT_ND, true, pad_value},
+         {constantShape, ge::DT_FLOAT16, ge::FORMAT_ND, true, &constantValue}},
+        {{{{2, 2, 40002}, {2, 2, 40002}}, ge::DT_FLOAT16, ge::FORMAT_ND}},
+        {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("constant")),
+         gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
+        &compileInfo);
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+    EXPECT_EQ(tilingInfo.tilingKey, 30010);
+}
+
+// Test scenario: constant mode, fp16, last dim 204B > 128B (big last dim) and fits in buffer,
+// split axis stays axis0, expect CONSTANT_BIG_LAST_DIM branch DIM2 30021 (normal width UB_AXES==2,
+// VF unroll optimized loop)
+TEST_F(PadV3TilingTest, pad_v3_tiling_constant_normal_width_dim2)
+{
+    PadV3CompileInfo compileInfo = {0, 0, 0, 0, 0, false, "constant", 0, 0, 0, false, "ascend950"};
+
+    gert::StorageShape xShape = {{100, 100}, {100, 100}};
+    gert::StorageShape padShape = {{4}, {4}};
+    gert::StorageShape constantShape = {{1}, {1}};
+    int64_t pad_value[4] = {0, 0, 1, 1};
+    int64_t constantValue = 0;
+
+    gert::TilingContextPara tilingContextPara(
+        "PadV3",
+        {{xShape, ge::DT_FLOAT16, ge::FORMAT_ND},
+         {padShape, ge::DT_INT64, ge::FORMAT_ND, true, pad_value},
+         {constantShape, ge::DT_FLOAT16, ge::FORMAT_ND, true, &constantValue}},
+        {{{{100, 102}, {100, 102}}, ge::DT_FLOAT16, ge::FORMAT_ND}},
+        {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("constant")),
+         gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
+        &compileInfo);
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+    EXPECT_EQ(tilingInfo.tilingKey, 30021);
+}
+
+// Test scenario: constant mode, fp16 3D, pads on mid/last dims keep 3 axes un-collapsed,
+// expect CONSTANT_BIG_LAST_DIM branch DIM3 30031 (normal width UB_AXES==3)
+TEST_F(PadV3TilingTest, pad_v3_tiling_constant_normal_width_dim3)
+{
+    PadV3CompileInfo compileInfo = {0, 0, 0, 0, 0, false, "constant", 0, 0, 0, false, "ascend950"};
+
+    gert::StorageShape xShape = {{100, 2, 100}, {100, 2, 100}};
+    gert::StorageShape padShape = {{6}, {6}};
+    gert::StorageShape constantShape = {{1}, {1}};
+    int64_t pad_value[6] = {0, 0, 1, 1, 1, 1};
+    int64_t constantValue = 0;
+
+    gert::TilingContextPara tilingContextPara(
+        "PadV3",
+        {{xShape, ge::DT_FLOAT16, ge::FORMAT_ND},
+         {padShape, ge::DT_INT64, ge::FORMAT_ND, true, pad_value},
+         {constantShape, ge::DT_FLOAT16, ge::FORMAT_ND, true, &constantValue}},
+        {{{{100, 4, 102}, {100, 4, 102}}, ge::DT_FLOAT16, ge::FORMAT_ND}},
+        {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("constant")),
+         gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
+        &compileInfo);
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+    EXPECT_EQ(tilingInfo.tilingKey, 30031);
+}
+
+// Test scenario: constant mode, fp16 4D, expect CONSTANT_BIG_LAST_DIM branch DIM4 30041
+// (normal width UB_AXES==4)
+TEST_F(PadV3TilingTest, pad_v3_tiling_constant_normal_width_dim4)
+{
+    PadV3CompileInfo compileInfo = {0, 0, 0, 0, 0, false, "constant", 0, 0, 0, false, "ascend950"};
+
+    gert::StorageShape xShape = {{100, 2, 2, 100}, {100, 2, 2, 100}};
+    gert::StorageShape padShape = {{8}, {8}};
+    gert::StorageShape constantShape = {{1}, {1}};
+    int64_t pad_value[8] = {0, 0, 1, 1, 1, 1, 1, 1};
+    int64_t constantValue = 0;
+
+    gert::TilingContextPara tilingContextPara(
+        "PadV3",
+        {{xShape, ge::DT_FLOAT16, ge::FORMAT_ND},
+         {padShape, ge::DT_INT64, ge::FORMAT_ND, true, pad_value},
+         {constantShape, ge::DT_FLOAT16, ge::FORMAT_ND, true, &constantValue}},
+        {{{{100, 4, 4, 102}, {100, 4, 4, 102}}, ge::DT_FLOAT16, ge::FORMAT_ND}},
+        {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("constant")),
+         gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
+        &compileInfo);
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+    EXPECT_EQ(tilingInfo.tilingKey, 30041);
+}
+
+// Test scenario: constant mode, BOOL dtype (regbase no longer casts bool to int8 on host api),
+// last dim 302B > 128B, expect CONSTANT_BIG_LAST_DIM branch DIM2 30021 so bool tensor reaches
+// normal width kernel directly
+TEST_F(PadV3TilingTest, pad_v3_tiling_constant_normal_width_bool)
+{
+    PadV3CompileInfo compileInfo = {0, 0, 0, 0, 0, false, "constant", 0, 0, 0, false, "ascend950"};
+
+    gert::StorageShape xShape = {{100, 300}, {100, 300}};
+    gert::StorageShape padShape = {{4}, {4}};
+    gert::StorageShape constantShape = {{1}, {1}};
+    int64_t pad_value[4] = {0, 0, 1, 1};
+    bool constantValue = true;
+
+    gert::TilingContextPara tilingContextPara(
+        "PadV3",
+        {{xShape, ge::DT_BOOL, ge::FORMAT_ND},
+         {padShape, ge::DT_INT64, ge::FORMAT_ND, true, pad_value},
+         {constantShape, ge::DT_BOOL, ge::FORMAT_ND, true, &constantValue}},
+        {{{{100, 302}, {100, 302}}, ge::DT_BOOL, ge::FORMAT_ND}},
+        {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("constant")),
+         gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
+        &compileInfo);
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+    EXPECT_EQ(tilingInfo.tilingKey, 30021);
+}
+
+// Test scenario: constant mode, fp16, small last dim (100B <= 128B) with heavy padding
+// (in last 10 * 2 < out last 50), expect CONSTANT_SMALL_LAST_DIM_SCATTER branch DIM2 30023
+TEST_F(PadV3TilingTest, pad_v3_tiling_constant_scatter_dim2)
+{
+    PadV3CompileInfo compileInfo = {0, 0, 0, 0, 0, false, "constant", 0, 0, 0, false, "ascend950"};
+
+    gert::StorageShape xShape = {{100, 10}, {100, 10}};
+    gert::StorageShape padShape = {{4}, {4}};
+    gert::StorageShape constantShape = {{1}, {1}};
+    int64_t pad_value[4] = {0, 0, 20, 20};
+    int64_t constantValue = 0;
+
+    gert::TilingContextPara tilingContextPara(
+        "PadV3",
+        {{xShape, ge::DT_FLOAT16, ge::FORMAT_ND},
+         {padShape, ge::DT_INT64, ge::FORMAT_ND, true, pad_value},
+         {constantShape, ge::DT_FLOAT16, ge::FORMAT_ND, true, &constantValue}},
+        {{{{140, 50}, {140, 50}}, ge::DT_FLOAT16, ge::FORMAT_ND}},
+        {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("constant")),
+         gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
+        &compileInfo);
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+    EXPECT_EQ(tilingInfo.tilingKey, 30023);
+}
+
+// Test scenario: constant mode, fp16, small last dim (124B <= 128B) with light padding
+// (in last 60 * 2 >= out last 62), expect CONSTANT_SMALL_LAST_DIM_GATHER branch DIM2 30022
+TEST_F(PadV3TilingTest, pad_v3_tiling_constant_gather_dim2)
+{
+    PadV3CompileInfo compileInfo = {0, 0, 0, 0, 0, false, "constant", 0, 0, 0, false, "ascend950"};
+
+    gert::StorageShape xShape = {{100, 60}, {100, 60}};
+    gert::StorageShape padShape = {{4}, {4}};
+    gert::StorageShape constantShape = {{1}, {1}};
+    int64_t pad_value[4] = {0, 0, 1, 1};
+    int64_t constantValue = 0;
+
+    gert::TilingContextPara tilingContextPara(
+        "PadV3",
+        {{xShape, ge::DT_FLOAT16, ge::FORMAT_ND},
+         {padShape, ge::DT_INT64, ge::FORMAT_ND, true, pad_value},
+         {constantShape, ge::DT_FLOAT16, ge::FORMAT_ND, true, &constantValue}},
+        {{{{100, 62}, {100, 62}}, ge::DT_FLOAT16, ge::FORMAT_ND}},
+        {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("constant")),
+         gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
+        &compileInfo);
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+    EXPECT_EQ(tilingInfo.tilingKey, 30022);
+}
