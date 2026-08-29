@@ -270,6 +270,7 @@
 - [aclnnStdMeanCorrection](../../math/reduce_std_with_mean/docs/aclnnStdMeanCorrection.md)
 - [aclnnStridedSlice](../../conversion/strided_slice/docs/aclnnStridedSlice.md)
 - [aclnnStridedSliceAssignV2](../../conversion/strided_slice_assign_v2/docs/aclnnStridedSliceAssignV2.md)
+- [aclnnStridedSliceGrad](../../conversion/strided_slice_grad/docs/aclnnStridedSliceGrad.md)
 - [aclnnSub&aclnnInplaceSub](../../math/sub/docs/aclnnSub&aclnnInplaceSub.md)
 - [aclnnSubs&aclnnInplaceSubs](../../math/sub/docs/aclnnSubs&aclnnInplaceSubs.md)
 - [aclnnSum](../../math/accumulate_nv2/docs/aclnnSum.md)
