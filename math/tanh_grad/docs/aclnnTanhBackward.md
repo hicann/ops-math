@@ -58,7 +58,7 @@ aclnnStatus aclnnTanhBackward(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
+  <table style="table-layout: fixed; width: 1547px"><colgroup>
   <col style="width: 203px">
   <col style="width: 124px">
   <col style="width: 212px">
@@ -143,7 +143,7 @@ aclnnStatus aclnnTanhBackward(
 
   第一段接口完成入参校验，出现如下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 288px">
   <col style="width: 114px">
   <col style="width: 747px">
@@ -178,7 +178,7 @@ aclnnStatus aclnnTanhBackward(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1143px"><colgroup>
+  <table style="table-layout: fixed; width: 1143px"><colgroup>
   <col style="width: 158px">
   <col style="width: 140px">
   <col style="width: 845px">

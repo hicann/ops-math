@@ -17,7 +17,7 @@
 * 计算公式：
 
 $$
-\text{y}_i = 
+\text{y}_i =
 \begin{cases}
 True,&\text{if }x_{i, 1} \ne x_{i,2} \\
 False,&\text{otherwise}
@@ -26,7 +26,7 @@ $$
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 1576px"><colgroup>
+<table style="table-layout: fixed; width: 1576px"><colgroup>
   <col style="width: 170px">
   <col style="width: 170px">
   <col style="width: 310px">

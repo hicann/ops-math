@@ -23,7 +23,7 @@
 
 ### CircularPad2d
 
-<table style="undefined;table-layout: fixed; width: 974px"><colgroup>
+<table style="table-layout: fixed; width: 974px"><colgroup>
 <col style="width: 139px">
 <col style="width: 146px">
 <col style="width: 342px">
@@ -65,7 +65,7 @@
 
 ### CircularPad3d
 
-<table style="undefined;table-layout: fixed; width: 974px"><colgroup>
+<table style="table-layout: fixed; width: 974px"><colgroup>
 <col style="width: 139px">
 <col style="width: 146px">
 <col style="width: 342px">

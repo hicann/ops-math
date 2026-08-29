@@ -18,7 +18,7 @@ $$
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+<table style="table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 280px">
@@ -40,7 +40,7 @@ $$
       <td>待进行BitwiseAnd计算的入参，公式中的x1。</td>
       <td>int16,uint16,int32</td>
       <td>ND</td>
-    </tr>  
+    </tr>
     <tr>
       <td>x2</td>
       <td>输入</td>

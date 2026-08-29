@@ -126,7 +126,7 @@ aclnnStatus aclnnRound(
          ACL_MEMCPY_DEVICE_TO_HOST);
      CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return);
      for (int64_t i = 0; i < size; i++) {
-         LOG_PRINT("mean result[%ld] is: %f\n", i, resultData[i]);
+         LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
      }
  }
 
@@ -205,7 +205,7 @@ aclnnStatus aclnnRound(
      ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
      CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-     // 3. 调用CANN算子库API，需要修改为具体的Api名称
+     // 3. 调用CANN算子库API，需要修改为具体的API名称
      uint64_t workspaceSize = 0;
      aclOpExecutor* executor;
 

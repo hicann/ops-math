@@ -78,7 +78,7 @@ aclnnStatus aclStft(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 170px">
   <col style="width: 120px">
   <col style="width: 271px">
@@ -219,7 +219,7 @@ aclnnStatus aclStft(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed;width: 1170px"><colgroup>
+  <table style="table-layout: fixed;width: 1170px"><colgroup>
   <col style="width: 268px">
   <col style="width: 140px">
   <col style="width: 762px">
@@ -262,7 +262,7 @@ aclnnStatus aclStft(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">
@@ -432,7 +432,7 @@ int main()
     bool normalized = false;
     bool onesided = true;
     bool returnComplex = false;
-    // 3.调用CANN算子库API，需要修改为具体的Api名称
+    // 3.调用CANN算子库API，需要修改为具体的API名称
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
     // 调用aclStft第一段接口

@@ -17,7 +17,7 @@
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 866px"><colgroup>
+<table style="table-layout: fixed; width: 866px"><colgroup>
 <col style="width: 139px">
 <col style="width: 148px">
 <col style="width: 236px">

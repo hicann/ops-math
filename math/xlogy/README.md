@@ -23,7 +23,7 @@ $$out_i = \begin{cases} 0 & \text{if } x1_i = 0 \\ x1_i \cdot \ln(x2_i) & \text{
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+<table style="table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 280px">

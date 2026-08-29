@@ -52,7 +52,7 @@ aclnnStatus aclnnEye(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1530px"><colgroup>
+  <table style="table-layout: fixed; width: 1530px"><colgroup>
     <col style="width: 223px">
     <col style="width: 132px">
     <col style="width: 263px">
@@ -136,7 +136,7 @@ aclnnStatus aclnnEye(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 288px">
   <col style="width: 114px">
   <col style="width: 747px">
@@ -174,7 +174,7 @@ aclnnStatus aclnnEye(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <table style="table-layout: fixed; width: 1151px"><colgroup>
     <col style="width: 184px">
     <col style="width: 134px">
     <col style="width: 833px">

@@ -80,7 +80,7 @@
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1496px"><colgroup>
+  <table style="table-layout: fixed; width: 1496px"><colgroup>
   <col style="width: 149px">
   <col style="width: 120px">
   <col style="width: 205px">
@@ -190,7 +190,7 @@
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1154px"><colgroup>
+  <table style="table-layout: fixed; width: 1154px"><colgroup>
   <col style="width: 257px">
   <col style="width: 125px">
   <col style="width: 772px">
@@ -237,7 +237,7 @@
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1045px"><colgroup>
+  <table style="table-layout: fixed; width: 1045px"><colgroup>
   <col style="width: 148px">
   <col style="width: 125px">
   <col style="width: 772px">
@@ -280,7 +280,7 @@
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1496px"><colgroup>
+  <table style="table-layout: fixed; width: 1496px"><colgroup>
   <col style="width: 149px">
   <col style="width: 120px">
   <col style="width: 205px">
@@ -375,7 +375,7 @@
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1157px"><colgroup>
+  <table style="table-layout: fixed; width: 1157px"><colgroup>
   <col style="width: 258px">
   <col style="width: 124px">
   <col style="width: 775px">
@@ -422,7 +422,7 @@
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1045px"><colgroup>
+  <table style="table-layout: fixed; width: 1045px"><colgroup>
   <col style="width: 148px">
   <col style="width: 125px">
   <col style="width: 772px">

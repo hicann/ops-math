@@ -79,7 +79,7 @@ aclnnStatus aclnnInplaceMul(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <table style="table-layout: fixed; width: 1555px"><colgroup>
   <col style="width: 217px">
   <col style="width: 125px">
   <col style="width: 247px">
@@ -105,7 +105,7 @@ aclnnStatus aclnnInplaceMul(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的输入`self`。</td>
-      <td>数据类型与other的数据类型需满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a> ，shape需要与other满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
+      <td>数据类型与other的数据类型需满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>，shape需要与other满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
@@ -163,7 +163,7 @@ aclnnStatus aclnnInplaceMul(
 
   第一段接口完成入参校验，出现如下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 300px">
   <col style="width: 134px">
   <col style="width: 716px">
@@ -201,7 +201,7 @@ aclnnStatus aclnnInplaceMul(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <table style="table-layout: fixed; width: 1151px"><colgroup>
   <col style="width: 184px">
   <col style="width: 134px">
   <col style="width: 833px">
@@ -244,7 +244,7 @@ aclnnStatus aclnnInplaceMul(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <table style="table-layout: fixed; width: 1555px"><colgroup>
   <col style="width: 217px">
   <col style="width: 125px">
   <col style="width: 247px">
@@ -318,7 +318,7 @@ aclnnStatus aclnnInplaceMul(
 
   第一段接口完成入参校验，出现如下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 300px">
   <col style="width: 134px">
   <col style="width: 716px">
@@ -356,7 +356,7 @@ aclnnStatus aclnnInplaceMul(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <table style="table-layout: fixed; width: 1151px"><colgroup>
   <col style="width: 184px">
   <col style="width: 134px">
   <col style="width: 833px">
@@ -500,7 +500,7 @@ int main() {
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3.调用CANN算子库API，需要修改为具体的Api名称
+  // 3.调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnMul第一段接口
@@ -642,7 +642,7 @@ int main() {
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3.调用CANN算子库API，需要修改为具体的Api名称
+  // 3.调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnInplaceMul第一段接口

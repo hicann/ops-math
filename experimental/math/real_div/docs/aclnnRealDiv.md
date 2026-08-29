@@ -41,7 +41,7 @@ aclnnStatus aclnnRealDiv(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1494px"><colgroup>
+  <table style="table-layout: fixed; width: 1494px"><colgroup>
   <col style="width: 146px">
   <col style="width: 110px">
   <col style="width: 301px">
@@ -122,7 +122,7 @@ aclnnStatus aclnnRealDiv(
 
   第一段接口会完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed;width: 1155px"><colgroup>
+  <table style="table-layout: fixed;width: 1155px"><colgroup>
   <col style="width: 319px">
   <col style="width: 144px">
   <col style="width: 671px">
@@ -156,7 +156,7 @@ aclnnStatus aclnnRealDiv(
 ## aclnnRealDiv
 
 - **参数说明：**
-  <table style="undefined;table-layout: fixed; width: 953px"><colgroup>
+  <table style="table-layout: fixed; width: 953px"><colgroup>
   <col style="width: 173px">
   <col style="width: 112px">
   <col style="width: 668px">

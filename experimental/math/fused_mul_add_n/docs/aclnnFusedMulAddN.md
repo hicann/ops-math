@@ -63,7 +63,7 @@ aclnnStatus aclnnFusedMulAddN(
 
 - **参数说明**：
 
-<table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
+<table style="table-layout: fixed; width: 1000px"><colgroup>
   <col style="width: 130px">
   <col style="width: 120px">
   <col style="width: 350px">
@@ -140,7 +140,7 @@ aclnnStatus aclnnFusedMulAddN(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-<table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
+<table style="table-layout: fixed; width: 1000px"><colgroup>
   <col style="width: 250px">
   <col style="width: 110px">
   <col style="width: 540px">
@@ -177,7 +177,7 @@ aclnnStatus aclnnFusedMulAddN(
 
 - **参数说明**：
 
-<table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
+<table style="table-layout: fixed; width: 1000px"><colgroup>
   <col style="width: 130px">
   <col style="width: 120px">
   <col style="width: 480px">

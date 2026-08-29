@@ -22,8 +22,8 @@
   $$
 
 ## 参数说明
-  
-  <table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+
+  <table style="table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 280px">
@@ -70,7 +70,7 @@
 - 无
 
 ## 调用说明
-    
+
 | 调用方式   | 样例代码           | 说明                                                                         |
 | ---------------- | --------------------------- |----------------------------------------------------------------------------|
 | aclnn接口  | [test_aclnn_bitwise_or_scalar](examples/test_aclnn_bitwise_or_scalar.cpp) | 通过[aclnnBitwiseOrScalar](docs/aclnnBitwiseOrScalar&aclnnInplaceBitwiseOrScalar.md)接口方式调用BitwiseOr算子。 |

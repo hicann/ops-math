@@ -32,8 +32,8 @@
   - $\mathrm{cdist} = \sqrt[p]{\sum (x_1 - x_2)^p}$ ： $p$ -范数距离
 
 ## 参数说明
-  
-  <table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+
+  <table style="table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 280px">
@@ -98,7 +98,7 @@
 无
 
 ## 调用说明
-    
+
 | 调用方式   | 样例代码           | 说明                                                                         |
 | ---------------- | --------------------------- |----------------------------------------------------------------------------|
 | aclnn接口  | [test_aclnn_cdist_backward](examples/test_aclnn_cdist_backward.cpp) | 通过[aclnnCdistBackward](docs/aclnnCdistBackward.md)接口方式调用CdistGrad算子。 |

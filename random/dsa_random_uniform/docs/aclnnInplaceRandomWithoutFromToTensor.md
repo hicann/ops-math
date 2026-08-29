@@ -54,7 +54,7 @@ aclnnStatus aclnnInplaceRandomWithoutFromToTensor(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1546px"><colgroup>
+  <table style="table-layout: fixed; width: 1546px"><colgroup>
   <col style="width: 165px">
   <col style="width: 121px">
   <col style="width: 325px">
@@ -144,7 +144,7 @@ aclnnStatus aclnnInplaceRandomWithoutFromToTensor(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1124px"><colgroup>
+  <table style="table-layout: fixed; width: 1124px"><colgroup>
   <col style="width: 284px">
   <col style="width: 124px">
   <col style="width: 716px">
@@ -173,7 +173,7 @@ aclnnStatus aclnnInplaceRandomWithoutFromToTensor(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 180px">
   <col style="width: 130px">
   <col style="width: 839px">

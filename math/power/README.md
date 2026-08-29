@@ -55,7 +55,7 @@ $$
 
 ## 算子参数说明
 
-  <table style="undefined;table-layout: fixed; width: 1280px"><colgroup>
+  <table style="table-layout: fixed; width: 1280px"><colgroup>
   <col style="width: 140px">
   <col style="width: 100px">
   <col style="width: 280px">

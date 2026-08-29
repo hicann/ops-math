@@ -26,9 +26,9 @@
 - 接口功能：对于输入张量input中每个元素，根据输入张量shiftBits对应位置的参数，按位进行右移。
 - 计算公式：
 
-$$
-output_{i} = input_{i}>>shiftBits_{i}
-$$
+  $$
+  output_{i} = input_{i}>>shiftBits_{i}
+  $$
 
 ## 函数原型
 
@@ -55,7 +55,7 @@ aclnnStatus aclnnRightShift(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1542px"><colgroup>
+  <table style="table-layout: fixed; width: 1542px"><colgroup>
   <col style="width: 141px">
   <col style="width: 120px">
   <col style="width: 344px">
@@ -101,7 +101,7 @@ aclnnStatus aclnnRightShift(
       <td>out</td>
       <td>输出</td>
       <td>输出张量，公式中的output。</td>
-      <td>shape需要与input保持一致。</td>
+      <td>shape需要与input、shiftBits broadcast后的shape一致。</td>
       <td>INT8、INT16、INT32、INT64、<br>UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
       <td>0-8</td>
@@ -135,7 +135,7 @@ aclnnStatus aclnnRightShift(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1030px"><colgroup>
+  <table style="table-layout: fixed; width: 1030px"><colgroup>
   <col style="width: 260px">
   <col style="width: 130px">
   <col style="width: 640px">
@@ -177,7 +177,7 @@ aclnnStatus aclnnRightShift(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">
@@ -317,7 +317,7 @@ int main() {
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_INT64, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3.调用CANN算子库API，需要修改为具体的Api名称
+  // 3.调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnRightShiftGetWorkspaceSize第一段接口

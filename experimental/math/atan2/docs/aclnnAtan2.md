@@ -41,7 +41,7 @@ aclnnStatus aclnnAtan2(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1310px"><colgroup>
+  <table style="table-layout: fixed; width: 1310px"><colgroup>
   <col style="width: 101px">
   <col style="width: 115px">
   <col style="width: 200px">
@@ -120,7 +120,7 @@ aclnnStatus aclnnAtan2(
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
   第一段接口会完成入参校验，出现以下场景时报错：
-  <table style="undefined;table-layout: fixed;width: 979px"><colgroup>
+  <table style="table-layout: fixed;width: 979px"><colgroup>
   <col style="width: 272px">
   <col style="width: 103px">
   <col style="width: 604px">
@@ -155,7 +155,7 @@ aclnnStatus aclnnAtan2(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 953px"><colgroup>
+  <table style="table-layout: fixed; width: 953px"><colgroup>
   <col style="width: 173px">
   <col style="width: 112px">
   <col style="width: 668px">

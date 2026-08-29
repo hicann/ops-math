@@ -75,7 +75,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1523px"><colgroup>
+  <table style="table-layout: fixed; width: 1523px"><colgroup>
   <col style="width: 146px">
   <col style="width: 120px">
   <col style="width: 301px">
@@ -155,7 +155,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 300px">
   <col style="width: 134px">
   <col style="width: 716px">
@@ -195,7 +195,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 953px"><colgroup>
+  <table style="table-layout: fixed; width: 953px"><colgroup>
   <col style="width: 173px">
   <col style="width: 112px">
   <col style="width: 668px">
@@ -238,7 +238,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1523px"><colgroup>
+  <table style="table-layout: fixed; width: 1523px"><colgroup>
   <col style="width: 146px">
   <col style="width: 120px">
   <col style="width: 301px">
@@ -274,7 +274,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
       <td>other（aclTensor*）</td>
       <td>输入</td>
       <td>输入tensor，公式中的other。</td>
-      <td>数据类型需要与selfRef的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。<br>shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
+      <td>数据类型需要与self的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。<br>shape需要与self满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
       <td>INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL</td>
       <td>ND</td>
       <td>0-8</td>
@@ -308,7 +308,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 300px">
   <col style="width: 134px">
   <col style="width: 716px">
@@ -323,24 +323,24 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的selfRef或other是空指针。</td>
+      <td>传入的self或other是空指针。</td>
     </tr>
     <tr>
       <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="5">161002</td>
-      <td>selfRef和other的数据类型不在支持的范围之内。</td>
+      <td>self和other的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>selfRef和other不满足数据类型推导规则。</td>
+      <td>self和other不满足数据类型推导规则。</td>
     </tr>
     <tr>
-      <td>selfRef和other推导出的数据类型无法转换为指定输出selfRef的类型。</td>
+      <td>self和other推导出的数据类型无法转换为指定输出self的类型。</td>
     </tr>
     <tr>
-      <td>selfRef和other的shape无法做broadcast。</td>
+      <td>self和other的shape无法做broadcast。</td>
     </tr>
     <tr>
-      <td>selfRef、other的维度超过8维。</td>
+      <td>self、other的维度超过8维。</td>
     </tr>
   </tbody></table>
 
@@ -348,7 +348,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <table style="table-layout: fixed; width: 1151px"><colgroup>
   <col style="width: 184px">
   <col style="width: 134px">
   <col style="width: 833px">

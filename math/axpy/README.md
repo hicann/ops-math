@@ -21,7 +21,7 @@ $out_i=self_i + alpha × other_i$
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 820px"><colgroup>
+<table style="table-layout: fixed; width: 820px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 190px">
@@ -75,4 +75,4 @@ $out_i=self_i + alpha × other_i$
 
 | 调用方式 | 调用样例                                             | 说明                                                                                         |
 |---------|----------------------------------------------------|----------------------------------------------------------------------------------------------|
-| 图模式调用 | [test_geir_axpy](./examples/test_geir_axpy.cpp)   | 通过[算子IR](./op_graph/axpy_proto.h)构图方式调用Axpy算子                               
+| 图模式调用 | [test_geir_axpy](./examples/test_geir_axpy.cpp)   | 通过[算子IR](./op_graph/axpy_proto.h)构图方式调用Axpy算子 |

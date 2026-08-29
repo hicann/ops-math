@@ -61,7 +61,7 @@ aclnnStatus aclnnStd(
 ## aclnnStdGetWorkspaceSize
 
 - **参数说明**：
-  <table style="undefined;table-layout: fixed; width: 1565px"><colgroup>
+  <table style="table-layout: fixed; width: 1565px"><colgroup>
   <col style="width: 200px">
   <col style="width: 120px">
   <col style="width: 300px">
@@ -166,7 +166,7 @@ aclnnStatus aclnnStd(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 288px">
   <col style="width: 114px">
   <col style="width: 747px">
@@ -206,7 +206,7 @@ aclnnStatus aclnnStd(
 ## aclnnStd
 
 - **参数说明**：
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 153px">
   <col style="width: 124px">
   <col style="width: 872px">

@@ -151,7 +151,7 @@ aclnnStatus aclnnInplaceTrunc(
 
   第一段接口完成入参校验，出现如下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 296px">
   <col style="width: 135px">
   <col style="width: 718px">
@@ -189,7 +189,7 @@ aclnnStatus aclnnInplaceTrunc(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">
@@ -292,7 +292,7 @@ aclnnStatus aclnnInplaceTrunc(
 
   第一段接口完成入参校验，出现如下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1148px"><colgroup>
+  <table style="table-layout: fixed; width: 1148px"><colgroup>
   <col style="width: 294px">
   <col style="width: 134px">
   <col style="width: 720px">
@@ -324,7 +324,7 @@ aclnnStatus aclnnInplaceTrunc(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">
@@ -456,7 +456,7 @@ int main() {
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3.调用CANN算子库API，需要修改为具体的Api名称
+  // 3.调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnTrunc第一段接口

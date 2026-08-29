@@ -76,7 +76,7 @@ aclnnStatus aclnnInplaceTanh(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <table style="table-layout: fixed; width: 1555px"><colgroup>
   <col style="width: 217px">
   <col style="width: 125px">
   <col style="width: 247px">
@@ -150,7 +150,7 @@ aclnnStatus aclnnInplaceTanh(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1148px"><colgroup>
+  <table style="table-layout: fixed; width: 1148px"><colgroup>
   <col style="width: 297px">
   <col style="width: 135px">
   <col style="width: 716px">
@@ -188,7 +188,7 @@ aclnnStatus aclnnInplaceTanh(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">
@@ -231,7 +231,7 @@ aclnnStatus aclnnInplaceTanh(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <table style="table-layout: fixed; width: 1555px"><colgroup>
   <col style="width: 217px">
   <col style="width: 125px">
   <col style="width: 247px">
@@ -295,7 +295,7 @@ aclnnStatus aclnnInplaceTanh(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1145px"><colgroup>
+  <table style="table-layout: fixed; width: 1145px"><colgroup>
   <col style="width: 295px">
   <col style="width: 134px">
   <col style="width: 716px">
@@ -324,7 +324,7 @@ aclnnStatus aclnnInplaceTanh(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">

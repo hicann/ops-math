@@ -14,7 +14,7 @@
 ## 功能说明
 
 - 算子功能：对长度为n的输入self，经过one_hot的计算后得到一个元素数量为n*k的输出out，其中k的值为numClasses。
-- 计算公式： 
+- 计算公式：
   $$
   out[i][j]=\left\{
   \begin{aligned}
@@ -26,7 +26,7 @@
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+<table style="table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 280px">

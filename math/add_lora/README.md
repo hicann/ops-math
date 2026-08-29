@@ -22,7 +22,7 @@
   给定输入张量x，最后一维的长度为2d，函数AddLora进行以下计算：
 
   1. 将x根据indices中的索引进行重排，对应同一组权重的x排列在一起。
-  
+
   2. 循环每个Lora分组，分别拿相应的x和weightA做矩阵乘：
 
      $$
@@ -41,7 +41,7 @@
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 855px"><colgroup>
+<table style="table-layout: fixed; width: 855px"><colgroup>
   <col style="width: 164px">
   <col style="width: 138px">
   <col style="width: 300px">

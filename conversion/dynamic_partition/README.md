@@ -35,7 +35,7 @@ array([[0, 1, 2, 3],
 
 ## 参数说明
 
-  <table style="undefined;table-layout: fixed; width: 1528px"><colgroup>
+  <table style="table-layout: fixed; width: 1528px"><colgroup>
   <col style="width: 132px">
   <col style="width: 120px">
   <col style="width: 256px">

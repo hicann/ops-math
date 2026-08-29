@@ -28,7 +28,7 @@ x1 shape (3, 1), x2 shape (1, 4) -> y shape (3, 4)
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+<table style="table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 280px">

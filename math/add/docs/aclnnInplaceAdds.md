@@ -57,7 +57,7 @@ aclnnStatus aclnnInplaceAdds(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1549px"><colgroup>
+  <table style="table-layout: fixed; width: 1549px"><colgroup>
   <col style="width: 160px">
   <col style="width: 137px">
   <col style="width: 259px">
@@ -152,7 +152,7 @@ aclnnStatus aclnnInplaceAdds(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 283px">
   <col style="width: 120px">
   <col style="width: 747px">
@@ -190,7 +190,7 @@ aclnnStatus aclnnInplaceAdds(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 168px">
   <col style="width: 128px">
   <col style="width: 854px">

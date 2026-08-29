@@ -29,7 +29,7 @@
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+<table style="table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 280px">
@@ -75,10 +75,10 @@
     </tr>
   </tbody></table>
 
-- paddings  
+- paddings
   paddings的第0维表示对输入x第0维的扩充配置，以此类推。每一行表示对应维度上的填充数量（左/右、前/后、上/下等）。对于每一行[a, b]，a表示在该维度的开头填充的元素数，b表示在该维度的末尾填充的元素数。
 
-- mode  
+- mode
   REFLECT模式下，镜像时不会包括边界本身。
   SYMMETRIC模式下，镜像时会包含边界本身，示例中可见。
 

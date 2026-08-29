@@ -190,7 +190,7 @@ aclnnStatus aclnnInplaceSub(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1142px"><colgroup>
+  <table style="table-layout: fixed; width: 1142px"><colgroup>
   <col style="width: 305px">
   <col style="width: 138px">
   <col style="width: 699px">
@@ -237,7 +237,7 @@ aclnnStatus aclnnInplaceSub(
 
 - **参数说明**：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">
@@ -374,7 +374,7 @@ aclnnStatus aclnnInplaceSub(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 298px">
   <col style="width: 135px">
   <col style="width: 716px">
@@ -421,7 +421,7 @@ aclnnStatus aclnnInplaceSub(
 
 - **参数说明**：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">

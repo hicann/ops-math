@@ -55,7 +55,7 @@ aclnnStatus aclnnInplaceNormalTensor(
 
 - **参数说明**：
 
-  <table style="undefined;table-layout: fixed; width: 1471px"><colgroup>
+  <table style="table-layout: fixed; width: 1471px"><colgroup>
   <col style="width: 166px">
   <col style="width: 122px">
   <col style="width: 355px">
@@ -165,7 +165,7 @@ aclnnStatus aclnnInplaceNormalTensor(
 
   第一段接口完成入参校验，出现以下场景报错：
 
-  <table style="undefined;table-layout: fixed; width: 1152px"><colgroup>
+  <table style="table-layout: fixed; width: 1152px"><colgroup>
   <col style="width: 282px">
   <col style="width: 123px">
   <col style="width: 747px">
@@ -215,7 +215,7 @@ aclnnStatus aclnnInplaceNormalTensor(
 
 - **参数描述：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 180px">
   <col style="width: 130px">
   <col style="width: 839px">

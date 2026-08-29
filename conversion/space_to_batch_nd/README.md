@@ -20,9 +20,9 @@
 
 - 计算公式：
   设输入张量x为N维，形状为 $[x_0, x_1, \ldots, x_{N-1}]$，block_shape为M维1D张量 $[b_0, b_1, \ldots, b_{M-1}]$，paddings为 $M \times 2$ 的2D张量 $[[p_{00}, p_{01}], [p_{10}, p_{11}], \ldots, [p_{M-1,0}, p_{M-1,1}]]$，满足 $1 \leq M < N \leq 8$。
-  
+
   输出张量y形状为 $[y_0, y_1, \ldots, y_{N-1}]$，计算方式如下：
-  
+
   $$
   y_i = \begin{cases}
   x_0 \times \prod_{j=0}^{M-1} b_j, & i = 0 \\
@@ -30,12 +30,12 @@
   x_i, & M+1 \leq i \leq N-1
   \end{cases}
   $$
-  
+
   其中，对于每个空间维度i，$x_i + p_{i-1,0} + p_{i-1,1}$ 必须能够被 $b_{i-1}$ 整除。
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 1480px">
+<table style="table-layout: fixed; width: 1480px">
   <colgroup>
     <col style="width: 177px">
     <col style="width: 120px">

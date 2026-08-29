@@ -253,7 +253,7 @@ int main()
     }
 
     // aclnnInplaceNeScalar调用示例
-    // 3. 调用CANN算子库API，需要修改为具体的Api名称
+    // 3. 调用CANN算子库API，需要修改为具体的API名称
     LOG_PRINT("\ntest aclnnInplaceNeScalar\n");
     // 调用aclnnInplaceNeScalar第一段接口
     ret = aclnnInplaceNeScalarGetWorkspaceSize(self, other, &workspaceSize, &executor);

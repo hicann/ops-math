@@ -46,7 +46,7 @@ aclnnStatus aclnnPolar(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
+  <table style="table-layout: fixed; width: 1547px"><colgroup>
   <col style="width: 150px">
   <col style="width: 121px">
   <col style="width: 206px">
@@ -137,7 +137,7 @@ aclnnStatus aclnnPolar(
 
   第一段接口完成入参校验，出现如下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1166px"><colgroup>
+  <table style="table-layout: fixed; width: 1166px"><colgroup>
   <col style="width: 267px">
   <col style="width: 124px">
   <col style="width: 775px">
@@ -178,7 +178,7 @@ aclnnStatus aclnnPolar(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1166px"><colgroup>
+  <table style="table-layout: fixed; width: 1166px"><colgroup>
   <col style="width: 173px">
   <col style="width: 133px">
   <col style="width: 860px">

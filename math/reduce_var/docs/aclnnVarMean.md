@@ -65,7 +65,7 @@ aclnnStatus aclnnVarMean(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
+  <table style="table-layout: fixed; width: 1547px"><colgroup>
   <col style="width: 198px">
   <col style="width: 124px">
   <col style="width: 252px">
@@ -179,7 +179,7 @@ aclnnStatus aclnnVarMean(
 
   第一段接口完成入参校验，出现如下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 288px">
   <col style="width: 114px">
   <col style="width: 747px">
@@ -217,7 +217,7 @@ aclnnStatus aclnnVarMean(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 153px">
   <col style="width: 124px">
   <col style="width: 872px">

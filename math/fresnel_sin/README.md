@@ -21,7 +21,7 @@ $$S(x) = \int_{0}^{x} \sin\left(\frac{\pi}{2} t^{2}\right) \mathrm{d}t$$
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+<table style="table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 280px">

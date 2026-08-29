@@ -14,14 +14,14 @@
 ## 功能说明
 
 - 算子功能：从start起始到end结束按照step的间隔获取值，并保存到输出的1维张量，其中数据范围为[start,end)。
-- 计算公式： 
+- 计算公式：
   $$
   out_{i+1} = out_i+step
   $$
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+<table style="table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 280px">

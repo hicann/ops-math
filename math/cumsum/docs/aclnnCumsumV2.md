@@ -60,7 +60,7 @@ aclnnStatus aclnnCumsumV2(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1539px"><colgroup>
+  <table style="table-layout: fixed; width: 1539px"><colgroup>
   <col style="width: 155px">
   <col style="width: 126px">
   <col style="width: 215px">
@@ -165,7 +165,7 @@ aclnnStatus aclnnCumsumV2(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 270px">
   <col style="width: 124px">
   <col style="width: 755px">
@@ -203,7 +203,7 @@ aclnnStatus aclnnCumsumV2(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 153px">
   <col style="width: 124px">
   <col style="width: 872px">

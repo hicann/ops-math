@@ -46,7 +46,7 @@ aclnnStatus aclnnFloorDiv(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1494px"><colgroup>
+  <table style="table-layout: fixed; width: 1494px"><colgroup>
   <col style="width: 146px">
   <col style="width: 110px">
   <col style="width: 301px">
@@ -127,7 +127,7 @@ aclnnStatus aclnnFloorDiv(
 
   第一段接口会完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed;width: 1155px"><colgroup>
+  <table style="table-layout: fixed;width: 1155px"><colgroup>
   <col style="width: 319px">
   <col style="width: 144px">
   <col style="width: 671px">
@@ -158,7 +158,7 @@ aclnnStatus aclnnFloorDiv(
 ## aclnnFloorDiv
 
 - **参数说明：**
-  <table style="undefined;table-layout: fixed; width: 953px"><colgroup>
+  <table style="table-layout: fixed; width: 953px"><colgroup>
   <col style="width: 173px">
   <col style="width: 112px">
   <col style="width: 668px">
@@ -243,9 +243,9 @@ void PrintOutResult(std::vector<int64_t>& shape, void** deviceAddr)
         ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return);
     for (int64_t i = 0; i < size; i++) {
-         LOG_PRINT("mean result[%ld] is: ", i);       // float
+         LOG_PRINT("result[%ld] is: ", i);       // float
          std::cout << (int)resultData[i] << std::endl;
-        //LOG_PRINT("mean result[%ld] is: %d\n", i, resultData[i]);       // int
+        //LOG_PRINT("result[%ld] is: %d\n", i, resultData[i]);       // int
     }
 }
 
@@ -325,7 +325,7 @@ int main()
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, ACL_TYPE, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-    // 3. 调用CANN算子库API，需要修改为具体的Api名称
+    // 3. 调用CANN算子库API，需要修改为具体的API名称
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
 

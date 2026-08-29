@@ -168,7 +168,7 @@ aclnnStatus aclnnMeanV2(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1164px"><colgroup>
+  <table style="table-layout: fixed; width: 1164px"><colgroup>
   <col style="width: 289px">
   <col style="width: 125px">
   <col style="width: 750px">
@@ -206,7 +206,7 @@ aclnnStatus aclnnMeanV2(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">

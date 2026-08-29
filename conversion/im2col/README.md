@@ -19,7 +19,7 @@ $L = \prod_{d} \lfloor \frac{spatial\_size[d] + 2 \times padding[d] - dilation[d
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 966px"><colgroup>
+<table style="table-layout: fixed; width: 966px"><colgroup>
 <col style="width: 144px">
 <col style="width: 166px">
 <col style="width: 290px">

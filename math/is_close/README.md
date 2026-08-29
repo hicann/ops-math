@@ -17,16 +17,16 @@
 - 计算公式：
   返回一个新张量out，其数据类型为BOOL，表示输入self的每个元素是否“close”输入other的对应元素。
   closeness定义为：
-  
+
   $$
   \left | self_{i}-other_{i}\right | \le  atol + rtol\times \left | other_{i} \right |
   $$
-    
+
   当self和other都是有限值时，以上公式成立。当self和other都是非有限时，且仅当它们是相等时，结果为True。当equal_nan为True，NaNs被认为是close的；当equal_nan为False，NaNs被认为是不close。
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+<table style="table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 280px">

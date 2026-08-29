@@ -18,7 +18,7 @@ $$
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+<table style="table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 280px">
@@ -40,14 +40,14 @@ $$
       <td>底数张量，可为标量或多维张量，支持广播到输出张量。</td>
       <td>FLOAT16、FLOAT32、BFLOAT16、INT8、UINT8、INT16、INT32</td>
       <td>ND</td>
-    </tr>  
+    </tr>
     <tr>
       <td>x2</td>
       <td>输入</td>
       <td>指数张量，可为标量或多维张量，支持广播到输出张量。</td>
       <td>FLOAT16、FLOAT32、BFLOAT16、INT8、UINT8、INT16、INT32</td>
       <td>ND</td>
-    </tr>  
+    </tr>
     <tr>
       <td>out</td>
       <td>输出</td>

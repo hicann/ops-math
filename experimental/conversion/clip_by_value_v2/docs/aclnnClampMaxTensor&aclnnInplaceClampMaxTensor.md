@@ -60,7 +60,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
   <col style="width: 266px">
@@ -143,7 +143,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
   <col style="width: 135px">
   <col style="width: 724px">
@@ -180,7 +180,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
 ## aclnnClampMaxTensor
 
 - **参数说明**
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 184px">
   <col style="width: 134px">
   <col style="width: 832px">
@@ -223,7 +223,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
   <col style="width: 266px">
@@ -301,7 +301,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
   <col style="width: 135px">
   <col style="width: 724px">
@@ -341,7 +341,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
 ## aclnnInplaceClampMaxTensor
 
 - **参数说明**
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 184px">
   <col style="width: 134px">
   <col style="width: 832px">
@@ -518,7 +518,7 @@ int main() {
       selfShape, maxShape, outShape, &selfDeviceAddr, &self, &maxDeviceAddr, &max, &outDeviceAddr, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3. 调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnClampMaxTensor第一段接口
@@ -675,7 +675,7 @@ int main() {
   ret = PrepareInputAndOutput(selfShape, maxShape, &selfDeviceAddr, &self, &maxDeviceAddr, &max);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3. 调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnInplaceClampMaxTensor第一段接口

@@ -12,7 +12,7 @@
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+<table style="table-layout: fixed; width: 980px"><colgroup>
 <col style="width: 100px">
 <col style="width: 150px">
 <col style="width: 280px">
@@ -34,7 +34,7 @@
 <td>待进行累加计算的入参，包含一组向量。</td>
 <td>FLOAT、FLOAT16、INT32、INT8、UINT8</td>
 <td>ND</td>
-</tr>  
+</tr>
 <tr>
 <td>y</td>
 <td>必要输出</td>

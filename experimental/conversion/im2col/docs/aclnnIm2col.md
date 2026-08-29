@@ -51,7 +51,7 @@ aclnnStatus aclnnIm2col(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1500px"><colgroup>
+  <table style="table-layout: fixed; width: 1500px"><colgroup>
   <col style="width: 180px"><col style="width: 100px"><col style="width: 270px"><col style="width: 360px">
   <col style="width: 180px"><col style="width: 100px"><col style="width: 150px"><col style="width: 100px">
   </colgroup><thead><tr>

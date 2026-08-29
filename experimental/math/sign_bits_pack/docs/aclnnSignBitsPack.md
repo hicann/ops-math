@@ -22,7 +22,7 @@
 
 - **参数说明**：
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 170px">
   <col style="width: 120px">
   <col style="width: 271px">
@@ -103,7 +103,7 @@
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1148px"><colgroup>
+  <table style="table-layout: fixed; width: 1148px"><colgroup>
   <col style="width: 300px">
   <col style="width: 136px">
   <col style="width: 712px">
@@ -141,7 +141,7 @@
 
 - **参数说明**：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">
@@ -297,7 +297,7 @@ int aclnnSignBitsPackTest(int32_t deviceId, aclrtStream& stream) {
   std::unique_ptr<void, aclError (*)(void *)> outDeviceAddrPtr(outDeviceAddr, aclrtFree);
   CHECK_FREE_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的Api名称
+  // 3. 调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnSignBitsPack第一段接口

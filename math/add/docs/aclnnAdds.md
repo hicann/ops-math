@@ -58,7 +58,7 @@
 
 - **参数说明：**
 
-    <table style="undefined;table-layout: fixed; width: 1510px"><colgroup>
+    <table style="table-layout: fixed; width: 1510px"><colgroup>
     <col style="width: 153px">
     <col style="width: 120px">
     <col style="width: 219px">
@@ -161,7 +161,7 @@
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-    <table style="undefined;table-layout: fixed; width: 1110px"><colgroup>
+    <table style="table-layout: fixed; width: 1110px"><colgroup>
     <col style="width: 291px">
     <col style="width: 112px">
     <col style="width: 707px">
@@ -205,7 +205,7 @@
 
 - **参数说明：**
 
-    <table style="undefined;table-layout: fixed; width: 1110px"><colgroup>
+    <table style="table-layout: fixed; width: 1110px"><colgroup>
     <col style="width: 153px">
     <col style="width: 124px">
     <col style="width: 833px">

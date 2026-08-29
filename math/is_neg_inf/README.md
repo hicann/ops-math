@@ -25,7 +25,7 @@
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 920px"><colgroup>
+<table style="table-layout: fixed; width: 920px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 290px">
@@ -61,4 +61,4 @@
 
 | 调用方式 | 调用样例                                             | 说明                                                                                         |
 |---------|----------------------------------------------------|----------------------------------------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_isneginf](./examples/test_aclnn_isneginf.cpp) | 通过[aclnnIsNegInf](./docs/aclnnIsNegInf.md)接口方式调用IsNegInf算子  |    
+| aclnn调用 | [test_aclnn_isneginf](./examples/test_aclnn_isneginf.cpp) | 通过[aclnnIsNegInf](./docs/aclnnIsNegInf.md)接口方式调用IsNegInf算子  |

@@ -12,7 +12,7 @@
 
 ## 算子原型
 
-<table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+<table style="table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 280px">
@@ -55,7 +55,7 @@
       <td>待进行NanToNum计算的属性neginf</td>
       <td>float</td>
       <td>1</td>
-    </tr>  
+    </tr>
     <tr>
       <td>y</td>
       <td>输出</td>

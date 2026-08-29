@@ -22,7 +22,7 @@ $$
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 1576px"><colgroup>
+<table style="table-layout: fixed; width: 1576px"><colgroup>
   <col style="width: 170px">
   <col style="width: 170px">
   <col style="width: 310px">
@@ -42,7 +42,7 @@ $$
       <td>x</td>
       <td>输入</td>
       <td>输入张量。</td>
-      <td>INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64 <br> 
+      <td>INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64 <br>
       FLOAT16、FLOAT、DOUBLE、BOOL、BFLOAT16、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>

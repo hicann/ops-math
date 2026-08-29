@@ -55,7 +55,7 @@ aclnnStatus aclnnHistc(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1549px"><colgroup>
+  <table style="table-layout: fixed; width: 1549px"><colgroup>
   <col style="width: 170px">
   <col style="width: 138px">
   <col style="width: 261px">
@@ -156,7 +156,7 @@ aclnnStatus aclnnHistc(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 281px">
   <col style="width: 119px">
   <col style="width: 750px">
@@ -203,7 +203,7 @@ aclnnStatus aclnnHistc(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 168px">
   <col style="width: 128px">
   <col style="width: 854px">

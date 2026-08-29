@@ -51,7 +51,7 @@ aclnnStatus aclnnMax(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <table style="table-layout: fixed; width: 1555px"><colgroup>
   <col style="width: 217px">
   <col style="width: 125px">
   <col style="width: 247px">
@@ -125,7 +125,7 @@ aclnnStatus aclnnMax(
 
   第一段接口完成入参校验，出现如下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 300px">
   <col style="width: 134px">
   <col style="width: 716px">
@@ -157,7 +157,7 @@ aclnnStatus aclnnMax(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <table style="table-layout: fixed; width: 1151px"><colgroup>
   <col style="width: 184px">
   <col style="width: 134px">
   <col style="width: 833px">
@@ -288,7 +288,7 @@ int main() {
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3.调用CANN算子库API，需要修改为具体的Api名称
+  // 3.调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnMax第一段接口

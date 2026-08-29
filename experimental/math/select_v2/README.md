@@ -16,7 +16,7 @@ $out_i=if(condition_i) ? self_i : other_i$
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+<table style="table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 280px">
@@ -38,14 +38,14 @@ $out_i=if(condition_i) ? self_i : other_i$
       <td>待进行select_v2计算的入参，公式中的condition。</td>
       <td>BOOL</td>
       <td>ND</td>
-    </tr>  
+    </tr>
     <tr>
       <td>self</td>
       <td>输入</td>
       <td>待进行select_v2计算的入参，公式中的self。</td>
       <td>FLOAT、FLOAT16、BFLOAT16、INT32、UINT32、INT16、UINT16、INT8、UINT8、BOOL</td>
       <td>ND</td>
-    </tr>  
+    </tr>
     <tr>
       <td>other</td>
       <td>输入</td>

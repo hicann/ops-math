@@ -54,7 +54,7 @@ const aclrtStream stream)
 
 - **参数说明：**
 
-    <table style="undefined;table-layout: fixed; width: 1499px"><colgroup>
+    <table style="table-layout: fixed; width: 1499px"><colgroup>
     <col style="width: 153px">
     <col style="width: 120px">
     <col style="width: 269px">
@@ -149,7 +149,7 @@ const aclrtStream stream)
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-    <table style="undefined;table-layout: fixed; width: 1110px"><colgroup>
+    <table style="table-layout: fixed; width: 1110px"><colgroup>
     <col style="width: 290px">
     <col style="width: 114px">
     <col style="width: 706px">
@@ -187,7 +187,7 @@ const aclrtStream stream)
 
 - **参数说明：**
 
-    <table style="undefined;table-layout: fixed; width: 1110px"><colgroup>
+    <table style="table-layout: fixed; width: 1110px"><colgroup>
     <col style="width: 153px">
     <col style="width: 124px">
     <col style="width: 833px">

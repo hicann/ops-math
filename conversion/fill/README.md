@@ -21,7 +21,7 @@
 
 ### InplaceFillScalar
 
-<table style="undefined;table-layout: fixed; width: 922px"><colgroup>
+<table style="table-layout: fixed; width: 922px"><colgroup>
 <col style="width: 144px">
 <col style="width: 166px">
 <col style="width: 202px">
@@ -56,7 +56,7 @@
 
 ### InplaceFillTensor
 
-<table style="undefined;table-layout: fixed; width: 922px"><colgroup>
+<table style="table-layout: fixed; width: 922px"><colgroup>
 <col style="width: 144px">
 <col style="width: 166px">
 <col style="width: 202px">

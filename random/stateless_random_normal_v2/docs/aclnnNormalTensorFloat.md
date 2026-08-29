@@ -25,7 +25,7 @@
 
 ## 功能说明
 
-算子功能：返回一个随机数张量，该随机数是从给定的均值(tensor)和标准差(float)的独立正态分布中获取。
+算子功能：返回一个随机数张量，该随机数是从给定的均值（tensor）和标准差（float）的独立正态分布中获取。
 
 ## 函数原型
 
@@ -54,7 +54,7 @@ aclnnStatus aclnnNormalTensorFloat(
 
 - **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
+  <table style="table-layout: fixed; width: 1547px"><colgroup>
   <col style="width: 170px">
   <col style="width: 120px">
   <col style="width: 300px">
@@ -155,7 +155,7 @@ aclnnStatus aclnnNormalTensorFloat(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 288px">
   <col style="width: 114px">
   <col style="width: 747px">
@@ -193,7 +193,7 @@ aclnnStatus aclnnNormalTensorFloat(
 
 - **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+<table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 153px">
   <col style="width: 124px">
   <col style="width: 872px">
@@ -234,8 +234,7 @@ aclnnStatus aclnnNormalTensorFloat(
 
 ## 约束说明
 
-- 确定性计算：
-  - aclnnNormalTensorFloat默认确定性实现。
+- 确定性计算：aclnnNormalTensorFloat默认确定性实现。
 
 <!-- npu="950" id7 -->
 - <term>Ascend 950PR/Ascend 950DT</term>：通过aclnnSetPytorchRandom设置对标PyTorch模式时，offset必须为4的倍数。
@@ -326,7 +325,7 @@ int main() {
   float stdValue = 1.2f;
   int64_t seed = 1;
   int64_t offset = 4;
-  // 创建self aclTensor
+  // 创建mean aclTensor
   ret = CreateAclTensor(meanHostData, meanShape, &meanDeviceAddr, aclDataType::ACL_FLOAT, &mean);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
   // 创建out aclTensor

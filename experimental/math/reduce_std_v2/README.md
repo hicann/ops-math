@@ -16,16 +16,16 @@
 - 算子功能：计算指定维度(dim)的标准差和均值，这个dim可以是单个维度、维度列表或者None。
 - 计算公式：
   假设 dim 为 $i$，则对该维度进行计算。$N$为该维度的 shape。取 $x_{i}$，求出该维度上的平均值 $\bar{x_{i}}$。
-  
+
   $$
   std = \sqrt{\frac{1}{max(0, N - \delta N)}\sum_{j=0}^{N-1}(x_{ij}-\bar{x_{i}})^2}
   $$
-  
+
   当 `keepdim = true`时，reduce 后保留该维度，且输出 shape 中该维度值为 1；当 `keepdim = false`时，不保留。
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+<table style="table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 280px">

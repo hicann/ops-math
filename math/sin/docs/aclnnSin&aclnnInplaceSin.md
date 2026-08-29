@@ -74,7 +74,7 @@ aclnnStatus aclnnInplaceSin(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1580px"><colgroup>
+  <table style="table-layout: fixed; width: 1580px"><colgroup>
   <col style="width: 239px">
   <col style="width: 132px">
   <col style="width: 232px">
@@ -148,7 +148,7 @@ aclnnStatus aclnnInplaceSin(
 
   第一段接口完成入参校验，出现如下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1142px"><colgroup>
+  <table style="table-layout: fixed; width: 1142px"><colgroup>
   <col style="width: 305px">
   <col style="width: 138px">
   <col style="width: 699px">
@@ -186,7 +186,7 @@ aclnnStatus aclnnInplaceSin(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">
@@ -229,7 +229,7 @@ aclnnStatus aclnnInplaceSin(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1494px"><colgroup>
+  <table style="table-layout: fixed; width: 1494px"><colgroup>
   <col style="width: 247px">
   <col style="width: 131px">
   <col style="width: 263px">
@@ -294,7 +294,7 @@ aclnnStatus aclnnInplaceSin(
 
   第一段接口完成入参校验，出现如下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1140px"><colgroup>
+  <table style="table-layout: fixed; width: 1140px"><colgroup>
   <col style="width: 304px">
   <col style="width: 138px">
   <col style="width: 698px">
@@ -326,7 +326,7 @@ aclnnStatus aclnnInplaceSin(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">
@@ -464,7 +464,7 @@ int main() {
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3.调用CANN算子库API，需要修改为具体的Api名称
+  // 3.调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnSin第一段接口

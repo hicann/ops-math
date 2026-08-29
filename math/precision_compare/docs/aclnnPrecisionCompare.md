@@ -60,7 +60,7 @@ aclnnStatus aclnnPrecisionCompare(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <table style="table-layout: fixed; width: 1555px"><colgroup>
   <col style="width: 217px">
   <col style="width: 125px">
   <col style="width: 247px">
@@ -141,7 +141,7 @@ aclnnStatus aclnnPrecisionCompare(
 
   第一段接口会完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 286px">
   <col style="width: 123px">
   <col style="width: 741px">
@@ -182,7 +182,7 @@ aclnnStatus aclnnPrecisionCompare(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">

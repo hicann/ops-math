@@ -54,7 +54,7 @@ aclnnStatus aclnnIsInScalarTensor(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <table style="table-layout: fixed; width: 1555px"><colgroup>
   <col style="width: 217px">
   <col style="width: 125px">
   <col style="width: 247px">
@@ -158,7 +158,7 @@ aclnnStatus aclnnIsInScalarTensor(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 300px">
   <col style="width: 134px">
   <col style="width: 716px">
@@ -192,7 +192,7 @@ aclnnStatus aclnnIsInScalarTensor(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <table style="table-layout: fixed; width: 1151px"><colgroup>
   <col style="width: 184px">
   <col style="width: 134px">
   <col style="width: 833px">

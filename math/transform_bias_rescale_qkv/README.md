@@ -10,7 +10,7 @@
 |  <term>Atlas 200I/500 A2 推理产品</term>    |     ×    |
 |  <term>Atlas 推理系列产品</term>    |     ×    |
 |  <term>Atlas 训练系列产品</term>    |     ×    |
-|  <term>Kirin X90 处理器系列产品</term> | √ | 
+|  <term>Kirin X90 处理器系列产品</term> | √ |
 |  <term>Kirin 9030 处理器系列产品</term> | √ |
 
 ## 功能说明
@@ -18,7 +18,7 @@
 - 算子功能：
   TransformBiasRescaleQkv算子是一个用于处理多头注意力机制中查询（Query）、键（Key）、值（Value）向量的接口。它用于调整这些向量的偏置（Bias）和缩放（Rescale）因子，以优化注意力计算过程。
 
-- 计算公式：  
+- 计算公式：
   逐个元素计算过程见公式：
 
   $$
@@ -27,18 +27,18 @@
 
   $$
   $$
-  
+
   k_o=k_i+k_{bias}\\
 
   $$
   $$
-  
-    v_o=v_i+v_{bias} 
+
+    v_o=v_i+v_{bias}
 
   $$
 
   公式中：
-  
+
   - dim_per_head为每个注意力头的维度。
   - q<sub>o</sub>、k<sub>o</sub>、v<sub>o</sub>分别为查询（Query）、键（Key）、值（Value）向量的输出元素。
   - q<sub>i</sub>、k<sub>i</sub>、v<sub>i</sub>分别为查询（Query）、键（Key）、值（Value）向量的输入元素。
@@ -46,7 +46,7 @@
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 937px"><colgroup>
+<table style="table-layout: fixed; width: 937px"><colgroup>
   <col style="width: 126px">
   <col style="width: 135px">
   <col style="width: 293px">

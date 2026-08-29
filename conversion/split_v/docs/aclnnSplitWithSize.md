@@ -53,7 +53,7 @@ aclnnStatus aclnnSplitWithSize(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
   <col style="width: 266px">
@@ -149,7 +149,7 @@ aclnnStatus aclnnSplitWithSize(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
   <col style="width: 135px">
   <col style="width: 724px">
@@ -178,7 +178,7 @@ aclnnStatus aclnnSplitWithSize(
       <td>out中的tensor长度不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>dim的取值越界不在[-dimNum, dimNum -1],dimNum为self的维度大小。</td>
+      <td>dim的取值越界，不在[-dimNum, dimNum -1]范围内，dimNum为self的维度大小。</td>
     </tr>
     <tr>
       <td>splitSize中各元素之和不等于被split维度的shape大小时。</td>
@@ -190,7 +190,7 @@ aclnnStatus aclnnSplitWithSize(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 184px">
   <col style="width: 134px">
   <col style="width: 832px">
@@ -363,7 +363,7 @@ int main()
     aclTensorList* out = aclCreateTensorList(tmp.data(), tmp.size());
     CHECK_RET(out != nullptr, return ret);
 
-    // 调用CANN算子库API，需要修改为具体的Api名称
+    // 调用CANN算子库API，需要修改为具体的API名称
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
     // 调用aclnnSplitWithSize第一段接口

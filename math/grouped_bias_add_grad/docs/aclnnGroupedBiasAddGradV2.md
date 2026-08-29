@@ -84,7 +84,7 @@ aclnnStatus aclnnGroupedBiasAddGradV2(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1692px"><colgroup>
+  <table style="table-layout: fixed; width: 1692px"><colgroup>
   <col style="width: 232px">
   <col style="width: 126px">
   <col style="width: 294px">
@@ -174,7 +174,7 @@ aclnnStatus aclnnGroupedBiasAddGradV2(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 286px">
   <col style="width: 124px">
   <col style="width: 739px">
@@ -212,7 +212,7 @@ aclnnStatus aclnnGroupedBiasAddGradV2(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">

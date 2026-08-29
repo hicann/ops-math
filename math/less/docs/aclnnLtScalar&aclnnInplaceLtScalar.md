@@ -171,7 +171,7 @@ aclnnStatus aclnnInplaceLtScalar(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <table style="table-layout: fixed; width: 1151px"><colgroup>
   <col style="width: 287px">
   <col style="width: 124px">
   <col style="width: 740px">
@@ -209,7 +209,7 @@ aclnnStatus aclnnInplaceLtScalar(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">
@@ -329,7 +329,7 @@ aclnnStatus aclnnInplaceLtScalar(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 286px">
   <col style="width: 124px">
   <col style="width: 740px">
@@ -364,7 +364,7 @@ aclnnStatus aclnnInplaceLtScalar(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">

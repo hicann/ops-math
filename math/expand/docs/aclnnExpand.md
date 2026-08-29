@@ -62,7 +62,7 @@ aclnnStatus aclnnExpand(
 
 - **参数说明**
 
-    <table style="undefined;table-layout: fixed; width: 1317px"><colgroup>
+    <table style="table-layout: fixed; width: 1317px"><colgroup>
     <col style="width: 127px">
     <col style="width: 120px">
     <col style="width: 227px">
@@ -146,7 +146,7 @@ aclnnStatus aclnnExpand(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1184px"><colgroup>
+  <table style="table-layout: fixed; width: 1184px"><colgroup>
   <col style="width: 277px">
   <col style="width: 133px">
   <col style="width: 774px">
@@ -184,7 +184,7 @@ aclnnStatus aclnnExpand(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1121px"><colgroup>
+  <table style="table-layout: fixed; width: 1121px"><colgroup>
   <col style="width: 153px">
   <col style="width: 132px">
   <col style="width: 836px">

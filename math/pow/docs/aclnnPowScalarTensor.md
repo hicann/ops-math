@@ -68,7 +68,7 @@ aclnnStatus aclnnPowScalarTensor(
 
 - **参数说明**
 
-    <table style="undefined;table-layout: fixed; width: 1400px"><colgroup>
+    <table style="table-layout: fixed; width: 1400px"><colgroup>
     <col style="width: 155px">
     <col style="width: 120px">
     <col style="width: 248px">
@@ -152,7 +152,7 @@ aclnnStatus aclnnPowScalarTensor(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-    <table style="undefined;table-layout: fixed; width: 1244px"><colgroup>
+    <table style="table-layout: fixed; width: 1244px"><colgroup>
     <col style="width: 276px">
     <col style="width: 132px">
     <col style="width: 836px">
@@ -190,7 +190,7 @@ aclnnStatus aclnnPowScalarTensor(
 
 - **参数说明**
 
-    <table style="undefined;table-layout: fixed; width: 1244px"><colgroup>
+    <table style="table-layout: fixed; width: 1244px"><colgroup>
       <col style="width: 200px">
       <col style="width: 162px">
       <col style="width: 882px">
@@ -330,7 +330,7 @@ int main() {
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3.调用CANN算子库API，需要修改为具体的Api名称
+  // 3.调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnPowScalarTensor第一段接口

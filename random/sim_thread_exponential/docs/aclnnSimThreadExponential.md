@@ -58,7 +58,7 @@ aclnnStatus aclnnSimThreadExponential(
 - **参数说明**
 
   <div style="overflow-x: auto;">
-    <table style="undefined;table-layout: fixed; width: 1497px"><colgroup>
+    <table style="table-layout: fixed; width: 1497px"><colgroup>
      <col style="width: 150px">
      <col style="width: 120px">
      <col style="width: 300px">
@@ -158,7 +158,7 @@ aclnnStatus aclnnSimThreadExponential(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1155px"><colgroup>
+  <table style="table-layout: fixed; width: 1155px"><colgroup>
   <col style="width: 253px">
   <col style="width: 140px">
   <col style="width: 762px">
@@ -195,7 +195,7 @@ aclnnStatus aclnnSimThreadExponential(
 - ​**参数说明**​：
 
   <div style="overflow-x: auto;">
-    <table style="undefined;table-layout: fixed; width: 900px"><colgroup>
+    <table style="table-layout: fixed; width: 900px"><colgroup>
     <col style="width: 150px">
     <col style="width: 100px">
     <col style="width: 650px">

@@ -17,7 +17,7 @@
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 1576px"><colgroup>
+<table style="table-layout: fixed; width: 1576px"><colgroup>
   <col style="width: 170px">
   <col style="width: 170px">
   <col style="width: 310px">
@@ -36,21 +36,21 @@
     <tr>
       <td>sorted_sequence</td>
       <td>输入</td>
-      <td> 输入Tensor ，其最后一维的数值按升序排列。</td>
+      <td> 输入Tensor，其最后一维的数值按升序排列。</td>
       <td>FLOAT16、FLOAT、INT8、INT16、INT32、INT64、UINT8</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>values</td>
       <td>输入</td>
-      <td>待插入的Tensor ，数据类型必须与输入sorted_sequence相同，除了最后一维外，其余维度必须与sorted_sequence相同。</td>
+      <td>待插入的Tensor，数据类型必须与输入sorted_sequence相同，除了最后一维外，其余维度必须与sorted_sequence相同。</td>
       <td>FLOAT16、FLOAT、INT8、INT16、INT32、INT64、UINT8</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>sorter</td>
       <td>可选输入</td>
-      <td>可选输入Tensor ，其shape与未排序的sorted_sequence相同，包含将其在最内层维度升序排序的索引序列。</td>
+      <td>可选输入Tensor，其shape与未排序的sorted_sequence相同，包含将其在最内层维度升序排序的索引序列。</td>
       <td>INT64</td>
       <td>ND</td>
     </tr>
@@ -58,7 +58,7 @@
       <td>dtype</td>
       <td>可选属性</td>
       <td>
-          • 指定输出Tensor的数据类型，仅支持INT64 / INT32。<br>
+          • 指定输出Tensor的数据类型，仅支持INT64、INT32。<br>
           • 默认值为INT64。
       </td>
       <td>TYPE</td>

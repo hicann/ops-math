@@ -55,7 +55,7 @@ aclnnStatus aclnnStridedSliceAssignV2(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
   <col style="width: 266px">
@@ -164,7 +164,7 @@ aclnnStatus aclnnStridedSliceAssignV2(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
   <col style="width: 135px">
   <col style="width: 724px">
@@ -192,7 +192,7 @@ aclnnStatus aclnnStridedSliceAssignV2(
 ## aclnnStridedSliceAssignV2
 
 - **参数说明**：
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 184px">
   <col style="width: 134px">
   <col style="width: 832px">
@@ -235,7 +235,7 @@ aclnnStatus aclnnStridedSliceAssignV2(
 
 - 确定性计算：
   - aclnnStridedSliceAssignV2默认确定性实现。
-inputValue的shape第i维的计算公式为：$inputValueShape[i] = \lceil\frac{end[i] - begin[i]}{strides[i]} \rceil$，其中$\lceil x\rceil$ 表示对 $x$向上取整。$end$ 和 $begin$ 为经过特殊值调整后的取值，调整方式为：当 $end[i] < 0$ 时，$end[i]=varShape[i] + end[i]$ ，若仍有$end[i] < 0$，则 $end[i] = 0$ ，当 $end[i] > varShape[i]$ 时， $end[i] = varShape[i]$。$begin$ 同理。
+inputValue的shape第i维的计算公式为：$inputValueShape[i] = \lceil\frac{end[i] - begin[i]}{strides[i]} \rceil$，其中$\lceil x\rceil$ 表示对 $x$向上取整。$end$ 和 $begin$ 为经过特殊值调整后的取值，调整方式为：当 $end[i] < 0$ 时，$end[i]=varShape[i] + end[i]$，若仍有$end[i] < 0$，则 $end[i] = 0$，当 $end[i] > varShape[i]$ 时，$end[i] = varShape[i]$。$begin$ 同理。
 
 ## 调用示例
 

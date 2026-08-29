@@ -86,7 +86,7 @@ aclnnStatus aclnnInplaceTril(
 ## aclnnTrilGetWorkspaceSize
 
 - **参数说明**
-  <table style="undefined;table-layout: fixed; width: 1587px"><colgroup>
+  <table style="table-layout: fixed; width: 1587px"><colgroup>
   <col style="width: 159px">
   <col style="width: 127px">
   <col style="width: 230px">
@@ -172,7 +172,7 @@ aclnnStatus aclnnInplaceTril(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
-    <table style="undefined;table-layout: fixed; width: 1154px"><colgroup>
+    <table style="table-layout: fixed; width: 1154px"><colgroup>
     <col style="width: 230px">
     <col style="width: 127px">
     <col style="width: 851px">
@@ -215,7 +215,7 @@ aclnnStatus aclnnInplaceTril(
 ## aclnnTril
 
 - **参数说明**
-  <table style="undefined;table-layout: fixed; width: 1154px"><colgroup>
+  <table style="table-layout: fixed; width: 1154px"><colgroup>
   <col style="width: 230px">
   <col style="width: 127px">
   <col style="width: 851px">
@@ -257,7 +257,7 @@ aclnnStatus aclnnInplaceTril(
 ## aclnnInplaceTrilGetWorkspaceSize
 
 - **参数说明**
-  <table style="undefined;table-layout: fixed; width: 1587px"><colgroup>
+  <table style="table-layout: fixed; width: 1587px"><colgroup>
   <col style="width: 159px">
   <col style="width: 127px">
   <col style="width: 230px">
@@ -333,7 +333,7 @@ aclnnStatus aclnnInplaceTril(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
-    <table style="undefined;table-layout: fixed; width: 1154px"><colgroup>
+    <table style="table-layout: fixed; width: 1154px"><colgroup>
     <col style="width: 230px">
     <col style="width: 127px">
     <col style="width: 851px">
@@ -364,7 +364,7 @@ aclnnStatus aclnnInplaceTril(
 ## aclnnInplaceTril
 
 - **参数说明**
-  <table style="undefined;table-layout: fixed; width: 1154px"><colgroup>
+  <table style="table-layout: fixed; width: 1154px"><colgroup>
   <col style="width: 230px">
   <col style="width: 127px">
   <col style="width: 851px">

@@ -176,7 +176,7 @@ aclnnStatus aclnnInplaceSubs(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1148px"><colgroup>
+  <table style="table-layout: fixed; width: 1148px"><colgroup>
   <col style="width: 298px">
   <col style="width: 135px">
   <col style="width: 715px">
@@ -220,7 +220,7 @@ aclnnStatus aclnnInplaceSubs(
 
 - **参数说明**：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">
@@ -347,7 +347,7 @@ aclnnStatus aclnnInplaceSubs(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1146px"><colgroup>
+  <table style="table-layout: fixed; width: 1146px"><colgroup>
   <col style="width: 297px">
   <col style="width: 135px">
   <col style="width: 714px">
@@ -385,7 +385,7 @@ aclnnStatus aclnnInplaceSubs(
 
 - **参数说明**：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">

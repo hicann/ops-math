@@ -21,14 +21,14 @@
   $$
 
   其中W为DFT矩阵，其定义为$W_{jk}=e^{-ij2\pi{\tfrac{k}{N}}n}$
-  
+
 - 示例：
 
-  假设x为 {1, 2, 3, 4} 则y = {10, 0, -2, 2, -2, 0} = {10 + 0j, -2 + 2j, -2 + 0j} 
+  假设x为 {1, 2, 3, 4} 则y = {10, 0, -2, 2, -2, 0} = {10 + 0j, -2 + 2j, -2 + 0j}
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 820px"><colgroup>
+<table style="table-layout: fixed; width: 820px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 190px">

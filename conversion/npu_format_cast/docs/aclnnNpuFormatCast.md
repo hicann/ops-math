@@ -77,7 +77,7 @@ aclnnStatus aclnnNpuFormatCast(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1665px;">
+  <table style="table-layout: fixed; width: 1665px;">
     <colgroup>
         <col style="width: 180px">
         <col style="width: 120px">
@@ -223,7 +223,7 @@ aclnnStatus aclnnNpuFormatCast(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1665px;">
+  <table style="table-layout: fixed; width: 1665px;">
     <colgroup>
         <col style="width: 180px">
         <col style="width: 120px">
@@ -350,7 +350,7 @@ aclnnStatus aclnnNpuFormatCast(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 184px">
   <col style="width: 134px">
   <col style="width: 832px">

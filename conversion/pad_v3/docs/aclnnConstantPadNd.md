@@ -103,7 +103,7 @@
 ## aclnnConstantPadNdGetWorkspaceSize
 
 - **参数说明**
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
   <col style="width: 266px">
@@ -130,7 +130,7 @@
       <td>输入</td>
       <td>待填充的原输入数据</td>
       <td>-</td>
-      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128 、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT4_E2M1、FLOAT4_E1M2。</td>
+      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT4_E2M1、FLOAT4_E1M2。</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -150,7 +150,7 @@
       <td>输入</td>
       <td>填充部分的填充值</td>
       <td>-</td>
-      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128 、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT6_E3M2、FLOAT6_E2M3、FLOAT4_E2M1、FLOAT4_E1M2。</td>
+      <td>FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0、FLOAT6_E3M2、FLOAT6_E2M3、FLOAT4_E2M1、FLOAT4_E1M2。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -201,7 +201,7 @@
 
     第一段接口完成入参校验，出现以下场景时报错：
 
-    <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+    <table style="table-layout: fixed; width: 1150px"><colgroup>
     <col style="width: 291px">
     <col style="width: 135px">
     <col style="width: 724px">
@@ -261,7 +261,7 @@
 ## aclnnConstantPadNd
 
 - **参数说明**
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 184px">
   <col style="width: 134px">
   <col style="width: 832px">
@@ -403,7 +403,7 @@ int main() {
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3.调用CANN算子库API，需要修改为具体的Api名称
+  // 3.调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnConstantPadNd第一段接口

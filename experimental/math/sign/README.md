@@ -13,7 +13,7 @@
 - 计算公式：
 
   $$
-  \text{out}_{i}= 
+  \text{out}_{i}=
   \begin{cases}
   1  & \text{if } \text{input}_{i}>0 \\[4pt]
   0  & \text{if } \text{input}_{i}=0 \\[4pt]
@@ -23,7 +23,7 @@
 
  **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1330px"><colgroup>
+  <table style="table-layout: fixed; width: 1330px"><colgroup>
   <col style="width: 101px">
   <col style="width: 115px">
   <col style="width: 220px">
@@ -76,7 +76,7 @@
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_sign](./examples/test_aclnn_sign.cpp) | 通过[aclnnSign](./docs/aclnnSign.md)接口方式调用Sign算子。 |    
+| aclnn调用 | [test_aclnn_sign](./examples/test_aclnn_sign.cpp) | 通过[aclnnSign](./docs/aclnnSign.md)接口方式调用Sign算子。 |
 
 ## 贡献说明
 

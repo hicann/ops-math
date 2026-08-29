@@ -78,7 +78,7 @@ aclnnStatus aclnnInplaceEqTensor(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 168px">
   <col style="width: 136px">
   <col style="width: 215px">
@@ -173,7 +173,7 @@ aclnnStatus aclnnInplaceEqTensor(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 281px">
   <col style="width: 119px">
   <col style="width: 750px">
@@ -214,7 +214,7 @@ aclnnStatus aclnnInplaceEqTensor(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 168px">
   <col style="width: 128px">
   <col style="width: 854px">
@@ -257,7 +257,7 @@ aclnnStatus aclnnInplaceEqTensor(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1542px"><colgroup>
+  <table style="table-layout: fixed; width: 1542px"><colgroup>
   <col style="width: 166px">
   <col style="width: 134px">
   <col style="width: 212px">
@@ -338,7 +338,7 @@ aclnnStatus aclnnInplaceEqTensor(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 281px">
   <col style="width: 119px">
   <col style="width: 750px">
@@ -382,7 +382,7 @@ aclnnStatus aclnnInplaceEqTensor(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 168px">
   <col style="width: 128px">
   <col style="width: 854px">

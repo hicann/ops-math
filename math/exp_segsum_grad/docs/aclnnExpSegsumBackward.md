@@ -85,7 +85,7 @@ aclnnStatus aclnnExpSegsumBackward(
 
 - **参数说明**：
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 170px">
   <col style="width: 120px">
   <col style="width: 271px">
@@ -166,7 +166,7 @@ aclnnStatus aclnnExpSegsumBackward(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed;width: 1170px"><colgroup>
+  <table style="table-layout: fixed;width: 1170px"><colgroup>
   <col style="width: 268px">
   <col style="width: 140px">
   <col style="width: 762px">
@@ -198,7 +198,7 @@ aclnnStatus aclnnExpSegsumBackward(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 953px"><colgroup>
+  <table style="table-layout: fixed; width: 953px"><colgroup>
   <col style="width: 173px">
   <col style="width: 112px">
   <col style="width: 668px">

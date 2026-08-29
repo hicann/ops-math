@@ -84,7 +84,7 @@ aclnnStatus aclnnTransformBiasRescaleQkv(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1370px"><colgroup>
+  <table style="table-layout: fixed; width: 1370px"><colgroup>
   <col style="width: 171px">
   <col style="width: 115px">
   <col style="width: 220px">
@@ -195,7 +195,7 @@ aclnnStatus aclnnTransformBiasRescaleQkv(
 
   第一段接口会完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1145px"><colgroup>
+  <table style="table-layout: fixed; width: 1145px"><colgroup>
   <col style="width: 295px">
   <col style="width: 134px">
   <col style="width: 716px">
@@ -224,7 +224,7 @@ aclnnStatus aclnnTransformBiasRescaleQkv(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">
@@ -412,7 +412,7 @@ ret = CreateAclTensor(outHostData, outShape, &outVDeviceAddr, aclDataType::ACL_F
 
 CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-// 3.调用CANN算子库API，需要修改为具体的Api名称
+// 3.调用CANN算子库API，需要修改为具体的API名称
 uint64_t workspaceSize = 16 * 1024 * 1024;
 aclOpExecutor* executor;
 

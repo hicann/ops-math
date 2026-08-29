@@ -56,7 +56,7 @@ aclnnStatus aclnnLgamma(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 180px">
   <col style="width: 120px">
   <col style="width: 280px">
@@ -127,7 +127,7 @@ aclnnStatus aclnnLgamma(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
+  <table style="table-layout: fixed; width: 1000px"><colgroup>
   <col style="width: 300px">
   <col style="width: 150px">
   <col style="width: 550px">
@@ -162,7 +162,7 @@ aclnnStatus aclnnLgamma(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1000px"><colgroup>
+  <table style="table-layout: fixed; width: 1000px"><colgroup>
   <col style="width: 180px">
   <col style="width: 120px">
   <col style="width: 700px">
@@ -243,7 +243,7 @@ void PrintOutResult(std::vector<int64_t> &shape, void** deviceAddr) {
                          *deviceAddr, size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return);
   for (int64_t i = 0; i < size; i++) {
-    LOG_PRINT("mean result[%ld] is: %f\n", i, resultData[i]);
+    LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
   }
 }
 

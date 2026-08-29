@@ -24,7 +24,7 @@ $$
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+<table style="table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 280px">
@@ -46,14 +46,14 @@ $$
       <td>待进行log计算的入参，公式中的self。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
-    </tr>  
+    </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
       <td>进行完log计算的出参，公式中的output。</td>
       <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
-    </tr>  
+    </tr>
     <tr>
       <td>base</td>
       <td>属性</td>

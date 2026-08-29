@@ -25,7 +25,7 @@
 
 ## 功能说明
 
-算子功能：返回一个随机数，该随机数是从给定的均值(tensor)和标准差(tensor)的独立正态分布中获取，mean和std的shape不需匹配，但需要满足broadcast关系。
+算子功能：返回一个随机数，该随机数是从给定的均值（tensor）和标准差（tensor）的独立正态分布中获取，mean和std的shape不需匹配，但需要满足broadcast关系。
 
 ## 函数原型
 
@@ -54,7 +54,7 @@ aclnnStatus aclnnNormalTensorTensor(
 
 - **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 1547px"><colgroup>
+  <table style="table-layout: fixed; width: 1547px"><colgroup>
   <col style="width: 170px">
   <col style="width: 120px">
   <col style="width: 300px">
@@ -155,7 +155,7 @@ aclnnStatus aclnnNormalTensorTensor(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 288px">
   <col style="width: 114px">
   <col style="width: 747px">
@@ -193,7 +193,7 @@ aclnnStatus aclnnNormalTensorTensor(
 
 - **参数说明：**
 
-<table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 153px">
   <col style="width: 124px">
   <col style="width: 872px">
@@ -234,8 +234,7 @@ aclnnStatus aclnnNormalTensorTensor(
 
 ## 约束说明
 
-- 确定性计算：
-  - aclnnNormalTensorTensor默认确定性实现。
+- 确定性计算：aclnnNormalTensorTensor默认确定性实现。
 
 <!-- npu="950" id7 -->
 - <term>Ascend 950PR/Ascend 950DT</term>：通过aclnnSetPytorchRandom设置对标PyTorch模式时，offset必须为4的倍数。

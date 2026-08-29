@@ -76,7 +76,7 @@ aclnnStatus aclnnInplaceFmodTensor(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1526px"><colgroup>
+  <table style="table-layout: fixed; width: 1526px"><colgroup>
   <col style="width: 154px">
   <col style="width: 125px">
   <col style="width: 213px">
@@ -157,7 +157,7 @@ aclnnStatus aclnnInplaceFmodTensor(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 288px">
   <col style="width: 114px">
   <col style="width: 747px">
@@ -198,7 +198,7 @@ aclnnStatus aclnnInplaceFmodTensor(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
     <col style="width: 153px">
     <col style="width: 124px">
     <col style="width: 872px">
@@ -241,7 +241,7 @@ aclnnStatus aclnnInplaceFmodTensor(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1526px"><colgroup>
+  <table style="table-layout: fixed; width: 1526px"><colgroup>
   <col style="width: 154px">
   <col style="width: 125px">
   <col style="width: 213px">
@@ -316,7 +316,7 @@ aclnnStatus aclnnInplaceFmodTensor(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 288px">
   <col style="width: 114px">
   <col style="width: 747px">
@@ -357,7 +357,7 @@ aclnnStatus aclnnInplaceFmodTensor(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
     <col style="width: 153px">
     <col style="width: 124px">
     <col style="width: 872px">

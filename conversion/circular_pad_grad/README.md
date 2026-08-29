@@ -21,7 +21,7 @@
 
 ### CircularPad2dBackward
 
-<table style="undefined;table-layout: fixed; width: 1007px"><colgroup>
+<table style="table-layout: fixed; width: 1007px"><colgroup>
 <col style="width: 139px">
 <col style="width: 146px">
 <col style="width: 342px">
@@ -70,7 +70,7 @@
 
 ### CircularPad3dBackward
 
-<table style="undefined;table-layout: fixed; width: 1007px"><colgroup>
+<table style="table-layout: fixed; width: 1007px"><colgroup>
 <col style="width: 139px">
 <col style="width: 146px">
 <col style="width: 342px">

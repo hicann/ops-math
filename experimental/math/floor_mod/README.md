@@ -18,7 +18,7 @@ $$
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 980px"><colgroup>
+<table style="table-layout: fixed; width: 980px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 280px">
@@ -40,7 +40,7 @@ $$
       <td>待进行FloorMod计算的被除数入参。</td>
       <td>FLOAT、FLOAT16、BFLOAT16、INT32</td>
       <td>ND</td>
-    </tr>  
+    </tr>
     <tr>
       <td>x2</td>
       <td>输入</td>

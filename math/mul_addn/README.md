@@ -10,7 +10,7 @@
 |  <term>Atlas 200I/500 A2 推理产品</term>    |     ×    |
 |  <term>Atlas 推理系列产品</term>    |     ×    |
 |  <term>Atlas 训练系列产品</term>    |     ×    |
-|  <term>Kirin X90 处理器系列产品</term> | √ |  
+|  <term>Kirin X90 处理器系列产品</term> | √ |
 |  <term>Kirin 9030 处理器系列产品</term> | √ |
 
 ## 功能说明
@@ -20,7 +20,7 @@
   实现n>=2个mul和addn融合计算，减少搬运时间和内存的占用。
 
 - 计算公式：
-  
+
   输入x1，  x2为变长输入，为N个tensor组成的列表。x1输入中的每个tensor shape都为[B, M, 1], x2输入中的每个tensor shape都为[B, 1, K], y为输出，shape为[B, M, K]; N对应为addn算子的n数量，也为融合算子融合mul的数量。
 
 $$
@@ -41,7 +41,7 @@ $$
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 855px"><colgroup>
+<table style="table-layout: fixed; width: 855px"><colgroup>
   <col style="width: 164px">
   <col style="width: 138px">
   <col style="width: 300px">

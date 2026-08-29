@@ -141,7 +141,7 @@ aclnnStatus aclnnMaxN(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1143px"><colgroup>
+  <table style="table-layout: fixed; width: 1143px"><colgroup>
   <col style="width: 288px">
   <col style="width: 124px">
   <col style="width: 731px">
@@ -179,7 +179,7 @@ aclnnStatus aclnnMaxN(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">

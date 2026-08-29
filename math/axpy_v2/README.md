@@ -21,7 +21,7 @@ $out_i=self_i + alpha_i × other_i$
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 820px"><colgroup>
+<table style="table-layout: fixed; width: 820px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 190px">

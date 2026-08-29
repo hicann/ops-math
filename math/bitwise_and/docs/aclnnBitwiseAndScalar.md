@@ -35,11 +35,6 @@
 
 ## 函数原型
 
-aclnnBitwiseAndScalar和aclnnInplaceBitwiseAndScalar实现相同的功能，使用区别如下，请根据自身实际场景选择合适的算子。
-
-- aclnnBitwiseAndScalar：需新建一个输出张量对象存储计算结果。
-- aclnnInplaceBitwiseAndScalar：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
-
 每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用"aclnnBitwiseAndScalarGetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnBitwiseAndScalar"接口执行计算。
 
 ```Cpp
@@ -63,7 +58,7 @@ aclnnStatus aclnnBitwiseAndScalar(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1555px"><colgroup>
+  <table style="table-layout: fixed; width: 1555px"><colgroup>
   <col style="width: 217px">
   <col style="width: 125px">
   <col style="width: 247px">
@@ -143,7 +138,7 @@ aclnnStatus aclnnBitwiseAndScalar(
 
   第一段接口完成入参校验，出现如下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 300px">
   <col style="width: 134px">
   <col style="width: 716px">
@@ -184,7 +179,7 @@ aclnnStatus aclnnBitwiseAndScalar(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <table style="table-layout: fixed; width: 1151px"><colgroup>
   <col style="width: 184px">
   <col style="width: 134px">
   <col style="width: 833px">

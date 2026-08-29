@@ -23,7 +23,7 @@ $$
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 1576px"><colgroup>
+<table style="table-layout: fixed; width: 1576px"><colgroup>
   <col style="width: 170px">
   <col style="width: 170px">
   <col style="width: 310px">
@@ -42,21 +42,21 @@ $$
     <tr>
       <td>x</td>
       <td>输入</td>
-      <td>输入x是一个k维张量，是待进行right_shift计算的入参，公式中的x_i 。</td>
+      <td>输入x是一个k维张量，是待进行right_shift计算的入参，公式中的x_i。</td>
       <td>INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输入</td>
-      <td>待进行right_shift计算的入参，公式中的y_i 。</td>
+      <td>待进行right_shift计算的入参，公式中的y_i。</td>
       <td>INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>z</td>
       <td>输出</td>
-      <td>待进行right_shift计算的出参，公式中的z_i 。</td>
+      <td>待进行right_shift计算的出参，公式中的z_i。</td>
       <td>INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
     </tr>
@@ -69,6 +69,6 @@ $$
 ## 调用说明
 
 | 调用方式 | 调用样例                                                          | 说明                                                          |
-|--------|---------------------------------------------------------------|-------------------------------------------------------------| 
-| aclnn调用 | [test_aclnn_rightshift](./examples/test_aclnn_right_shift.cpp) | 通过[aclnnRightshift](./docs/aclnnRightShift.md)接口方式调用rightshift算子。|  
+|--------|---------------------------------------------------------------|-------------------------------------------------------------|
+| aclnn调用 | [test_aclnn_rightshift](./examples/test_aclnn_right_shift.cpp) | 通过[aclnnRightshift](./docs/aclnnRightShift.md)接口方式调用rightshift算子。|
 | 图模式调用 | [test_geir_right_shift](./examples/test_geir_right_shift.cpp) | 通过[算子IR](./op_graph/right_shift_proto.h)构图方式调用RightShift算子。 |

@@ -16,9 +16,9 @@
 - 算子功能：将输入Tensor`x`中mask位置为`True`的元素填充指定的值。`mask`必须与`x`的shape相同或可广播。
 
 - 计算公式：
-  
+
   $$
-  y_i = 
+  y_i =
   \begin{cases}
   x_i, \, \, mask_i=False\\
   value_i, \, \, mask_i=True\\
@@ -27,7 +27,7 @@
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 1005px"><colgroup>
+<table style="table-layout: fixed; width: 1005px"><colgroup>
   <col style="width: 140px">
   <col style="width: 140px">
   <col style="width: 180px">

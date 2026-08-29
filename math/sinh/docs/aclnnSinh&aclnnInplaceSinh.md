@@ -166,7 +166,7 @@ aclnnStatus aclnnInplaceSinh(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1142px"><colgroup>
+  <table style="table-layout: fixed; width: 1142px"><colgroup>
   <col style="width: 305px">
   <col style="width: 138px">
   <col style="width: 699px">
@@ -204,7 +204,7 @@ aclnnStatus aclnnInplaceSinh(
 
 - **参数说明**：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">
@@ -311,7 +311,7 @@ aclnnStatus aclnnInplaceSinh(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1152px"><colgroup>
+  <table style="table-layout: fixed; width: 1152px"><colgroup>
   <col style="width: 301px">
   <col style="width: 137px">
   <col style="width: 714px">
@@ -343,7 +343,7 @@ aclnnStatus aclnnInplaceSinh(
 
 - **参数说明**：
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">

@@ -56,7 +56,7 @@ aclnnStatus aclnnStdMeanCorrection(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1540px"><colgroup>
+  <table style="table-layout: fixed; width: 1540px"><colgroup>
   <col style="width: 248px">
   <col style="width: 131px">
   <col style="width: 265px">
@@ -166,7 +166,7 @@ aclnnStatus aclnnStdMeanCorrection(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1148px"><colgroup>
+  <table style="table-layout: fixed; width: 1148px"><colgroup>
   <col style="width: 287px">
   <col style="width: 124px">
   <col style="width: 737px">
@@ -207,7 +207,7 @@ aclnnStatus aclnnStdMeanCorrection(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">

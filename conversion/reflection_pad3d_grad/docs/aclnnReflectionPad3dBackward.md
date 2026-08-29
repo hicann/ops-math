@@ -53,7 +53,7 @@ aclnnStatus aclnnReflectionPad3dBackward(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
   <col style="width: 266px">
@@ -142,7 +142,7 @@ aclnnStatus aclnnReflectionPad3dBackward(
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
   <col style="width: 135px">
   <col style="width: 724px">
@@ -186,7 +186,7 @@ aclnnStatus aclnnReflectionPad3dBackward(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1126px"><colgroup>
+  <table style="table-layout: fixed; width: 1126px"><colgroup>
   <col style="width: 141px">
   <col style="width: 140px">
   <col style="width: 845px">

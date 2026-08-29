@@ -10,7 +10,7 @@
 | <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
 | <term>Atlas 推理系列产品</term>                             |    √     |
 | <term>Atlas 训练系列产品</term>                              |    √     |
-| <term>Kirin X90 处理器系列产品</term>                      | √ | 
+| <term>Kirin X90 处理器系列产品</term>                      | √ |
 | <term>Kirin 9030 处理器系列产品</term>                       | √ |
 
 ## 功能说明
@@ -25,7 +25,7 @@ $$
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 1576px"><colgroup>
+<table style="table-layout: fixed; width: 1576px"><colgroup>
   <col style="width: 170px">
   <col style="width: 170px">
   <col style="width: 310px">

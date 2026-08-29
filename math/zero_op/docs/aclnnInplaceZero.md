@@ -67,7 +67,7 @@ aclnnStatus aclnnInplaceZero(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1248px"><colgroup>
+  <table style="table-layout: fixed; width: 1248px"><colgroup>
   <col style="width: 126px">
   <col style="width: 120px">
   <col style="width: 227px">
@@ -137,7 +137,7 @@ aclnnStatus aclnnInplaceZero(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1143px"><colgroup>
+  <table style="table-layout: fixed; width: 1143px"><colgroup>
   <col style="width: 255px">
   <col style="width: 129px">
   <col style="width: 759px">
@@ -166,7 +166,7 @@ aclnnStatus aclnnInplaceZero(
 
 - **参数说明**
 
-  <table style="undefined;table-layout: fixed; width: 1136px"><colgroup>
+  <table style="table-layout: fixed; width: 1136px"><colgroup>
   <col style="width: 157px">
   <col style="width: 151px">
   <col style="width: 828px">

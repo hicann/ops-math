@@ -12,14 +12,14 @@
 
 - 计算公式：
   对于入参self，和比较标量other，gt可以用如下数学公式表示：
-  
+
   $$
   y_{i}= (x1_i > x2_i) ? True : False
   $$
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 820px"><colgroup>
+<table style="table-layout: fixed; width: 820px"><colgroup>
   <col style="width: 100px">
   <col style="width: 150px">
   <col style="width: 190px">

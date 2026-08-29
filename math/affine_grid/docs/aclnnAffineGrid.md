@@ -51,7 +51,7 @@ aclnnStatus aclnnAffineGrid(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1545px"><colgroup>
+  <table style="table-layout: fixed; width: 1545px"><colgroup>
   <col style="width: 248px">
   <col style="width: 128px">
   <col style="width: 307px">
@@ -145,7 +145,7 @@ aclnnStatus aclnnAffineGrid(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1147px"><colgroup>
+  <table style="table-layout: fixed; width: 1147px"><colgroup>
   <col style="width: 302px">
   <col style="width: 135px">
   <col style="width: 710px">
@@ -189,7 +189,7 @@ aclnnStatus aclnnAffineGrid(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1151px"><colgroup>
+  <table style="table-layout: fixed; width: 1151px"><colgroup>
   <col style="width: 184px">
   <col style="width: 134px">
   <col style="width: 833px">

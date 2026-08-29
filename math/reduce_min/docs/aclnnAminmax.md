@@ -54,7 +54,7 @@ aclrtStream    stream)
 
 - **参数说明：**
 
-    <table style="undefined;table-layout: fixed; width: 1502px"><colgroup>
+    <table style="table-layout: fixed; width: 1502px"><colgroup>
     <col style="width: 155px">
     <col style="width: 121px">
     <col style="width: 262px">
@@ -159,7 +159,7 @@ aclrtStream    stream)
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-    <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+    <table style="table-layout: fixed; width: 1149px"><colgroup>
     <col style="width: 288px">
     <col style="width: 114px">
     <col style="width: 747px">
@@ -203,7 +203,7 @@ aclrtStream    stream)
 
 - **参数说明：**
 
-    <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+    <table style="table-layout: fixed; width: 1149px"><colgroup>
     <col style="width: 153px">
     <col style="width: 124px">
     <col style="width: 872px">
@@ -346,7 +346,7 @@ int main() {
   ret = CreateAclTensor(maxOutHostData, outShape, &maxOutDeviceAddr, aclDataType::ACL_FLOAT, &maxOut);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3.调用CANN算子库API，需要修改为具体的Api名称
+  // 3.调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnAminmax第一段接口

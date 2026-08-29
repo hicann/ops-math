@@ -17,7 +17,7 @@
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 996px"><colgroup>
+<table style="table-layout: fixed; width: 996px"><colgroup>
   <col style="width: 102px">
   <col style="width: 168px">
   <col style="width: 203px">
@@ -40,7 +40,7 @@
       <td>FLOAT, FLOAT16, INT8, INT16, UINT16, UINT8,
         INT32, INT64, UINT32, UINT64, BOOL, DOUBLE, STRING, BFLOAT16</td>
       <td>ND</td>
-    </tr>    
+    </tr>
     <tr>
       <td>y</td>
       <td>输出</td>

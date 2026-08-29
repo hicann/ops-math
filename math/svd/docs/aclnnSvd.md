@@ -61,7 +61,7 @@ aclnnStatus aclnnSvd(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1544px"><colgroup>
+  <table style="table-layout: fixed; width: 1544px"><colgroup>
   <col style="width: 141px">
   <col style="width: 120px">
   <col style="width: 354px">
@@ -171,7 +171,7 @@ aclnnStatus aclnnSvd(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1145px"><colgroup>
+  <table style="table-layout: fixed; width: 1145px"><colgroup>
   <col style="width: 296px">
   <col style="width: 135px">
   <col style="width: 714px">
@@ -209,7 +209,7 @@ aclnnStatus aclnnSvd(
 
 - **参数说明：**
 
-  <table style="undefined;table-layout: fixed; width: 1149px"><colgroup>
+  <table style="table-layout: fixed; width: 1149px"><colgroup>
   <col style="width: 167px">
   <col style="width: 134px">
   <col style="width: 848px">
@@ -365,7 +365,7 @@ int SetupAndExecuteSVD(aclrtStream stream, SVDTensors& tensors, SVDWorkspace& wo
   ret = CreateAclTensor(vHostData, tensors.vShape, &tensors.vDeviceAddr, aclDataType::ACL_FLOAT, &tensors.v);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 调用CANN算子库API，需要修改为具体的Api名称
+  // 调用CANN算子库API，需要修改为具体的API名称
   aclOpExecutor* executor;
   // 调用aclnnSvdGetWorkspaceSize第一段接口
   ret = aclnnSvdGetWorkspaceSize(tensors.input, fullMatrices, computeUV, tensors.sigma, tensors.u, tensors.v,

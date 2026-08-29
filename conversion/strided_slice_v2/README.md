@@ -15,7 +15,7 @@
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 1576px"><colgroup>
+<table style="table-layout: fixed; width: 1576px"><colgroup>
 <col style="width: 170px">
 <col style="width: 170px">
 <col style="width: 310px">
@@ -34,7 +34,7 @@
     <tr>
     <td>x</td>
     <td>输入</td>
-    <td>输入的张量</td> 
+    <td>输入的张量</td>
     <td>INT8、UINT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、FLOAT、FLOAT16、BF16、BOOL、COMPLEX32、COMPLEX64、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0</td>
     <td>ND</td>
     </tr>

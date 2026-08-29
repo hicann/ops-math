@@ -62,7 +62,7 @@ aclnnStatus aclRfft1D(
 
 - **参数说明：**
 
-    <table style="undefined;table-layout: fixed; width: 1200px"><colgroup>
+    <table style="table-layout: fixed; width: 1200px"><colgroup>
     <col style="width: 180px">
     <col style="width: 80px">
     <col style="width: 150px">
@@ -163,7 +163,7 @@ aclnnStatus aclRfft1D(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-    <table style="undefined;table-layout: fixed; width: 1150px">
+    <table style="table-layout: fixed; width: 1150px">
     <colgroup>
     <col style="width: 380px">
     <col style="width: 135px">
@@ -203,7 +203,7 @@ aclnnStatus aclRfft1D(
 
 - **参数说明：**
 
-    <table style="undefined;table-layout: fixed; width: 1200px"><colgroup>
+    <table style="table-layout: fixed; width: 1200px"><colgroup>
     <col style="width: 180px">
     <col style="width: 80px">
     <col style="width: 150px">

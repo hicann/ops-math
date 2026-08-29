@@ -19,7 +19,7 @@
 
 ## 参数说明
 
-<table style="undefined;table-layout: fixed; width: 1576px"><colgroup>
+<table style="table-layout: fixed; width: 1576px"><colgroup>
   <col style="width: 170px">
   <col style="width: 170px">
   <col style="width: 310px">
@@ -41,7 +41,7 @@
       <td>输入张量。</td>
       <td>INT32, INT64</td>
       <td>1D</td>
-    </tr>    
+    </tr>
     <tr>
       <td>y</td>
       <td>输出</td>

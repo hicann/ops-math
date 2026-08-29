@@ -67,7 +67,7 @@ aclnnStatus aclnnConfusionTranspose(
 
 - **参数说明**：
 
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
   <col style="width: 266px">
@@ -123,7 +123,7 @@ aclnnStatus aclnnConfusionTranspose(
       <td class="tg-0lax">transposeFirst（bool）</td>
       <td class="tg-0lax">输入</td>
       <td class="tg-0lax">判断是否先执行transpose操作。</td>
-      <td class="tg-0lax">如果值为True ，首先执行transpose，否则先执行reshape 。</td>
+      <td class="tg-0lax">如果值为True，首先执行transpose，否则先执行reshape。</td>
       <td class="tg-0lax">BOOL</td>
       <td class="tg-0lax">-</td>
       <td class="tg-0lax">-</td>
@@ -167,7 +167,7 @@ aclnnStatus aclnnConfusionTranspose(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
   <col style="width: 135px">
   <col style="width: 724px">
@@ -187,7 +187,7 @@ aclnnStatus aclnnConfusionTranspose(
     <tr>
       <td class="tg-0pky">ACLNN_ERR_PARAM_INVALID</td>
       <td class="tg-0pky">161002</td>
-      <td class="tg-0pky">传入的x 、out的数据类型不在支持的范围之内。</td>
+      <td class="tg-0pky">传入的x、out的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
       <td class="tg-0lax">ACLNN_ERR_INNER_NULLPTR</td>
@@ -201,7 +201,7 @@ aclnnStatus aclnnConfusionTranspose(
 
 - **参数说明**：
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 184px">
   <col style="width: 134px">
   <col style="width: 832px">
@@ -246,14 +246,14 @@ aclnnStatus aclnnConfusionTranspose(
 
   例如：
 
-      设shape_before为reshape操作前的数据形状，shape_after为reshape操作后的数据形状，
+  设shape_before为reshape操作前的数据形状，shape_after为reshape操作后的数据形状，
 
-          shape_before = [(ab),(cd),f,(gh)]
-          shape_after = [a,(bc),d,e,(fg),h]
+    shape_before = [(ab),(cd),f,(gh)]
+    shape_after = [a,(bc),d,e,(fg),h]
 
-      而如下的shape_after是不被允许的：
+  而如下的shape_after是不被允许的：
 
-          shape_after_illegal = [a,b,d,e,(fg),(ch)]
+    shape_after_illegal = [a,b,d,e,(fg),(ch)]
 
 ## 调用示例
 
@@ -292,7 +292,7 @@ void PrintOutResult(std::vector<int64_t> &shape, void** deviceAddr) {
                          *deviceAddr, size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return);
   for (int64_t i = 0; i < size; i++) {
-    LOG_PRINT("mean result[%ld] is: %f\n", i, resultData[i]);
+    LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
   }
 }
 
@@ -372,7 +372,7 @@ int main() {
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3.调用CANN算子库API，需要修改为具体的Api名称
+  // 3.调用CANN算子库API，需要修改为具体的API名称
   uint64_t workspaceSize = 16 * 1024 * 1024;
   aclOpExecutor* executor;
 
@@ -398,7 +398,7 @@ int main() {
   // 5.获取输出的值，将device侧内存上的结果复制至host侧，需要根据具体API的接口定义修改
   PrintOutResult(outShape, &outDeviceAddr);
 
-  // 6.释放aclTensor和aclTensor，需要根据具体API的接口定义修改
+  // 6.释放aclTensor，需要根据具体API的接口定义修改
   aclDestroyTensor(x);
   aclDestroyTensor(out);
 

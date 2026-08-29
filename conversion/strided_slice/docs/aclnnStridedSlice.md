@@ -56,7 +56,7 @@
   $endMask$指定$bit$位为1对应的索引维度的$end$被忽略，
   $ellipsisMask$从$bit$位为1对应的索引维度开始全选后续维度，直到遇到指定$begin$才退出，
   $newAxisMask$指定$bit$位为1对应的索引维度增加维度为1的$shape$，
-  $shrinkAxisMask$指定$bit$位为1对应的索引维度强制降为1 。
+  $shrinkAxisMask$指定$bit$位为1对应的索引维度强制降为1。
 
 ## 函数原型
 
@@ -89,7 +89,7 @@ aclnnStatus aclnnStridedSlice(
 ## aclnnStridedSliceGetWorkspaceSize
 
 - **参数说明**：
-  <table style="undefined;table-layout: fixed; width: 1550px"><colgroup>
+  <table style="table-layout: fixed; width: 1550px"><colgroup>
   <col style="width: 211px">
   <col style="width: 120px">
   <col style="width: 266px">
@@ -194,7 +194,7 @@ aclnnStatus aclnnStridedSlice(
     <tr>
       <td>shrinkAxisMask</td>
       <td>输入</td>
-      <td>把bit位为1对应的索引维度强制降为1 。</td>
+      <td>把bit位为1对应的索引维度强制降为1。</td>
       <td>shrinkAxisMask中bit位为1的索引，对应的strides需要大于0，即正数。</td>
       <td>INT64</td>
       <td>-</td>
@@ -240,7 +240,7 @@ aclnnStatus aclnnStridedSlice(
 
   第一段接口完成入参校验，出现以下场景时报错：
 
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 291px">
   <col style="width: 135px">
   <col style="width: 724px">
@@ -292,7 +292,7 @@ aclnnStatus aclnnStridedSlice(
 ## aclnnStridedSlice
 
 - **参数说明**：
-  <table style="undefined;table-layout: fixed; width: 1150px"><colgroup>
+  <table style="table-layout: fixed; width: 1150px"><colgroup>
   <col style="width: 184px">
   <col style="width: 134px">
   <col style="width: 832px">
@@ -459,10 +459,10 @@ int main()
     strides = aclCreateIntArray(stridesData.data(), 2);
     CHECK_RET(strides != nullptr, return ret);
 
-    // 3.调用CANN算子库API，需要修改为具体的Api名称
+    // 3.调用CANN算子库API，需要修改为具体的API名称
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
-    // 调用aclnnCast第一段接口
+    // 调用aclnnStridedSliceGetWorkspaceSize第一段接口
     ret = aclnnStridedSliceGetWorkspaceSize(
         self, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask, out, &workspaceSize,
         &executor);
@@ -473,7 +473,7 @@ int main()
         ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
         CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
     }
-    // 调用aclnnCast第二段接口
+    // 调用aclnnStridedSlice第二段接口
     ret = aclnnStridedSlice(workspaceAddr, workspaceSize, executor, stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnStridedSlice failed. ERROR: %d\n", ret); return ret);
 

@@ -65,7 +65,7 @@ repeats中的值必须大于等于0。
 
 ## 参数说明
 
-  <table style="undefined;table-layout: fixed; width: 1528px"><colgroup>
+  <table style="table-layout: fixed; width: 1528px"><colgroup>
   <col style="width: 132px">
   <col style="width: 120px">
   <col style="width: 256px">
@@ -73,9 +73,9 @@ repeats中的值必须大于等于0。
   <col style="width: 333px">
   <col style="width: 126px">
   <col style="width: 160px">
-  <col style="width: 145px"> 
-  </colgroup> 
-  <thead> 
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
     <tr>
       <th>参数名</th>
       <th>输入/输出</th>
