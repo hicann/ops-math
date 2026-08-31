@@ -14,26 +14,27 @@ import numpy as np
 
 
 __golden__ = {
-    "kernel": {
-        "erf": "erf_golden"
-    }
+    "aclnn": {
+        "aclnnErf": "aclnn_erf_golden",
+    },
+    "kernel": {"erf": "erf_golden"},
 }
 
 
 def erf_golden(x, **kwargs):
-    '''
+    """
     Kernel golden for erf.
     All the parameters follow @erf_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
         input_formats, output_formats, input_ori_formats, output_ori_formats,
         input_dtypes, output_dtypes.
-    '''
+    """
     import torch
-    
+
     ori_dtype = kwargs.get("input_dtypes", ["float32"])[0]
     x_dtype = x.dtype
-    
+
     if ori_dtype and "bfloat16" in str(ori_dtype).lower():
         x_tensor = torch.from_numpy(x.astype(np.float32))
         output = torch.erf(x_tensor)
@@ -46,3 +47,14 @@ def erf_golden(x, **kwargs):
         x_tensor = torch.from_numpy(x)
         output = torch.erf(x_tensor)
         return output.numpy()
+
+
+def aclnn_erf_golden(self, out=None, **kwargs):
+    """
+    Aclnn golden for aclnnErf.
+    Parameters follow @aclnnErfGetWorkspaceSize without workspaceSize & executor.
+    All the input Tensors are torch.Tensor.
+    """
+    import torch
+
+    return [torch.erf(self)]

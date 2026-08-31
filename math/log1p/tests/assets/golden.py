@@ -15,19 +15,31 @@ import torch
 
 
 __golden__ = {
-    "kernel": {
-        "log1p": "log1p_golden"
-    }
+    "aclnn": {
+        "aclnnLog1p": "aclnn_log1p_golden",
+    },
+    "kernel": {"log1p": "log1p_golden"},
 }
 
 
 def log1p_golden(x, **kwargs):
     ori_dtype = kwargs.get("input_dtypes", ["float32"])[0]
     x_dtype = x.dtype
-    
+
     if "bfloat16" in str(ori_dtype).lower() or "float16" in str(ori_dtype).lower():
         x_tensor = torch.from_numpy(x.astype(np.float32))
         output = torch.log1p(x_tensor)
         return output.numpy().astype(x_dtype, copy=False)
     else:
         return np.log1p(x)
+
+
+def aclnn_log1p_golden(self, out=None, **kwargs):
+    """
+    Aclnn golden for aclnnLog1p.
+    Parameters follow @aclnnLog1pGetWorkspaceSize without workspaceSize & executor.
+    All the input Tensors are torch.Tensor.
+    """
+    import torch
+
+    return [torch.log1p(self)]

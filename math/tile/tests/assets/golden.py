@@ -14,24 +14,32 @@ import numpy as np
 
 
 __golden__ = {
-    "kernel": {
-        "tile": "tile_golden",
-        "tile_d": "tile_golden"
-    }
+    "aclnn": {
+        "aclnnRepeat": "aclnn_repeat_golden",
+    },
+    "kernel": {"tile": "tile_golden", "tile_d": "tile_golden"},
 }
 
 
 def tile_golden(x, multiples, **kwargs):
-    '''
+    """
     Kernel golden for tile / tile_d.
     All the parameters follow @tile_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
         input_formats, output_formats, input_ori_formats, output_ori_formats,
         input_dtypes, output_dtypes.
-    '''
+    """
     multiples_arr = np.array(multiples).astype(np.int64)
     multiples_val = multiples_arr.tolist()
     if isinstance(multiples_val, int):
         multiples_val = (multiples_val,)
     return np.tile(x, multiples_val)
+
+
+def aclnn_repeat_golden(self, repeats=0, out=None, **kwargs):
+    if hasattr(repeats, "tolist"):
+        repeats = repeats.tolist()
+    elif isinstance(repeats, int):
+        repeats = [repeats]
+    return [self.repeat(*repeats)]

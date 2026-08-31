@@ -14,26 +14,27 @@ import numpy as np
 
 
 __golden__ = {
-    "kernel": {
-        "sign": "sign_golden"
-    }
+    "aclnn": {
+        "aclnnSign": "aclnn_sign_golden",
+    },
+    "kernel": {"sign": "sign_golden"},
 }
 
 
 def sign_golden(x, **kwargs):
-    '''
+    """
     Kernel golden for sign.
     All the parameters follow @sign_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
         input_formats, output_formats, input_ori_formats, output_ori_formats,
         input_dtypes, output_dtypes.
-    '''
+    """
     import torch
-    
+
     ori_dtype = kwargs.get("input_dtypes", ["float32"])[0]
     x_dtype = x.dtype
-    
+
     if ori_dtype and "bfloat16" in str(ori_dtype).lower():
         x_tensor = torch.from_numpy(x.astype(np.float32))
         output = torch.sign(x_tensor)
@@ -46,3 +47,14 @@ def sign_golden(x, **kwargs):
         x_tensor = torch.from_numpy(x)
         output = torch.sign(x_tensor)
         return output.numpy()
+
+
+def aclnn_sign_golden(self, result=None, **kwargs):
+    """
+    Aclnn golden for aclnnSign.
+    Parameters follow @aclnnSignGetWorkspaceSize without workspaceSize & executor.
+    All the input Tensors are torch.Tensor.
+    """
+    import torch
+
+    return [torch.sign(self)]

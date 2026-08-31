@@ -14,26 +14,27 @@ import numpy as np
 
 
 __golden__ = {
-    "kernel": {
-        "sqrt": "sqrt_golden"
-    }
+    "aclnn": {
+        "aclnnSqrt": "aclnn_sqrt_golden",
+    },
+    "kernel": {"sqrt": "sqrt_golden"},
 }
 
 
 def sqrt_golden(x, **kwargs):
-    '''
+    """
     Kernel golden for sqrt.
     All the parameters follow @sqrt_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
         input_formats, output_formats, input_ori_formats, output_ori_formats,
         input_dtypes, output_dtypes.
-    '''
+    """
     import torch
-    
+
     ori_dtype = kwargs.get("input_dtypes", ["float32"])[0]
     x_dtype = x.dtype
-    
+
     if ori_dtype and "bfloat16" in str(ori_dtype).lower():
         x_tensor = torch.from_numpy(x.astype(np.float32))
         result = torch.sqrt(x_tensor)
@@ -46,3 +47,14 @@ def sqrt_golden(x, **kwargs):
         x_tensor = torch.from_numpy(x)
         result = torch.sqrt(x_tensor)
         return result.numpy()
+
+
+def aclnn_sqrt_golden(self, out=None, opExecutor=0, **kwargs):
+    """
+    Aclnn golden for aclnnSqrt.
+    Parameters follow @aclnnSqrtGetWorkspaceSize without workspaceSize & executor.
+    All the input Tensors are torch.Tensor.
+    """
+    import torch
+
+    return [torch.sqrt(self)]

@@ -9,23 +9,34 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
-  	 	
+
 import numpy as np
-  	 	
+import torch
+
 __golden__ = {
-   	"kernel": {
-   	    "ceil": "ceil_golden"
-   	}
+    "aclnn": {
+        "aclnnCeil": "aclnn_ceil_golden",
+    },
+    "kernel": {"ceil": "ceil_golden"},
 }
-  	 	
-def ceil_golden(x,
-                **kwargs):
-    '''
+
+
+def ceil_golden(x, **kwargs):
+    """
     Kernel golden for ceil.
     All the parameters follow @ceil_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
-  	    input_formats, output_formats, input_ori_formats, output_ori_formats,
-  	    input_dtypes, output_dtypes.
-    '''
+              input_formats, output_formats, input_ori_formats, output_ori_formats,
+              input_dtypes, output_dtypes.
+    """
     return np.ceil(x)
+
+
+def aclnn_ceil_golden(self, out=None, **kwargs):
+    """
+    Aclnn golden for aclnnCeil.
+    Parameters follow @aclnnCeilGetWorkspaceSize without workspaceSize & executor.
+    All the input Tensors are torch.Tensor.
+    """
+    return [torch.ceil(self)]

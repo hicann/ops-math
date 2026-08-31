@@ -11,7 +11,14 @@
 # ----------------------------------------------------------------------------
 
 
-__golden__ = {"kernel": {"reduce_max": "reduce_max_golden"}}
+__golden__ = {
+    "aclnn": {
+        "aclnnAmax": "aclnn_amax_golden",
+        "aclnnMax": "aclnn_max_golden",
+        "aclnnMaxV2": "aclnn_max_v2_golden",
+    },
+    "kernel": {"reduce_max": "reduce_max_golden"},
+}
 
 
 def reduce_max_golden(x, axes=None, keep_dims: bool = False, **kwargs):
@@ -55,3 +62,51 @@ def reduce_max_golden(x, axes=None, keep_dims: bool = False, **kwargs):
             # Fallback to NumPy
             res = np.max(x, axis=axis, keepdims=keep_dims)
     return res.astype(input_dtype, copy=False)
+
+
+def aclnn_max_v2_golden(
+    self, dims=0, keepDims=0, noopWithEmptyDims=0, out=None, **kwargs
+):
+    """
+    Aclnn golden for aclnnMaxV2.
+    Parameters follow @aclnnMaxV2GetWorkspaceSize without workspaceSize & executor.
+    All the input Tensors are torch.Tensor.
+    """
+    import torch
+
+    ipt = self
+    dim = kwargs.get("attributes", {})["dims"]
+    keepdim = kwargs.get("attributes", {})["keepDims"]
+    noop_with_empty_dims = kwargs.get("attributes", {})["noopWithEmptyDims"]
+    if dim is None or (isinstance(dim, (tuple, list)) and len(dim) == 0):
+        if noop_with_empty_dims:
+            result = ipt
+        else:
+            result = ipt.flatten()
+            if keepdim:
+                result = result.reshape([1] * ipt.dim())
+    else:
+        result = torch.amax(ipt, dim=dim, keepdim=keepdim)
+    return result
+
+
+def aclnn_max_golden(self, out=None, **kwargs):
+    """
+    Aclnn golden for aclnnMax.
+    Parameters follow @aclnnMaxGetWorkspaceSize without workspaceSize & executor.
+    All the input Tensors are torch.Tensor.
+    """
+    import torch
+
+    return [torch.ops.aten.amax(self)]
+
+
+def aclnn_amax_golden(self, dim=0, keepDim=0, out=None, **kwargs):
+    """
+    Aclnn golden for aclnnAmax.
+    Parameters follow @aclnnAmaxGetWorkspaceSize without workspaceSize & executor.
+    All the input Tensors are torch.Tensor.
+    """
+    import torch
+
+    return torch.amax(self, dim=dim, keepdim=keepDim)

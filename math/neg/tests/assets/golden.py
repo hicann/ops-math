@@ -15,19 +15,31 @@ import torch
 
 
 __golden__ = {
-    "kernel": {
-        "neg": "neg_golden"
-    }
+    "aclnn": {
+        "aclnnNeg": "aclnn_neg_golden",
+    },
+    "kernel": {"neg": "neg_golden"},
 }
 
 
 def neg_golden(x, **kwargs):
     ori_dtype = kwargs.get("input_dtypes", ["float32"])[0]
     x_dtype = x.dtype
-    
+
     if "bfloat16" in str(ori_dtype).lower() or "float16" in str(ori_dtype).lower():
         x_tensor = torch.from_numpy(x.astype(np.float32))
         output = torch.neg(x_tensor)
         return output.numpy().astype(x_dtype, copy=False)
     else:
         return np.negative(x)
+
+
+def aclnn_neg_golden(self, out=None, **kwargs):
+    """
+    Aclnn golden for aclnnNeg.
+    Parameters follow @aclnnNegGetWorkspaceSize without workspaceSize & executor.
+    All the input Tensors are torch.Tensor.
+    """
+    import torch
+
+    return [torch.neg(self)]

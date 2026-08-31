@@ -15,19 +15,31 @@ import torch
 
 
 __golden__ = {
-    "kernel": {
-        "square": "square_golden"
-    }
+    "aclnn": {
+        "aclnnSquare": "aclnn_square_golden",
+    },
+    "kernel": {"square": "square_golden"},
 }
 
 
 def square_golden(x, **kwargs):
     ori_dtype = kwargs.get("input_dtypes", ["float32"])[0]
     x_dtype = x.dtype
-    
+
     if "bfloat16" in str(ori_dtype).lower() or "float16" in str(ori_dtype).lower():
         x_tensor = torch.from_numpy(x.astype(np.float32))
         output = torch.square(x_tensor)
         return output.numpy().astype(x_dtype, copy=False)
     else:
         return np.square(x)
+
+
+def aclnn_square_golden(self, out=None, **kwargs):
+    """
+    Aclnn golden for aclnnSquare.
+    Parameters follow @aclnnSquareGetWorkspaceSize without workspaceSize & executor.
+    All the input Tensors are torch.Tensor.
+    """
+    import torch
+
+    return [torch.square(self)]

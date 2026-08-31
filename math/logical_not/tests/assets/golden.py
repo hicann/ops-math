@@ -11,14 +11,20 @@
 # ----------------------------------------------------------------------------
 
 import numpy as np
+import torch
 
 
 __golden__ = {
-    "kernel": {
-        "logical_not": "logical_not_golden"
-    }
+    "aclnn": {
+        "aclnnLogicalNot": "aclnn_logical_not_golden",
+    },
+    "kernel": {"logical_not": "logical_not_golden"},
 }
 
 
 def logical_not_golden(x, **kwargs):
     return np.logical_not(x)
+
+
+def aclnn_logical_not_golden(self, out=None, **kwargs):
+    return [torch.logical_not(self)]

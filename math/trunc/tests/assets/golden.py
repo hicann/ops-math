@@ -14,26 +14,27 @@ import numpy as np
 
 
 __golden__ = {
-    "kernel": {
-        "trunc": "trunc_golden"
-    }
+    "aclnn": {
+        "aclnnTrunc": "aclnn_trunc_golden",
+    },
+    "kernel": {"trunc": "trunc_golden"},
 }
 
 
 def trunc_golden(input_x, **kwargs):
-    '''
+    """
     Kernel golden for trunc.
     All the parameters follow @trunc_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
         input_formats, output_formats, input_ori_formats, output_ori_formats,
         input_dtypes, output_dtypes.
-    '''
+    """
     import torch
-    
+
     ori_dtype = kwargs.get("input_dtypes", ["float32"])[0]
     x_dtype = input_x.dtype
-    
+
     if ori_dtype and "bfloat16" in str(ori_dtype).lower():
         x_tensor = torch.from_numpy(input_x.astype(np.float32))
         output = torch.trunc(x_tensor)
@@ -46,3 +47,14 @@ def trunc_golden(input_x, **kwargs):
         x_tensor = torch.from_numpy(input_x)
         output = torch.trunc(x_tensor)
         return output.numpy()
+
+
+def aclnn_trunc_golden(self, out=None, **kwargs):
+    """
+    Aclnn golden for aclnnTrunc.
+    Parameters follow @aclnnTruncGetWorkspaceSize without workspaceSize & executor.
+    All the input Tensors are torch.Tensor.
+    """
+    import torch
+
+    return [torch.trunc(self)]

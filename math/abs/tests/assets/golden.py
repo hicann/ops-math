@@ -41,7 +41,7 @@ def abs_golden(x, **kwargs):
         return np.abs(x)
 
 
-def aclnn_abs_golden(selfT, out=None, **kwargs):
+def aclnn_abs_golden(self, out=None, **kwargs):
     """
     Aclnn golden for aclnnAbs.
     Parameters follow @aclnnAbsGetWorkspaceSize without workspaceSize & executor.
@@ -50,4 +50,4 @@ def aclnn_abs_golden(selfT, out=None, **kwargs):
     kwargs may contain: tensor_dtypes, tensor_formats, scalar_dtypes,
                         use_torch, short_soc_version, testcase_name.
     """
-    return torch.abs(selfT)
+    return torch.abs(self)

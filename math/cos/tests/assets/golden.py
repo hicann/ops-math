@@ -1,4 +1,4 @@
- #!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 # ----------------------------------------------------------------------------
 # Copyright (c) 2026 Huawei Technologies Co., Ltd.
@@ -11,27 +11,38 @@
 # ----------------------------------------------------------------------------
 
 import numpy as np
+import torch
 
 
 __golden__ = {
-    "kernel": {
-        "cos": "cos_golden"
-    }
+    "aclnn": {
+        "aclnnCos": "aclnn_cos_golden",
+    },
+    "kernel": {"cos": "cos_golden"},
 }
 
 
 def cos_golden(x, **kwargs):
-    '''
+    """
     Kernel golden for cos.
     All the parameters follow @cos_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
         input_formats, output_formats, input_ori_formats, output_ori_formats,
         input_dtypes, output_dtypes.
-    '''
+    """
     ori_dtype = x.dtype
     if ori_dtype.name in ("float16", "bfloat16"):
         x_cast = x.astype(np.float32)
         res = np.cos(x_cast)
         return res.astype(ori_dtype, copy=False)
     return np.cos(x)
+
+
+def aclnn_cos_golden(input, out=None, **kwargs):
+    """
+    Aclnn golden for aclnnCos.
+    Parameters follow @aclnnCosGetWorkspaceSize without workspaceSize & executor.
+    All the input Tensors are torch.Tensor.
+    """
+    return [torch.cos(input)]

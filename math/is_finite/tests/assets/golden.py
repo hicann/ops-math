@@ -11,14 +11,25 @@
 # ----------------------------------------------------------------------------
 
 import numpy as np
+import torch
 
 
 __golden__ = {
-    "kernel": {
-        "is_finite": "is_finite_golden"
-    }
+    "aclnn": {
+        "aclnnIsFinite": "aclnn_is_finite_golden",
+    },
+    "kernel": {"is_finite": "is_finite_golden"},
 }
 
 
 def is_finite_golden(x, **kwargs):
     return np.isfinite(x)
+
+
+def aclnn_is_finite_golden(self, out=None, **kwargs):
+    """
+    Aclnn golden for aclnnIsFinite.
+    Parameters follow @aclnnIsFiniteGetWorkspaceSize without workspaceSize & executor.
+    All the input Tensors are torch.Tensor.
+    """
+    return [torch.ops.aten.isfinite(self)]

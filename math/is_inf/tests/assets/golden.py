@@ -11,14 +11,20 @@
 # ----------------------------------------------------------------------------
 
 import numpy as np
+import torch
 
 
 __golden__ = {
-    "kernel": {
-        "is_inf": "is_inf_golden"
-    }
+    "aclnn": {
+        "aclnnIsInf": "aclnn_is_inf_golden",
+    },
+    "kernel": {"is_inf": "is_inf_golden"},
 }
 
 
 def is_inf_golden(x, **kwargs):
     return np.isinf(x)
+
+
+def aclnn_is_inf_golden(x, out=None, **kwargs):
+    return [torch.isinf(x)]

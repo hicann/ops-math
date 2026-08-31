@@ -10,23 +10,30 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 import numpy as np
+import torch
 
 __golden__ = {
-   	"kernel": {
-   	    "pack": "pack_golden"
-   	}
+    "aclnn": {
+        "aclnnStack": "aclnn_stack_golden",
+    },
+    "kernel": {"pack": "pack_golden"},
 }
-  	
-def pack_golden(x,
-                axis: int=0, N: int=1,
-                **kwargs):
-    '''
+
+
+def pack_golden(x, axis: int = 0, N: int = 1, **kwargs):
+    """
     Kernel golden for pack.
     All the parameters follow @pack_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
-    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes, 
-  	    input_formats, output_formats, input_ori_formats, output_ori_formats,
-  	    input_dtypes, output_dtypes.
-    '''
-    
+    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
+              input_formats, output_formats, input_ori_formats, output_ori_formats,
+              input_dtypes, output_dtypes.
+    """
+
     return np.stack(x, axis=axis)
+
+
+def aclnn_stack_golden(tensors, dim, out, **kwargs):
+    if hasattr(dim, "item"):
+        dim = dim.item()
+    return [torch.stack(tensors, dim=dim)]

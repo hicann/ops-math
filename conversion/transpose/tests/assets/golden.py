@@ -11,23 +11,33 @@
 # ----------------------------------------------------------------------------
 
 import numpy as np
+import torch
 
 
 __golden__ = {
-    "kernel": {
-        "transpose": "transpose_golden"
-    }
+    "aclnn": {
+        "aclnnPermute": "aclnn_permute_golden",
+    },
+    "kernel": {"transpose": "transpose_golden"},
 }
 
 
 def transpose_golden(x, perm, **kwargs):
-    '''
+    """
     Kernel golden for transpose / transpose_d.
     All the parameters follow @transpose_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
         input_formats, output_formats, input_ori_formats, output_ori_formats,
         input_dtypes, output_dtypes.
-    '''
+    """
     perm_val = perm.tolist() if isinstance(perm, np.ndarray) else perm
     return np.transpose(x, perm_val)
+
+
+def aclnn_permute_golden(self, dims=0, out=None, **kwargs):
+    if hasattr(dims, "tolist"):
+        dims = dims.tolist()
+    elif isinstance(dims, int):
+        dims = [dims]
+    return [torch.permute(self, dims)]

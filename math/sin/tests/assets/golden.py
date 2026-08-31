@@ -11,29 +11,31 @@
 # ----------------------------------------------------------------------------
 
 import numpy as np
+import torch
 
 
 __golden__ = {
-    "kernel": {
-        "sin": "sin_golden"
-    }
+    "aclnn": {
+        "aclnnSin": "aclnn_sin_golden",
+    },
+    "kernel": {"sin": "sin_golden"},
 }
 
 
 def sin_golden(x, **kwargs):
-    '''
+    """
     Kernel golden for sin.
     All the parameters follow @sin_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
         input_formats, output_formats, input_ori_formats, output_ori_formats,
         input_dtypes, output_dtypes.
-    '''
+    """
     import torch
-    
+
     ori_dtype = kwargs.get("input_dtypes", ["float32"])[0]
     x_dtype = x.dtype
-    
+
     if ori_dtype and "bfloat16" in str(ori_dtype).lower():
         x_tensor = torch.from_numpy(x.astype(np.float32))
         output = torch.sin(x_tensor)
@@ -44,3 +46,7 @@ def sin_golden(x, **kwargs):
         return output.numpy().astype(x_dtype, copy=False)
     else:
         return np.sin(x)
+
+
+def aclnn_sin_golden(input, out=None, **kwargs):
+    return [torch.sin(input)]

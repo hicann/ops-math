@@ -11,47 +11,80 @@
 # ----------------------------------------------------------------------------
 
 
-__golden__ = {"kernel": {"reduce_min": "reduce_min_golden"}}
+import torch
 
 
-def reduce_min_golden(x, axes=None, keep_dims: bool = False, **kwargs):
+__golden__ = {
+    "aclnn": {
+        "aclnnAminmax": "aclnn_aminmax_golden",
+        "aclnnAminmaxDim": "aclnn_aminmax_dim_golden",
+        "aclnnAminmaxAll": "aclnn_aminmax_all_golden",
+    },
+    "kernel": {"reduce_min": "reduce_min_golden"},
+}
+
+
+# def reduce_min_golden(x, axes=None, keep_dims: bool = False, **kwargs):
+#     """
+#     Kernel golden for reduce_min.
+#     """
+#     import numpy as np
+
+#     input_dtype = x.dtype
+#     if str(input_dtype) == "bfloat16":
+#         x = x.astype(np.float32)
+
+#     if axes is not None:
+#         axis = tuple(int(a) for a in np.asarray(axes).flatten())
+#     else:
+#         axis = None
+
+#     try:
+#         import tensorflow as tf
+#         x_tensor = tf.constant(x)
+#         res_tensor = tf.reduce_min(x_tensor, axis=axis, keepdims=keep_dims)
+#         res = res_tensor.numpy()
+#     except ImportError:
+#         try:
+#             import torch
+#             x_torch = torch.from_numpy(x)
+#             if axis is not None:
+#                 res_torch = torch.amin(x_torch, dim=axis, keepdim=keep_dims)
+#             else:
+#                 res_torch = torch.amin(x_torch, keepdim=keep_dims)
+#             res = res_torch.numpy()
+#         except ImportError:
+#             res = np.min(x, axis=axis, keepdims=keep_dims)
+#     return res.astype(input_dtype, copy=False)
+
+
+def aclnn_aminmax_golden(self, dim=0, keepDim=0, minOut=None, maxOut=None, **kwargs):
     """
-    Kernel golden for reduce_min.
-    All the parameters follow @reduce_min_def.cpp without outputs.
-    All the input Tensors are numpy.ndarray.
-    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
-        input_formats, output_formats, input_ori_formats, output_ori_formats,
-        input_dtypes, output_dtypes.
+    Aclnn golden for aclnnAminmax.
     """
-    import numpy as np
-
-    input_dtype = x.dtype
-    if str(input_dtype) == "bfloat16":
-        x = x.astype(np.float32)
-
-    if axes is not None:
-        axis = tuple(int(a) for a in np.asarray(axes).flatten())
+    if isinstance(dim, (tuple, list)):
+        min_val = torch.amin(self, dim=dim, keepdim=bool(keepDim))
+        max_val = torch.amax(self, dim=dim, keepdim=bool(keepDim))
     else:
-        axis = None
+        result = torch.aminmax(self, dim=dim[0], keepdim=bool(keepDim))
+        min_val = result.min
+        max_val = result.max
+    return [min_val, max_val]
 
-    # Try TensorFlow first (supports empty tensors), fallback to PyTorch, then NumPy
-    try:
-        import tensorflow as tf
 
-        x_tensor = tf.constant(x)
-        res_tensor = tf.reduce_min(x_tensor, axis=axis, keepdims=keep_dims)
-        res = res_tensor.numpy()
-    except ImportError:
-        try:
-            import torch
+def aclnn_aminmax_all_golden(self, minOut=None, maxOut=None, **kwargs):
+    """
+    Aclnn golden for aclnnAminmaxAll.
+    """
+    result = torch.aminmax(self)
+    return [result.min, result.max]
 
-            x_torch = torch.from_numpy(x)
-            if axis is not None:
-                res_torch = torch.amin(x_torch, dim=axis, keepdim=keep_dims)
-            else:
-                res_torch = torch.amin(x_torch, keepdim=keep_dims)
-            res = res_torch.numpy()
-        except ImportError:
-            # Fallback to NumPy
-            res = np.min(x, axis=axis, keepdims=keep_dims)
-    return res.astype(input_dtype, copy=False)
+
+def aclnn_aminmax_dim_golden(
+    self, dim=0, keepDim=0, minOut=None, maxOut=None, **kwargs
+):
+    """
+    Aclnn golden for aclnnAminmaxDim.
+    """
+    result = torch.aminmax(self, dim=dim, keepdim=bool(keepDim))
+    return [result.min, result.max]
