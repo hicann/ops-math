@@ -27,3 +27,25 @@ if (UT_TEST_ALL OR OP_KERNEL_UT)
     # param4：该算子依赖的所有tiling源码文件
     AddOpTestCase(histogram_v2 "ascend910b" "-DDTYPE_X=float" "${histogram_v2_tiling_files}")
 endif()
+
+if (UT_TEST_ALL OR OP_HOST_UT)
+    # HistogramV2 has two tiling templates selected at runtime by SoC (IsRegbaseSocVersion):
+    #   RegBase (ascend950)                  -> arch35 (HistogramV2SimtTiling)
+    #   non-RegBase (ascend310p/910_93/910b) -> arch22 (HistogramV2MembaseTiling)
+    # The single-value TILING_DIR of add_all_modules_sources cannot express both arch dirs, so
+    # register them explicitly here. Each case fakes the SoC it needs via
+    # TilingContextPara::socVersion_, so a single build (any BUILD_SOC_VERSION) exercises
+    # BOTH templates and covers both tiling sources.
+    get_filename_component(histogram_v2_op_host_ut_dir ${CMAKE_CURRENT_SOURCE_DIR}/../op_host REALPATH)
+    add_modules_ut_sources(UT_NAME ${OP_TILING_MODULE_NAME} MODE PRIVATE
+                           DIR ${histogram_v2_op_host_ut_dir} TILING_DIR arch22)
+    add_modules_ut_sources(UT_NAME ${OP_TILING_MODULE_NAME} MODE PRIVATE
+                           DIR ${histogram_v2_op_host_ut_dir} TILING_DIR arch35)
+    # histogram_v2_tiling_ut_util.h fetches/runs tiling via the op-impl space registry (to fake
+    # the SoC per case). That header lives under ${ASCEND_DIR}/pkg_inc, which the shared tiling
+    # common obj already includes but the cases obj does not — add it here just for this op.
+    if (TARGET ${OP_TILING_MODULE_NAME}_cases_obj)
+        target_include_directories(${OP_TILING_MODULE_NAME}_cases_obj
+                                   PRIVATE ${ASCEND_DIR}/pkg_inc)
+    endif()
+endif()
