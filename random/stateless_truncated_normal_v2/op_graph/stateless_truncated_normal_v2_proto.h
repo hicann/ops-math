@@ -30,7 +30,8 @@ namespace ge {
 *alg: The default setting in this operator is 1. \n
 
 *@par Attributes:
-*@li dtype: An optional type. Defaults to DT_FLOAT. The data type of y. It supports 1(float16), 27(bfloat16) and 0(float32).
+*@li dtype: An optional type. Defaults to DT_FLOAT. The data type of y. It supports 1(float16), 27(bfloat16) and
+0(float32).
 
 *@par Outputs:
 *@li y: A tensor of types: float16, float32, bfloat16, double. A tensor of the specified shape
@@ -43,7 +44,8 @@ filled with random truncated normal values. \n
 *@par Third-party framework compatibility
 Compatible with tensorflow StatelessTruncatedNormalV2 operator.
 */
-
+#ifndef OPS_PROTO_DEF_STATELESSTRUNCATEDNORMALV2
+#define OPS_PROTO_DEF_STATELESSTRUNCATEDNORMALV2
 REG_OP(StatelessTruncatedNormalV2)
     .INPUT(shape, TensorType({DT_INT32, DT_INT64}))
     .INPUT(key, TensorType({DT_UINT64}))
@@ -52,7 +54,7 @@ REG_OP(StatelessTruncatedNormalV2)
     .OUTPUT(y, TensorType({DT_FLOAT16, DT_BF16, DT_FLOAT, DT_DOUBLE}))
     .ATTR(dtype, Type, DT_FLOAT)
     .OP_END_FACTORY_REG(StatelessTruncatedNormalV2)
-
+#endif
 } // namespace ge
 
 #endif // OP_PROTO_STATELESS_TRUNCATED_NORMAL_V2_H_
