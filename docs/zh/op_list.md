@@ -1598,6 +1598,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/reciprocal_grad/README.md">reciprocal_grad</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>计算Reciprocal算子的反向梯度。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/reduce_all/README.md">reduce_all</a></td>
     <td>×</td>
     <td>×</td>
