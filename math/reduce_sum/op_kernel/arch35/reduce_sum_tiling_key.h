@@ -17,9 +17,9 @@
 #define _REDUCE_SUM_TILING_KEY_H_
 
 #include "atvoss/reduce/reduce_tiling_key_decl.h"
-#include "atvoss/reduce/reduce_tiling_key_decl_batch_invariant.h"
-#include "atvoss/reduce/reduce_tiling_key_sel_batch_invariant.h"
+#include "atvoss/reduce/reduce_tiling_key_decl_full.h"
+#include "atvoss/reduce/reduce_tiling_key_sel_full.h"
 
-ASCENDC_TPL_ARGS_DECL(ReduceSum, REDUCE_TPL_KEY_DECL_BATCH_INVARIANT());
+ASCENDC_TPL_ARGS_DECL(ReduceSum, REDUCE_TPL_KEY_DECL_FULL());
 
 #endif
