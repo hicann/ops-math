@@ -16,24 +16,6 @@
 namespace Sort {
 using namespace AscendC;
 
-// inputValue is the full-tensor GM base. Convert the grouped-batch segment id to (outer, inner), then gather
-// GM [outer, axis, inner] into the dense UB [segment, axis] layout consumed by the shared two-stage sort.
-template <typename T>
-__simt_vf__ LAUNCH_BOUND(SmallAxisCommon::TWO_STAGE_THREAD_NUM) __aicore__
-    void LoadGroupedOuterBatchSimt(uint32_t totalElems, uint32_t segmentLen, uint32_t validSegs, uint64_t outerStart,
-                                   uint32_t innerSize, __gm__ volatile T* inputValue, __ubuf__ T* outputValue)
-{
-    for (uint32_t idx = static_cast<uint32_t>(threadIdx.x); idx < totalElems;
-         idx += SmallAxisCommon::TWO_STAGE_THREAD_NUM) {
-        uint32_t axis = idx / validSegs;
-        uint32_t seg = idx - axis * validSegs;
-        uint32_t outer = seg / innerSize;
-        uint32_t inner = seg - outer * innerSize;
-        uint64_t gmOffset = ((outerStart + outer) * segmentLen + axis) * innerSize + inner;
-        outputValue[seg * segmentLen + axis] = inputValue[gmOffset];
-    }
-}
-
 // outputValue/outputIdx are full-tensor GM bases. Compute the complete GM offset exactly once and scatter the
 // dense UB [segment, axis] results back to GM [outer, axis, inner].
 template <typename T, typename UbIdxT, typename OutIdxT>
@@ -75,8 +57,8 @@ public:
         if (tilingData == nullptr || pipe == nullptr) {
             return;
         }
-        blockIdx_ = GetBlockIdx();
-        blockDim_ = GetBlockNum();
+        this->blockIdx_ = GetBlockIdx();
+        this->blockDim_ = GetBlockNum();
         batchSize_ = tilingData->keyParams0;
         batchNum_ = tilingData->keyParams1;
         segmentLen_ = tilingData->numTileDataSize;
@@ -104,8 +86,6 @@ public:
 private:
     using Base::batchNum_;
     using Base::batchSize_;
-    using Base::blockDim_;
-    using Base::blockIdx_;
     using Base::finalIdx_;
     using Base::finalValues_;
     using Base::inputValues_;
@@ -114,8 +94,8 @@ private:
 
     __aicore__ inline bool IsProcessInvalid() const
     {
-        return blockIdx_ >= blockDim_ || batchSize_ == 0U || segmentLen_ == 0U || outerSize_ <= 0 || innerSize_ <= 0 ||
-               outerPerBatch_ == 0U ||
+        return this->blockIdx_ >= this->blockDim_ || batchSize_ == 0U || segmentLen_ == 0U || outerSize_ <= 0 ||
+               innerSize_ <= 0 || outerPerBatch_ == 0U ||
                static_cast<uint64_t>(outerPerBatch_) * static_cast<uint64_t>(innerSize_) != batchSize_;
     }
 
@@ -154,14 +134,10 @@ private:
         uint32_t totalElems = validSegs * segmentLen_;
         uint64_t outerStart = static_cast<uint64_t>(batchId) * outerPerBatch_;
         uint32_t validOuter = validSegs / static_cast<uint32_t>(innerSize_);
-        if ((static_cast<uint64_t>(innerSize_) * sizeof(T)) % UB_BLOCK_SIZE == 0U) {
-            LoadGroupedOuterBatchWithNddma(outerStart, validOuter);
-        } else {
-            asc_vf_call<LoadGroupedOuterBatchSimt<T>>(
-                dim3(SmallAxisCommon::TWO_STAGE_THREAD_NUM), totalElems, segmentLen_, validSegs, outerStart,
-                static_cast<uint32_t>(innerSize_), (__gm__ volatile T*)inputXGm_.GetPhyAddr(),
-                (__ubuf__ T*)inputValues_.GetPhyAddr());
-        }
+        // NDDMA strides and loop sizes are element-based and do not require an inner row to be block-aligned.
+        // Keep one producer for aligned and unaligned grouped batches so the following vector sort always has an
+        // explicit MTE2_V handoff.
+        LoadGroupedOuterBatchWithNddma(outerStart, validOuter);
         Base::RunTwoStageSort(totalElems);
         asc_vf_call<StoreGroupedOuterBatchSimt<T, uint32_t, OutIdxT>>(
             dim3(SmallAxisCommon::TWO_STAGE_THREAD_NUM), totalElems, segmentLen_, validSegs, outerStart,

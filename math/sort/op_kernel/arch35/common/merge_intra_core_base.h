@@ -239,6 +239,7 @@ __aicore__ inline void MergeIntraCoreBase<Derived, ValueType, IndexType, IsDesce
     LocalTensor<uint32_t> indexTmpLocal = this->indexTmpBuf_.template Get<uint32_t>();
     ArithProgression<int32_t>(indexTmpLocal.template ReinterpretCast<int32_t>(), baseOffset, 1, actualElem);
 
+    static_cast<Derived*>(this)->PrepareInputForSort(xLocal, alignSize);
     // Flip sign bit so that ascending bit-order matches ascending numeric order for signed floats
     // Note: Keep sign-flipped data for merge, flip back only in ExtractAndCopyChunk
     if constexpr (!IsDescend) {

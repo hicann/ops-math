@@ -14,6 +14,7 @@
 #include <cmath>
 #include "kernel_operator.h"
 #include "op_kernel/platform_util.h"
+#include "kth_value_median_utils.h"
 #include "kth_value_tiling_data.h"
 #include "../../sort/arch35/common/merge_sort_constants.h"
 #include "../../sort/arch35/common/util_type_simd.h"
@@ -28,7 +29,7 @@ using MergeSortConstants::XOR_OP_VALUE_HALF;
 
 constexpr uint32_t UB_BLOCK_SIZE = Ops::Base::GetUbBlockSize();
 
-template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis = 0>
+template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis = 0, bool EnableMedian = false>
 class KthValueMergeSortOneCore {
 public:
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR values, GM_ADDR indices, const KthValueTilingData* tiling,
@@ -73,11 +74,12 @@ private:
     uint32_t sortLoopTimes_ = 0;
     uint32_t unsortedDimParallel_ = 0;
     uint32_t kthIndex_ = 0;
+    uint32_t medianMode_ = 0;
     int64_t unsortedDimNum_ = 0;
 };
 
-template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis>
-__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis>::Init(
+template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis, bool EnableMedian>
+__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis, EnableMedian>::Init(
     GM_ADDR x, GM_ADDR values, GM_ADDR indices, const KthValueTilingData* tiling, TPipe* pipe)
 {
     if (tiling == nullptr || pipe == nullptr) {
@@ -112,8 +114,8 @@ __aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAx
     InitIndexLocal();
 }
 
-template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis>
-__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis>::ParseTilingData()
+template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis, bool EnableMedian>
+__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis, EnableMedian>::ParseTilingData()
 {
     oneCoreRowNum_ = tiling_->keyParams0;
     numTileData_ = tiling_->numTileDataSize;
@@ -121,11 +123,12 @@ __aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAx
     sortLoopTimes_ = tiling_->sortLoopTimes;
     unsortedDimParallel_ = tiling_->unsortedDimParallel;
     kthIndex_ = tiling_->kthIndex;
+    medianMode_ = tiling_->medianMode;
     unsortedDimNum_ = tiling_->unsortedDimNum;
 }
 
-template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis>
-__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis>::InitIndexLocal()
+template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis, bool EnableMedian>
+__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis, EnableMedian>::InitIndexLocal()
 {
     __ubuf__ int32_t* indexValuePtr = reinterpret_cast<__ubuf__ int32_t*>(indexLocal_.GetPhyAddr());
     uint32_t vfLenB32 = Ops::Base::GetVRegSize() / sizeof(int32_t);
@@ -144,10 +147,9 @@ __aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAx
     }
 }
 
-template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis>
-__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis>::CopyDataIn(uint64_t tileOffset,
-                                                                                                uint32_t currTileSize,
-                                                                                                uint32_t rowNum)
+template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis, bool EnableMedian>
+__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis, EnableMedian>::CopyDataIn(
+    uint64_t tileOffset, uint32_t currTileSize, uint32_t rowNum)
 {
     LocalTensor<T> xLocal = inQueueX_.AllocTensor<T>();
     Duplicate(xLocal, static_cast<T>(NAN), alignSize_ * rowNum);
@@ -166,8 +168,8 @@ __aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAx
     inQueueX_.EnQue<T>(xLocal);
 }
 
-template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis>
-__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis>::FlipSignBit(
+template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis, bool EnableMedian>
+__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis, EnableMedian>::FlipSignBit(
     LocalTensor<CONVERT_TYPE> xLocal, uint32_t offset, uint32_t count)
 {
     if constexpr (IsSameType<float, CONVERT_TYPE>::value) {
@@ -179,8 +181,8 @@ __aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAx
     }
 }
 
-template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis>
-__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis>::SortRows(
+template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis, bool EnableMedian>
+__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis, EnableMedian>::SortRows(
     LocalTensor<T> xLocal, LocalTensor<T> sortedValueLocal, LocalTensor<uint32_t> sortedIndexLocal, uint32_t rowNum)
 {
     uint32_t sortRepeatTimes = alignSize_ / DEALING_SORT_NUM_ONCE;
@@ -200,6 +202,11 @@ __aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAx
     }
     for (uint32_t row = 0; row < rowNum; ++row) {
         uint32_t offset = row * alignSize_;
+        if constexpr (EnableMedian && IS_MEDIAN_FLOAT_TYPE<CONVERT_TYPE>) {
+            if (medianMode_ != MEDIAN_MODE_STATIC) {
+                CanonicalizeNanValues(xSortLocal[offset], alignSize_);
+            }
+        }
         // MergeSort sorts sign-flipped ascending keys. Flip before Sort/Sort32 and flip back after Extract.
         FlipSignBit(xSortLocal, offset, alignSize_);
         if constexpr (isSort32SmallAxis == 1) {
@@ -218,9 +225,9 @@ __aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAx
     }
 }
 
-template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis>
-__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis>::CopyKthToGm(uint64_t outputOffset,
-                                                                                                 uint32_t rowNum)
+template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis, bool EnableMedian>
+__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis, EnableMedian>::CopyKthToGm(
+    uint64_t outputOffset, uint32_t rowNum)
 {
     LocalTensor<T> sortedValueLocal = outValueQueue_.DeQue<T>();
     LocalTensor<uint32_t> sortedIndexLocal = outIndexQueue_.DeQue<uint32_t>();
@@ -232,7 +239,14 @@ __aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAx
     LocalTensor<T> compactValue = compactValueQueue_.AllocTensor<T>();
     LocalTensor<int64_t> compactIndex = compactIndexQueue_.AllocTensor<int64_t>();
     for (uint32_t row = 0; row < rowNum; ++row) {
-        uint32_t srcOffset = row * alignSize_ + kthIndex_;
+        uint32_t rowOffset = row * alignSize_;
+        uint32_t selectedK = kthIndex_;
+        if constexpr (EnableMedian && IS_MEDIAN_FLOAT_TYPE<T>) {
+            uint32_t nonNanCount = CountNonNan(sortedValueLocal[rowOffset], numTileData_, concatTmpBuf_.Get<float>(),
+                                               pipe_);
+            selectedK = ResolveMedianK(kthIndex_, numTileData_, nonNanCount, medianMode_);
+        }
+        uint32_t srcOffset = rowOffset + selectedK;
         compactValue.SetValue(row, sortedValueLocal.GetValue(srcOffset));
         compactIndex.SetValue(row, static_cast<int64_t>(sortedIndexLocal.GetValue(srcOffset)));
     }
@@ -253,8 +267,9 @@ __aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAx
     outIndexQueue_.FreeTensor(sortedIndexLocal);
 }
 
-template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis>
-__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis>::ProcessSingleRound(uint32_t round)
+template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis, bool EnableMedian>
+__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis, EnableMedian>::ProcessSingleRound(
+    uint32_t round)
 {
     int64_t rowStart = (static_cast<int64_t>(blockIdx_) + static_cast<int64_t>(round) * unsortedDimParallel_) *
                        oneCoreRowNum_;
@@ -278,8 +293,8 @@ __aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAx
     CopyKthToGm(static_cast<uint64_t>(rowStart), rowNum);
 }
 
-template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis>
-__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis>::Process()
+template <typename T, typename CONVERT_TYPE, uint64_t isSort32SmallAxis, bool EnableMedian>
+__aicore__ inline void KthValueMergeSortOneCore<T, CONVERT_TYPE, isSort32SmallAxis, EnableMedian>::Process()
 {
     if (blockIdx_ >= GetBlockNum()) {
         return;

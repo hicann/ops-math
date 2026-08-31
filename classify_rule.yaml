@@ -634,6 +634,8 @@ sort@ops-math:
         - ops/ops-math/math/sort_with_index/
         - ops/ops-math/math/top_k_v2/
         - ops/ops-math/math/kth_value/
+        - ops/ops-math/math/median/
+        - ops/ops-math/math/nan_median/
       opensource_style: null
       kernel_style: null
     unrelease:
@@ -644,6 +646,8 @@ sort@ops-math:
         - ops/ops-math/math/sort_with_index/tests/
         - ops/ops-math/math/top_k_v2/examples/
         - ops/ops-math/math/top_k_v2/tests/
+        - ops/ops-math/math/median/tests/
+        - ops/ops-math/math/nan_median/tests/
       non_delivery: null
       open_source: null
 

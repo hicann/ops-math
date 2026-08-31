@@ -22,6 +22,7 @@
 #include "kernel_tiling/kernel_tiling.h"
 #include "op_kernel/platform_util.h"
 #include "simt_api/asc_simt.h"
+#include "signed_zero_sort_utils.h"
 #include "util_type_simd.h"
 
 namespace SmallAxisCommon {
@@ -43,9 +44,10 @@ constexpr uint32_t NON_LAST_MERGE_SORT_ALIGN = 32;
  * @tparam IsDescend Sort order: true for descending, false for ascending
  * @tparam UseMergeSort Whether to use MERGE_SORT instead of RADIX_SORT for row sorting
  * @tparam IsBf16Merge Whether bf16 input needs an intermediate cast buffer for merge-sort path
+ * @tparam NormalizeSignedZero Whether radix sort must preserve stable ordering between +0 and -0
  */
 template <typename Derived, typename T, typename SortT, typename RangeType, typename IdxType, typename CastType,
-          bool IsDescend, bool UseMergeSort, bool IsBf16Merge>
+          bool IsDescend, bool UseMergeSort, bool IsBf16Merge, bool NormalizeSignedZero = false>
 class NonLastSmallAxisBase {
 public:
     __aicore__ inline void Process()
@@ -54,18 +56,17 @@ public:
             this->innerLoopNum_ == 0) {
             return;
         }
-        uint64_t tileCount = static_cast<uint64_t>(this->outerSize_) * static_cast<uint64_t>(this->innerLoopNum_);
-        uint64_t tilesPerCore = Ops::Base::CeilDiv(tileCount, static_cast<uint64_t>(this->blockDim_));
-        uint64_t startTile = static_cast<uint64_t>(this->blockIdx_) * tilesPerCore;
+        const uint64_t tileCount = static_cast<uint64_t>(this->outerSize_) * static_cast<uint64_t>(this->innerLoopNum_);
+        const uint64_t tilesPerCore = Ops::Base::CeilDiv(tileCount, static_cast<uint64_t>(this->blockDim_));
+        const uint64_t startTile = static_cast<uint64_t>(this->blockIdx_) * tilesPerCore;
         uint64_t endTile = startTile + tilesPerCore;
-        if (endTile > tileCount) {
-            endTile = tileCount;
-        }
+        endTile = endTile > tileCount ? tileCount : endTile;
         for (uint64_t tileId = startTile; tileId < endTile; ++tileId) {
-            uint64_t outerId = tileId / this->innerLoopNum_;
-            uint32_t innerTileId = static_cast<uint32_t>(tileId - outerId * static_cast<uint64_t>(this->innerLoopNum_));
-            uint32_t curInnerChunk = this->GetCurrentInnerChunk(innerTileId);
-            if (curInnerChunk == 0) {
+            const uint64_t outerId = tileId / this->innerLoopNum_;
+            const uint32_t innerTileId = static_cast<uint32_t>(tileId -
+                                                               outerId * static_cast<uint64_t>(this->innerLoopNum_));
+            const uint32_t curInnerChunk = this->GetCurrentInnerChunk(innerTileId);
+            if (curInnerChunk == 0U) {
                 continue;
             }
             int64_t innerStart = static_cast<int64_t>(innerTileId) * static_cast<int64_t>(this->innerChunk_);
@@ -99,6 +100,7 @@ protected:
     LocalTensor<SortT> sortInput_;
     LocalTensor<SortT> sortedValue_;
     LocalTensor<uint32_t> sortedIndex_;
+    LocalTensor<uint32_t> sourceIndex_;
     LocalTensor<uint8_t> tmp_;
 
     uint32_t blockIdx_ = 0;
@@ -239,7 +241,14 @@ protected:
             LocalTensor<SortT> src = this->sortInput_[inner * this->valueAxisElems_];
             LocalTensor<SortT> dst = this->sortedValue_[inner * this->valueAxisElems_];
             LocalTensor<uint32_t> dstIndex = this->sortedIndex_[inner * this->indexAxisElems_];
-            AscendC::Sort<SortT, true, sortConfig_>(dst, dstIndex, src, this->tmp_, this->sortCount_);
+            if constexpr (NormalizeSignedZero) {
+                SignedZeroSortCommon::PrepareSignedZeroKeysVec(src, this->sourceIndex_, this->sortCount_);
+                AscendC::Sort<SortT, true, sortConfig_>(dst, dstIndex, src, this->tmp_, this->sortCount_);
+                SignedZeroSortCommon::RestoreSignedZeroValuesByIndexVec(dst, dstIndex, this->sourceIndex_,
+                                                                        this->sortCount_);
+            } else {
+                AscendC::Sort<SortT, true, sortConfig_>(dst, dstIndex, src, this->tmp_, this->sortCount_);
+            }
         }
     }
 };

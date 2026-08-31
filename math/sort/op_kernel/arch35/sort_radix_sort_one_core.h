@@ -20,6 +20,7 @@
 #include "kernel_operator.h"
 #include "op_kernel/platform_util.h"
 #include "kernel_tiling/kernel_tiling.h"
+#include "common/signed_zero_sort_utils.h"
 
 namespace Sort {
 using namespace AscendC;
@@ -45,6 +46,8 @@ private:
     TBuf<TPosition::VECCALC> tmpUb_;
     TQue<QuePosition::VECOUT, 1> outIdxQueue_;
     TQue<QuePosition::VECOUT, 1> outValueQueue_;
+    TBuf<TPosition::VECCALC> sourceOrderBuf_;
+    LocalTensor<uint32_t> sourceOrder_;
     static constexpr SortConfig sortConfigMuti{SortType::RADIX_SORT, isDescend};
 
     int64_t totalDataNum_ = 0;
@@ -80,6 +83,10 @@ __aicore__ inline void SortRadixOneCore<T1, T2, isDescend>::Init(GM_ADDR x, GM_A
     pipe_->InitBuffer(outValueQueue_, bufferNum_, xUbSize_);
     pipe_->InitBuffer(outIdxQueue_, bufferNum_, yUbSize_);
     pipe_->InitBuffer(tmpUb_, tmpUbSize_);
+    if constexpr (SignedZeroSortCommon::IS_FLOATING_POINT_V<T1>) {
+        pipe_->InitBuffer(sourceOrderBuf_, halfIndex_ * sizeof(uint32_t));
+        sourceOrder_ = sourceOrderBuf_.Get<uint32_t>();
+    }
 }
 
 template <typename T1, typename T2, bool isDescend>
@@ -120,15 +127,38 @@ __aicore__ inline void SortRadixOneCore<T1, T2, isDescend>::ProcessRadixSortOneC
     LocalTensor<T1> sortValueUb = outValueQueue_.AllocTensor<T1>();
     LocalTensor<uint32_t> sortIdxUb = outIdxQueue_.AllocTensor<uint32_t>();
     LocalTensor<uint8_t> tmpUb = tmpUb_.Get<uint8_t>();
+    bool hasNegativeZero = false;
+    if constexpr (SignedZeroSortCommon::IS_FLOATING_POINT_V<T1>) {
+        hasNegativeZero = SignedZeroSortCommon::HasNegativeZeroVec(xLocal, sourceOrder_, numTileData_);
+        if (hasNegativeZero) {
+            SignedZeroSortCommon::PrepareSignedZeroKeysVec(xLocal, sourceOrder_, numTileData_);
+        }
+    }
     if constexpr (sizeof(T2) == sizeof(int64_t)) {
         LocalTensor<uint32_t> sortIdxUbHalf = sortIdxUb[halfIndex_];
-        AscendC::Sort<T1, false, sortConfigMuti>(sortValueUb, sortIdxUbHalf, xLocal, tmpUb, numTileData_);
+        if constexpr (SignedZeroSortCommon::IS_FLOATING_POINT_V<T1>) {
+            AscendC::Sort<T1, false, sortConfigMuti>(sortValueUb, sortIdxUbHalf, xLocal, tmpUb, numTileData_);
+            if (hasNegativeZero) {
+                SignedZeroSortCommon::RestoreSignedZeroValuesByIndexVec(sortValueUb, sortIdxUbHalf, sourceOrder_,
+                                                                        numTileData_);
+            }
+        } else {
+            AscendC::Sort<T1, false, sortConfigMuti>(sortValueUb, sortIdxUbHalf, xLocal, tmpUb, numTileData_);
+        }
         inQueueX_.FreeTensor(xLocal);
         LocalTensor<int64_t> sortIdxUbInt64 = sortIdxUb.template ReinterpretCast<int64_t>();
         LocalTensor<int32_t> sortIdxUbInt32 = sortIdxUbHalf.template ReinterpretCast<int32_t>();
         AscendC::Cast(sortIdxUbInt64, sortIdxUbInt32, RoundMode::CAST_NONE, numTileData_);
     } else {
-        AscendC::Sort<T1, false, sortConfigMuti>(sortValueUb, sortIdxUb, xLocal, tmpUb, numTileData_);
+        if constexpr (SignedZeroSortCommon::IS_FLOATING_POINT_V<T1>) {
+            AscendC::Sort<T1, false, sortConfigMuti>(sortValueUb, sortIdxUb, xLocal, tmpUb, numTileData_);
+            if (hasNegativeZero) {
+                SignedZeroSortCommon::RestoreSignedZeroValuesByIndexVec(sortValueUb, sortIdxUb, sourceOrder_,
+                                                                        numTileData_);
+            }
+        } else {
+            AscendC::Sort<T1, false, sortConfigMuti>(sortValueUb, sortIdxUb, xLocal, tmpUb, numTileData_);
+        }
         inQueueX_.FreeTensor(xLocal);
     }
     outValueQueue_.EnQue<T1>(sortValueUb);

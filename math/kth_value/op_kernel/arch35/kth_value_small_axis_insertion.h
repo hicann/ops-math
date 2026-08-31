@@ -16,34 +16,40 @@
 #include "kernel_operator.h"
 #include "op_kernel/platform_util.h"
 #include "simt_api/asc_simt.h"
+#include "kth_value_median_utils.h"
 #include "kth_value_tiling_data.h"
 #include "../../sort/arch35/common/small_axis_insertion_base.h"
 
 namespace KthValue {
 using namespace AscendC;
 
-template <typename T, typename CONVERT_TYPE>
+template <typename T, typename CONVERT_TYPE, bool EnableMedian>
 __simt_vf__ LAUNCH_BOUND(SmallAxisCommon::INSERTION_THREAD_NUM) __aicore__
-    void SimtStoreKthInsertionBatch(uint32_t validSegs, uint32_t kthIndex, uint32_t valueRowElems,
-                                    uint32_t indexRowElems, uint64_t outputStart, __ubuf__ CONVERT_TYPE* values,
-                                    __ubuf__ uint32_t* indices, __gm__ volatile T* outputValue,
-                                    __gm__ volatile int64_t* outputIndex)
+    void SimtStoreKthInsertionBatch(uint32_t validSegs, uint32_t segmentLen, uint32_t kthIndex, uint32_t medianMode,
+                                    uint32_t valueRowElems, uint32_t indexRowElems, uint64_t outputStart,
+                                    __ubuf__ CONVERT_TYPE* values, __ubuf__ uint32_t* indices,
+                                    __gm__ volatile T* outputValue, __gm__ volatile int64_t* outputIndex)
 {
     for (uint32_t seg = static_cast<uint32_t>(threadIdx.x); seg < validSegs;
          seg += SmallAxisCommon::INSERTION_THREAD_NUM) {
-        uint32_t valueOffset = seg * valueRowElems + kthIndex;
-        uint32_t indexOffset = seg * indexRowElems + kthIndex;
+        uint32_t rowOffset = seg * valueRowElems;
+        uint32_t selectedK = kthIndex;
+        if constexpr (EnableMedian && IS_MEDIAN_FLOAT_TYPE<T>) {
+            selectedK = ResolveMedianKFromSorted(values, rowOffset, segmentLen, kthIndex, medianMode);
+        }
+        uint32_t valueOffset = rowOffset + selectedK;
+        uint32_t indexOffset = seg * indexRowElems + selectedK;
         outputValue[outputStart + seg] = static_cast<T>(values[valueOffset]);
         outputIndex[outputStart + seg] = static_cast<int64_t>(indices[indexOffset]);
     }
 }
 
-template <typename T, typename CONVERT_TYPE>
+template <typename T, typename CONVERT_TYPE, bool EnableMedian = false>
 class KthValueSmallAxisInsertion
-    : public SmallAxisCommon::SmallAxisInsertionBase<KthValueSmallAxisInsertion<T, CONVERT_TYPE>, T, CONVERT_TYPE,
-                                                     uint32_t, false> {
-    using Base = SmallAxisCommon::SmallAxisInsertionBase<KthValueSmallAxisInsertion<T, CONVERT_TYPE>, T, CONVERT_TYPE,
-                                                         uint32_t, false>;
+    : public SmallAxisCommon::SmallAxisInsertionBase<KthValueSmallAxisInsertion<T, CONVERT_TYPE, EnableMedian>, T,
+                                                     CONVERT_TYPE, uint32_t, false, IS_MEDIAN_FLOAT_TYPE<T>> {
+    using Base = SmallAxisCommon::SmallAxisInsertionBase<KthValueSmallAxisInsertion<T, CONVERT_TYPE, EnableMedian>, T,
+                                                         CONVERT_TYPE, uint32_t, false, IS_MEDIAN_FLOAT_TYPE<T>>;
 
 public:
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR values, GM_ADDR indices, const KthValueTilingData* tiling,
@@ -80,14 +86,17 @@ private:
     const KthValueTilingData* tiling_ = nullptr;
 
     uint32_t kthIndex_ = 0;
+    uint32_t medianMode_ = 0;
     int64_t totalSegs_ = 0;
     int64_t innerSize_ = 1;
     uint32_t innerLoopNum_ = 0;
 };
 
-template <typename T, typename CONVERT_TYPE>
-__aicore__ inline void KthValueSmallAxisInsertion<T, CONVERT_TYPE>::Init(GM_ADDR x, GM_ADDR values, GM_ADDR indices,
-                                                                         const KthValueTilingData* tiling, TPipe* pipe)
+template <typename T, typename CONVERT_TYPE, bool EnableMedian>
+__aicore__ inline void KthValueSmallAxisInsertion<T, CONVERT_TYPE, EnableMedian>::Init(GM_ADDR x, GM_ADDR values,
+                                                                                       GM_ADDR indices,
+                                                                                       const KthValueTilingData* tiling,
+                                                                                       TPipe* pipe)
 {
     if (tiling == nullptr || pipe == nullptr) {
         return;
@@ -99,6 +108,7 @@ __aicore__ inline void KthValueSmallAxisInsertion<T, CONVERT_TYPE>::Init(GM_ADDR
     segmentsPerBatch_ = tiling_->keyParams0;
     batchNum_ = tiling_->keyParams1;
     kthIndex_ = tiling_->kthIndex;
+    medianMode_ = tiling_->medianMode;
     totalSegs_ = tiling_->unsortedDimNum;
     innerSize_ = tiling_->innerSize <= 0 ? 1 : tiling_->innerSize;
     innerLoopNum_ = tiling_->innerLoopNum;
@@ -114,15 +124,16 @@ __aicore__ inline void KthValueSmallAxisInsertion<T, CONVERT_TYPE>::Init(GM_ADDR
     Base::InitInsertionBuffers(pipe);
 }
 
-template <typename T, typename CONVERT_TYPE>
-__aicore__ inline bool KthValueSmallAxisInsertion<T, CONVERT_TYPE>::IsProcessInvalid() const
+template <typename T, typename CONVERT_TYPE, bool EnableMedian>
+__aicore__ inline bool KthValueSmallAxisInsertion<T, CONVERT_TYPE, EnableMedian>::IsProcessInvalid() const
 {
     return blockIdx_ >= blockDim_ || segmentLen_ == 0U || segmentsPerBatch_ == 0U ||
            (IsNonLastMode() && innerSize_ <= 0);
 }
 
-template <typename T, typename CONVERT_TYPE>
-__aicore__ inline uint32_t KthValueSmallAxisInsertion<T, CONVERT_TYPE>::ComputeValidSegs(uint32_t batchId) const
+template <typename T, typename CONVERT_TYPE, bool EnableMedian>
+__aicore__ inline uint32_t KthValueSmallAxisInsertion<T, CONVERT_TYPE, EnableMedian>::ComputeValidSegs(
+    uint32_t batchId) const
 {
     if (IsNonLastMode()) {
         uint32_t innerTileId = batchId % innerLoopNum_;
@@ -144,8 +155,9 @@ __aicore__ inline uint32_t KthValueSmallAxisInsertion<T, CONVERT_TYPE>::ComputeV
     return static_cast<uint32_t>(segRemain);
 }
 
-template <typename T, typename CONVERT_TYPE>
-__aicore__ inline void KthValueSmallAxisInsertion<T, CONVERT_TYPE>::ProcessBatch(uint32_t batchId, uint32_t validSegs)
+template <typename T, typename CONVERT_TYPE, bool EnableMedian>
+__aicore__ inline void KthValueSmallAxisInsertion<T, CONVERT_TYPE, EnableMedian>::ProcessBatch(uint32_t batchId,
+                                                                                               uint32_t validSegs)
 {
     int64_t segStart = GetOutputStart(batchId);
     LoadBatch(batchId, validSegs);
@@ -153,14 +165,15 @@ __aicore__ inline void KthValueSmallAxisInsertion<T, CONVERT_TYPE>::ProcessBatch
     StoreKth(segStart, validSegs);
 }
 
-template <typename T, typename CONVERT_TYPE>
-__aicore__ inline bool KthValueSmallAxisInsertion<T, CONVERT_TYPE>::IsNonLastMode() const
+template <typename T, typename CONVERT_TYPE, bool EnableMedian>
+__aicore__ inline bool KthValueSmallAxisInsertion<T, CONVERT_TYPE, EnableMedian>::IsNonLastMode() const
 {
     return innerLoopNum_ != 0U;
 }
 
-template <typename T, typename CONVERT_TYPE>
-__aicore__ inline int64_t KthValueSmallAxisInsertion<T, CONVERT_TYPE>::GetOutputStart(uint32_t batchId) const
+template <typename T, typename CONVERT_TYPE, bool EnableMedian>
+__aicore__ inline int64_t KthValueSmallAxisInsertion<T, CONVERT_TYPE, EnableMedian>::GetOutputStart(
+    uint32_t batchId) const
 {
     if (!IsNonLastMode()) {
         return static_cast<int64_t>(batchId) * static_cast<int64_t>(segmentsPerBatch_);
@@ -170,8 +183,9 @@ __aicore__ inline int64_t KthValueSmallAxisInsertion<T, CONVERT_TYPE>::GetOutput
     return outerId * innerSize_ + innerTileId * static_cast<int64_t>(segmentsPerBatch_);
 }
 
-template <typename T, typename CONVERT_TYPE>
-__aicore__ inline int64_t KthValueSmallAxisInsertion<T, CONVERT_TYPE>::GetInputStart(uint32_t batchId) const
+template <typename T, typename CONVERT_TYPE, bool EnableMedian>
+__aicore__ inline int64_t KthValueSmallAxisInsertion<T, CONVERT_TYPE, EnableMedian>::GetInputStart(
+    uint32_t batchId) const
 {
     if (!IsNonLastMode()) {
         return static_cast<int64_t>(batchId) * static_cast<int64_t>(segmentsPerBatch_) *
@@ -183,8 +197,9 @@ __aicore__ inline int64_t KthValueSmallAxisInsertion<T, CONVERT_TYPE>::GetInputS
     return outerId * static_cast<int64_t>(segmentLen_) * innerSize_ + innerStart;
 }
 
-template <typename T, typename CONVERT_TYPE>
-__aicore__ inline void KthValueSmallAxisInsertion<T, CONVERT_TYPE>::LoadBatch(uint32_t batchId, uint32_t validSegs)
+template <typename T, typename CONVERT_TYPE, bool EnableMedian>
+__aicore__ inline void KthValueSmallAxisInsertion<T, CONVERT_TYPE, EnableMedian>::LoadBatch(uint32_t batchId,
+                                                                                            uint32_t validSegs)
 {
     if (IsNonLastMode()) {
         uint64_t outerId = static_cast<uint64_t>(batchId / innerLoopNum_);
@@ -197,15 +212,17 @@ __aicore__ inline void KthValueSmallAxisInsertion<T, CONVERT_TYPE>::LoadBatch(ui
     }
 }
 
-template <typename T, typename CONVERT_TYPE>
-__aicore__ inline void KthValueSmallAxisInsertion<T, CONVERT_TYPE>::StoreKth(int64_t segStart, uint32_t validSegs)
+template <typename T, typename CONVERT_TYPE, bool EnableMedian>
+__aicore__ inline void KthValueSmallAxisInsertion<T, CONVERT_TYPE, EnableMedian>::StoreKth(int64_t segStart,
+                                                                                           uint32_t validSegs)
 {
     if (validSegs == 0U) {
         return;
     }
-    asc_vf_call<SimtStoreKthInsertionBatch<T, CONVERT_TYPE>>(
-        dim3(SmallAxisCommon::INSERTION_THREAD_NUM), validSegs, kthIndex_, valueRowStride_, indexRowStride_,
-        static_cast<uint64_t>(segStart), reinterpret_cast<__ubuf__ CONVERT_TYPE*>(values_.GetPhyAddr()),
+    asc_vf_call<SimtStoreKthInsertionBatch<T, CONVERT_TYPE, EnableMedian>>(
+        dim3(SmallAxisCommon::INSERTION_THREAD_NUM), validSegs, segmentLen_, kthIndex_, medianMode_, valueRowStride_,
+        indexRowStride_, static_cast<uint64_t>(segStart),
+        reinterpret_cast<__ubuf__ CONVERT_TYPE*>(values_.GetPhyAddr()),
         reinterpret_cast<__ubuf__ uint32_t*>(indices_.GetPhyAddr()), (__gm__ volatile T*)valueGm_.GetPhyAddr(),
         (__gm__ volatile int64_t*)indexGm_.GetPhyAddr());
     event_t eventIdVToS = static_cast<event_t>(pipe_->FetchEventID(HardEvent::V_S));

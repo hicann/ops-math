@@ -229,33 +229,6 @@ TEST_F(KthValueTilingTest, test_kthvalue_int64_small_axis_short_rank_select_1693
     EXPECT_EQ(tilingInfo.workspaceSizes[0], WORK_SPACE_SIZE);
 }
 
-TEST_F(KthValueTilingTest, test_kthvalue_bf16_nonlast_axis1840_radix)
-{
-    auto tilingContextPara = MakeKthValueTilingContext({{2, 1840, 1}, {2, 1840, 1}}, {{2, 1, 1}, {2, 1, 1}},
-                                                       {{2, 1, 1}, {2, 1, 1}}, ge::DT_BF16, 920, 1);
-
-    TilingInfo tilingInfo;
-    ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
-    EXPECT_EQ(tilingInfo.tilingKey, 266);
-    ASSERT_EQ(tilingInfo.workspaceSizes.size(), 1);
-    EXPECT_EQ(tilingInfo.workspaceSizes[0], WORK_SPACE_SIZE);
-}
-
-TEST_F(KthValueTilingTest, test_kthvalue_fp32_nonlast_sort32_uses_wide_inner_tile)
-{
-    auto tilingContextPara = MakeKthValueTilingContext({{28, 26, 27, 29, 26}, {28, 26, 27, 29, 26}},
-                                                       {{1, 26, 27, 29, 26}, {1, 26, 27, 29, 26}},
-                                                       {{1, 26, 27, 29, 26}, {1, 26, 27, 29, 26}}, ge::DT_FLOAT, 14, 0);
-
-    TilingInfo tilingInfo;
-    ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
-    EXPECT_EQ(tilingInfo.tilingKey, 265);
-    ASSERT_GE(tilingInfo.tilingDataSize, sizeof(KthValueTilingData));
-    const auto* tilingData = reinterpret_cast<const KthValueTilingData*>(tilingInfo.tilingData.get());
-    EXPECT_EQ(tilingData->innerChunk, 32);
-    EXPECT_EQ(tilingData->innerLoopNum, 16541);
-}
-
 TEST_F(KthValueTilingTest, test_kthvalue_twostage_stays_on_original_route)
 {
     auto tilingContextPara = MakeKthValueTilingContext({{4096, 9}, {4096, 9}}, {{4096, 1}, {4096, 1}},

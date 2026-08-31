@@ -47,6 +47,8 @@ struct MergeSortBigSize
                                 const SortRegBaseTilingData* tilingData, TPipe* pipe);
     __aicore__ inline void InitMergeBuffers();
     __aicore__ inline void ExtractAndCopyOut();
+    __aicore__ inline void OnInputLoaded(LocalTensor<T>, uint32_t) {}
+    __aicore__ inline void PrepareInputForSort(LocalTensor<T>, uint32_t) {}
 };
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>

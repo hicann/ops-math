@@ -165,6 +165,7 @@ public:
         LocalTensor<T> inputLocal = this->inputQueue_.template DeQue<T>();
         LocalTensor<CONVERT_TYPE> sortedValueLocal = this->sortedValueUb_.template Get<CONVERT_TYPE>();
         LocalTensor<uint32_t> sortedValueIndexLocal = this->sortedValueIndexUb_.template Get<uint32_t>();
+        static_cast<Derived*>(this)->OnInputLoaded(inputLocal, tileNum);
         InitIndexLocal(tileNum, sortedValueIndexLocal, offsetPerCore);
         DoSort(tileNum, inputLocal, sortedValueLocal, sortedValueIndexLocal);
         CopyOutWorkSpace(tileNum, offsetPerCore, sortedValueLocal);
@@ -220,6 +221,7 @@ public:
         uint32_t sortRepeatTimes = Ops::Base::CeilDiv(aglinTileNum, DEALING_SORT_NUM_ONCE);
         uint32_t concatRepeatTimes = Ops::Base::CeilDiv(aglinTileNum, DEALING_CONCAT_NUM_ONCE);
 
+        static_cast<Derived*>(this)->PrepareInputForSort(inputLocal, aglinTileNum);
         if constexpr (!IS_DESCEND) {
             FlipSignBit(inputLocal, aglinTileNum);
         }

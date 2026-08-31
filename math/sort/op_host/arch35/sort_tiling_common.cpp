@@ -259,6 +259,8 @@ bool GetNonLastSortTmpSize(ge::DataType dataType, uint32_t sortCount, bool useMe
     AscendC::SortConfig config;
     config.type = useMergeSort ? AscendC::SortType::MERGE_SORT : AscendC::SortType::RADIX_SORT;
     config.isDescend = isDescend;
+    // Non-last-axis kernels use Sort's implicit-index overload for both radix
+    // and merge paths. sourceOrder is consumed only after floating radix Sort.
     config.hasSrcIndex = false;
     config.hasDstIndex = true;
     uint32_t maxValue = 0;
@@ -1313,7 +1315,13 @@ static bool SelectNonLastSmallAxisRouteImpl(const SortKthTileInfo& info, SmallAx
         // Group only when the target per-core work can hold at least two complete outer slices. Rounding the
         // batch cap to an innerSize multiple preserves batchSize == outerSlicesPerBatch * innerSize, allowing the
         // kernel to recover each segment's (outer, inner) coordinates without a partial outer slice.
-        if (innerSize <= fullCoreSegs / 2U) {
+        // Keep rows smaller than one UB block on the established non-grouped path. The grouped 3D NDDMA
+        // transpose loses lane data for b64 innerSize == 2 when several complete outer slices share one batch.
+        // Element-based NDDMA strides still support rows that span at least one block without being block-aligned.
+        const uint64_t innerRowBytes = static_cast<uint64_t>(innerSize) * info.dtypeSize;
+        const bool canGroupMultipleOuterSlices = innerSize <= fullCoreSegs / 2U;
+        const bool innerRowSpansUbBlock = info.blockUbSize != 0U && innerRowBytes >= info.blockUbSize;
+        if (canGroupMultipleOuterSlices && innerRowSpansUbBlock) {
             uint64_t groupedBatchCap64 = Ops::Base::CeilDiv(static_cast<uint64_t>(fullCoreSegs),
                                                             static_cast<uint64_t>(innerSize)) *
                                          innerSize;

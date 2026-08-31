@@ -23,6 +23,7 @@
 #include "kernel_operator.h"
 #include "op_kernel/math_util.h"
 #include "op_kernel/platform_util.h"
+#include "kth_value_median_utils.h"
 #include "kth_value_tiling_data.h"
 #include "../../sort/arch35/common/merge_sort_constants.h"
 #include "../../sort/arch35/common/merge_intra_core_base.h"
@@ -44,13 +45,14 @@ using MergeSortConstants::UB_BLOCK_BYTES;
  * @tparam ValueType Input data type (float)
  * @tparam IndexType Index data type (int32_t or int64_t)
  * @tparam IsDescend Sort order: true for descending, false for ascending
+ * @tparam EnableMedian Enables NaN canonicalization and runtime median-k resolution for Median/NanMedian
  */
-template <typename ValueType, typename IndexType, bool IsDescend>
+template <typename ValueType, typename IndexType, bool IsDescend, bool EnableMedian = false>
 class KthValueMergeIntraCore
-    : public MergeIntraCoreCommon::MergeIntraCoreBase<KthValueMergeIntraCore<ValueType, IndexType, IsDescend>,
-                                                      ValueType, IndexType, IsDescend> {
-    using Base = MergeIntraCoreCommon::MergeIntraCoreBase<KthValueMergeIntraCore<ValueType, IndexType, IsDescend>,
-                                                          ValueType, IndexType, IsDescend>;
+    : public MergeIntraCoreCommon::MergeIntraCoreBase<
+          KthValueMergeIntraCore<ValueType, IndexType, IsDescend, EnableMedian>, ValueType, IndexType, IsDescend> {
+    using Base = MergeIntraCoreCommon::MergeIntraCoreBase<
+        KthValueMergeIntraCore<ValueType, IndexType, IsDescend, EnableMedian>, ValueType, IndexType, IsDescend>;
     friend Base;
 
 public:
@@ -61,18 +63,22 @@ public:
 private:
     // KthValue-specific members
     uint32_t kthIndex_ = 0;
+    uint32_t staticKthIndex_ = 0;
+    uint32_t medianMode_ = 0;
     TQue<QuePosition::VECOUT, 1> kthValueQueue_, kthIdxQueue_;
 
     __aicore__ inline void InitPhase1Buffers();
     __aicore__ inline void InitPhase2Buffers();
     __aicore__ inline void InitPhase3Buffers();
+    __aicore__ inline void PrepareInputForSort(LocalTensor<ValueType> inputLocal, uint32_t alignedCount);
     __aicore__ inline void ExtractAndCopyOut(int64_t batchIdx, uint32_t resultRegion);
     __aicore__ inline void ExtractAndCopyChunk(int64_t cacheBatchOffset, uint32_t cacheOffset, int64_t outputOffset,
                                                uint32_t elemProcessed, uint32_t elemCount);
+    __aicore__ inline uint32_t ResolveBatchK(int64_t batchIdx);
 };
 
-template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend>::Init(
+template <typename ValueType, typename IndexType, bool IsDescend, bool EnableMedian>
+__aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend, EnableMedian>::Init(
     GM_ADDR x, GM_ADDR value, GM_ADDR indices, GM_ADDR workspace, const KthValueTilingData* tilingData, TPipe* pipe)
 {
     if (tilingData == nullptr || pipe == nullptr) {
@@ -87,6 +93,8 @@ __aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend>::
     this->batchPerCore_ = tilingData->keyParams0;
     this->blockSortSize_ = tilingData->numTileDataSize;
     kthIndex_ = tilingData->kthIndex;
+    staticKthIndex_ = kthIndex_;
+    medianMode_ = tilingData->medianMode;
     this->extractChunkSize_ = tilingData->keyParams4;
     this->blocksPerRow_ = tilingData->lastDimTileNum;
     this->maxCoreNum_ = tilingData->lastDimNeedCore;
@@ -122,8 +130,8 @@ __aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend>::
                                    static_cast<int64_t>(this->blockIdx_) * perCoreCacheLen);
 }
 
-template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend>::InitPhase1Buffers()
+template <typename ValueType, typename IndexType, bool IsDescend, bool EnableMedian>
+__aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend, EnableMedian>::InitPhase1Buffers()
 {
     this->pipe_->InitBuffer(this->inQueueX_, MERGE_INTRA_BUFFER_NUM, this->blockSortSize_ * sizeof(ValueType));
     this->pipe_->InitBuffer(this->concatTmpBuf_, this->sortBufferSize_);
@@ -132,16 +140,27 @@ __aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend>::
     this->pipe_->InitBuffer(this->indexTmpBuf_, this->blockSortSize_ * sizeof(uint32_t));
 }
 
-template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend>::InitPhase2Buffers()
+template <typename ValueType, typename IndexType, bool IsDescend, bool EnableMedian>
+__aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend, EnableMedian>::PrepareInputForSort(
+    LocalTensor<ValueType> inputLocal, uint32_t alignedCount)
+{
+    if constexpr (EnableMedian && IS_MEDIAN_FLOAT_TYPE<ValueType>) {
+        if (medianMode_ != MEDIAN_MODE_STATIC) {
+            CanonicalizeNanValues(inputLocal, alignedCount);
+        }
+    }
+}
+
+template <typename ValueType, typename IndexType, bool IsDescend, bool EnableMedian>
+__aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend, EnableMedian>::InitPhase2Buffers()
 {
     uint32_t mergeBufferSize = MERGE_LIST_MAX_NUM * this->sortBufferSize_;
     this->pipe_->InitBuffer(this->mergeInQueue_, 1, mergeBufferSize);
     this->pipe_->InitBuffer(this->mergeOutQueue_, 1, mergeBufferSize);
 }
 
-template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend>::InitPhase3Buffers()
+template <typename ValueType, typename IndexType, bool IsDescend, bool EnableMedian>
+__aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend, EnableMedian>::InitPhase3Buffers()
 {
     uint32_t extractInSize = AscendC::GetSortLen<ValueType>(this->extractChunkSize_) * sizeof(ValueType);
     this->pipe_->InitBuffer(this->extractInQueue_, MERGE_INTRA_BUFFER_NUM, extractInSize);
@@ -153,11 +172,14 @@ __aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend>::
     }
 }
 
-template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend>::ExtractAndCopyOut(int64_t batchIdx,
-                                                                                                  uint32_t resultRegion)
+template <typename ValueType, typename IndexType, bool IsDescend, bool EnableMedian>
+__aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend, EnableMedian>::ExtractAndCopyOut(
+    int64_t batchIdx, uint32_t resultRegion)
 {
     int64_t outputOffset = batchIdx;
+    if constexpr (EnableMedian && IS_MEDIAN_FLOAT_TYPE<ValueType>) {
+        kthIndex_ = ResolveBatchK(batchIdx);
+    }
 
     // resultRegion: 0 = Ping (offset 0), 1 = Pong (offset batchSortLen_)
     int64_t cacheBatchOffset = (resultRegion == 1) ? this->batchSortLen_ : 0;
@@ -183,8 +205,36 @@ __aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend>::
     }
 }
 
-template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend>::ExtractAndCopyChunk(
+// Resolves the effective k for one batch row: recounts non-NaN elements by re-reading the
+// raw GM row in chunks (the merged cache is sign-flip encoded, unusable for NaN tests),
+// then maps it to a sorted index via ResolveMedianK.
+template <typename ValueType, typename IndexType, bool IsDescend, bool EnableMedian>
+__aicore__ inline uint32_t KthValueMergeIntraCore<ValueType, IndexType, IsDescend, EnableMedian>::ResolveBatchK(
+    int64_t batchIdx)
+{
+    uint32_t nonNanCount = 0U;
+    uint32_t elemOffset = 0U;
+    uint32_t axisLen = static_cast<uint32_t>(this->sortAxisNum_);
+    LocalTensor<ValueType> scalarLocal = kthValueQueue_.template AllocTensor<ValueType>();
+    while (elemOffset < axisLen) {
+        uint32_t remain = axisLen - elemOffset;
+        uint32_t elemCount = this->extractChunkSize_ < remain ? this->extractChunkSize_ : remain;
+        LocalTensor<ValueType> inputLocal = this->extractInQueue_.template AllocTensor<ValueType>();
+        DataCopyExtParams loadParams{1, static_cast<uint32_t>(elemCount * sizeof(ValueType)), 0, 0, 0};
+        DataCopyPad(inputLocal, this->inputXGm_[batchIdx * this->sortAxisNum_ + elemOffset], loadParams,
+                    {false, 0, 0, 0});
+        this->extractInQueue_.EnQue(inputLocal);
+        inputLocal = this->extractInQueue_.template DeQue<ValueType>();
+        nonNanCount += CountNonNan(inputLocal, elemCount, scalarLocal.template ReinterpretCast<float>(), this->pipe_);
+        this->extractInQueue_.FreeTensor(inputLocal);
+        elemOffset += elemCount;
+    }
+    kthValueQueue_.FreeTensor(scalarLocal);
+    return ResolveMedianK(staticKthIndex_, axisLen, nonNanCount, medianMode_);
+}
+
+template <typename ValueType, typename IndexType, bool IsDescend, bool EnableMedian>
+__aicore__ inline void KthValueMergeIntraCore<ValueType, IndexType, IsDescend, EnableMedian>::ExtractAndCopyChunk(
     int64_t cacheBatchOffset, uint32_t cacheOffset, int64_t outputOffset, uint32_t elemProcessed, uint32_t elemCount)
 {
     LocalTensor<ValueType> kthCacheLocal = this->extractInQueue_.template AllocTensor<ValueType>();

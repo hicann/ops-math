@@ -77,14 +77,16 @@ class SortNonLastSmallAxis
           std::conditional_t<sizeof(T) <= sizeof(int16_t), int16_t, int32_t>,
           std::conditional_t<sizeof(T) <= sizeof(int16_t), uint16_t, uint32_t>,
           std::conditional_t<sizeof(T) == 1, std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>,
-          IsDescend, UseMergeSort, UseMergeSort && std::is_same_v<T, bfloat16_t>> {
+          IsDescend, UseMergeSort, UseMergeSort && std::is_same_v<T, bfloat16_t>,
+          !UseMergeSort && SignedZeroSortCommon::IS_FLOATING_POINT_V<T>> {
     using Base = SmallAxisCommon::NonLastSmallAxisBase<
         SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>, T,
         std::conditional_t<UseMergeSort && std::is_same_v<T, bfloat16_t>, float, T>,
         std::conditional_t<sizeof(T) <= sizeof(int16_t), int16_t, int32_t>,
         std::conditional_t<sizeof(T) <= sizeof(int16_t), uint16_t, uint32_t>,
         std::conditional_t<sizeof(T) == 1, std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>,
-        IsDescend, UseMergeSort, UseMergeSort && std::is_same_v<T, bfloat16_t>>;
+        IsDescend, UseMergeSort, UseMergeSort && std::is_same_v<T, bfloat16_t>,
+        !UseMergeSort && SignedZeroSortCommon::IS_FLOATING_POINT_V<T>>;
 
 public:
     using SortT_ = typename std::conditional_t<UseMergeSort && std::is_same_v<T, bfloat16_t>, float, T>;
@@ -93,6 +95,7 @@ public:
     using CastType_ = std::conditional_t<sizeof(T) == 1,
                                          std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
     static constexpr bool IsBf16Merge_ = UseMergeSort && std::is_same_v<T, bfloat16_t>;
+    static constexpr bool NormalizeSignedZero_ = !UseMergeSort && SignedZeroSortCommon::IS_FLOATING_POINT_V<T>;
 
     __aicore__ inline SortNonLastSmallAxis() {}
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR idx, GM_ADDR workspace,
@@ -146,6 +149,12 @@ __aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>
     }
 
     uint32_t inputTileBytes = this->axisLen_ * this->inputRowBytes_;
+    if constexpr (NormalizeSignedZero_) {
+        // inputTile_ is dead after the transpose and then carries one B32
+        // source-index row for restoring signed zero values by clean Sort indices.
+        uint32_t sourceIndexBytes = ROUND_UP_AGLIN(this->sortCount_ * sizeof(uint32_t));
+        inputTileBytes = inputTileBytes > sourceIndexBytes ? inputTileBytes : sourceIndexBytes;
+    }
     uint32_t inputCastBytes = IsBf16Merge_ ? this->innerChunk_ * this->inputValueAxisBytes_ : 0U;
     uint32_t sortValueBytes = this->innerChunk_ * this->valueAxisBytes_;
     uint32_t sortedIndexBytes = this->innerChunk_ * this->indexAxisBytes_;
@@ -191,6 +200,9 @@ __aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>
         this->sortedValue_ = this->sortedValueBuf_.template Get<SortT_>();
         this->sortedIndex_ = this->sortedIndexBuf_.template Get<uint32_t>();
         this->tmp_ = this->tmpBuf_.template Get<uint8_t>();
+    }
+    if constexpr (NormalizeSignedZero_) {
+        this->sourceIndex_ = this->inputTile_.template ReinterpretCast<uint32_t>();
     }
 }
 

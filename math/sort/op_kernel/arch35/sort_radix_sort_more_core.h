@@ -49,6 +49,9 @@ public:
                                 const SortRegBaseTilingData* __restrict tilingData, TPipe* pipe);
 
 protected:
+    __aicore__ inline bool ShouldCanonicalizeMedianNan(uint32_t) const { return false; }
+    __aicore__ inline void OnRadixInputLoaded(LocalTensor<T1>, uint32_t, uint32_t, uint32_t, LocalTensor<uint16_t>) {}
+    __aicore__ inline void OnRadixRoundComplete(uint32_t, uint32_t, LocalTensor<uint32_t>) {}
     __aicore__ inline void ParserTilingData();
     __aicore__ inline void ScatterKeysGlobal(LocalTensor<T1> xInputValueLocal, LocalTensor<uint32_t> sortedIndexLocal,
                                              LocalTensor<uint32_t> xInputIndexLocal,

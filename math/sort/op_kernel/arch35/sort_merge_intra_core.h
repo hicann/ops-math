@@ -62,6 +62,7 @@ protected:
     __aicore__ inline void InitPhase1Buffers();
     __aicore__ inline void InitPhase2Buffers();
     __aicore__ inline void InitPhase3Buffers();
+    __aicore__ inline void PrepareInputForSort(LocalTensor<ValueType>, uint32_t) {}
     __aicore__ inline void ExtractAndCopyChunk(int64_t cacheBatchOffset, uint32_t cacheOffset, int64_t outputOffset,
                                                uint32_t elemProcessed, uint32_t elemCount);
 

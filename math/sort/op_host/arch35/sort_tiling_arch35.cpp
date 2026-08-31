@@ -167,6 +167,8 @@ void SetSortTmpSize(ge::DataType dataType, uint32_t tileData, bool isDescend, So
     AscendC::SortConfig config;
     config.type = AscendC::SortType::RADIX_SORT;
     config.isDescend = isDescend;
+    // The one-core kernel uses Sort's implicit-index overload. sourceOrder is
+    // consumed only after Sort to restore signed-zero signs by output index.
     config.hasSrcIndex = false;
     config.hasDstIndex = true;
     uint32_t maxValue = 0;
@@ -239,9 +241,12 @@ bool IsRadixSortOneCore(SortKthTileInfo& sortTileInfo)
     sortTileInfo.keyParams1 = y2UbSize;
     sortTileInfo.keyParams2 = halfNum;
     sortTileInfo.keyParams3 = 1;
+    int64_t sourceOrderBytes = NeedsSignedZeroSourceOrder(sortTileInfo.dataType) ?
+                                   static_cast<int64_t>(halfNum) * sizeof(uint32_t) :
+                                   0;
     // keyParams3 records whether the queues can use double buffer after reserving Sort tmp UB.
     int64_t oneBufferQueSize = static_cast<int64_t>(xUbSize) * 2 + static_cast<int64_t>(y2UbSize);
-    int64_t remainUb = static_cast<int64_t>(sortTileInfo.ubSize) - oneBufferQueSize;
+    int64_t remainUb = static_cast<int64_t>(sortTileInfo.ubSize) - oneBufferQueSize - sourceOrderBytes;
     if (remainUb <= static_cast<int64_t>(0)) {
         return false;
     }
@@ -255,7 +260,8 @@ bool IsRadixSortOneCore(SortKthTileInfo& sortTileInfo)
         return false;
     }
 
-    int64_t doubleBufferRemainUb = static_cast<int64_t>(sortTileInfo.ubSize) - oneBufferQueSize * DOUBLE_BUFFER_NUM;
+    int64_t doubleBufferRemainUb = static_cast<int64_t>(sortTileInfo.ubSize) - oneBufferQueSize * DOUBLE_BUFFER_NUM -
+                                   sourceOrderBytes;
     doubleBufferRemainUb = (doubleBufferRemainUb / static_cast<int64_t>(sortTileInfo.blockUbSize)) *
                            static_cast<int64_t>(sortTileInfo.blockUbSize);
     if (tmpUb <= doubleBufferRemainUb) {

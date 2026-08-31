@@ -53,8 +53,9 @@ __simt_vf__ LAUNCH_BOUND(INSERTION_THREAD_NUM) __aicore__
  * @tparam T Sort value data type
  * @tparam IDX_T Output index data type stored in UB
  * @tparam IsDescend Sort order: true for descending, false for ascending
+ * @tparam OrderNan Whether floating-point NaNs follow the sort order contract
  */
-template <typename T, typename IDX_T, bool IsDescend>
+template <typename T, typename IDX_T, bool IsDescend, bool OrderNan = false>
 __simt_vf__ LAUNCH_BOUND(INSERTION_THREAD_NUM) __aicore__
     void SimtInsertionSortSegments(uint32_t validSegs, uint32_t segmentLen, uint32_t valueRowElems,
                                    uint32_t idxRowElems, __ubuf__ T* valueBase, __ubuf__ IDX_T* idxBase)
@@ -75,7 +76,20 @@ __simt_vf__ LAUNCH_BOUND(INSERTION_THREAD_NUM) __aicore__
             while (insertPos > 0) {
                 T prevValue = valueBase[valueBaseOffset + insertPos - 1];
                 bool needMove;
-                if constexpr (IsDescend) {
+                if constexpr (OrderNan && (IsSameType<T, float>::value || IsSameType<T, half>::value ||
+                                           IsSameType<T, bfloat16_t>::value)) {
+                    bool prevNan = prevValue != prevValue;
+                    bool keyNan = keyValue != keyValue;
+                    if (prevNan != keyNan) {
+                        needMove = IsDescend ? keyNan : prevNan;
+                    } else if (prevNan) {
+                        needMove = false;
+                    } else if constexpr (IsDescend) {
+                        needMove = prevValue < keyValue;
+                    } else {
+                        needMove = prevValue > keyValue;
+                    }
+                } else if constexpr (IsDescend) {
                     needMove = prevValue < keyValue;
                 } else {
                     needMove = prevValue > keyValue;
@@ -102,8 +116,9 @@ __simt_vf__ LAUNCH_BOUND(INSERTION_THREAD_NUM) __aicore__
  * @tparam CONVERT_TYPE Data type used for insertion-sort comparisons in UB
  * @tparam IDX_T Index data type stored in UB during insertion sort
  * @tparam IsDescend Sort order: true for descending, false for ascending
+ * @tparam OrderNan Whether floating-point NaNs follow the sort order contract
  */
-template <typename Derived, typename T, typename CONVERT_TYPE, typename IDX_T, bool IsDescend>
+template <typename Derived, typename T, typename CONVERT_TYPE, typename IDX_T, bool IsDescend, bool OrderNan = false>
 class SmallAxisInsertionBase {
 public:
     __aicore__ inline void Process()
@@ -192,7 +207,7 @@ public:
 
     __aicore__ inline void SortBatch(uint32_t validSegs)
     {
-        asc_vf_call<SimtInsertionSortSegments<CONVERT_TYPE, IDX_T, IsDescend>>(
+        asc_vf_call<SimtInsertionSortSegments<CONVERT_TYPE, IDX_T, IsDescend, OrderNan>>(
             dim3(INSERTION_THREAD_NUM), validSegs, segmentLen_, valueRowStride_, indexRowStride_,
             (__ubuf__ CONVERT_TYPE*)values_.GetPhyAddr(), (__ubuf__ IDX_T*)indices_.GetPhyAddr());
     }

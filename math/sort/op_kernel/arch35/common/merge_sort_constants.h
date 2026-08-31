@@ -25,6 +25,7 @@ constexpr uint32_t THREE_WAY_MERGE_LIST_NUM = 3;
 constexpr uint32_t MERGE_INTRA_BUFFER_NUM = 2;
 constexpr uint32_t MERGE_MORE_BUFFER_NUM = 1;
 constexpr uint32_t MERGE_WORKSPACE_BUFFER_NUM = 2;
+constexpr uint32_t MERGE_SORT_WORKSPACE_PARAM = 5U;
 
 constexpr int32_t XOR_OP_VALUE_FP = 0x80000000;
 constexpr int16_t XOR_OP_VALUE_HALF = 0x8000;

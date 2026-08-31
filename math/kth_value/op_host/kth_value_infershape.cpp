@@ -12,12 +12,23 @@
 
 #include "register/op_impl_registry.h"
 #include "log/log.h"
+#include "util/shape_util.h"
 
 namespace ops {
 static ge::graphStatus KthValueInferShapeFunc(gert::InferShapeContext* context)
 {
     const gert::Shape* xShape = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
+    auto* valuesShape = context->GetOutputShape(0);
+    auto* indicesShape = context->GetOutputShape(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context, valuesShape);
+    OP_CHECK_NULL_WITH_CONTEXT(context, indicesShape);
+
+    if (Ops::Base::IsUnknownRank(*xShape)) {
+        Ops::Base::SetUnknownRank(*valuesShape);
+        Ops::Base::SetUnknownRank(*indicesShape);
+        return ge::GRAPH_SUCCESS;
+    }
 
     const int64_t rank = static_cast<int64_t>(xShape->GetDimNum());
     if (rank <= 0) {
@@ -34,10 +45,6 @@ static ge::graphStatus KthValueInferShapeFunc(gert::InferShapeContext* context)
         OP_LOGE_WITH_INVALID_ATTR(context->GetNodeName(), "dim", dimValue.c_str(), dimRange.c_str());
         return ge::GRAPH_FAILED;
     }
-    auto* valuesShape = context->GetOutputShape(0);
-    auto* indicesShape = context->GetOutputShape(1);
-    OP_CHECK_NULL_WITH_CONTEXT(context, valuesShape);
-    OP_CHECK_NULL_WITH_CONTEXT(context, indicesShape);
     *valuesShape = *xShape;
     *indicesShape = *xShape;
     valuesShape->SetDim(normDim, 1);

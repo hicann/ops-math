@@ -14,13 +14,15 @@
 #include "kernel_tiling/kernel_tiling.h"
 #include "kernel_operator.h"
 #include "op_kernel/platform_util.h"
+#include "kth_value_median_utils.h"
 #include "kth_value_tiling_data.h"
+#include "../../sort/arch35/common/signed_zero_sort_utils.h"
 #include "../../sort/arch35/common/util_type_simd.h"
 
 namespace KthValue {
 using namespace AscendC;
 
-template <typename T>
+template <typename T, bool EnableMedian = false>
 class KthValueRadixOneCore {
 public:
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR values, GM_ADDR indices, const KthValueTilingData* tiling,
@@ -51,11 +53,14 @@ private:
     TQue<QuePosition::VECOUT, 1> compactValueQueue_;
     TQue<QuePosition::VECOUT, 1> compactIndexQueue_;
     TBuf<TPosition::VECCALC> tmpUb_;
+    TBuf<TPosition::VECCALC> sourceOrderBuf_;
+    LocalTensor<uint32_t> sourceOrder_;
 
     uint32_t blockIdx_ = 0;
     uint32_t blockNum_ = 0;
     uint32_t numTileData_ = 0;
     uint32_t kthIndex_ = 0;
+    uint32_t medianMode_ = 0;
     uint32_t unsortedDimParallel_ = 0;
     uint32_t xUbSize_ = 0;
     uint32_t idxUbSize_ = 0;
@@ -66,9 +71,9 @@ private:
     int64_t unsortedDimNum_ = 0;
 };
 
-template <typename T>
-__aicore__ inline void KthValueRadixOneCore<T>::Init(GM_ADDR x, GM_ADDR values, GM_ADDR indices,
-                                                     const KthValueTilingData* tiling, TPipe* pipe)
+template <typename T, bool EnableMedian>
+__aicore__ inline void KthValueRadixOneCore<T, EnableMedian>::Init(GM_ADDR x, GM_ADDR values, GM_ADDR indices,
+                                                                   const KthValueTilingData* tiling, TPipe* pipe)
 {
     if (tiling == nullptr || pipe == nullptr) {
         return;
@@ -89,13 +94,18 @@ __aicore__ inline void KthValueRadixOneCore<T>::Init(GM_ADDR x, GM_ADDR values, 
     pipe_->InitBuffer(compactValueQueue_, bufferNum_, ROUND_UP_AGLIN(outputRowsPerLoop_ * sizeof(T)));
     pipe_->InitBuffer(compactIndexQueue_, bufferNum_, ROUND_UP_AGLIN(outputRowsPerLoop_ * sizeof(int64_t)));
     pipe_->InitBuffer(tmpUb_, tmpUbSize_);
+    if constexpr (SignedZeroSortCommon::IS_FLOATING_POINT_V<T>) {
+        pipe_->InitBuffer(sourceOrderBuf_, idxUbSize_);
+        sourceOrder_ = sourceOrderBuf_.Get<uint32_t>();
+    }
 }
 
-template <typename T>
-__aicore__ inline void KthValueRadixOneCore<T>::ParseTilingData()
+template <typename T, bool EnableMedian>
+__aicore__ inline void KthValueRadixOneCore<T, EnableMedian>::ParseTilingData()
 {
     numTileData_ = tiling_->numTileDataSize;
     kthIndex_ = tiling_->kthIndex;
+    medianMode_ = tiling_->medianMode;
     unsortedDimParallel_ = tiling_->unsortedDimParallel;
     xUbSize_ = tiling_->keyParams0;
     idxUbSize_ = tiling_->keyParams1;
@@ -106,8 +116,8 @@ __aicore__ inline void KthValueRadixOneCore<T>::ParseTilingData()
     unsortedDimNum_ = tiling_->unsortedDimNum;
 }
 
-template <typename T>
-__aicore__ inline void KthValueRadixOneCore<T>::CopyInputToUb(LocalTensor<T>& xLocal, int64_t row)
+template <typename T, bool EnableMedian>
+__aicore__ inline void KthValueRadixOneCore<T, EnableMedian>::CopyInputToUb(LocalTensor<T>& xLocal, int64_t row)
 {
     int64_t inputOffset = row * lastAxisNum_;
     uint32_t copyBytes = static_cast<uint32_t>(numTileData_ * sizeof(T));
@@ -117,10 +127,10 @@ __aicore__ inline void KthValueRadixOneCore<T>::CopyInputToUb(LocalTensor<T>& xL
     DataCopyPad(xLocal, xGm_[inputOffset], inputCopyParam, inputPadParam);
 }
 
-template <typename T>
-__aicore__ inline void KthValueRadixOneCore<T>::ProcessOneRow(int64_t row, uint32_t localOffset,
-                                                              LocalTensor<T>& compactValue,
-                                                              LocalTensor<int64_t>& compactIndex)
+template <typename T, bool EnableMedian>
+__aicore__ inline void KthValueRadixOneCore<T, EnableMedian>::ProcessOneRow(int64_t row, uint32_t localOffset,
+                                                                            LocalTensor<T>& compactValue,
+                                                                            LocalTensor<int64_t>& compactIndex)
 {
     LocalTensor<T> xLocal = inQueueX_.AllocTensor<T>();
     CopyInputToUb(xLocal, row);
@@ -129,8 +139,29 @@ __aicore__ inline void KthValueRadixOneCore<T>::ProcessOneRow(int64_t row, uint3
     LocalTensor<T> sortedValue = outValueQueue_.AllocTensor<T>();
     LocalTensor<uint32_t> sortedIndex = outIndexQueue_.AllocTensor<uint32_t>();
     LocalTensor<uint8_t> tmpUb = tmpUb_.Get<uint8_t>();
+    uint32_t selectedK = kthIndex_;
+    if constexpr (EnableMedian && IS_MEDIAN_FLOAT_TYPE<T>) {
+        if (medianMode_ != MEDIAN_MODE_STATIC) {
+            CanonicalizeNanValues(xLocal, numTileData_);
+        }
+        uint32_t nonNanCount = CountNonNan(xLocal, numTileData_, tmpUb_.Get<float>(), pipe_);
+        selectedK = ResolveMedianK(kthIndex_, numTileData_, nonNanCount, medianMode_);
+    }
 
-    AscendC::Sort<T, false, SORT_CONFIG>(sortedValue, sortedIndex, xLocal, tmpUb, numTileData_);
+    bool hasNegativeZero = false;
+    if constexpr (SignedZeroSortCommon::IS_FLOATING_POINT_V<T>) {
+        hasNegativeZero = SignedZeroSortCommon::HasNegativeZeroVec(xLocal, sourceOrder_, numTileData_);
+        if (hasNegativeZero) {
+            SignedZeroSortCommon::PrepareSignedZeroKeysVec(xLocal, sourceOrder_, numTileData_);
+        }
+        AscendC::Sort<T, false, SORT_CONFIG>(sortedValue, sortedIndex, xLocal, tmpUb, numTileData_);
+        if (hasNegativeZero) {
+            SignedZeroSortCommon::RestoreSignedZeroValuesByIndexVec(sortedValue, sortedIndex, sourceOrder_,
+                                                                    numTileData_);
+        }
+    } else {
+        AscendC::Sort<T, false, SORT_CONFIG>(sortedValue, sortedIndex, xLocal, tmpUb, numTileData_);
+    }
     inQueueX_.FreeTensor(xLocal);
     outValueQueue_.EnQue<T>(sortedValue);
     outIndexQueue_.EnQue<uint32_t>(sortedIndex);
@@ -140,17 +171,17 @@ __aicore__ inline void KthValueRadixOneCore<T>::ProcessOneRow(int64_t row, uint3
     SetFlag<HardEvent::V_S>(eventIdVToS);
     WaitFlag<HardEvent::V_S>(eventIdVToS);
 
-    compactValue.SetValue(localOffset, sortedValue.GetValue(kthIndex_));
-    compactIndex.SetValue(localOffset, static_cast<int64_t>(sortedIndex.GetValue(kthIndex_)));
+    compactValue.SetValue(localOffset, sortedValue.GetValue(selectedK));
+    compactIndex.SetValue(localOffset, static_cast<int64_t>(sortedIndex.GetValue(selectedK)));
 
     outValueQueue_.FreeTensor(sortedValue);
     outIndexQueue_.FreeTensor(sortedIndex);
 }
 
-template <typename T>
-__aicore__ inline void KthValueRadixOneCore<T>::CopyOutputToGm(int64_t rowStart, uint32_t rowCount,
-                                                               LocalTensor<T>& compactValue,
-                                                               LocalTensor<int64_t>& compactIndex)
+template <typename T, bool EnableMedian>
+__aicore__ inline void KthValueRadixOneCore<T, EnableMedian>::CopyOutputToGm(int64_t rowStart, uint32_t rowCount,
+                                                                             LocalTensor<T>& compactValue,
+                                                                             LocalTensor<int64_t>& compactIndex)
 {
     event_t eventIdSToMte3 = static_cast<event_t>(pipe_->FetchEventID(HardEvent::S_MTE3));
     SetFlag<HardEvent::S_MTE3>(eventIdSToMte3);
@@ -162,8 +193,8 @@ __aicore__ inline void KthValueRadixOneCore<T>::CopyOutputToGm(int64_t rowStart,
     DataCopyPad(indicesGm_[rowStart], compactIndex, indexCopyParam);
 }
 
-template <typename T>
-__aicore__ inline void KthValueRadixOneCore<T>::ProcessRows(int64_t rowStart, uint32_t rowCount)
+template <typename T, bool EnableMedian>
+__aicore__ inline void KthValueRadixOneCore<T, EnableMedian>::ProcessRows(int64_t rowStart, uint32_t rowCount)
 {
     LocalTensor<T> compactValue = compactValueQueue_.AllocTensor<T>();
     LocalTensor<int64_t> compactIndex = compactIndexQueue_.AllocTensor<int64_t>();
@@ -179,8 +210,8 @@ __aicore__ inline void KthValueRadixOneCore<T>::ProcessRows(int64_t rowStart, ui
     compactIndexQueue_.FreeTensor(compactIndex);
 }
 
-template <typename T>
-__aicore__ inline void KthValueRadixOneCore<T>::Process()
+template <typename T, bool EnableMedian>
+__aicore__ inline void KthValueRadixOneCore<T, EnableMedian>::Process()
 {
     if (blockIdx_ >= blockNum_ || blockIdx_ >= unsortedDimParallel_) {
         return;

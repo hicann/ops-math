@@ -46,6 +46,10 @@ constexpr uint32_t SMALL_AXIS_MAX_DATACOPY_BLOCK_COUNT = 4095; // DataCopy hardw
 constexpr uint32_t SORT_STRUCT_BYTES = 8;                      // fp32 sort struct size (index + value)
 
 constexpr bool IsRadixUint32CounterRange(int64_t axisLen) { return axisLen <= RADIX_UINT32_VALUE_MAX; }
+constexpr bool NeedsSignedZeroSourceOrder(ge::DataType dataType)
+{
+    return dataType == ge::DT_FLOAT16 || dataType == ge::DT_BF16 || dataType == ge::DT_FLOAT;
+}
 
 // =============================================================================
 // Safe arithmetic utilities

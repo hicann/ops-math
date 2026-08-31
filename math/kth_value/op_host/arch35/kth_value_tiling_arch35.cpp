@@ -27,6 +27,8 @@
 
 namespace optiling {
 constexpr uint32_t DEFAULT_OUTPUT_ROWS = 1024;
+constexpr uint32_t MEDIAN_RADIX_COUNT_STORAGE_WORDS = 8;
+constexpr int64_t LOWER_MEDIAN_DIVISOR = 2;
 
 static ge::graphStatus CheckKthValueDtypes(gert::TilingContext* context, ge::DataType dataType, uint32_t& dtypeSize)
 {
@@ -202,6 +204,25 @@ static bool TryComputeKthNonLastSmallAxisLayout(const SortKthTileInfo& info, uin
     return true;
 }
 
+static bool TryComputeKthNonLastSmallAxisCastBytes(const SortKthTileInfo& info, uint32_t innerChunk, uint32_t sortCount,
+                                                   bool useMergeSort, uint32_t sortDtypeSize, uint64_t& inputCastBytes,
+                                                   uint64_t& compactCastBytes)
+{
+    inputCastBytes = 0U;
+    compactCastBytes = 0U;
+    if (!useMergeSort || info.dataType != ge::DT_BF16) {
+        return true;
+    }
+    uint32_t inputValueAxisBytes = 0U;
+    if (!CeilAlignUint32(static_cast<uint64_t>(sortCount) * info.dtypeSize, info.blockUbSize, inputValueAxisBytes)) {
+        return false;
+    }
+    inputCastBytes = static_cast<uint64_t>(innerChunk) * inputValueAxisBytes;
+    compactCastBytes = Ops::Base::CeilAlign<uint64_t>(static_cast<uint64_t>(innerChunk) * sortDtypeSize,
+                                                      info.blockUbSize);
+    return compactCastBytes != 0U;
+}
+
 static bool ComputeKthNonLastSmallAxisPeakUb(const SortKthTileInfo& info, uint32_t innerChunk, uint32_t sortCount,
                                              bool useMergeSort, uint64_t& peakUb, NonLastSmallAxisCandidate& plan)
 {
@@ -227,18 +248,9 @@ static bool ComputeKthNonLastSmallAxisPeakUb(const SortKthTileInfo& info, uint32
 
     uint64_t inputCastBytes = 0;
     uint64_t compactCastBytes = 0;
-    if (useMergeSort && info.dataType == ge::DT_BF16) {
-        uint32_t inputValueAxisBytes = 0;
-        if (!CeilAlignUint32(static_cast<uint64_t>(sortCount) * info.dtypeSize, info.blockUbSize,
-                             inputValueAxisBytes)) {
-            return false;
-        }
-        inputCastBytes = static_cast<uint64_t>(innerChunk) * inputValueAxisBytes;
-        compactCastBytes = Ops::Base::CeilAlign<uint64_t>(static_cast<uint64_t>(innerChunk) * sortDtypeSize,
-                                                          info.blockUbSize);
-        if (compactCastBytes == 0U) {
-            return false;
-        }
+    if (!TryComputeKthNonLastSmallAxisCastBytes(info, innerChunk, sortCount, useMergeSort, sortDtypeSize,
+                                                inputCastBytes, compactCastBytes)) {
+        return false;
     }
     uint64_t compactValueBytes = Ops::Base::CeilAlign<uint64_t>(static_cast<uint64_t>(innerChunk) * info.dtypeSize,
                                                                 info.blockUbSize);
@@ -247,8 +259,11 @@ static bool ComputeKthNonLastSmallAxisPeakUb(const SortKthTileInfo& info, uint32
     if (compactValueBytes == 0U || compactIndexBytes == 0U) {
         return false;
     }
-    peakUb = static_cast<uint64_t>(axisLen) * plan.inputRowBytes + inputCastBytes +
-             static_cast<uint64_t>(innerChunk) * plan.valueAxisBytes * 2U +
+    uint64_t inputTileBytes = static_cast<uint64_t>(axisLen) * plan.inputRowBytes;
+    if (!useMergeSort && NeedsSignedZeroSourceOrder(info.dataType)) {
+        inputTileBytes += plan.indexAxisBytes;
+    }
+    peakUb = inputTileBytes + inputCastBytes + static_cast<uint64_t>(innerChunk) * plan.valueAxisBytes * 2U +
              static_cast<uint64_t>(innerChunk) * plan.indexAxisBytes + compactValueBytes + compactCastBytes +
              compactIndexBytes + static_cast<uint64_t>(info.tmpUbSize);
     return true;
@@ -260,8 +275,9 @@ static bool ComputeKthNonLastSmallAxisPeakUb(const SortKthTileInfo& info, uint32
 static ge::graphStatus SetRadixOneCoreTiling(gert::TilingContext* context, const SortKthTileInfo& info,
                                              KthValueTilingData* tilingData)
 {
+    uint64_t sourceOrderBytes = NeedsSignedZeroSourceOrder(info.dataType) ? info.idxUbSize : 0U;
     OP_CHECK_IF(
-        (info.oneBufferQueSize >= info.ubSize),
+        (info.oneBufferQueSize + sourceOrderBytes >= info.ubSize),
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ubSize", std::to_string(info.ubSize).c_str(),
                                               "The value of ubSize must be greater than oneBufferQueSize."),
         return ge::GRAPH_FAILED);
@@ -278,15 +294,15 @@ static ge::graphStatus SetRadixOneCoreTiling(gert::TilingContext* context, const
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "QuerySortTmpSizeRadix", "false",
                                                       "The value of QuerySortTmpSizeRadix must be true."),
                 return ge::GRAPH_FAILED);
-    uint64_t remainUb = (info.ubSize - info.oneBufferQueSize) / info.blockUbSize * info.blockUbSize;
+    uint64_t remainUb = (info.ubSize - info.oneBufferQueSize - sourceOrderBytes) / info.blockUbSize * info.blockUbSize;
     OP_CHECK_IF((static_cast<uint64_t>(tilingData->tmpUbSize) > remainUb),
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "tmpUbSize",
                                                       std::to_string(tilingData->tmpUbSize).c_str(),
                                                       "The value of tmpUbSize must be less than or equal to remainUb."),
                 return ge::GRAPH_FAILED);
-    uint64_t doubleBufferRemainUb = info.ubSize > info.oneBufferQueSize * DOUBLE_BUFFER_NUM ?
-                                        (info.ubSize - info.oneBufferQueSize * DOUBLE_BUFFER_NUM) / info.blockUbSize *
-                                            info.blockUbSize :
+    uint64_t doubleBufferUsedUb = info.oneBufferQueSize * DOUBLE_BUFFER_NUM + sourceOrderBytes;
+    uint64_t doubleBufferRemainUb = info.ubSize > doubleBufferUsedUb ?
+                                        (info.ubSize - doubleBufferUsedUb) / info.blockUbSize * info.blockUbSize :
                                         0;
     if (static_cast<uint64_t>(tilingData->tmpUbSize) <= doubleBufferRemainUb) {
         tilingData->keyParams3 = DOUBLE_BUFFER_NUM;
@@ -378,6 +394,37 @@ static ge::graphStatus SetMergeIntraCoreTiling(gert::TilingContext* context, Sor
     return ge::GRAPH_SUCCESS;
 }
 
+static bool FillNonLastSmallAxisTiling(gert::TilingContext* context, const SortKthTileInfo& info,
+                                       const NonLastSmallAxisCandidate& plan, uint32_t axisLen, uint32_t sortCount,
+                                       uint32_t tmpUbSize, bool useMergeSort, KthValueTilingData* tilingData,
+                                       uint32_t& blockDim, uint64_t& schId)
+{
+    uint32_t inputValueAxisBytes = 0U;
+    if (useMergeSort && info.dataType == ge::DT_BF16 &&
+        !CeilAlignUint32(static_cast<uint64_t>(sortCount) * info.dtypeSize, info.blockUbSize, inputValueAxisBytes)) {
+        return false;
+    }
+    tilingData->lastAxisNum = info.lastAxis;
+    tilingData->unsortedDimNum = info.outerSize * info.innerSize;
+    tilingData->outerSize = info.outerSize;
+    tilingData->innerSize = info.innerSize;
+    tilingData->innerLoopNum = plan.innerLoopNum;
+    tilingData->innerChunk = plan.innerChunk;
+    tilingData->inputRowBytes = plan.inputRowBytes;
+    tilingData->valueAxisBytes = plan.valueAxisBytes;
+    tilingData->indexAxisBytes = plan.indexAxisBytes;
+    tilingData->numTileDataSize = axisLen;
+    tilingData->tmpUbSize = tmpUbSize;
+    tilingData->keyParams0 = sortCount;
+    tilingData->keyParams1 = inputValueAxisBytes;
+    blockDim = plan.activeCore;
+    schId = useMergeSort ? KTH_VALUE_SCHID_NON_LAST_SMALL_AXIS : KTH_VALUE_SCHID_NON_LAST_SMALL_AXIS_RADIX;
+    size_t* userWorkspaceSize = context->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context, userWorkspaceSize);
+    userWorkspaceSize[0] = WORK_SPACE_SIZE;
+    return true;
+}
+
 static bool SetNonLastSmallAxisTiling(gert::TilingContext* context, const SortKthTileInfo& constInfo,
                                       KthValueTilingData* tilingData, uint32_t& blockDim, uint64_t& schId)
 {
@@ -389,7 +436,11 @@ static bool SetNonLastSmallAxisTiling(gert::TilingContext* context, const SortKt
     bool useMergeSort = UseNonLastMergeSort(constInfo.dataType, axisLen32);
     uint32_t sortCount = GetNonLastSortCount(constInfo.dataType, axisLen32);
     uint32_t tmpUbSize = 0;
-    GetNonLastSortTmpSize(constInfo.dataType, sortCount, useMergeSort, false, tmpUbSize);
+    bool gotTmpSize = useMergeSort ? GetNonLastSortTmpSize(constInfo.dataType, sortCount, true, false, tmpUbSize) :
+                                     QuerySortTmpSizeRadix(constInfo.dataType, sortCount, tmpUbSize);
+    if (!gotTmpSize) {
+        return false;
+    }
     SortKthTileInfo info = constInfo;
     info.tmpUbSize = tmpUbSize;
     NonLastSmallAxisCandidate best;
@@ -401,32 +452,8 @@ static bool SetNonLastSmallAxisTiling(gert::TilingContext* context, const SortKt
         OP_LOGI(context->GetNodeName(), "kth_value non-last small-axis no valid inner chunk.");
         return false;
     }
-    int64_t unsortedDim = constInfo.outerSize * constInfo.innerSize;
-    uint32_t inputValueAxisBytes = 0;
-    if (useMergeSort && constInfo.dataType == ge::DT_BF16 &&
-        !CeilAlignUint32(static_cast<uint64_t>(sortCount) * constInfo.dtypeSize, constInfo.blockUbSize,
-                         inputValueAxisBytes)) {
-        return false;
-    }
-    tilingData->lastAxisNum = constInfo.lastAxis;
-    tilingData->unsortedDimNum = unsortedDim;
-    tilingData->outerSize = constInfo.outerSize;
-    tilingData->innerSize = constInfo.innerSize;
-    tilingData->innerLoopNum = best.innerLoopNum;
-    tilingData->innerChunk = best.innerChunk;
-    tilingData->inputRowBytes = best.inputRowBytes;
-    tilingData->valueAxisBytes = best.valueAxisBytes;
-    tilingData->indexAxisBytes = best.indexAxisBytes;
-    tilingData->numTileDataSize = axisLen32;
-    tilingData->tmpUbSize = tmpUbSize;
-    tilingData->keyParams0 = sortCount;
-    tilingData->keyParams1 = inputValueAxisBytes;
-    blockDim = best.activeCore;
-    schId = useMergeSort ? KTH_VALUE_SCHID_NON_LAST_SMALL_AXIS : KTH_VALUE_SCHID_NON_LAST_SMALL_AXIS_RADIX;
-    size_t* userWorkspaceSize = context->GetWorkspaceSizes(1);
-    OP_CHECK_NULL_WITH_CONTEXT(context, userWorkspaceSize);
-    userWorkspaceSize[0] = WORK_SPACE_SIZE;
-    return true;
+    return FillNonLastSmallAxisTiling(context, constInfo, best, axisLen32, sortCount, tmpUbSize, useMergeSort,
+                                      tilingData, blockDim, schId);
 }
 
 // =============================================================================
@@ -544,10 +571,11 @@ static ge::graphStatus SetAxisOneCopyTiling(gert::TilingContext* context, SortKt
 static bool TryRadixOneCore(gert::TilingContext* context, const SortKthTileInfo& info, KthValueTilingData* tilingData,
                             uint64_t& schId)
 {
-    if (info.oneBufferQueSize >= info.ubSize) {
+    uint64_t sourceOrderBytes = NeedsSignedZeroSourceOrder(info.dataType) ? info.idxUbSize : 0U;
+    if (info.oneBufferQueSize + sourceOrderBytes >= info.ubSize) {
         return false;
     }
-    uint64_t remainUb = (info.ubSize - info.oneBufferQueSize) / info.blockUbSize * info.blockUbSize;
+    uint64_t remainUb = (info.ubSize - info.oneBufferQueSize - sourceOrderBytes) / info.blockUbSize * info.blockUbSize;
     if (static_cast<uint64_t>(info.oneCoreTmpUbSize) > remainUb) {
         return false;
     }
@@ -925,9 +953,73 @@ static void SetKthValueTilingContext(gert::TilingContext* context, uint64_t schI
     }
 }
 
+// Extends user workspace for the merge multi-core median schedule: block-alignment
+// padding for the algorithm region, plus a per-core uint32 count buffer for aggregation.
+static ge::graphStatus AddMergeMedianWorkspace(gert::TilingContext* context, const SortKthTileInfo& info,
+                                               uint32_t blockDim)
+{
+    size_t* userWorkspaceSize = context->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context, userWorkspaceSize);
+    OP_CHECK_IF(info.workspaceSize < WORK_SPACE_SIZE,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "workspace", "invalid",
+                                                      "Merge workspace size must include the system workspace."),
+                return ge::GRAPH_FAILED);
+    uint64_t rawAlgorithmBytes = static_cast<uint64_t>(info.workspaceSize - WORK_SPACE_SIZE);
+    OP_CHECK_IF(
+        info.blockUbSize == 0U || rawAlgorithmBytes > std::numeric_limits<uint64_t>::max() - (info.blockUbSize - 1U),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "workspace", "overflow",
+                                              "Median workspace alignment must not overflow."),
+        return ge::GRAPH_FAILED);
+    uint64_t alignedAlgorithmBytes = Ops::Base::CeilAlign(rawAlgorithmBytes, static_cast<uint64_t>(info.blockUbSize));
+    uint64_t countBytes = Ops::Base::CeilAlign(static_cast<uint64_t>(blockDim) * sizeof(uint32_t),
+                                               static_cast<uint64_t>(info.blockUbSize));
+    uint64_t extraBytes = alignedAlgorithmBytes - rawAlgorithmBytes + countBytes;
+    OP_CHECK_IF(userWorkspaceSize[0] > std::numeric_limits<size_t>::max() - extraBytes,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "workspace", "overflow",
+                                                      "Median count workspace size must not overflow."),
+                return ge::GRAPH_FAILED);
+    userWorkspaceSize[0] += static_cast<size_t>(extraBytes);
+    return ge::GRAPH_SUCCESS;
+}
+
+// Extends user workspace for the radix multi-core median schedule with a per-core
+// uint32 count buffer; the radix workspace is already block-aligned, so no padding is added.
+static ge::graphStatus AddRadixMedianWorkspace(gert::TilingContext* context, const SortKthTileInfo& info,
+                                               uint32_t blockDim)
+{
+    size_t* userWorkspaceSize = context->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context, userWorkspaceSize);
+    uint64_t countBytes = Ops::Base::CeilAlign(
+        static_cast<uint64_t>(blockDim) * MEDIAN_RADIX_COUNT_STORAGE_WORDS * sizeof(uint32_t),
+        static_cast<uint64_t>(info.blockUbSize));
+    OP_CHECK_IF(userWorkspaceSize[0] > std::numeric_limits<size_t>::max() - countBytes,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "workspace", "overflow",
+                                                      "Median count workspace size must not overflow."),
+                return ge::GRAPH_FAILED);
+    userWorkspaceSize[0] += static_cast<size_t>(countBytes);
+    return ge::GRAPH_SUCCESS;
+}
+
+static ge::graphStatus AddMedianWorkspace(gert::TilingContext* context, const SortKthTileInfo& info,
+                                          const KthValueTilingData& tilingData, uint64_t schId, uint32_t blockDim,
+                                          bool isMedianOp)
+{
+    if (!isMedianOp || tilingData.medianMode == MEDIAN_MODE_STATIC) {
+        return ge::GRAPH_SUCCESS;
+    }
+    if (schId == KTH_VALUE_SCHID_MERGE_MORE_CORE) {
+        return AddMergeMedianWorkspace(context, info, blockDim);
+    }
+    if (schId == KTH_VALUE_SCHID_RADIX_MORE_CORE) {
+        return AddRadixMedianWorkspace(context, info, blockDim);
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
 static ge::graphStatus SelectAndFinalizeKthValueRoute(gert::TilingContext* context,
                                                       const platform_ascendc::PlatformAscendC& ascendcPlatform,
-                                                      SortKthTileInfo& info, KthValueTilingData* tilingData)
+                                                      SortKthTileInfo& info, KthValueTilingData* tilingData,
+                                                      bool isMedianOp)
 {
     KthValueTilingData candidateTilingData = *tilingData;
     uint64_t schId = KTH_VALUE_SCHID_RADIX_MORE_CORE;
@@ -941,6 +1033,11 @@ static ge::graphStatus SelectAndFinalizeKthValueRoute(gert::TilingContext* conte
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "FinalizeKthValueRoute", "GRAPH_FAILED",
                                                       "The value of FinalizeKthValueRoute must be GRAPH_SUCCESS."),
                 return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        AddMedianWorkspace(context, info, candidateTilingData, schId, blockDim, isMedianOp) != ge::GRAPH_SUCCESS,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "AddMedianWorkspace", "GRAPH_FAILED",
+                                              "The value of AddMedianWorkspace must be GRAPH_SUCCESS."),
+        return ge::GRAPH_FAILED);
     *tilingData = candidateTilingData;
     OP_LOGI(context->GetNodeName(),
             "KthValueTiling: schId=%lu, blockDim=%u, lastAxis=%ld, unsortedDim=%ld, "
@@ -953,7 +1050,8 @@ static ge::graphStatus SelectAndFinalizeKthValueRoute(gert::TilingContext* conte
 // =============================================================================
 // Main entry
 // =============================================================================
-static ge::graphStatus Tiling4KthValue(gert::TilingContext* context)
+static ge::graphStatus TilingKthLike(gert::TilingContext* context, int64_t k, int64_t dim, uint32_t medianMode,
+                                     bool isMedianOp)
 {
     auto platformInfo = context->GetPlatformInfo();
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
@@ -964,11 +1062,6 @@ static ge::graphStatus Tiling4KthValue(gert::TilingContext* context)
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "memset_s", "not EOK",
                                                       "The value of memset_s must be EOK."),
                 return ge::GRAPH_FAILED);
-    auto attrs = context->GetAttrs();
-    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
-    const int64_t* kAttr = attrs->GetAttrPointer<int64_t>(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, kAttr);
-    const int64_t* dimAttr = attrs->GetAttrPointer<int64_t>(1);
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
     ge::DataType dataType = inputDesc->GetDataType();
@@ -983,7 +1076,7 @@ static ge::graphStatus Tiling4KthValue(gert::TilingContext* context)
     info.y2DtypeSize = static_cast<uint32_t>(sizeof(uint32_t));
     info.blockUbSize = Ops::Base::GetUbBlockSize(context);
     info.maxCoreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF((ParseKthValueShapeInfo(context, kAttr, dimAttr, info) != ge::GRAPH_SUCCESS),
+    OP_CHECK_IF((ParseKthValueShapeInfo(context, &k, &dim, info) != ge::GRAPH_SUCCESS),
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ParseKthValueShapeInfo", "GRAPH_FAILED",
                                                       "The value of ParseKthValueShapeInfo must be GRAPH_SUCCESS."),
                 return ge::GRAPH_FAILED);
@@ -993,9 +1086,59 @@ static ge::graphStatus Tiling4KthValue(gert::TilingContext* context)
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ComputeKthValueUbInfo", "GRAPH_FAILED",
                                                       "The value of ComputeKthValueUbInfo must be GRAPH_SUCCESS."),
                 return ge::GRAPH_FAILED);
-    InitKthValueBaseTiling(tilingData, info, oneCoreUbValid, *kAttr - 1);
-    return SelectAndFinalizeKthValueRoute(context, ascendcPlatform, info, tilingData);
+    InitKthValueBaseTiling(tilingData, info, oneCoreUbValid, k - 1);
+    tilingData->medianMode = medianMode;
+    return SelectAndFinalizeKthValueRoute(context, ascendcPlatform, info, tilingData, isMedianOp);
 }
+
+static ge::graphStatus Tiling4KthValue(gert::TilingContext* context)
+{
+    auto attrs = context->GetAttrs();
+    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
+    const int64_t* kAttr = attrs->GetAttrPointer<int64_t>(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, kAttr);
+    const int64_t* dimAttr = attrs->GetAttrPointer<int64_t>(1);
+    int64_t dim = dimAttr == nullptr ? -1 : *dimAttr;
+    return TilingKthLike(context, *kAttr, dim, MEDIAN_MODE_STATIC, false);
+}
+
+static ge::graphStatus TilingMedianLike(gert::TilingContext* context, bool ignoreNan)
+{
+    auto attrs = context->GetAttrs();
+    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
+    const int64_t* dimAttr = attrs->GetAttrPointer<int64_t>(0);
+    int64_t dim = dimAttr == nullptr ? -1 : *dimAttr;
+    auto inputShape = context->GetInputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputShape);
+    auto inputDesc = context->GetInputDesc(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
+    ge::DataType inputDtype = inputDesc->GetDataType();
+    bool isFloating = inputDtype == ge::DT_FLOAT16 || inputDtype == ge::DT_FLOAT || inputDtype == ge::DT_BF16;
+    const gert::Shape& shape = inputShape->GetStorageShape();
+    int64_t rank = shape.GetDimNum();
+    int64_t normDim = dim < 0 ? dim + rank : dim;
+    OP_CHECK_IF(
+        normDim < 0 || normDim >= rank,
+        OP_LOGE_WITH_INVALID_ATTR(context->GetNodeName(), "dim", std::to_string(dim).c_str(), "a valid dimension"),
+        return ge::GRAPH_FAILED);
+    int64_t axisLen = shape.GetDim(normDim);
+    OP_CHECK_IF(axisLen <= 0,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "axisLen",
+                                                      std::to_string(axisLen).c_str(), "axisLen must be positive."),
+                return ge::GRAPH_FAILED);
+    // Use the lower median for an even axis length. TilingKthLike expects one-based k,
+    // so add one to the zero-based lower-median index (axisLen - 1) / 2.
+    int64_t medianK = (axisLen - 1) / LOWER_MEDIAN_DIVISOR + 1;
+    // Integer inputs contain no NaN. Keep them on KthValue's original static-k
+    // path for both Median and NanMedian, without a scan or extra UB usage.
+    uint32_t medianMode = isFloating ? (ignoreNan ? MEDIAN_MODE_IGNORE_NAN : MEDIAN_MODE_PROPAGATE_NAN) :
+                                       MEDIAN_MODE_STATIC;
+    return TilingKthLike(context, medianK, dim, medianMode, true);
+}
+
+ge::graphStatus Tiling4Median(gert::TilingContext* context) { return TilingMedianLike(context, false); }
+
+ge::graphStatus Tiling4NanMedian(gert::TilingContext* context) { return TilingMedianLike(context, true); }
 
 static ge::graphStatus TilingPrepare4KthValue(gert::TilingParseContext* context)
 {
@@ -1012,6 +1155,10 @@ static ge::graphStatus TilingPrepare4KthValue(gert::TilingParseContext* context)
                 return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
+
+ge::graphStatus TilingPrepare4Median(gert::TilingParseContext* context) { return TilingPrepare4KthValue(context); }
+
+ge::graphStatus TilingPrepare4NanMedian(gert::TilingParseContext* context) { return TilingPrepare4KthValue(context); }
 
 IMPL_OP_OPTILING(KthValue).Tiling(Tiling4KthValue).TilingParse<KthValueCompileInfo>(TilingPrepare4KthValue);
 } // namespace optiling

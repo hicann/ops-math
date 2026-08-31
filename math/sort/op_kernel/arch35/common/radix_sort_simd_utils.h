@@ -116,28 +116,30 @@ __aicore__ inline void TwiddleInB64(LocalTensor<T1> inputX, LocalTensor<UT> uint
     }
 }
 
-template <typename T1, typename UT, uint64_t isDescend>
-__aicore__ inline void TwiddleInFp16(LocalTensor<T1> inputX, LocalTensor<UT> uintInputX, uint32_t numTileData)
+template <typename T1, typename UT, uint64_t isDescend, bool CanonicalizeNan>
+__aicore__ inline void TwiddleInFp16Impl(LocalTensor<T1> inputX, LocalTensor<UT> uintInputX, uint32_t numTileData)
 {
-    __ubuf__ uint16_t* xValuePtr = (__ubuf__ uint16_t*)inputX.GetPhyAddr();
-    __ubuf__ uint16_t* uXValuePtr = (__ubuf__ uint16_t*)uintInputX.GetPhyAddr();
+    auto *xPtr = (__ubuf__ uint16_t*)inputX.GetPhyAddr(), *outPtr = (__ubuf__ uint16_t*)uintInputX.GetPhyAddr();
     uint16_t repeatTime = CeilDivision(numTileData, VF_LEN_B16);
     uint32_t inputNum = numTileData;
     __VEC_SCOPE__
     {
-        Reg::RegTensor<uint16_t> inputReg, vnotReg;
-        Reg::RegTensor<uint16_t> xorMaskReg, vandMask;
-        Reg::RegTensor<uint16_t> twiddledZeroReg;
-        Reg::MaskReg maskB16 = Reg::CreateMask<uint16_t>();
-        Reg::MaskReg xorMask;
+        Reg::RegTensor<uint16_t> inputReg, vnotReg, xorMaskReg, vandMask, twiddledZeroReg;
+        Reg::RegTensor<uint16_t> canonicalNanReg, absMaskReg;
+        Reg::MaskReg maskB16 = Reg::CreateMask<uint16_t>(), xorMask;
         Reg::Duplicate(xorMaskReg, LOWEST_KEY_VALUE_B16, maskB16);
         Reg::Duplicate(vandMask, XOR_OP_VALUE_B16, maskB16);
         Reg::Duplicate(twiddledZeroReg, TWIDDLED_ZERO_BITS_FP16, maskB16);
+        // Median mode only: precompute the canonical NaN key and the abs-bits mask used below.
+        if constexpr (CanonicalizeNan) {
+            Reg::Duplicate(canonicalNanReg, CANONICAL_NAN_KEY_B16, maskB16);
+            Reg::Duplicate(absMaskReg, FLOAT_ABS_MASK_B16, maskB16);
+        }
 
         for (uint16_t i = 0; i < repeatTime; i++) {
             xorMask = Reg::UpdateMask<uint16_t>(inputNum);
             // load input
-            Reg::LoadAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputReg, xValuePtr, VF_LEN_B16);
+            Reg::LoadAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(inputReg, xPtr, VF_LEN_B16);
             // vand
             Reg::RegTensor<uint16_t> andValueOne;
             Reg::And(andValueOne, inputReg, vandMask, maskB16);
@@ -159,20 +161,36 @@ __aicore__ inline void TwiddleInFp16(LocalTensor<T1> inputX, LocalTensor<UT> uin
             // change -0.0 to +0.0
             Reg::RegTensor<uint16_t> resultReg;
             Reg::Select(resultReg, twiddledZeroReg, xorVectorOne, minusZeroMask);
+            // Median mode only: detect NaN from the raw input bits (|bits| > inf, sign-independent)
+            // and overwrite the twiddled key with the canonical NaN key, so every NaN lands in one
+            // shared max bucket. Only the output key changes; the input data stays untouched.
+            if constexpr (CanonicalizeNan) {
+                constexpr uint16_t INF_BITS = IsSameType<half, T1>::value ? FP16_INFINITY_BITS : BF16_INFINITY_BITS;
+                Reg::RegTensor<uint16_t> absBits;
+                Reg::MaskReg nanMask;
+                Reg::And(absBits, inputReg, absMaskReg, xorMask);
+                Reg::Compares<uint16_t, CMPMODE::GT>(nanMask, absBits, INF_BITS, xorMask);
+                Reg::Select(resultReg, canonicalNanReg, resultReg, nanMask);
+            }
 
             if constexpr (isDescend == 0) {
-                Reg::StoreAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(uXValuePtr, resultReg, VF_LEN_B16,
-                                                                              xorMask);
+                Reg::StoreAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(outPtr, resultReg, VF_LEN_B16, xorMask);
             } else {
                 Reg::Not(vnotReg, resultReg, xorMask);
-                Reg::StoreAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(uXValuePtr, vnotReg, VF_LEN_B16, xorMask);
+                Reg::StoreAlign<uint16_t, Reg::PostLiteral::POST_MODE_UPDATE>(outPtr, vnotReg, VF_LEN_B16, xorMask);
             }
         }
     }
 }
 
 template <typename T1, typename UT, uint64_t isDescend>
-__aicore__ inline void TwiddleInFp32(LocalTensor<T1> inputX, LocalTensor<UT> uintInputX, uint32_t numTileData)
+__aicore__ inline void TwiddleInFp16(LocalTensor<T1> inputX, LocalTensor<UT> uintInputX, uint32_t numTileData)
+{
+    TwiddleInFp16Impl<T1, UT, isDescend, false>(inputX, uintInputX, numTileData);
+}
+
+template <typename T1, typename UT, uint64_t isDescend, bool CanonicalizeNan>
+__aicore__ inline void TwiddleInFp32Impl(LocalTensor<T1> inputX, LocalTensor<UT> uintInputX, uint32_t numTileData)
 {
     __ubuf__ uint32_t* xValuePtr = (__ubuf__ uint32_t*)inputX.GetPhyAddr();
     __ubuf__ uint32_t* uXValuePtr = (__ubuf__ uint32_t*)uintInputX.GetPhyAddr();
@@ -180,14 +198,16 @@ __aicore__ inline void TwiddleInFp32(LocalTensor<T1> inputX, LocalTensor<UT> uin
     uint32_t inputNum = numTileData;
     __VEC_SCOPE__
     {
-        Reg::RegTensor<uint32_t> inputReg, vnotReg;
-        Reg::RegTensor<uint32_t> xorMaskReg, vandMask;
-        Reg::RegTensor<uint32_t> twiddledZeroReg;
-        Reg::MaskReg maskB32 = Reg::CreateMask<uint32_t>();
-        Reg::MaskReg xorMask;
+        Reg::RegTensor<uint32_t> inputReg, vnotReg, xorMaskReg, vandMask, twiddledZeroReg;
+        Reg::RegTensor<uint32_t> canonicalNanReg, absMaskReg;
+        Reg::MaskReg maskB32 = Reg::CreateMask<uint32_t>(), xorMask;
         Reg::Duplicate(xorMaskReg, LOWEST_KEY_VALUE_B32, maskB32);
         Reg::Duplicate(vandMask, XOR_OP_VALUE, maskB32);
         Reg::Duplicate(twiddledZeroReg, TWIDDLED_ZERO_BITS_FP32, maskB32);
+        if constexpr (CanonicalizeNan) {
+            Reg::Duplicate(canonicalNanReg, CANONICAL_NAN_KEY_B32, maskB32);
+            Reg::Duplicate(absMaskReg, FLOAT_ABS_MASK_B32, maskB32);
+        }
         for (uint16_t i = 0; i < repeatTime; i++) {
             xorMask = Reg::UpdateMask<uint32_t>(inputNum);
             // load input
@@ -213,6 +233,13 @@ __aicore__ inline void TwiddleInFp32(LocalTensor<T1> inputX, LocalTensor<UT> uin
             // change -0.0 to +0.0
             Reg::RegTensor<uint32_t> resultReg;
             Reg::Select(resultReg, twiddledZeroReg, xorVectorZero, minusZeroMask);
+            if constexpr (CanonicalizeNan) {
+                Reg::RegTensor<uint32_t> absBits;
+                Reg::MaskReg nanMask;
+                Reg::And(absBits, inputReg, absMaskReg, xorMask);
+                Reg::Compares<uint32_t, CMPMODE::GT>(nanMask, absBits, FP32_INFINITY_BITS, xorMask);
+                Reg::Select(resultReg, canonicalNanReg, resultReg, nanMask);
+            }
 
             if constexpr (isDescend == 0) {
                 Reg::StoreAlign<uint32_t, Reg::PostLiteral::POST_MODE_UPDATE>(uXValuePtr, resultReg, VF_LEN_B32,
@@ -223,6 +250,12 @@ __aicore__ inline void TwiddleInFp32(LocalTensor<T1> inputX, LocalTensor<UT> uin
             }
         }
     }
+}
+
+template <typename T1, typename UT, uint64_t isDescend>
+__aicore__ inline void TwiddleInFp32(LocalTensor<T1> inputX, LocalTensor<UT> uintInputX, uint32_t numTileData)
+{
+    TwiddleInFp32Impl<T1, UT, isDescend, false>(inputX, uintInputX, numTileData);
 }
 
 template <typename T1, typename UT>

@@ -19,12 +19,15 @@
 #include "kernel_operator.h"
 #include "op_kernel/platform_util.h"
 #include "simt_api/asc_simt.h"
+#include "signed_zero_sort_utils.h"
 #include "util_type_simd.h"
 
 namespace SmallAxisCommon {
 using namespace AscendC;
 
 constexpr uint32_t TWO_STAGE_THREAD_NUM = 1024;
+using SignedZeroSortCommon::FloatBitsT;
+using SignedZeroSortCommon::IS_FLOATING_POINT_V;
 
 /**
  * @brief SIMT gather kernel for non-last-axis two-stage-sort batches.
@@ -60,14 +63,23 @@ __simt_vf__ LAUNCH_BOUND(TWO_STAGE_THREAD_NUM) __aicore__
 template <typename T, typename OutIdxT>
 __simt_vf__ LAUNCH_BOUND(TWO_STAGE_THREAD_NUM) __aicore__
     void RankInverseScatter(uint32_t totalElems, uint32_t segmentLen, __ubuf__ T* stage1ValuePtr,
-                            __ubuf__ uint32_t* stage1OrderPtr, __ubuf__ uint32_t* rankInversePtr,
-                            __ubuf__ T* finalValuePtr, __ubuf__ OutIdxT* finalIdxPtr)
+                            __ubuf__ uint32_t* stage1OrderPtr, __ubuf__ uint32_t* signFlagPtr,
+                            __ubuf__ uint32_t* rankInversePtr, __ubuf__ T* finalValuePtr, __ubuf__ OutIdxT* finalIdxPtr)
 {
     // Build inverse mapping: for each flattened index, store its rank from stage-1 sort.
     // rankInverse[stage1Order[rank]] = rank, e.g. stage1Order=[1, 4, 0, 3, 2, 5]
     // gives rankInverse=[2, 0, 4, 3, 1, 5].
     for (uint32_t rank = static_cast<uint32_t>(threadIdx.x); rank < totalElems; rank += TWO_STAGE_THREAD_NUM) {
         uint32_t flatIdx = stage1OrderPtr[rank];
+        if constexpr (IS_FLOATING_POINT_V<T>) {
+            using BitsT = FloatBitsT<T>;
+            __ubuf__ BitsT* signFlagBits = reinterpret_cast<__ubuf__ BitsT*>(signFlagPtr);
+            if (signFlagBits[flatIdx] != static_cast<BitsT>(0U)) {
+                constexpr BitsT signBit = static_cast<BitsT>(BitsT{1} << (sizeof(T) * 8U - 1U));
+                __ubuf__ BitsT* stage1ValueBits = reinterpret_cast<__ubuf__ BitsT*>(stage1ValuePtr);
+                stage1ValueBits[rank] = signBit;
+            }
+        }
         rankInversePtr[flatIdx] = rank;
     }
     asc_syncthreads();
@@ -184,6 +196,9 @@ public:
         // read in the same batch, so the input buffer can be reused as the final output buffer without overlap.
         finalValues_ = inputValues_;
         finalIdx_ = finalIdxBuf_.template Get<FinalIdxT>();
+        // finalIdx_ is not live until rank-inverse scatter, so its B32-or-wider
+        // storage safely carries the per-source -0 marker during Stage1Sort.
+        stage1SignFlags_ = finalIdxBuf_.template Get<uint32_t>();
         if (useRankInverse_) {
             rankInverse_ = rankInverseBuf_.template Get<uint32_t>();
         } else {
@@ -248,6 +263,7 @@ protected:
     LocalTensor<uint32_t> stage2Order_;
     LocalTensor<T> finalValues_;
     LocalTensor<FinalIdxT> finalIdx_;
+    LocalTensor<uint32_t> stage1SignFlags_;
     LocalTensor<uint8_t> tmp_;
 
     uint32_t blockIdx_ = 0;
@@ -270,6 +286,13 @@ private:
 
     __aicore__ inline void Stage1Sort(uint32_t totalElems)
     {
+        if constexpr (IS_FLOATING_POINT_V<T>) {
+            if (useRankInverse_) {
+                SignedZeroSortCommon::PrepareSignedZeroKeysAndFlagsVec(inputValues_, stage1SignFlags_, totalElems);
+                AscendC::Sort<T, false, kStage1SortConfig>(stage1Values_, stage1Order_, inputValues_, tmp_, totalElems);
+                return;
+            }
+        }
         AscendC::Sort<T, false, kStage1SortConfig>(stage1Values_, stage1Order_, inputValues_, tmp_, totalElems);
     }
 
@@ -277,8 +300,9 @@ private:
     {
         asc_vf_call<RankInverseScatter<T, FinalIdxT>>(
             dim3(TWO_STAGE_THREAD_NUM), totalElems, segmentLen_, (__ubuf__ T*)stage1Values_.GetPhyAddr(),
-            (__ubuf__ uint32_t*)stage1Order_.GetPhyAddr(), (__ubuf__ uint32_t*)rankInverse_.GetPhyAddr(),
-            (__ubuf__ T*)finalValues_.GetPhyAddr(), (__ubuf__ FinalIdxT*)finalIdx_.GetPhyAddr());
+            (__ubuf__ uint32_t*)stage1Order_.GetPhyAddr(), (__ubuf__ uint32_t*)stage1SignFlags_.GetPhyAddr(),
+            (__ubuf__ uint32_t*)rankInverse_.GetPhyAddr(), (__ubuf__ T*)finalValues_.GetPhyAddr(),
+            (__ubuf__ FinalIdxT*)finalIdx_.GetPhyAddr());
     }
 
     __aicore__ inline void BuildStage2Keys(uint32_t totalElems)

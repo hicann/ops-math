@@ -16,12 +16,18 @@
 #define AIR_CXX_RUNTIME_V2_OP_IMPL_KTH_VALUE_TILING_ARCH35_H
 
 #include "register/op_def_registry.h"
+#include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
 
 namespace optiling {
 struct KthValueCompileInfo {
     int32_t coreNum;
 };
+
+ge::graphStatus Tiling4Median(gert::TilingContext* context);
+ge::graphStatus TilingPrepare4Median(gert::TilingParseContext* context);
+ge::graphStatus Tiling4NanMedian(gert::TilingContext* context);
+ge::graphStatus TilingPrepare4NanMedian(gert::TilingParseContext* context);
 } // namespace optiling
 
 #endif // AIR_CXX_RUNTIME_V2_OP_IMPL_KTH_VALUE_TILING_ARCH35_H

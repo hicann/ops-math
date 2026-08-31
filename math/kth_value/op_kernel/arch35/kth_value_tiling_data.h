@@ -13,6 +13,10 @@
 
 #include <cstdint>
 
+constexpr uint32_t MEDIAN_MODE_STATIC = 0U;
+constexpr uint32_t MEDIAN_MODE_PROPAGATE_NAN = 1U;
+constexpr uint32_t MEDIAN_MODE_IGNORE_NAN = 2U;
+
 struct KthValueTilingData {
     uint32_t numTileDataSize;     // h轴ub一次处理个数
     uint32_t unsortedDimParallel; // b轴使用的核数
@@ -64,6 +68,8 @@ struct KthValueTilingData {
     uint32_t inputRowBytes;  // non-last-axis: 输入一行字节数
     uint32_t valueAxisBytes; // non-last-axis: value轴字节数
     uint32_t indexAxisBytes; // non-last-axis: index轴字节数
+    // 0: KthValue, 1: Median (propagate NaN), 2: NanMedian (ignore NaN).
+    uint32_t medianMode;
 };
 
 #endif

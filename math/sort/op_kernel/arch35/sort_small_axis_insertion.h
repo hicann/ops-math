@@ -44,9 +44,9 @@ __simt_vf__ LAUNCH_BOUND(SmallAxisCommon::INSERTION_THREAD_NUM) __aicore__
 template <typename T, typename CONVERT_TYPE, typename OUT_IDX_T, bool IsDescend>
 class SortSmallAxisInsertion
     : public SmallAxisCommon::SmallAxisInsertionBase<SortSmallAxisInsertion<T, CONVERT_TYPE, OUT_IDX_T, IsDescend>, T,
-                                                     CONVERT_TYPE, OUT_IDX_T, IsDescend> {
+                                                     CONVERT_TYPE, OUT_IDX_T, IsDescend, true> {
     using Base = SmallAxisCommon::SmallAxisInsertionBase<SortSmallAxisInsertion<T, CONVERT_TYPE, OUT_IDX_T, IsDescend>,
-                                                         T, CONVERT_TYPE, OUT_IDX_T, IsDescend>;
+                                                         T, CONVERT_TYPE, OUT_IDX_T, IsDescend, true>;
 
 public:
     __aicore__ inline SortSmallAxisInsertion() {}

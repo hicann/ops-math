@@ -555,15 +555,25 @@ public:
         }
     }
 
-    __aicore__ inline LocalTensor<UT> PreProcess(LocalTensor<T1> inputX, uint32_t numTileData)
+    __aicore__ inline LocalTensor<UT> PreProcess(LocalTensor<T1> inputX, uint32_t numTileData, uint32_t round,
+                                                 uint32_t tileId)
     {
+        (void)tileId;
         LocalTensor<UT> inputXCopy = inputX.template ReinterpretCast<UT>();
         if constexpr (IsSameType<int32_t, T1>::value) {
             TwiddleInB32<T1, UT, isDescend>(inputX, inputXCopy, numTileData);
         } else if constexpr (IsSameType<half, T1>::value || IsSameType<bfloat16_t, T1>::value) {
-            TwiddleInFp16<T1, UT, isDescend>(inputX, inputXCopy, numTileData);
+            if (static_cast<Derived*>(this)->ShouldCanonicalizeMedianNan(round)) {
+                TwiddleInFp16Impl<T1, UT, isDescend, true>(inputX, inputXCopy, numTileData);
+            } else {
+                TwiddleInFp16<T1, UT, isDescend>(inputX, inputXCopy, numTileData);
+            }
         } else if constexpr (IsSameType<float, T1>::value) {
-            TwiddleInFp32<T1, UT, isDescend>(inputX, inputXCopy, numTileData);
+            if (static_cast<Derived*>(this)->ShouldCanonicalizeMedianNan(round)) {
+                TwiddleInFp32Impl<T1, UT, isDescend, true>(inputX, inputXCopy, numTileData);
+            } else {
+                TwiddleInFp32<T1, UT, isDescend>(inputX, inputXCopy, numTileData);
+            }
         } else if constexpr (IsSameType<int16_t, T1>::value) {
             TwiddleInB16<T1, UT, isDescend>(inputX, inputXCopy, numTileData);
         } else if constexpr (IsSameType<int8_t, T1>::value) {
@@ -636,10 +646,11 @@ public:
                 this->inQueueX_.EnQue(xLocal);
                 xLocal = this->inQueueX_.template DeQue<T1>();
                 // Convert signed/floating values to unsigned radix keys before byte extraction.
-                LocalTensor<UT> xUbCopy = PreProcess(xLocal, currTileSize);
+                LocalTensor<UT> xUbCopy = PreProcess(xLocal, currTileSize, round, tileId);
                 LocalTensor<uint8_t> inputB8Ub = this->inputB8Que_.template AllocTensor<uint8_t>();
                 LocalTensor<uint16_t> histUb = this->outIdxQueue_.template AllocTensor<uint16_t>();
                 LocalTensor<uint16_t> histCumsumUb = this->outValueQueue_.template AllocTensor<uint16_t>();
+                static_cast<Derived*>(this)->OnRadixInputLoaded(xLocal, currTileSize, round, tileId, histCumsumUb);
                 LocalTensor<T3> blockExcusiveUbTmp = blockExcusiveUb.template ReinterpretCast<T3>();
                 PreGlobalExcusiveSum(xUbCopy, blockExcusiveUbTmp, histUb, histCumsumUb, inputB8Ub, currTileSize, round,
                                      tileId);
@@ -693,6 +704,7 @@ public:
                     dim3(RADIX_SORT_NUM), excusiveBinOffset, (__gm__ T3*)(this->excusiveBinsGmWk_.GetPhyAddr()),
                     (__ubuf__ T3*)(blockExcusiveUb.GetPhyAddr()), (__gm__ T3*)(this->outIdxGm_.GetPhyAddr()));
             }
+            static_cast<Derived*>(this)->OnRadixRoundComplete(round, sortLoopRound, blockExcusiveUb);
             this->blockUbFlagQue_.FreeTensor(blockExcusiveUb);
         }
     }

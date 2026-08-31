@@ -164,6 +164,24 @@ TEST_F(KthValueInfershape, kthvalue_infershape_scalar_input_fails)
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, expectOutputShape);
 }
 
+TEST_F(KthValueInfershape, kthvalue_infershape_unknown_rank)
+{
+    gert::InfershapeContextPara infershapeContextPara("KthValue",
+                                                      {
+                                                          {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"k", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
+                                                          {"dim", Ops::Math::AnyValue::CreateFrom<int64_t>(-1)},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{-2}, {-2}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
 TEST_F(KthValueInfershape, kthvalue_infershape_int8_dtype)
 {
     gert::InfershapeContextPara infershapeContextPara("KthValue",
