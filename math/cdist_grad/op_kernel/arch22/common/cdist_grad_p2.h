@@ -63,9 +63,29 @@ __aicore__ inline void CdistGradP2<T>::ComputeForJ(int64_t j)
     AscendC::Adds(distSafe, this->distChunk_[rowOff], 1e-38f, count);
     // numer = grad * diff   (950: Mul(CastGrad, OpDiff))
     AscendC::Mul(diff, this->gradChunk_[rowOff], diff, count);
-    // / (cdist + 1e-38)
-    AscendC::Div(diff, diff, distSafe, count);
+    // / (cdist + 1e-38) — high-precision division.
+    // arch22's plain Vector Div is a fast reciprocal-table approximation that inflates max
+    // relative error for fp32 beyond ATK tolerance. Two Newton-Raphson reciprocal refinements
+    // (r1 = r0*(2 - b*r0), r2 = r1*(2 - b*r1)) drive a/b ~= a*r2 to ~1e-7 instead of ~1e-5.
+    // signBuf holds rcp, tmpBuf holds the intermediate b*rk (both unused in the p=2 path).
+    LocalTensor<float> rcp = this->signBuf.template Get<float>();
+    LocalTensor<float> t = this->tmpBuf.template Get<float>();
+    AscendC::Reciprocal(rcp, distSafe, count); // r0 = 1/b, b = cdist + 1e-38
+    AscendC::Mul(t, distSafe, rcp, count);     // b*r0
+    AscendC::Muls(t, t, -1.0f, count);         // -b*r0
+    AscendC::Adds(t, t, 2.0f, count);          // 2 - b*r0
+    AscendC::Mul(rcp, rcp, t, count);          // r1 = r0*(2 - b*r0)
+    AscendC::Mul(t, distSafe, rcp, count);     // b*r1
+    AscendC::Muls(t, t, -1.0f, count);         // -b*r1
+    AscendC::Adds(t, t, 2.0f, count);          // 2 - b*r1
+    AscendC::Mul(rcp, rcp, t, count);          // r2 = r1*(2 - b*r1)
+    AscendC::Mul(diff, diff, rcp, count);      // q = a*r2
     // *(cdist != 0): where cdist==0 take 0
+    AscendC::Select(diff, maskDistZero, this->zero_, diff, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, count);
+    // A fp16 cdist saturates to +inf once the true distance exceeds 65504, and the exact term
+    // is then grad*diff/inf == 0. The Newton refinement above cannot produce that: Reciprocal
+    // (+inf) is 0, so the b*r0 step evaluates inf*0 = NaN and poisons the whole output row.
+    AscendC::Compares(maskDistZero, this->distChunk_[rowOff], 3.4028235e38f, AscendC::CMPMODE::GE, count);
     AscendC::Select(diff, maskDistZero, this->zero_, diff, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, count);
     // accum += diff
     AscendC::Add(this->accum_, this->accum_, diff, count);
