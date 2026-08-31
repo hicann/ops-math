@@ -173,15 +173,18 @@ aclnnStatus aclnnExpSegsum(
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的self或out是空指针。</td>
+      <td>传入的self或out是空指针，或workspaceSize、executor是空指针。</td>
     </tr>
     <tr>
-      <td rowspan="2">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="2">161002</td>
+      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="3">161002</td>
       <td>self、out的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
       <td>self、out的shape不满足参数要求。</td>
+    </tr>
+    <tr>
+      <td>self、out的format不是ND。</td>
     </tr>
   </tbody></table>
 

@@ -39,18 +39,6 @@ __input__ = {
     }
 }
 
-_KERNEL_TOLERANCE = {
-    "float32": {"standard": "cross_check", "level": "L1"},
-    "float16": {"standard": "cross_check", "level": "L1"},
-    "bfloat16": {"standard": "cross_check", "level": "L1"},
-}
-
-_ACLNN_TOLERANCE = {
-    "float32": {"standard": "stat_rel_err"},
-    "float16": {"standard": "stat_rel_err"},
-    "bfloat16": {"standard": "stat_rel_err"},
-}
-
 
 def _to_f32_array(arr):
     if hasattr(arr, "astype"):
@@ -199,7 +187,6 @@ class SegsumKernelSpec:
         return [outs[0].cpu().numpy().astype(_numpy_dtype(output_dtype), copy=False)]
 
     third_party = {"torch": _SegsumCompose}
-    tolerance = _KERNEL_TOLERANCE
 
 
 class SegsumAclnnSpec:
@@ -212,7 +199,6 @@ class SegsumAclnnSpec:
         return _compute(self)
 
     third_party = {"torch": _SegsumCompose}
-    tolerance = _ACLNN_TOLERANCE
 
 
 # 【不存在】geir 通路: 全仓无 IMPL_OP_INFERSHAPE(Segsum), op_graph 下无 proto/infer 实现.

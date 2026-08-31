@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #ifndef OP_API_INC_SEGSUM_H_
 #define OP_API_INC_SEGSUM_H_
 
@@ -22,12 +22,12 @@ extern "C" {
  * @brief aclnnExpSegsum的第一段接口，根据具体的计算流程，计算workspace大小。
  * @domain aclnn_ops_infer
  *
- * 算子功能：进行分段和计算。生成对角线为0的半可分矩阵，且上三角为-inf。
+ * 算子功能：进行分段和计算。生成对角线为1、上三角为0的半可分矩阵。
  * 计算公式：如下所示（以4D输入为例）
  * 1. 输入self由（N1,N2,N3,N4）升维成（N1,N2,N3,N4,1）
  * 2. 进行广播得到（N1,N2,N3,N4,N4）
  * 3. 生成（N4,N4）类型为bool的三角矩阵A，上三角为True，下三角为False，对角线为True。
- * 4. 用0填充输入self里面与矩阵A中值为Ture的位置相对应的元素。
+ * 4. 用0填充输入self里面与矩阵A中值为True的位置相对应的元素。
  * $$
  * self_i=
  * \begin{cases}self_i,\quad A_i==False
@@ -40,11 +40,11 @@ extern "C" {
  * selfTemp_{i} = self_{1} + self_{2} + self_{3} + ...... + self_{i}
  * $$
  * 6. 生成（N4,N4）类型为bool的三角矩阵B，上三角为True，下三角为False，对角线为False。
- * 7. 用-inf填充selfTemp里面与矩阵B中值为Ture的位置相对应的元素。
+ * 7. 用-inf填充selfTemp里面与矩阵B中值为True的位置相对应的元素。
  * $$
  * out_i=
  * \begin{cases}selfTemp_i,\quad B_i==False
- * \\-inf, \quad BD_i==True
+ * \\-inf, \quad B_i==True
  * \end{cases}
  * $$
  * 8. 计算selfTemp里面每个元素的指数。
@@ -66,7 +66,7 @@ ACLNN_API aclnnStatus aclnnExpSegsumGetWorkspaceSize(const aclTensor* self, aclT
 /**
  * @brief aclnnExpSegsum的第二段接口，用于执行计算。
  *
- * 算子功能：进行分段和计算。生成对角线为0的半可分矩阵，且上三角为-inf。
+ * 算子功能：进行分段和计算。生成对角线为1、上三角为0的半可分矩阵。
  *
  * @param [in] workspace: 在npu device侧申请的workspace内存起址。
  * @param [in] workspaceSize: 在npu device侧申请的workspace大小，
@@ -82,4 +82,4 @@ ACLNN_API aclnnStatus aclnnExpSegsum(void* workspace, uint64_t workspaceSize, ac
 }
 #endif
 
-#endif  // OP_API_INC_SEGSUM_H_
+#endif // OP_API_INC_SEGSUM_H_
