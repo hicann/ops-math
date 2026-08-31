@@ -37,6 +37,12 @@ static constexpr int64_t ALIGNMENT_32 = 32;
 static constexpr int64_t OFFSET_LIMIT = 4;
 static constexpr int64_t MASK_ALIGN_SIZE = 128;
 static constexpr int64_t UINT8_BIT_SIZE = 8;
+static constexpr int64_t VEC_INIT = 8;
+static constexpr int64_t NUM_2 = 2;
+static constexpr int64_t NUM_4 = 4;
+static constexpr int64_t NUM_8 = 8;
+static constexpr int64_t NUM_16 = 16;
+static constexpr int64_t DROPOUT_CORE_GRANULARITY = 32;
 
 OpTilingConfig DropOutV3Tiling::BuildOpConfig(gert::TilingContext* context)
 {
@@ -99,7 +105,11 @@ OpTilingConfig DropOutV3Tiling::BuildOpConfig(gert::TilingContext* context)
 
 ge::graphStatus DropOutV3Tiling::UniqueProcess()
 {
-    simtTilingData_.ubSize = ubSize_;
+    dropOutV3TilingData_.usedCoreNum = simtTilingData_.usedCoreNum;
+    dropOutV3TilingData_.outputSize = simtTilingData_.outputSize;
+    dropOutV3TilingData_.seed = simtTilingData_.seed;
+    dropOutV3TilingData_.offset = simtTilingData_.offset;
+    dropOutV3TilingData_.ubSize = ubSize_;
 
     auto pTensor = context_->GetRequiredInputTensor(INPUT_IDX_P);
     OP_CHECK_NULL_WITH_CONTEXT(context_, pTensor);
@@ -146,11 +156,100 @@ ge::graphStatus DropOutV3Tiling::UniqueProcess()
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "input p", valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
-    simtTilingData_.prob = prob;
+    dropOutV3TilingData_.prob = prob;
+
+    auto xDescPtr = context_->GetRequiredInputDesc(INPUT_IDX_X);
+    OP_CHECK_NULL_WITH_CONTEXT(context_, xDescPtr);
+    auto xDtype = xDescPtr->GetDataType();
+    auto sizeofT = static_cast<uint32_t>(ge::GetSizeByDataType(xDtype));
+
+    int64_t outputSize = dropOutV3TilingData_.outputSize;
+    int64_t totalCoreNum = totalCoreNum_;
+
+    // 计算 VEC
+    uint32_t vec = static_cast<uint32_t>(VEC_INIT);
+    if (outputSize % NUM_2 != 0) {
+        vec = 1;
+    } else {
+        uint32_t optimalVec = static_cast<uint32_t>(NUM_16 / sizeofT);
+        vec = std::min(static_cast<uint32_t>(VEC_INIT), optimalVec);
+        while (vec > 1 && static_cast<uint64_t>(outputSize) % vec != 0) {
+            vec /= NUM_2;
+        }
+    }
+    dropOutV3TilingData_.vec = vec;
+    dropOutV3TilingData_.transportMode = (vec == 1) ? 1 : 0;
+
+    // 计算 grid 和 totalThreads
+    int64_t blockSize = SIMT_THREAD_GROUP_SIZE;
+    int64_t maxThreadsPerMultiProcessor = MAX_THREADS_PER_AIC;
+    int64_t blocksPerSM = maxThreadsPerMultiProcessor / blockSize;
+    int64_t multiProcessorCount = AIC_CLUSTER_COUNT;
+    int64_t blocksCount = multiProcessorCount * blocksPerSM;
+    int64_t grid = (outputSize + blockSize - 1) / blockSize;
+    grid = (blocksCount < grid) ? blocksCount : grid;
+    dropOutV3TilingData_.totalThreads = static_cast<uint64_t>(grid * blockSize);
+
+    // 分核
+    int64_t coreGranularity = DROPOUT_CORE_GRANULARITY;
+    int64_t avgPerCore = Ops::Base::CeilDiv(outputSize, totalCoreNum);
+    int64_t perCoreElements = Ops::Base::CeilAlign(avgPerCore, coreGranularity);
+    perCoreElements = std::max(perCoreElements, coreGranularity);
+    int64_t usedCoreNum = std::min(totalCoreNum, Ops::Base::CeilDiv(outputSize, perCoreElements));
+    usedCoreNum = std::max(1L, usedCoreNum);
+    int64_t tailCoreElements = outputSize - (perCoreElements * (usedCoreNum - 1));
+
+    dropOutV3TilingData_.usedCoreNum = usedCoreNum;
+    dropOutV3TilingData_.perCoreElements = perCoreElements;
+    dropOutV3TilingData_.tailCoreElements = tailCoreElements;
+
+    // 分 UB (双buffer: 2*input + 2*output + 2*maskBit + randomFloatBuf)
+    int64_t perBlockBytes = (NUM_2 * coreGranularity * sizeofT) + (NUM_2 * coreGranularity * sizeofT) +
+                            (NUM_2 * coreGranularity / NUM_8) + (coreGranularity * NUM_4);
+    int64_t ubFactorElements = Ops::Base::FloorDiv(ubSize_, perBlockBytes) * coreGranularity;
+    while (NUM_2 * Ops::Base::CeilAlign(ubFactorElements * sizeofT, ALIGNMENT_32) +
+               NUM_2 * Ops::Base::CeilAlign(ubFactorElements * sizeofT, ALIGNMENT_32) +
+               NUM_2 * Ops::Base::CeilAlign(ubFactorElements / NUM_8, ALIGNMENT_32) +
+               Ops::Base::CeilAlign(ubFactorElements * NUM_4, ALIGNMENT_32) >
+           ubSize_) {
+        ubFactorElements -= coreGranularity;
+    }
+    ubFactorElements = std::max(ubFactorElements, coreGranularity);
+    dropOutV3TilingData_.ubFactorElements = ubFactorElements;
+
+    dropOutV3TilingData_.ubLoopCount = Ops::Base::CeilDiv(perCoreElements, ubFactorElements);
+    dropOutV3TilingData_.tailUbFactorElements = perCoreElements -
+                                                (dropOutV3TilingData_.ubLoopCount - 1) * ubFactorElements;
+    dropOutV3TilingData_.tailUbLoopCount = Ops::Base::CeilDiv(tailCoreElements, ubFactorElements);
+    dropOutV3TilingData_.tailCoreTailUbFactorElements = tailCoreElements -
+                                                        (dropOutV3TilingData_.tailUbLoopCount - 1) * ubFactorElements;
 
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(context_->GetPlatformInfo());
-    workspaceSize_ = Ops::Base::CeilAlign(simtTilingData_.outputSize, ALIGNMENT_32) * sizeof(uint8_t) +
+    workspaceSize_ = Ops::Base::CeilAlign(outputSize, ALIGNMENT_32) * sizeof(uint8_t) +
                      ascendcPlatform.GetLibApiWorkSpaceSize();
+
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus DropOutV3Tiling::WriteBackToContext()
+{
+    size_t* workspaces = context_->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context_, workspaces);
+    workspaces[0] = workspaceSize_;
+
+    context_->SetBlockDim(dropOutV3TilingData_.usedCoreNum);
+    context_->SetScheduleMode(config_.isNeedSyncAll);
+    context_->SetTilingKey(tilingKey_);
+    if (config_.DcacheSize != 0) {
+        auto res = context_->SetLocalMemorySize(ubSize_);
+        OP_CHECK_IF((res != ge::GRAPH_SUCCESS),
+                    OP_LOGE(opName_, "SetLocalMemorySize ubSize = %ld failed.", static_cast<int64_t>(ubSize_)),
+                    return ge::GRAPH_FAILED);
+    }
+
+    auto* tilingData = context_->GetTilingData<DropOutV3TilingDataStruct>();
+    OP_CHECK_IF(tilingData == nullptr, OP_LOGE(opName_, "DropOutV3 tilingData ptr is null"), return ge::GRAPH_FAILED);
+    *tilingData = dropOutV3TilingData_;
 
     return ge::GRAPH_SUCCESS;
 }

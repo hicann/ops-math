@@ -45,7 +45,8 @@ public:
              << "usedCoreNum: " << usedCoreNum << ", normalCoreProNum: " << normalCoreProNum
              << ", tailCoreProNum: " << tailCoreProNum << ", singleBufferSize: " << singleBufferSize << ", key: ["
              << key[0] << ", " << key[1] << "]"
-             << ", counter: [" << counter[COUNTER_IDX_0] << ", " << counter[COUNTER_IDX_1] << ", " << counter[COUNTER_IDX_2] << ", " << counter[COUNTER_IDX_3] << "]"
+             << ", counter: [" << counter[COUNTER_IDX_0] << ", " << counter[COUNTER_IDX_1] << ", "
+             << counter[COUNTER_IDX_2] << ", " << counter[COUNTER_IDX_3] << "]"
              << ", outputSize: " << outputSize << ", probTensorSize: " << probTensorSize
              << ", sharedTmpBufSize: " << sharedTmpBufSize << ", keepProb: " << keepProb
              << ", v3KernelMode: " << v3KernelMode;

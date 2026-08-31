@@ -17,6 +17,7 @@
 
 #include "register/op_def_registry.h"
 #include "register/op_impl_registry.h"
+#include "../../op_kernel/arch35/drop_out_v3_tiling_data_arch35.h"
 #include "../../../random_common/op_host/arch35/random_tiling_arch35.h"
 
 namespace optiling {
@@ -27,9 +28,11 @@ public:
 
 protected:
     ge::graphStatus UniqueProcess() override;
+    ge::graphStatus WriteBackToContext() override;
 
 private:
     static OpTilingConfig BuildOpConfig(gert::TilingContext* context);
+    DropOutV3TilingDataStruct dropOutV3TilingData_;
 };
 } // namespace optiling
 #endif // AIR_CXX_RUNTIME_V2_OP_IMPL_DROP_OUT_V3_H_

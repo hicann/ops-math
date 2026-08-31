@@ -12,6 +12,7 @@
 #define DROP_OUT_V3_IMPL_H
 
 #include "../../random_common/arch35/random_kernel_base.h"
+#include "drop_out_v3_tiling_data_arch35.h"
 #include "simt_api/asc_simt.h"
 
 namespace DropOutV3 {
@@ -35,14 +36,13 @@ template <typename T, typename U>
 class DropOutV3Impl {
 public:
     __aicore__ inline DropOutV3Impl(){};
-    __aicore__ inline void Init(GM_ADDR p, GM_ADDR mask, GM_ADDR workspace,
-                                const RandomUnifiedSimtTilingDataStruct* tilingData, TPipe* pipe);
-    __aicore__ inline void Process(GM_ADDR x, GM_ADDR y, GM_ADDR mask,
-                                   const RandomUnifiedSimtTilingDataStruct* tilingData);
+    __aicore__ inline void Init(GM_ADDR p, GM_ADDR mask, GM_ADDR workspace, const DropOutV3TilingDataStruct* tilingData,
+                                TPipe* pipe);
+    __aicore__ inline void Process(GM_ADDR x, GM_ADDR y, GM_ADDR mask, const DropOutV3TilingDataStruct* tilingData);
     __aicore__ inline void CopyInMask(const int64_t offset, const uint32_t count);
     __aicore__ inline void CompareMask(uint32_t count);
     __aicore__ inline void CopyOutMask(const int64_t offset, const uint32_t count);
-    __aicore__ inline void UpdateMask(const RandomUnifiedSimtTilingDataStruct* tilingData);
+    __aicore__ inline void UpdateMask(const DropOutV3TilingDataStruct* tilingData);
     __aicore__ inline uint64_t GetVectorSize(uint64_t eleCount);
     __aicore__ inline bool IsProbEqual(float a, float b);
 
@@ -60,7 +60,7 @@ private:
 
 template <typename T, typename U>
 __aicore__ inline void DropOutV3Impl<T, U>::Init(GM_ADDR p, GM_ADDR mask, GM_ADDR workspace,
-                                                 const RandomUnifiedSimtTilingDataStruct* tilingData, TPipe* pipe)
+                                                 const DropOutV3TilingDataStruct* tilingData, TPipe* pipe)
 {
     pipe_ = pipe;
     prob_ = tilingData->prob;
@@ -189,7 +189,7 @@ __aicore__ inline void DropOutV3Impl<T, U>::CopyOutMask(const int64_t offset, co
 }
 
 template <typename T, typename U>
-__aicore__ inline void DropOutV3Impl<T, U>::UpdateMask(const RandomUnifiedSimtTilingDataStruct* tilingData)
+__aicore__ inline void DropOutV3Impl<T, U>::UpdateMask(const DropOutV3TilingDataStruct* tilingData)
 {
     int64_t valueSize = sizeof(uint8_t);
     int64_t perCoreHandleMaskAlign = Ops::Base::CeilAlign(
@@ -250,7 +250,7 @@ __aicore__ inline bool DropOutV3Impl<T, U>::IsProbEqual(float a, float b)
 
 template <typename T, typename U>
 __aicore__ inline void DropOutV3Impl<T, U>::Process(GM_ADDR x, GM_ADDR y, GM_ADDR mask,
-                                                    const RandomUnifiedSimtTilingDataStruct* tilingData)
+                                                    const DropOutV3TilingDataStruct* tilingData)
 {
     blockIdx_ = GetBlockIdx();
     if (blockIdx_ >= tilingData->usedCoreNum) {

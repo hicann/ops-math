@@ -55,19 +55,13 @@ struct TensorSliceState {
     void PartitionDim(int64_t dim, TensorSliceState& other);
 };
 
-ge::graphStatus InitTensorSliceState(
-    TensorSliceState& state,
-    const gert::Shape& outputTensor,
-    int64_t outputSize,
-    ge::DataType outputDtype);
+ge::graphStatus InitTensorSliceState(TensorSliceState& state, const gert::Shape& outputTensor, int64_t outputSize,
+                                     ge::DataType outputDtype);
 
-ge::graphStatus CalcSplitBlocks(
-    TensorSliceState& state,
-    RandomUnifiedSimtTilingDataStruct& simtTilingData);
+ge::graphStatus CalcSplitBlocks(TensorSliceState& state, RandomUnifiedSimtTilingDataStruct& simtTilingData);
 
-ge::graphStatus CalcExecutionPoliciesForBlocks(
-    RandomUnifiedSimtTilingDataStruct& simtTilingData,
-    uint32_t unrollFactor);
+ge::graphStatus CalcExecutionPoliciesForBlocks(RandomUnifiedSimtTilingDataStruct& simtTilingData,
+                                               uint32_t unrollFactor);
 
 // 输入输出Tensor校验规则配置
 struct TensorCheckRule {
@@ -80,7 +74,7 @@ struct TensorCheckRule {
 };
 
 // 算子私有配置
-enum class RandomKernelMode {SIMD, SIMT};
+enum class RandomKernelMode { SIMD, SIMT };
 
 struct OpTilingConfig {
     std::unordered_map<int32_t, TensorCheckRule> inputCheckRules;
@@ -111,8 +105,7 @@ struct OpTilingConfig {
     RandomKernelMode kernelMode = RandomKernelMode::SIMD;
 };
 
-class RandomTilingArch35
-{
+class RandomTilingArch35 {
 public:
     explicit RandomTilingArch35(gert::TilingContext* context, const OpTilingConfig& config);
     virtual ~RandomTilingArch35() = default;
@@ -120,14 +113,8 @@ public:
     ge::graphStatus DoTiling();
 
 protected:
-    virtual ge::graphStatus UniqueProcess()
-    {
-        return ge::GRAPH_SUCCESS;
-    }
-    virtual ge::graphStatus BeforeProcess()
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    virtual ge::graphStatus UniqueProcess() { return ge::GRAPH_SUCCESS; }
+    virtual ge::graphStatus BeforeProcess() { return ge::GRAPH_SUCCESS; }
 
     ge::graphStatus CheckInputsOutputsAndAttrs();
     ge::graphStatus GetPlatformInfo();
@@ -137,9 +124,10 @@ protected:
     virtual ge::graphStatus DoSimtBlockTiling();
     ge::graphStatus DoUbTiling();
     ge::graphStatus CalcTilingKeyAndWorkspace();
-    ge::graphStatus WriteBackToContext();
+    virtual ge::graphStatus WriteBackToContext();
 
-    ge::graphStatus CheckTensor(const gert::CompileTimeTensorDesc* tensorDesc, const gert::Shape& tensorShape, const TensorCheckRule& rule, const std::string& tensorName);
+    ge::graphStatus CheckTensor(const gert::CompileTimeTensorDesc* tensorDesc, const gert::Shape& tensorShape,
+                                const TensorCheckRule& rule, const std::string& tensorName);
 
     gert::TilingContext* context_ = nullptr;
     OpTilingConfig config_;
@@ -151,7 +139,7 @@ protected:
     int64_t ubSize_ = 0;
     uint64_t tilingKey_ = 0;
     uint64_t workspaceSize_ = 0;
-    int64_t bufNum_= 0;
+    int64_t bufNum_ = 0;
 };
 
 } // namespace optiling
