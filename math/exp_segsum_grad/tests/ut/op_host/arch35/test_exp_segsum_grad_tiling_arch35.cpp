@@ -23,10 +23,12 @@
 #include "platform/platform_info.h"
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
+#include "../../../../op_host/arch35/exp_segsum_grad_tiling_arch35.h"
 #include "../../../../op_kernel/arch35/exp_segsum_grad_tiling_data.h"
 
 using namespace ge;
 using namespace gert;
+using optiling::ExpSegsumGradCompileInfoArch35;
 
 #define EXP_SEGSUM_GRAD_ARCH35_STR_IMPL(x) #x
 #define EXP_SEGSUM_GRAD_ARCH35_STR(x) EXP_SEGSUM_GRAD_ARCH35_STR_IMPL(x)
@@ -36,8 +38,6 @@ constexpr uint64_t EXP_SEGSUM_GRAD_ARCH35_TILING_KEY_SMALL = 1;
 constexpr size_t EXP_SEGSUM_GRAD_A2_WORKSPACE_SIZE = 32 * 1024 * 1024;
 constexpr size_t EXP_SEGSUM_GRAD_ARCH35_SYS_WORKSPACE_SIZE = 16 * 1024 * 1024;
 constexpr int64_t EXP_SEGSUM_GRAD_ARCH35_FP32_SLIDE_SIZE = 10912;
-
-struct ExpSegsumGradCompileInfoArch35 {};
 
 bool IsAscend950Build() { return std::string(EXP_SEGSUM_GRAD_ARCH35_STR(BUILD_SOC_VERSION)) == "ascend950"; }
 
