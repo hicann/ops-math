@@ -25,7 +25,7 @@
 #include "util/platform_util.h"
 #include "tiling/tiling_api.h"
 #include "math/cdist_grad/op_kernel/cdist_grad_tiling_data_arch22.h"
-#include "math/cdist_grad/op_kernel/arch22/cdist_grad_tiling_key.h"
+#include "math/cdist_grad/op_kernel/arch22/cdist_grad_tiling_key_arch22.h"
 
 namespace optiling {
 

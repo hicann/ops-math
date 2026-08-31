@@ -36,7 +36,7 @@
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
 #include "../../cdist_grad_tiling_data_arch22.h"
-#include "../cdist_grad_tiling_key.h"
+#include "../cdist_grad_tiling_key_arch22.h"
 
 namespace NsCdistGrad {
 
