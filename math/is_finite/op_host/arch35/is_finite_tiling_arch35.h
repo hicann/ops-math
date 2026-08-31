@@ -30,10 +30,9 @@ protected:
     ge::graphStatus CalcOutputDtype();
     ge::graphStatus CalcInputDtype();
     ge::graphStatus CheckShape();
-    ge::graphStatus SetTilingData();
+    ge::graphStatus SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling);
 
 private:
-    EleBaseTilingDataV2* tiling_ = nullptr;
     uint64_t dType = 0;
     gert::TilingContext* tilingContext = nullptr;
     ge::DataType inputDtype = ge::DT_UNDEFINED;

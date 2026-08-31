@@ -8,13 +8,28 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef OPS_MATH_DEV_FILL_STRUCT_H
-#define OPS_MATH_DEV_FILL_STRUCT_H
-#include "atvoss/elewise/elewise_base_struct.h"
+/* !
+ * \file fill_dag.h
+ * \brief fill implement
+ */
+
+#ifndef CANN_CUSTOM_OPS_FILL_DAG_H
+#define CANN_CUSTOM_OPS_FILL_DAG_H
+#include "atvoss/util/dag.h"
+#include "atvoss/util/vec.h"
+#include "atvoss/util/placeholder.h"
+
+namespace FillOp {
 using namespace Ops::Base;
-namespace FillStruct {
-struct FillTilingDataStruct {
-    EleBaseTilingData baseTiling;
+
+template <typename T>
+struct FillDag {
+    using OpDuplicate = Bind<Vec::Duplicate<T>, Placeholder::In0<T, Placeholder::ScalarAttr<true>>>;
+    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpDuplicate>;
+    using Output = Elems<OpCopyOut>;
+    using OpDag = DAGSch<Output>;
 };
-}
-#endif // OPS_MATH_DEV_FILL_STRUCT_H
+
+} // namespace FillOp
+
+#endif // CANN_CUSTOM_OPS_FILL_DAG_H

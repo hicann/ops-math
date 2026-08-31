@@ -16,7 +16,7 @@
 #include "arch35/is_finite_struct_arch35.h"
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
-#include "atvoss/elewise/elewise_sch.h"
+#include "atvoss/elewise/elewise_sch_16b.h"
 
 using namespace Ops::Base;
 using namespace AscendC;
@@ -26,23 +26,18 @@ template <uint64_t extraMode, uint64_t schMode, uint64_t dType>
 __global__ __aicore__ void is_finite(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
-    TPipe pipe;
+    REGISTER_TILING_DEFAULT(EleBaseTilingData16B);
+    GET_TILING_DATA_PTR_WITH_STRUCT(EleBaseTilingData16B, tilingData, tiling);
     if constexpr (dType == TPL_FP16) {
-        REGISTER_TILING_DEFAULT(EleBaseTilingDataV2);
-        GET_TILING_DATA_WITH_STRUCT(EleBaseTilingDataV2, tilingData, tiling);
-        ElementwiseSch<schMode, IsFiniteDag<half>::OpDag> sch(&tilingData, &pipe);
+        ElementwiseSch16B<schMode, IsFiniteDag<half>::OpDag> sch(tilingData);
         sch.Init(x, y);
         sch.Process();
     } else if constexpr (dType == TPL_BF16) {
-        REGISTER_TILING_DEFAULT(EleBaseTilingDataV2);
-        GET_TILING_DATA_WITH_STRUCT(EleBaseTilingDataV2, tilingData, tiling);
-        ElementwiseSch<schMode, IsFiniteDag<bfloat16_t>::OpDag> sch(&tilingData, &pipe);
+        ElementwiseSch16B<schMode, IsFiniteDag<bfloat16_t>::OpDag> sch(tilingData);
         sch.Init(x, y);
         sch.Process();
     } else if constexpr (dType == TPL_FP32) {
-        REGISTER_TILING_DEFAULT(EleBaseTilingDataV2);
-        GET_TILING_DATA_WITH_STRUCT(EleBaseTilingDataV2, tilingData, tiling);
-        ElementwiseSch<schMode, IsFiniteDag<float>::OpDag> sch(&tilingData, &pipe);
+        ElementwiseSch16B<schMode, IsFiniteDag<float>::OpDag> sch(tilingData);
         sch.Init(x, y);
         sch.Process();
     }

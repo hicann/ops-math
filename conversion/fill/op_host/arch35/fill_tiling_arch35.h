@@ -18,8 +18,7 @@
 
 #include "register/tilingdata_base.h"
 #include "atvoss/elewise/elewise_tiling.h"
-#include "atvoss/elewise/elewise_base_struct.h"
-#include "../../op_kernel/fill_struct.h"
+#include "ascendc/host_api/tiling/template_argument.h"
 
 namespace optiling {
 using namespace Ops::Base;
@@ -31,20 +30,20 @@ struct FillCompileInfo {
 
 class FillTiling {
 public:
-    explicit FillTiling(gert::TilingContext *context) : context_(context){};
+    explicit FillTiling(gert::TilingContext* context) : context_(context) {};
     ge::graphStatus RunTiling();
 
 protected:
     ge::graphStatus CalcOutputDtype();
-    ge::graphStatus SetTilingData();
+    ge::graphStatus SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling);
 
 private:
     ge::graphStatus CheckInputDims();
     ge::graphStatus CheckInputValue();
-    FillStruct::FillTilingDataStruct *tilingData;
-    gert::TilingContext *context_;
-    ge::DataType outputDtype_;
+    gert::TilingContext* context_;
+    ge::DataType outputDtype_ = ge::DT_UNDEFINED;
+    uint64_t dType = 0;
 };
 
-}  // namespace optiling
-#endif  // OPS_BUILD_IN_OP_TILING_RUNTIME_FILL_TILING_H
+} // namespace optiling
+#endif // OPS_BUILD_IN_OP_TILING_RUNTIME_FILL_TILING_H

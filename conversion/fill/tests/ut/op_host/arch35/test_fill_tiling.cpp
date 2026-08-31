@@ -16,7 +16,6 @@
 #include <iostream>
 #include <gtest/gtest.h>
 #include "../../../../op_host/arch35/fill_tiling_arch35.h"
-#include "../../../../op_kernel/fill_struct.h"
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
 #include "exe_graph/runtime/storage_format.h"
@@ -28,28 +27,25 @@ using namespace ge;
 
 class FillTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "FillTilingTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "FillTilingTest SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "FillTilingTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "FillTilingTest TearDown" << std::endl; }
 };
 
-TEST_F(FillTilingTest, fill_test_0) {
+TEST_F(FillTilingTest, fill_test_0)
+{
     optiling::FillCompileInfo compile_info = {64, 262144};
     gert::TilingContextPara tilingContextPara("Fill",
                                               {
                                                   {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},
                                                   {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},
                                               },
-                                              {{{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},},
+                                              {
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},
+                                              },
                                               &compile_info);
-    uint64_t expectTilingKey = 101;
-    string expectTilingData = "1 70368744177665 512 1 1 1 512 1 16384 1 ";
+    uint64_t expectTilingKey = 13;
+    string expectTilingData = "1 70368744177665 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

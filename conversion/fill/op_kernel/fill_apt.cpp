@@ -8,35 +8,55 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-
 /*!
  * \file fill.cpp
  * \brief fill kernel
  */
 
-#include "fill_dag.h"
-#include "fill_struct.h"
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
-#include "atvoss/elewise/elewise_sch.h"
+#include "arch35/fill_dag.h"
+#include "arch35/fill_struct.h"
+#include "atvoss/elewise/elewise_sch_16b.h"
 
+using namespace Ops::Base;
 using namespace AscendC;
+using namespace FillOp;
+
+template <uint64_t schMode, uint64_t dType>
 __global__ __aicore__ void fill(GM_ADDR dims, GM_ADDR value, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
+    REGISTER_TILING_DEFAULT(EleBaseTilingData16B);
+    GET_TILING_DATA_PTR_WITH_STRUCT(EleBaseTilingData16B, tilingData, tiling);
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
-    REGISTER_TILING_DEFAULT(FillStruct::FillTilingDataStruct);
-    GET_TILING_DATA_WITH_STRUCT(FillStruct::FillTilingDataStruct, tilingData, tiling);
-    TPipe pipe;
-    if (TILING_KEY_IS(101UL)) {
-        if constexpr (std::is_same<DTYPE_VALUE, bool>::value) {
-            Ops::Base::ElementwiseSch<0UL, FillDag<int8_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
-            sch.Init(value, y);
-            sch.Process();
-        } else {
-            Ops::Base::ElementwiseSch<0UL, FillDag<DTYPE_VALUE>::OpDag> sch(&(tilingData.baseTiling), &pipe);
-            sch.Init(value, y);
-            sch.Process();
-        }
+    if constexpr (dType == TPL_FP16) {
+        ElementwiseSch16B<schMode, FillDag<half>::OpDag> sch(tilingData);
+        sch.Init(value, y);
+        sch.Process();
+    } else if constexpr (dType == TPL_FP32) {
+        ElementwiseSch16B<schMode, FillDag<float>::OpDag> sch(tilingData);
+        sch.Init(value, y);
+        sch.Process();
+    } else if constexpr (dType == TPL_BF16) {
+        ElementwiseSch16B<schMode, FillDag<bfloat16_t>::OpDag> sch(tilingData);
+        sch.Init(value, y);
+        sch.Process();
+    } else if constexpr (dType == TPL_INT8) {
+        ElementwiseSch16B<schMode, FillDag<int8_t>::OpDag> sch(tilingData);
+        sch.Init(value, y);
+        sch.Process();
+    } else if constexpr (dType == TPL_INT32) {
+        ElementwiseSch16B<schMode, FillDag<int32_t>::OpDag> sch(tilingData);
+        sch.Init(value, y);
+        sch.Process();
+    } else if constexpr (dType == TPL_INT64) {
+        ElementwiseSch16B<schMode, FillDag<int64_t>::OpDag> sch(tilingData);
+        sch.Init(value, y);
+        sch.Process();
+    } else if constexpr (dType == TPL_BOOL) {
+        ElementwiseSch16B<schMode, FillDag<int8_t>::OpDag> sch(tilingData);
+        sch.Init(value, y);
+        sch.Process();
     }
     return;
 }

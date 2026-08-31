@@ -70,19 +70,16 @@ ge::graphStatus IsFiniteRegbaseTiling::CheckShape()
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus IsFiniteRegbaseTiling::SetTilingData()
+ge::graphStatus IsFiniteRegbaseTiling::SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling)
 {
-    auto rawTilingData = tilingContext->GetRawTilingData();
-    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, rawTilingData);
-
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = static_cast<uint64_t>(ASCEND_WORKSPACE);
 
-    const uint64_t tilingKey = GET_TPL_TILING_KEY(TPL_EXTRA, tiling_->scheMode, dType);
+    const uint64_t tilingKey = GET_TPL_TILING_KEY(TPL_EXTRA, TPL_SCH_MODE_1, dType);
     OP_LOGD(tilingContext, "[TilingData] : tilingKey=%lu", tilingKey);
     tilingContext->SetTilingKey(tilingKey);
-    tilingContext->SetBlockDim(tiling_->blockNum);
+    tilingContext->SetBlockDim(elewiseBaseTiling.GetBlockDim());
     return ge::GRAPH_SUCCESS;
 }
 
@@ -96,21 +93,18 @@ ge::graphStatus IsFiniteRegbaseTiling::RunTiling()
     OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "Check shape failed"),
                 return ge::GRAPH_FAILED);
 
-    tiling_ = tilingContext->GetTilingData<EleBaseTilingDataV2>();
-    OP_CHECK_IF((tiling_ == nullptr),
-                OP_LOGE_FOR_INVALID_VALUE(tilingContext->GetNodeName(), "tiling_data", "nullptr", "not nullptr"),
-                return ge::GRAPH_FAILED);
+    auto tiling = tilingContext->GetTilingData<EleBaseTilingData16B>();
 
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
     if (this->inputDtype == ge::DT_FLOAT16) {
         dType = TPL_FP16;
-        baseTilingResult = elewiseBaseTiling.DoTiling<IsFiniteDag<half>::OpDag>(*tiling_, ASCEND_API_BUFFER);
+        baseTilingResult = elewiseBaseTiling.DoTiling<IsFiniteDag<half>::OpDag>(*tiling, ASCEND_API_BUFFER);
     } else if (this->inputDtype == ge::DT_BF16) {
         dType = TPL_BF16;
-        baseTilingResult = elewiseBaseTiling.DoTiling<IsFiniteDag<bfloat16_t>::OpDag>(*tiling_, ASCEND_API_BUFFER);
+        baseTilingResult = elewiseBaseTiling.DoTiling<IsFiniteDag<bfloat16_t>::OpDag>(*tiling, ASCEND_API_BUFFER);
     } else if (this->inputDtype == ge::DT_FLOAT) {
         dType = TPL_FP32;
-        baseTilingResult = elewiseBaseTiling.DoTiling<IsFiniteDag<float>::OpDag>(*tiling_, ASCEND_API_BUFFER);
+        baseTilingResult = elewiseBaseTiling.DoTiling<IsFiniteDag<float>::OpDag>(*tiling, ASCEND_API_BUFFER);
     } else {
         OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "x",
                                   ge::TypeUtils::DataTypeToSerialString(this->inputDtype), "FLOAT, FLOAT16, BF16");
@@ -121,7 +115,7 @@ ge::graphStatus IsFiniteRegbaseTiling::RunTiling()
                         ge::TypeUtils::DataTypeToSerialString(this->inputDtype).c_str()),
                 return ge::GRAPH_FAILED);
 
-    return SetTilingData();
+    return SetTilingData(elewiseBaseTiling);
 }
 
 static ge::graphStatus TilingPrepare4IsFiniteArch35(gert::TilingParseContext* context)
