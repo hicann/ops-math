@@ -18,8 +18,7 @@
 #include "graph/operator_reg.h"
 #include "graph/operator.h"
 
-namespace ge
-{
+namespace ge {
 /**
 * @brief Computes "x" reciprocal grad, dx = -1*dy*y*y, where, "y = 1/x",
 * and "dy" is the corresponding input gradient.  Support broadcasting operations.
@@ -36,10 +35,13 @@ namespace ge
 * @par Third-party framework compatibility:
 * Compatible with the TensorFlow operator InvGrad.
 */
+#ifndef OPS_PROTO_DEF_INVGRAD
+#define OPS_PROTO_DEF_INVGRAD
 REG_OP(InvGrad)
     .INPUT(x, TensorType({DT_FLOAT, DT_BF16, DT_FLOAT16, DT_INT32, DT_INT8}))
     .INPUT(grad, TensorType({DT_FLOAT, DT_BF16, DT_FLOAT16, DT_INT32, DT_INT8}))
     .OUTPUT(y, TensorType({DT_FLOAT, DT_BF16, DT_FLOAT16, DT_INT32, DT_INT8}))
     .OP_END_FACTORY_REG(InvGrad)
+#endif
 } // namespace ge
 #endif

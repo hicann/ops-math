@@ -15,12 +15,8 @@
  * \brief InvGrad Tiling UT (arch35 / Ascend950)
  *
  * Covers paths in op_host/arch35/inv_grad_tiling_arch35.cpp:
- *   1) Dtype path -- TilingKey selected by ASCENDC_TPL_SEL_PARAM(context, dTypeX)
- *        - FP32  -> D_T_X = C_DT_FLOAT
- *        - FP16  -> D_T_X = C_DT_FLOAT16
- *        - BF16  -> D_T_X = C_DT_BF16
- *      Per header doc inv_grad_tiling_key.h, mapping is 0/1/2; the actual
- *      runtime TilingKey is framework-determined and fixed in expectTilingKey.
+ *   1) Dtype path -- dtype changes element size and UB tiling parameters;
+ *      kernel dtype binaries are generated from inv_grad_def.cpp, not TilingKey.
  *   2) Multi-core path (large shape) vs single-core path (small shape).
  *   3) Non-aligned tail (totalElements not multiple of 32B in elements).
  *   4) Empty tensor (totalElements == 0)
@@ -51,6 +47,7 @@
  */
 
 #include "../../../../op_host/arch35/inv_grad_tiling_arch35.h"
+#include "../../../../op_kernel/arch35/inv_grad_tiling_data.h"
 #include <cstdint>
 #include <iostream>
 #include <gtest/gtest.h>
@@ -61,16 +58,33 @@ using namespace std;
 
 class InvGradTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "InvGradTilingTest SetUp" << std::endl;
+    static void SetUpTestCase() { std::cout << "InvGradTilingTest SetUp" << std::endl; }
+
+    static void TearDownTestCase() { std::cout << "InvGradTilingTest TearDown" << std::endl; }
+};
+
+static void ExecuteInvGradTilingCase(const gert::TilingContextPara& tilingContextPara, ge::graphStatus expectResult,
+                                     int64_t expectTotalElements, int64_t expectBlockFactor, int64_t expectUbFactor,
+                                     const std::vector<size_t>& expectWorkspaces)
+{
+    TilingInfo tilingInfo;
+    const bool tilingSuccess = ExecuteTiling(tilingContextPara, tilingInfo);
+    ASSERT_EQ(tilingSuccess, expectResult == ge::GRAPH_SUCCESS);
+    if (expectResult != ge::GRAPH_SUCCESS) {
+        return;
     }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "InvGradTilingTest TearDown" << std::endl;
+    ASSERT_EQ(tilingInfo.workspaceSizes.size(), expectWorkspaces.size());
+    for (size_t i = 0; i < expectWorkspaces.size(); ++i) {
+        EXPECT_EQ(tilingInfo.workspaceSizes[i], expectWorkspaces[i]);
     }
-};
+
+    ASSERT_GE(tilingInfo.tilingDataSize, sizeof(InvGradTilingData));
+    const auto* tilingData = reinterpret_cast<const InvGradTilingData*>(tilingInfo.tilingData.get());
+    EXPECT_EQ(tilingData->totalElements, expectTotalElements);
+    EXPECT_EQ(tilingData->blockFactor, expectBlockFactor);
+    EXPECT_EQ(tilingData->ubFactor, expectUbFactor);
+}
 
 // ===========================================================================
 // 1) FP32 main path -- multi-core, aligned
@@ -79,7 +93,6 @@ protected:
 //      perCoreRaw = ceil(8192/64) = 128; blockFactor = align_up(128, 8) = 128
 //      usedCoreNum = ceil(8192/128) = 64
 //      bytesPerElem = 3*4 + 2*4 = 20 -> ubFactor = FloorAlign(13107, 8) = 13104
-//    TilingKey 0 = FP32 (per inv_grad_tiling_key.h header comment)
 // ===========================================================================
 TEST_F(InvGradTilingTest, test_tiling_fp32_multi_core_001)
 {
@@ -87,17 +100,15 @@ TEST_F(InvGradTilingTest, test_tiling_fp32_multi_core_001)
     gert::TilingContextPara tilingContextPara(
         "InvGrad",
         {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},  // x
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},  // grad
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND}, // x
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND}, // grad
         },
         {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},  // y
+            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND}, // y
         },
         &compileInfo);
-    uint64_t expectTilingKey = 0;
-    string expectTilingData = "8192 128 13104 ";
     std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+    ExecuteInvGradTilingCase(tilingContextPara, ge::GRAPH_SUCCESS, 8192, 128, 13104, expectWorkspaces);
 }
 
 // ===========================================================================
@@ -107,49 +118,40 @@ TEST_F(InvGradTilingTest, test_tiling_fp32_multi_core_001)
 //      perCoreRaw = ceil(8192/64) = 128; blockFactor = align_up(128, 16) = 128
 //      usedCoreNum = 64
 //      bytesPerElem = 3*2 + 2*4 = 14 -> ubFactor = FloorAlign(18724, 16) = 18720
-//    TilingKey 1 = FP16
 // ===========================================================================
 TEST_F(InvGradTilingTest, test_tiling_fp16_multi_core_002)
 {
     optiling::InvGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "InvGrad",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 1;
-    string expectTilingData = "8192 128 18720 ";
+    gert::TilingContextPara tilingContextPara("InvGrad",
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+    ExecuteInvGradTilingCase(tilingContextPara, ge::GRAPH_SUCCESS, 8192, 128, 18720, expectWorkspaces);
 }
 
 // ===========================================================================
 // 3) BF16 main path -- multi-core, aligned (shares fp16 layout)
-//    TilingKey 2 = BF16
 // ===========================================================================
 TEST_F(InvGradTilingTest, test_tiling_bf16_multi_core_003)
 {
     optiling::InvGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "InvGrad",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    // bf16 由 ASCENDC_TPL_SEL_PARAM 框架映射为 TilingKey=27（fp32→0、fp16→1、bf16→27）
-    uint64_t expectTilingKey = 27;
-    string expectTilingData = "8192 128 18720 ";
+    gert::TilingContextPara tilingContextPara("InvGrad",
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+    ExecuteInvGradTilingCase(tilingContextPara, ge::GRAPH_SUCCESS, 8192, 128, 18720, expectWorkspaces);
 }
 
 // ===========================================================================
@@ -163,20 +165,17 @@ TEST_F(InvGradTilingTest, test_tiling_bf16_multi_core_003)
 TEST_F(InvGradTilingTest, test_tiling_fp32_small_tail_004)
 {
     optiling::InvGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "InvGrad",
-        {
-            {{{7}, {7}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{7}, {7}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{7}, {7}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 0;
-    string expectTilingData = "7 8 13104 ";
+    gert::TilingContextPara tilingContextPara("InvGrad",
+                                              {
+                                                  {{{7}, {7}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{7}, {7}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{7}, {7}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+    ExecuteInvGradTilingCase(tilingContextPara, ge::GRAPH_SUCCESS, 7, 8, 13104, expectWorkspaces);
 }
 
 // ===========================================================================
@@ -189,20 +188,17 @@ TEST_F(InvGradTilingTest, test_tiling_fp32_small_tail_004)
 TEST_F(InvGradTilingTest, test_tiling_fp32_unalign_multi_core_005)
 {
     optiling::InvGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "InvGrad",
-        {
-            {{{33}, {33}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{33}, {33}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{33}, {33}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 0;
-    string expectTilingData = "33 8 13104 ";
+    gert::TilingContextPara tilingContextPara("InvGrad",
+                                              {
+                                                  {{{33}, {33}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{33}, {33}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{33}, {33}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+    ExecuteInvGradTilingCase(tilingContextPara, ge::GRAPH_SUCCESS, 33, 8, 13104, expectWorkspaces);
 }
 
 // ===========================================================================
@@ -215,44 +211,37 @@ TEST_F(InvGradTilingTest, test_tiling_fp32_unalign_multi_core_005)
 TEST_F(InvGradTilingTest, test_tiling_fp16_unalign_006)
 {
     optiling::InvGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "InvGrad",
-        {
-            {{{17}, {17}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{17}, {17}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{17}, {17}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 1;
-    string expectTilingData = "17 16 18720 ";
+    gert::TilingContextPara tilingContextPara("InvGrad",
+                                              {
+                                                  {{{17}, {17}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{17}, {17}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{17}, {17}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+    ExecuteInvGradTilingCase(tilingContextPara, ge::GRAPH_SUCCESS, 17, 16, 18720, expectWorkspaces);
 }
 
 // ===========================================================================
 // 7) Empty tensor FP32: totalElements=0 -> early return branch
 //    Tiling data should be {0, 0, 0}; blockDim = 1.
-//    ASCENDC_TPL_SEL_PARAM still runs with dTypeX = DT_FLOAT -> key 0.
 // ===========================================================================
 TEST_F(InvGradTilingTest, test_tiling_empty_fp32_007)
 {
     optiling::InvGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "InvGrad",
-        {
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 0;
-    string expectTilingData = "0 0 0 ";
+    gert::TilingContextPara tilingContextPara("InvGrad",
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+    ExecuteInvGradTilingCase(tilingContextPara, ge::GRAPH_SUCCESS, 0, 0, 0, expectWorkspaces);
 }
 
 // ===========================================================================
@@ -261,21 +250,17 @@ TEST_F(InvGradTilingTest, test_tiling_empty_fp32_007)
 TEST_F(InvGradTilingTest, test_tiling_empty_bf16_008)
 {
     optiling::InvGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "InvGrad",
-        {
-            {{{0, 8}, {0, 8}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{0, 8}, {0, 8}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{0, 8}, {0, 8}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    // bf16 由 ASCENDC_TPL_SEL_PARAM 框架映射为 TilingKey=27
-    uint64_t expectTilingKey = 27;
-    string expectTilingData = "0 0 0 ";
+    gert::TilingContextPara tilingContextPara("InvGrad",
+                                              {
+                                                  {{{0, 8}, {0, 8}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                  {{{0, 8}, {0, 8}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{0, 8}, {0, 8}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+    ExecuteInvGradTilingCase(tilingContextPara, ge::GRAPH_SUCCESS, 0, 0, 0, expectWorkspaces);
 }
 
 // ===========================================================================
@@ -285,20 +270,16 @@ TEST_F(InvGradTilingTest, test_tiling_empty_bf16_008)
 TEST_F(InvGradTilingTest, test_tiling_fail_dtype_mismatch_009)
 {
     optiling::InvGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "InvGrad",
-        {
-            {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{8}, {8}}, ge::DT_FLOAT,   ge::FORMAT_ND},
-        },
-        {
-            {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 0;
-    string expectTilingData = "";
-    std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectTilingData, expectWorkspaces);
+    gert::TilingContextPara tilingContextPara("InvGrad",
+                                              {
+                                                  {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    ExecuteInvGradTilingCase(tilingContextPara, ge::GRAPH_FAILED, 0, 0, 0, {});
 }
 
 // ===========================================================================
@@ -307,20 +288,16 @@ TEST_F(InvGradTilingTest, test_tiling_fail_dtype_mismatch_009)
 TEST_F(InvGradTilingTest, test_tiling_fail_rank_mismatch_010)
 {
     optiling::InvGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "InvGrad",
-        {
-            {{{8},    {8}},    ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{2, 4}, {2, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 0;
-    string expectTilingData = "";
-    std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectTilingData, expectWorkspaces);
+    gert::TilingContextPara tilingContextPara("InvGrad",
+                                              {
+                                                  {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{2, 4}, {2, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    ExecuteInvGradTilingCase(tilingContextPara, ge::GRAPH_FAILED, 0, 0, 0, {});
 }
 
 // ===========================================================================
@@ -329,20 +306,16 @@ TEST_F(InvGradTilingTest, test_tiling_fail_rank_mismatch_010)
 TEST_F(InvGradTilingTest, test_tiling_fail_dim_mismatch_011)
 {
     optiling::InvGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "InvGrad",
-        {
-            {{{8},  {8}},  ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 0;
-    string expectTilingData = "";
-    std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectTilingData, expectWorkspaces);
+    gert::TilingContextPara tilingContextPara("InvGrad",
+                                              {
+                                                  {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    ExecuteInvGradTilingCase(tilingContextPara, ge::GRAPH_FAILED, 0, 0, 0, {});
 }
 
 // ===========================================================================
@@ -351,20 +324,16 @@ TEST_F(InvGradTilingTest, test_tiling_fail_dim_mismatch_011)
 TEST_F(InvGradTilingTest, test_tiling_fail_unsupported_dtype_double_012)
 {
     optiling::InvGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "InvGrad",
-        {
-            {{{16}, {16}}, ge::DT_DOUBLE, ge::FORMAT_ND},
-            {{{16}, {16}}, ge::DT_DOUBLE, ge::FORMAT_ND},
-        },
-        {
-            {{{16}, {16}}, ge::DT_DOUBLE, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 0;
-    string expectTilingData = "";
-    std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectTilingData, expectWorkspaces);
+    gert::TilingContextPara tilingContextPara("InvGrad",
+                                              {
+                                                  {{{16}, {16}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                                  {{{16}, {16}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{16}, {16}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    ExecuteInvGradTilingCase(tilingContextPara, ge::GRAPH_FAILED, 0, 0, 0, {});
 }
 
 // ===========================================================================
@@ -373,20 +342,16 @@ TEST_F(InvGradTilingTest, test_tiling_fail_unsupported_dtype_double_012)
 TEST_F(InvGradTilingTest, test_tiling_fail_unsupported_dtype_int8_013)
 {
     optiling::InvGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "InvGrad",
-        {
-            {{{16}, {16}}, ge::DT_INT8, ge::FORMAT_ND},
-            {{{16}, {16}}, ge::DT_INT8, ge::FORMAT_ND},
-        },
-        {
-            {{{16}, {16}}, ge::DT_INT8, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 0;
-    string expectTilingData = "";
-    std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectTilingData, expectWorkspaces);
+    gert::TilingContextPara tilingContextPara("InvGrad",
+                                              {
+                                                  {{{16}, {16}}, ge::DT_INT8, ge::FORMAT_ND},
+                                                  {{{16}, {16}}, ge::DT_INT8, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{16}, {16}}, ge::DT_INT8, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    ExecuteInvGradTilingCase(tilingContextPara, ge::GRAPH_FAILED, 0, 0, 0, {});
 }
 
 // ===========================================================================
@@ -397,45 +362,37 @@ TEST_F(InvGradTilingTest, test_tiling_fail_unsupported_dtype_int8_013)
 TEST_F(InvGradTilingTest, test_tiling_int32_multi_core_014)
 {
     optiling::InvGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "InvGrad",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    // int32 是 ASCENDC_TPL_SEL 第 4 个声明（fp32, fp16, bf16, int32），
-    // 实际 TilingKey 由框架编码，由 first-run 验证补 expectTilingKey
-    uint64_t expectTilingKey = 3;
-    string expectTilingData = "8192 128 13104 ";
+    gert::TilingContextPara tilingContextPara("InvGrad",
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+    ExecuteInvGradTilingCase(tilingContextPara, ge::GRAPH_SUCCESS, 8192, 128, 13104, expectWorkspaces);
 }
 
 // ===========================================================================
 // 15) PASS: int32 empty tensor — totalElements=0 走 memset 早返回路径
-//   tilingData 全 0, blockDim=1, TilingKey=3
+//   tilingData 全 0, blockDim=1
 // ===========================================================================
 TEST_F(InvGradTilingTest, test_tiling_empty_int32_015)
 {
     optiling::InvGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "InvGrad",
-        {
-            {{{0, 8}, {0, 8}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{0, 8}, {0, 8}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{0, 8}, {0, 8}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 3;
-    string expectTilingData = "0 0 0 ";
+    gert::TilingContextPara tilingContextPara("InvGrad",
+                                              {
+                                                  {{{0, 8}, {0, 8}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{0, 8}, {0, 8}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{0, 8}, {0, 8}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+    ExecuteInvGradTilingCase(tilingContextPara, ge::GRAPH_SUCCESS, 0, 0, 0, expectWorkspaces);
 }
 
 // ===========================================================================
@@ -447,18 +404,15 @@ TEST_F(InvGradTilingTest, test_tiling_empty_int32_015)
 TEST_F(InvGradTilingTest, test_tiling_int32_unalign_016)
 {
     optiling::InvGradCompileInfo compileInfo;
-    gert::TilingContextPara tilingContextPara(
-        "InvGrad",
-        {
-            {{{33}, {33}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{33}, {33}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{33}, {33}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
-    uint64_t expectTilingKey = 3;
-    string expectTilingData = "33 8 13104 ";
+    gert::TilingContextPara tilingContextPara("InvGrad",
+                                              {
+                                                  {{{33}, {33}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{33}, {33}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{33}, {33}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+    ExecuteInvGradTilingCase(tilingContextPara, ge::GRAPH_SUCCESS, 33, 8, 13104, expectWorkspaces);
 }

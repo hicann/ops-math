@@ -14,37 +14,11 @@
  * \file inv_grad_tiling_key.h
  * \brief InvGrad TilingKey definition (arch35)
  *
- * TilingKey mapping (based on input dtype of x, which must match grad).
- * 实际值由 ASCENDC_TPL_SEL_PARAM 框架按声明顺序映射，运行期可能与序号不同（已知 bf16 = 27）：
- *   D_T_X = C_DT_FLOAT     (float32, native fp32)
- *   D_T_X = C_DT_FLOAT16   (float16, up-cast via fp32)
- *   D_T_X = C_DT_BF16      (bfloat16, up-cast via fp32)
- *   D_T_X = C_DT_INT32     (int32, native int32)
+ * def 驱动 dtype 模式：dtype 由 inv_grad_def.cpp 的 DataType profile 声明，
+ * 构建系统通过 DTYPE_X 宏注入，无需额外的 dtype TilingKey 参数。
  */
 
 #ifndef OPS_MATH_INV_GRAD_TILING_KEY_H
 #define OPS_MATH_INV_GRAD_TILING_KEY_H
-
-#include "ascendc/host_api/tiling/template_argument.h"
-
-ASCENDC_TPL_ARGS_DECL(InvGrad,
-    ASCENDC_TPL_DATATYPE_DECL(D_T_X, C_DT_FLOAT, C_DT_FLOAT16, C_DT_BF16, C_DT_INT32,
-                              ASCENDC_TPL_INPUT(0))
-);
-
-ASCENDC_TPL_SEL(
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT)
-    ),
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_FLOAT16)
-    ),
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_BF16)
-    ),
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T_X, C_DT_INT32)
-    ),
-);
 
 #endif // OPS_MATH_INV_GRAD_TILING_KEY_H

@@ -19,21 +19,17 @@
  *   grad : upstream gradient
  *   y    : gradient w.r.t. original input
  *
- * TilingKey selects D_T_X:
- *   TilingKey 0: D_T_X = float       (fp32 direct: Mul, Mul, Muls(-1))
- *   TilingKey 1: D_T_X = half        (fp16 up-cast: Cast -> Mul -> Mul -> Muls(-1) -> Cast)
- *   TilingKey 2: D_T_X = bfloat16_t  (bf16 up-cast: Cast -> Mul -> Mul -> Muls(-1) -> Cast)
+ * dtype 由 inv_grad_def.cpp 的 DataType profile 驱动，构建系统通过
+ * DTYPE_X 宏为每种 dtype 生成独立 kernel binary。
  */
 
 #include "arch35/inv_grad.h"
 
-template <typename D_T_X>
-__global__ __aicore__ void inv_grad(GM_ADDR x, GM_ADDR grad, GM_ADDR y,
-                                    GM_ADDR workspace, GM_ADDR tiling)
+__global__ __aicore__ void inv_grad(GM_ADDR x, GM_ADDR grad, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(InvGradTilingData);
     GET_TILING_DATA_WITH_STRUCT(InvGradTilingData, tilingData, tiling);
-    NsInvGrad::InvGrad<D_T_X> op;
+    NsInvGrad::InvGrad<DTYPE_X> op;
     op.Init(x, grad, y, &tilingData);
     op.Process();
 }
