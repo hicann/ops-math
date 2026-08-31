@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :-------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             | ×        |
+| <term>Ascend 950PR/Ascend 950DT</term>                             | √        |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     | √        |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> | √        |
 | <term>Atlas 200I/500 A2 推理产品</term>                      |     ×     |
@@ -40,7 +40,16 @@ Stack Ball Query具体操作如下：
 
 ## 约束说明
 
-无。
+- xyz为2维Tensor，shape为(3,N)，第0维必须为3（对应x/y/z三个坐标轴，坐标按行存储），第1维N为堆叠后总点数。
+- center_xyz为2维Tensor，shape为(M,3)，第1维必须为3（每个center含cx/cy/cz三个坐标）。
+- xyz_batch_cnt为1维Tensor，shape为(B,)，B为batch数。
+- center_xyz_batch_cnt为1维Tensor，shape为(B,)，dim[0]必须与xyz_batch_cnt的dim[0]一致。
+- xyz与center_xyz的dtype必须相同，且为FLOAT或FLOAT16。
+- xyz_batch_cnt与center_xyz_batch_cnt的dtype必须相同，且为INT32或INT64。
+- 输出idx的dtype固定为INT32，shape为(M,sample_num)，M为center_xyz.shape[0]。
+- max_radius必须大于0。
+- sample_num必须大于0。
+- 算子仅支持2D输入（xyz和center_xyz）及1D输入（batch_cnt），不支持标量或其他维度场景。
 
 ## 调用说明
 

@@ -14,19 +14,27 @@
  */
 #include "stack_ball_query.h"
 
-extern "C" __global__ __aicore__ void stack_ball_query(
-    GM_ADDR xyz, GM_ADDR center_xyz, GM_ADDR xyz_batch_cnt, GM_ADDR center_xyz_batch_cnt, GM_ADDR idx,
-    GM_ADDR workspace, GM_ADDR tiling)
+extern "C" __global__ __aicore__ void stack_ball_query(GM_ADDR xyz, GM_ADDR center_xyz, GM_ADDR xyz_batch_cnt,
+                                                       GM_ADDR center_xyz_batch_cnt, GM_ADDR idx, GM_ADDR workspace,
+                                                       GM_ADDR tiling)
 {
     GET_TILING_DATA(tilingData, tiling);
     AscendC::TPipe pipe;
 
     if (TILING_KEY_IS(1)) {
-        KernelStackBallQuery<float> op(&pipe);
+        KernelStackBallQuery<float, int32_t> op(&pipe);
         op.Init(xyz, center_xyz, xyz_batch_cnt, center_xyz_batch_cnt, idx, tilingData);
         op.Process();
     } else if (TILING_KEY_IS(2)) {
-        KernelStackBallQuery<half> op(&pipe);
+        KernelStackBallQuery<half, int32_t> op(&pipe);
+        op.Init(xyz, center_xyz, xyz_batch_cnt, center_xyz_batch_cnt, idx, tilingData);
+        op.Process();
+    } else if (TILING_KEY_IS(3)) {
+        KernelStackBallQuery<float, int64_t> op(&pipe);
+        op.Init(xyz, center_xyz, xyz_batch_cnt, center_xyz_batch_cnt, idx, tilingData);
+        op.Process();
+    } else if (TILING_KEY_IS(4)) {
+        KernelStackBallQuery<half, int64_t> op(&pipe);
         op.Init(xyz, center_xyz, xyz_batch_cnt, center_xyz_batch_cnt, idx, tilingData);
         op.Process();
     }

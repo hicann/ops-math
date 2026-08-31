@@ -26,15 +26,13 @@ constexpr int32_t ALIGN_16 = 16;
 constexpr int32_t XYZ_NUM = 3;
 constexpr int32_t XYZ_GM_OFFSET = 2;
 
-template <typename INPUT_T>
-class KernelStackBallQuery
-{
+template <typename INPUT_T, typename COUNT_T>
+class KernelStackBallQuery {
 public:
-    __aicore__ inline KernelStackBallQuery(AscendC::TPipe* p) : pipe(p) {};
+    __aicore__ inline KernelStackBallQuery(AscendC::TPipe* p) : pipe(p){};
 
-    __aicore__ inline void Init(
-        GM_ADDR xyz, GM_ADDR center_xyz, GM_ADDR xyz_batch_cnt, GM_ADDR center_xyz_batch_cnt, GM_ADDR idx,
-        StackBallQueryTilingData tilingData)
+    __aicore__ inline void Init(GM_ADDR xyz, GM_ADDR center_xyz, GM_ADDR xyz_batch_cnt, GM_ADDR center_xyz_batch_cnt,
+                                GM_ADDR idx, StackBallQueryTilingData tilingData)
     {
         ASSERT(GetBlockNum() != 0 && "block dim can not be zero !");
         this->batchSize = tilingData.batchSize;
@@ -47,18 +45,18 @@ public:
         this->maxRadius = tilingData.maxRadius * tilingData.maxRadius;
         this->sampleNum = tilingData.sampleNum;
         this->typeXyzBlockSize = ALIGN_32 / (sizeof(INPUT_T));
-        this->typeIntBlockSize = ALIGN_NUM;
+        this->typeIntBlockSize = ALIGN_32 / sizeof(COUNT_T);
         this->centerXyzEachSegmentLength = this->centerXyzEachSegmentLength / BUFFER_NUM;
         this->xyzEachSegmentLength = this->xyzEachSegmentLength / BUFFER_NUM;
         this->idxEachSegmentLength = this->idxEachSegmentLength / BUFFER_NUM;
 
         int centerXyzEachCoreLength = Ceil(this->totalLengthCenterXyz, coreNum);
-        centerXyzGm.SetGlobalBuffer(
-            (__gm__ INPUT_T*)center_xyz + 3 * this->centerXyzPerCore * GetBlockIdx(), 3 * centerXyzEachCoreLength);
+        centerXyzGm.SetGlobalBuffer((__gm__ INPUT_T*)center_xyz + 3 * this->centerXyzPerCore * GetBlockIdx(),
+                                    3 * centerXyzEachCoreLength);
         xyzGm.SetGlobalBuffer((__gm__ INPUT_T*)xyz, 3 * this->totalLengthXyz);
         idxGm.SetGlobalBuffer((__gm__ int32_t*)idx, this->totalIdxLength);
-        centerXyzBatchCntGm.SetGlobalBuffer((__gm__ int32_t*)center_xyz_batch_cnt, this->batchSize);
-        xyzBatchCntGm.SetGlobalBuffer((__gm__ int32_t*)xyz_batch_cnt, this->batchSize);
+        centerXyzBatchCntGm.SetGlobalBuffer((__gm__ COUNT_T*)center_xyz_batch_cnt, this->batchSize);
+        xyzBatchCntGm.SetGlobalBuffer((__gm__ COUNT_T*)xyz_batch_cnt, this->batchSize);
 
         pipe->InitBuffer(inQueueCenterXyz, BUFFER_NUM, XYZ_NUM * this->centerXyzEachSegmentLength * sizeof(INPUT_T));
         pipe->InitBuffer(inQueueX, BUFFER_NUM, this->xyzEachSegmentLength * sizeof(INPUT_T));
@@ -91,9 +89,11 @@ public:
         pipe->InitBuffer(calcBufCenterDistanceX, this->xyzEachSegmentLength * sizeof(INPUT_T));
         pipe->InitBuffer(calcBufCenterDistanceY, this->xyzEachSegmentLength * sizeof(INPUT_T));
         pipe->InitBuffer(calcBufCenterDistanceZ, this->xyzEachSegmentLength * sizeof(INPUT_T));
-        pipe->InitBuffer(xyzBatchValue, this->GetAlignValue(this->batchSize, ALIGN_NUM) * sizeof(int32_t));
-        pipe->InitBuffer(centerXyzBatchValue, this->GetAlignValue(this->batchSize, ALIGN_NUM) * sizeof(int32_t));
-        PipeBarrier<PIPE_ALL>();;
+        pipe->InitBuffer(xyzBatchValue, this->GetAlignValue(this->batchSize, this->typeIntBlockSize) * sizeof(COUNT_T));
+        pipe->InitBuffer(centerXyzBatchValue,
+                         this->GetAlignValue(this->batchSize, this->typeIntBlockSize) * sizeof(COUNT_T));
+        PipeBarrier<PIPE_ALL>();
+        ;
     }
 
     __aicore__ inline void Process()
@@ -116,10 +116,12 @@ public:
             for (int j = 0; j < this->centerXyzEachSegmentLength; j++) {
                 RunPerCluster(i, j);
             }
-            PipeBarrier<PIPE_ALL>();;
+            PipeBarrier<PIPE_ALL>();
+            ;
             inQueueCenterXyz.FreeTensor(this->centerXyzLocal);
         }
-        PipeBarrier<PIPE_ALL>();;
+        PipeBarrier<PIPE_ALL>();
+        ;
 
         if (centerXyzLoopTail != 0) {
             CopyInCenterXyz(centerXyzLoopCount, centerXyzLoopTail);
@@ -129,10 +131,12 @@ public:
             for (int j = 0; j < centerXyzLoopTail; j++) {
                 RunPerCluster(centerXyzLoopCount, j);
             }
-            PipeBarrier<PIPE_ALL>();;
+            PipeBarrier<PIPE_ALL>();
+            ;
             inQueueCenterXyz.FreeTensor(this->centerXyzLocal);
         }
-        PipeBarrier<PIPE_ALL>();;
+        PipeBarrier<PIPE_ALL>();
+        ;
         this->SendResultToGm(true);
     }
 
@@ -159,9 +163,8 @@ private:
     }
 
     template <typename Type>
-    __aicore__ inline void DataCopyGm2UbAlign32(
-        const LocalTensor<Type>& dstLocal, const GlobalTensor<Type>& srcGlobal, const uint32_t calCount,
-        const uint32_t blockSize)
+    __aicore__ inline void DataCopyGm2UbAlign32(const LocalTensor<Type>& dstLocal, const GlobalTensor<Type>& srcGlobal,
+                                                const uint32_t calCount, const uint32_t blockSize)
     {
         uint32_t tail = calCount % blockSize;
         if (tail != 0) {
@@ -180,10 +183,10 @@ private:
 
     __aicore__ inline void CopyInBatchCnt()
     {
-        this->centerXyzBatchLocal = centerXyzBatchValue.Get<int32_t>();
+        this->centerXyzBatchLocal = centerXyzBatchValue.Get<COUNT_T>();
         DataCopyGm2UbAlign32(this->centerXyzBatchLocal, centerXyzBatchCntGm, this->batchSize, typeIntBlockSize);
 
-        this->xyzBatchLocal = xyzBatchValue.Get<int32_t>();
+        this->xyzBatchLocal = xyzBatchValue.Get<COUNT_T>();
         DataCopyGm2UbAlign32(this->xyzBatchLocal, xyzBatchCntGm, this->batchSize, typeIntBlockSize);
     }
 
@@ -201,12 +204,11 @@ private:
         yLocal = inQueueY.AllocTensor<INPUT_T>();
         zLocal = inQueueZ.AllocTensor<INPUT_T>();
 
-        DataCopyGm2UbAlign32(
-            xLocal, xyzGm[offsetXyzStart + xyzSegmentLoopIndex * this->xyzEachSegmentLength], xyzSegmentLen,
-            typeXyzBlockSize);
-        DataCopyGm2UbAlign32(
-            yLocal, xyzGm[totalLengthXyz + offsetXyzStart + xyzSegmentLoopIndex * this->xyzEachSegmentLength],
-            xyzSegmentLen, typeXyzBlockSize);
+        DataCopyGm2UbAlign32(xLocal, xyzGm[offsetXyzStart + xyzSegmentLoopIndex * this->xyzEachSegmentLength],
+                             xyzSegmentLen, typeXyzBlockSize);
+        DataCopyGm2UbAlign32(yLocal,
+                             xyzGm[totalLengthXyz + offsetXyzStart + xyzSegmentLoopIndex * this->xyzEachSegmentLength],
+                             xyzSegmentLen, typeXyzBlockSize);
         DataCopyGm2UbAlign32(
             zLocal,
             xyzGm[XYZ_GM_OFFSET * totalLengthXyz + offsetXyzStart + xyzSegmentLoopIndex * this->xyzEachSegmentLength],
@@ -218,7 +220,8 @@ private:
 
     __aicore__ inline void SendResultToGm(bool forceSend)
     {
-        PipeBarrier<PIPE_ALL>();;
+        PipeBarrier<PIPE_ALL>();
+        ;
 
         int tailLen = this->resultOffset % this->idxEachSegmentLength;
         if (forceSend or tailLen == 0) {
@@ -242,7 +245,8 @@ private:
                         }
                         DataCopy(idxGm[gmOffset], resultOut, lenToSend - sendTail);
                     }
-                    PipeBarrier<PIPE_ALL>();;
+                    PipeBarrier<PIPE_ALL>();
+                    ;
                     for (int k = 0; k < ALIGN_NUM; k++) {
                         this->resultOutAlign.SetValue(k, this->resultOut.GetValue(lenToSend - ALIGN_NUM + k));
                     }
@@ -255,7 +259,8 @@ private:
                         return;
                     }
                     DataCopy(this->resultOutAlign, idxGm[gmOffset + lenToSend - ALIGN_NUM], ALIGN_NUM);
-                    PipeBarrier<PIPE_ALL>();;
+                    PipeBarrier<PIPE_ALL>();
+                    ;
                     for (int k = 0; k < lenToSend; k++) {
                         this->resultOutAlign.SetValue(ALIGN_NUM - lenToSend + k, this->resultOut.GetValue(k));
                     }
@@ -265,7 +270,8 @@ private:
                     DataCopy(idxGm[gmOffset + lenToSend - ALIGN_NUM], this->resultOutAlign, ALIGN_NUM);
                 }
             }
-            PipeBarrier<PIPE_ALL>();;
+            PipeBarrier<PIPE_ALL>();
+            ;
         }
     }
 
@@ -283,13 +289,11 @@ private:
             if (this->resultNum >= this->sampleNum) {
                 break;
             }
-            Compare(
-                ubDstLtLocal, this->distanceEachSegment[selIdx * this->selMaxElements],
-                this->ubMaxRadiusLocal[selIdx * this->selMaxElements], CMPMODE::LT, this->xyzEachSegmentLength);
+            Compare(ubDstLtLocal, this->distanceEachSegment[selIdx * this->selMaxElements],
+                    this->ubMaxRadiusLocal[selIdx * this->selMaxElements], CMPMODE::LT, this->xyzEachSegmentLength);
 
-            Select(
-                ubResultLtLocal, ubDstLtLocal, ubOneFloat32Local, ubZeroFloat32Local, SELMODE::VSEL_TENSOR_TENSOR_MODE,
-                this->selMaxElements);
+            Select(ubResultLtLocal, ubDstLtLocal, ubOneFloat32Local, ubZeroFloat32Local,
+                   SELMODE::VSEL_TENSOR_TENSOR_MODE, this->selMaxElements);
 
             for (int internalSelIdx = 0; internalSelIdx < this->selMaxElements; ++internalSelIdx) {
                 auto currentCalNum = internalSelIdx + selIdx * this->selMaxElements;
@@ -380,7 +384,8 @@ private:
             int currentNStart = i * this->xyzEachSegmentLength;
 
             CopyInXyz(offsetXyzStart, i, segmentLen);
-            PipeBarrier<PIPE_ALL>();;
+            PipeBarrier<PIPE_ALL>();
+            ;
             this->CalculateDistance();
             ComputeBallQueryFp32(currentNStart, this->xyzEachSegmentLength);
 
@@ -394,7 +399,8 @@ private:
             int currentNStart = xyzSegmentLoop * this->xyzEachSegmentLength;
 
             CopyInXyz(offsetXyzStart, xyzSegmentLoop, segmentLen);
-            PipeBarrier<PIPE_ALL>();;
+            PipeBarrier<PIPE_ALL>();
+            ;
             this->CalculateDistance();
             ComputeBallQueryFp32(currentNStart, xyzSegmentTail);
             inQueueX.FreeTensor(this->xLocal);
@@ -409,7 +415,8 @@ private:
 
         for (int i = resultNum; i < sampleNum; i++) {
             this->SetResultAndTrySend(this->firstResult);
-            PipeBarrier<PIPE_ALL>();;
+            PipeBarrier<PIPE_ALL>();
+            ;
         }
     }
 
@@ -440,8 +447,8 @@ private:
     TQue<QuePosition::VECIN, BUFFER_NUM> inQueueY;
     TQue<QuePosition::VECIN, BUFFER_NUM> inQueueZ;
 
-    LocalTensor<int32_t> centerXyzBatchLocal;
-    LocalTensor<int32_t> xyzBatchLocal;
+    LocalTensor<COUNT_T> centerXyzBatchLocal;
+    LocalTensor<COUNT_T> xyzBatchLocal;
     LocalTensor<int32_t> resultOut;
     LocalTensor<int32_t> resultOutAlign;
     LocalTensor<uint16_t> ubDstLtLocal;
@@ -452,7 +459,8 @@ private:
     LocalTensor<float> ubOneFloat32Local, ubZeroFloat32Local, ubResultLtLocal;
 
     GlobalTensor<INPUT_T> centerXyzGm, xyzGm;
-    GlobalTensor<int32_t> idxGm, xyzBatchCntGm, centerXyzBatchCntGm;
+    GlobalTensor<int32_t> idxGm;
+    GlobalTensor<COUNT_T> xyzBatchCntGm, centerXyzBatchCntGm;
 
     TBuf<TPosition::VECCALC> calcBufCenterX, calcBufCenterY, calcBufCenterZ, calcBufDistanceResult;
     TBuf<TPosition::VECCALC> calcBufCenterDistanceX, calcBufCenterDistanceY, calcBufCenterDistanceZ;
