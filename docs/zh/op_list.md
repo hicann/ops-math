@@ -3197,6 +3197,16 @@
     <td>将张量沿指定维度split_dim平均拆分为num_split份更小的张量。与Split算子不同，split_dim作为属性而非输入提供。</td>
   </tr>
   <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/strided_slice_assign/README.md">strided_slice_assign</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>将输入张量input_value的内容赋值给目标张量var中由begin、end、strides指定的切片位置，切片以外的区域保持var原值不变（in-place语义）。</td>
+  </tr>
+  <tr>
     <td>random</td>
     <td><a href="../../random/drop_out_do_mask/README.md">drop_out_do_mask</a></td>
     <td>√</td>
