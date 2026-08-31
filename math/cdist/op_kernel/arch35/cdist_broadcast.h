@@ -44,6 +44,7 @@ using namespace AscendC;
 
 constexpr int32_t CDIST_BRC_BLOCK = 32;
 constexpr int32_t CDIST_STATIC_RANK = 2; // 编译期固定 rank（方案2 核心）
+constexpr int32_t CDIST_QUEUE_DEPTH = 2; // TQue 双缓冲深度
 
 template <typename T>
 class CdistBroadcast {
@@ -67,14 +68,14 @@ private:
     static constexpr bool IS_FP32 = (sizeof(T) == sizeof(float));
 
     // Staging buffers (T-typed load region for fp16/bf16 before cast to fp32).
-    TQue<TPosition::VECIN, 2> qLoad1_, qLoad2_; // OneDim inputs (T)
+    TQue<TPosition::VECIN, CDIST_QUEUE_DEPTH> qLoad1_, qLoad2_; // OneDim inputs (T)
     // fp32 compute planes
-    TBuf<TPosition::VECCALC> bufSrc1_;  // x1 紧凑源 fp32 (rowsP,1) / OneDim x1 fp32
-    TBuf<TPosition::VECCALC> bufSrc2_;  // x2 紧凑源 fp32 (1,R)     / OneDim x2 fp32
-    TBuf<TPosition::VECCALC> bufX1Exp_; // x1 展开 (rowsP,R) fp32   / OneDim yfp32
-    TBuf<TPosition::VECCALC> bufX2Exp_; // x2 展开 (rowsP,R) fp32
-    TBuf<TPosition::VECCALC> bufStage_; // T-typed staging for UB-BRC compact load
-    TQue<TPosition::VECOUT, 2> qY_;     // output (T)
+    TBuf<TPosition::VECCALC> bufSrc1_;              // x1 紧凑源 fp32 (rowsP,1) / OneDim x1 fp32
+    TBuf<TPosition::VECCALC> bufSrc2_;              // x2 紧凑源 fp32 (1,R)     / OneDim x2 fp32
+    TBuf<TPosition::VECCALC> bufX1Exp_;             // x1 展开 (rowsP,R) fp32   / OneDim yfp32
+    TBuf<TPosition::VECCALC> bufX2Exp_;             // x2 展开 (rowsP,R) fp32
+    TBuf<TPosition::VECCALC> bufStage_;             // T-typed staging for UB-BRC compact load
+    TQue<TPosition::VECOUT, CDIST_QUEUE_DEPTH> qY_; // output (T)
 };
 
 template <typename T>

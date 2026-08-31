@@ -32,6 +32,7 @@ using namespace AscendC;
 constexpr int64_t BROADCAST_MAX_DIMS = 8; // 支持的最大维数
 constexpr int64_t NDDMA_DIM = 5;          // 单次多维 DMA 维数上限
 constexpr int64_t BLOCK_LENGTH = 32;      // 对齐字节
+constexpr int64_t DOUBLE_BUFFER_NUM = 2;  // 双缓冲 buffer 数
 
 // brcMode：每个输入由 Host tiling 选定的广播实现
 enum BrcMode { BRC_NONE = 0, BRC_NDDMA = 1, BRC_DATACOPYPAD = 2, BRC_UB = 3 };
@@ -79,7 +80,7 @@ inline void ComputeTiling(BroadcastTilingData<IN_NUM>& td, int dtSize, int64_t c
     int rank = td.shapeLen;
     int64_t dtBytes = (dtSize > 0) ? dtSize : 1; // 钳制除数，保证静态可证 >=1（G.EXP.22-CPP）
     int64_t alignEle = BLOCK_LENGTH / dtBytes;
-    td.elemNum = BrcAlignDown(ubSize / (aliveBuf * dtBytes * 2 /*DoubleBuffer*/), alignEle);
+    td.elemNum = BrcAlignDown(ubSize / (aliveBuf * dtBytes * DOUBLE_BUFFER_NUM /*DoubleBuffer*/), alignEle);
     if (td.elemNum < alignEle)
         td.elemNum = alignEle;
 
@@ -350,7 +351,7 @@ inline void ComputeOneDimTiling(OneDimTilingData& t, int64_t dimLen, int32_t sca
     t.scalarFlag = scalarFlag;
     int64_t dtBytes = (dtSize > 0) ? dtSize : 1; // 钳制除数，保证静态可证 >=1（G.EXP.22-CPP）
     int64_t alignEle = BLOCK_LENGTH / dtBytes;
-    int64_t tileNum = BrcAlignDown(ubSize / (aliveBuf * dtBytes * 2 /*DoubleBuffer*/), alignEle);
+    int64_t tileNum = BrcAlignDown(ubSize / (aliveBuf * dtBytes * DOUBLE_BUFFER_NUM /*DoubleBuffer*/), alignEle);
     if (tileNum < alignEle)
         tileNum = alignEle;
     int64_t ubOuter = BrcCeilDiv(dimLen, tileNum); // 一维共几块
