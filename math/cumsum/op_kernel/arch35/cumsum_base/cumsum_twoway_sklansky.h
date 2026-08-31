@@ -281,12 +281,12 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfNoAlig
     __VEC_SCOPE__
     {
         AscendC::Reg::MaskReg p0 = AscendC::Reg::CreateMask<DataType, AscendC::Reg::MaskPattern::ALL>();
-        AscendC::Reg::UnalignReg u0;
+        AscendC::Reg::UnalignRegForLoad u0;
         AscendC::Reg::RegTensor<DataType> outNoAlignReg;
         auto srcUbT = outputPtr + dirtyDataNum; // 非对齐的有效数据
-        AscendC::Reg::DataCopyUnAlignPre(u0, srcUbT);
-        AscendC::Reg::DataCopyUnAlign(outNoAlignReg, u0, srcUbT);
-        AscendC::Reg::DataCopy(outNoAlignPtr, outNoAlignReg, p0);
+        AscendC::Reg::LoadUnAlignPre(u0, srcUbT);
+        AscendC::Reg::LoadUnAlign(outNoAlignReg, u0, srcUbT);
+        AscendC::Reg::StoreAlign(outNoAlignPtr, outNoAlignReg, p0);
     }
     DataCopyExtParams dataCopyNoAlignParams;
     dataCopyNoAlignParams.blockCount = 1;
@@ -382,10 +382,10 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfFirstA
             addReg1Offset = (startOffset + reverseFlag * m * addOffset) * VL_ELEM;
             for (uint16_t n = 0; n < addCount; n++) {
                 addReg2Offset = (startOffset + reverseFlag * (m * addOffset + n + 1)) * VL_ELEM;
-                AscendC::Reg::DataCopy(addReg1, foldPtr + addReg1Offset);
-                AscendC::Reg::DataCopy(addReg2, foldPtr + addReg2Offset);
+                AscendC::Reg::LoadAlign(addReg1, foldPtr + addReg1Offset);
+                AscendC::Reg::LoadAlign(addReg2, foldPtr + addReg2Offset);
                 AscendC::Reg::Add(sumReg, addReg1, addReg2, p0);
-                AscendC::Reg::DataCopy(foldPtr + addReg2Offset, sumReg, p0);
+                AscendC::Reg::StoreAlign(foldPtr + addReg2Offset, sumReg, p0);
             }
         }
     }
@@ -436,9 +436,9 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfGather
             p1 = AscendC::Reg::UpdateMask<int32_t>(num1);
             for (uint16_t j = 0; j < foldCount; j++) {
                 AscendC::Reg::Adds(loopAddReg, addReg, (int32_t)nAlignBlockElem_ * j, p0);
-                AscendC::Reg::DataCopyGather(dstReg, srcPtr, (AscendC::Reg::RegTensor<uint32_t>&)loopAddReg, p1);
+                AscendC::Reg::Gather(dstReg, srcPtr, (AscendC::Reg::RegTensor<uint32_t>&)loopAddReg, p1);
                 dstOffset = dstBaseOffset + i * VL_ELEM + reverseFlag * j * numAlignBlock;
-                AscendC::Reg::DataCopy(dstPtr + dstOffset, dstReg, p1);
+                AscendC::Reg::StoreAlign(dstPtr + dstOffset, dstReg, p1);
             }
         }
     }
@@ -507,14 +507,14 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfSecond
                     p1 = AscendC::Reg::UpdateMask<int32_t>(baseNum1);
                     // 连续搬入AddFactor的index和data
                     AscendC::Reg::AddrReg addrOffset = AscendC::Reg::CreateAddrReg<PromoteDataType>(j, VL_ELEM);
-                    AscendC::Reg::DataCopy(addFactorIndexReg, addFactorIndexPtr, addrOffset);
+                    AscendC::Reg::LoadAlign(addFactorIndexReg, addFactorIndexPtr, addrOffset);
                     AscendC::Reg::Adds(addFactorIndexReg, addFactorIndexReg, m * VL_ELEM * 2, p0);
-                    AscendC::Reg::DataCopyGather(addFactorDataReg, addFactorDataPtr,
-                                                 (AscendC::Reg::RegTensor<uint32_t>&)addFactorIndexReg, p0);
+                    AscendC::Reg::Gather(addFactorDataReg, addFactorDataPtr,
+                                         (AscendC::Reg::RegTensor<uint32_t>&)addFactorIndexReg, p0);
                     int32_t addDataOffset = addDataMainReserveOffset + (i * indexLoopCount_ + j) * VL_ELEM;
-                    AscendC::Reg::DataCopy(addDataReg, secondfoldPtr + addDataOffset);     // 连续对齐搬入addData
-                    AscendC::Reg::Add(addDataReg, addDataReg, addFactorDataReg, p1);       // Add
-                    AscendC::Reg::DataCopy(secondfoldPtr + addDataOffset, addDataReg, p1); // 搬出
+                    AscendC::Reg::LoadAlign(addDataReg, secondfoldPtr + addDataOffset); // 连续对齐搬入addData
+                    AscendC::Reg::Add(addDataReg, addDataReg, addFactorDataReg, p1);    // Add
+                    AscendC::Reg::StoreAlign(secondfoldPtr + addDataOffset, addDataReg, p1); // 搬出
                 }
             }
             // 尾块，只需执行一次即可
@@ -522,14 +522,14 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfSecond
                 for (uint16_t j = 0; j < indexLoopCountTail; j++) {
                     p2 = AscendC::Reg::UpdateMask<int32_t>(baseNum2);
                     AscendC::Reg::AddrReg addrOffset = AscendC::Reg::CreateAddrReg<PromoteDataType>(j, VL_ELEM);
-                    AscendC::Reg::DataCopy(addFactorIndexReg, addFactorIndexPtr, addrOffset);
+                    AscendC::Reg::LoadAlign(addFactorIndexReg, addFactorIndexPtr, addrOffset);
                     AscendC::Reg::Adds(addFactorIndexReg, addFactorIndexReg, m * VL_ELEM * 2, p0);
-                    AscendC::Reg::DataCopyGather(addFactorDataReg, addFactorDataPtr,
-                                                 (AscendC::Reg::RegTensor<uint32_t>&)addFactorIndexReg, p0);
+                    AscendC::Reg::Gather(addFactorDataReg, addFactorDataPtr,
+                                         (AscendC::Reg::RegTensor<uint32_t>&)addFactorIndexReg, p0);
                     int32_t addDataOffset = addDataTailReserveOffset + (i * indexLoopCount_ + j) * VL_ELEM;
-                    AscendC::Reg::DataCopy(addDataReg, secondfoldPtr + addDataOffset);
+                    AscendC::Reg::LoadAlign(addDataReg, secondfoldPtr + addDataOffset);
                     AscendC::Reg::Add(addDataReg, addDataReg, addFactorDataReg, p2);
-                    AscendC::Reg::DataCopy(secondfoldPtr + addDataOffset, addDataReg, p2);
+                    AscendC::Reg::StoreAlign(secondfoldPtr + addDataOffset, addDataReg, p2);
                 }
             }
         }
@@ -572,10 +572,10 @@ __aicore__ inline void CumsumTwowaySklansky<DataType, PromoteDataType>::VfSecond
                 AscendC::Reg::Mul(tmp3, tmp, nReg, p0);              // [000...99999.....63]
                 AscendC::Reg::Sub(tmp2, indexReg, tmp3, p0);         // [0123...0123...0123..]
                 AscendC::Reg::Adds(secondFoldReg, tmp2, addFactorDataStart + ReserveStartOffset, p0);
-                AscendC::Reg::DataCopyGather(addFactorDataReg, secondfoldPtr,
-                                             (AscendC::Reg::RegTensor<uint32_t>&)secondFoldReg, p0);
-                AscendC::Reg::DataCopy(addFactorDataPtr + (int32_t)VL_ELEM * 2 * m + (int32_t)VL_ELEM * i,
-                                       addFactorDataReg, p0);
+                AscendC::Reg::Gather(addFactorDataReg, secondfoldPtr, (AscendC::Reg::RegTensor<uint32_t>&)secondFoldReg,
+                                     p0);
+                AscendC::Reg::StoreAlign(addFactorDataPtr + (int32_t)VL_ELEM * 2 * m + (int32_t)VL_ELEM * i,
+                                         addFactorDataReg, p0);
                 startIdx = startIdx + singleRemainder;
             }
         }

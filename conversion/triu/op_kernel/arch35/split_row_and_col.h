@@ -236,8 +236,8 @@ __aicore__ inline void SplitRowAndCol<T, IS_LOWER>::DoCopyVector(NormalBlockInfo
         uint16_t tailLoops = tailRows * vfInnerLoops;
         uint16_t midRowsU16 = static_cast<uint16_t>(midRows);
 
-        __local_mem__ T* xAddr = (__local_mem__ T*)xLocal.GetPhyAddr();
-        __local_mem__ T* yAddr = (__local_mem__ T*)yLocal.GetPhyAddr();
+        __ubuf__ T* xAddr = (__ubuf__ T*)xLocal.GetPhyAddr();
+        __ubuf__ T* yAddr = (__ubuf__ T*)yLocal.GetPhyAddr();
 
         __VEC_SCOPE__
         {
@@ -250,10 +250,11 @@ __aicore__ inline void SplitRowAndCol<T, IS_LOWER>::DoCopyVector(NormalBlockInfo
             AscendC::Reg::MaskReg selectMask;
             for (uint16_t i = 0; i < headLoops; ++i) {
                 if constexpr (IS_LOWER) {
-                    AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(yAddr, vregZero, regCount_, rowMask);
+                    AscendC::Reg::StoreAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(yAddr, vregZero, regCount_,
+                                                                                    rowMask);
                 } else {
-                    AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(vregSrc, xAddr, regCount_);
-                    AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(yAddr, vregSrc, regCount_, rowMask);
+                    AscendC::Reg::LoadAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(vregSrc, xAddr, regCount_);
+                    AscendC::Reg::StoreAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(yAddr, vregSrc, regCount_, rowMask);
                 }
             }
             if constexpr (IS_LOWER) {
@@ -262,25 +263,26 @@ __aicore__ inline void SplitRowAndCol<T, IS_LOWER>::DoCopyVector(NormalBlockInfo
             for (uint16_t i = 0; i < midRowsU16; ++i) {
                 uint32_t copyEleNum = copyCols + i;
                 for (uint16_t j = 0; j < vfInnerLoops; ++j) {
-                    AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(vregSrc, xAddr, regCount_);
+                    AscendC::Reg::LoadAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(vregSrc, xAddr, regCount_);
                     selectMask = AscendC::Reg::UpdateMask<T>(copyEleNum);
                     if constexpr (IS_LOWER) {
                         AscendC::Reg::Select(vregDst, vregSrc, vregZero, selectMask);
-                        AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(yAddr, vregDst, regCount_,
-                                                                                      rowMask);
+                        AscendC::Reg::StoreAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(yAddr, vregDst, regCount_,
+                                                                                        rowMask);
                     } else {
                         AscendC::Reg::Select(vregDst, vregZero, vregSrc, selectMask);
-                        AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(yAddr, vregDst, regCount_,
-                                                                                      rowMask);
+                        AscendC::Reg::StoreAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(yAddr, vregDst, regCount_,
+                                                                                        rowMask);
                     }
                 }
             }
             for (uint16_t i = 0; i < tailLoops; ++i) {
                 if constexpr (IS_LOWER) {
-                    AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(vregSrc, xAddr, regCount_);
-                    AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(yAddr, vregSrc, regCount_, rowMask);
+                    AscendC::Reg::LoadAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(vregSrc, xAddr, regCount_);
+                    AscendC::Reg::StoreAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(yAddr, vregSrc, regCount_, rowMask);
                 } else {
-                    AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(yAddr, vregZero, regCount_, rowMask);
+                    AscendC::Reg::StoreAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(yAddr, vregZero, regCount_,
+                                                                                    rowMask);
                 }
             }
             if constexpr (!IS_LOWER) {

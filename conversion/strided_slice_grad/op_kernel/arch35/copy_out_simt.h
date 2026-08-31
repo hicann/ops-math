@@ -20,18 +20,19 @@
 #include "simt_api/asc_simt.h"
 #include "simt_api/device_functions.h"
 
-namespace StridedSliceGrad
-{
+namespace StridedSliceGrad {
 using namespace AscendC;
 constexpr int16_t SIMT_BEGIN_OFFSET = 8;
 constexpr int16_t SIMT_STRIDES_OFFSET = 16;
 constexpr int16_t SIMT_FUSEDOUTPUTINNERSHAPE_OFFSET = 24;
 
 template <typename T>
-__simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_DIM) inline void CopyOut(__local_mem__ T* srcLocal, __gm__ T* dstGm,
-                                                                    __local_mem__ uint32_t* simtB32Local, __local_mem__ int64_t* simtB64Local,
-                                                                    uint32_t curLoopBlockNum, uint32_t blockIdx, uint32_t normalCoreProcessNum,
-                                                                    uint32_t loopNum, uint32_t normalLoopBlockNum, uint32_t inputDimNum)
+__simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_DIM) inline void CopyOut(__ubuf__ T* srcLocal, __gm__ T* dstGm,
+                                                                    __ubuf__ uint32_t* simtB32Local,
+                                                                    __ubuf__ int64_t* simtB64Local,
+                                                                    uint32_t curLoopBlockNum, uint32_t blockIdx,
+                                                                    uint32_t normalCoreProcessNum, uint32_t loopNum,
+                                                                    uint32_t normalLoopBlockNum, uint32_t inputDimNum)
 {
     for (int32_t i = threadIdx.x; i < curLoopBlockNum; i += blockDim.x) {
         int32_t idx = blockIdx * normalCoreProcessNum + loopNum * normalLoopBlockNum + i;
@@ -53,11 +54,11 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_DIM) inline void CopyOut(__local_mem_
 }
 
 template <typename T>
-class CopyOutSimt : public StridedSliceGradBase
-{
+class CopyOutSimt : public StridedSliceGradBase {
 public:
     __aicore__ CopyOutSimt() {};
-    __aicore__ inline void Init(GM_ADDR dy, GM_ADDR output, const StridedSliceGradTilingData& tilingData, TPipe& pipeIn);
+    __aicore__ inline void Init(GM_ADDR dy, GM_ADDR output, const StridedSliceGradTilingData& tilingData,
+                                TPipe& pipeIn);
     __aicore__ inline void Process();
     __aicore__ inline void InitCopyParams();
     __aicore__ inline void ConstructDivParams();
@@ -100,7 +101,7 @@ private:
 
 template <typename T>
 __aicore__ inline void CopyOutSimt<T>::Init(GM_ADDR dy, GM_ADDR output, const StridedSliceGradTilingData& tilingData,
-                                          TPipe& pipeIn)
+                                            TPipe& pipeIn)
 {
     // tiling_data
     StridedSliceGradBase::ParseTilingData(tilingData);
@@ -165,23 +166,22 @@ __aicore__ inline void CopyOutSimt<T>::ProcessPerLoop()
     LocalTensor<int64_t> simtB64Local = simtB64Buf_.Get<int64_t>();
     LocalTensor<uint32_t> simtB32Local = simtB32Buf_.Get<uint32_t>();
 
-    for(int i = 0; i < MAX_SUPPORT_DIM; i++) {
+    for (int i = 0; i < MAX_SUPPORT_DIM; i++) {
         simtB32Local(i) = m_[i];
         simtB32Local(i + MAX_SUPPORT_DIM) = shift_[i];
     }
 
-    for(int i = 0; i < MAX_SUPPORT_DIM; i++) {
+    for (int i = 0; i < MAX_SUPPORT_DIM; i++) {
         simtB64Local(i) = fusedSliceInnerShape_[i];
         simtB64Local(i + SIMT_BEGIN_OFFSET) = begin_[i];
         simtB64Local(i + SIMT_STRIDES_OFFSET) = strides_[i];
         simtB64Local(i + SIMT_FUSEDOUTPUTINNERSHAPE_OFFSET) = fusedOutputInnerShape_[i];
     }
     PipeBarrier<PIPE_ALL>();
-    asc_vf_call<CopyOut<T>>(dim3(threadsPerBlock_), 
-                              (__local_mem__ T*)(yLocal.GetPhyAddr()), (__gm__ T*)(dstGm_.GetPhyAddr()),  
-                              (__local_mem__ uint32_t*)(simtB32Local.GetPhyAddr()), (__local_mem__ int64_t*)(simtB64Local.GetPhyAddr()),
-                              curLoopBlockNum_, blockIdx_, normalCoreProcessNum_,
-                              loopNum_, normalLoopBlockNum_, inputDimNum_);
+    asc_vf_call<CopyOut<T>>(dim3(threadsPerBlock_), (__ubuf__ T*)(yLocal.GetPhyAddr()),
+                            (__gm__ T*)(dstGm_.GetPhyAddr()), (__ubuf__ uint32_t*)(simtB32Local.GetPhyAddr()),
+                            (__ubuf__ int64_t*)(simtB64Local.GetPhyAddr()), curLoopBlockNum_, blockIdx_,
+                            normalCoreProcessNum_, loopNum_, normalLoopBlockNum_, inputDimNum_);
     dataQueue_.FreeTensor(yLocal);
 }
 
@@ -195,6 +195,6 @@ __aicore__ inline void CopyOutSimt<T>::InitCopyParams()
     padParams_ = {false, static_cast<uint8_t>(0), static_cast<uint8_t>(0), static_cast<T>(0)};
 }
 
-}  // namespace StridedSliceGrad
+} // namespace StridedSliceGrad
 
-#endif  // COPY_OUT_SIMT_H
+#endif // COPY_OUT_SIMT_H

@@ -23,10 +23,10 @@ using namespace AscendC;
 
 template <typename T, typename U>
 __simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__
-    void CopyUbToGmDim5(__gm__ T* dst, __ubuf__ T* src, uint32_t batchSize,
-    uint32_t ubDim4Stride, uint32_t ubDim3Stride, uint32_t ubDim2Stride, uint32_t ubDim1Stride,
-    __ubuf__ uint32_t* ParamDim4MagicUb, __ubuf__ uint32_t* ParamDim4ShiftUb,
-    __ubuf__ uint32_t* ParamDim5SrcStrideUb, __ubuf__ U* ParamDim5DstStrideUb)
+    void CopyUbToGmDim5(__gm__ T* dst, __ubuf__ T* src, uint32_t batchSize, uint32_t ubDim4Stride,
+                        uint32_t ubDim3Stride, uint32_t ubDim2Stride, uint32_t ubDim1Stride,
+                        __ubuf__ uint32_t* ParamDim4MagicUb, __ubuf__ uint32_t* ParamDim4ShiftUb,
+                        __ubuf__ uint32_t* ParamDim5SrcStrideUb, __ubuf__ U* ParamDim5DstStrideUb)
 {
     for (uint32_t i = threadIdx.x; i < batchSize; i += blockDim.x) {
         uint32_t idx = i;
@@ -60,7 +60,7 @@ __simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__
         uint32_t dim0Index = newIdx2 - dim1Index * ubDim1Stride;
         srcIndex += (dim1Index * ParamDim5SrcStrideUb[DIM1]);
         dstIndex += (dim1Index * ParamDim5DstStrideUb[DIM1]);
-        
+
         srcIndex += (dim0Index * ParamDim5SrcStrideUb[DIM0]);
         dstIndex += (dim0Index * ParamDim5DstStrideUb[DIM0]);
         dst[dstIndex] = src[srcIndex];
@@ -70,22 +70,21 @@ __simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__
 template <typename T>
 class ViewCopySimtDim5 : public ViewCopyBase<T> {
 public:
-    __aicore__ inline ViewCopySimtDim5(TPipe &pipe, const ViewCopyTilingData *tilingData) :
-        pipe_(pipe), tilingData_(tilingData) {};
-    __aicore__ inline void Init(
-        GM_ADDR dst, GM_ADDR dstSize, GM_ADDR dstStride, GM_ADDR dstStorageOffset,
-        GM_ADDR src, GM_ADDR srcSize, GM_ADDR srcStride, GM_ADDR srcStorageOffset,
-        GM_ADDR out);
+    __aicore__ inline ViewCopySimtDim5(TPipe& pipe, const ViewCopyTilingData* tilingData)
+        : pipe_(pipe), tilingData_(tilingData){};
+    __aicore__ inline void Init(GM_ADDR dst, GM_ADDR dstSize, GM_ADDR dstStride, GM_ADDR dstStorageOffset, GM_ADDR src,
+                                GM_ADDR srcSize, GM_ADDR srcStride, GM_ADDR srcStorageOffset, GM_ADDR out);
     __aicore__ inline void Process();
     __aicore__ inline void InitCopyParams();
 
 private:
-    __aicore__ inline void ProcessPerLoop(int64_t globalLoopIdx, const MultiCopyParams<T, DIM5> &dmaParam,
-        int32_t batchSize);
-    __aicore__ inline void CopyIn(const GlobalTensor<T> &src, const MultiCopyParams<T, DIM5> &dmaParams);
+    __aicore__ inline void ProcessPerLoop(int64_t globalLoopIdx, const NdDmaParams<T, DIM5>& dmaParam,
+                                          int32_t batchSize);
+    __aicore__ inline void CopyIn(const GlobalTensor<T>& src, const NdDmaParams<T, DIM5>& dmaParams);
+
 private:
-    TPipe &pipe_;
-    const ViewCopyTilingData *tilingData_;
+    TPipe& pipe_;
+    const ViewCopyTilingData* tilingData_;
     TQue<QuePosition::VECIN, BUFFER_NUM> inQueue_;
 
     GlobalTensor<T> srcGm_;
@@ -95,8 +94,8 @@ private:
     TBuf<TPosition::VECCALC> Dim5paramSrcStrideBuf_;
     TBuf<TPosition::VECCALC> Dim5paramDstStrideBuf_;
 
-    MultiCopyParams<T, DIM5> tailDmaParam_;
-    MultiCopyParams<T, DIM5> dmaParam_;
+    NdDmaParams<T, DIM5> tailDmaParam_;
+    NdDmaParams<T, DIM5> dmaParam_;
     DataCopyExtParams tailCopyParams_;
     DataCopyExtParams copyParams_;
 
@@ -112,14 +111,13 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void ViewCopySimtDim5<T>::Init(
-    GM_ADDR dst, GM_ADDR dstSize, GM_ADDR dstStride, GM_ADDR dstStorageOffset,
-    GM_ADDR src, GM_ADDR srcSize, GM_ADDR srcStride, GM_ADDR srcStorageOffset,
-    GM_ADDR out)
+__aicore__ inline void ViewCopySimtDim5<T>::Init(GM_ADDR dst, GM_ADDR dstSize, GM_ADDR dstStride,
+                                                 GM_ADDR dstStorageOffset, GM_ADDR src, GM_ADDR srcSize,
+                                                 GM_ADDR srcStride, GM_ADDR srcStorageOffset, GM_ADDR out)
 {
     this->ParseTilingData(tilingData_);
-    dstGm_.SetGlobalBuffer((__gm__ T *)(dst + tilingData_->dstStorageOffset * sizeof(T)));
-    srcGm_.SetGlobalBuffer((__gm__ T *)(src + tilingData_->srcStorageOffset * sizeof(T)));
+    dstGm_.SetGlobalBuffer((__gm__ T*)(dst + tilingData_->dstStorageOffset * sizeof(T)));
+    srcGm_.SetGlobalBuffer((__gm__ T*)(src + tilingData_->srcStorageOffset * sizeof(T)));
 
     blockOffset_ = GetBlockIdx() * tilingData_->blockFactor;
     pipe_.InitBuffer(inQueue_, BUFFER_NUM, tilingData_->bufferSize);
@@ -135,15 +133,15 @@ __aicore__ inline void ViewCopySimtDim5<T>::Init(
     int32_t tailBatchSize_ = 1;
 
     dim4UbdstStride_ = tilingData_->ubDstSize[DIM0_INDEX] * tilingData_->ubDstSize[DIM1_INDEX] *
-        tilingData_->ubDstSize[DIM2_INDEX] * tilingData_->ubDstSize[DIM3_INDEX];
+                       tilingData_->ubDstSize[DIM2_INDEX] * tilingData_->ubDstSize[DIM3_INDEX];
     dim3UbdstStride_ = tilingData_->ubDstSize[DIM0_INDEX] * tilingData_->ubDstSize[DIM1_INDEX] *
-        tilingData_->ubDstSize[DIM2_INDEX];
+                       tilingData_->ubDstSize[DIM2_INDEX];
     dim2UbdstStride_ = tilingData_->ubDstSize[DIM0_INDEX] * tilingData_->ubDstSize[DIM1_INDEX];
     dim1UbdstStride_ = tilingData_->ubDstSize[DIM0_INDEX];
     GetUintDivMagicAndShift<uint32_t>(m_[0], shift_[0], dim4UbdstStride_);
-    GetUintDivMagicAndShift<uint32_t>(m_[1], shift_[1], dim3UbdstStride_); 
-    GetUintDivMagicAndShift<uint32_t>(m_[2], shift_[2], dim2UbdstStride_);   
-    GetUintDivMagicAndShift<uint32_t>(m_[3], shift_[3], dim1UbdstStride_); 
+    GetUintDivMagicAndShift<uint32_t>(m_[1], shift_[1], dim3UbdstStride_);
+    GetUintDivMagicAndShift<uint32_t>(m_[2], shift_[2], dim2UbdstStride_);
+    GetUintDivMagicAndShift<uint32_t>(m_[3], shift_[3], dim1UbdstStride_);
 }
 
 template <typename T>
@@ -186,7 +184,7 @@ __aicore__ inline void ViewCopySimtDim5<T>::Process()
     for (int64_t idx = 0; idx < loopSize; idx++) {
         globalLoopIdx = blockOffset_ + idx;
         globalLoopIdxModUo = globalLoopIdx % tilingData_->uo;
-        if ((globalLoopIdxModUo) * tilingData_->ubFactor <= tilingData_->ubDimSize) {
+        if ((globalLoopIdxModUo)*tilingData_->ubFactor <= tilingData_->ubDimSize) {
             if ((globalLoopIdxModUo + 1) * tilingData_->ubFactor > tilingData_->ubDimSize) {
                 ProcessPerLoop(globalLoopIdx, tailDmaParam_, tailBatchSize_);
             } else {
@@ -197,8 +195,7 @@ __aicore__ inline void ViewCopySimtDim5<T>::Process()
 }
 
 template <typename T>
-__aicore__ inline void ViewCopySimtDim5<T>::CopyIn(const GlobalTensor<T> &src,
-    const MultiCopyParams<T, DIM5> &dmaParams)
+__aicore__ inline void ViewCopySimtDim5<T>::CopyIn(const GlobalTensor<T>& src, const NdDmaParams<T, DIM5>& dmaParams)
 {
     LocalTensor<T> srcLocal = inQueue_.AllocTensor<T>();
     this->CopyInDim5(src, srcLocal, dmaParams, tilingData_->enableMovAlign != 0);
@@ -206,8 +203,8 @@ __aicore__ inline void ViewCopySimtDim5<T>::CopyIn(const GlobalTensor<T> &src,
 }
 
 template <typename T>
-__aicore__ inline void ViewCopySimtDim5<T>::ProcessPerLoop(int64_t globalLoopIdx,
-    const MultiCopyParams<T, DIM5> &dmaParam, int32_t batchSize)
+__aicore__ inline void ViewCopySimtDim5<T>::ProcessPerLoop(int64_t globalLoopIdx, const NdDmaParams<T, DIM5>& dmaParam,
+                                                           int32_t batchSize)
 {
     LocalTensor<uint32_t> ParamDim4MagicUb = Dim4paramMagicBuf_.Get<uint32_t>();
     LocalTensor<uint32_t> ParamDim4ShiftUb = Dim4paramShiftBuf_.Get<uint32_t>();
@@ -222,19 +219,20 @@ __aicore__ inline void ViewCopySimtDim5<T>::ProcessPerLoop(int64_t globalLoopIdx
     __gm__ T* dstAddr = (__gm__ T*)(dstGm_.GetPhyAddr()) + dstOffset;
     if (tilingData_->enableDstInt64 != 0) {
         LocalTensor<uint64_t> ParamDim5DstStrideUb = Dim5paramDstStrideBuf_.Get<uint64_t>();
-        asc_vf_call<CopyUbToGmDim5<T, uint64_t>>(dim3(THREAD_DIM), dstAddr, srcAddr, batchSize,
-            dim4UbdstStride_, dim3UbdstStride_, dim2UbdstStride_, dim1UbdstStride_, 
-            (__ubuf__ uint32_t*)(ParamDim4MagicUb.GetPhyAddr()), (__ubuf__ uint32_t*)(ParamDim4ShiftUb.GetPhyAddr()),
-            (__ubuf__ uint32_t*)(ParamDim5SrcStrideUb.GetPhyAddr()),
-            (__ubuf__ uint64_t*)(ParamDim5DstStrideUb.GetPhyAddr()));
+        asc_vf_call<CopyUbToGmDim5<T, uint64_t>>(dim3(THREAD_DIM), dstAddr, srcAddr, batchSize, dim4UbdstStride_,
+                                                 dim3UbdstStride_, dim2UbdstStride_, dim1UbdstStride_,
+                                                 (__ubuf__ uint32_t*)(ParamDim4MagicUb.GetPhyAddr()),
+                                                 (__ubuf__ uint32_t*)(ParamDim4ShiftUb.GetPhyAddr()),
+                                                 (__ubuf__ uint32_t*)(ParamDim5SrcStrideUb.GetPhyAddr()),
+                                                 (__ubuf__ uint64_t*)(ParamDim5DstStrideUb.GetPhyAddr()));
     } else {
         LocalTensor<uint32_t> ParamDim5DstStrideUb = Dim5paramDstStrideBuf_.Get<uint32_t>();
-        asc_vf_call<CopyUbToGmDim5<T, uint32_t>>(dim3(THREAD_DIM), dstAddr, srcAddr, batchSize,
-            dim4UbdstStride_, dim3UbdstStride_, dim2UbdstStride_, dim1UbdstStride_,
-            (__ubuf__ uint32_t*)(ParamDim4MagicUb.GetPhyAddr()),
-            (__ubuf__ uint32_t*)(ParamDim4ShiftUb.GetPhyAddr()),
-            (__ubuf__ uint32_t*)(ParamDim5SrcStrideUb.GetPhyAddr()),
-            (__ubuf__ uint32_t*)(ParamDim5DstStrideUb.GetPhyAddr()));
+        asc_vf_call<CopyUbToGmDim5<T, uint32_t>>(dim3(THREAD_DIM), dstAddr, srcAddr, batchSize, dim4UbdstStride_,
+                                                 dim3UbdstStride_, dim2UbdstStride_, dim1UbdstStride_,
+                                                 (__ubuf__ uint32_t*)(ParamDim4MagicUb.GetPhyAddr()),
+                                                 (__ubuf__ uint32_t*)(ParamDim4ShiftUb.GetPhyAddr()),
+                                                 (__ubuf__ uint32_t*)(ParamDim5SrcStrideUb.GetPhyAddr()),
+                                                 (__ubuf__ uint32_t*)(ParamDim5DstStrideUb.GetPhyAddr()));
     }
     inQueue_.FreeTensor(dstLocal);
 }
@@ -242,52 +240,44 @@ __aicore__ inline void ViewCopySimtDim5<T>::ProcessPerLoop(int64_t globalLoopIdx
 template <typename T>
 __aicore__ inline void ViewCopySimtDim5<T>::InitCopyParams()
 {
-    dmaParam_ = {
-        {
-            {static_cast<uint64_t>(tilingData_->nddmaStride[DIM0_INDEX]),
-                static_cast<uint64_t>(tilingData_->nddmaStride[DIM1_INDEX]),
-                static_cast<uint64_t>(tilingData_->nddmaStride[DIM2_INDEX]),
-                static_cast<uint64_t>(tilingData_->nddmaStride[DIM3_INDEX]),
-                static_cast<uint64_t>(tilingData_->nddmaStride[DIM4_INDEX]) },
-            {static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM0_INDEX]),
-                static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM1_INDEX]),
-                static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM2_INDEX]),
-                static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM3_INDEX]),
-                static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM4_INDEX])},
-            {static_cast<uint32_t>(tilingData_->nddmaSize[DIM0_INDEX]),
-                static_cast<uint32_t>(tilingData_->nddmaSize[DIM1_INDEX]),
-                static_cast<uint32_t>(tilingData_->nddmaSize[DIM2_INDEX]),
-                static_cast<uint32_t>(tilingData_->nddmaSize[DIM3_INDEX]),
-                static_cast<uint32_t>(tilingData_->nddmaSize[DIM4_INDEX])},
-            {0, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0}
-        },
-        0
-    };
+    dmaParam_ = {{{static_cast<uint64_t>(tilingData_->nddmaStride[DIM0_INDEX]),
+                   static_cast<uint64_t>(tilingData_->nddmaStride[DIM1_INDEX]),
+                   static_cast<uint64_t>(tilingData_->nddmaStride[DIM2_INDEX]),
+                   static_cast<uint64_t>(tilingData_->nddmaStride[DIM3_INDEX]),
+                   static_cast<uint64_t>(tilingData_->nddmaStride[DIM4_INDEX])},
+                  {static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM0_INDEX]),
+                   static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM1_INDEX]),
+                   static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM2_INDEX]),
+                   static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM3_INDEX]),
+                   static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM4_INDEX])},
+                  {static_cast<uint32_t>(tilingData_->nddmaSize[DIM0_INDEX]),
+                   static_cast<uint32_t>(tilingData_->nddmaSize[DIM1_INDEX]),
+                   static_cast<uint32_t>(tilingData_->nddmaSize[DIM2_INDEX]),
+                   static_cast<uint32_t>(tilingData_->nddmaSize[DIM3_INDEX]),
+                   static_cast<uint32_t>(tilingData_->nddmaSize[DIM4_INDEX])},
+                  {0, 0, 0, 0, 0},
+                  {0, 0, 0, 0, 0}},
+                 0};
 
-    tailDmaParam_ = {
-        {
-            {static_cast<uint64_t>(tilingData_->nddmaStride[DIM0_INDEX]),
-                static_cast<uint64_t>(tilingData_->nddmaStride[DIM1_INDEX]),
-                static_cast<uint64_t>(tilingData_->nddmaStride[DIM2_INDEX]),
-                static_cast<uint64_t>(tilingData_->nddmaStride[DIM3_INDEX]),
-                static_cast<uint64_t>(tilingData_->nddmaStride[DIM4_INDEX])},
-            {static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM0_INDEX]),
-                static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM1_INDEX]),
-                static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM2_INDEX]),
-                static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM3_INDEX]),
-                static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM4_INDEX])},
-            {static_cast<uint32_t>(this->tailNddmaSize_[DIM0_INDEX]),
-                static_cast<uint32_t>(this->tailNddmaSize_[DIM1_INDEX]),
-                static_cast<uint32_t>(this->tailNddmaSize_[DIM2_INDEX]),
-                static_cast<uint32_t>(this->tailNddmaSize_[DIM3_INDEX]),
-                static_cast<uint32_t>(this->tailNddmaSize_[DIM4_INDEX])},
-            {0, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0}
-        },
-        0
-    };
+    tailDmaParam_ = {{{static_cast<uint64_t>(tilingData_->nddmaStride[DIM0_INDEX]),
+                       static_cast<uint64_t>(tilingData_->nddmaStride[DIM1_INDEX]),
+                       static_cast<uint64_t>(tilingData_->nddmaStride[DIM2_INDEX]),
+                       static_cast<uint64_t>(tilingData_->nddmaStride[DIM3_INDEX]),
+                       static_cast<uint64_t>(tilingData_->nddmaStride[DIM4_INDEX])},
+                      {static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM0_INDEX]),
+                       static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM1_INDEX]),
+                       static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM2_INDEX]),
+                       static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM3_INDEX]),
+                       static_cast<uint32_t>(tilingData_->contiguousUbSrcStride[DIM4_INDEX])},
+                      {static_cast<uint32_t>(this->tailNddmaSize_[DIM0_INDEX]),
+                       static_cast<uint32_t>(this->tailNddmaSize_[DIM1_INDEX]),
+                       static_cast<uint32_t>(this->tailNddmaSize_[DIM2_INDEX]),
+                       static_cast<uint32_t>(this->tailNddmaSize_[DIM3_INDEX]),
+                       static_cast<uint32_t>(this->tailNddmaSize_[DIM4_INDEX])},
+                      {0, 0, 0, 0, 0},
+                      {0, 0, 0, 0, 0}},
+                     0};
 }
-}  // namespace ViewCopy
+} // namespace ViewCopy
 
-#endif  // VIEW_COPY_SIMT_DIM5_H_
+#endif // VIEW_COPY_SIMT_DIM5_H_

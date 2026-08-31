@@ -122,8 +122,8 @@ __aicore__ inline void StridedIsZero<T>::CopyIn()
 template <typename T>
 __aicore__ inline void StridedIsZero<T>::Compute()
 {
-    __local_mem__ T* tempInTensorUbAddr = (__local_mem__ T*)tempInTensor_.GetPhyAddr();
-    __local_mem__ T* xTensorUbAddr = (__local_mem__ T*)xTensor_.GetPhyAddr();
+    __ubuf__ T* tempInTensorUbAddr = (__ubuf__ T*)tempInTensor_.GetPhyAddr();
+    __ubuf__ T* xTensorUbAddr = (__ubuf__ T*)xTensor_.GetPhyAddr();
 
     uint16_t vfLen = Ops::Base::GetVRegSize() / sizeof(T);
     uint32_t dupNum = static_cast<uint32_t>(dupNum_);
@@ -138,12 +138,12 @@ __aicore__ inline void StridedIsZero<T>::Compute()
         Reg::MaskReg dupMask = Reg::CreateMask<T, Reg::MaskPattern::ALL>();
         Reg::MaskReg lenMask;
 
-        Reg::DataCopy(tempInRegTensor, tempInTensorUbAddr);
+        Reg::LoadAlign(tempInRegTensor, tempInTensorUbAddr);
         Reg::Duplicate<T, Reg::HighLowPart::LOWEST, Reg::MaskMergeMode::ZEROING>(tempXTensor, tempInRegTensor, dupMask);
 
         for (uint16_t loop = 0; loop < loopsCnt; loop++) {
             lenMask = Reg::UpdateMask<T>(dupNum);
-            Reg::DataCopy(xTensorUbAddr + loop * vfLen, tempXTensor, lenMask);
+            Reg::StoreAlign(xTensorUbAddr + loop * vfLen, tempXTensor, lenMask);
         }
     }
 }

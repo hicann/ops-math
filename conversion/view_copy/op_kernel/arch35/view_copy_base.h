@@ -75,8 +75,8 @@ struct CustomCopyExtParams {
 };
 
 template <typename T>
-__aicore__ inline void CopyGmToUbCompact(const LocalTensor<T> &dstLocal, const GlobalTensor<T> &srcGlobal,
-    const DataCopyExtParams &params, bool isCompact=false)
+__aicore__ inline void CopyGmToUbCompact(const LocalTensor<T>& dstLocal, const GlobalTensor<T>& srcGlobal,
+                                         const DataCopyExtParams& params, bool isCompact = false)
 {
     DataCopyPadExtParams<T> padExtParams;
     padExtParams.isPad = false;
@@ -94,27 +94,28 @@ template <typename T>
 class ViewCopyBase {
 public:
     __aicore__ inline ViewCopyBase(){};
-    __aicore__ inline int64_t GetGmOffset(int64_t loopIdx, const int64_t *blockStride, const int64_t *blockSrcStride,
+    __aicore__ inline int64_t GetGmOffset(int64_t loopIdx, const int64_t* blockStride, const int64_t* blockSrcStride,
                                           int64_t blockFusedNumber);
+
 public:
     int64_t tailUbFactor_;
     int32_t tailNddmaSize_[NDDMA_ARRAY_LEN] = {1, 1, 1, 1, 1, 1, 1, 1};
     int32_t tailUbDstSize_[NDDMA_ARRAY_LEN] = {1, 1, 1, 1, 1, 1, 1, 1};
 
 protected:
-    __aicore__ inline void ParseTilingData(const ViewCopyTilingData *tilingData);
-    __aicore__ inline void CopyArray(const int64_t *src, int64_t *dst, int16_t size);
-    __aicore__ inline void CopyArray(const int32_t *src, int32_t *dst, int16_t size);
-    __aicore__ inline void CopyInDim3(const GlobalTensor<T> &src, const LocalTensor<T> &dstLocal,
-        const MultiCopyParams<T, DIM3> &dmaParams, bool enableMovAlign);
-    __aicore__ inline void CopyInDim4(const GlobalTensor<T> &src, const LocalTensor<T> &dstLocal,
-        const MultiCopyParams<T, DIM4> &dmaParams, bool enableMovAlign);
-    __aicore__ inline void CopyInDim5(const GlobalTensor<T> &src, const LocalTensor<T> &dstLocal,
-        const MultiCopyParams<T, DIM5> &dmaParams, bool enableMovAlign);
+    __aicore__ inline void ParseTilingData(const ViewCopyTilingData* tilingData);
+    __aicore__ inline void CopyArray(const int64_t* src, int64_t* dst, int16_t size);
+    __aicore__ inline void CopyArray(const int32_t* src, int32_t* dst, int16_t size);
+    __aicore__ inline void CopyInDim3(const GlobalTensor<T>& src, const LocalTensor<T>& dstLocal,
+                                      const NdDmaParams<T, DIM3>& dmaParams, bool enableMovAlign);
+    __aicore__ inline void CopyInDim4(const GlobalTensor<T>& src, const LocalTensor<T>& dstLocal,
+                                      const NdDmaParams<T, DIM4>& dmaParams, bool enableMovAlign);
+    __aicore__ inline void CopyInDim5(const GlobalTensor<T>& src, const LocalTensor<T>& dstLocal,
+                                      const NdDmaParams<T, DIM5>& dmaParams, bool enableMovAlign);
 };
 
 template <typename T>
-__aicore__ inline void ViewCopyBase<T>::ParseTilingData(const ViewCopyTilingData *tilingData)
+__aicore__ inline void ViewCopyBase<T>::ParseTilingData(const ViewCopyTilingData* tilingData)
 {
     CopyArray(tilingData->nddmaSize, tailNddmaSize_, tilingData->nddmaSizeLen);
     CopyArray(tilingData->ubDstSize, tailUbDstSize_, tilingData->ubDstSizeLen);
@@ -124,7 +125,7 @@ __aicore__ inline void ViewCopyBase<T>::ParseTilingData(const ViewCopyTilingData
 }
 
 template <typename T>
-__aicore__ inline void ViewCopyBase<T>::CopyArray(const int32_t *src, int32_t *dst, int16_t size)
+__aicore__ inline void ViewCopyBase<T>::CopyArray(const int32_t* src, int32_t* dst, int16_t size)
 {
     for (int i = 0; i < size; i++) {
         dst[i] = src[i];
@@ -132,12 +133,12 @@ __aicore__ inline void ViewCopyBase<T>::CopyArray(const int32_t *src, int32_t *d
 }
 
 template <typename T>
-__aicore__ inline int64_t ViewCopyBase<T>::GetGmOffset(int64_t loopIdx, const int64_t *blockStride,
-    const int64_t *blockSrcStride, int64_t blockFusedNumber)
+__aicore__ inline int64_t ViewCopyBase<T>::GetGmOffset(int64_t loopIdx, const int64_t* blockStride,
+                                                       const int64_t* blockSrcStride, int64_t blockFusedNumber)
 {
     int64_t offset = 0;
     int64_t curLoopIdx = loopIdx;
-    for (int64_t idx=0; idx < blockFusedNumber; idx++){
+    for (int64_t idx = 0; idx < blockFusedNumber; idx++) {
         offset += (curLoopIdx / blockStride[idx] * blockSrcStride[idx]);
         curLoopIdx = curLoopIdx % blockStride[idx];
     }
@@ -145,8 +146,8 @@ __aicore__ inline int64_t ViewCopyBase<T>::GetGmOffset(int64_t loopIdx, const in
 }
 
 template <typename T>
-__aicore__ inline void ViewCopyBase<T>::CopyInDim3(const GlobalTensor<T> &src, const LocalTensor<T> &dstLocal,
-    const MultiCopyParams<T, DIM3> &dmaParams, bool enableMovAlign)
+__aicore__ inline void ViewCopyBase<T>::CopyInDim3(const GlobalTensor<T>& src, const LocalTensor<T>& dstLocal,
+                                                   const NdDmaParams<T, DIM3>& dmaParams, bool enableMovAlign)
 {
     if (enableMovAlign) {
         int64_t srcOffset = 0;
@@ -156,8 +157,7 @@ __aicore__ inline void ViewCopyBase<T>::CopyInDim3(const GlobalTensor<T> &src, c
         copyParams.blockCount = loopInfo.loopSize[DIM1];
         copyParams.blockLen = loopInfo.loopSize[DIM0] * sizeof(T);
         copyParams.srcStride = (loopInfo.loopSrcStride[DIM1] - loopInfo.loopSize[DIM0]) * sizeof(T);
-        copyParams.dstStride = (loopInfo.loopDstStride[DIM1] - loopInfo.loopSize[DIM0]) * sizeof(T) /
-            GetUbBlockSize();
+        copyParams.dstStride = (loopInfo.loopDstStride[DIM1] - loopInfo.loopSize[DIM0]) * sizeof(T) / GetUbBlockSize();
         bool isCompact = loopInfo.loopDstStride[DIM1] == loopInfo.loopSize[DIM0];
 
         for (uint32_t loopDim2 = 0; loopDim2 < loopInfo.loopSize[DIM2]; loopDim2++) {
@@ -171,8 +171,8 @@ __aicore__ inline void ViewCopyBase<T>::CopyInDim3(const GlobalTensor<T> &src, c
 }
 
 template <typename T>
-__aicore__ inline void ViewCopyBase<T>::CopyInDim4(const GlobalTensor<T> &src, const LocalTensor<T> &dstLocal,
-    const MultiCopyParams<T, DIM4> &dmaParams, bool enableMovAlign)
+__aicore__ inline void ViewCopyBase<T>::CopyInDim4(const GlobalTensor<T>& src, const LocalTensor<T>& dstLocal,
+                                                   const NdDmaParams<T, DIM4>& dmaParams, bool enableMovAlign)
 {
     if (enableMovAlign) {
         const auto& loopInfo = dmaParams.loopInfo;
@@ -182,8 +182,7 @@ __aicore__ inline void ViewCopyBase<T>::CopyInDim4(const GlobalTensor<T> &src, c
         copyParams.blockCount = loopInfo.loopSize[DIM1];
         copyParams.blockLen = loopInfo.loopSize[DIM0] * sizeof(T);
         copyParams.srcStride = (loopInfo.loopSrcStride[DIM1] - loopInfo.loopSize[DIM0]) * sizeof(T);
-        copyParams.dstStride = (loopInfo.loopDstStride[DIM1] -
-            loopInfo.loopSize[DIM0]) * sizeof(T) / GetUbBlockSize();
+        copyParams.dstStride = (loopInfo.loopDstStride[DIM1] - loopInfo.loopSize[DIM0]) * sizeof(T) / GetUbBlockSize();
         bool isCompact = loopInfo.loopDstStride[DIM1] == loopInfo.loopSize[DIM0];
         for (uint32_t loopDim3 = 0; loopDim3 < loopInfo.loopSize[DIM3]; loopDim3++) {
             for (uint32_t loopDim2 = 0; loopDim2 < loopInfo.loopSize[DIM2]; loopDim2++) {
@@ -198,8 +197,8 @@ __aicore__ inline void ViewCopyBase<T>::CopyInDim4(const GlobalTensor<T> &src, c
 }
 
 template <typename T>
-__aicore__ inline void ViewCopyBase<T>::CopyInDim5(const GlobalTensor<T> &src, const LocalTensor<T> &dstLocal,
-    const MultiCopyParams<T, DIM5> &dmaParams, bool enableMovAlign)
+__aicore__ inline void ViewCopyBase<T>::CopyInDim5(const GlobalTensor<T>& src, const LocalTensor<T>& dstLocal,
+                                                   const NdDmaParams<T, DIM5>& dmaParams, bool enableMovAlign)
 {
     if (enableMovAlign) {
         const auto& loopInfo = dmaParams.loopInfo;
@@ -207,8 +206,7 @@ __aicore__ inline void ViewCopyBase<T>::CopyInDim5(const GlobalTensor<T> &src, c
         copyParams.blockCount = loopInfo.loopSize[DIM1];
         copyParams.blockLen = loopInfo.loopSize[DIM0] * sizeof(T);
         copyParams.srcStride = (loopInfo.loopSrcStride[DIM1] - loopInfo.loopSize[DIM0]) * sizeof(T);
-        copyParams.dstStride = (loopInfo.loopDstStride[DIM1] -
-            loopInfo.loopSize[DIM0]) * sizeof(T) / GetUbBlockSize();
+        copyParams.dstStride = (loopInfo.loopDstStride[DIM1] - loopInfo.loopSize[DIM0]) * sizeof(T) / GetUbBlockSize();
         bool isCompact = loopInfo.loopDstStride[DIM1] == loopInfo.loopSize[DIM0];
         int64_t srcOffset = 0;
         int64_t dstOffset = 0;
@@ -227,6 +225,6 @@ __aicore__ inline void ViewCopyBase<T>::CopyInDim5(const GlobalTensor<T> &src, c
         DataCopy(dstLocal, src, dmaParams);
     }
 }
-}  // namespace ViewCopy
+} // namespace ViewCopy
 
-#endif  // VIEW_COPY_BASE_H_
+#endif // VIEW_COPY_BASE_H_

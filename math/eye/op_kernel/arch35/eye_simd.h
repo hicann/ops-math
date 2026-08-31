@@ -106,7 +106,7 @@ __aicore__ inline void EyeKernelSimd<T, U>::GenScatterIndex()
         Reg::Mul(vd5, vd2, v2, p0);
         Reg::Mul(vd1, vd4, v0, p0);
         Reg::Add(vd6, vd5, vd1, p0);
-        Reg::DataCopy(dstAddr, vd6, p0);
+        Reg::StoreAlign(dstAddr, vd6, p0);
     }
 }
 
@@ -142,13 +142,13 @@ __aicore__ inline void EyeKernelSimd<T, U>::GenEyeBuf()
             Reg::RegTensor<U> vd1;
             Reg::RegTensor<T> one;
             Reg::Duplicate(one, (T)(1), p0);
-            Reg::DataCopy(vd0, indexAddr);
+            Reg::LoadAlign(vd0, indexAddr);
             for (uint16_t i = 0; i < size0; i++) {
                 Reg::Adds(vd1, vd0, (U)(i * stride), p0);
-                Reg::DataCopyScatter(zeroAddr, one, vd1, p0);
+                Reg::Scatter(zeroAddr, one, vd1, p0);
             }
             Reg::Adds(vd1, vd0, (U)(size0 * stride), p1);
-            Reg::DataCopyScatter(zeroAddr, one, vd1, p1);
+            Reg::Scatter(zeroAddr, one, vd1, p1);
         }
     } else {
         uint16_t regFactor1 = vfLen;
@@ -169,15 +169,15 @@ __aicore__ inline void EyeKernelSimd<T, U>::GenEyeBuf()
             Reg::RegTensor<U> index;
             Reg::RegTensor<T> one;
             Reg::Duplicate(one, (T)(1), p0);
-            Reg::DataCopy(index, indexAddr);
+            Reg::LoadAlign(index, indexAddr);
             for (uint16_t i = 0; i < size0; i++) {
                 Reg::Adds(vd0, index, (U)(i * batchEleNum), p0);
                 for (uint16_t j = 0; j < size1; j++) {
                     Reg::Adds(vd1, vd0, (U)(j * stride), p0);
-                    Reg::DataCopyScatter(zeroAddr, one, vd1, p0);
+                    Reg::Scatter(zeroAddr, one, vd1, p0);
                 }
                 Reg::Adds(vd2, vd0, (U)(size1 * stride), p1);
-                Reg::DataCopyScatter(zeroAddr, one, vd2, p1);
+                Reg::Scatter(zeroAddr, one, vd2, p1);
             }
         }
     }

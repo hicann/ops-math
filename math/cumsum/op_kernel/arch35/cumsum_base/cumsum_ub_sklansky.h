@@ -90,24 +90,19 @@ private:
     __aicore__ inline void SetOnewaySklanskyParam(int32_t ubIndex,
                                                   OnewaySklanskyProcessData& onewaySklanskyProcessData);
     __aicore__ inline bool CheckOffsetAndLen(int32_t ubIndex);
-    __aicore__ inline void VfBetweenUbAddTwoway(__local_mem__ PromoteDataType* dstPtr,
-                                                __local_mem__ PromoteDataType* srcPtr, uint32_t cacheStartInRes,
-                                                uint16_t memCacheId);
-    __aicore__ inline void VfBetweenUbAddTwowayBak(__local_mem__ PromoteDataType* dstPtr,
-                                                   __local_mem__ PromoteDataType* srcPtr, uint32_t cacheStartInRes,
-                                                   uint16_t memCacheId);
-    __aicore__ inline void VfBetweenUbWriteMemTwoway(__local_mem__ PromoteDataType* dstPtr,
-                                                     __local_mem__ PromoteDataType* srcPtr, uint32_t cacheStartInRes,
-                                                     uint16_t memCacheId);
-    __aicore__ inline void VfBetweenUbAddOneway(__local_mem__ PromoteDataType* dstPtr,
-                                                __local_mem__ PromoteDataType* srcPtr, uint32_t cacheStartInRes,
-                                                uint16_t memCacheId);
-    __aicore__ inline void VfBetweenUbWriteMemOneway(__local_mem__ PromoteDataType* dstPtr,
-                                                     __local_mem__ PromoteDataType* srcPtr, uint32_t cacheStartInRes,
-                                                     uint16_t memCacheId);
+    __aicore__ inline void VfBetweenUbAddTwoway(__ubuf__ PromoteDataType* dstPtr, __ubuf__ PromoteDataType* srcPtr,
+                                                uint32_t cacheStartInRes, uint16_t memCacheId);
+    __aicore__ inline void VfBetweenUbAddTwowayBak(__ubuf__ PromoteDataType* dstPtr, __ubuf__ PromoteDataType* srcPtr,
+                                                   uint32_t cacheStartInRes, uint16_t memCacheId);
+    __aicore__ inline void VfBetweenUbWriteMemTwoway(__ubuf__ PromoteDataType* dstPtr, __ubuf__ PromoteDataType* srcPtr,
+                                                     uint32_t cacheStartInRes, uint16_t memCacheId);
+    __aicore__ inline void VfBetweenUbAddOneway(__ubuf__ PromoteDataType* dstPtr, __ubuf__ PromoteDataType* srcPtr,
+                                                uint32_t cacheStartInRes, uint16_t memCacheId);
+    __aicore__ inline void VfBetweenUbWriteMemOneway(__ubuf__ PromoteDataType* dstPtr, __ubuf__ PromoteDataType* srcPtr,
+                                                     uint32_t cacheStartInRes, uint16_t memCacheId);
     __aicore__ inline uint16_t CalAddFactorIndex();
-    __aicore__ inline void CalAddFactorValue(__local_mem__ PromoteDataType* dstPtr,
-                                             __local_mem__ PromoteDataType* addFactorDataPtr, int32_t singleRemainder,
+    __aicore__ inline void CalAddFactorValue(__ubuf__ PromoteDataType* dstPtr,
+                                             __ubuf__ PromoteDataType* addFactorDataPtr, int32_t singleRemainder,
                                              uint16_t memCacheId);
 
 private:
@@ -294,7 +289,7 @@ __aicore__ inline uint16_t CumsumUbSklansky<DataType, PromoteDataType, UbInner>:
 
 template <typename DataType, typename PromoteDataType, typename UbInner>
 __aicore__ inline void CumsumUbSklansky<DataType, PromoteDataType, UbInner>::CalAddFactorValue(
-    __local_mem__ PromoteDataType* dstPtr, __local_mem__ PromoteDataType* addFactorDataPtr, int32_t singleRemainder,
+    __ubuf__ PromoteDataType* dstPtr, __ubuf__ PromoteDataType* addFactorDataPtr, int32_t singleRemainder,
     uint16_t memCacheId)
 {
     uint16_t dataFactorSize = DATA_FACTOR_SIZE;
@@ -317,9 +312,9 @@ __aicore__ inline void CumsumUbSklansky<DataType, PromoteDataType, UbInner>::Cal
             AscendC::Reg::Muls(tmp1, tmp0, (int32_t)VL_ELEM, p0); // [000..64...448]
             AscendC::Reg::Mul(tmp3, tmp0, nReg, p0);              // [000...99999.....63]
             AscendC::Reg::Sub(tmp2, indexReg, tmp3, p0);          // [0123...0123...0123..]
-            AscendC::Reg::DataCopyGather(addFactorDataReg, dstPtr + memCacheId * initData_.perMemoSize,
-                                         (AscendC::Reg::RegTensor<uint32_t>&)tmp2, p0);
-            AscendC::Reg::DataCopy(addFactorDataPtr + (int32_t)VL_ELEM * ii, addFactorDataReg, p0);
+            AscendC::Reg::Gather(addFactorDataReg, dstPtr + memCacheId * initData_.perMemoSize,
+                                 (AscendC::Reg::RegTensor<uint32_t>&)tmp2, p0);
+            AscendC::Reg::StoreAlign(addFactorDataPtr + (int32_t)VL_ELEM * ii, addFactorDataReg, p0);
             startIdx = startIdx + singleRemainder;
         }
     }
@@ -327,13 +322,12 @@ __aicore__ inline void CumsumUbSklansky<DataType, PromoteDataType, UbInner>::Cal
 
 template <typename DataType, typename PromoteDataType, typename UbInner>
 __aicore__ inline void CumsumUbSklansky<DataType, PromoteDataType, UbInner>::VfBetweenUbAddTwoway(
-    __local_mem__ PromoteDataType* dstPtr, __local_mem__ PromoteDataType* srcPtr, uint32_t cacheStartInRes,
-    uint16_t memCacheId)
+    __ubuf__ PromoteDataType* dstPtr, __ubuf__ PromoteDataType* srcPtr, uint32_t cacheStartInRes, uint16_t memCacheId)
 {
     uint16_t indexLoopCount = CalAddFactorIndex();
     int32_t singleRemainder = VL_ELEM % initData_.ubFactorN;
-    __local_mem__ PromoteDataType* addFactorDataPtr = (__local_mem__ PromoteDataType*)addFactorDataBuffer_.GetPhyAddr();
-    __local_mem__ uint32_t* addFactorIndexPtr = (__local_mem__ uint32_t*)addFactorIndexBuffer_.GetPhyAddr();
+    __ubuf__ PromoteDataType* addFactorDataPtr = (__ubuf__ PromoteDataType*)addFactorDataBuffer_.GetPhyAddr();
+    __ubuf__ uint32_t* addFactorIndexPtr = (__ubuf__ uint32_t*)addFactorIndexBuffer_.GetPhyAddr();
 
     CalAddFactorValue(dstPtr, addFactorDataPtr, singleRemainder, memCacheId);
 
@@ -358,13 +352,13 @@ __aicore__ inline void CumsumUbSklansky<DataType, PromoteDataType, UbInner>::VfB
                 // 连续搬入AddFactor的index和data
                 p3 = AscendC::Reg::UpdateMask<int32_t>(mainNum);
                 AscendC::Reg::AddrReg addrOffset = AscendC::Reg::CreateAddrReg<PromoteDataType>(j, VL_ELEM);
-                AscendC::Reg::DataCopy(addFactorIndexReg, addFactorIndexPtr, addrOffset);
-                AscendC::Reg::DataCopyGather(addFactorDataReg, addFactorDataPtr, addFactorIndexReg, p0);
+                AscendC::Reg::LoadAlign(addFactorIndexReg, addFactorIndexPtr, addrOffset);
+                AscendC::Reg::Gather(addFactorDataReg, addFactorDataPtr, addFactorIndexReg, p0);
                 // 搬入第二块数据
                 int32_t addDataOffset = (i * indexLoopCount + j) * VL_ELEM;
-                AscendC::Reg::DataCopy(curReg, srcPtr + addDataOffset);
+                AscendC::Reg::LoadAlign(curReg, srcPtr + addDataOffset);
                 AscendC::Reg::Add(curReg, curReg, addFactorDataReg, p3);
-                AscendC::Reg::DataCopy(srcPtr + addDataOffset, curReg, p3);
+                AscendC::Reg::StoreAlign(srcPtr + addDataOffset, curReg, p3);
             }
         }
 
@@ -372,21 +366,20 @@ __aicore__ inline void CumsumUbSklansky<DataType, PromoteDataType, UbInner>::VfB
             // 连续搬入AddFactor的index和data
             p3 = AscendC::Reg::UpdateMask<int32_t>(baseNumOver);
             AscendC::Reg::AddrReg addrOffset = AscendC::Reg::CreateAddrReg<PromoteDataType>(j, VL_ELEM);
-            AscendC::Reg::DataCopy(addFactorIndexReg, addFactorIndexPtr, addrOffset);
-            AscendC::Reg::DataCopyGather(addFactorDataReg, addFactorDataPtr, addFactorIndexReg, p0);
+            AscendC::Reg::LoadAlign(addFactorIndexReg, addFactorIndexPtr, addrOffset);
+            AscendC::Reg::Gather(addFactorDataReg, addFactorDataPtr, addFactorIndexReg, p0);
             // 搬入第二块数据
             int32_t addDataOffset = (mainCount + j) * VL_ELEM;
-            AscendC::Reg::DataCopy(curReg, srcPtr + addDataOffset);
+            AscendC::Reg::LoadAlign(curReg, srcPtr + addDataOffset);
             AscendC::Reg::Add(curReg, curReg, addFactorDataReg, p3);
-            AscendC::Reg::DataCopy(srcPtr + addDataOffset, curReg, p3);
+            AscendC::Reg::StoreAlign(srcPtr + addDataOffset, curReg, p3);
         }
     }
 }
 
 template <typename DataType, typename PromoteDataType, typename UbInner>
 __aicore__ inline void CumsumUbSklansky<DataType, PromoteDataType, UbInner>::VfBetweenUbAddOneway(
-    __local_mem__ PromoteDataType* dstPtr, __local_mem__ PromoteDataType* srcPtr, uint32_t cacheStartInRes,
-    uint16_t memCacheId)
+    __ubuf__ PromoteDataType* dstPtr, __ubuf__ PromoteDataType* srcPtr, uint32_t cacheStartInRes, uint16_t memCacheId)
 {
     uint16_t rCount = ubBetweenAddR_;
     uint32_t addLen = addLenN_ * initData_.mFold;
@@ -399,14 +392,14 @@ __aicore__ inline void CumsumUbSklansky<DataType, PromoteDataType, UbInner>::VfB
         AscendC::Reg::RegTensor<PromoteDataType> curReg;
         AscendC::Reg::MaskReg p0;
         p0 = AscendC::Reg::UpdateMask<int32_t>(addLen);
-        AscendC::Reg::DataCopy(memoReg, dstPtr + memCacheId * initData_.perMemoSize);
+        AscendC::Reg::LoadAlign(memoReg, dstPtr + memCacheId * initData_.perMemoSize);
         for (uint16_t i = 0; i < mLoop; i++) {
             for (uint16_t ii = 0; ii < rCount; ii++) {
                 uint16_t j = i * rCount + ii;
                 AscendC::Reg::AddrReg addrOffset = AscendC::Reg::CreateAddrReg<PromoteDataType>(j, addLenAlign);
-                AscendC::Reg::DataCopy(curReg, srcPtr, addrOffset);
+                AscendC::Reg::LoadAlign(curReg, srcPtr, addrOffset);
                 AscendC::Reg::Add(curReg, curReg, memoReg, p0);
-                AscendC::Reg::DataCopy(srcPtr, curReg, addrOffset, p0);
+                AscendC::Reg::StoreAlign(srcPtr, curReg, addrOffset, p0);
             }
         }
     }
@@ -414,8 +407,7 @@ __aicore__ inline void CumsumUbSklansky<DataType, PromoteDataType, UbInner>::VfB
 
 template <typename DataType, typename PromoteDataType, typename UbInner>
 __aicore__ inline void CumsumUbSklansky<DataType, PromoteDataType, UbInner>::VfBetweenUbWriteMemTwoway(
-    __local_mem__ PromoteDataType* dstPtr, __local_mem__ PromoteDataType* srcPtr, uint32_t cacheStartInRes,
-    uint16_t memCacheId)
+    __ubuf__ PromoteDataType* dstPtr, __ubuf__ PromoteDataType* srcPtr, uint32_t cacheStartInRes, uint16_t memCacheId)
 {
     __VEC_SCOPE__
     {
@@ -426,15 +418,14 @@ __aicore__ inline void CumsumUbSklansky<DataType, PromoteDataType, UbInner>::VfB
         AscendC::Reg::Arange(indexReg2, cacheStartInRes);
         uint32_t nLen = initData_.ubFactorN;
         p0 = AscendC::Reg::UpdateMask<int32_t>(nLen);
-        AscendC::Reg::DataCopyGather(dstCaheReg, srcPtr, (AscendC::Reg::RegTensor<uint32_t>&)indexReg2, p0);
-        AscendC::Reg::DataCopy(dstPtr + memCacheId * initData_.perMemoSize, dstCaheReg, p0);
+        AscendC::Reg::Gather(dstCaheReg, srcPtr, (AscendC::Reg::RegTensor<uint32_t>&)indexReg2, p0);
+        AscendC::Reg::StoreAlign(dstPtr + memCacheId * initData_.perMemoSize, dstCaheReg, p0);
     }
 }
 
 template <typename DataType, typename PromoteDataType, typename UbInner>
 __aicore__ inline void CumsumUbSklansky<DataType, PromoteDataType, UbInner>::VfBetweenUbWriteMemOneway(
-    __local_mem__ PromoteDataType* dstPtr, __local_mem__ PromoteDataType* srcPtr, uint32_t cacheStartInRes,
-    uint16_t memCacheId)
+    __ubuf__ PromoteDataType* dstPtr, __ubuf__ PromoteDataType* srcPtr, uint32_t cacheStartInRes, uint16_t memCacheId)
 {
     uint32_t addLen = addLenN_ * initData_.mFold;
     uint32_t addLenAlign = addLenN_ * initData_.mFold; // block对齐
@@ -443,8 +434,8 @@ __aicore__ inline void CumsumUbSklansky<DataType, PromoteDataType, UbInner>::VfB
         AscendC::Reg::MaskReg p0;
         AscendC::Reg::RegTensor<PromoteDataType> dstCaheReg;
         p0 = AscendC::Reg::UpdateMask<int32_t>(addLen);
-        AscendC::Reg::DataCopy(dstCaheReg, srcPtr + cacheStartInRes * addLenAlign);
-        AscendC::Reg::DataCopy(dstPtr + memCacheId * initData_.perMemoSize, dstCaheReg, p0);
+        AscendC::Reg::LoadAlign(dstCaheReg, srcPtr + cacheStartInRes * addLenAlign);
+        AscendC::Reg::StoreAlign(dstPtr + memCacheId * initData_.perMemoSize, dstCaheReg, p0);
     }
 }
 
@@ -452,9 +443,9 @@ template <typename DataType, typename PromoteDataType, typename UbInner>
 __aicore__ inline void CumsumUbSklansky<DataType, PromoteDataType, UbInner>::SkalanskyBetweenUb(int32_t ubIndex)
 {
     int32_t cacheID = __CumsumUtil::GetCacheID(ubIndex);
-    __local_mem__ PromoteDataType* dstPtr = (__local_mem__ PromoteDataType*)memoBuffer_.GetPhyAddr();
+    __ubuf__ PromoteDataType* dstPtr = (__ubuf__ PromoteDataType*)memoBuffer_.GetPhyAddr();
     LocalTensor<PromoteDataType> computeBuffer = ubInner_.GetBaseResTensor();
-    __local_mem__ PromoteDataType* srcPtr = (__local_mem__ PromoteDataType*)computeBuffer.GetPhyAddr();
+    __ubuf__ PromoteDataType* srcPtr = (__ubuf__ PromoteDataType*)computeBuffer.GetPhyAddr();
 
     uint32_t cacheStartInRes = 0;
     if constexpr (IsSameType<UbInner, CumsumTwowaySklansky<DataType, PromoteDataType>>::value) {

@@ -34,7 +34,7 @@ public:
     __aicore__ inline void InitCopyParams();
 
 private:
-    __aicore__ inline void ProcessPerLoop(int64_t globalLoopIdx, const MultiCopyParams<T, DIM2>& dmaParam,
+    __aicore__ inline void ProcessPerLoop(int64_t globalLoopIdx, const NdDmaParams<T, DIM2>& dmaParam,
                                           const DataCopyExtParams& copyParams);
 
 private:
@@ -46,8 +46,8 @@ private:
     GlobalTensor<T> srcGm_;
 
     int64_t blockOffset_ = 0;
-    MultiCopyParams<T, DIM2> dmaParam_;
-    MultiCopyParams<T, DIM2> tailDmaParam_;
+    NdDmaParams<T, DIM2> dmaParam_;
+    NdDmaParams<T, DIM2> tailDmaParam_;
     DataCopyExtParams copyParams_;
     DataCopyExtParams tailCopyParams_;
 };
@@ -96,7 +96,7 @@ __aicore__ inline void ViewCopyDim2<T>::Process()
 }
 
 template <typename T>
-__aicore__ inline void ViewCopyDim2<T>::ProcessPerLoop(int64_t globalLoopIdx, const MultiCopyParams<T, DIM2>& dmaParam,
+__aicore__ inline void ViewCopyDim2<T>::ProcessPerLoop(int64_t globalLoopIdx, const NdDmaParams<T, DIM2>& dmaParam,
                                                        const DataCopyExtParams& copyParams)
 {
     int64_t srcOffset = this->GetGmOffset(globalLoopIdx, tilingData_->blockStride, tilingData_->blockSrcStride,

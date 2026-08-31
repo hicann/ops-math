@@ -330,7 +330,7 @@ __aicore__ inline void OneAxisConcatNoAlignGather<T, U, TILINGDATA>::GenGatherIn
 
         AscendC::Reg::Add(vd9, vd1, vd5, p0);
         AscendC::Reg::Add(vd10, vd8, vd9, p0);
-        AscendC::Reg::DataCopy(dstAddr, vd10, p0);
+        AscendC::Reg::StoreAlign(dstAddr, vd10, p0);
     }
 }
 
@@ -368,7 +368,7 @@ __aicore__ inline void OneAxisConcatNoAlignGather<T, U, TILINGDATA>::ComputeNoSp
         AscendC::Reg::RegTensor<U> vd0;
         AscendC::Reg::RegTensor<U> vd1;
         AscendC::Reg::RegTensor<T> vd2;
-        AscendC::Reg::UnalignReg u0;
+        AscendC::Reg::UnalignRegForStore u0;
 
         uint32_t num = static_cast<uint32_t>(regFactorDim0 * cols);
         uint32_t tailNum = static_cast<uint32_t>(tailRegFactorDim0 * cols);
@@ -377,17 +377,17 @@ __aicore__ inline void OneAxisConcatNoAlignGather<T, U, TILINGDATA>::ComputeNoSp
         AscendC::Reg::MaskReg p0 = AscendC::Reg::UpdateMask<U>(num);
         AscendC::Reg::MaskReg p1 = AscendC::Reg::UpdateMask<U>(tailNum);
 
-        AscendC::Reg::DataCopy(vd0, indexAddr);
+        AscendC::Reg::LoadAlign(vd0, indexAddr);
         for (uint16_t i = 0; i < size0; i++) {
             AscendC::Reg::Adds(vd1, vd0, (U)(i * stride), p0);
-            AscendC::Reg::DataCopyGather(vd2, srcAddr, vd1, p0);
-            AscendC::Reg::DataCopyUnAlign(dstAddr, vd2, u0, main);
-            AscendC::Reg::DataCopyUnAlignPost(dstAddr, u0, 0);
+            AscendC::Reg::Gather(vd2, srcAddr, vd1, p0);
+            AscendC::Reg::StoreUnAlign(dstAddr, vd2, u0, main);
+            AscendC::Reg::StoreUnAlignPost(dstAddr, u0, 0);
         }
         AscendC::Reg::Adds(vd1, vd0, (U)(size0 * stride), p1);
-        AscendC::Reg::DataCopyGather(vd2, srcAddr, vd1, p1);
-        AscendC::Reg::DataCopyUnAlign(dstAddr, vd2, u0, tail);
-        AscendC::Reg::DataCopyUnAlignPost(dstAddr, u0, 0);
+        AscendC::Reg::Gather(vd2, srcAddr, vd1, p1);
+        AscendC::Reg::StoreUnAlign(dstAddr, vd2, u0, tail);
+        AscendC::Reg::StoreUnAlignPost(dstAddr, u0, 0);
     }
 
     inQueue_.FreeTensor(srcLocal);
@@ -419,7 +419,7 @@ __aicore__ inline void OneAxisConcatNoAlignGather<T, U, TILINGDATA>::ComputeNoSp
         AscendC::Reg::RegTensor<uint16_t> vd4;
         AscendC::Reg::RegTensor<uint8_t> vd5;
 
-        AscendC::Reg::UnalignReg u0;
+        AscendC::Reg::UnalignRegForStore u0;
 
         uint32_t num = static_cast<uint32_t>(regFactorDim0 * cols);
         uint32_t tailNum = static_cast<uint32_t>(tailRegFactorDim0 * cols);
@@ -428,19 +428,19 @@ __aicore__ inline void OneAxisConcatNoAlignGather<T, U, TILINGDATA>::ComputeNoSp
         AscendC::Reg::MaskReg p0 = AscendC::Reg::UpdateMask<U>(num);
         AscendC::Reg::MaskReg p1 = AscendC::Reg::UpdateMask<U>(tailNum);
 
-        AscendC::Reg::DataCopy(vd0, indexAddr);
+        AscendC::Reg::LoadAlign(vd0, indexAddr);
         for (uint16_t i = 0; i < size0; i++) {
             AscendC::Reg::Adds(vd1, vd0, (U)(i * stride), p0);
-            AscendC::Reg::DataCopyGather(vd2, srcAddr, vd1, p0);
+            AscendC::Reg::Gather(vd2, srcAddr, vd1, p0);
             AscendC::Reg::Pack(vd3, vd2);
-            AscendC::Reg::DataCopyUnAlign(dstAddr, vd3, u0, main);
-            AscendC::Reg::DataCopyUnAlignPost(dstAddr, u0, 0);
+            AscendC::Reg::StoreUnAlign(dstAddr, vd3, u0, main);
+            AscendC::Reg::StoreUnAlignPost(dstAddr, u0, 0);
         }
         AscendC::Reg::Adds(vd1, vd0, (U)(size0 * stride), p1);
-        AscendC::Reg::DataCopyGather(vd4, srcAddr, vd1, p1);
+        AscendC::Reg::Gather(vd4, srcAddr, vd1, p1);
         AscendC::Reg::Pack(vd5, vd4);
-        AscendC::Reg::DataCopyUnAlign(dstAddr, vd5, u0, tail);
-        AscendC::Reg::DataCopyUnAlignPost(dstAddr, u0, 0);
+        AscendC::Reg::StoreUnAlign(dstAddr, vd5, u0, tail);
+        AscendC::Reg::StoreUnAlignPost(dstAddr, u0, 0);
     }
 
     inQueue_.FreeTensor(srcLocal);
@@ -491,8 +491,8 @@ __aicore__ inline void OneAxisConcatNoAlignGather<T, U, TILINGDATA>::ComputeSpli
         AscendC::Reg::RegTensor<T> vd2;
         AscendC::Reg::RegTensor<U> vd3;
         AscendC::Reg::RegTensor<T> vd4;
-        AscendC::Reg::UnalignReg u0;
-        AscendC::Reg::UnalignReg u1;
+        AscendC::Reg::UnalignRegForStore u0;
+        AscendC::Reg::UnalignRegForStore u1;
 
         uint32_t num = static_cast<uint32_t>(regFactorDim1);
         uint32_t tailNum = static_cast<uint32_t>(tailRegFactorDim1);
@@ -502,7 +502,7 @@ __aicore__ inline void OneAxisConcatNoAlignGather<T, U, TILINGDATA>::ComputeSpli
         uint32_t main = num;
         uint32_t tail = tailNum;
 
-        AscendC::Reg::DataCopy(vd0, indexAddr);
+        AscendC::Reg::LoadAlign(vd0, indexAddr);
         AscendC::Reg::MaskReg p0 = AscendC::Reg::UpdateMask<U>(pnum);
         AscendC::Reg::MaskReg p1 = AscendC::Reg::UpdateMask<U>(tailPnum);
         uint32_t stride = everyRegCalcTensorNum * tensorStride;
@@ -513,15 +513,15 @@ __aicore__ inline void OneAxisConcatNoAlignGather<T, U, TILINGDATA>::ComputeSpli
             rowStride = i * inputCols;
             for (uint16_t j = 0; j < size1; j++) {
                 AscendC::Reg::Adds(vd1, vd0, (U)(rowStride + j * stride), p0);
-                AscendC::Reg::DataCopyGather(vd2, srcAddr, vd1, p0);
-                AscendC::Reg::DataCopyUnAlign(curDstAddr, vd2, u0, main);
-                AscendC::Reg::DataCopyUnAlignPost(curDstAddr, u0, 0);
+                AscendC::Reg::Gather(vd2, srcAddr, vd1, p0);
+                AscendC::Reg::StoreUnAlign(curDstAddr, vd2, u0, main);
+                AscendC::Reg::StoreUnAlignPost(curDstAddr, u0, 0);
             }
             tail = tailNum;
             AscendC::Reg::Adds(vd3, vd0, (U)(rowStride + size1 * stride), p1);
-            AscendC::Reg::DataCopyGather(vd4, srcAddr, vd3, p1);
-            AscendC::Reg::DataCopyUnAlign(curDstAddr, vd4, u1, tail);
-            AscendC::Reg::DataCopyUnAlignPost(curDstAddr, u1, 0);
+            AscendC::Reg::Gather(vd4, srcAddr, vd3, p1);
+            AscendC::Reg::StoreUnAlign(curDstAddr, vd4, u1, tail);
+            AscendC::Reg::StoreUnAlignPost(curDstAddr, u1, 0);
         }
     }
 
@@ -562,8 +562,8 @@ __aicore__ inline void OneAxisConcatNoAlignGather<T, U, TILINGDATA>::ComputeSpli
         AscendC::Reg::RegTensor<uint16_t> vd4;
         AscendC::Reg::RegTensor<uint16_t> vd5;
         AscendC::Reg::RegTensor<uint8_t> vd6;
-        AscendC::Reg::UnalignReg u0;
-        AscendC::Reg::UnalignReg u1;
+        AscendC::Reg::UnalignRegForStore u0;
+        AscendC::Reg::UnalignRegForStore u1;
 
         uint32_t num = static_cast<uint32_t>(regFactorDim1);
         uint32_t tailNum = static_cast<uint32_t>(tailRegFactorDim1);
@@ -573,7 +573,7 @@ __aicore__ inline void OneAxisConcatNoAlignGather<T, U, TILINGDATA>::ComputeSpli
         uint32_t main = num;
         uint32_t tail = tailNum;
 
-        AscendC::Reg::DataCopy(vd0, indexAddr);
+        AscendC::Reg::LoadAlign(vd0, indexAddr);
         AscendC::Reg::MaskReg p1 = AscendC::Reg::UpdateMask<U>(tailPnum);
         AscendC::Reg::MaskReg p0 = AscendC::Reg::UpdateMask<U>(pnum);
         uint32_t stride = everyRegCalcTensorNum * tensorStride;
@@ -584,17 +584,17 @@ __aicore__ inline void OneAxisConcatNoAlignGather<T, U, TILINGDATA>::ComputeSpli
             rowStride = inputCols * i;
             for (uint16_t j = 0; j < size1; j++) {
                 AscendC::Reg::Adds(vd1, vd0, (U)(rowStride + j * stride), p0);
-                AscendC::Reg::DataCopyGather(vd2, srcAddr, vd1, p0);
+                AscendC::Reg::Gather(vd2, srcAddr, vd1, p0);
                 AscendC::Reg::Pack(vd3, vd2);
-                AscendC::Reg::DataCopyUnAlign(curDstAddr, vd3, u0, main);
-                AscendC::Reg::DataCopyUnAlignPost(curDstAddr, u0, 0);
+                AscendC::Reg::StoreUnAlign(curDstAddr, vd3, u0, main);
+                AscendC::Reg::StoreUnAlignPost(curDstAddr, u0, 0);
             }
             tail = tailNum;
             AscendC::Reg::Adds(vd4, vd0, (U)(rowStride + size1 * stride), p1);
-            AscendC::Reg::DataCopyGather(vd5, srcAddr, vd4, p1);
+            AscendC::Reg::Gather(vd5, srcAddr, vd4, p1);
             AscendC::Reg::Pack(vd6, vd5);
-            AscendC::Reg::DataCopyUnAlign(curDstAddr, vd6, u1, tail);
-            AscendC::Reg::DataCopyUnAlignPost(curDstAddr, u1, 0);
+            AscendC::Reg::StoreUnAlign(curDstAddr, vd6, u1, tail);
+            AscendC::Reg::StoreUnAlignPost(curDstAddr, u1, 0);
         }
     }
 

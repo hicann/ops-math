@@ -17,13 +17,11 @@
 
 #include "strided_slice_grad_base.h"
 
-namespace StridedSliceGrad
-{
+namespace StridedSliceGrad {
 using namespace AscendC;
 
 template <typename T>
-class SplitAllAxisNddma : public StridedSliceGradBase
-{
+class SplitAllAxisNddma : public StridedSliceGradBase {
 public:
     __aicore__ inline SplitAllAxisNddma(){};
     __aicore__ inline void Init(GM_ADDR dy, GM_ADDR output, const StridedSliceGradTilingData& tilingData,
@@ -41,8 +39,8 @@ private:
     GlobalTensor<T> dstGm_;
     GlobalTensor<T> srcGm_;
 
-    MultiCopyParams<T, 1> dmaParam_;
-    static constexpr MultiCopyConfig nddmaConfig_ = {false};
+    NdDmaParams<T, 1> dmaParam_;
+    static constexpr NdDmaConfig nddmaConfig_ = {false};
 
     int64_t dealDataSize_;
 
@@ -122,8 +120,8 @@ __aicore__ inline void SplitAllAxisNddma<T>::Process()
     SetFlag<HardEvent::MTE3_V>(eventSecond);
     for (loopNum_ = 0; loopNum_ < curCoreProcessNum_; loopNum_++) {
         outerAxisIdx_ = (blockIdx_ * normalCoreProcessNum_ + loopNum_) / tailAxisOuter_;
-        outerAxisTail_ =
-            (blockIdx_ * normalCoreProcessNum_ + loopNum_) % tailAxisOuter_;  // range [0--> tailAxisOuter_ - 1]
+        outerAxisTail_ = (blockIdx_ * normalCoreProcessNum_ + loopNum_) %
+                         tailAxisOuter_; // range [0--> tailAxisOuter_ - 1]
 
         dealDataSize_ = (outerAxisTail_ == tailAxisOuter_ - 1) ? tailAxisTail_ : tailAxisInner_;
 
@@ -155,12 +153,12 @@ __aicore__ inline void SplitAllAxisNddma<T>::ProcessNddma(LocalTensor<T>& srcLoc
         srcGmEndAxisOffset = 0;
     }
 
-    int64_t elementSize = 0;  // 本ubBuf内的元素数量，值只跟当前段尾和end的相对关系有关
+    int64_t elementSize = 0; // 本ubBuf内的元素数量，值只跟当前段尾和end的相对关系有关
     if ((outerAxisTail_ + 1) * tailAxisInner_ < end_[DIM0]) {
-        elementSize = (tailAxisInner_ - ubOffset) / strides_[DIM0] + 1;  // 左闭不一定右开 （end-begin）//stride + 1
+        elementSize = (tailAxisInner_ - ubOffset) / strides_[DIM0] + 1; // 左闭不一定右开 （end-begin）//stride + 1
     } else {
         elementSize = (end_[DIM0] - outerAxisTail_ * tailAxisInner_ - ubOffset - 1) / strides_[DIM0] +
-                      1;  // 左闭右开 （end-begin -1）//stride + 1
+                      1; // 左闭右开 （end-begin -1）//stride + 1
     }
 
     dmaParam_.constantValue = 0;
@@ -203,6 +201,6 @@ __aicore__ inline void SplitAllAxisNddma<T>::ProcessPerLoop(LocalTensor<T>& srcL
     SetFlag<HardEvent::MTE3_V>(eventId);
 }
 
-}  // namespace StridedSliceGrad
+} // namespace StridedSliceGrad
 
-#endif  // SPLIT_ALL_AXIS_NDDMA_H
+#endif // SPLIT_ALL_AXIS_NDDMA_H

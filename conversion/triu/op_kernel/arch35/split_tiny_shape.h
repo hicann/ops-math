@@ -158,9 +158,9 @@ __aicore__ inline void SplitTinyShape<T>::DoVectorCopy(const TinyBlockInfo& info
     LocalTensor<T> xLocal = inQueue_.DeQue<T>();
     LocalTensor<T> yLocal = outQueue_.AllocTensor<T>();
 
-    auto* srcAddr = (__local_mem__ T*)xLocal.GetPhyAddr();
-    auto* dstAddr = (__local_mem__ T*)yLocal.GetPhyAddr();
-    auto* maskUbAddr = (__local_mem__ uint8_t*)maskLocal_.GetPhyAddr();
+    auto* srcAddr = (__ubuf__ T*)xLocal.GetPhyAddr();
+    auto* dstAddr = (__ubuf__ T*)yLocal.GetPhyAddr();
+    auto* maskUbAddr = (__ubuf__ uint8_t*)maskLocal_.GetPhyAddr();
 
     constexpr int64_t dataCount = GetVRegSize() / sizeof(T);
     uint16_t repeatTimes = static_cast<uint16_t>(info.highActual);
@@ -180,24 +180,24 @@ __aicore__ inline void SplitTinyShape<T>::DoVectorCopy(const TinyBlockInfo& info
         AscendC::Reg::Duplicate(sreg, 0);
 
         if constexpr (sizeof(T) / sizeof(int8_t) == DOUBLE) {
-            AscendC::Reg::DataCopy<uint8_t, AscendC::Reg::MaskDist::DIST_US>(maskRegO, maskUbAddr);
+            AscendC::Reg::LoadAlign<uint8_t, AscendC::Reg::MaskDist::DIST_US>(maskRegO, maskUbAddr);
         } else if constexpr (sizeof(T) / sizeof(int8_t) == QUADRUPLE) {
-            AscendC::Reg::DataCopy(maskReg, maskUbAddr);
-            AscendC::Reg::MaskUnPack(maskRegD, maskReg);
-            AscendC::Reg::MaskUnPack(maskRegO, maskRegD);
+            AscendC::Reg::LoadAlign(maskReg, maskUbAddr);
+            AscendC::Reg::UnPack(maskRegD, maskReg);
+            AscendC::Reg::UnPack(maskRegO, maskRegD);
         } else if constexpr (sizeof(T) / sizeof(int8_t) == OCTA) {
-            AscendC::Reg::DataCopy(maskReg, maskUbAddr);
-            AscendC::Reg::MaskUnPack(maskRegD, maskReg);
-            AscendC::Reg::MaskUnPack(maskRegQ, maskRegD);
-            AscendC::Reg::MaskUnPack(maskRegO, maskRegQ);
+            AscendC::Reg::LoadAlign(maskReg, maskUbAddr);
+            AscendC::Reg::UnPack(maskRegD, maskReg);
+            AscendC::Reg::UnPack(maskRegQ, maskRegD);
+            AscendC::Reg::UnPack(maskRegO, maskRegQ);
         } else {
-            AscendC::Reg::DataCopy(maskRegO, maskUbAddr);
+            AscendC::Reg::LoadAlign(maskRegO, maskUbAddr);
         }
 
         for (uint16_t i = 0; i < repeatTimes; i++) {
-            AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(vreg, srcAddr, dataCount);
-            AscendC::Reg::DataCopy(dstAddr, sreg, moveMask);
-            AscendC::Reg::DataCopy<T, Reg::PostLiteral::POST_MODE_UPDATE>(dstAddr, vreg, dataCount, maskRegO);
+            AscendC::Reg::LoadAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(vreg, srcAddr, dataCount);
+            AscendC::Reg::StoreAlign(dstAddr, sreg, moveMask);
+            AscendC::Reg::StoreAlign<T, Reg::PostLiteral::POST_MODE_UPDATE>(dstAddr, vreg, dataCount, maskRegO);
         }
     }
     inQueue_.FreeTensor(xLocal);

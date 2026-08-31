@@ -17,13 +17,11 @@
 
 #include "strided_slice_grad_base.h"
 
-namespace StridedSliceGrad
-{
+namespace StridedSliceGrad {
 using namespace AscendC;
 
 template <typename T>
-class SplitFrontAxisNddma : public StridedSliceGradBase
-{
+class SplitFrontAxisNddma : public StridedSliceGradBase {
 public:
     __aicore__ inline SplitFrontAxisNddma(){};
     __aicore__ inline void Init(GM_ADDR dy, GM_ADDR output, const StridedSliceGradTilingData& tilingData,
@@ -46,8 +44,8 @@ private:
 
     DataCopyExtParams copyOutCopyParams_;
 
-    MultiCopyParams<T, NDDMA_MAX_DIMS> dmaParam_;
-    static constexpr MultiCopyConfig nddmaConfig_ = {false};
+    NdDmaParams<T, NDDMA_MAX_DIMS> dmaParam_;
+    static constexpr NdDmaConfig nddmaConfig_ = {false};
 
     uint32_t splitUbAxisNum_;
     uint32_t splitUbAxisIndex_;
@@ -70,7 +68,7 @@ __aicore__ inline void SplitFrontAxisNddma<T>::Init(GM_ADDR dy, GM_ADDR output,
         return;
     }
 
-    splitUbAxisNum_ = tilingData.splitUbAxisNum;  // ub里面能放得下的维度数目  [1,5]
+    splitUbAxisNum_ = tilingData.splitUbAxisNum; // ub里面能放得下的维度数目  [1,5]
     splitUbAxisIndex_ = MAX_SUPPORT_DIM - 1 - tilingData.splitUbAxisNum;
     ubDataSize_ = fusedOutputInnerShape_[splitUbAxisIndex_];
 
@@ -182,8 +180,8 @@ __aicore__ inline void SplitFrontAxisNddma<T>::InitCopyParams()
         // [低维  --> 高维]
         dmaParam_.loopInfo.loopSize[i] = inputShape_[MAX_SUPPORT_DIM - 1 - i];
         dmaParam_.loopInfo.loopSrcStride[i] = fusedSliceInnerShape_[MAX_SUPPORT_DIM - 1 - i];
-        dmaParam_.loopInfo.loopDstStride[i] =
-            fusedOutputInnerShape_[MAX_SUPPORT_DIM - 1 - i] * strides_[MAX_SUPPORT_DIM - 1 - i];
+        dmaParam_.loopInfo.loopDstStride[i] = fusedOutputInnerShape_[MAX_SUPPORT_DIM - 1 - i] *
+                                              strides_[MAX_SUPPORT_DIM - 1 - i];
         dmaParam_.loopInfo.loopLpSize[i] = 0;
         dmaParam_.loopInfo.loopRpSize[i] = 0;
     }
@@ -198,6 +196,6 @@ __aicore__ inline void SplitFrontAxisNddma<T>::InitCopyParams()
     }
 }
 
-}  // namespace StridedSliceGrad
+} // namespace StridedSliceGrad
 
-#endif  // SPLIT_FRONT_AXIS_NDDMA_H
+#endif // SPLIT_FRONT_AXIS_NDDMA_H

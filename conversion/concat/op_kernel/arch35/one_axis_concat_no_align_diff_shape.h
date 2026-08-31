@@ -315,7 +315,7 @@ __aicore__ inline void OneAxisConcatNoAlignDiffShape<T, U, TILINGDATA>::ScatterS
         AscendC::Reg::RegTensor<T> dst1;
         AscendC::Reg::RegTensor<U> vd0;
         AscendC::Reg::RegTensor<U> vd1;
-        AscendC::Reg::UnalignReg u0;
+        AscendC::Reg::UnalignRegForLoad u0;
 
         uint32_t num = (uint32_t)(regFactorDim0 * curLoopHandleCurTensorCols);
         uint32_t tailNum = (uint32_t)(tailRegFactorDim0 * curLoopHandleCurTensorCols);
@@ -324,25 +324,25 @@ __aicore__ inline void OneAxisConcatNoAlignDiffShape<T, U, TILINGDATA>::ScatterS
         AscendC::Reg::MaskReg p0 = AscendC::Reg::UpdateMask<U>(num);
         AscendC::Reg::MaskReg p1 = AscendC::Reg::UpdateMask<U>(tailNum);
 
-        AscendC::Reg::DataCopy(vd0, indexAddr);
-        AscendC::Reg::DataCopyUnAlignPre(u0, srcAddr);
+        AscendC::Reg::LoadAlign(vd0, indexAddr);
+        AscendC::Reg::LoadUnAlignPre(u0, srcAddr);
         for (uint16_t i = 0; i < size0; i++) {
-            AscendC::Reg::DataCopyUnAlign(vd2, u0, srcAddr, pnum);
+            AscendC::Reg::LoadUnAlign(vd2, u0, srcAddr, pnum);
             AscendC::Reg::Adds(vd1, vd0, (U)(i * curLoopHandleCols * regFactorDim0), p0);
             if constexpr (sizeof(T) == 1) {
                 AscendC::Reg::Interleave(dst0, dst1, vd2, tmp);
-                AscendC::Reg::DataCopyScatter(dstAddr, dst0, vd1, p0);
+                AscendC::Reg::Scatter(dstAddr, dst0, vd1, p0);
             } else {
-                AscendC::Reg::DataCopyScatter(dstAddr, vd2, vd1, p0);
+                AscendC::Reg::Scatter(dstAddr, vd2, vd1, p0);
             }
         }
-        AscendC::Reg::DataCopyUnAlign(vd2, u0, srcAddr, tailPnum);
+        AscendC::Reg::LoadUnAlign(vd2, u0, srcAddr, tailPnum);
         AscendC::Reg::Adds(vd1, vd0, (U)(size0 * curLoopHandleCols * regFactorDim0), p1);
         if constexpr (sizeof(T) == 1) {
             AscendC::Reg::Interleave(dst0, dst1, vd2, tmp);
-            AscendC::Reg::DataCopyScatter(dstAddr, dst0, vd1, p1);
+            AscendC::Reg::Scatter(dstAddr, dst0, vd1, p1);
         } else {
-            AscendC::Reg::DataCopyScatter(dstAddr, vd2, vd1, p1);
+            AscendC::Reg::Scatter(dstAddr, vd2, vd1, p1);
         }
     }
 }
@@ -437,7 +437,7 @@ __aicore__ inline void OneAxisConcatNoAlignDiffShape<T, U, TILINGDATA>::GenScatt
         AscendC::Reg::Muls(vd0, vd2, curLoopHandleCols, p0);
         AscendC::Reg::Add(vd3, vd0, vd7, p0);
         AscendC::Reg::Adds(vd10, vd3, curTensorStartCols, p0);
-        AscendC::Reg::DataCopy(dstAddr, vd10, p0);
+        AscendC::Reg::StoreAlign(dstAddr, vd10, p0);
     }
 }
 

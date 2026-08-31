@@ -59,7 +59,7 @@ private:
     __aicore__ inline void CopyInExclusive();
     __aicore__ inline void CopyInDataCast();
     __aicore__ inline void Compute();
-    __aicore__ inline void ComputeWithFlag(int32_t addOffset, uint32_t realDupSize, __local_mem__ PromoteDataType* xBuf,
+    __aicore__ inline void ComputeWithFlag(int32_t addOffset, uint32_t realDupSize, __ubuf__ PromoteDataType* xBuf,
                                            int32_t flag);
     __aicore__ inline void ComputeInner(int32_t addLoop, uint32_t realDupSize);
 
@@ -219,8 +219,10 @@ __aicore__ inline void CumsumOnewaySklansky<DataType, PromoteDataType>::CopyInDa
 }
 
 template <typename DataType, typename PromoteDataType>
-__aicore__ inline void CumsumOnewaySklansky<DataType, PromoteDataType>::ComputeWithFlag(
-    int32_t addOffset, uint32_t realDupSize, __local_mem__ PromoteDataType* xBuf, int32_t flag)
+__aicore__ inline void CumsumOnewaySklansky<DataType, PromoteDataType>::ComputeWithFlag(int32_t addOffset,
+                                                                                        uint32_t realDupSize,
+                                                                                        __ubuf__ PromoteDataType* xBuf,
+                                                                                        int32_t flag)
 {
     uint16_t groupMainCount = groupMainCount_;
     uint16_t groupTailCount = groupTailCount_;
@@ -242,23 +244,26 @@ __aicore__ inline void CumsumOnewaySklansky<DataType, PromoteDataType>::ComputeW
             for (uint16_t j = 0; j < nLoop; j++) {
                 mask = Reg::UpdateMask<uint32_t>(addTotal);
                 for (uint16_t m = 0; m < groupMainCount; m++) {
-                    DataCopy(x1RegTensor, xBuf + j * ADD_ELEM + flag * m * addOffset + i * mFactor);
+                    MicroAPI::LoadAlign(x1RegTensor, xBuf + j * ADD_ELEM + flag * m * addOffset + i * mFactor);
                     for (uint16_t n = 1; n <= addCount; n++) {
-                        DataCopy(x2RegTensor,
-                                 xBuf + j * ADD_ELEM + flag * (m * addOffset + n * computeLen) + i * mFactor);
+                        MicroAPI::LoadAlign(
+                            x2RegTensor, xBuf + j * ADD_ELEM + flag * (m * addOffset + n * computeLen) + i * mFactor);
                         Add(x2RegTensor, x1RegTensor, x2RegTensor, mask);
-                        DataCopy(xBuf + j * ADD_ELEM + flag * (m * addOffset + n * computeLen) + i * mFactor,
-                                 x2RegTensor, mask);
+                        MicroAPI::StoreAlign(
+                            xBuf + j * ADD_ELEM + flag * (m * addOffset + n * computeLen) + i * mFactor, x2RegTensor,
+                            mask);
                     }
                 }
 
                 for (uint16_t m = 0; m < groupTailCount; m++) {
-                    DataCopy(x1RegTensor, xBuf + j * ADD_ELEM + flag * groupMainCount * addOffset + i * mFactor);
+                    MicroAPI::LoadAlign(x1RegTensor,
+                                        xBuf + j * ADD_ELEM + flag * groupMainCount * addOffset + i * mFactor);
                     for (uint16_t n = 1; n <= addTailCount; n++) {
-                        DataCopy(x2RegTensor, xBuf + j * ADD_ELEM +
-                                                  flag * (groupMainCount * addOffset + n * computeLen) + i * mFactor);
+                        MicroAPI::LoadAlign(
+                            x2RegTensor,
+                            xBuf + j * ADD_ELEM + flag * (groupMainCount * addOffset + n * computeLen) + i * mFactor);
                         Add(x2RegTensor, x1RegTensor, x2RegTensor, mask);
-                        DataCopy(
+                        MicroAPI::StoreAlign(
                             xBuf + j * ADD_ELEM + flag * (groupMainCount * addOffset + n * computeLen) + i * mFactor,
                             x2RegTensor, mask);
                     }
@@ -282,8 +287,8 @@ __aicore__ inline void CumsumOnewaySklansky<DataType, PromoteDataType>::ComputeI
     groupMainCount_ = Ops::Base::FloorDiv(rFactor_, nextAddLoopPow);
     groupTailCount_ = (rFactor_ % nextAddLoopPow > addCount_) ? 1 : 0;
     addTailCount_ = rFactor_ - groupMainCount_ * nextAddLoopPow - addLoopPow;
-    __local_mem__ PromoteDataType* xBuf = (__local_mem__ PromoteDataType*)computerBuffer_[startOffset + startAddOffset]
-                                              .GetPhyAddr();
+    __ubuf__ PromoteDataType* xBuf = (__ubuf__ PromoteDataType*)computerBuffer_[startOffset + startAddOffset]
+                                         .GetPhyAddr();
 
     int32_t flag = reverse_ ? -1 : 1;
     ComputeWithFlag(addOffset, realDupSize, xBuf, flag);

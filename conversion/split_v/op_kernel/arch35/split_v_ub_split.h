@@ -148,7 +148,7 @@ __aicore__ inline void DataCopyGatherScope(int32_t vfLenU, int32_t ubSizeNum, in
         AscendC::Reg::RegTensor<T1> tmp2;
         AscendC::Reg::RegTensor<T1> subReg;
         AscendC::Reg::RegTensor<T1> niReg;
-        AscendC::Reg::UnalignReg u0;
+        AscendC::Reg::UnalignRegForStore u0;
         p0 = AscendC::Reg::UpdateMask<T1>(mask1);
         AscendC::Reg::Duplicate(niReg, (T1)niSize, p0);
         AscendC::Reg::Arange(indexReg, 0);
@@ -158,19 +158,19 @@ __aicore__ inline void DataCopyGatherScope(int32_t vfLenU, int32_t ubSizeNum, in
         AscendC::Reg::Sub(tmp2, (AscendC::Reg::RegTensor<T1>&)indexReg, subReg, p0);
         AscendC::Reg::Add(addReg, tmp1, tmp2, p0);
         AscendC::Reg::Adds(addReg, addReg, (T1)ubStartOffset, p0);
-        AscendC::Reg::DataCopyGather(dstReg, srcPtr, addReg, p0);
-        AscendC::Reg::DataCopy(dstPtr, dstReg, p0);
+        AscendC::Reg::Gather(dstReg, srcPtr, addReg, p0);
+        AscendC::Reg::StoreAlign(dstPtr, dstReg, p0);
         for (uint16_t ii = 0; ii < times; ii++) {
             AscendC::Reg::Adds(addReg1, addReg, (T1)(offset * (ii + 1)), p0);
-            AscendC::Reg::DataCopyGather(dstReg, srcPtr, addReg1, p0);
-            AscendC::Reg::DataCopyUnAlign(curDstPtr, dstReg, u0, num);
-            AscendC::Reg::DataCopyUnAlignPost(curDstPtr, u0, 0);
+            AscendC::Reg::Gather(dstReg, srcPtr, addReg1, p0);
+            AscendC::Reg::StoreUnAlign(curDstPtr, dstReg, u0, num);
+            AscendC::Reg::StoreUnAlignPost(curDstPtr, u0, 0);
         }
         p1 = AscendC::Reg::UpdateMask<T1>(mask2);
         AscendC::Reg::Adds(addReg1, addReg, (T1)(offset * (times + 1)), p1);
-        AscendC::Reg::DataCopyGather(dstReg, srcPtr, addReg1, p1);
-        AscendC::Reg::DataCopyUnAlign(curDstPtr, dstReg, u0, tail);
-        AscendC::Reg::DataCopyUnAlignPost(curDstPtr, u0, 0);
+        AscendC::Reg::Gather(dstReg, srcPtr, addReg1, p1);
+        AscendC::Reg::StoreUnAlign(curDstPtr, dstReg, u0, tail);
+        AscendC::Reg::StoreUnAlignPost(curDstPtr, u0, 0);
     }
 }
 
@@ -216,7 +216,7 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::DataCopyGatherVf(int64_t mFactor,
             AscendC::Reg::RegTensor<U> subReg;
             AscendC::Reg::RegTensor<U> niReg;
             AscendC::Reg::RegTensor<T> dstRegO;
-            AscendC::Reg::UnalignReg u0;
+            AscendC::Reg::UnalignRegForStore u0;
             p0 = AscendC::Reg::UpdateMask<U>(mask1);
             AscendC::Reg::Duplicate(niReg, (U)niSize, p0);
             AscendC::Reg::Arange(indexReg, 0);
@@ -226,34 +226,34 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::DataCopyGatherVf(int64_t mFactor,
             AscendC::Reg::Sub(tmp2, (AscendC::Reg::RegTensor<U>&)indexReg, subReg, p0);
             AscendC::Reg::Add(addReg, tmp1, tmp2, p0);
             AscendC::Reg::Adds(addReg, addReg, (U)ubStartOffset, p0);
-            AscendC::Reg::DataCopyGather(dstReg, srcPtr, addReg, p0);
+            AscendC::Reg::Gather(dstReg, srcPtr, addReg, p0);
             if constexpr (sizeof(T) == sizeof(int8_t)) {
-                AscendC::Reg::DataCopy<uint16_t, AscendC::Reg::StoreDist::DIST_PACK_B16>(dstPtr, dstReg, p0);
+                AscendC::Reg::StoreAlign<uint16_t, AscendC::Reg::StoreDist::DIST_PACK_B16>(dstPtr, dstReg, p0);
             } else {
-                AscendC::Reg::DataCopy(dstPtr, dstReg, p0);
+                AscendC::Reg::StoreAlign(dstPtr, dstReg, p0);
             }
             for (uint16_t ii = 0; ii < times; ii++) {
                 AscendC::Reg::Adds(addReg1, addReg, (U)(offset * (ii + 1)), p0);
-                AscendC::Reg::DataCopyGather(dstReg, srcPtr, addReg1, p0);
+                AscendC::Reg::Gather(dstReg, srcPtr, addReg1, p0);
                 if constexpr (sizeof(T) == sizeof(int8_t)) {
                     AscendC::Reg::Pack(dstRegO, dstReg);
-                    AscendC::Reg::DataCopyUnAlign(curDstPtr, dstRegO, u0, num);
-                    AscendC::Reg::DataCopyUnAlignPost(curDstPtr, u0, 0);
+                    AscendC::Reg::StoreUnAlign(curDstPtr, dstRegO, u0, num);
+                    AscendC::Reg::StoreUnAlignPost(curDstPtr, u0, 0);
                 } else {
-                    AscendC::Reg::DataCopyUnAlign(curDstPtr, dstReg, u0, num);
-                    AscendC::Reg::DataCopyUnAlignPost(curDstPtr, u0, 0);
+                    AscendC::Reg::StoreUnAlign(curDstPtr, dstReg, u0, num);
+                    AscendC::Reg::StoreUnAlignPost(curDstPtr, u0, 0);
                 }
             }
             p1 = AscendC::Reg::UpdateMask<U>(mask2);
             AscendC::Reg::Adds(addReg1, addReg, (U)(offset * (times + 1)), p1);
-            AscendC::Reg::DataCopyGather(dstReg, srcPtr, addReg1, p1);
+            AscendC::Reg::Gather(dstReg, srcPtr, addReg1, p1);
             if constexpr (sizeof(T) == sizeof(int8_t)) {
                 AscendC::Reg::Pack(dstRegO, dstReg);
-                AscendC::Reg::DataCopyUnAlign(curDstPtr, dstRegO, u0, tail);
-                AscendC::Reg::DataCopyUnAlignPost(curDstPtr, u0, 0);
+                AscendC::Reg::StoreUnAlign(curDstPtr, dstRegO, u0, tail);
+                AscendC::Reg::StoreUnAlignPost(curDstPtr, u0, 0);
             } else {
-                AscendC::Reg::DataCopyUnAlign(curDstPtr, dstReg, u0, tail);
-                AscendC::Reg::DataCopyUnAlignPost(curDstPtr, u0, 0);
+                AscendC::Reg::StoreUnAlign(curDstPtr, dstReg, u0, tail);
+                AscendC::Reg::StoreUnAlignPost(curDstPtr, u0, 0);
             }
         }
     }
@@ -268,19 +268,18 @@ __aicore__ inline void DataCopyScope(uint16_t size0, int64_t offset, int64_t nis
     __VEC_SCOPE__
     {
         AscendC::Reg::RegTensor<T1> vd0;
-        AscendC::Reg::UnalignReg u0;
-        AscendC::Reg::UnalignReg u1;
+        AscendC::Reg::UnalignRegForLoad u0;
+        AscendC::Reg::UnalignRegForStore u1;
         for (uint16_t i = 0; i < size0; i++) {
             __ubuf__ T1* srcPtr1 = srcPtr + i * offset;
-            AscendC::Reg::DataCopyUnAlignPre(u0, srcPtr1);
+            AscendC::Reg::LoadUnAlignPre(u0, srcPtr1);
             for (uint16_t j = 0; j < repeatTimes; j++) {
-                AscendC::Reg::DataCopyUnAlign<T1, AscendC::Reg::PostLiteral::POST_MODE_UPDATE>(vd0, u0, srcPtr1,
-                                                                                               vfLen1);
-                AscendC::Reg::DataCopyUnAlign<T1, AscendC::Reg::PostLiteral::POST_MODE_UPDATE>(dstPtr, vd0, u1, vfLen1);
+                AscendC::Reg::LoadUnAlign<T1, AscendC::Reg::PostLiteral::POST_MODE_UPDATE>(vd0, u0, srcPtr1, vfLen1);
+                AscendC::Reg::StoreUnAlign<T1, AscendC::Reg::PostLiteral::POST_MODE_UPDATE>(dstPtr, vd0, u1, vfLen1);
             }
-            AscendC::Reg::DataCopyUnAlign<T1, AscendC::Reg::PostLiteral::POST_MODE_UPDATE>(vd0, u0, srcPtr1, vfLen1);
-            AscendC::Reg::DataCopyUnAlign<T1, AscendC::Reg::PostLiteral::POST_MODE_UPDATE>(dstPtr, vd0, u1, tail);
-            AscendC::Reg::DataCopyUnAlignPost<T1, AscendC::Reg::PostLiteral::POST_MODE_UPDATE>(dstPtr, u1, 0);
+            AscendC::Reg::LoadUnAlign<T1, AscendC::Reg::PostLiteral::POST_MODE_UPDATE>(vd0, u0, srcPtr1, vfLen1);
+            AscendC::Reg::StoreUnAlign<T1, AscendC::Reg::PostLiteral::POST_MODE_UPDATE>(dstPtr, vd0, u1, tail);
+            AscendC::Reg::StoreUnAlignPost<T1, AscendC::Reg::PostLiteral::POST_MODE_UPDATE>(dstPtr, u1, 0);
         }
     }
 }

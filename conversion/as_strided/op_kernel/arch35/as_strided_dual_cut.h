@@ -31,11 +31,10 @@ using namespace AscendC;
 template <typename T, int TILING_KEY>
 class KernelAsStridedDualCut {
 public:
-    __aicore__ inline KernelAsStridedDualCut()
-    {}
+    __aicore__ inline KernelAsStridedDualCut() {}
 
-    __aicore__ inline void Init(
-        GM_ADDR input, GM_ADDR outShape, GM_ADDR outStride, GM_ADDR output, const AsStridedTilingData* tiling)
+    __aicore__ inline void Init(GM_ADDR input, GM_ADDR outShape, GM_ADDR outStride, GM_ADDR output,
+                                const AsStridedTilingData* tiling)
     {
         storageOffset_ = 0;
 
@@ -110,8 +109,8 @@ public:
         }
     }
 
-    __aicore__ inline void MoveOutWithLoop(
-        LocalTensor<T>& outLocal, int64_t outAddr, LoopModeParams& loopMode, DataCopyExtParams& copyOutParamV2)
+    __aicore__ inline void MoveOutWithLoop(LocalTensor<T>& outLocal, int64_t outAddr, LoopModeParams& loopMode,
+                                           DataCopyExtParams& copyOutParamV2)
     {
         loopMode.loop2Size = dmaParam_.loopInfo.loopSize[NDDMA_INDEX3];
         loopMode.loop2SrcStride = ubDstStride_[1] * sizeof(T);
@@ -128,10 +127,9 @@ public:
         // add changes
         SetLoopModePara(loopMode, DataCopyMVType::UB_TO_OUT);
         for (int aIdx = 0; aIdx < dmaParam_.loopInfo.loopSize[NDDMA_INDEX4]; ++aIdx) {
-            DataCopyExtParams copyParams{
-                copyOutParamV2.blockCount, copyOutParamV2.blockLen,
-                (copyOutParamV2.srcStride - copyOutParamV2.blockLen) / 32,
-                copyOutParamV2.dstStride - copyOutParamV2.blockLen, 0};
+            DataCopyExtParams copyParams{copyOutParamV2.blockCount, copyOutParamV2.blockLen,
+                                         (copyOutParamV2.srcStride - copyOutParamV2.blockLen) / 32,
+                                         copyOutParamV2.dstStride - copyOutParamV2.blockLen, 0};
             DataCopyPad(outputGm_[outAddr + aIdx * ubOutStride_[0]], outLocal[aIdx * ubDstStride_[0]], copyParams);
         }
         ResetLoopModePara(DataCopyMVType::UB_TO_OUT);
@@ -275,7 +273,7 @@ private:
     GlobalTensor<T> inputGm_, outputGm_;
     TQueBind<TPosition::VECIN, TPosition::VECOUT, BUFFER_NUM> inOutQueue;
 
-    MultiCopyParams<T, NDDMA_DIM> dmaParam_;
+    NdDmaParams<T, NDDMA_DIM> dmaParam_;
 
     uint32_t ubShape_[TILING_NDDMA_LEN] = {0};
     uint64_t ubInStride_[TILING_NDDMA_LEN] = {0};

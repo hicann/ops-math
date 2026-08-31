@@ -251,20 +251,20 @@ __aicore__ inline void OneAxisConcatNoAlignCopy<T, TILINGDATA>::ComputeNoSplitDi
     {
         AscendC::Reg::RegTensor<T> vd0;
         AscendC::Reg::RegTensor<T> vd1;
-        AscendC::Reg::UnalignReg u0;
-        AscendC::Reg::UnalignReg u1;
+        AscendC::Reg::UnalignRegForLoad u0;
+        AscendC::Reg::UnalignRegForStore u1;
         for (uint16_t i = 0; i < size0; i++) {
             for (uint16_t j = 0; j < inputNum; j++) {
                 curSrcAddr = srcAddr + j * tensorStride + i * inputCols;
                 curDstAddr = dstAddr + i * dstColStride + j * inputCols;
-                AscendC::Reg::DataCopyUnAlignPre(u0, curSrcAddr);
+                AscendC::Reg::LoadUnAlignPre(u0, curSrcAddr);
                 for (uint16_t k = 0; k < size1; k++) {
-                    AscendC::Reg::DataCopyUnAlign(vd0, u0, curSrcAddr, main);
-                    AscendC::Reg::DataCopyUnAlign(curDstAddr, vd0, u1, main);
+                    AscendC::Reg::LoadUnAlign(vd0, u0, curSrcAddr, main);
+                    AscendC::Reg::StoreUnAlign(curDstAddr, vd0, u1, main);
                 }
-                AscendC::Reg::DataCopyUnAlign(vd0, u0, curSrcAddr, tail);
-                AscendC::Reg::DataCopyUnAlign(curDstAddr, vd0, u1, tail);
-                AscendC::Reg::DataCopyUnAlignPost(curDstAddr, u1, 0);
+                AscendC::Reg::LoadUnAlign(vd0, u0, curSrcAddr, tail);
+                AscendC::Reg::StoreUnAlign(curDstAddr, vd0, u1, tail);
+                AscendC::Reg::StoreUnAlignPost(curDstAddr, u1, 0);
             }
         }
     }

@@ -33,10 +33,10 @@ public:
 
 private:
     __aicore__ inline void CustomNddma(LocalTensor<T>& dst, const GlobalTensor<T>& src,
-                                       const MultiCopyParams<T, 5>& dmaParam, const CustomCopyExtParams& extParams);
+                                       const NdDmaParams<T, 5>& dmaParam, const CustomCopyExtParams& extParams);
     __aicore__ inline void CopyOut(const GlobalTensor<T>& dst, const DataCopyExtParams& copyParams,
                                    const CustomCopyExtParams& extParams);
-    __aicore__ inline void ProcessPerLoop(int64_t globalLoopIdx, const MultiCopyParams<T, DIM5>& dmaParams,
+    __aicore__ inline void ProcessPerLoop(int64_t globalLoopIdx, const NdDmaParams<T, DIM5>& dmaParams,
                                           const DataCopyExtParams& copyParams, const int32_t* inLoopSize,
                                           const int32_t* outLoopSize);
 
@@ -51,8 +51,8 @@ private:
     int64_t blockOffset_ = 0;
     CustomCopyExtParams outExtParams_;
     CustomCopyExtParams inExtParams_;
-    MultiCopyParams<T, DIM5> dmaParam_;
-    MultiCopyParams<T, DIM5> tailDmaParam_;
+    NdDmaParams<T, DIM5> dmaParam_;
+    NdDmaParams<T, DIM5> tailDmaParam_;
     DataCopyExtParams copyParams_;
     DataCopyExtParams tailCopyParams_;
 };
@@ -104,7 +104,7 @@ __aicore__ inline void ViewCopyDim8<T>::Process()
 }
 
 template <typename T>
-__aicore__ inline void ViewCopyDim8<T>::ProcessPerLoop(int64_t globalLoopIdx, const MultiCopyParams<T, DIM5>& dmaParams,
+__aicore__ inline void ViewCopyDim8<T>::ProcessPerLoop(int64_t globalLoopIdx, const NdDmaParams<T, DIM5>& dmaParams,
                                                        const DataCopyExtParams& copyParams, const int32_t* inLoopSize,
                                                        const int32_t* outLoopSize)
 {
@@ -122,7 +122,7 @@ __aicore__ inline void ViewCopyDim8<T>::ProcessPerLoop(int64_t globalLoopIdx, co
 
 template <typename T>
 __aicore__ inline void ViewCopyDim8<T>::CustomNddma(LocalTensor<T>& dst, const GlobalTensor<T>& src,
-                                                    const MultiCopyParams<T, DIM5>& dmaParam,
+                                                    const NdDmaParams<T, DIM5>& dmaParam,
                                                     const CustomCopyExtParams& extParams)
 {
     // srcSize (dim7, dim6, dim5, dim4, dim3, dim2, dim1, dim0)
@@ -209,7 +209,7 @@ __aicore__ inline void ViewCopyDim8<T>::InitCopyParams()
             {ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8}, // left pad
             {ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8}  // right pad
         },
-        0                                                  // pad value
+        0 // pad value
     };
 
     tailDmaParam_ = {
@@ -239,7 +239,7 @@ __aicore__ inline void ViewCopyDim8<T>::InitCopyParams()
             {ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8}, // left pad
             {ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8}  // right pad
         },
-        0                                                  // pad value
+        0 // pad value
     };
     int64_t copyDstStride = (tilingData_->ubDstStride[DIM1_INDEX] - tilingData_->ubDstSize[DIM0_INDEX]) * sizeof(T);
     int64_t tailCopyDstStride = (tilingData_->ubDstStride[DIM1_INDEX] - this->tailUbDstSize_[DIM0_INDEX]) * sizeof(T);

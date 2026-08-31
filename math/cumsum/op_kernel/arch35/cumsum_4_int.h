@@ -49,7 +49,7 @@ static __aicore__ inline void SetUBZero(const LocalTensor<T>& ubTensor, uint32_t
 {
     static constexpr uint32_t regElem = GetVecLen() / sizeof(T);
     uint16_t lpCnt = Ops::Base::CeilDiv(len, regElem);
-    __local_mem__ T* yPtr = (__local_mem__ T*)ubTensor.GetPhyAddr();
+    __ubuf__ T* yPtr = (__ubuf__ T*)ubTensor.GetPhyAddr();
     __VEC_SCOPE__
     {
         Reg::MaskReg mask;
@@ -57,7 +57,7 @@ static __aicore__ inline void SetUBZero(const LocalTensor<T>& ubTensor, uint32_t
         Reg::Duplicate(zeros, (T)0);
         for (uint16_t i = 0; i < lpCnt; i++) {
             mask = Reg::UpdateMask<T>(len);
-            Reg::DataCopy<T>(yPtr + i * regElem, zeros, mask);
+            Reg::StoreAlign<T>(yPtr + i * regElem, zeros, mask);
         }
     }
 }
@@ -247,8 +247,8 @@ __aicore__ inline void DataCopyTDRightACum<T>::CumCopyTDRightA(const LocalTensor
      */
     uint16_t rLpCnt = (uint16_t)rLen;
     uint16_t aLpCnt = (uint16_t)Ops::Base::CeilDiv(rightALen, regElem);
-    __local_mem__ T* srcPtr = (__local_mem__ T*)inUB.GetPhyAddr();
-    __local_mem__ T* dstPtr = (__local_mem__ T*)outUB.GetPhyAddr();
+    __ubuf__ T* srcPtr = (__ubuf__ T*)inUB.GetPhyAddr();
+    __ubuf__ T* dstPtr = (__ubuf__ T*)outUB.GetPhyAddr();
 
     int32_t bakBegAddr = (rSize - 1) * raLenBA;
     int32_t srcBegAddr = 0;
@@ -274,12 +274,12 @@ __aicore__ inline void DataCopyTDRightACum<T>::CumCopyTDRightA(const LocalTensor
             mask = Reg::UpdateMask<T>(rightALen);
             offset1 = aIdx * regElem;
             // Get last loop backup result, the result is zero for first loop
-            Reg::DataCopy<T>(yDst, dstPtr + bakBegAddr + offset1);
+            Reg::LoadAlign<T>(yDst, dstPtr + bakBegAddr + offset1);
             for (uint16_t rIdx = 0; rIdx < rLpCnt; rIdx++) {
                 offset = offset1 + rIdx * rOffset;
-                Reg::DataCopy<T>(xSrc, srcPtr + srcBegAddr + offset);
+                Reg::LoadAlign<T>(xSrc, srcPtr + srcBegAddr + offset);
                 Reg::Add(yDst, yDst, xSrc, mask);
-                Reg::DataCopy<T>(dstPtr + dstBegAddr + offset, yDst, mask);
+                Reg::StoreAlign<T>(dstPtr + dstBegAddr + offset, yDst, mask);
             }
         }
     }
@@ -436,20 +436,20 @@ private:
     __aicore__ inline void TDLeftAInnerProcess(const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM,
                                                const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal,
                                                int64_t laLen, int64_t rLen, bool isExc = false);
-    __aicore__ inline void CleanInputDirtyData(__local_mem__ T*& srcPtr, int32_t zeroBase, uint32_t leftSize);
+    __aicore__ inline void CleanInputDirtyData(__ubuf__ T*& srcPtr, int32_t zeroBase, uint32_t leftSize);
     __aicore__ inline void TDLeftAForwardProcess(const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM,
                                                  const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal,
                                                  int64_t laLpIdx, int64_t laSize);
     __aicore__ inline void TDLeftAReverseProcess(const GlobalTensor<T>& inGM, const GlobalTensor<T>& outGM,
                                                  const LocalTensor<T>& inLocal, const LocalTensor<T>& outLocal,
                                                  int64_t laLpIdx, int64_t laSize);
-    __aicore__ inline void TDRReverseProcess(__local_mem__ T*& srcPtr, __local_mem__ T*& dstPtr, uint16_t rLpNum,
+    __aicore__ inline void TDRReverseProcess(__ubuf__ T*& srcPtr, __ubuf__ T*& dstPtr, uint16_t rLpNum,
                                              int32_t comRightA, int32_t splitRASize, int32_t curBegAddrBase,
                                              int32_t curBakBegAdd, uint16_t sndRLpCnt, int32_t phs1SrcBegIdx,
                                              int32_t phs2SrcBegIdx, int32_t phs1LpOffset, int32_t phs2LpOffset,
                                              int32_t phs2TLpOffset, int32_t bakBegAddr, int32_t phs1DstBegIdx,
                                              int32_t phs2DstBegIdx, uint32_t comLpMaskVal, uint32_t sndLpLeftMaskVal);
-    __aicore__ inline void TDRForwardProcess(__local_mem__ T*& srcPtr, __local_mem__ T*& dstPtr, uint16_t rLpNum,
+    __aicore__ inline void TDRForwardProcess(__ubuf__ T*& srcPtr, __ubuf__ T*& dstPtr, uint16_t rLpNum,
                                              int32_t comRightA, int32_t splitRASize, int32_t curBegAddrBase,
                                              int32_t curBakBegAdd, uint16_t sndRLpCnt, int32_t phs1SrcBegIdx,
                                              int32_t phs2SrcBegIdx, int32_t phs1LpOffset, int32_t phs2LpOffset,
@@ -514,8 +514,8 @@ __aicore__ inline void GatherCum<T>::CumGatherTDRightA(const LocalTensor<T>& inL
      *  2. The position of result of last loop is at R.
      */
 
-    __local_mem__ T* srcPtr = (__local_mem__ T*)inLocal.GetPhyAddr();
-    __local_mem__ T* dstPtr = (__local_mem__ T*)outLocal.GetPhyAddr();
+    __ubuf__ T* srcPtr = (__ubuf__ T*)inLocal.GetPhyAddr();
+    __ubuf__ T* dstPtr = (__ubuf__ T*)outLocal.GetPhyAddr();
     uint16_t rLpCnt = (uint16_t)rLen;
     uint32_t aSize = tilingPtr->raLpUnit;
     // B8时Gather/Scatter中按照B16处理，mask控制RegTensor中的数据量，Index Tensor控制UB中的数据量，所以B8时mask需要翻倍
@@ -546,14 +546,14 @@ __aicore__ inline void GatherCum<T>::CumGatherTDRightA(const LocalTensor<T>& inL
 
         // get backup result of last loop
         Reg::Arange(gIdx, bakBegAddr);
-        Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, mask);
+        Reg::Gather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, mask);
 
         Reg::Arange(gIdx, srcBegIdx);
         Reg::Arange(sIdx, dstBegIdx);
         for (uint16_t rIdx = 0; rIdx < rLpCnt; rIdx++) {
-            Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, mask);
+            Reg::Gather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, mask);
             Reg::Add(yDst, yDst, xSrc, mask);
-            Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, mask);
+            Reg::Scatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, mask);
             Reg::Adds(gIdx, gIdx, lpOffset, idxMask);
             Reg::Adds(sIdx, sIdx, lpOffset, idxMask);
         }
@@ -669,7 +669,7 @@ __aicore__ inline void GatherCum<T>::GatherNoSplitRProcess(
 }
 
 template <typename T>
-__aicore__ inline void GatherCum<T>::CleanInputDirtyData(__local_mem__ T*& srcPtr, int32_t zeroBase, uint32_t leftSize)
+__aicore__ inline void GatherCum<T>::CleanInputDirtyData(__ubuf__ T*& srcPtr, int32_t zeroBase, uint32_t leftSize)
 {
     uint16_t lpCnt = Ops::Base::CeilDiv(leftSize, regElem);
     if constexpr (sizeof(T) == 1) {
@@ -685,18 +685,20 @@ __aicore__ inline void GatherCum<T>::CleanInputDirtyData(__local_mem__ T*& srcPt
         Reg::MaskReg idxMask = Reg::CreateMask<RangeType, Reg::MaskPattern::ALL>();
         for (uint16_t i = 0; i < lpCnt; i++) {
             mask = Reg::UpdateMask<T>(leftSize);
-            Reg::DataCopyScatter(srcPtr, zeros, (Reg::RegTensor<IdxType>&)sIdx, mask);
+            Reg::Scatter(srcPtr, zeros, (Reg::RegTensor<IdxType>&)sIdx, mask);
             Reg::Adds(sIdx, sIdx, regElem, idxMask);
         }
     }
 }
 
 template <typename T>
-__aicore__ inline void GatherCum<T>::TDRReverseProcess(
-    __local_mem__ T*& srcPtr, __local_mem__ T*& dstPtr, uint16_t rLpNum, int32_t comRightA, int32_t splitRASize,
-    int32_t curBegAddrBase, int32_t curBakBegAdd, uint16_t sndRLpCnt, int32_t phs1SrcBegIdx, int32_t phs2SrcBegIdx,
-    int32_t phs1LpOffset, int32_t phs2LpOffset, int32_t phs2TLpOffset, int32_t bakBegAddr, int32_t phs1DstBegIdx,
-    int32_t phs2DstBegIdx, uint32_t comLpMaskVal, uint32_t sndLpLeftMaskVal)
+__aicore__ inline void GatherCum<T>::TDRReverseProcess(__ubuf__ T*& srcPtr, __ubuf__ T*& dstPtr, uint16_t rLpNum,
+                                                       int32_t comRightA, int32_t splitRASize, int32_t curBegAddrBase,
+                                                       int32_t curBakBegAdd, uint16_t sndRLpCnt, int32_t phs1SrcBegIdx,
+                                                       int32_t phs2SrcBegIdx, int32_t phs1LpOffset,
+                                                       int32_t phs2LpOffset, int32_t phs2TLpOffset, int32_t bakBegAddr,
+                                                       int32_t phs1DstBegIdx, int32_t phs2DstBegIdx,
+                                                       uint32_t comLpMaskVal, uint32_t sndLpLeftMaskVal)
 {
     int32_t rightALen = tilingPtr->raLpUnit;
     __VEC_SCOPE__
@@ -718,7 +720,7 @@ __aicore__ inline void GatherCum<T>::TDRReverseProcess(
         Reg::Muls(tmp1, tmp1, (RangeType)rightALen, idxMask); // tmp1 is i//k*k
         Reg::Sub(gIdx, gIdx, tmp1, idxMask);
         // the index result format is: (0, 1, 2, 0, 1, 2, 0, 1, 2, ...), concat last loop backup result
-        Reg::Copy(gComIdx, gIdx); // backup gComIdx
+        Reg::Move(gComIdx, gIdx); // backup gComIdx
         // the index result format is: (0, 1, 2, 6, 7, 8, ...)
         Reg::Add(gIdx, gIdx, tmp2, idxMask); // backup gIdx
 
@@ -727,27 +729,27 @@ __aicore__ inline void GatherCum<T>::TDRReverseProcess(
         Reg::RegTensor<RangeType> gBakIdx;
         Reg::Adds(gBakIdx, gComIdx, bakBegAddr, idxMask);
         Reg::MaskReg comMask = Reg::UpdateMask<T>(comLpMaskVal);
-        Reg::DataCopyGather((Reg::RegTensor<CastType>&)bakSrc, dstPtr, (Reg::RegTensor<IdxType>&)gBakIdx, comMask);
+        Reg::Gather((Reg::RegTensor<CastType>&)bakSrc, dstPtr, (Reg::RegTensor<IdxType>&)gBakIdx, comMask);
         Reg::LocalMemBar<Reg::MemType::VEC_LOAD, Reg::MemType::VEC_STORE>();
 
         // first operation, split R
         Reg::Duplicate(yDst, (T)0, comMask);
-        Reg::Copy(sIdx, gIdx);
+        Reg::Move(sIdx, gIdx);
         Reg::Adds(gIdx, gIdx, phs1SrcBegIdx, idxMask);
         Reg::Adds(sIdx, sIdx, phs1DstBegIdx, idxMask);
         for (uint16_t rIdx = 0; rIdx < rLpNum; rIdx++) {
-            Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, comMask);
+            Reg::Gather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, comMask);
             Reg::Add(yDst, yDst, xSrc, comMask);
-            Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, comMask);
+            Reg::Scatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, comMask);
             Reg::Adds(gIdx, gIdx, phs1LpOffset, idxMask);
             Reg::Adds(sIdx, sIdx, phs1LpOffset, idxMask);
         }
         Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_LOAD>();
 
         // second operation, get result
-        Reg::Copy(xSrc, bakSrc);
+        Reg::Move(xSrc, bakSrc);
         Reg::Arange(sIdx, (RangeType)0);
-        Reg::Copy(gIdx, sIdx);
+        Reg::Move(gIdx, sIdx);
         Reg::Adds(gIdx, gIdx, phs2SrcBegIdx, idxMask);
         Reg::Adds(sIdx, sIdx, phs2DstBegIdx, idxMask);
         // for exclusive is true
@@ -758,45 +760,47 @@ __aicore__ inline void GatherCum<T>::TDRReverseProcess(
         for (uint16_t srIdx = 0; srIdx < sndRLpCnt; srIdx++) {
             Reg::Adds(gIdx, gIdx, phs2LpOffset, idxMask);
             Reg::Adds(sIdx, sIdx, phs2LpOffset, idxMask);
-            Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, comMask);
+            Reg::Gather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, comMask);
             Reg::Add(yDst, yDst, xSrc, comMask);
-            Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, comMask);
+            Reg::Scatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, comMask);
         }
         Reg::Adds(gIdx, gIdx, phs2TLpOffset, idxMask);
         Reg::Adds(sIdx, sIdx, phs2TLpOffset, idxMask);
-        Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, sndLpLeftMask);
+        Reg::Gather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, sndLpLeftMask);
         Reg::Add(yDst, yDst, xSrc, sndLpLeftMask);
-        Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, sndLpLeftMask);
+        Reg::Scatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, sndLpLeftMask);
         Reg::Adds(gComIdx, gComIdx, curBegAddrBase, idxMask);
         Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_LOAD>();
-        Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, dstPtr, (Reg::RegTensor<IdxType>&)gComIdx, comMask);
+        Reg::Gather((Reg::RegTensor<CastType>&)xSrc, dstPtr, (Reg::RegTensor<IdxType>&)gComIdx, comMask);
 
         for (uint16_t comIdx = 1; comIdx < (uint16_t)comRightA; comIdx++) {
             for (uint16_t srIdx = 0; srIdx < sndRLpCnt; srIdx++) {
                 Reg::Adds(gIdx, gIdx, phs2LpOffset, idxMask);
                 Reg::Adds(sIdx, sIdx, phs2LpOffset, idxMask);
-                Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, comMask);
+                Reg::Gather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, comMask);
                 Reg::Add(yDst, yDst, xSrc, comMask);
-                Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, comMask);
+                Reg::Scatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, comMask);
             }
             Reg::Adds(gIdx, gIdx, phs2TLpOffset, idxMask);
             Reg::Adds(sIdx, sIdx, phs2TLpOffset, idxMask);
-            Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, sndLpLeftMask);
+            Reg::Gather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, sndLpLeftMask);
             Reg::Add(yDst, yDst, xSrc, sndLpLeftMask);
-            Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, sndLpLeftMask);
+            Reg::Scatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, sndLpLeftMask);
             Reg::Adds(gComIdx, gComIdx, curBakBegAdd, idxMask);
             Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_LOAD>();
-            Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, dstPtr, (Reg::RegTensor<IdxType>&)gComIdx, comMask);
+            Reg::Gather((Reg::RegTensor<CastType>&)xSrc, dstPtr, (Reg::RegTensor<IdxType>&)gComIdx, comMask);
         }
     }
 }
 
 template <typename T>
-__aicore__ inline void GatherCum<T>::TDRForwardProcess(
-    __local_mem__ T*& srcPtr, __local_mem__ T*& dstPtr, uint16_t rLpNum, int32_t comRightA, int32_t splitRASize,
-    int32_t curBegAddrBase, int32_t curBakBegAdd, uint16_t sndRLpCnt, int32_t phs1SrcBegIdx, int32_t phs2SrcBegIdx,
-    int32_t phs1LpOffset, int32_t phs2LpOffset, int32_t phs2TLpOffset, int32_t bakBegAddr, int32_t phs1DstBegIdx,
-    int32_t phs2DstBegIdx, uint32_t comLpMaskVal, uint32_t sndLpLeftMaskVal)
+__aicore__ inline void GatherCum<T>::TDRForwardProcess(__ubuf__ T*& srcPtr, __ubuf__ T*& dstPtr, uint16_t rLpNum,
+                                                       int32_t comRightA, int32_t splitRASize, int32_t curBegAddrBase,
+                                                       int32_t curBakBegAdd, uint16_t sndRLpCnt, int32_t phs1SrcBegIdx,
+                                                       int32_t phs2SrcBegIdx, int32_t phs1LpOffset,
+                                                       int32_t phs2LpOffset, int32_t phs2TLpOffset, int32_t bakBegAddr,
+                                                       int32_t phs1DstBegIdx, int32_t phs2DstBegIdx,
+                                                       uint32_t comLpMaskVal, uint32_t sndLpLeftMaskVal)
 {
     int32_t rightALen = tilingPtr->raLpUnit;
     __VEC_SCOPE__
@@ -818,7 +822,7 @@ __aicore__ inline void GatherCum<T>::TDRForwardProcess(
         Reg::Muls(tmp1, tmp1, (RangeType)rightALen, idxMask); // tmp1 is i//k*k
         Reg::Sub(gIdx, gIdx, tmp1, idxMask);
         // the index result format is: (0, 1, 2, 0, 1, 2, 0, 1, 2, ...), concat last loop backup result
-        Reg::Copy(gComIdx, gIdx); // backup gComIdx
+        Reg::Move(gComIdx, gIdx); // backup gComIdx
         // the index result format is: (0, 1, 2, 6, 7, 8, ...)
         Reg::Add(gIdx, gIdx, tmp2, idxMask); // backup gIdx
 
@@ -827,27 +831,27 @@ __aicore__ inline void GatherCum<T>::TDRForwardProcess(
         Reg::RegTensor<RangeType> gBakIdx;
         Reg::Adds(gBakIdx, gComIdx, bakBegAddr, idxMask);
         Reg::MaskReg comMask = Reg::UpdateMask<T>(comLpMaskVal);
-        Reg::DataCopyGather((Reg::RegTensor<CastType>&)bakSrc, dstPtr, (Reg::RegTensor<IdxType>&)gBakIdx, comMask);
+        Reg::Gather((Reg::RegTensor<CastType>&)bakSrc, dstPtr, (Reg::RegTensor<IdxType>&)gBakIdx, comMask);
         Reg::LocalMemBar<Reg::MemType::VEC_LOAD, Reg::MemType::VEC_STORE>();
 
         // first operation, split R
         Reg::Duplicate(yDst, (T)0, comMask);
-        Reg::Copy(sIdx, gIdx);
+        Reg::Move(sIdx, gIdx);
         Reg::Adds(gIdx, gIdx, phs1SrcBegIdx, idxMask);
         Reg::Adds(sIdx, sIdx, phs1DstBegIdx, idxMask);
         for (uint16_t rIdx = 0; rIdx < rLpNum; rIdx++) {
-            Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, comMask);
+            Reg::Gather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, comMask);
             Reg::Add(yDst, yDst, xSrc, comMask);
-            Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, comMask);
+            Reg::Scatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, comMask);
             Reg::Adds(gIdx, gIdx, phs1LpOffset, idxMask);
             Reg::Adds(sIdx, sIdx, phs1LpOffset, idxMask);
         }
         Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_LOAD>();
 
         // second operation, get result
-        Reg::Copy(xSrc, bakSrc);
+        Reg::Move(xSrc, bakSrc);
         Reg::Arange(sIdx, (RangeType)0);
-        Reg::Copy(gIdx, sIdx);
+        Reg::Move(gIdx, sIdx);
         Reg::Adds(gIdx, gIdx, phs2SrcBegIdx, idxMask);
         Reg::Adds(sIdx, sIdx, phs2DstBegIdx, idxMask);
         // for exclusive is true
@@ -856,37 +860,37 @@ __aicore__ inline void GatherCum<T>::TDRForwardProcess(
 
         // first split RA of second phase
         for (uint16_t srIdx = 0; srIdx < sndRLpCnt; srIdx++) {
-            Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, comMask);
+            Reg::Gather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, comMask);
             Reg::Add(yDst, yDst, xSrc, comMask);
-            Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, comMask);
+            Reg::Scatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, comMask);
             Reg::Adds(gIdx, gIdx, phs2LpOffset, idxMask);
             Reg::Adds(sIdx, sIdx, phs2LpOffset, idxMask);
         }
-        Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, sndLpLeftMask);
+        Reg::Gather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, sndLpLeftMask);
         Reg::Add(yDst, yDst, xSrc, sndLpLeftMask);
-        Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, sndLpLeftMask);
+        Reg::Scatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, sndLpLeftMask);
         Reg::Adds(gIdx, gIdx, phs2TLpOffset, idxMask);
         Reg::Adds(sIdx, sIdx, phs2TLpOffset, idxMask);
         Reg::Adds(gComIdx, gComIdx, curBegAddrBase, idxMask);
         Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_LOAD>();
-        Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, dstPtr, (Reg::RegTensor<IdxType>&)gComIdx, comMask);
+        Reg::Gather((Reg::RegTensor<CastType>&)xSrc, dstPtr, (Reg::RegTensor<IdxType>&)gComIdx, comMask);
 
         for (uint16_t comIdx = 1; comIdx < (uint16_t)comRightA; comIdx++) {
             for (uint16_t srIdx = 0; srIdx < sndRLpCnt; srIdx++) {
-                Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, comMask);
+                Reg::Gather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, comMask);
                 Reg::Add(yDst, yDst, xSrc, comMask);
-                Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, comMask);
+                Reg::Scatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, comMask);
                 Reg::Adds(gIdx, gIdx, phs2LpOffset, idxMask);
                 Reg::Adds(sIdx, sIdx, phs2LpOffset, idxMask);
             }
-            Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, sndLpLeftMask);
+            Reg::Gather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gIdx, sndLpLeftMask);
             Reg::Add(yDst, yDst, xSrc, sndLpLeftMask);
-            Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, sndLpLeftMask);
+            Reg::Scatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, sndLpLeftMask);
             Reg::Adds(gIdx, gIdx, phs2TLpOffset, idxMask);
             Reg::Adds(sIdx, sIdx, phs2TLpOffset, idxMask);
             Reg::Adds(gComIdx, gComIdx, curBakBegAdd, idxMask);
             Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_LOAD>();
-            Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, dstPtr, (Reg::RegTensor<IdxType>&)gComIdx, comMask);
+            Reg::Gather((Reg::RegTensor<CastType>&)xSrc, dstPtr, (Reg::RegTensor<IdxType>&)gComIdx, comMask);
         }
     }
 }
@@ -904,8 +908,8 @@ __aicore__ inline void GatherCum<T>::CumGatherRightATDR(const LocalTensor<T>& in
      *  3. The rLen will be split into multiple parts.
      */
 
-    __local_mem__ T* srcPtr = (__local_mem__ T*)inLocal.GetPhyAddr();
-    __local_mem__ T* dstPtr = (__local_mem__ T*)outLocal.GetPhyAddr();
+    __ubuf__ T* srcPtr = (__ubuf__ T*)inLocal.GetPhyAddr();
+    __ubuf__ T* dstPtr = (__ubuf__ T*)outLocal.GetPhyAddr();
 
     int32_t rightALen = tilingPtr->raLpUnit;
     uint32_t tmp = (regElem / rightALen > rLen) ? rLen : regElem / rightALen;
@@ -1001,8 +1005,8 @@ __aicore__ inline void GatherCum<T>::CumGatherRightATDLeftA(const LocalTensor<T>
      *  3. The laOffset always be main loop size of RA.
      */
 
-    __local_mem__ T* srcPtr = (__local_mem__ T*)inLocal.GetPhyAddr();
-    __local_mem__ T* dstPtr = (__local_mem__ T*)outLocal.GetPhyAddr();
+    __ubuf__ T* srcPtr = (__ubuf__ T*)inLocal.GetPhyAddr();
+    __ubuf__ T* dstPtr = (__ubuf__ T*)outLocal.GetPhyAddr();
     uint16_t rLpCnt = (uint16_t)rLen;
     uint32_t rightALen = tilingPtr->raLpUnit;
     uint32_t comRightACnt = (regElem / rightALen > leftALen) ? leftALen : regElem / rightALen;
@@ -1057,9 +1061,9 @@ __aicore__ inline void GatherCum<T>::CumGatherRightATDLeftA(const LocalTensor<T>
         Reg::Muls(tmp1, tmp1, (RangeType)rightALen, idxMask);
         Reg::Sub(gIdx, gIdx, tmp1, idxMask);
         Reg::Add(gIdx, gIdx, tmp2, idxMask); // backup gIdx
-        Reg::Copy(gBakIdx, gIdx);
-        Reg::Copy(sIdx, gIdx);
-        Reg::Copy(sBakIdx, gIdx);
+        Reg::Move(gBakIdx, gIdx);
+        Reg::Move(sIdx, gIdx);
+        Reg::Move(sBakIdx, gIdx);
         Reg::Adds(gBakIdx, gBakIdx, bakBegAddr, idxMask);
 
         Reg::Adds(gIdx, gIdx, srcBegAddr, idxMask);
@@ -1068,26 +1072,26 @@ __aicore__ inline void GatherCum<T>::CumGatherRightATDLeftA(const LocalTensor<T>
         Reg::MaskReg tMask = Reg::UpdateMask<T>(tailComSize);
         for (uint16_t aIdx = 0; aIdx < aMainLpCnt; aIdx++) {
             // get backup result of last loop
-            Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gBakIdx, mMask);
+            Reg::Gather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gBakIdx, mMask);
             for (uint16_t rIdx = 0; rIdx < rLpCnt; rIdx++) {
-                Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, mMask);
+                Reg::Gather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, mMask);
                 Reg::Add(yDst, yDst, xSrc, mMask);
-                Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, mMask);
+                Reg::Scatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, mMask);
                 Reg::Adds(gIdx, gIdx, lpOffset, idxMask);
                 Reg::Adds(sIdx, sIdx, lpOffset, idxMask);
             }
             Reg::Adds(gBakIdx, gBakIdx, aLpIdxOffset, idxMask);
             Reg::Adds(sBakIdx, sBakIdx, aLpIdxOffset, idxMask);
-            Reg::Copy(gIdx, sBakIdx);
+            Reg::Move(gIdx, sBakIdx);
             Reg::Adds(sIdx, gIdx, dstBegIdx, idxMask);
             Reg::Adds(gIdx, gIdx, srcBegAddr, idxMask);
         }
 
-        Reg::DataCopyGather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gBakIdx, tMask);
+        Reg::Gather((Reg::RegTensor<CastType>&)yDst, dstPtr, (Reg::RegTensor<IdxType>&)gBakIdx, tMask);
         for (uint16_t rIdx = 0; rIdx < rLpCnt; rIdx++) {
-            Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, tMask);
+            Reg::Gather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, tMask);
             Reg::Add(yDst, yDst, xSrc, tMask);
-            Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, tMask);
+            Reg::Scatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)sIdx, tMask);
             Reg::Adds(gIdx, gIdx, lpOffset, idxMask);
             Reg::Adds(sIdx, sIdx, lpOffset, idxMask);
         }
@@ -1433,8 +1437,8 @@ __aicore__ inline void CumWithGroup<T>::GetPrevCoresResult(LocalTensor<T>& midUB
     InsertSync(HardEvent::MTE2_V);
 
     // rightA in UB is block align
-    __local_mem__ T* midPtr = (__local_mem__ T*)midUB.GetPhyAddr();
-    __local_mem__ T* inPtr = (__local_mem__ T*)inUB.GetPhyAddr();
+    __ubuf__ T* midPtr = (__ubuf__ T*)midUB.GetPhyAddr();
+    __ubuf__ T* inPtr = (__ubuf__ T*)inUB.GetPhyAddr();
     uint32_t rightALen = raSize;
     uint16_t raLpCnt_ = Ops::Base::CeilDiv(raSize, realRegElem);
     __VEC_SCOPE__
@@ -1446,10 +1450,10 @@ __aicore__ inline void CumWithGroup<T>::GetPrevCoresResult(LocalTensor<T>& midUB
         for (uint16_t raIdx = 0; raIdx < raLpCnt_; raIdx++) {
             mask = Reg::UpdateMask<T>(rightALen);
             for (uint16_t idx = 0; idx < prevCoreCnt; idx++) {
-                Reg::DataCopy(src, inPtr + raIdx * realRegElem + idx * raBA);
+                Reg::LoadAlign(src, inPtr + raIdx * realRegElem + idx * raBA);
                 Reg::Add(dst, dst, src, mask);
             }
-            Reg::DataCopy<T>(midPtr + raIdx * realRegElem, dst, mask);
+            Reg::StoreAlign<T>(midPtr + raIdx * realRegElem, dst, mask);
         }
     }
 }
@@ -1458,9 +1462,9 @@ template <typename T>
 __aicore__ inline void CumWithGroup<T>::CrossCoreCum(const LocalTensor<T>& inUB, const LocalTensor<T>& midUB,
                                                      LocalTensor<T>& outUB, uint32_t rLen, uint32_t raSize)
 {
-    __local_mem__ T* srcPtr = (__local_mem__ T*)inUB.GetPhyAddr();
-    __local_mem__ T* midPtr = (__local_mem__ T*)midUB.GetPhyAddr();
-    __local_mem__ T* dstPtr = (__local_mem__ T*)outUB.GetPhyAddr();
+    __ubuf__ T* srcPtr = (__ubuf__ T*)inUB.GetPhyAddr();
+    __ubuf__ T* midPtr = (__ubuf__ T*)midUB.GetPhyAddr();
+    __ubuf__ T* dstPtr = (__ubuf__ T*)outUB.GetPhyAddr();
     // A must be smaller than VL
     uint32_t rightALen = raSize;
     uint32_t comA = regElem / rightALen;
@@ -1498,17 +1502,17 @@ __aicore__ inline void CumWithGroup<T>::CrossCoreCum(const LocalTensor<T>& inUB,
 
         Reg::MaskReg mMask = Reg::UpdateMask<T>(mMaskVal);
         // get last R result of previous cores
-        Reg::DataCopyGather((Reg::RegTensor<CastType>&)mSrc, midPtr, (Reg::RegTensor<IdxType>&)gBakIdx, mMask);
+        Reg::Gather((Reg::RegTensor<CastType>&)mSrc, midPtr, (Reg::RegTensor<IdxType>&)gBakIdx, mMask);
         for (uint16_t rIdx = 0; rIdx < rLpCnt; rIdx++) {
-            Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, mMask);
+            Reg::Gather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, mMask);
             Reg::Add(yDst, xSrc, mSrc, mMask);
-            Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)gIdx, mMask);
+            Reg::Scatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)gIdx, mMask);
             Reg::Adds(gIdx, gIdx, mComA, idxMask);
         }
         Reg::MaskReg tMask = Reg::UpdateMask<T>(tMaskVal);
-        Reg::DataCopyGather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, tMask);
+        Reg::Gather((Reg::RegTensor<CastType>&)xSrc, srcPtr, (Reg::RegTensor<IdxType>&)gIdx, tMask);
         Reg::Add(yDst, xSrc, mSrc, tMask);
-        Reg::DataCopyScatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)gIdx, tMask);
+        Reg::Scatter(dstPtr, yDst, (Reg::RegTensor<IdxType>&)gIdx, tMask);
     }
 }
 
@@ -1516,9 +1520,9 @@ template <typename T>
 __aicore__ inline void CumWithGroup<T>::CrossCoreCum4BigRA(const LocalTensor<T>& inUB, const LocalTensor<T>& midUB,
                                                            LocalTensor<T>& outUB, uint32_t rLen, uint32_t raSize)
 {
-    __local_mem__ T* srcPtr = (__local_mem__ T*)inUB.GetPhyAddr();
-    __local_mem__ T* midPtr = (__local_mem__ T*)midUB.GetPhyAddr();
-    __local_mem__ T* dstPtr = (__local_mem__ T*)outUB.GetPhyAddr();
+    __ubuf__ T* srcPtr = (__ubuf__ T*)inUB.GetPhyAddr();
+    __ubuf__ T* midPtr = (__ubuf__ T*)midUB.GetPhyAddr();
+    __ubuf__ T* dstPtr = (__ubuf__ T*)outUB.GetPhyAddr();
 
     uint32_t rightALen = raSize;
     uint16_t raLpCnt = (uint16_t)Ops::Base::CeilDiv(raSize, realRegElem);
@@ -1532,15 +1536,15 @@ __aicore__ inline void CumWithGroup<T>::CrossCoreCum4BigRA(const LocalTensor<T>&
         Reg::MaskReg mask;
 
         // get last R result of previous cores
-        Reg::DataCopy(mSrc, midPtr);
+        Reg::LoadAlign(mSrc, midPtr);
         uint32_t offset = 0;
         for (uint16_t raIdx = 0; raIdx < raLpCnt; raIdx++) {
             mask = Reg::UpdateMask<T>(rightALen);
             for (uint16_t rIdx = 0; rIdx < rLpCnt; rIdx++) {
                 offset = raIdx * realRegElem + rIdx * raBA;
-                Reg::DataCopy(xSrc, srcPtr + offset);
+                Reg::LoadAlign(xSrc, srcPtr + offset);
                 Reg::Add(yDst, xSrc, mSrc, mask);
-                Reg::DataCopy(dstPtr + offset, yDst, mask);
+                Reg::StoreAlign(dstPtr + offset, yDst, mask);
             }
         }
     }

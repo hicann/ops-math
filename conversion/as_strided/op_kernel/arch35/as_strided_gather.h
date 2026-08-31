@@ -296,11 +296,11 @@ template <typename T>
 __aicore__ inline void KernelAsStridedGather<T>::AsGather(int64_t idxOffset)
 {
     // index
-    __local_mem__ IdxType_* indexAddr = (__local_mem__ IdxType_*)indexLocal_.GetPhyAddr();
+    __ubuf__ IdxType_* indexAddr = (__ubuf__ IdxType_*)indexLocal_.GetPhyAddr();
     // xUb
-    __local_mem__ T* xUbAddr = (__local_mem__ T*)ubFactorLocal_.GetPhyAddr();
+    __ubuf__ T* xUbAddr = (__ubuf__ T*)ubFactorLocal_.GetPhyAddr();
     // yUb
-    __local_mem__ T* yUbAddr = (__local_mem__ T*)yUbFactorLocal_.GetPhyAddr();
+    __ubuf__ T* yUbAddr = (__ubuf__ T*)yUbFactorLocal_.GetPhyAddr();
 
     if constexpr (sizeof(T) == 1) {
         uint16_t vfLen = VF_LENGTH / sizeof(CastType_);
@@ -318,20 +318,21 @@ __aicore__ inline void KernelAsStridedGather<T>::AsGather(int64_t idxOffset)
             Reg::RegTensor<IdxType_> vd0;
             Reg::RegTensor<T> dstReg;
             for (uint16_t idx_reg = 0; idx_reg < mainLoopsCnt; ++idx_reg) {
-                Reg::DataCopy(indexReg, indexAddr + idx_reg * xUbMain_copy);
+                Reg::LoadAlign(indexReg, indexAddr + idx_reg * xUbMain_copy);
                 Reg::Adds(vd0, indexReg, idxOffset, p0);
-                Reg::DataCopyGather((Reg::RegTensor<CastType_>&)dstReg, xUbAddr, vd0, p0);
-                __local_mem__ CastType_* yUbAddrB16 = reinterpret_cast<__local_mem__ CastType_*>(
-                    yUbAddr + idx_reg * xUbMain_copy);
-                Reg::DataCopy<CastType_, Reg::StoreDist::DIST_PACK_B16>(yUbAddrB16, (Reg::RegTensor<CastType_>&)dstReg,
-                                                                        p0);
+                Reg::Gather((Reg::RegTensor<CastType_>&)dstReg, xUbAddr, vd0, p0);
+                __ubuf__ CastType_* yUbAddrB16 = reinterpret_cast<__ubuf__ CastType_*>(yUbAddr +
+                                                                                       idx_reg * xUbMain_copy);
+                Reg::StoreAlign<CastType_, Reg::StoreDist::DIST_PACK_B16>(yUbAddrB16,
+                                                                          (Reg::RegTensor<CastType_>&)dstReg, p0);
             }
-            Reg::DataCopy(indexReg, indexAddr + mainLoopsCnt2 * xUbMain_copy);
+            Reg::LoadAlign(indexReg, indexAddr + mainLoopsCnt2 * xUbMain_copy);
             Reg::Adds(vd0, indexReg, idxOffset, p1);
-            Reg::DataCopyGather((Reg::RegTensor<CastType_>&)dstReg, xUbAddr, vd0, p1);
-            __local_mem__ CastType_* yUbAddrB16 = reinterpret_cast<__local_mem__ CastType_*>(
-                yUbAddr + mainLoopsCnt2 * xUbMain_copy);
-            Reg::DataCopy<CastType_, Reg::StoreDist::DIST_PACK_B16>(yUbAddrB16, (Reg::RegTensor<CastType_>&)dstReg, p1);
+            Reg::Gather((Reg::RegTensor<CastType_>&)dstReg, xUbAddr, vd0, p1);
+            __ubuf__ CastType_* yUbAddrB16 = reinterpret_cast<__ubuf__ CastType_*>(yUbAddr +
+                                                                                   mainLoopsCnt2 * xUbMain_copy);
+            Reg::StoreAlign<CastType_, Reg::StoreDist::DIST_PACK_B16>(yUbAddrB16, (Reg::RegTensor<CastType_>&)dstReg,
+                                                                      p1);
         }
     } else {
         uint16_t vfLen = VF_LENGTH / sizeof(CastType_);
@@ -352,15 +353,15 @@ __aicore__ inline void KernelAsStridedGather<T>::AsGather(int64_t idxOffset)
             Reg::RegTensor<T> dstReg;
             Reg::AddrReg aReg0;
             for (uint16_t idx_reg = 0; idx_reg < mainLoopsCnt; ++idx_reg) {
-                Reg::DataCopy(indexReg, indexAddr + idx_reg * xUbMain_copy);
+                Reg::LoadAlign(indexReg, indexAddr + idx_reg * xUbMain_copy);
                 Reg::Adds(vd0, indexReg, idxOffset, p2);
-                Reg::DataCopyGather(dstReg, xUbAddr, vd0, p0);
-                Reg::DataCopy(yUbAddr + idx_reg * xUbMain_copy, dstReg, p0);
+                Reg::Gather(dstReg, xUbAddr, vd0, p0);
+                Reg::StoreAlign(yUbAddr + idx_reg * xUbMain_copy, dstReg, p0);
             }
-            Reg::DataCopy(indexReg, indexAddr + mainLoopsCnt2 * xUbMain_copy);
+            Reg::LoadAlign(indexReg, indexAddr + mainLoopsCnt2 * xUbMain_copy);
             Reg::Adds(vd0, indexReg, idxOffset, p2);
-            Reg::DataCopyGather(dstReg, xUbAddr, vd0, p1);
-            Reg::DataCopy(yUbAddr + mainLoopsCnt2 * xUbMain_copy, dstReg, p1);
+            Reg::Gather(dstReg, xUbAddr, vd0, p1);
+            Reg::StoreAlign(yUbAddr + mainLoopsCnt2 * xUbMain_copy, dstReg, p1);
         }
     }
     outQue_.EnQue<T>(yUbFactorLocal_);
@@ -395,7 +396,7 @@ __aicore__ inline void KernelAsStridedGather<T>::AsComputeIdx()
 template <typename T>
 __aicore__ inline void KernelAsStridedGather<T>::GenDim3Index()
 {
-    __local_mem__ IdxType_* idxAddr = (__local_mem__ IdxType_*)indexLocal_.GetPhyAddr();
+    __ubuf__ IdxType_* idxAddr = (__ubuf__ IdxType_*)indexLocal_.GetPhyAddr();
     uint16_t vfLen = VF_LENGTH / sizeof(IdxType_);
 
     uint32_t lastDimInOffset = strideArr_[dimNum_ - 1];
@@ -429,9 +430,9 @@ __aicore__ inline void KernelAsStridedGather<T>::GenDim3Index()
         Reg::Arange(tmp, 0);
         idxReg = (RegTensor<IdxType_>&)tmp;
         Reg::Duplicate(dim0Reg, lastDimSize);
-        Reg::Copy(dim2Reg, dim0Reg); // backup a
+        Reg::Move(dim2Reg, dim0Reg); // backup a
         Reg::Div(tmpReg, idxReg, dim0Reg, mask);
-        Reg::Copy(dim1Reg, tmpReg); // backup VL / a
+        Reg::Move(dim1Reg, tmpReg); // backup VL / a
         Reg::Mul(tmpReg, tmpReg, dim0Reg, mask);
         Reg::Sub(dim0Reg, idxReg, tmpReg, mask);
         // vec_b: VL / a % b
@@ -448,7 +449,7 @@ __aicore__ inline void KernelAsStridedGather<T>::GenDim3Index()
         Reg::Muls(dstReg, dim2Reg, last3rdDimInOffset, mask);
         Reg::Add(dstReg, dstReg, tmpReg, mask);
         Reg::Add(dstReg, dstReg, tmp1Reg, mask);
-        Reg::DataCopy(idxAddr, dstReg, mask);
+        Reg::StoreAlign(idxAddr, dstReg, mask);
 
         MaskReg lpMask;
         MaskReg selMask;
@@ -464,7 +465,7 @@ __aicore__ inline void KernelAsStridedGather<T>::GenDim3Index()
              *   vec_a = vec_a - cmp_a * a
              */
             Reg::Adds(dim0Reg, dim0Reg, lastDimInc, lpMask);
-            Reg::CompareScalar<IdxType_, CMPMODE::GE>(selMask, dim0Reg, lastDimSize, lpMask);
+            Reg::Compares<IdxType_, CMPMODE::GE>(selMask, dim0Reg, lastDimSize, lpMask);
             Reg::Select(cmpReg, oneReg, zeroReg, selMask);
             Reg::Muls(tmpReg, cmpReg, lastDimSize, lpMask);
             Reg::Sub(dim0Reg, dim0Reg, tmpReg, lpMask);
@@ -474,7 +475,7 @@ __aicore__ inline void KernelAsStridedGather<T>::GenDim3Index()
              */
             Reg::Adds(cmpReg, cmpReg, last2ndDimInc, lpMask);
             Reg::Add(dim1Reg, dim1Reg, cmpReg, lpMask);
-            Reg::CompareScalar<IdxType_, CMPMODE::GE>(selMask, dim1Reg, last2ndDimSize, lpMask);
+            Reg::Compares<IdxType_, CMPMODE::GE>(selMask, dim1Reg, last2ndDimSize, lpMask);
             Reg::Select(cmpReg, oneReg, zeroReg, selMask);
             Reg::Muls(tmpReg, cmpReg, last2ndDimSize, lpMask);
             Reg::Sub(dim1Reg, dim1Reg, tmpReg, lpMask);
@@ -487,7 +488,7 @@ __aicore__ inline void KernelAsStridedGather<T>::GenDim3Index()
             Reg::Muls(dstReg, dim2Reg, last3rdDimInOffset, lpMask);
             Reg::Add(dstReg, dstReg, tmpReg, lpMask);
             Reg::Add(dstReg, dstReg, tmp1Reg, lpMask);
-            Reg::DataCopy(idxAddr + (lpIdx + 1) * vfLen, dstReg, lpMask);
+            Reg::StoreAlign(idxAddr + (lpIdx + 1) * vfLen, dstReg, lpMask);
         }
     }
 }
@@ -495,7 +496,7 @@ __aicore__ inline void KernelAsStridedGather<T>::GenDim3Index()
 template <typename T>
 __aicore__ inline void KernelAsStridedGather<T>::GenDim2Index()
 {
-    __local_mem__ IdxType_* idxAddr = (__local_mem__ IdxType_*)indexLocal_.GetPhyAddr();
+    __ubuf__ IdxType_* idxAddr = (__ubuf__ IdxType_*)indexLocal_.GetPhyAddr();
     uint16_t vfLen = VF_LENGTH / sizeof(IdxType_);
     uint32_t lastDimInOffset = strideArr_[dimNum_ - 1];
     uint32_t last2ndDimInOffset = strideArr_[dimNum_ - 2];
@@ -525,14 +526,14 @@ __aicore__ inline void KernelAsStridedGather<T>::GenDim2Index()
         idxReg = (RegTensor<IdxType_>&)tmp;
         Reg::Duplicate(dim0Reg, lastDimSize);
         Reg::Div(tmpReg, idxReg, dim0Reg, mask);
-        Reg::Copy(dim1Reg, tmpReg); // vec_b: VL / a
+        Reg::Move(dim1Reg, tmpReg); // vec_b: VL / a
         Reg::Mul(tmpReg, tmpReg, dim0Reg, mask);
         Reg::Sub(dim0Reg, idxReg, tmpReg, mask);
         // index: vec_a * a_in_offset + vec_b * b_in_offset
         Reg::Muls(tmpReg, dim0Reg, lastDimInOffset, mask);
         Reg::Muls(dstReg, dim1Reg, last2ndDimInOffset, mask);
         Reg::Add(dstReg, dstReg, tmpReg, mask);
-        Reg::DataCopy(idxAddr, dstReg, mask);
+        Reg::StoreAlign(idxAddr, dstReg, mask);
 
         MaskReg lpMask;
         MaskReg selMask;
@@ -548,7 +549,7 @@ __aicore__ inline void KernelAsStridedGather<T>::GenDim2Index()
              *   vec_a = vec_a - cmp_a * a
              */
             Reg::Adds(dim0Reg, dim0Reg, lastDimInc, lpMask);
-            Reg::CompareScalar<IdxType_, CMPMODE::GE>(selMask, dim0Reg, lastDimSize, lpMask);
+            Reg::Compares<IdxType_, CMPMODE::GE>(selMask, dim0Reg, lastDimSize, lpMask);
             Reg::Select(cmpReg, oneReg, zeroReg, selMask);
             Reg::Muls(tmpReg, cmpReg, lastDimSize, lpMask);
             Reg::Sub(dim0Reg, dim0Reg, tmpReg, lpMask);
@@ -559,7 +560,7 @@ __aicore__ inline void KernelAsStridedGather<T>::GenDim2Index()
             Reg::Muls(tmpReg, dim0Reg, lastDimInOffset, lpMask);
             Reg::Muls(dstReg, dim1Reg, last2ndDimInOffset, lpMask);
             Reg::Add(dstReg, dstReg, tmpReg, lpMask);
-            Reg::DataCopy(idxAddr + (lpIdx + 1) * vfLen, dstReg, lpMask);
+            Reg::StoreAlign(idxAddr + (lpIdx + 1) * vfLen, dstReg, lpMask);
         }
     }
 }
@@ -567,7 +568,7 @@ __aicore__ inline void KernelAsStridedGather<T>::GenDim2Index()
 template <typename T>
 __aicore__ inline void KernelAsStridedGather<T>::GenDim1Index()
 {
-    __local_mem__ IdxType_* idxAddr = (__local_mem__ IdxType_*)indexLocal_.GetPhyAddr();
+    __ubuf__ IdxType_* idxAddr = (__ubuf__ IdxType_*)indexLocal_.GetPhyAddr();
     uint16_t vfLen = VF_LENGTH / sizeof(IdxType_);
     uint32_t lastDimInOffset = strideArr_[dimNum_ - 1];
     uint16_t loopsCnt = CeilDiv(blockUbFactor_, vfLen);
@@ -583,7 +584,7 @@ __aicore__ inline void KernelAsStridedGather<T>::GenDim1Index()
         for (uint16_t lpIdx = 0; lpIdx < loopsCnt; ++lpIdx) {
             mask = UpdateMask<IdxType_>(tempBUF);
             Reg::Muls(dstReg, srcReg, lastDimInOffset, mask);
-            Reg::DataCopy(idxAddr + lpIdx * vfLen, dstReg, mask);
+            Reg::StoreAlign(idxAddr + lpIdx * vfLen, dstReg, mask);
             Reg::Adds(srcReg, srcReg, vfLen, mask);
         }
     }

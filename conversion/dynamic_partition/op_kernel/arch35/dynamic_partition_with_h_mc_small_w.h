@@ -38,11 +38,9 @@ private:
     __aicore__ inline void MultiplePartGatherOutX(LocalTensor<uint64_t>& ubPartBase, uint32_t partLen, int32_t begPart,
                                                   int32_t endPart);
     __aicore__ inline void GatherB32B64(uint32_t processNum, uint16_t loopCnt, uint32_t loopTailNum,
-                                        __local_mem__ int32_t* ptrPartMid, __local_mem__ T* ptrXIn,
-                                        __local_mem__ T* ptrXOut);
+                                        __ubuf__ int32_t* ptrPartMid, __ubuf__ T* ptrXIn, __ubuf__ T* ptrXOut);
     __aicore__ inline void GatherB8B16(uint32_t processNum, uint16_t loopCnt, uint32_t loopTailNum,
-                                       __local_mem__ int32_t* ptrPartMid, __local_mem__ T* ptrXIn,
-                                       __local_mem__ T* ptrXOut);
+                                       __ubuf__ int32_t* ptrPartMid, __ubuf__ T* ptrXIn, __ubuf__ T* ptrXOut);
 
 private:
     const DynPartTilingData* tdPtr_ = nullptr;
@@ -127,13 +125,13 @@ __aicore__ inline void DynPartWithHMCSMALLW<T>::CopyPInBrc(int64_t hLpIdx, uint3
 {
     auto ubR2PIn = this->pR2InQue_.template AllocTensor<int32_t>();
     constexpr uint8_t dim = NUM_TWO;
-    static constexpr MultiCopyConfig config = {false};
-    MultiCopyLoopInfo<dim> loopInfo = {.loopSrcStride = {0, 1},
-                                       .loopDstStride = {1, wLen},
-                                       .loopSize = {wLen, hLen},
-                                       .loopLpSize = {0, 0},
-                                       .loopRpSize = {0, 0}};
-    MultiCopyParams<int32_t, dim> copyInParams = {loopInfo, 0};
+    static constexpr NdDmaConfig config = {false};
+    NdDmaLoopInfo<dim> loopInfo = {.loopSrcStride = {0, 1},
+                                   .loopDstStride = {1, wLen},
+                                   .loopSize = {wLen, hLen},
+                                   .loopLpSize = {0, 0},
+                                   .loopRpSize = {0, 0}};
+    NdDmaParams<int32_t, dim> copyInParams = {loopInfo, 0};
     DataCopy<int32_t, dim, config>(ubR2PIn, this->pInGM_[this->blockIdx_ * tdPtr_->hMSize + hLpIdx * tdPtr_->hLpUnit],
                                    copyInParams);
     this->pR2InQue_.EnQue(ubR2PIn);
@@ -167,14 +165,14 @@ __aicore__ inline void DynPartWithHMCSMALLW<T>::MultiplePartGatherOutX(LocalTens
     auto ubXIn = this->xInQue_.template DeQue<T>();
     auto ubPartIn = this->pR2InQue_.template DeQue<int32_t>();
     auto ubXOut = this->xOutQue_.template AllocTensor<T>();
-    __local_mem__ T* ptrXOut = (__local_mem__ T*)ubXOut.GetPhyAddr();
-    __local_mem__ T* ptrXIn = (__local_mem__ T*)ubXIn.GetPhyAddr();
+    __ubuf__ T* ptrXOut = (__ubuf__ T*)ubXOut.GetPhyAddr();
+    __ubuf__ T* ptrXIn = (__ubuf__ T*)ubXIn.GetPhyAddr();
     uint32_t ubOffset = 0;
     uint16_t partLpCnt = static_cast<uint16_t>(Ops::Base::CeilDiv(partLen * wLen, this->b32VLSize_));
     int32_t int32VL = static_cast<int32_t>(this->b32VLSize_);
     for (int32_t partID = begPart; partID < endPart; ++partID) {
-        __local_mem__ int32_t* ptrPartIn = (__local_mem__ int32_t*)ubPartIn.GetPhyAddr();
-        __local_mem__ int32_t* ptrPartMid = (__local_mem__ int32_t*)ubPartMid.GetPhyAddr();
+        __ubuf__ int32_t* ptrPartIn = (__ubuf__ int32_t*)ubPartIn.GetPhyAddr();
+        __ubuf__ int32_t* ptrPartMid = (__ubuf__ int32_t*)ubPartMid.GetPhyAddr();
         uint32_t partSize = partLen * wLen;
         __VEC_SCOPE__
         {
@@ -182,19 +180,19 @@ __aicore__ inline void DynPartWithHMCSMALLW<T>::MultiplePartGatherOutX(LocalTens
             RegTensor<int32_t> partMid;
             RegTensor<int32_t> alphaIdx;
             Reg::Arange(alphaIdx, int32_t(0));
-            Reg::UnalignReg ureg;
+            Reg::UnalignRegForStore ureg;
             MaskReg validMask;
             MaskReg cmpMask;
             Reg::ClearSpr<SpecialPurposeReg::AR>();
             for (uint16_t partLpIdx = 0; partLpIdx < partLpCnt; ++partLpIdx) {
                 validMask = UpdateMask<int32_t>(partSize);
-                Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(partIn, ptrPartIn, int32VL);
-                Reg::CompareScalar(cmpMask, partIn, partID, validMask);
-                Reg::GatherMask<int32_t, Reg::GatherMaskMode::STORE_REG>(partMid, alphaIdx, cmpMask);
-                Reg::DataCopyUnAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(ptrPartMid, partMid, ureg);
+                Reg::LoadAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(partIn, ptrPartIn, int32VL);
+                Reg::Compares(cmpMask, partIn, partID, validMask);
+                Reg::Squeeze<int32_t, Reg::GatherMaskMode::STORE_REG>(partMid, alphaIdx, cmpMask);
+                Reg::StoreUnAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(ptrPartMid, partMid, ureg);
                 Reg::Adds(alphaIdx, alphaIdx, int32VL, validMask);
             }
-            Reg::DataCopyUnAlignPost(ptrPartMid, ureg);
+            Reg::StoreUnAlignPost(ptrPartMid, ureg);
         }
 
         uint32_t vPartCnt = static_cast<uint32_t>(Reg::GetSpr<SpecialPurposeReg::AR>() / sizeof(int32_t));
@@ -227,8 +225,8 @@ __aicore__ inline void DynPartWithHMCSMALLW<T>::MultiplePartGatherOutX(LocalTens
 
 template <typename T>
 __aicore__ inline void DynPartWithHMCSMALLW<T>::GatherB32B64(uint32_t processNum, uint16_t loopCnt,
-                                                             uint32_t loopTailNum, __local_mem__ int32_t* ptrPartMid,
-                                                             __local_mem__ T* ptrXIn, __local_mem__ T* ptrXOut)
+                                                             uint32_t loopTailNum, __ubuf__ int32_t* ptrPartMid,
+                                                             __ubuf__ T* ptrXIn, __ubuf__ T* ptrXOut)
 {
     __VEC_SCOPE__
     {
@@ -254,8 +252,8 @@ __aicore__ inline void DynPartWithHMCSMALLW<T>::GatherB32B64(uint32_t processNum
 
 template <typename T>
 __aicore__ inline void DynPartWithHMCSMALLW<T>::GatherB8B16(uint32_t processNum, uint16_t loopCnt, uint32_t loopTailNum,
-                                                            __local_mem__ int32_t* ptrPartMid, __local_mem__ T* ptrXIn,
-                                                            __local_mem__ T* ptrXOut)
+                                                            __ubuf__ int32_t* ptrPartMid, __ubuf__ T* ptrXIn,
+                                                            __ubuf__ T* ptrXOut)
 {
     __VEC_SCOPE__
     {

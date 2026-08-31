@@ -164,7 +164,7 @@ struct PowerGenericCompute : public Vec::ElemwiseTernaryOP<float, float, float, 
             for (uint16_t loopIdx = 0; loopIdx < loopNum; loopIdx++) {
                 // 更新尾元素 mask 并把当前 batch 的 base 搬入寄存器。
                 mask = AscendC::Reg::UpdateMask<float, AscendC::Reg::RegTraitNumOne>(count);
-                AscendC::Reg::DataCopy(regBase, (__ubuf__ float*)(baseAddr + loopIdx * vl));
+                AscendC::Reg::LoadAlign(regBase, (__ubuf__ float*)(baseAddr + loopIdx * vl));
 
                 // ----- 主路径：rawExp = exp(power * log(|base|))，全程 in-place 复用 regMain -----
                 AscendC::Reg::Abs(regMain, regBase, mask);         // regMain = |base|
@@ -194,7 +194,7 @@ struct PowerGenericCompute : public Vec::ElemwiseTernaryOP<float, float, float, 
                 AscendC::Reg::Select(regBranch, regMain, regBranch, maskZero);
 
                 // 把当前 batch 的最终结果写回 UB。
-                AscendC::Reg::DataCopy((__ubuf__ float*)(dstAddr + loopIdx * vl), regBranch, mask);
+                AscendC::Reg::StoreAlign((__ubuf__ float*)(dstAddr + loopIdx * vl), regBranch, mask);
             }
         }
 #endif

@@ -39,8 +39,7 @@ constexpr size_t NDDMA_INDEX4 = 4;
 template <typename T>
 class KernelAsStrided {
 public:
-    __aicore__ inline KernelAsStrided()
-    {}
+    __aicore__ inline KernelAsStrided() {}
 
     template <typename U>
     __aicore__ inline void CopyArray(const U* src, U* dst, int64_t size)
@@ -50,8 +49,8 @@ public:
         }
     }
 
-    __aicore__ inline void Init(
-        GM_ADDR input, GM_ADDR outShape, GM_ADDR outStride, GM_ADDR output, AsStridedTilingData tilingData)
+    __aicore__ inline void Init(GM_ADDR input, GM_ADDR outShape, GM_ADDR outStride, GM_ADDR output,
+                                AsStridedTilingData tilingData)
     {
         blockNum_ = tilingData.blockNum;
         loopsTailCore_ = tilingData.loopsTailCore;
@@ -75,8 +74,8 @@ public:
         CopyArray(tilingData.nddmaDstStride, nddmaDstStride_, TILING_NDDMA_LEN);
 
         blockOffset_ = loopsPerCore_ * ubFactor_;
-        tileOffset_ =
-            ubFactorTail_ == 0 ? ubFactor_ * outerAxisFactor_ : ubFactor_ * (outerAxisFactor_ - 1) + ubFactorTail_;
+        tileOffset_ = ubFactorTail_ == 0 ? ubFactor_ * outerAxisFactor_ :
+                                           ubFactor_ * (outerAxisFactor_ - 1) + ubFactorTail_;
 
         inputGm_.SetGlobalBuffer((__gm__ T*)input + storageOffset_);
         outputGm_.SetGlobalBuffer((__gm__ T*)output);
@@ -118,36 +117,35 @@ public:
             },
             0};
 
-        dmaTailParam_ = {
-            {
-                {// src stride
-                 static_cast<uint64_t>(nddmaSrcStride_[NDDMA_INDEX4]),
-                 static_cast<uint64_t>(nddmaSrcStride_[NDDMA_INDEX3]),
-                 static_cast<uint64_t>(nddmaSrcStride_[NDDMA_INDEX2]),
-                 static_cast<uint64_t>(nddmaSrcStride_[NDDMA_INDEX1]),
-                 static_cast<uint64_t>(nddmaSrcStride_[NDDMA_INDEX0])},
-                {//  dst stride
-                 static_cast<uint32_t>(nddmaDstStride_[NDDMA_INDEX4]),
-                 static_cast<uint32_t>(nddmaDstStride_[NDDMA_INDEX3]),
-                 static_cast<uint32_t>(nddmaDstStride_[NDDMA_INDEX2]),
-                 static_cast<uint32_t>(nddmaDstStride_[NDDMA_INDEX1]),
-                 static_cast<uint32_t>(nddmaDstStride_[NDDMA_INDEX0])},
-                {//  loop size
-                 static_cast<uint32_t>(nddmaTailLoop_[NDDMA_INDEX4]),
-                 static_cast<uint32_t>(nddmaTailLoop_[NDDMA_INDEX3]),
-                 static_cast<uint32_t>(nddmaTailLoop_[NDDMA_INDEX2]),
-                 static_cast<uint32_t>(nddmaTailLoop_[NDDMA_INDEX1]),
-                 static_cast<uint32_t>(nddmaTailLoop_[NDDMA_INDEX0])},
-                {ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8}, // left pad
-                {ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8}  //  right pad
-            },
-            0};
+        dmaTailParam_ = {{
+                             {// src stride
+                              static_cast<uint64_t>(nddmaSrcStride_[NDDMA_INDEX4]),
+                              static_cast<uint64_t>(nddmaSrcStride_[NDDMA_INDEX3]),
+                              static_cast<uint64_t>(nddmaSrcStride_[NDDMA_INDEX2]),
+                              static_cast<uint64_t>(nddmaSrcStride_[NDDMA_INDEX1]),
+                              static_cast<uint64_t>(nddmaSrcStride_[NDDMA_INDEX0])},
+                             {//  dst stride
+                              static_cast<uint32_t>(nddmaDstStride_[NDDMA_INDEX4]),
+                              static_cast<uint32_t>(nddmaDstStride_[NDDMA_INDEX3]),
+                              static_cast<uint32_t>(nddmaDstStride_[NDDMA_INDEX2]),
+                              static_cast<uint32_t>(nddmaDstStride_[NDDMA_INDEX1]),
+                              static_cast<uint32_t>(nddmaDstStride_[NDDMA_INDEX0])},
+                             {//  loop size
+                              static_cast<uint32_t>(nddmaTailLoop_[NDDMA_INDEX4]),
+                              static_cast<uint32_t>(nddmaTailLoop_[NDDMA_INDEX3]),
+                              static_cast<uint32_t>(nddmaTailLoop_[NDDMA_INDEX2]),
+                              static_cast<uint32_t>(nddmaTailLoop_[NDDMA_INDEX1]),
+                              static_cast<uint32_t>(nddmaTailLoop_[NDDMA_INDEX0])},
+                             {ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8}, // left pad
+                             {ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8, ZERO_U8}  //  right pad
+                         },
+                         0};
 
-        copyParams_ = {
-            static_cast<uint16_t>(1), static_cast<uint32_t>(ubFactor_ * sizeof(T)), static_cast<uint32_t>(0), 0, 0};
+        copyParams_ = {static_cast<uint16_t>(1), static_cast<uint32_t>(ubFactor_ * sizeof(T)), static_cast<uint32_t>(0),
+                       0, 0};
 
-        copyParamsTail_ = {
-            static_cast<uint16_t>(1), static_cast<uint32_t>(ubFactorTail_ * sizeof(T)), static_cast<uint32_t>(0), 0, 0};
+        copyParamsTail_ = {static_cast<uint16_t>(1), static_cast<uint32_t>(ubFactorTail_ * sizeof(T)),
+                           static_cast<uint32_t>(0), 0, 0};
     }
 
     __aicore__ inline void Process()
@@ -158,7 +156,7 @@ public:
 
     __aicore__ inline void CopyProcess(int64_t srcOffset, int64_t dstOffset, uint32_t totalIdx)
     {
-        static constexpr MultiCopyConfig Config = {false, 0, 0, false};
+        static constexpr NdDmaConfig Config = {false, 0, 0, false};
         if (innerAxisFactorTail_ == 0) {
             LocalTensor<T> srcLocal = inQueue_.AllocTensor<T>();
             DataCopy<T, NDDMA_DIM, Config>(srcLocal, inputGm_[srcOffset], dmaParam_);
@@ -244,8 +242,8 @@ private:
     uint32_t nddmaTailLoop_[TILING_NDDMA_LEN] = {1, 1, 1, 1, 1};
     uint32_t nddmaDstStride_[TILING_NDDMA_LEN] = {1, 1, 1, 1, 1};
     uint64_t nddmaSrcStride_[TILING_NDDMA_LEN] = {0};
-    MultiCopyParams<T, NDDMA_DIM> dmaParam_;
-    MultiCopyParams<T, NDDMA_DIM> dmaTailParam_;
+    NdDmaParams<T, NDDMA_DIM> dmaParam_;
+    NdDmaParams<T, NDDMA_DIM> dmaTailParam_;
 };
 
 } // namespace AsStrided

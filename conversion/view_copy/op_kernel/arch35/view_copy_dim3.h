@@ -34,9 +34,9 @@ public:
 private:
     __aicore__ inline void CopyOut(const GlobalTensor<T>& dst, const DataCopyExtParams& copyParams,
                                    const CustomCopyExtParams& extParams);
-    __aicore__ inline void ProcessPerLoop(int64_t globalLoopIdx, const MultiCopyParams<T, DIM3>& dmaParams,
+    __aicore__ inline void ProcessPerLoop(int64_t globalLoopIdx, const NdDmaParams<T, DIM3>& dmaParams,
                                           const DataCopyExtParams& copyParams, const int32_t* outLoopSize);
-    __aicore__ inline void CopyIn(const GlobalTensor<T>& src, const MultiCopyParams<T, DIM3>& dmaParams);
+    __aicore__ inline void CopyIn(const GlobalTensor<T>& src, const NdDmaParams<T, DIM3>& dmaParams);
 
 private:
     TPipe& pipe_;
@@ -47,8 +47,8 @@ private:
     GlobalTensor<T> srcGm_;
     int64_t blockOffset_ = 0;
 
-    MultiCopyParams<T, DIM3> dmaParam_;
-    MultiCopyParams<T, DIM3> tailDmaParam_;
+    NdDmaParams<T, DIM3> dmaParam_;
+    NdDmaParams<T, DIM3> tailDmaParam_;
     DataCopyExtParams copyParams_;
     DataCopyExtParams tailCopyParams_;
     CustomCopyExtParams outExtParams_;
@@ -97,7 +97,7 @@ __aicore__ inline void ViewCopyDim3<T>::Process()
 }
 
 template <typename T>
-__aicore__ inline void ViewCopyDim3<T>::CopyIn(const GlobalTensor<T>& src, const MultiCopyParams<T, DIM3>& dmaParams)
+__aicore__ inline void ViewCopyDim3<T>::CopyIn(const GlobalTensor<T>& src, const NdDmaParams<T, DIM3>& dmaParams)
 {
     LocalTensor<T> dstLocal = inQueue_.AllocTensor<T>();
     this->CopyInDim3(src, dstLocal, dmaParams, tilingData_->enableMovAlign != 0);
@@ -123,7 +123,7 @@ __aicore__ inline void ViewCopyDim3<T>::CopyOut(const GlobalTensor<T>& dst, cons
 }
 
 template <typename T>
-__aicore__ inline void ViewCopyDim3<T>::ProcessPerLoop(int64_t globalLoopIdx, const MultiCopyParams<T, DIM3>& dmaParams,
+__aicore__ inline void ViewCopyDim3<T>::ProcessPerLoop(int64_t globalLoopIdx, const NdDmaParams<T, DIM3>& dmaParams,
                                                        const DataCopyExtParams& copyParams, const int32_t* outLoopSize)
 {
     int64_t srcOffset = this->GetGmOffset(globalLoopIdx, tilingData_->blockStride, tilingData_->blockSrcStride,

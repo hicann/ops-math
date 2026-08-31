@@ -117,7 +117,7 @@ private:
     TBuf<> addDataCasted_; // 与前一R分组中的最大值的一行，进行行相加的每一行数据，精度提升后
     TBuf<> addFactorOffset_; // 每次copy addFactor数据的偏移量
 
-    static constexpr MultiCopyConfig nddmaConfig_ = {false};
+    static constexpr NdDmaConfig nddmaConfig_ = {false};
 }; // class CumsumCoreSklansky
 
 template <typename T, typename PromtT>
@@ -243,7 +243,7 @@ __aicore__ inline void CumsumCoreSklansky<T, PromtT>::CopyInAddFactor(int32_t ss
 
     // 搬入UB，使用nddma broadcast
     NdDmaDci();
-    MultiCopyParams<T, ADD_FACTOR_NDDMA_DIM> copyParam;
+    NdDmaParams<T, ADD_FACTOR_NDDMA_DIM> copyParam;
     copyParam.constantValue = 0;
     copyParam.loopInfo = {
         {1, 0},
@@ -482,18 +482,19 @@ __aicore__ inline void CumsumCoreSklansky<T, PromtT>::DoAddTailN(DataCopyExtPara
             for (uint16_t j = 0; j < addFactorCircleCount_; j++) {
                 // 搬入addFactor
                 AscendC::Reg::AddrReg addrReg = AscendC::Reg::CreateAddrReg<uint32_t>(j, vlElementCount);
-                AscendC::Reg::DataCopy(addFactorIndexRegTensor, addFactorOffset, addrReg);
-                AscendC::Reg::DataCopyGather(addFactorRegTensor, addFactor, addFactorIndexRegTensor, p0);
+                AscendC::Reg::LoadAlign(addFactorIndexRegTensor, addFactorOffset, addrReg);
+                AscendC::Reg::Gather(addFactorRegTensor, addFactor, addFactorIndexRegTensor, p0);
 
                 // 对齐连续搬入addData
-                DataCopy(addDataRegTensor, addData + (i * addFactorCircleCount_ + j) * vlElementCount);
+                MicroAPI::LoadAlign(addDataRegTensor, addData + (i * addFactorCircleCount_ + j) * vlElementCount);
 
                 // Add
                 mask = AscendC::Reg::UpdateMask<uint32_t>(addTotal);
                 Add(addDataRegTensor, addFactorRegTensor, addDataRegTensor, mask);
 
                 // 对齐连续搬出addData
-                DataCopy(addData + (i * addFactorCircleCount_ + j) * vlElementCount, addDataRegTensor, mask);
+                MicroAPI::StoreAlign(addData + (i * addFactorCircleCount_ + j) * vlElementCount, addDataRegTensor,
+                                     mask);
             }
         }
 
@@ -501,20 +502,20 @@ __aicore__ inline void CumsumCoreSklansky<T, PromtT>::DoAddTailN(DataCopyExtPara
         for (uint16_t j = 0; j < addFactorCircleCountTail; j++) {
             // 搬入addFactor
             AscendC::Reg::AddrReg addrReg = AscendC::Reg::CreateAddrReg<uint32_t>(j, vlElementCount);
-            AscendC::Reg::DataCopy(addFactorIndexRegTensor, addFactorOffset, addrReg);
-            AscendC::Reg::DataCopyGather(addFactorRegTensor, addFactor, addFactorIndexRegTensor, p0);
+            AscendC::Reg::LoadAlign(addFactorIndexRegTensor, addFactorOffset, addrReg);
+            AscendC::Reg::Gather(addFactorRegTensor, addFactor, addFactorIndexRegTensor, p0);
 
             // 对齐连续搬入addData
-            DataCopy(addDataRegTensor,
-                     addData + ((addFactorCircleLoop - 1) * addFactorCircleCount_ + j) * vlElementCount);
+            MicroAPI::LoadAlign(addDataRegTensor,
+                                addData + ((addFactorCircleLoop - 1) * addFactorCircleCount_ + j) * vlElementCount);
 
             // Add
             mask = AscendC::Reg::UpdateMask<uint32_t>(addTotalTail);
             Add(addDataRegTensor, addFactorRegTensor, addDataRegTensor, mask);
 
             // 对齐连续搬出addData
-            DataCopy(addData + ((addFactorCircleLoop - 1) * addFactorCircleCount_ + j) * vlElementCount,
-                     addDataRegTensor, mask);
+            MicroAPI::StoreAlign(addData + ((addFactorCircleLoop - 1) * addFactorCircleCount_ + j) * vlElementCount,
+                                 addDataRegTensor, mask);
         }
     } // __VEC_SCOPE__
 }

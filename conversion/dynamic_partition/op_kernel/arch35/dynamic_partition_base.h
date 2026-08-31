@@ -178,17 +178,17 @@ __aicore__ inline void DynPartBase<T>::RefreshOutputShapes(LocalTensor<uint64_t>
     uint16_t lpCnt = static_cast<uint16_t>(shapeLpUnit_ - 1);
     if (lpCnt > 0) {
         InsertSync(HardEvent::S_V);
-        __local_mem__ uint64_t* ptrFirstShape = (__local_mem__ uint64_t*)ubOutShape.GetPhyAddr();
-        __local_mem__ uint64_t* ptrSecondShape = ptrFirstShape + SHAPE_GAP;
+        __ubuf__ uint64_t* ptrFirstShape = (__ubuf__ uint64_t*)ubOutShape.GetPhyAddr();
+        __ubuf__ uint64_t* ptrSecondShape = ptrFirstShape + SHAPE_GAP;
         __VEC_SCOPE__
         {
             RegTensor<uint64_t> shapeInfo;
-            Reg::UnalignReg ureg;
-            Reg::DataCopy(shapeInfo, ptrFirstShape);
+            Reg::UnalignRegForStore ureg;
+            Reg::LoadAlign(shapeInfo, ptrFirstShape);
             for (uint16_t j = 0; j < lpCnt; ++j) {
-                Reg::DataCopyUnAlign(ptrSecondShape, shapeInfo, ureg, SHAPE_GAP);
+                Reg::StoreUnAlign(ptrSecondShape, shapeInfo, ureg, SHAPE_GAP);
             }
-            Reg::DataCopyUnAlignPost(ptrSecondShape, ureg);
+            Reg::StoreUnAlignPost(ptrSecondShape, ureg);
         }
         InsertSync(HardEvent::V_S);
     }
@@ -263,14 +263,14 @@ __aicore__ inline void DynPartBase<T>::MultiplePartCopyOutX(LocalTensor<uint64_t
     auto ubXIn = xInQue_.DeQue<T>();
     auto ubPartIn = pR2InQue_.DeQue<int32_t>();
     auto ubXOut = xOutQue_.AllocTensor<T>();
-    __local_mem__ T* ptrXOut = (__local_mem__ T*)ubXOut.GetPhyAddr();
-    __local_mem__ T* ptrXIn = (__local_mem__ T*)ubXIn.GetPhyAddr();
+    __ubuf__ T* ptrXOut = (__ubuf__ T*)ubXOut.GetPhyAddr();
+    __ubuf__ T* ptrXIn = (__ubuf__ T*)ubXIn.GetPhyAddr();
     uint32_t ubOffset = 0;
     uint16_t partLpCnt = static_cast<uint16_t>(Ops::Base::CeilDiv(partLen, b32VLSize_));
     int32_t int32VL = static_cast<int32_t>(b32VLSize_);
     for (int32_t partID = begPart; partID < endPart; ++partID) {
-        __local_mem__ int32_t* ptrPartIn = (__local_mem__ int32_t*)ubPartIn.GetPhyAddr();
-        __local_mem__ int32_t* ptrPartMid = (__local_mem__ int32_t*)ubPartMid.GetPhyAddr();
+        __ubuf__ int32_t* ptrPartIn = (__ubuf__ int32_t*)ubPartIn.GetPhyAddr();
+        __ubuf__ int32_t* ptrPartMid = (__ubuf__ int32_t*)ubPartMid.GetPhyAddr();
         uint32_t partSize = partLen;
         __VEC_SCOPE__
         {
@@ -278,19 +278,19 @@ __aicore__ inline void DynPartBase<T>::MultiplePartCopyOutX(LocalTensor<uint64_t
             RegTensor<int32_t> partMid;
             RegTensor<int32_t> alphaIdx;
             Reg::Arange(alphaIdx, int32_t(0));
-            Reg::UnalignReg ureg;
+            Reg::UnalignRegForStore ureg;
             MaskReg validMask;
             MaskReg cmpMask;
             Reg::ClearSpr<SpecialPurposeReg::AR>();
             for (uint16_t partLpIdx = 0; partLpIdx < partLpCnt; ++partLpIdx) {
                 validMask = UpdateMask<int32_t>(partSize);
-                Reg::DataCopy<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(partIn, ptrPartIn, int32VL);
-                Reg::CompareScalar(cmpMask, partIn, partID, validMask);
-                Reg::GatherMask<int32_t, Reg::GatherMaskMode::STORE_REG>(partMid, alphaIdx, cmpMask);
-                Reg::DataCopyUnAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(ptrPartMid, partMid, ureg);
+                Reg::LoadAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(partIn, ptrPartIn, int32VL);
+                Reg::Compares(cmpMask, partIn, partID, validMask);
+                Reg::Squeeze<int32_t, Reg::GatherMaskMode::STORE_REG>(partMid, alphaIdx, cmpMask);
+                Reg::StoreUnAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(ptrPartMid, partMid, ureg);
                 Reg::Adds(alphaIdx, alphaIdx, int32VL, validMask);
             }
-            Reg::DataCopyUnAlignPost(ptrPartMid, ureg);
+            Reg::StoreUnAlignPost(ptrPartMid, ureg);
         }
 
         uint32_t vPartCnt = static_cast<uint32_t>(Reg::GetSpr<SpecialPurposeReg::AR>() / sizeof(int32_t));
@@ -308,8 +308,8 @@ __aicore__ inline void DynPartBase<T>::MultiplePartCopyOutX(LocalTensor<uint64_t
                     MaskReg mask;
                     for (uint16_t wLpIdx = 0; wLpIdx < wLpCnt; ++wLpIdx) {
                         mask = UpdateMask<T>(wSize);
-                        Reg::DataCopy(xReg, ptrXIn + curWIdx * wAlign + wLpIdx * vlSize_);
-                        Reg::DataCopy(ptrXOut + vPIdx * wAlign + wLpIdx * vlSize_, xReg, mask);
+                        Reg::LoadAlign(xReg, ptrXIn + curWIdx * wAlign + wLpIdx * vlSize_);
+                        Reg::StoreAlign(ptrXOut + vPIdx * wAlign + wLpIdx * vlSize_, xReg, mask);
                     }
                 }
             }

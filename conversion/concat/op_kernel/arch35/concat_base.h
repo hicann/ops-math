@@ -85,19 +85,19 @@ __aicore__ inline void Copy(const LocalTensor<T>& dstLocal, const LocalTensor<T>
 
     __VEC_SCOPE__
     {
-        AscendC::Reg::UnalignReg u0;
-        AscendC::Reg::UnalignReg uReg;
+        AscendC::Reg::UnalignRegForLoad u0;
+        AscendC::Reg::UnalignRegForStore uReg;
         AscendC::Reg::RegTensor<T> vd0;
-        AscendC::Reg::DataCopyUnAlignPre(u0, srcAddr);
+        AscendC::Reg::LoadUnAlignPre(u0, srcAddr);
         for (uint16_t i = 0; i < size0; i++) {
             auto curDstAddr = dstAddr + i * rowStride;
             for (uint16_t j = 0; j < size1; j++) {
-                AscendC::Reg::DataCopyUnAlign(vd0, u0, srcAddr, main);
-                AscendC::Reg::DataCopyUnAlign(curDstAddr, vd0, uReg, main);
+                AscendC::Reg::LoadUnAlign(vd0, u0, srcAddr, main);
+                AscendC::Reg::StoreUnAlign(curDstAddr, vd0, uReg, main);
             }
-            AscendC::Reg::DataCopyUnAlign(vd0, u0, srcAddr, tail);
-            AscendC::Reg::DataCopyUnAlign(curDstAddr, vd0, uReg, tail);
-            AscendC::Reg::DataCopyUnAlignPost(curDstAddr, uReg, 0);
+            AscendC::Reg::LoadUnAlign(vd0, u0, srcAddr, tail);
+            AscendC::Reg::StoreUnAlign(curDstAddr, vd0, uReg, tail);
+            AscendC::Reg::StoreUnAlignPost(curDstAddr, uReg, 0);
         }
     }
 }
@@ -119,7 +119,7 @@ __aicore__ inline void ScatterConcat(const LocalTensor<T>& dstLocal, const Local
 
     __VEC_SCOPE__
     {
-        AscendC::Reg::UnalignReg u0;
+        AscendC::Reg::UnalignRegForLoad u0;
         AscendC::Reg::RegTensor<T> gather0;
         AscendC::Reg::RegTensor<T> gather1;
         AscendC::Reg::RegTensor<T> gather2;
@@ -134,45 +134,45 @@ __aicore__ inline void ScatterConcat(const LocalTensor<T>& dstLocal, const Local
         auto tailVf = tail;
         AscendC::Reg::MaskReg p0 = AscendC::Reg::UpdateMask<U>(allVf);
         AscendC::Reg::MaskReg p1 = AscendC::Reg::UpdateMask<U>(tailVf);
-        AscendC::Reg::DataCopyUnAlignPre(u0, srcAddr);
+        AscendC::Reg::LoadUnAlignPre(u0, srcAddr);
         for (uint16_t i = 0; i < size0; i++) {
             auto curDstAddr = dstAddr + i * rowStride;
             if constexpr (ScatterNum > DIGIT_THREE) {
-                AscendC::Reg::DataCopyUnAlign(gather3, u0, srcAddr, main);
+                AscendC::Reg::LoadUnAlign(gather3, u0, srcAddr, main);
                 if constexpr (sizeof(T) == 1) {
                     AscendC::Reg::UnPack((AscendC::Reg::RegTensor<uint16_t>&)dst, gather3);
-                    AscendC::Reg::DataCopyScatter(curDstAddr, dst, index, p0);
+                    AscendC::Reg::Scatter(curDstAddr, dst, index, p0);
                 } else {
-                    AscendC::Reg::DataCopyScatter(curDstAddr, gather3, index, p0);
+                    AscendC::Reg::Scatter(curDstAddr, gather3, index, p0);
                 }
                 curDstAddr = curDstAddr + main;
             }
             if constexpr (ScatterNum > DIGIT_TWO) {
-                AscendC::Reg::DataCopyUnAlign(gather2, u0, srcAddr, main);
+                AscendC::Reg::LoadUnAlign(gather2, u0, srcAddr, main);
                 if constexpr (sizeof(T) == 1) {
                     AscendC::Reg::UnPack((AscendC::Reg::RegTensor<uint16_t>&)dst, gather2);
-                    AscendC::Reg::DataCopyScatter(curDstAddr, dst, index, p0);
+                    AscendC::Reg::Scatter(curDstAddr, dst, index, p0);
                 } else {
-                    AscendC::Reg::DataCopyScatter(curDstAddr, gather2, index, p0);
+                    AscendC::Reg::Scatter(curDstAddr, gather2, index, p0);
                 }
                 curDstAddr = curDstAddr + main;
             }
             if constexpr (ScatterNum > 1) {
-                AscendC::Reg::DataCopyUnAlign(gather1, u0, srcAddr, main);
+                AscendC::Reg::LoadUnAlign(gather1, u0, srcAddr, main);
                 if constexpr (sizeof(T) == 1) {
                     AscendC::Reg::UnPack((AscendC::Reg::RegTensor<uint16_t>&)dst, gather1);
-                    AscendC::Reg::DataCopyScatter(curDstAddr, dst, index, p0);
+                    AscendC::Reg::Scatter(curDstAddr, dst, index, p0);
                 } else {
-                    AscendC::Reg::DataCopyScatter(curDstAddr, gather1, index, p0);
+                    AscendC::Reg::Scatter(curDstAddr, gather1, index, p0);
                 }
                 curDstAddr = curDstAddr + main;
             }
-            AscendC::Reg::DataCopyUnAlign(gather0, u0, srcAddr, tail);
+            AscendC::Reg::LoadUnAlign(gather0, u0, srcAddr, tail);
             if constexpr (sizeof(T) == 1) {
                 AscendC::Reg::UnPack((AscendC::Reg::RegTensor<uint16_t>&)dst, gather0);
-                AscendC::Reg::DataCopyScatter(curDstAddr, dst, index, p1);
+                AscendC::Reg::Scatter(curDstAddr, dst, index, p1);
             } else {
-                AscendC::Reg::DataCopyScatter(curDstAddr, gather0, index, p1);
+                AscendC::Reg::Scatter(curDstAddr, gather0, index, p1);
             }
         }
     }

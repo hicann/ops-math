@@ -110,9 +110,9 @@ __aicore__ inline void DynPartWithHMC<T, isSingleW>::InnerProcess4CalcPartCnt(ui
     auto ubPart = pR1InQue_.template DeQue<int32_t>();
     auto ubPartCnt = this->pCntQue_.template DeQue<uint64_t>();
     auto ubPartBase = this->pBaseQue_.template DeQue<uint64_t>();
-    __local_mem__ int32_t* ptrPart = (__local_mem__ int32_t*)ubPart.GetPhyAddr();
-    __local_mem__ uint64_t* ptrPartBase = (__local_mem__ uint64_t*)ubPartBase.GetPhyAddr();
-    __local_mem__ int32_t* ptrPartMid = reinterpret_cast<__local_mem__ int32_t*>(ptrPartBase);
+    __ubuf__ int32_t* ptrPart = (__ubuf__ int32_t*)ubPart.GetPhyAddr();
+    __ubuf__ uint64_t* ptrPartBase = (__ubuf__ uint64_t*)ubPartBase.GetPhyAddr();
+    __ubuf__ int32_t* ptrPartMid = reinterpret_cast<__ubuf__ int32_t*>(ptrPartBase);
     constexpr auto dFactor = sizeof(uint64_t) / sizeof(int32_t);
     uint16_t pLpCntVF = static_cast<uint16_t>(Ops::Base::CeilDiv(ubPartLen, this->b32VLSize_));
 
@@ -133,14 +133,14 @@ __aicore__ inline void DynPartWithHMC<T, isSingleW>::InnerProcess4CalcPartCnt(ui
 
             for (uint16_t i = 0; i < pLpCntVF; ++i) {
                 mask = UpdateMask<int32_t>(partSize);
-                Reg::DataCopy(parts, ptrPart + i * this->b32VLSize_);
-                Reg::CompareScalar(cmpMask, parts, partIdx, mask);
-                Reg::ReduceSum(midPartCnt, allTensor, cmpMask);
+                Reg::LoadAlign(parts, ptrPart + i * this->b32VLSize_);
+                Reg::Compares(cmpMask, parts, partIdx, mask);
+                Reg::Reduce<Reg::ReduceType::SUM>(midPartCnt, allTensor, cmpMask);
                 Reg::Add(partCnt, partCnt, midPartCnt, vl1Mask);
             }
             // partCnt must be less than max int32_t
-            Reg::DataCopy<int32_t, Reg::StoreDist::DIST_FIRST_ELEMENT_B32>(ptrPartMid + modPartIdx * dFactor, partCnt,
-                                                                           vl1Mask);
+            Reg::StoreAlign<int32_t, Reg::StoreDist::DIST_FIRST_ELEMENT_B32>(ptrPartMid + modPartIdx * dFactor, partCnt,
+                                                                             vl1Mask);
         }
     }
     Add(ubPartCnt, ubPartCnt, ubPartBase, this->coreWS_);

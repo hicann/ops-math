@@ -268,7 +268,7 @@ __aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::ComputeIdx(int64_t process
             AscendC::Reg::Sub(tmp2B64, (AscendC::Reg::RegTensor<U>&)indexRegB64, subRegB64, maskB64);
             AscendC::Reg::Add(addRegB64, tmp1B64, tmp2B64, maskB64);
 
-            AscendC::Reg::DataCopy(idxPtr, addRegB64, maskB64);
+            AscendC::Reg::StoreAlign(idxPtr, addRegB64, maskB64);
         }
     } else {
         __ubuf__ U* idxPtr = (__ubuf__ U*)idxUb.GetPhyAddr();
@@ -294,7 +294,7 @@ __aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::ComputeIdx(int64_t process
             AscendC::Reg::Sub(tmp2, (AscendC::Reg::RegTensor<U>&)indexReg, subReg, mask);
             AscendC::Reg::Add(addReg, tmp1, tmp2, mask);
 
-            AscendC::Reg::DataCopy(idxPtr, addReg, mask);
+            AscendC::Reg::StoreAlign(idxPtr, addReg, mask);
         }
     }
     idxQueue_.EnQue(idxUb);
@@ -338,25 +338,25 @@ __aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::Compute(uint32_t g, int64_
         {
             AscendC::Reg::RegTensor<U> addReg;
             AscendC::Reg::RegTensor<U> dstReg;
-            AscendC::Reg::UnalignReg uDst;
+            AscendC::Reg::UnalignRegForStore uDst;
             AscendC::Reg::MaskReg mask;
             AscendC::Reg::MaskReg maskTmp;
 
             mask = AscendC::Reg::UpdateMask<U>(processNum);
             maskTmp = AscendC::Reg::UpdateMask<U>(nRegSize);
-            AscendC::Reg::DataCopy(addReg, idxPtr);
+            AscendC::Reg::LoadAlign(addReg, idxPtr);
             AscendC::Reg::Adds(addReg, addReg, (U)gnSize, mask);
 
             for (uint16_t i = 0; i < loopNum; i++) {
-                AscendC::Reg::DataCopyGather(dstReg, srcPtr, addReg, maskTmp);
+                AscendC::Reg::Gather(dstReg, srcPtr, addReg, maskTmp);
                 // Copy out
-                AscendC::Reg::DataCopyUnAlign(dstPtr, dstReg, uDst, mnSize);
+                AscendC::Reg::StoreUnAlign(dstPtr, dstReg, uDst, mnSize);
                 AscendC::Reg::Adds(addReg, addReg, (U)(tmpLoop * gnAlignSize), mask);
             }
             maskTmp = AscendC::Reg::UpdateMask<U>(processLastNum);
-            AscendC::Reg::DataCopyGather(dstReg, srcPtr, addReg, maskTmp);
-            AscendC::Reg::DataCopyUnAlign(dstPtr, dstReg, uDst, mnSizeLast);
-            AscendC::Reg::DataCopyUnAlignPost(dstPtr, uDst, 0);
+            AscendC::Reg::Gather(dstReg, srcPtr, addReg, maskTmp);
+            AscendC::Reg::StoreUnAlign(dstPtr, dstReg, uDst, mnSizeLast);
+            AscendC::Reg::StoreUnAlignPost(dstPtr, uDst, 0);
         }
     } else {
         __ubuf__ T* srcPtr = (__ubuf__ T*)srcUb.GetPhyAddr();
@@ -369,39 +369,39 @@ __aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::Compute(uint32_t g, int64_
             AscendC::Reg::RegTensor<U> addReg;
             AscendC::Reg::RegTensor<U> dstReg;
             AscendC::Reg::RegTensor<T> dstRegT;
-            AscendC::Reg::UnalignReg uDst;
+            AscendC::Reg::UnalignRegForStore uDst;
             AscendC::Reg::MaskReg mask;
             AscendC::Reg::MaskReg maskTmp;
 
             mask = AscendC::Reg::UpdateMask<U>(processNum);
             maskTmp = AscendC::Reg::UpdateMask<U>(nRegSize);
-            AscendC::Reg::DataCopy(addReg, idxPtr);
+            AscendC::Reg::LoadAlign(addReg, idxPtr);
             AscendC::Reg::Adds(addReg, addReg, (U)gnSize, mask);
 
             for (uint16_t i = 0; i < loopNum; i++) {
-                AscendC::Reg::DataCopyGather(dstReg, srcPtr, addReg, maskTmp);
+                AscendC::Reg::Gather(dstReg, srcPtr, addReg, maskTmp);
                 // Copy out
                 if constexpr (sizeof(T) == sizeof(int8_t)) {
                     // Convert B16 to B8
                     AscendC::Reg::Pack(dstRegT, dstReg);
-                    AscendC::Reg::DataCopyUnAlign(dstPtrT, dstRegT, uDst, mnSize);
-                    AscendC::Reg::DataCopyUnAlignPost(dstPtrT, uDst, 0);
+                    AscendC::Reg::StoreUnAlign(dstPtrT, dstRegT, uDst, mnSize);
+                    AscendC::Reg::StoreUnAlignPost(dstPtrT, uDst, 0);
                 } else {
-                    AscendC::Reg::DataCopyUnAlign(dstPtrU, dstReg, uDst, mnSize);
-                    AscendC::Reg::DataCopyUnAlignPost(dstPtrU, uDst, 0);
+                    AscendC::Reg::StoreUnAlign(dstPtrU, dstReg, uDst, mnSize);
+                    AscendC::Reg::StoreUnAlignPost(dstPtrU, uDst, 0);
                 }
                 AscendC::Reg::Adds(addReg, addReg, (U)(tmpLoop * gnAlignSize), mask);
             }
             maskTmp = AscendC::Reg::UpdateMask<U>(processLastNum);
-            AscendC::Reg::DataCopyGather(dstReg, srcPtr, addReg, maskTmp);
+            AscendC::Reg::Gather(dstReg, srcPtr, addReg, maskTmp);
             if constexpr (sizeof(T) == sizeof(int8_t)) {
                 // Convert B16 to B8
                 AscendC::Reg::Pack(dstRegT, dstReg);
-                AscendC::Reg::DataCopyUnAlign(dstPtrT, dstRegT, uDst, mnSizeLast);
-                AscendC::Reg::DataCopyUnAlignPost(dstPtrT, uDst, 0);
+                AscendC::Reg::StoreUnAlign(dstPtrT, dstRegT, uDst, mnSizeLast);
+                AscendC::Reg::StoreUnAlignPost(dstPtrT, uDst, 0);
             } else {
-                AscendC::Reg::DataCopyUnAlign(dstPtrU, dstReg, uDst, mnSizeLast);
-                AscendC::Reg::DataCopyUnAlignPost(dstPtrU, uDst, 0);
+                AscendC::Reg::StoreUnAlign(dstPtrU, dstReg, uDst, mnSizeLast);
+                AscendC::Reg::StoreUnAlignPost(dstPtrU, uDst, 0);
             }
         }
     }
