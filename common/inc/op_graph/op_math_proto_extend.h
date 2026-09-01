@@ -742,56 +742,6 @@ REG_OP(ExpandDims)
     .OP_END_FACTORY_REG(InTopK)
 
     /**
-    * @brief Adds "v" into specified rows of "x".
-    * Computes y = x; y[i, :] += v.
-    * @par Inputs:
-    * Three inputs, including:
-    * @li x: A Tensor.
-    *     TensorType::BasicType(), Format is ND.
-    * @li indices: A vector of type int32.
-    *     Indices into the left-most dimension of "x".
-    * @li v: A Tensor of the same type as "x".
-    *     Same dimension sizes as x except the first dimension,
-    *     which must be the same as the size of "indices" . \n
-
-    * @par Outputs:
-    * y: A Tensor of the same type as "x".
-    *  An alias of "x". The content of "y" is undefined if there are duplicates in indices.
-    * @par Third-party framework compatibility
-    * Compatible with the TensorFlow operator InplaceAdd.
-    */
-    REG_OP(InplaceAdd)
-    .INPUT(x, TensorType::BasicType())
-    .INPUT(indices, TensorType({DT_INT32}))
-    .INPUT(v, TensorType::BasicType())
-    .OUTPUT(y, TensorType::BasicType())
-    .OP_END_FACTORY_REG(InplaceAdd)
-
-    /**
-    * @brief Subtracts "v" into specified rows of "x".
-    * Computes y = x; y[i, :] -= v; return y.
-    * @par Inputs:
-    ** Three inputs, including:
-    * @li x: A Tensor. TensorType::BasicType(), Format is ND.
-    * @li indices: A vector of type int32, Format is ND. Indices into the left-most dimension of x.
-    * @li v: A Tensor of the same type as "x", Format is ND.
-    * Same dimension sizes as "x" except the first dimension, which must be the same as the size of "indices" . \n
-
-    * @par Outputs:
-    * y: A Tensor. Has the same type as "x", Format is ND.
-    *  An alias of "x". The content of "y" is undefined if there are duplicates in indices . \n
-
-    * @par Third-party framework compatibility
-    * Compatible with the TensorFlow operator InplaceSub.
-    */
-    REG_OP(InplaceSub)
-    .INPUT(x, TensorType::BasicType())
-    .INPUT(indices, TensorType({DT_INT32}))
-    .INPUT(v, TensorType::BasicType())
-    .OUTPUT(y, TensorType::BasicType())
-    .OP_END_FACTORY_REG(InplaceSub)
-
-    /**
     * @brief Performs transform mask to argmax .
 
     * @par Inputs:
