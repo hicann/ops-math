@@ -102,6 +102,28 @@ private:
     template <typename T>
     void GetPaddingsToShape(const gert::Tensor* paddingsTensor);
 
+    void FindSplitAxisLoop(bool isBigLastDim, uint64_t& dimSizeInUb, uint64_t& dimSizeInLast4Axis);
+    void SettleUbFactor(uint64_t dimSizeInUb, uint64_t dimSizeInLast4Axis);
+    void CalcCoreInfo(int64_t tmpTotalCount, int64_t& tmpPerCount, int64_t& tmpCoreNum);
+    bool OptimizeFactorSearch(uint8_t dimIdx, int64_t sliceCount, const PadV3GradUbTileInfo& lastInfo,
+                              PadV3GradUbTileInfo& bestInfo, uint32_t& loopGuard, uint32_t loopLimit);
+    bool NeedFallBackToPrevAxis(const PadV3GradUbTileInfo& oldTilingInfo, const PadV3GradUbTileInfo& newTilingInfo);
+    ge::graphStatus ParseModeAndContiguousAttrs();
+    void MapModeStrToNum(const char* mode);
+    ge::graphStatus ValidateModeValue(const char* mode);
+    bool NeedCutLastForSingleAxis(uint64_t lastShapeSizeAlign);
+    void KeyMirrorBigLastDim(uint64_t lastShapeSizeAlign, uint64_t alignNum);
+    void KeyMirrorSmallLastDim(uint64_t lastShapeSizeAlign, uint64_t alignNum);
+    ge::graphStatus LogPadParamCheckFailed(int64_t padFront, int64_t padBack, const std::string& reasonStr);
+    ge::graphStatus CheckReflectParam(int64_t inShapeV, int64_t padFront, int64_t padBack);
+    ge::graphStatus CheckSymmetricParam(int64_t inShapeV, int64_t padFront, int64_t padBack);
+    ge::graphStatus CheckCircularParam(int64_t inShapeV, int64_t padFront, int64_t padBack);
+    ge::graphStatus CheckEdgeParam(int64_t inShapeV, int64_t padFront, int64_t padBack);
+    void UpdatePadSignFlags(int64_t padFront, int64_t padBack);
+    void FoldZeroPadDims(uint16_t& scanIdx, uint16_t rankLimit, uint64_t& mergedDim, int64_t& mergedLeftPad,
+                         int64_t& mergedRightPad);
+    bool IsUnitDimToDrop(uint64_t inShapeV, int64_t padFront, int64_t padBack);
+
 private:
     gert::TilingContext* context_ = nullptr;
     uint32_t coreNum_{0};

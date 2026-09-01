@@ -63,11 +63,11 @@ uint64_t PadV3GradACTiling::GetSizeOfBlockAlign(uint64_t inputSize, uint64_t ali
     return (inputSize + alignBlockSize - 1) / alignBlockSize * alignBlockSize;
 }
 
-void PadV3GradACTiling::DoFindSplitAxisByInput(bool isBigLastDim)
+void PadV3GradACTiling::FindSplitAxisLoop(bool isBigLastDim, uint64_t& dimSizeInUb, uint64_t& dimSizeInLast4Axis)
 {
-    OP_LOGD(context_, "Start PadV3GradACTiling CalculateTilingKey DoFindSplitAxis.");
-    uint64_t dimSizeInUb = dtypeBytes_;
-    uint64_t dimSizeInLast4Axis = dimSizeInUb;
+    OP_LOGD(context_, "Start PadV3GradACTiling CalculateTilingKey FindSplitAxisLoop.");
+    dimSizeInUb = dtypeBytes_;
+    dimSizeInLast4Axis = dimSizeInUb;
     // 找到切分轴
     for (int64_t i = dimNum_ - 1; i >= 0; i--) {
         if (isBigLastDim && i == static_cast<int64_t>(dimNum_ - 1)) {
@@ -84,6 +84,10 @@ void PadV3GradACTiling::DoFindSplitAxisByInput(bool isBigLastDim)
             break;
         }
     }
+}
+
+void PadV3GradACTiling::SettleUbFactor(uint64_t dimSizeInUb, uint64_t dimSizeInLast4Axis)
+{
     // 维度超过4，满载后4个轴
     if (dimNum_ - ubAxis_ > PAD_DIM_INDEX_FOURTH) {
         ubAxis_ = dimNum_ - PAD_DIM_INDEX_FOURTH;
@@ -105,6 +109,15 @@ void PadV3GradACTiling::DoFindSplitAxisByInput(bool isBigLastDim)
         outTileSize_ = GetSizeOfBlockAlign(dimSizeInUb, blockSize_);
     }
     outTileSize_ = outTileSize_ / dtypeBytes_;
+}
+
+void PadV3GradACTiling::DoFindSplitAxisByInput(bool isBigLastDim)
+{
+    OP_LOGD(context_, "Start PadV3GradACTiling CalculateTilingKey DoFindSplitAxis.");
+    uint64_t dimSizeInUb;
+    uint64_t dimSizeInLast4Axis;
+    FindSplitAxisLoop(isBigLastDim, dimSizeInUb, dimSizeInLast4Axis);
+    SettleUbFactor(dimSizeInUb, dimSizeInLast4Axis);
 }
 
 bool PadV3GradACTiling::CheckTilingInfoSatisfied(PadV3GradUbTileInfo& tilingInfo)
@@ -132,6 +145,74 @@ bool PadV3GradACTiling::CheckTilingInfoSatisfied(PadV3GradUbTileInfo& tilingInfo
     return false;
 }
 
+void PadV3GradACTiling::CalcCoreInfo(int64_t tmpTotalCount, int64_t& tmpPerCount, int64_t& tmpCoreNum)
+{
+    tmpPerCount = tmpTotalCount > coreNum_ ? Ops::Base::CeilDiv(tmpTotalCount, static_cast<int64_t>(coreNum_)) : 1;
+    tmpCoreNum = tmpTotalCount > coreNum_ ? Ops::Base::CeilDiv(tmpTotalCount, tmpPerCount) : tmpTotalCount;
+}
+
+bool PadV3GradACTiling::NeedFallBackToPrevAxis(const PadV3GradUbTileInfo& oldTilingInfo,
+                                               const PadV3GradUbTileInfo& newTilingInfo)
+{
+    return newTilingInfo.ubSplitAxis != dimNum_ - 1 && newTilingInfo.ubSplitAxis > oldTilingInfo.ubSplitAxis &&
+           newTilingInfo.ubSplitFactor >= tilingData_->outShape[newTilingInfo.ubSplitAxis];
+}
+
+bool PadV3GradACTiling::OptimizeFactorSearch(uint8_t dimIdx, int64_t sliceCount, const PadV3GradUbTileInfo& lastInfo,
+                                             PadV3GradUbTileInfo& bestInfo, uint32_t& loopGuard, uint32_t loopLimit)
+{
+    bool searchDone = false;
+    int64_t startFactor = (dimIdx == lastInfo.ubSplitAxis) ? lastInfo.ubSplitFactor : tilingData_->outShape[dimIdx];
+    for (int64_t tryFactor = startFactor; tryFactor > 0;) {
+        loopGuard++;
+        if (loopGuard > loopLimit) {
+            searchDone = true;
+            OP_LOGD(context_, "loops:%u is bigger than maxLoop:%u", loopGuard, loopLimit);
+            break;
+        }
+
+        // dimSliceCnt 每次循环会增加1,最多增加 coreNum_ 后，perCoreCnt会增加1
+        int64_t dimSliceCnt = Ops::Base::CeilDiv(tilingData_->outShape[dimIdx], static_cast<uint64_t>(tryFactor));
+        int64_t totalCnt = dimSliceCnt * sliceCount;
+        int64_t perCoreCnt = 0;
+        int64_t usedCores = 0;
+        CalcCoreInfo(totalCnt, perCoreCnt, usedCores);
+        int64_t balancedFactor = Ops::Base::CeilDiv(tilingData_->outShape[dimIdx],
+                                                    static_cast<uint64_t>(dimSliceCnt)); // 切分更均匀
+
+        if (lastInfo.ubPerCoreCnt != perCoreCnt) {
+            OP_LOGD(context_, "iDim:%u factor:%ld tmpPerCount:%ld not equal ubPerCoreCnt:%ld", dimIdx, tryFactor,
+                    perCoreCnt, lastInfo.ubPerCoreCnt);
+            searchDone = true;
+            break;
+        }
+
+        if (tryFactor * tilingData_->inStride[dimIdx] * dtypeBytes_ < MIN_PER_UB_SIZE ||
+            balancedFactor * tilingData_->inStride[dimIdx] * dtypeBytes_ < MIN_PER_UB_SIZE) {
+            OP_LOGD(context_, "iDim:%u factor:%ld tmpFactor:%ld in ubSize is too small", dimIdx, tryFactor,
+                    balancedFactor);
+            searchDone = true;
+            break;
+        }
+
+        bestInfo.ubSplitAxis = dimIdx;
+        bestInfo.ubSplitFactor = balancedFactor;
+        bestInfo.ubTotalCnt = totalCnt;
+        bestInfo.ubPerCoreCnt = perCoreCnt;
+        bestInfo.usedCoreNum = usedCores;
+
+        double coreUseRate = static_cast<double>(usedCores) / static_cast<double>(coreNum_);
+        OP_LOGD(context_, "current iDim:%u factor:%ld iDimOuter:%ld tmpFactor:%ld tmpCoreNum:%ld usedRate:%f", dimIdx,
+                tryFactor, dimSliceCnt, balancedFactor, usedCores, coreUseRate);
+        if (coreUseRate >= MIN_USED_CORES_RATIO) {
+            searchDone = true;
+            break;
+        }
+        tryFactor = balancedFactor - 1;
+    }
+    return searchDone;
+}
+
 void PadV3GradACTiling::GetOptimizeTiling(const PadV3GradUbTileInfo& oldTilingInfo, PadV3GradUbTileInfo& newTilingInfo)
 {
     int64_t outCount = 1;
@@ -148,56 +229,7 @@ void PadV3GradACTiling::GetOptimizeTiling(const PadV3GradUbTileInfo& oldTilingIn
             outCount *= tilingData_->outShape[iDim - 1];
         }
 
-        int64_t iDimFactor = (iDim == oldTilingInfo.ubSplitAxis) ? oldTilingInfo.ubSplitFactor :
-                                                                   tilingData_->outShape[iDim];
-        for (int64_t factor = iDimFactor; factor > 0;) {
-            loops++;
-            if (loops > maxLoop) {
-                found = true;
-                OP_LOGD(context_, "loops:%u is bigger than maxLoop:%u", loops, maxLoop);
-                break;
-            }
-
-            // iDimOuter 每次循环会增加1,最多增加 coreNum_ 后，tmpPerCount会增加1
-            int64_t iDimOuter = Ops::Base::CeilDiv(tilingData_->outShape[iDim], static_cast<uint64_t>(factor));
-            int64_t tmpTotalCount = iDimOuter * outCount;
-            int64_t tmpPerCount = tmpTotalCount > coreNum_ ?
-                                      Ops::Base::CeilDiv(tmpTotalCount, static_cast<int64_t>(coreNum_)) :
-                                      1;
-            int64_t tmpCoreNum = tmpTotalCount > coreNum_ ? Ops::Base::CeilDiv(tmpTotalCount, tmpPerCount) :
-                                                            tmpTotalCount;
-            int64_t tmpFactor = Ops::Base::CeilDiv(tilingData_->outShape[iDim],
-                                                   static_cast<uint64_t>(iDimOuter)); // 切分更均匀
-
-            if (oldTilingInfo.ubPerCoreCnt != tmpPerCount) {
-                OP_LOGD(context_, "iDim:%u factor:%ld tmpPerCount:%ld not equal ubPerCoreCnt:%ld", iDim, factor,
-                        tmpPerCount, oldTilingInfo.ubPerCoreCnt);
-                found = true;
-                break;
-            }
-
-            if (factor * tilingData_->inStride[iDim] * dtypeBytes_ < MIN_PER_UB_SIZE ||
-                tmpFactor * tilingData_->inStride[iDim] * dtypeBytes_ < MIN_PER_UB_SIZE) {
-                OP_LOGD(context_, "iDim:%u factor:%ld tmpFactor:%ld in ubSize is too small", iDim, factor, tmpFactor);
-                found = true;
-                break;
-            }
-
-            newTilingInfo.ubSplitAxis = iDim;
-            newTilingInfo.ubSplitFactor = tmpFactor;
-            newTilingInfo.ubTotalCnt = tmpTotalCount;
-            newTilingInfo.ubPerCoreCnt = tmpPerCount;
-            newTilingInfo.usedCoreNum = tmpCoreNum;
-
-            double usedRate = static_cast<double>(tmpCoreNum) / static_cast<double>(coreNum_);
-            OP_LOGD(context_, "current iDim:%u factor:%ld iDimOuter:%ld tmpFactor:%ld tmpCoreNum:%ld usedRate:%f", iDim,
-                    factor, iDimOuter, tmpFactor, tmpCoreNum, usedRate);
-            if (usedRate >= MIN_USED_CORES_RATIO) {
-                found = true;
-                break;
-            }
-            factor = tmpFactor - 1;
-        }
+        found = OptimizeFactorSearch(iDim, outCount, oldTilingInfo, newTilingInfo, loops, maxLoop);
 
         OP_LOGD(context_, "iDim:%u ubSplitAxis:%u ubSplitFactor:%u loops:%u found:%d", iDim, newTilingInfo.ubSplitAxis,
                 newTilingInfo.ubSplitFactor, loops, found);
@@ -207,8 +239,7 @@ void PadV3GradACTiling::GetOptimizeTiling(const PadV3GradUbTileInfo& oldTilingIn
         }
     }
     // 如果切分轴变化，不是尾轴，且该轴满载，那还是切前一个轴且factor=1
-    if (newTilingInfo.ubSplitAxis != dimNum_ - 1 && newTilingInfo.ubSplitAxis > oldTilingInfo.ubSplitAxis &&
-        newTilingInfo.ubSplitFactor >= tilingData_->outShape[newTilingInfo.ubSplitAxis]) {
+    if (NeedFallBackToPrevAxis(oldTilingInfo, newTilingInfo)) {
         newTilingInfo.ubSplitAxis = newTilingInfo.ubSplitAxis - 1;
         newTilingInfo.ubSplitFactor = 1;
         OP_LOGD(context_, "Back to last axis, ubSplitAxis:%u ubSplitFactor:%u", newTilingInfo.ubSplitAxis,
@@ -259,6 +290,49 @@ void PadV3GradACTiling::TilingInfoTune()
     coreNum_ = newTilingInfo.usedCoreNum;
 }
 
+bool PadV3GradACTiling::NeedCutLastForSingleAxis(uint64_t lastShapeSizeAlign)
+{
+    return lastShapeSizeAlign * EXPANSION_FACTOR > bufferSize_ ||
+           (tilingData_->inShape[dimNum_ - 1] * dtypeBytes_ > vectorSize_ / HALF_FACTOR && dimNum_ == 1);
+}
+
+void PadV3GradACTiling::KeyMirrorBigLastDim(uint64_t lastShapeSizeAlign, uint64_t alignNum)
+{
+    additionTileSize_ = GetSizeOfBlockAlign(tilingData_->inShape[dimNum_ - 1] * dtypeBytes_, blockSize_);
+    if (dtypeBytes_ == 1) {
+        additionTileSize_ = GetSizeOfBlockAlign(tilingData_->inShape[dimNum_ - 1] * dtypeBytes_ * EXPANSION_FACTOR,
+                                                blockSize_);
+    }
+    bufferSize_ = GetSizeOfBlockAlign((ubSize_ - additionTileSize_) / (CONST4 * dtypeBytes_ + FP32_SIZE) - alignNum,
+                                      alignNum);
+    DoFindSplitAxisByInput(true);
+    cutMode_ = TPL_SIMD_NORMAL;
+
+    if (lastShapeSizeAlign * EXPANSION_FACTOR > outTileSize_) {
+        cutMode_ = TPL_SIMD_BIG;
+        bufferSize_ = GetSizeOfBlockAlign(ubSize_ / (CONST2 * dtypeBytes_ + CONST4 * FP32_SIZE) - alignNum, alignNum);
+        ubAxis_ = static_cast<uint8_t>(static_cast<int8_t>(dimNum_) - 1);
+        ubFactor_ = tilingData_->inShape[dimNum_ - 1];
+        outTileSize_ = bufferSize_;
+        return TilingInfoTune();
+    } else {
+        return TilingInfoTuneForNormal(lastShapeSizeAlign);
+    }
+}
+
+void PadV3GradACTiling::KeyMirrorSmallLastDim(uint64_t lastShapeSizeAlign, uint64_t alignNum)
+{
+    bufferSize_ = GetSizeOfBlockAlign(
+        (ubSize_ - vectorSize_ * CONST3 * CONST2 - blockSize_ * CONST2) / (CONST2 * dtypeBytes_ + CONST4 * FP32_SIZE) -
+            alignNum,
+        alignNum);
+    DoFindSplitAxisByInput(false);
+    cutMode_ = TPL_SIMD_SMALL;
+
+    additionTileSize_ = vectorSize_;
+    TilingInfoTuneForNormal(lastShapeSizeAlign);
+}
+
 void PadV3GradACTiling::CalculateTilingKeyMirror()
 {
     OP_LOGD(context_, "Start PadV3GradACTiling CalculateTilingKeyMirror.");
@@ -275,8 +349,7 @@ void PadV3GradACTiling::CalculateTilingKeyMirror()
     }
     // 不切w，但是倒数第二根轴只能切1，此时也走切W分支
     // 不切w, 但是只有一根轴 & w > 128B，也走切w分支
-    if (lastShapeSizeAlign * EXPANSION_FACTOR > bufferSize_ ||
-        (tilingData_->inShape[dimNum_ - 1] * dtypeBytes_ > vectorSize_ / HALF_FACTOR && dimNum_ == 1)) {
+    if (NeedCutLastForSingleAxis(lastShapeSizeAlign)) {
         cutMode_ = TPL_SIMD_BIG;
         ubAxis_ = dimNum_ - 1;
         ubFactor_ = tilingData_->inShape[dimNum_ - 1];
@@ -284,37 +357,9 @@ void PadV3GradACTiling::CalculateTilingKeyMirror()
         return TilingInfoTune();
     }
     if (tilingData_->inShape[dimNum_ - 1] > vectorSize_ / sizeof(ge::float32_t)) {
-        additionTileSize_ = GetSizeOfBlockAlign(tilingData_->inShape[dimNum_ - 1] * dtypeBytes_, blockSize_);
-        if (dtypeBytes_ == 1) {
-            additionTileSize_ = GetSizeOfBlockAlign(tilingData_->inShape[dimNum_ - 1] * dtypeBytes_ * EXPANSION_FACTOR,
-                                                    blockSize_);
-        }
-        bufferSize_ = GetSizeOfBlockAlign((ubSize_ - additionTileSize_) / (CONST4 * dtypeBytes_ + FP32_SIZE) - alignNum,
-                                          alignNum);
-        DoFindSplitAxisByInput(true);
-        cutMode_ = TPL_SIMD_NORMAL;
-
-        if (lastShapeSizeAlign * EXPANSION_FACTOR > outTileSize_) {
-            cutMode_ = TPL_SIMD_BIG;
-            bufferSize_ = GetSizeOfBlockAlign(ubSize_ / (CONST2 * dtypeBytes_ + CONST4 * FP32_SIZE) - alignNum,
-                                              alignNum);
-            ubAxis_ = static_cast<uint8_t>(static_cast<int8_t>(dimNum_) - 1);
-            ubFactor_ = tilingData_->inShape[dimNum_ - 1];
-            outTileSize_ = bufferSize_;
-            return TilingInfoTune();
-        } else {
-            return TilingInfoTuneForNormal(lastShapeSizeAlign);
-        }
+        KeyMirrorBigLastDim(lastShapeSizeAlign, alignNum);
     } else {
-        bufferSize_ = GetSizeOfBlockAlign((ubSize_ - vectorSize_ * CONST3 * CONST2 - blockSize_ * CONST2) /
-                                                  (CONST2 * dtypeBytes_ + CONST4 * FP32_SIZE) -
-                                              alignNum,
-                                          alignNum);
-        DoFindSplitAxisByInput(false);
-        cutMode_ = TPL_SIMD_SMALL;
-
-        additionTileSize_ = vectorSize_;
-        TilingInfoTuneForNormal(lastShapeSizeAlign);
+        KeyMirrorSmallLastDim(lastShapeSizeAlign, alignNum);
     }
 }
 
@@ -459,101 +504,152 @@ ge::graphStatus PadV3GradACTiling::ComputeAfterPaddingsAndStrides()
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus PadV3GradACTiling::CheckModeInputParam(int64_t inShapeV, int64_t padFront, int64_t padBack)
+ge::graphStatus PadV3GradACTiling::LogPadParamCheckFailed(int64_t padFront, int64_t padBack,
+                                                          const std::string& reasonStr)
+{
+    std::string incorrectValues = std::to_string(padFront) + " and " + std::to_string(padBack);
+    OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context_->GetNodeName(), "padFront and padBack", incorrectValues.c_str(),
+                                           reasonStr.c_str());
+    return ge::GRAPH_FAILED;
+}
+
+ge::graphStatus PadV3GradACTiling::CheckReflectParam(int64_t inShapeV, int64_t padFront, int64_t padBack)
 {
     int64_t outShapeV = inShapeV - padFront - padBack;
     int64_t leftsubin = padFront - outShapeV;
     int64_t rightsubin = padBack - outShapeV;
     if (padMode_ == TPL_MODE_REFLECT && (0 < (leftsubin + 1) || 0 < (rightsubin + 1))) {
-        std::string incorrectValues = std::to_string(padFront) + " and " + std::to_string(padBack);
         std::string
             reasonStr = "The value of padFront and padBack must be less than InferredOutShape - 1 for reflect mode, "
                         "InferredOutShape: " +
                         std::to_string(outShapeV);
-        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context_->GetNodeName(), "padFront and padBack", incorrectValues.c_str(),
-                                               reasonStr.c_str());
-        return ge::GRAPH_FAILED;
+        return LogPadParamCheckFailed(padFront, padBack, reasonStr);
     }
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus PadV3GradACTiling::CheckSymmetricParam(int64_t inShapeV, int64_t padFront, int64_t padBack)
+{
+    int64_t outShapeV = inShapeV - padFront - padBack;
+    int64_t leftsubin = padFront - outShapeV;
+    int64_t rightsubin = padBack - outShapeV;
     if (padMode_ == TPL_MODE_SYMMETRIC && (0 < leftsubin || 0 < rightsubin)) {
-        std::string incorrectValues = std::to_string(padFront) + " and " + std::to_string(padBack);
         std::string reasonStr = "The value of padFront and padBack must be no greater than InferredOutShape for "
                                 "symmetric mode, "
                                 "InferredOutShape: " +
                                 std::to_string(outShapeV);
-        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context_->GetNodeName(), "padFront and padBack", incorrectValues.c_str(),
-                                               reasonStr.c_str());
-        return ge::GRAPH_FAILED;
+        return LogPadParamCheckFailed(padFront, padBack, reasonStr);
     }
+    return ge::GRAPH_SUCCESS;
+}
 
+ge::graphStatus PadV3GradACTiling::CheckCircularParam(int64_t inShapeV, int64_t padFront, int64_t padBack)
+{
+    int64_t outShapeV = inShapeV - padFront - padBack;
+    int64_t leftsubin = padFront - outShapeV;
+    int64_t rightsubin = padBack - outShapeV;
     if (padMode_ == TPL_MODE_CIRCULAR && (0 < leftsubin || 0 < rightsubin)) {
-        std::string incorrectValues = std::to_string(padFront) + " and " + std::to_string(padBack);
         std::string
             reasonStr = "The value of padFront and padBack must be no greater than InferredOutShape for circular mode, "
                         "InferredOutShape: " +
                         std::to_string(outShapeV);
-        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context_->GetNodeName(), "padFront and padBack", incorrectValues.c_str(),
-                                               reasonStr.c_str());
-        return ge::GRAPH_FAILED;
+        return LogPadParamCheckFailed(padFront, padBack, reasonStr);
     }
-
-    if (padMode_ == TPL_MODE_EDGE && outShapeV == 0 && (padFront != 0 || padBack != 0)) {
-        std::string incorrectValues = std::to_string(padFront) + " and " + std::to_string(padBack);
-        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
-            context_->GetNodeName(), "padFront and padBack", incorrectValues.c_str(),
-            "The value of padFront and padBack must be 0 when InferredOutShape is 0");
-        return ge::GRAPH_FAILED;
-    }
-
     return ge::GRAPH_SUCCESS;
 }
+
+ge::graphStatus PadV3GradACTiling::CheckEdgeParam(int64_t inShapeV, int64_t padFront, int64_t padBack)
+{
+    int64_t outShapeV = inShapeV - padFront - padBack;
+    if (padMode_ == TPL_MODE_EDGE && outShapeV == 0 && (padFront != 0 || padBack != 0)) {
+        return LogPadParamCheckFailed(padFront, padBack,
+                                      "The value of padFront and padBack must be 0 when InferredOutShape is 0");
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus PadV3GradACTiling::CheckModeInputParam(int64_t inShapeV, int64_t padFront, int64_t padBack)
+{
+    const ge::graphStatus reflectRet = CheckReflectParam(inShapeV, padFront, padBack);
+    if (reflectRet != ge::GRAPH_SUCCESS) {
+        return reflectRet;
+    }
+    const ge::graphStatus symmetricRet = CheckSymmetricParam(inShapeV, padFront, padBack);
+    if (symmetricRet != ge::GRAPH_SUCCESS) {
+        return symmetricRet;
+    }
+    const ge::graphStatus circularRet = CheckCircularParam(inShapeV, padFront, padBack);
+    if (circularRet != ge::GRAPH_SUCCESS) {
+        return circularRet;
+    }
+    const ge::graphStatus edgeRet = CheckEdgeParam(inShapeV, padFront, padBack);
+    if (edgeRet != ge::GRAPH_SUCCESS) {
+        return edgeRet;
+    }
+    return ge::GRAPH_SUCCESS;
+}
+void PadV3GradACTiling::UpdatePadSignFlags(int64_t padFront, int64_t padBack)
+{
+    if (padFront > 0 || padBack > 0) {
+        isPadAllNegative_ = false;
+    }
+    if (padFront < 0 || padBack < 0) {
+        isPadAllPositive_ = false;
+    }
+}
+
+void PadV3GradACTiling::FoldZeroPadDims(uint16_t& scanIdx, uint16_t rankLimit, uint64_t& mergedDim,
+                                        int64_t& mergedLeftPad, int64_t& mergedRightPad)
+{
+    while (scanIdx < rankLimit && (0 == paddings_.padFront.GetDim(scanIdx) && 0 == paddings_.padBack.GetDim(scanIdx))) {
+        mergedDim *= tilingData_->inShape[scanIdx];
+        mergedLeftPad *= tilingData_->inShape[scanIdx];
+        mergedRightPad *= tilingData_->inShape[scanIdx];
+        scanIdx++;
+        dimNum_--;
+    }
+}
+
+bool PadV3GradACTiling::IsUnitDimToDrop(uint64_t inShapeV, int64_t padFront, int64_t padBack)
+{
+    return inShapeV == 1 && (inShapeV + padFront + padBack) == 1;
+}
+
 ge::graphStatus PadV3GradACTiling::DimensionCollapseMode()
 {
-    uint16_t fastDim = 0;
-    uint16_t slowDim = 0;
-    uint8_t originalRank = dimNum_;
+    uint16_t readDim = 0;
+    uint16_t writeDim = 0;
+    uint8_t srcRank = dimNum_;
     OP_LOGD(context_,
             "Before collapse paddings, padMode_:%u dimNum is %u, shape is %s, left pad is %s, right pad is %s",
-            padMode_, originalRank, ToString(tilingData_->inShape, originalRank).c_str(),
+            padMode_, srcRank, ToString(tilingData_->inShape, srcRank).c_str(),
             Ops::Base::ToString(paddings_.padFront).c_str(), Ops::Base::ToString(paddings_.padBack).c_str());
-    while (fastDim < originalRank) {
-        int64_t padFront = paddings_.padFront.GetDim(fastDim);
-        int64_t padBack = paddings_.padBack.GetDim(fastDim);
+    while (readDim < srcRank) {
+        int64_t dimLeftPad = paddings_.padFront.GetDim(readDim);
+        int64_t dimRightPad = paddings_.padBack.GetDim(readDim);
 
-        OP_CHECK_IF(CheckModeInputParam(tilingData_->inShape[fastDim], padFront, padBack) == ge::GRAPH_FAILED,
+        OP_CHECK_IF(CheckModeInputParam(tilingData_->inShape[readDim], dimLeftPad, dimRightPad) == ge::GRAPH_FAILED,
                     OP_LOGE(context_, "CheckModeInputParam failed."), return ge::GRAPH_FAILED);
 
         // 消除1轴
-        if (tilingData_->inShape[fastDim] == 1 && (tilingData_->inShape[fastDim] + padFront + padBack) == 1) {
-            fastDim++;
+        if (IsUnitDimToDrop(tilingData_->inShape[readDim], dimLeftPad, dimRightPad)) {
+            readDim++;
             dimNum_--;
             continue;
         }
-        if (padFront > 0 || padBack > 0) {
-            isPadAllNegative_ = false;
-        }
+        UpdatePadSignFlags(dimLeftPad, dimRightPad);
 
-        if (padFront < 0 || padBack < 0) {
-            isPadAllPositive_ = false;
+        uint64_t dstShape = tilingData_->inShape[readDim];
+        int64_t dstLeftPad = paddings_.padFront.GetDim(readDim);
+        int64_t dstRightPad = paddings_.padBack.GetDim(readDim);
+        readDim++;
+        if (0 == paddings_.padFront.GetDim(readDim - 1) && 0 == paddings_.padBack.GetDim(readDim - 1)) {
+            FoldZeroPadDims(readDim, srcRank, dstShape, dstLeftPad, dstRightPad);
         }
-
-        uint64_t collapsedShape = tilingData_->inShape[fastDim];
-        int64_t collapsedPadFront = paddings_.padFront.GetDim(fastDim);
-        int64_t collapsedPadBack = paddings_.padBack.GetDim(fastDim);
-        fastDim++;
-        if (0 == paddings_.padFront.GetDim(fastDim - 1) && 0 == paddings_.padBack.GetDim(fastDim - 1)) {
-            while (fastDim < originalRank &&
-                   (0 == paddings_.padFront.GetDim(fastDim) && 0 == paddings_.padBack.GetDim(fastDim))) {
-                collapsedShape *= tilingData_->inShape[fastDim];
-                collapsedPadFront *= tilingData_->inShape[fastDim];
-                collapsedPadBack *= tilingData_->inShape[fastDim];
-                fastDim++;
-                dimNum_--;
-            }
-        }
-        tilingData_->inShape[slowDim] = collapsedShape;
-        tilingData_->leftPad[slowDim] = collapsedPadFront;
-        tilingData_->rightPad[slowDim] = collapsedPadBack;
-        ++slowDim;
+        tilingData_->inShape[writeDim] = dstShape;
+        tilingData_->leftPad[writeDim] = dstLeftPad;
+        tilingData_->rightPad[writeDim] = dstRightPad;
+        ++writeDim;
     }
     // shape全1且不补pad的场景,消除1轴后就为空了
     if (dimNum_ == 0) {
@@ -762,9 +858,33 @@ ge::graphStatus PadV3GradACTiling::GetShapesAndDtypes()
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus PadV3GradACTiling::GetShapeAttrsInfo()
+void PadV3GradACTiling::MapModeStrToNum(const char* mode)
 {
-    OP_LOGD(context_, "Start PadV3GradACTiling GetShapeAttrsInfo");
+    if (!strcmp(mode, "constant")) {
+        padMode_ = TPL_MODE_CONSTANT;
+    } else if (!strcmp(mode, "edge")) {
+        padMode_ = TPL_MODE_EDGE;
+    } else if (!strcmp(mode, "symmetric")) {
+        padMode_ = TPL_MODE_SYMMETRIC;
+    } else if (!strcmp(mode, "circular")) {
+        padMode_ = TPL_MODE_CIRCULAR;
+    }
+}
+
+ge::graphStatus PadV3GradACTiling::ValidateModeValue(const char* mode)
+{
+    if (strcmp(mode, "constant") != 0 && strcmp(mode, "edge") != 0 && strcmp(mode, "reflect") != 0 &&
+        strcmp(mode, "symmetric") != 0 && strcmp(mode, "circular") != 0) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "mode", mode,
+            "The value of mode can only be constant, edge, reflect, symmetric, or circular");
+        return ge::GRAPH_FAILED;
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus PadV3GradACTiling::ParseModeAndContiguousAttrs()
+{
     auto const attrs = context_->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context_, attrs);
     if (isCircularPadGrad_) {
@@ -774,28 +894,25 @@ ge::graphStatus PadV3GradACTiling::GetShapeAttrsInfo()
         auto* mode = attrs->GetAttrPointer<char>(0);
         // padv3grad mode可选，默认reflect;
         if (mode) {
-            if (!strcmp(mode, "constant")) {
-                padMode_ = TPL_MODE_CONSTANT;
-            } else if (!strcmp(mode, "edge")) {
-                padMode_ = TPL_MODE_EDGE;
-            } else if (!strcmp(mode, "symmetric")) {
-                padMode_ = TPL_MODE_SYMMETRIC;
-            } else if (!strcmp(mode, "circular")) {
-                padMode_ = TPL_MODE_CIRCULAR;
+            MapModeStrToNum(mode);
+            if (ValidateModeValue(mode) == ge::GRAPH_FAILED) {
+                return ge::GRAPH_FAILED;
             }
-            OP_CHECK_IF(strcmp(mode, "constant") != 0 && strcmp(mode, "edge") != 0 && strcmp(mode, "reflect") != 0 &&
-                            strcmp(mode, "symmetric") != 0 && strcmp(mode, "circular") != 0,
-                        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-                            context_->GetNodeName(), "mode", mode,
-                            "The value of mode can only be constant, edge, reflect, symmetric, or circular"),
-                        return ge::GRAPH_FAILED);
         }
         auto* paddingContiguous = attrs->GetAttrPointer<bool>(1);
         if (paddingContiguous) {
             paddingContiguous_ = *paddingContiguous;
         }
     }
+    return ge::GRAPH_SUCCESS;
+}
 
+ge::graphStatus PadV3GradACTiling::GetShapeAttrsInfo()
+{
+    OP_LOGD(context_, "Start PadV3GradACTiling GetShapeAttrsInfo");
+    if (ParseModeAndContiguousAttrs() == ge::GRAPH_FAILED) {
+        return ge::GRAPH_FAILED;
+    }
     OP_CHECK_IF(GetShapesAndDtypes() == ge::GRAPH_FAILED,
                 OP_LOGE(context_, "PadV3GradACTiling GetShapeAttrsInfo GetShapesAndDtypes error."),
                 return ge::GRAPH_FAILED);

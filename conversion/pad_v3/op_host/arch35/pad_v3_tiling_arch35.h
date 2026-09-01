@@ -92,6 +92,7 @@ private:
     void FillsAndPrintTilingData();
 
     ge::graphStatus GetShapesAndDtypes();
+    ge::graphStatus GetInShapeInfo();
     ge::graphStatus GetPaddings();
     template <typename T>
     void GetPaddingsToShape(const gert::Tensor* paddingsTensor);
@@ -116,6 +117,42 @@ private:
     ge::graphStatus Fp4ValidateInShape();
     ge::graphStatus Fp4ValidatePaddings();
     void Fp4TilingData();
+
+    uint64_t GetTileShape(uint8_t dimIdx, bool cutOutput);
+    void CalcCoreInfo(int64_t tmpTotalCount, int64_t& tmpPerCount, int64_t& tmpCoreNum);
+    bool SearchFactorForDim(uint8_t iDim, int64_t outCount, const PadV3UbTileInfo& oldTilingInfo,
+                            PadV3UbTileInfo& newTilingInfo, uint32_t& loops, uint32_t maxLoop, bool cutOutput);
+    bool NeedFallBackToPrevAxis(const PadV3UbTileInfo& oldTilingInfo, const PadV3UbTileInfo& newTilingInfo,
+                                bool cutOutput);
+    ge::graphStatus ParseModeAndContiguousAttrs();
+    void MapModeStrToNum(const char* mode);
+    ge::graphStatus ValidatePadV3Mode(const char* mode);
+    ge::graphStatus ValidateMirrorPadMode(const char* mode);
+    bool ShouldUseSimtBranchReflect();
+    bool ShouldUseSimtBranchEdge();
+    void ClampBufferSize();
+    bool NeedCutLastForSingleAxis(uint64_t lastShapeSizeAlign);
+    void CutLastDimBranch(uint64_t tilingKey, uint64_t ubFactor, uint64_t outTileSize);
+    uint64_t SelectReflectSimtKey();
+    uint64_t SelectReflectCutLastKey();
+    uint64_t SelectReflectBigLastKey();
+    uint64_t SelectReflectSmallGatherKey();
+    void KeyEdgeBigLastDim(uint64_t lastShapeSizeAlign);
+    void KeyEdgeSmallLastDim(uint64_t lastShapeSizeAlign);
+    void KeyConstantBigLastDim(uint64_t lastShapeSizeAlign);
+    void KeyConstantSmallLastDim(uint64_t lastShapeSizeAlign);
+    ge::graphStatus LogPadParamCheckFailed(int64_t padFront, int64_t padBack, int64_t inShapeV, const char* reasonMsg);
+    ge::graphStatus CheckReflectParam(int64_t inShapeV, int64_t padFront, int64_t padBack);
+    ge::graphStatus CheckSymmetricParam(int64_t inShapeV, int64_t padFront, int64_t padBack);
+    ge::graphStatus CheckCircularParam(int64_t inShapeV, int64_t padFront, int64_t padBack);
+    ge::graphStatus CheckEdgeParam(int64_t inShapeV, int64_t padFront, int64_t padBack);
+    void UpdatePadSignFlags(int64_t padFront, int64_t padBack);
+    void MergeZeroPadRun(uint16_t& fastDim, uint16_t originalRank, uint64_t& collapsedShape, int64_t& collapsedPadFront,
+                         int64_t& collapsedPadBack);
+    bool IsUnitDimToDrop(uint64_t inShapeV, int64_t padFront, int64_t padBack);
+    bool IsFp8Fp4Dtype();
+    bool IsFp4Dtype();
+    ge::graphStatus DispatchTilingBranch();
 
 public:
     bool isPadV3_{false};

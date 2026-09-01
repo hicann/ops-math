@@ -57,6 +57,18 @@ private:
     void CalcUsedCore();
     void FillTilingData(PadV3GradReplicationTilingData* tilingData);
 
+    ge::graphStatus CalcDataSizeByDtype();
+    void CalcInnerProducts(uint32_t axis, uint64_t& innerProdUb, uint64_t& innerProdInGm);
+    void CalcDataBufLimit(uint64_t& dataBufSz, uint64_t& maxDataBufElements);
+    bool CalcUbBudget(uint32_t axis, uint64_t perUnitBytes, uint64_t fixedBytes, uint64_t ubAvailable,
+                      uint64_t& unitsPerTile);
+    bool AdjustSingleTile(uint32_t axis, uint64_t pL, uint64_t pR, uint64_t worstFactor, uint64_t innerProdUb,
+                          uint64_t dataBufSz, uint64_t perUnitBytes, uint64_t ubAvailable);
+    bool ApplyIndexLimit(uint32_t axis, uint64_t pL, uint64_t pR, uint64_t maxSinglePad, uint64_t worstFactor,
+                         uint64_t innerProdUb, uint64_t maxDataBufElements, uint64_t& effectivePad);
+    bool TryForceMultiTileForIndexLimit(uint32_t axis, uint64_t pL, uint64_t pR, uint64_t maxSinglePad,
+                                        uint64_t indexCoef, uint64_t maxDataBufElements, uint64_t& effectivePad);
+
     template <typename T>
     std::string ToString(const T* value, size_t size);
 

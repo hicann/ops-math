@@ -41,6 +41,11 @@ public:
     void FillValues();
     void SetPreferences();
     void PrintTilingValues();
+    void CalcUbTensorSizes(uint32_t blockBytes);
+    void BuildVirtualInputShape();
+    void BuildVirtualOutputShape();
+    void RemapPaddings();
+    int64_t CalcMiddleLen(uint32_t total, uint32_t pad1, uint32_t pad2);
 
 private:
     gert::TilingContext* context = nullptr;
@@ -128,24 +133,19 @@ void PadV3GradReplicationTilingHandler<T>::Run()
 
 /* 计算tiling相关数值 */
 template <typename T>
-void PadV3GradReplicationTilingHandler<T>::CalculateValues()
+void PadV3GradReplicationTilingHandler<T>::CalcUbTensorSizes(uint32_t blockBytes)
 {
-    if (dtype == ge::DT_FLOAT) {
-        addTensorBlockNum = compileInfo->ubByteSize / BYTE_32BLOCK / ADD_TERSOR_NUM;
-        addTensorByteSize = addTensorBlockNum * BYTE_32BLOCK;
-        addTensorSize = addTensorByteSize / B32_BYTE_SIZE;
-        moveTensorBlockNum = compileInfo->ubByteSize / BYTE_32BLOCK;
-        moveTensorByteSize = moveTensorBlockNum * BYTE_32BLOCK;
-        moveTensorSize = moveTensorByteSize / B32_BYTE_SIZE;
-    } else { // fp16、bf16场景，32B对齐后还要cast，因此64B对齐
-        addTensorBlockNum = compileInfo->ubByteSize / BYTE_64BLOCK / ADD_TERSOR_NUM;
-        addTensorByteSize = addTensorBlockNum * BYTE_64BLOCK;
-        addTensorSize = addTensorByteSize / B32_BYTE_SIZE;
-        moveTensorBlockNum = compileInfo->ubByteSize / BYTE_64BLOCK;
-        moveTensorByteSize = moveTensorBlockNum * BYTE_64BLOCK;
-        moveTensorSize = moveTensorByteSize / B32_BYTE_SIZE;
-    }
+    addTensorBlockNum = compileInfo->ubByteSize / blockBytes / ADD_TERSOR_NUM;
+    addTensorByteSize = addTensorBlockNum * blockBytes;
+    addTensorSize = addTensorByteSize / B32_BYTE_SIZE;
+    moveTensorBlockNum = compileInfo->ubByteSize / blockBytes;
+    moveTensorByteSize = moveTensorBlockNum * blockBytes;
+    moveTensorSize = moveTensorByteSize / B32_BYTE_SIZE;
+}
 
+template <typename T>
+void PadV3GradReplicationTilingHandler<T>::BuildVirtualInputShape()
+{
     for (uint32_t i = 1; i < VIRTUAL_INPUT_DIM; i++) {
         virtualInputShape[VIRTUAL_INPUT_DIM - i] = (uint32_t)inputShape[inputDim - i];
     }
@@ -159,7 +159,11 @@ void PadV3GradReplicationTilingHandler<T>::CalculateValues()
     cubeNumLastCore = virtualInputShape[DIM_0] % cubeNumEachCore;
     if (cubeNumLastCore == 0)
         cubeNumLastCore = cubeNumEachCore;
+}
 
+template <typename T>
+void PadV3GradReplicationTilingHandler<T>::BuildVirtualOutputShape()
+{
     for (uint32_t i = 1; i < VIRTUAL_INPUT_DIM; i++) {
         virtualOutputShape[VIRTUAL_INPUT_DIM - i] = (uint32_t)outputShape[inputDim - i];
     }
@@ -171,6 +175,11 @@ void PadV3GradReplicationTilingHandler<T>::CalculateValues()
     cubeOutputSize = virtualOutputShape[DIM_1] * virtualOutputShape[DIM_2] *
                      virtualOutputShape[DIM_3];                              // 计算输出的后三维体积
     layerOutputSize = virtualOutputShape[DIM_2] * virtualOutputShape[DIM_3]; // 计算输出的后两维体积;
+}
+
+template <typename T>
+void PadV3GradReplicationTilingHandler<T>::RemapPaddings()
+{
     for (uint32_t i = 0; i < PADDING_PAIR_NUM; i++) {
         paddings[i * PAIR] = paddingValue[PADDING_API_LENGTH - i * PAIR - PAIR];
         paddings[i * PAIR + 1] = paddingValue[PADDING_API_LENGTH - i * PAIR - 1];
@@ -187,18 +196,36 @@ void PadV3GradReplicationTilingHandler<T>::CalculateValues()
         paddings[DIM_4] += paddings[DIM_5];
         paddings[DIM_5] = 0;
     }
+}
+
+template <typename T>
+int64_t PadV3GradReplicationTilingHandler<T>::CalcMiddleLen(uint32_t total, uint32_t pad1, uint32_t pad2)
+{
+    int64_t len = total - (pad1 ? (pad1 + 1) : 0) - (pad2 ? (pad2 + 1) : 0);
+    if (len < 0)
+        len = 0;
+    return len;
+}
+
+template <typename T>
+void PadV3GradReplicationTilingHandler<T>::CalculateValues()
+{
+    if (dtype == ge::DT_FLOAT) {
+        CalcUbTensorSizes(BYTE_32BLOCK);
+    } else { // fp16、bf16场景，32B对齐后还要cast，因此64B对齐
+        CalcUbTensorSizes(BYTE_64BLOCK);
+    }
+    BuildVirtualInputShape();
+    BuildVirtualOutputShape();
+    RemapPaddings();
 
     topSize = virtualInputShape[DIM_3];
     totalTopInputSizeEachCube = virtualInputShape[DIM_1] * topSize;
-    leftSize = virtualInputShape[DIM_2] - (paddings[DIM_2] ? (paddings[DIM_2] + 1) : 0) -
-               (paddings[DIM_3] ? (paddings[DIM_3] + 1) : 0); // 如果小等于0，则没有左右边的中间部分需要累加
-    if (leftSize < 0)
-        leftSize = 0;
+    leftSize = CalcMiddleLen(virtualInputShape[DIM_2], paddings[DIM_2],
+                             paddings[DIM_3]); // 如果小等于0，则没有左右边的中间部分需要累加
     totalLeftInputSizeEachCube = virtualInputShape[DIM_1] * leftSize;
-    innerRowLength = virtualInputShape[DIM_3] - (paddings[DIM_0] ? (paddings[DIM_0] + 1) : 0) -
-                     (paddings[DIM_1] ? (paddings[DIM_1] + 1) : 0); // 如果小等于0，则没有中间部分需要搬运
-    if (innerRowLength < 0)
-        innerRowLength = 0;
+    innerRowLength = CalcMiddleLen(virtualInputShape[DIM_3], paddings[DIM_0],
+                                   paddings[DIM_1]); // 如果小等于0，则没有中间部分需要搬运
     topToBottomSize = (virtualInputShape[DIM_2] - paddings[DIM_3] - 1) * topSize; // 底边相对顶边在输入上的偏移量
     topResultSize = virtualInputShape[DIM_0] * virtualInputShape[DIM_1] * topSize; // 底边相对顶边在临时输出上的偏移量
     leftToRightSize = virtualInputShape[DIM_3] - paddings[DIM_1] - 1; // 右边相对左边在输入上的偏移量

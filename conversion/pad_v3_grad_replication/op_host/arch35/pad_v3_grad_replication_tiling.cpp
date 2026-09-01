@@ -77,6 +77,24 @@ ge::graphStatus PadV3GradReplicationTiling::Init()
     return ge::GRAPH_SUCCESS;
 }
 
+ge::graphStatus PadV3GradReplicationTiling::CalcDataSizeByDtype()
+{
+    static const std::pair<ge::DataType, uint32_t> dtypeSizeTable[] = {
+        {ge::DT_FLOAT, FP32_SIZE},        {ge::DT_FLOAT16, FP16_SIZE},     {ge::DT_BF16, BF16_SIZE},
+        {ge::DT_INT8, INT8_BYTE_SIZE},    {ge::DT_UINT8, INT8_BYTE_SIZE},  {ge::DT_INT16, INT16_BYTE_SIZE},
+        {ge::DT_UINT16, INT16_BYTE_SIZE}, {ge::DT_INT32, INT32_BYTE_SIZE}, {ge::DT_UINT32, INT32_BYTE_SIZE},
+        {ge::DT_INT64, INT64_BYTE_SIZE},  {ge::DT_UINT64, INT64_BYTE_SIZE}};
+    for (const auto& entry : dtypeSizeTable) {
+        if (paramsDtype_ == entry.first) {
+            dataSize_ = entry.second;
+            return ge::GRAPH_SUCCESS;
+        }
+    }
+    OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x", Ops::Base::ToString(paramsDtype_).c_str(),
+                                          "The dtype of x must be float, float16, bfloat16 or integer types");
+    return ge::GRAPH_FAILED;
+}
+
 ge::graphStatus PadV3GradReplicationTiling::GetShapeAttrsInfo()
 {
     const gert::StorageShape* xShape = context_->GetInputShape(0);
@@ -100,37 +118,8 @@ ge::graphStatus PadV3GradReplicationTiling::GetShapeAttrsInfo()
     }
 
     paramsDtype_ = context_->GetInputDesc(0)->GetDataType();
-    switch (paramsDtype_) {
-        case ge::DT_FLOAT:
-            dataSize_ = FP32_SIZE;
-            break;
-        case ge::DT_FLOAT16:
-            dataSize_ = FP16_SIZE;
-            break;
-        case ge::DT_BF16:
-            dataSize_ = BF16_SIZE;
-            break;
-        case ge::DT_INT8:
-        case ge::DT_UINT8:
-            dataSize_ = INT8_BYTE_SIZE;
-            break;
-        case ge::DT_INT16:
-        case ge::DT_UINT16:
-            dataSize_ = INT16_BYTE_SIZE;
-            break;
-        case ge::DT_INT32:
-        case ge::DT_UINT32:
-            dataSize_ = INT32_BYTE_SIZE;
-            break;
-        case ge::DT_INT64:
-        case ge::DT_UINT64:
-            dataSize_ = INT64_BYTE_SIZE;
-            break;
-        default:
-            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x",
-                                                  Ops::Base::ToString(paramsDtype_).c_str(),
-                                                  "The dtype of x must be float, float16, bfloat16 or integer types");
-            return ge::GRAPH_FAILED;
+    if (CalcDataSizeByDtype() == ge::GRAPH_FAILED) {
+        return ge::GRAPH_FAILED;
     }
 
     OP_LOGI(context_->GetNodeName(), "GetShapeAttrsInfo: dimNum=%u, dtype=%s, dataSize=%u", dimNum_,
@@ -233,57 +222,37 @@ uint64_t PadV3GradReplicationTiling::CalcWorstFactor(uint32_t axis) const
     return factor;
 }
 
-bool PadV3GradReplicationTiling::TrySplitAxis(uint32_t axis, uint64_t ubAvailable)
+void PadV3GradReplicationTiling::CalcInnerProducts(uint32_t axis, uint64_t& innerProdUb, uint64_t& innerProdInGm)
 {
-    // UB 估算必须与 kernel Init 完全一致（pad_v3_grad_replication.h:127-137）：
-    //   worstFactor    = ∏_{k<axis} (max(pL_k, pR_k) + 1)            // corner tile 外层放大
-    //   innerProdUb    = (axis == N-1) ? 1 : strideAligned[axis]      // dataBuf 内层，尾轴 32B 对齐
-    //   innerProdInGm  = (axis == N-1) ? 1 : ∏_{k>axis} inputShape[k] // outputBuf 内层，紧凑
-    //   padOverhead    = singleTile ? (pL + pR) : max(pL, pR)         // 单 tile 两端 pad，多 tile 仅一端
-    //   maxSliceAxis   = splitSize + padOverhead
-    //   dataBufBytes   = CeilAlign(worstFactor × maxSliceAxis × innerProdUb × dataSize, BLOCK_SIZE)
-    //   outputBufBytes = CeilAlign(splitSize     × innerProdInGm × dataSize, BLOCK_SIZE)
-    //   总 UB = dataBufBytes + outputBufBytes
-    //
-
-    const uint64_t pL = static_cast<uint64_t>(leftPad_[axis]);
-    const uint64_t pR = static_cast<uint64_t>(rightPad_[axis]);
-    const uint64_t worstFactor = CalcWorstFactor(axis);
-
-    uint64_t innerProdUb = 1;
-    uint64_t innerProdInGm = 1;
+    innerProdUb = 1;
+    innerProdInGm = 1;
     if (axis != static_cast<uint32_t>(dimNum_) - 1) {
         innerProdUb = strideAligned_[axis];
         for (uint32_t k = axis + 1; k < dimNum_; k++) {
             innerProdInGm *= inputShape_[k];
         }
     }
+}
 
+void PadV3GradReplicationTiling::CalcDataBufLimit(uint64_t& dataBufSz, uint64_t& maxDataBufElements)
+{
     // dataBuf 元素索引限制：
     //   - cast 类型 (fp16/bf16): dataBuf 存 F32，gather 用 uint32_t 索引，无 16 位限制
     //   - 非 cast ≤16 位: GatherToOutputBufGatherPath IndexT=uint16_t，限制 INT16_MAX
     //   - > 16 位: uint32_t 索引，无限制
     bool isCastType = (paramsDtype_ == ge::DT_FLOAT16 || paramsDtype_ == ge::DT_BF16);
-    uint64_t dataBufSz = isCastType ? FP32_SIZE : dataSize_; // PromoteT 大小 vs T 大小
-    uint64_t maxDataBufElements = UINT64_MAX;
+    dataBufSz = isCastType ? FP32_SIZE : dataSize_; // PromoteT 大小 vs T 大小
+    maxDataBufElements = UINT64_MAX;
     if (!isCastType && dataSize_ <= static_cast<uint32_t>(NUM_TWO)) {
         maxDataBufElements = INT16_MAX_VAL;
     }
+}
 
-    // 每 tile 至多一端 pad（首 tile pL / 尾 tile pR），单 tile 才同时 pL + pR。
-    // 先用 max(pL, pR) 估 budget，出单 tile 时再回验 pL + pR。
-    const uint64_t maxSinglePad = (pL > pR) ? pL : pR;
-    // dataBuf 用 PromoteT 大小，outputBuf 仍用 T 大小
-    const uint64_t perUnitBytes = worstFactor * innerProdUb * dataBufSz + innerProdInGm * dataSize_;
-    const uint64_t fixedBytes = worstFactor * innerProdUb * maxSinglePad * dataBufSz;
+bool PadV3GradReplicationTiling::CalcUbBudget(uint32_t axis, uint64_t perUnitBytes, uint64_t fixedBytes,
+                                              uint64_t ubAvailable, uint64_t& unitsPerTile)
+{
     // 两个 buf 各自 CeilAlign 到 BLOCK_SIZE，最坏多占 2 × (BLOCK_SIZE - 1)
     const uint64_t alignSlack = 2 * blockSize_;
-
-    OP_LOGI(context_->GetNodeName(),
-            "TrySplitAxis: axis=%u, worstFactor=%lu, innerProdUb=%lu, innerProdInGm=%lu, pL=%lu, pR=%lu, "
-            "perUnitBytes=%lu, fixedBytes=%lu, ubAvailable=%lu",
-            axis, worstFactor, innerProdUb, innerProdInGm, pL, pR, perUnitBytes, fixedBytes, ubAvailable);
-
     if (perUnitBytes == 0) {
         OP_LOGI(context_->GetNodeName(), "axis=%u failed: perUnitBytes=0 (invalid shape)", axis);
         return false;
@@ -303,14 +272,22 @@ bool PadV3GradReplicationTiling::TrySplitAxis(uint32_t axis, uint64_t ubAvailabl
     budget -= alignSlack;
 
     // 解 splitSize：perUnitBytes × splitSize ≤ budget
-    uint64_t unitsPerTile = budget / perUnitBytes;
+    unitsPerTile = budget / perUnitBytes;
     if (unitsPerTile == 0) {
         OP_LOGI(context_->GetNodeName(), "axis=%u failed: unitsPerTile=0", axis);
         return false;
     }
-    splitSize_ = static_cast<uint32_t>(std::min(unitsPerTile, inputShape_[axis]));
+    return true;
+}
+
+bool PadV3GradReplicationTiling::AdjustSingleTile(uint32_t axis, uint64_t pL, uint64_t pR, uint64_t worstFactor,
+                                                  uint64_t innerProdUb, uint64_t dataBufSz, uint64_t perUnitBytes,
+                                                  uint64_t ubAvailable)
+{
     // 单 tile 需同时装 pL + pR：回验预算（之前按 max(pL,pR) 估，仅多 tile 正确）
     if (splitSize_ == inputShape_[axis] && (pL > 0 || pR > 0)) {
+        // 两个 buf 各自 CeilAlign 到 BLOCK_SIZE，最坏多占 2 × (BLOCK_SIZE - 1)
+        const uint64_t alignSlack = 2 * blockSize_;
         const uint64_t bothFixedBytes = worstFactor * innerProdUb * (pL + pR) * dataBufSz;
         if (bothFixedBytes + alignSlack >= ubAvailable) {
             if (inputShape_[axis] <= 1) {
@@ -344,33 +321,48 @@ bool PadV3GradReplicationTiling::TrySplitAxis(uint32_t axis, uint64_t ubAvailabl
             }
         }
     }
+    return true;
+}
 
+bool PadV3GradReplicationTiling::TryForceMultiTileForIndexLimit(uint32_t axis, uint64_t pL, uint64_t pR,
+                                                                uint64_t maxSinglePad, uint64_t indexCoef,
+                                                                uint64_t maxDataBufElements, uint64_t& effectivePad)
+{
+    bool forcedMultiTile = false;
+    if (static_cast<uint64_t>(splitSize_) == inputShape_[axis] && inputShape_[axis] > 1 && (pL + pR) > maxSinglePad &&
+        indexCoef > 0) {
+        uint64_t multiEffPad = maxSinglePad;
+        if (maxDataBufElements >= indexCoef * multiEffPad) {
+            uint64_t multiAllowedSlice = maxDataBufElements / indexCoef;
+            if (multiAllowedSlice > multiEffPad) {
+                uint64_t multiSplit = multiAllowedSlice - multiEffPad;
+                splitSize_ = static_cast<uint32_t>(std::min(multiSplit, inputShape_[axis] - 1));
+                effectivePad = multiEffPad;
+                forcedMultiTile = true;
+                OP_LOGI(context_->GetNodeName(),
+                        "axis=%u: uint16_t limit forced multi-tile, splitSize=%u, effectivePad=%lu", axis, splitSize_,
+                        effectivePad);
+            }
+        }
+    }
+    return forcedMultiTile;
+}
+
+bool PadV3GradReplicationTiling::ApplyIndexLimit(uint32_t axis, uint64_t pL, uint64_t pR, uint64_t maxSinglePad,
+                                                 uint64_t worstFactor, uint64_t innerProdUb,
+                                                 uint64_t maxDataBufElements, uint64_t& effectivePad)
+{
     // 检查 dataBuf 元素索引限制（B16 dtype Gather/Scatter uint16_t 索引）
     // dataBuf 分配与 kernel Init 一致：singleTile 用 pL+pR，multiTile 用 max(pL,pR)
-    uint64_t effectivePad = (static_cast<uint64_t>(splitSize_) == inputShape_[axis]) ? (pL + pR) : maxSinglePad;
+    effectivePad = (static_cast<uint64_t>(splitSize_) == inputShape_[axis]) ? (pL + pR) : maxSinglePad;
     const uint64_t indexCoef = worstFactor * innerProdUb;
     if (maxDataBufElements != UINT64_MAX) {
         uint64_t dataBufElems = indexCoef * (static_cast<uint64_t>(splitSize_) + effectivePad);
         if (dataBufElems > maxDataBufElements) {
             // 单 tile 时 effectivePad = pL+pR 可能过大导致 uint16_t 不足，
             // 尝试切到多 tile（effectivePad 降为 maxSinglePad）
-            bool forcedMultiTile = false;
-            if (static_cast<uint64_t>(splitSize_) == inputShape_[axis] && inputShape_[axis] > 1 &&
-                (pL + pR) > maxSinglePad && indexCoef > 0) {
-                uint64_t multiEffPad = maxSinglePad;
-                if (maxDataBufElements >= indexCoef * multiEffPad) {
-                    uint64_t multiAllowedSlice = maxDataBufElements / indexCoef;
-                    if (multiAllowedSlice > multiEffPad) {
-                        uint64_t multiSplit = multiAllowedSlice - multiEffPad;
-                        splitSize_ = static_cast<uint32_t>(std::min(multiSplit, inputShape_[axis] - 1));
-                        effectivePad = multiEffPad;
-                        forcedMultiTile = true;
-                        OP_LOGI(context_->GetNodeName(),
-                                "axis=%u: uint16_t limit forced multi-tile, splitSize=%u, effectivePad=%lu", axis,
-                                splitSize_, effectivePad);
-                    }
-                }
-            }
+            bool forcedMultiTile = TryForceMultiTileForIndexLimit(axis, pL, pR, maxSinglePad, indexCoef,
+                                                                  maxDataBufElements, effectivePad);
             if (!forcedMultiTile) {
                 if (indexCoef == 0 || maxDataBufElements < indexCoef * effectivePad) {
                     OP_LOGI(
@@ -392,6 +384,60 @@ bool PadV3GradReplicationTiling::TrySplitAxis(uint32_t axis, uint64_t ubAvailabl
             }
         }
     }
+    return true;
+}
+
+bool PadV3GradReplicationTiling::TrySplitAxis(uint32_t axis, uint64_t ubAvailable)
+{
+    // UB 估算必须与 kernel Init 完全一致（pad_v3_grad_replication.h:127-137）：
+    //   worstFactor    = ∏_{k<axis} (max(pL_k, pR_k) + 1)            // corner tile 外层放大
+    //   innerProdUb    = (axis == N-1) ? 1 : strideAligned[axis]      // dataBuf 内层，尾轴 32B 对齐
+    //   innerProdInGm  = (axis == N-1) ? 1 : ∏_{k>axis} inputShape[k] // outputBuf 内层，紧凑
+    //   padOverhead    = singleTile ? (pL + pR) : max(pL, pR)         // 单 tile 两端 pad，多 tile 仅一端
+    //   maxSliceAxis   = splitSize + padOverhead
+    //   dataBufBytes   = CeilAlign(worstFactor × maxSliceAxis × innerProdUb × dataSize, BLOCK_SIZE)
+    //   outputBufBytes = CeilAlign(splitSize     × innerProdInGm × dataSize, BLOCK_SIZE)
+    //   总 UB = dataBufBytes + outputBufBytes
+    //
+
+    const uint64_t pL = static_cast<uint64_t>(leftPad_[axis]);
+    const uint64_t pR = static_cast<uint64_t>(rightPad_[axis]);
+    const uint64_t worstFactor = CalcWorstFactor(axis);
+
+    uint64_t innerProdUb = 1;
+    uint64_t innerProdInGm = 1;
+    CalcInnerProducts(axis, innerProdUb, innerProdInGm);
+
+    uint64_t dataBufSz = 0;
+    uint64_t maxDataBufElements = 0;
+    CalcDataBufLimit(dataBufSz, maxDataBufElements);
+
+    // 每 tile 至多一端 pad（首 tile pL / 尾 tile pR），单 tile 才同时 pL + pR。
+    // 先用 max(pL, pR) 估 budget，出单 tile 时再回验 pL + pR。
+    const uint64_t maxSinglePad = (pL > pR) ? pL : pR;
+    // dataBuf 用 PromoteT 大小，outputBuf 仍用 T 大小
+    const uint64_t perUnitBytes = worstFactor * innerProdUb * dataBufSz + innerProdInGm * dataSize_;
+    const uint64_t fixedBytes = worstFactor * innerProdUb * maxSinglePad * dataBufSz;
+
+    OP_LOGI(context_->GetNodeName(),
+            "TrySplitAxis: axis=%u, worstFactor=%lu, innerProdUb=%lu, innerProdInGm=%lu, pL=%lu, pR=%lu, "
+            "perUnitBytes=%lu, fixedBytes=%lu, ubAvailable=%lu",
+            axis, worstFactor, innerProdUb, innerProdInGm, pL, pR, perUnitBytes, fixedBytes, ubAvailable);
+
+    uint64_t unitsPerTile = 0;
+    if (!CalcUbBudget(axis, perUnitBytes, fixedBytes, ubAvailable, unitsPerTile)) {
+        return false;
+    }
+    splitSize_ = static_cast<uint32_t>(std::min(unitsPerTile, inputShape_[axis]));
+    // 单 tile 需同时装 pL + pR：回验预算（之前按 max(pL,pR) 估，仅多 tile 正确）
+    if (!AdjustSingleTile(axis, pL, pR, worstFactor, innerProdUb, dataBufSz, perUnitBytes, ubAvailable)) {
+        return false;
+    }
+
+    uint64_t effectivePad = 0;
+    if (!ApplyIndexLimit(axis, pL, pR, maxSinglePad, worstFactor, innerProdUb, maxDataBufElements, effectivePad)) {
+        return false;
+    }
 
     // 计算 splitCount：每个 tile = 外层(axis<k) 1 个位置 + 当前轴 splitSize 单位 + 内层(axis>k) 全量
     if (splitSize_ == 0) {
@@ -405,6 +451,7 @@ bool PadV3GradReplicationTiling::TrySplitAxis(uint32_t axis, uint64_t ubAvailabl
     uint64_t splitCountAxis = Ops::Base::CeilDiv(inputShape_[axis], static_cast<uint64_t>(splitSize_));
     splitCount_ = static_cast<uint32_t>(outerCombos * splitCountAxis);
 
+    const uint64_t indexCoef = worstFactor * innerProdUb;
     const uint64_t finalDataBufElems = indexCoef * (static_cast<uint64_t>(splitSize_) + effectivePad);
     const uint64_t finalDataBufBytes = finalDataBufElems * dataSize_;
     const uint64_t finalOutputBufBytes = static_cast<uint64_t>(splitSize_) * innerProdInGm * dataSize_;
