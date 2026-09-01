@@ -21,6 +21,7 @@
 #include "op_common/op_host/util/platform_util.h"
 #include "op_api/op_util.h"
 #include <algorithm>
+#include <limits>
 
 using namespace std;
 using namespace ge;
@@ -46,8 +47,8 @@ constexpr int64_t TENS_DIGITS = 10;
 constexpr int64_t HUNDREDS_DIGITS = 100;
 constexpr int64_t THOUSANDS_DIGITS = 1000;
 constexpr int64_t TEN_THOUSANDS_DIGITS = 10000;
-constexpr uint64_t COMPACT_THRESHOLD = 4294967295ULL; // UINT32_MAX
-constexpr int64_t LEAST_ROWS = 64;                    // ub切分的最小行数
+constexpr int64_t COMPACT_THRESHOLD = std::numeric_limits<int32_t>::max();
+constexpr int64_t LEAST_ROWS = 64; // ub切分的最小行数
 constexpr int64_t LEAST_COLS = 256;
 constexpr bool ENABLE_DB = true;
 constexpr int64_t B64_BYTES = 8;
@@ -777,17 +778,17 @@ void SetTilingData<ConcatTilingDataCompact>(ConcatTilingDataCompact& tilingData,
 {
     tilingData.set_ubSplitDim1(param.ubSplitDim1);
     tilingData.set_dim(static_cast<int16_t>(param.dim));
-    tilingData.set_blockFactor(static_cast<int32_t>(param.blockFactor));
-    tilingData.set_tailBlockFactor(static_cast<int32_t>(param.tailBlockFactor));
+    tilingData.set_blockFactor(param.blockFactor);
+    tilingData.set_tailBlockFactor(param.tailBlockFactor);
     tilingData.set_ubFactorDim0(static_cast<int32_t>(param.ubFactorDim0));
     tilingData.set_ubFactorDim1(static_cast<int32_t>(param.ubFactorDim1));
     tilingData.set_tailUbFactorDim0(static_cast<int32_t>(param.tailUbFactorDim0));
     tilingData.set_tailUbFactorDim1(static_cast<int32_t>(param.tailUbFactorDim1));
-    tilingData.set_uoDim0(static_cast<int32_t>(param.uoDim0));
-    tilingData.set_uoDim1(static_cast<int32_t>(param.uoDim1));
+    tilingData.set_uoDim0(param.uoDim0);
+    tilingData.set_uoDim1(param.uoDim1);
     tilingData.set_tensorNum(param.tensorNum);
     tilingData.set_catDim1(param.catDim1);
-    tilingData.set_sameShapeTensorDim1(static_cast<int32_t>(param.sameShapeTensorDim1));
+    tilingData.set_sameShapeTensorDim1(param.sameShapeTensorDim1);
     tilingData.set_isFP4Type(param.isFP4Type);
     tilingData.set_bufferSize(static_cast<int32_t>(param.bufferSize));
     tilingData.set_dtypeSize(static_cast<int16_t>(param.dtypeSize));
@@ -815,17 +816,17 @@ void SetTilingData<ConcatTilingDataNoArrayCompact>(ConcatTilingDataNoArrayCompac
 {
     tilingData.set_ubSplitDim1(param.ubSplitDim1);
     tilingData.set_dim(static_cast<int16_t>(param.dim));
-    tilingData.set_blockFactor(static_cast<int32_t>(param.blockFactor));
-    tilingData.set_tailBlockFactor(static_cast<int32_t>(param.tailBlockFactor));
+    tilingData.set_blockFactor(param.blockFactor);
+    tilingData.set_tailBlockFactor(param.tailBlockFactor);
     tilingData.set_ubFactorDim0(static_cast<int32_t>(param.ubFactorDim0));
     tilingData.set_ubFactorDim1(static_cast<int32_t>(param.ubFactorDim1));
     tilingData.set_tailUbFactorDim0(static_cast<int32_t>(param.tailUbFactorDim0));
     tilingData.set_tailUbFactorDim1(static_cast<int32_t>(param.tailUbFactorDim1));
-    tilingData.set_uoDim0(static_cast<int32_t>(param.uoDim0));
-    tilingData.set_uoDim1(static_cast<int32_t>(param.uoDim1));
+    tilingData.set_uoDim0(param.uoDim0);
+    tilingData.set_uoDim1(param.uoDim1);
     tilingData.set_tensorNum(param.tensorNum);
     tilingData.set_catDim1(param.catDim1);
-    tilingData.set_sameShapeTensorDim1(static_cast<int32_t>(param.sameShapeTensorDim1));
+    tilingData.set_sameShapeTensorDim1(param.sameShapeTensorDim1);
     tilingData.set_isFP4Type(param.isFP4Type);
     tilingData.set_bufferSize(static_cast<int32_t>(param.bufferSize));
     tilingData.set_dtypeSize(static_cast<int16_t>(param.dtypeSize));
