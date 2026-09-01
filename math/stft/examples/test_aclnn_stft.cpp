@@ -112,6 +112,7 @@ int main()
     std::vector<float> outHostData = {0, 0, 0, 0, 0, 0};
     // 创建self aclTensor
     ret = CreateAclTensor(selfHostData, selfShape, aclDataType::ACL_FLOAT, selfDeviceAddr, self);
+    CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建window aclTensor
     ret = CreateAclTensor(windowHostData, windowShape, aclDataType::ACL_FLOAT, windowDeviceAddr, window);
     CHECK_RET(ret == ACL_SUCCESS, return ret);

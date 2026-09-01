@@ -26,13 +26,13 @@
 - 接口功能：计算输入在滑动窗口内的傅里叶变换。
 - 计算公式：
 
-  - 当normalized=false时：
+  - 当normalized=False时：
 
     $$
     X[w,m]=\sum_{k=0}^{winLength-1}window[k]*self[m*hopLength+k]*exp(-j*\frac{2{\pi}wk}{nFft})
     $$
 
-  - 当normalized=true时：
+  - 当normalized=True时：
 
     $$
     X[w,m]=\frac{1}{\sqrt{nFft}}(\sum_{k=0}^{winLength-1}window[k]*self[m*hopLength+k]*exp(-j*\frac{2{\pi}wk}{nFft}))
@@ -420,6 +420,7 @@ int main()
     std::vector<float> outHostData = {0, 0, 0, 0, 0, 0};
     // 创建self aclTensor
     ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
+    CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建window aclTensor
     ret = CreateAclTensor(windowHostData, windowShape, &windowDeviceAddr, aclDataType::ACL_FLOAT, &window);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
