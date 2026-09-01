@@ -43,6 +43,7 @@ public:
             .ExtendCfgInfo("opFile.value", "zeros_like_apt");
 
         this->AICore().AddConfig("ascend950", aicore_config);
+        this->AICore().AddConfig("ascend350", aicore_config);
     }
 };
 

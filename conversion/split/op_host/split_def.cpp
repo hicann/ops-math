@@ -13,15 +13,15 @@
 
 namespace ops {
 class Split : public OpDef {
-   public:
+public:
     explicit Split(const char* name) : OpDef(name)
     {
         this->Input("split_dim")
             .ParamType(REQUIRED)
-            .DataType({ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-                       ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-                       ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                       ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64})
+            .DataType({ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+                       ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+                       ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+                       ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64})
             .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
                      ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
                      ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
@@ -34,10 +34,10 @@ class Split : public OpDef {
             .ValueDepend(OPTIONAL);
         this->Input("x")
             .ParamType(REQUIRED)
-            .DataType({ge::DT_INT64, ge::DT_UINT64, ge::DT_INT32, ge::DT_UINT32, ge::DT_FLOAT, ge::DT_FLOAT16,
-                       ge::DT_INT8, ge::DT_UINT8, ge::DT_BF16, ge::DT_INT16, ge::DT_UINT16, ge::DT_BOOL,
-                       ge::DT_INT64, ge::DT_UINT64, ge::DT_INT32, ge::DT_UINT32, ge::DT_FLOAT, ge::DT_FLOAT16,
-                       ge::DT_INT8, ge::DT_UINT8, ge::DT_BF16, ge::DT_INT16, ge::DT_UINT16, ge::DT_BOOL})
+            .DataType({ge::DT_INT64, ge::DT_UINT64, ge::DT_INT32, ge::DT_UINT32, ge::DT_FLOAT,  ge::DT_FLOAT16,
+                       ge::DT_INT8,  ge::DT_UINT8,  ge::DT_BF16,  ge::DT_INT16,  ge::DT_UINT16, ge::DT_BOOL,
+                       ge::DT_INT64, ge::DT_UINT64, ge::DT_INT32, ge::DT_UINT32, ge::DT_FLOAT,  ge::DT_FLOAT16,
+                       ge::DT_INT8,  ge::DT_UINT8,  ge::DT_BF16,  ge::DT_INT16,  ge::DT_UINT16, ge::DT_BOOL})
             .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
                      ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
                      ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
@@ -49,10 +49,10 @@ class Split : public OpDef {
                                  ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
         this->Output("y")
             .ParamType(DYNAMIC)
-            .DataType({ge::DT_INT64, ge::DT_UINT64, ge::DT_INT32, ge::DT_UINT32, ge::DT_FLOAT, ge::DT_FLOAT16,
-                       ge::DT_INT8, ge::DT_UINT8, ge::DT_BF16, ge::DT_INT16, ge::DT_UINT16, ge::DT_BOOL,
-                       ge::DT_INT64, ge::DT_UINT64, ge::DT_INT32, ge::DT_UINT32, ge::DT_FLOAT, ge::DT_FLOAT16,
-                       ge::DT_INT8, ge::DT_UINT8, ge::DT_BF16, ge::DT_INT16, ge::DT_UINT16, ge::DT_BOOL})
+            .DataType({ge::DT_INT64, ge::DT_UINT64, ge::DT_INT32, ge::DT_UINT32, ge::DT_FLOAT,  ge::DT_FLOAT16,
+                       ge::DT_INT8,  ge::DT_UINT8,  ge::DT_BF16,  ge::DT_INT16,  ge::DT_UINT16, ge::DT_BOOL,
+                       ge::DT_INT64, ge::DT_UINT64, ge::DT_INT32, ge::DT_UINT32, ge::DT_FLOAT,  ge::DT_FLOAT16,
+                       ge::DT_INT8,  ge::DT_UINT8,  ge::DT_BF16,  ge::DT_INT16,  ge::DT_UINT16, ge::DT_BOOL})
             .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
                      ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
                      ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
@@ -65,13 +65,14 @@ class Split : public OpDef {
         this->Attr("num_split").AttrType(REQUIRED).Int();
 
         OpAICoreConfig aicoreConfig;
-            aicoreConfig.DynamicCompileStaticFlag(true)
+        aicoreConfig.DynamicCompileStaticFlag(true)
             .DynamicRankSupportFlag(true)
             .DynamicShapeSupportFlag(true)
             .ExtendCfgInfo("opFile.value", "split_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend350", aicoreConfig);
     }
 };
 
 OP_ADD(Split);
-}  // namespace ops
+} // namespace ops

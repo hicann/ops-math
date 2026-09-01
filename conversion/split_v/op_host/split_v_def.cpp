@@ -12,69 +12,40 @@
 #include "register/op_def_registry.h"
 namespace ops {
 static const std::vector<ge::DataType> xDtype = {
-    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-    ge::DT_UINT32, ge::DT_UINT32, ge::DT_UINT32, ge::DT_UINT32,
-    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-    ge::DT_UINT64, ge::DT_UINT64,ge::DT_UINT64, ge::DT_UINT64,
-    ge::DT_INT16, ge::DT_INT16, ge::DT_INT16, ge::DT_INT16,
-    ge::DT_UINT16, ge::DT_UINT16, ge::DT_UINT16, ge::DT_UINT16,
-    ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT16,
-    ge::DT_BF16, ge::DT_BF16, ge::DT_BF16, ge::DT_BF16,
-    ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT,
-    ge::DT_INT8, ge::DT_INT8, ge::DT_INT8, ge::DT_INT8,
-    ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8, ge::DT_UINT8,
-    ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL
-};
+    ge::DT_INT32,  ge::DT_INT32,  ge::DT_INT32,  ge::DT_INT32,   ge::DT_UINT32,  ge::DT_UINT32,  ge::DT_UINT32,
+    ge::DT_UINT32, ge::DT_INT64,  ge::DT_INT64,  ge::DT_INT64,   ge::DT_INT64,   ge::DT_UINT64,  ge::DT_UINT64,
+    ge::DT_UINT64, ge::DT_UINT64, ge::DT_INT16,  ge::DT_INT16,   ge::DT_INT16,   ge::DT_INT16,   ge::DT_UINT16,
+    ge::DT_UINT16, ge::DT_UINT16, ge::DT_UINT16, ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT16,
+    ge::DT_BF16,   ge::DT_BF16,   ge::DT_BF16,   ge::DT_BF16,    ge::DT_FLOAT,   ge::DT_FLOAT,   ge::DT_FLOAT,
+    ge::DT_FLOAT,  ge::DT_INT8,   ge::DT_INT8,   ge::DT_INT8,    ge::DT_INT8,    ge::DT_UINT8,   ge::DT_UINT8,
+    ge::DT_UINT8,  ge::DT_UINT8,  ge::DT_BOOL,   ge::DT_BOOL,    ge::DT_BOOL,    ge::DT_BOOL};
 static const std::vector<ge::DataType> sizeDtype = {
-    ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64
-};
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64, ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64, ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64, ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64, ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64, ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64,
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64, ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64};
 static const std::vector<ge::DataType> dimDtype = {
-    ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
-    ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64
-};
+    ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
+    ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
+    ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
+    ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
+    ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
+    ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64};
 static const std::vector<ge::Format> inputFormat = {
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND
-};
-class SplitV: public OpDef {
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+class SplitV : public OpDef {
 public:
-    explicit SplitV(const char* name) : OpDef(name) {
-        this->Input("x")
-            .ParamType(REQUIRED)
-            .DataType(xDtype)
-            .Format(inputFormat)
-            .UnknownShapeFormat(inputFormat);
+    explicit SplitV(const char* name) : OpDef(name)
+    {
+        this->Input("x").ParamType(REQUIRED).DataType(xDtype).Format(inputFormat).UnknownShapeFormat(inputFormat);
         this->Input("size_splits")
             .ParamType(REQUIRED)
             .DataType(sizeDtype)
@@ -87,11 +58,7 @@ public:
             .Format(inputFormat)
             .ValueDepend(OPTIONAL)
             .UnknownShapeFormat(inputFormat);
-        this->Output("y")
-            .ParamType(DYNAMIC)
-            .DataType(xDtype)
-            .Format(inputFormat)
-            .UnknownShapeFormat(inputFormat);
+        this->Output("y").ParamType(DYNAMIC).DataType(xDtype).Format(inputFormat).UnknownShapeFormat(inputFormat);
         this->Attr("num_split").AttrType(OPTIONAL).Int(0);
 
         OpAICoreConfig aicoreConfig;
@@ -100,7 +67,8 @@ public:
             .DynamicShapeSupportFlag(true)
             .ExtendCfgInfo("opFile.value", "split_v_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend350", aicoreConfig);
     }
 };
 OP_ADD(SplitV);
-}
+} // namespace ops

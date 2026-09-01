@@ -16,39 +16,29 @@
 #include <cstdint>
 #include "register/op_def_registry.h"
 
-namespace ops
-{
+namespace ops {
 // remain same as aic-ascend910b-ops-info.ini, and add 3 more aicore type
 static const std::vector<ge::DataType> xDType = {
-    ge::DT_FLOAT,     ge::DT_FLOAT16,  ge::DT_INT32,       ge::DT_INT64,
-    ge::DT_BOOL,      ge::DT_BF16,     ge::DT_INT8,        ge::DT_UINT8,
-    ge::DT_INT16,     ge::DT_UINT16,   ge::DT_UINT32,      ge::DT_UINT64,
-    ge::DT_COMPLEX64, ge::DT_HIFLOAT8, ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E4M3FN,
-    ge::DT_FLOAT,     ge::DT_FLOAT16,  ge::DT_INT32,       ge::DT_INT64,
-    ge::DT_BOOL,      ge::DT_BF16,     ge::DT_INT8,        ge::DT_UINT8,
-    ge::DT_INT16,     ge::DT_UINT16,   ge::DT_UINT32,      ge::DT_UINT64,
-    ge::DT_COMPLEX64, ge::DT_HIFLOAT8, ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E4M3FN};
+    ge::DT_FLOAT,         ge::DT_FLOAT16,      ge::DT_INT32,     ge::DT_INT64,     ge::DT_BOOL,
+    ge::DT_BF16,          ge::DT_INT8,         ge::DT_UINT8,     ge::DT_INT16,     ge::DT_UINT16,
+    ge::DT_UINT32,        ge::DT_UINT64,       ge::DT_COMPLEX64, ge::DT_HIFLOAT8,  ge::DT_FLOAT8_E5M2,
+    ge::DT_FLOAT8_E4M3FN, ge::DT_FLOAT,        ge::DT_FLOAT16,   ge::DT_INT32,     ge::DT_INT64,
+    ge::DT_BOOL,          ge::DT_BF16,         ge::DT_INT8,      ge::DT_UINT8,     ge::DT_INT16,
+    ge::DT_UINT16,        ge::DT_UINT32,       ge::DT_UINT64,    ge::DT_COMPLEX64, ge::DT_HIFLOAT8,
+    ge::DT_FLOAT8_E5M2,   ge::DT_FLOAT8_E4M3FN};
 static const std::vector<ge::Format> xFormat = {
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
     ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
 static const std::vector<ge::DataType> constDType = {
-    ge::DT_INT32,  ge::DT_INT32,  ge::DT_INT32,  ge::DT_INT32,  
-    ge::DT_INT32,  ge::DT_INT32,  ge::DT_INT32,  ge::DT_INT32, 
-    ge::DT_INT32,  ge::DT_INT32,  ge::DT_INT32,  ge::DT_INT32,  
-    ge::DT_INT32,  ge::DT_INT32,  ge::DT_INT32,  ge::DT_INT32,  
-    ge::DT_INT64,  ge::DT_INT64,  ge::DT_INT64,  ge::DT_INT64,  
-    ge::DT_INT64,  ge::DT_INT64,  ge::DT_INT64,  ge::DT_INT64,  
-    ge::DT_INT64,  ge::DT_INT64,  ge::DT_INT64,  ge::DT_INT64, 
-    ge::DT_INT64,  ge::DT_INT64,  ge::DT_INT64,  ge::DT_INT64};
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
 
-class Tile : public OpDef
-{
+class Tile : public OpDef {
 public:
     explicit Tile(const char* name) : OpDef(name)
     {
@@ -69,8 +59,9 @@ public:
             .NeedCheckSupportFlag(false)
             .ExtendCfgInfo("opFile.value", "tile_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend350", aicoreConfig);
     }
 };
 
 OP_ADD(Tile);
-}  // namespace ops
+} // namespace ops

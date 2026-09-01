@@ -15,84 +15,68 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
-    class StridedSlice : public OpDef {
-    public:
-        const std::vector<ge::DataType> baseDataType = {ge::DT_INT8, ge::DT_UINT8, ge::DT_INT16, ge::DT_UINT16,
-                                                        ge::DT_INT32, ge::DT_UINT32, ge::DT_INT64, ge::DT_UINT64,
-                                                        ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16, ge::DT_BOOL,
-                                                        ge::DT_COMPLEX32, ge::DT_COMPLEX64, ge::DT_HIFLOAT8,
-                                                        ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E4M3FN,
-                                                        ge::DT_INT8, ge::DT_UINT8, ge::DT_INT16, ge::DT_UINT16,
-                                                        ge::DT_INT32, ge::DT_UINT32, ge::DT_INT64, ge::DT_UINT64,
-                                                        ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16, ge::DT_BOOL,
-                                                        ge::DT_COMPLEX32, ge::DT_COMPLEX64, ge::DT_HIFLOAT8,
-                                                        ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E4M3FN};
-        const std::vector<ge::Format> baseFormat = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                                    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                                    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                                    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                                    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                                    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                                    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                                    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                                    ge::FORMAT_ND, ge::FORMAT_ND};
-        const std::vector<ge::DataType> attrDataType = {ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-                                                        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-                                                        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-                                                        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-                                                        ge::DT_INT32,
-                                                        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                                                        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                                                        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                                                        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                                                        ge::DT_INT64};
-        explicit StridedSlice(const char* name) : OpDef(name)
-        {
-            this->Input("x")
-                    .ParamType(REQUIRED)
-                    .DataType(baseDataType)
-                    .Format(baseFormat)
-                    .UnknownShapeFormat(baseFormat);
-            this->Input("begin")
-                    .ParamType(REQUIRED)
-                    .ValueDepend(OPTIONAL)
-                    .DataType(attrDataType)
-                    .Format(baseFormat)
-                    .UnknownShapeFormat(baseFormat);
-            this->Input("end")
-                    .ParamType(REQUIRED)
-                    .ValueDepend(OPTIONAL)
-                    .DataType(attrDataType)
-                    .Format(baseFormat)
-                    .UnknownShapeFormat(baseFormat);
-            this->Input("strides")
-                    .ParamType(REQUIRED)
-                    .ValueDepend(OPTIONAL)
-                    .DataType(attrDataType)
-                    .Format(baseFormat)
-                    .UnknownShapeFormat(baseFormat);
-            this->Output("y")
-                    .ParamType(REQUIRED)
-                    .DataType(baseDataType)
-                    .Format(baseFormat)
-                    .UnknownShapeFormat(baseFormat);
-            this->Attr("begin_mask").AttrType(OPTIONAL).Int(0);
-            this->Attr("end_mask").AttrType(OPTIONAL).Int(0);
-            this->Attr("ellipsis_mask").AttrType(OPTIONAL).Int(0);
-            this->Attr("new_axis_mask").AttrType(OPTIONAL).Int(0);
-            this->Attr("shrink_axis_mask").AttrType(OPTIONAL).Int(0);
+class StridedSlice : public OpDef {
+public:
+    const std::vector<ge::DataType> baseDataType = {
+        ge::DT_INT8,        ge::DT_UINT8,         ge::DT_INT16,       ge::DT_UINT16,       ge::DT_INT32,
+        ge::DT_UINT32,      ge::DT_INT64,         ge::DT_UINT64,      ge::DT_FLOAT,        ge::DT_FLOAT16,
+        ge::DT_BF16,        ge::DT_BOOL,          ge::DT_COMPLEX32,   ge::DT_COMPLEX64,    ge::DT_HIFLOAT8,
+        ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E4M3FN, ge::DT_INT8,        ge::DT_UINT8,        ge::DT_INT16,
+        ge::DT_UINT16,      ge::DT_INT32,         ge::DT_UINT32,      ge::DT_INT64,        ge::DT_UINT64,
+        ge::DT_FLOAT,       ge::DT_FLOAT16,       ge::DT_BF16,        ge::DT_BOOL,         ge::DT_COMPLEX32,
+        ge::DT_COMPLEX64,   ge::DT_HIFLOAT8,      ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E4M3FN};
+    const std::vector<ge::Format> baseFormat = {
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+    const std::vector<ge::DataType> attrDataType = {
+        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
+    explicit StridedSlice(const char* name) : OpDef(name)
+    {
+        this->Input("x").ParamType(REQUIRED).DataType(baseDataType).Format(baseFormat).UnknownShapeFormat(baseFormat);
+        this->Input("begin")
+            .ParamType(REQUIRED)
+            .ValueDepend(OPTIONAL)
+            .DataType(attrDataType)
+            .Format(baseFormat)
+            .UnknownShapeFormat(baseFormat);
+        this->Input("end")
+            .ParamType(REQUIRED)
+            .ValueDepend(OPTIONAL)
+            .DataType(attrDataType)
+            .Format(baseFormat)
+            .UnknownShapeFormat(baseFormat);
+        this->Input("strides")
+            .ParamType(REQUIRED)
+            .ValueDepend(OPTIONAL)
+            .DataType(attrDataType)
+            .Format(baseFormat)
+            .UnknownShapeFormat(baseFormat);
+        this->Output("y").ParamType(REQUIRED).DataType(baseDataType).Format(baseFormat).UnknownShapeFormat(baseFormat);
+        this->Attr("begin_mask").AttrType(OPTIONAL).Int(0);
+        this->Attr("end_mask").AttrType(OPTIONAL).Int(0);
+        this->Attr("ellipsis_mask").AttrType(OPTIONAL).Int(0);
+        this->Attr("new_axis_mask").AttrType(OPTIONAL).Int(0);
+        this->Attr("shrink_axis_mask").AttrType(OPTIONAL).Int(0);
 
-            OpAICoreConfig aicore_config;                
-            aicore_config.DynamicCompileStaticFlag(true)
-                .DynamicFormatFlag(false)
-                .DynamicRankSupportFlag(true)
-                .DynamicShapeSupportFlag(true)
-                .NeedCheckSupportFlag(false)
-                .ExtendCfgInfo("opFile.value", "strided_slice_apt");
+        OpAICoreConfig aicore_config;
+        aicore_config.DynamicCompileStaticFlag(true)
+            .DynamicFormatFlag(false)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .NeedCheckSupportFlag(false)
+            .ExtendCfgInfo("opFile.value", "strided_slice_apt");
 
-            this->AICore().AddConfig("ascend950", aicore_config);
-        }
-    };
+        this->AICore().AddConfig("ascend950", aicore_config);
+        this->AICore().AddConfig("ascend350", aicore_config);
+    }
+};
 
-    OP_ADD(StridedSlice);
+OP_ADD(StridedSlice);
 } // namespace ops
