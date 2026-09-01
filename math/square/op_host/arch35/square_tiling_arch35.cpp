@@ -21,14 +21,13 @@
 #include "../../op_kernel/arch35/square_dag.h"
 #include "log/log.h"
 
-#include <iostream>
-
 namespace optiling {
 const uint64_t TILING_KEY_FP16 = 1;
 const uint64_t TILING_KEY_BF16 = 2;
 const uint64_t TILING_KEY_FP32 = 3;
 const uint64_t TILING_KEY_INT32 = 4;
 const uint64_t TILING_KEY_INT64 = 5;
+const size_t ASCEND_WORKSPACE = 16 * 1024 * 1024;
 
 ge::graphStatus SquareTiling::CalcInputDtype()
 {
@@ -106,12 +105,12 @@ ge::graphStatus SquareTiling::SetTilingData(const ElewiseBaseTiling& elewiseBase
                                   "FLOAT16, BF16, FLOAT, INT32, INT64");
         return ge::GRAPH_FAILED;
     }
-    OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%ld.", tilingKey);
+    OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu.", tilingKey);
     tilingContext->SetTilingKey(tilingKey);
     tilingContext->SetBlockDim(elewiseBaseTiling.GetBlockDim());
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
-    currentWorkspace[0] = 16 * 1024 * 1024;
+    currentWorkspace[0] = ASCEND_WORKSPACE;
     return ge::GRAPH_SUCCESS;
 }
 
