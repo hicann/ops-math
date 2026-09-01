@@ -160,7 +160,7 @@ ge::graphStatus RangeRegBaseTilingClass::DoOpTiling()
         }
         default: {
             OP_CHECK_IF(CalculateOutputSize<float>(context_, start, limit, delta, outSize) != ge::GRAPH_SUCCESS,
-                        OP_LOGE(context_->GetNodeName(), "append tiling args fail."), return ge::GRAPH_FAILED);
+                        OP_LOGE(context_->GetNodeName(), "CalculateOutputSize fail."), return ge::GRAPH_FAILED);
             break;
         }
     }
@@ -169,7 +169,7 @@ ge::graphStatus RangeRegBaseTilingClass::DoOpTiling()
 
     // 设置Range算子中的参数
     OP_CHECK_IF(CalcRangeTilingParam(context_, tilingParam_, outDataType_) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context_->GetNodeName(), "SetRangeTilingParam fail"), return ge::GRAPH_FAILED);
+                OP_LOGE(context_->GetNodeName(), "CalcRangeTilingParam fail."), return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }

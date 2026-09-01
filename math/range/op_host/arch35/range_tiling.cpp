@@ -31,13 +31,9 @@ constexpr int32_t INT16_BITS_NUM = 16;
 
 class RangeMemBaseTilingClass : public Ops::Base::TilingBaseClass {
 public:
-    explicit RangeMemBaseTilingClass(gert::TilingContext* context) : TilingBaseClass(context)
-    {}
+    explicit RangeMemBaseTilingClass(gert::TilingContext* context) : TilingBaseClass(context) {}
 
-    void Reset(gert::TilingContext* context) override
-    {
-        TilingBaseClass::Reset(context);
-    }
+    void Reset(gert::TilingContext* context) override { TilingBaseClass::Reset(context); }
 
 protected:
     ge::graphStatus GetPlatformInfo() override
@@ -54,39 +50,21 @@ protected:
         return ge::GRAPH_SUCCESS;
     }
 
-    ge::graphStatus GetWorkspaceSize() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus GetWorkspaceSize() override { return ge::GRAPH_SUCCESS; }
 
-    ge::graphStatus DoLibApiTiling() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus DoLibApiTiling() override { return ge::GRAPH_SUCCESS; }
 
-    bool IsCapable() override
-    {
-        return !Ops::Base::IsRegbaseSocVersion(context_);
-    }
+    bool IsCapable() override { return !Ops::Base::IsRegbaseSocVersion(context_); }
 
     // 3、计算数据切分TilingData
     ge::graphStatus DoOpTiling() override;
 
     // 7、保存Tiling数据
-    ge::graphStatus PostTiling() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus PostTiling() override { return ge::GRAPH_SUCCESS; }
 
-    ge::graphStatus GetShapeAttrsInfo() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus GetShapeAttrsInfo() override { return ge::GRAPH_SUCCESS; }
 
-    uint64_t GetTilingKey() const override
-    {
-        return context_->GetTilingKey();
-    }
+    uint64_t GetTilingKey() const override { return context_->GetTilingKey(); }
 
     platform_ascendc::SocVersion socVersion_;
 };
@@ -155,47 +133,39 @@ static ge::graphStatus AppendTilingData(gert::TilingData* tilingData, T value)
 template <typename T>
 static ge::graphStatus CheckStep(gert::TilingContext* context, T start, T limit, T delta)
 {
-    OP_CHECK_IF(
-        !(delta > (static_cast<T>(0)) || delta < (static_cast<T>(0))),
-        OP_LOGE_FOR_INVALID_VALUE(context->GetNodeName(), "delta", "0", "non zero"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        ((limit > start) && (delta < 0)),
-        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
-            context->GetNodeName(), "start, limit and delta",
-            (std::to_string(start) + ", " + std::to_string(limit) + " and " + std::to_string(delta)).c_str(),
-            "When limit is greater than start, delta must be greater than or equal to 0"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        ((limit < start) && (delta > 0)),
-        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
-            context->GetNodeName(), "start, limit and delta",
-            (std::to_string(start) + ", " + std::to_string(limit) + " and " + std::to_string(delta)).c_str(),
-            "When limit is less than start, delta must be less than or equal to 0"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(!(delta > (static_cast<T>(0)) || delta < (static_cast<T>(0))),
+                OP_LOGE_FOR_INVALID_VALUE(context->GetNodeName(), "delta", "0", "non zero"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(((limit > start) && (delta < 0)),
+                OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+                    context->GetNodeName(), "start, limit and delta",
+                    (std::to_string(start) + ", " + std::to_string(limit) + " and " + std::to_string(delta)).c_str(),
+                    "When limit is greater than start, delta must be greater than or equal to 0"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(((limit < start) && (delta > 0)),
+                OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+                    context->GetNodeName(), "start, limit and delta",
+                    (std::to_string(start) + ", " + std::to_string(limit) + " and " + std::to_string(delta)).c_str(),
+                    "When limit is less than start, delta must be less than or equal to 0"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 template <typename T>
-ge::graphStatus CalculateOutputSize(
-    gert::TilingContext* context, const gert::Tensor* tensorStart, const gert::Tensor* tensorLimit,
-    const gert::Tensor* tensorDelta, uint64_t& outputSize)
+ge::graphStatus CalculateOutputSize(gert::TilingContext* context, const gert::Tensor* tensorStart,
+                                    const gert::Tensor* tensorLimit, const gert::Tensor* tensorDelta,
+                                    uint64_t& outputSize)
 {
     T start(0);
     T limit(0);
     T delta(0);
-    OP_CHECK_IF(
-        RangeGetConstValue<T>(context, tensorStart, start) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "get start const value fail."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        RangeGetConstValue<T>(context, tensorLimit, limit) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "get limit const value fail."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        RangeGetConstValue<T>(context, tensorDelta, delta) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "get delta const value fail."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CheckStep<T>(context, start, limit, delta) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "CheckStep fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(RangeGetConstValue<T>(context, tensorStart, start) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "get start const value fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(RangeGetConstValue<T>(context, tensorLimit, limit) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "get limit const value fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(RangeGetConstValue<T>(context, tensorDelta, delta) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "get delta const value fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckStep<T>(context, start, limit, delta) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "CheckStep fail."), return ge::GRAPH_FAILED);
     OP_CHECK_NULL_WITH_CONTEXT(context, context->GetOutputDesc(0));
     auto dtypeOutput = context->GetOutputDesc(0)->GetDataType();
     const gert::RuntimeAttrs* attrs = context->GetAttrs();
@@ -212,68 +182,58 @@ ge::graphStatus CalculateOutputSize(
             double startDouble = 0.0;
             double limitDouble = 0.0;
             double deltaDouble = 0.0;
-            OP_CHECK_IF(
-                RangeGetConstValue<double>(context, tensorStart, startDouble) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "get start value fail."), return ge::GRAPH_FAILED);
-            OP_CHECK_IF(
-                RangeGetConstValue<double>(context, tensorLimit, limitDouble) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "get limit value fail."), return ge::GRAPH_FAILED);
-            OP_CHECK_IF(
-                RangeGetConstValue<double>(context, tensorDelta, deltaDouble) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "get delta value fail."), return ge::GRAPH_FAILED);
+            OP_CHECK_IF(RangeGetConstValue<double>(context, tensorStart, startDouble) != ge::GRAPH_SUCCESS,
+                        OP_LOGE(context->GetNodeName(), "get start value fail."), return ge::GRAPH_FAILED);
+            OP_CHECK_IF(RangeGetConstValue<double>(context, tensorLimit, limitDouble) != ge::GRAPH_SUCCESS,
+                        OP_LOGE(context->GetNodeName(), "get limit value fail."), return ge::GRAPH_FAILED);
+            OP_CHECK_IF(RangeGetConstValue<double>(context, tensorDelta, deltaDouble) != ge::GRAPH_SUCCESS,
+                        OP_LOGE(context->GetNodeName(), "get delta value fail."), return ge::GRAPH_FAILED);
             outputSize = static_cast<uint64_t>(std::ceil((limitDouble - startDouble) / deltaDouble));
         }
     }
-    OP_LOGD(
-        context->GetNodeName(), "CalculateOutputSize: start: %lf, limit: %lf, delta: %lf, outputSize: %lu",
-        static_cast<double>(start), static_cast<double>(limit), static_cast<double>(delta), outputSize);
+    OP_LOGD(context->GetNodeName(), "CalculateOutputSize: start: %lf, limit: %lf, delta: %lf, outputSize: %lu",
+            static_cast<double>(start), static_cast<double>(limit), static_cast<double>(delta), outputSize);
     auto out_shape = context->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, out_shape);
     uint64_t outSizeFromFramework = out_shape->GetStorageShape().GetShapeSize();
-    OP_LOGD(context->GetNodeName(), "OFF: %lu", outSizeFromFramework);
+    OP_LOGD(context->GetNodeName(), "Output size from framework: %lu", outSizeFromFramework);
     if (outputSize != outSizeFromFramework) {
-        OP_LOGW(context->GetNodeName(), "OFF is %lu, but OFT is %lu", outSizeFromFramework, outputSize);
+        OP_LOGW(context->GetNodeName(), "Output size from framework is %lu, but calculated output size is %lu.",
+                outSizeFromFramework, outputSize);
         outputSize = (outputSize > outSizeFromFramework) ? outSizeFromFramework : outputSize;
     }
     return ge::GRAPH_SUCCESS;
 }
 
 template <typename T>
-ge::graphStatus AppendTilingArgs(
-    gert::TilingContext* context, const gert::Tensor* tensorStart, const gert::Tensor* tensorDelta,
-    const uint64_t outputSize, gert::TilingData* tilingData)
+ge::graphStatus AppendTilingArgs(gert::TilingContext* context, const gert::Tensor* tensorStart,
+                                 const gert::Tensor* tensorDelta, const uint64_t outputSize,
+                                 gert::TilingData* tilingData)
 {
     T start(0);
     T delta(0);
-    OP_CHECK_IF(
-        RangeGetConstValue<T>(context, tensorStart, start) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "get start const value fail."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        RangeGetConstValue<T>(context, tensorDelta, delta) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "get delta const value fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(RangeGetConstValue<T>(context, tensorStart, start) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "get start const value fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(RangeGetConstValue<T>(context, tensorDelta, delta) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "get delta const value fail."), return ge::GRAPH_FAILED);
 
     auto compileInfo = reinterpret_cast<const RangeCompileInfo*>(context->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
-    OP_CHECK_IF(
-        AppendTilingData<uint64_t>(tilingData, outputSize) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "append  fail."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        AppendTilingData<uint64_t>(tilingData, static_cast<uint64_t>(compileInfo->running_core_num)) !=
-            ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "append running_core_num fail."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        AppendTilingData<T>(tilingData, start) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "append start fail."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        AppendTilingData<T>(tilingData, delta) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "append delta fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(AppendTilingData<uint64_t>(tilingData, outputSize) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "append  fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(AppendTilingData<uint64_t>(tilingData, static_cast<uint64_t>(compileInfo->running_core_num)) !=
+                    ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "append running_core_num fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(AppendTilingData<T>(tilingData, start) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "append start fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(AppendTilingData<T>(tilingData, delta) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "append delta fail."), return ge::GRAPH_FAILED);
 
     context->SetBlockDim(compileInfo->running_core_num);
 
-    OP_LOGD(
-        context->GetNodeName(), "range get output_total_num:%lu, compile_info->running_core_num:%u", outputSize,
-        compileInfo->running_core_num);
+    OP_LOGD(context->GetNodeName(), "range get output_total_num:%lu, compile_info->running_core_num:%u", outputSize,
+            compileInfo->running_core_num);
 
     return ge::GRAPH_SUCCESS;
 }
@@ -287,14 +247,13 @@ ge::graphStatus TilingPrepareRangeForAscendC(gert::TilingParseContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->totalCoreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        (compileInfo->totalCoreNum <= 0), OP_LOGE(context->GetNodeName(), "Failed to get core num."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->totalCoreNum <= 0), OP_LOGE(context->GetNodeName(), "Failed to get core num."),
+                return ge::GRAPH_FAILED);
     uint64_t ubSize;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compileInfo->ubSize = static_cast<int64_t>(ubSize);
-    OP_CHECK_IF(
-        (compileInfo->ubSize <= 0), OP_LOGE(context->GetNodeName(), "Failed to get ub size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->ubSize <= 0), OP_LOGE(context->GetNodeName(), "Failed to get ub size."),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -308,9 +267,9 @@ static ge::graphStatus TilingPrepare4Range(gert::TilingParseContext* context)
     return TilingPrepareRangeForAscendC(context);
 }
 
-ge::graphStatus OpTilingCalculateOutputSize(
-    gert::TilingContext* context, const gert::Tensor* start, const gert::Tensor* tensorLimit,
-    const gert::Tensor* tensorDelta, const ge::DataType dtypeOutput)
+ge::graphStatus OpTilingCalculateOutputSize(gert::TilingContext* context, const gert::Tensor* start,
+                                            const gert::Tensor* tensorLimit, const gert::Tensor* tensorDelta,
+                                            const ge::DataType dtypeOutput)
 {
     auto tilingData = context->GetRawTilingData();
     uint64_t outputSize = 0;
@@ -346,7 +305,7 @@ ge::graphStatus OpTilingCalculateOutputSize(
         default: {
             OP_CHECK_IF(
                 CalculateOutputSize<float>(context, start, tensorLimit, tensorDelta, outputSize) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "append tiling args fail."), return ge::GRAPH_FAILED);
+                OP_LOGE(context->GetNodeName(), "CalculateOutputSize fail."), return ge::GRAPH_FAILED);
             OP_CHECK_IF(
                 AppendTilingArgs<float>(context, start, tensorDelta, outputSize, tilingData) != ge::GRAPH_SUCCESS,
                 OP_LOGE(context->GetNodeName(), "append tiling args fail."), return ge::GRAPH_FAILED);
@@ -372,16 +331,15 @@ ge::graphStatus RangeMemBaseTilingClass::DoOpTiling()
     auto dtypeDelta = tensorDelta->GetDataType();
     OP_CHECK_NULL_WITH_CONTEXT(context_, context_->GetOutputDesc(0));
     auto dtypeOutput = context_->GetOutputDesc(0)->GetDataType();
-    OP_CHECK_IF(
-        InputTypeIsInvalid(dtypeStart, dtypeLimit, dtypeDelta, dtypeOutput),
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            context_->GetNodeName(), "start, limit, delta and y",
-            (Ops::Base::ToString(dtypeStart) + ", " + Ops::Base::ToString(dtypeLimit) + ", " +
-             Ops::Base::ToString(dtypeDelta) + " and " + Ops::Base::ToString(dtypeOutput))
-                .c_str(),
-            "The dtype of start, limit and delta must be int32, int64, float, float16, bf16 or double, "
-            "and the dtype of y must be int32, int64, float, float16 or bf16"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(InputTypeIsInvalid(dtypeStart, dtypeLimit, dtypeDelta, dtypeOutput),
+                OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+                    context_->GetNodeName(), "start, limit, delta and y",
+                    (Ops::Base::ToString(dtypeStart) + ", " + Ops::Base::ToString(dtypeLimit) + ", " +
+                     Ops::Base::ToString(dtypeDelta) + " and " + Ops::Base::ToString(dtypeOutput))
+                        .c_str(),
+                    "The dtype of start, limit and delta must be int32, int64, float, float16, bf16 or double, "
+                    "and the dtype of y must be int32, int64, float, float16 or bf16"),
+                return ge::GRAPH_FAILED);
 
     auto ret = OpTilingCalculateOutputSize(context_, tensorStart, tensorLimit, tensorDelta, dtypeOutput);
     if (ret != ge::GRAPH_SUCCESS) {

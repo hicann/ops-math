@@ -45,9 +45,9 @@ uint32_t LinSpaceParaCheck(const CpuKernelContext& ctx, int64_t& num_value)
                         ((num_shape->GetDimSizes().size() == 1) && (num_shape->GetDimSize(0) == 1))),
                        KERNEL_STATUS_PARAM_INVALID, "Input[num] must be a scalar")
     KERNEL_CHECK_FALSE((tensor_start->GetDataType() == tensor_stop->GetDataType()), KERNEL_STATUS_PARAM_INVALID,
-                       "start datatype != stop datatype fail.")
+                       "the data types of start and stop must be the same.")
     KERNEL_CHECK_FALSE((tensor_start->GetDataType() == tensor_output->GetDataType()), KERNEL_STATUS_PARAM_INVALID,
-                       "start datatype != output datatype fail.")
+                       "the data types of start and output must be the same.")
 
     auto num_type = static_cast<DataType>(tensor_num->GetDataType());
     switch (num_type) {
@@ -62,7 +62,7 @@ uint32_t LinSpaceParaCheck(const CpuKernelContext& ctx, int64_t& num_value)
             break;
         }
         default:
-            KERNEL_LOG_ERROR("num datatype[%d] must be DT_INT32 or DT_INT64 fail.", num_type);
+            KERNEL_LOG_ERROR("num data type[%d] must be DT_INT32 or DT_INT64.", num_type);
             return KERNEL_STATUS_PARAM_INVALID;
     }
     KERNEL_CHECK_FALSE((num_value > 0), KERNEL_STATUS_PARAM_INVALID,

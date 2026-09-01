@@ -428,7 +428,7 @@ static ge::graphStatus SetTilingDataForLinSpace(gert::TilingContext* context, Li
                                                 const ge::DataType outDataType)
 {
     OP_CHECK_IF(SetTilingTilingKeyForLinSpace(context, tilingData, outDataType) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context->GetNodeName(), "set loopNum fail."), return ge::GRAPH_FAILED);
+                OP_LOGE(context->GetNodeName(), "set tilingKey fail."), return ge::GRAPH_FAILED);
     OP_CHECK_IF(SetLoopNumForLinSpace(context, tilingData, outDataType) != ge::GRAPH_SUCCESS,
                 OP_LOGE(context->GetNodeName(), "set loopNum fail."), return ge::GRAPH_FAILED);
 

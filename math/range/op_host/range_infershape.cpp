@@ -60,7 +60,7 @@ static bool IsTensorNull(const gert::InferShapeContext* context, const gert::Ten
             break;
         }
         default:
-            OP_LOGW(context->GetNodeName(), "aicore datatype not support.");
+            OP_LOGW(context->GetNodeName(), "AICore data type is not supported.");
             break;
     }
     return ret;

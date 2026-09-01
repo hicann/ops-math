@@ -36,12 +36,15 @@ static ge::graphStatus TilingPrepare4OneHotForAscendc(gert::TilingParseContext* 
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->core_num = ascendcPlatform.GetCoreNumAiv();
     OP_CHECK_IF(
-        (compileInfo->core_num <= 0), OP_LOGE(context->GetNodeName(), "core num invalid."), return ge::GRAPH_FAILED);
+        (compileInfo->core_num <= 0),
+        OP_LOGE(context->GetNodeName(), "Core num must be greater than 0, but got [%ld].", compileInfo->core_num),
+        return ge::GRAPH_FAILED);
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compileInfo->ub_size = static_cast<int64_t>(ubSize);
-    OP_CHECK_IF(
-        (compileInfo->ub_size <= 0), OP_LOGE(context->GetNodeName(), "ub size invalid."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->ub_size <= 0),
+                OP_LOGE(context->GetNodeName(), "UB size must be greater than 0, but got [%ld].", compileInfo->ub_size),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 

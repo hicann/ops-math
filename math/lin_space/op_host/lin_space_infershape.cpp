@@ -57,7 +57,7 @@ static ge::graphStatus InferShape4LinSpace(gert::InferShapeContext* context)
     auto res = GetNumValue(numTensor, numValue);
     if (res != ge::GRAPH_SUCCESS) {
         outShape->SetDimNum(0);
-        OP_LOGE(context->GetNodeName(), "the dtype of num only support int32_t and int64_t, infershape failed!");
+        OP_LOGE(context->GetNodeName(), "the dtype of num only supports int32_t and int64_t, infershape failed!");
         return ge::GRAPH_FAILED;
     }
     outShape->SetDimNum(1);
@@ -67,7 +67,5 @@ static ge::graphStatus InferShape4LinSpace(gert::InferShapeContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_INFERSHAPE(LinSpace)
-    .InputsDataDependency({LINSPACE_IDX_IN_NUM})
-    .InferShape(InferShape4LinSpace);
+IMPL_OP_INFERSHAPE(LinSpace).InputsDataDependency({LINSPACE_IDX_IN_NUM}).InferShape(InferShape4LinSpace);
 } // namespace ops

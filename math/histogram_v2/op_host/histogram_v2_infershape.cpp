@@ -31,7 +31,7 @@ static ge::graphStatus HistogramV2InferShapeFunc(gert::InferShapeContext* contex
     // 属性缺失时回落默认值，与 tiling 侧行为保持一致
     int64_t bins = (binsPtr == nullptr) ? DEFAULT_BINS : *binsPtr;
     OP_LOGD(context, "bins = %ld", bins);
-    OP_CHECK_IF(bins <= 0, OP_LOGE(context, "bins has to be positive, but get %ld", bins), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(bins <= 0, OP_LOGE(context, "bins has to be positive, but got %ld", bins), return ge::GRAPH_FAILED);
 
     gert::Shape* y_shape = context->GetOutputShape(OUTPUT_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context, y_shape);

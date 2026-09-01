@@ -39,8 +39,8 @@ static const std::initializer_list<op::DataType> VALUE_DTYPE_SUPPORT_LIST_950 = 
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_INT32,
     op::DataType::DT_INT64,   op::DataType::DT_INT8,  op::DataType::DT_UINT8};
 
-static inline bool CheckNotNull(
-    const aclTensor* self, const aclTensor* onValue, const aclTensor* offValue, const aclTensor* out)
+static inline bool CheckNotNull(const aclTensor* self, const aclTensor* onValue, const aclTensor* offValue,
+                                const aclTensor* out)
 {
     // self, out, onValue, offValue不能为空指针
     OP_CHECK_NULL(self, return false);
@@ -50,8 +50,8 @@ static inline bool CheckNotNull(
     return true;
 }
 
-static inline bool CheckDtypeValid(
-    const aclTensor* self, const aclTensor* onValue, const aclTensor* offValue, const aclTensor* out)
+static inline bool CheckDtypeValid(const aclTensor* self, const aclTensor* onValue, const aclTensor* offValue,
+                                   const aclTensor* out)
 {
     static bool isSimtVersion = IsRegBase();
     if (isSimtVersion) {
@@ -82,8 +82,8 @@ static inline bool CheckDtypeValid(
     return true;
 }
 
-static bool CheckMaxDimension(
-    const aclTensor* self, const aclTensor* onValue, const aclTensor* offValue, const aclTensor* out)
+static bool CheckMaxDimension(const aclTensor* self, const aclTensor* onValue, const aclTensor* offValue,
+                              const aclTensor* out)
 {
     static bool isSimtVersion = IsRegBase();
     if (isSimtVersion) {
@@ -103,16 +103,14 @@ static bool CheckMaxNumClasses(const aclTensor* self, int64_t numClasses)
     if (self->IsEmpty()) {
         // 空tensor时，numClasses应大于0
         if (numClasses <= MIN_NUM_CLASSES) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "NumClasses should be greater than %ld, but got %ld.", MIN_NUM_CLASSES,
-                numClasses);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "NumClasses should be greater than %ld, but got %ld.", MIN_NUM_CLASSES,
+                    numClasses);
             return false;
         }
     } else if (numClasses < MIN_NUM_CLASSES) {
         // 其他情况下，numClasses应大于等于0
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "NumClasses should be greater and equal than %ld, but got %ld.", MIN_NUM_CLASSES,
-            numClasses);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "NumClasses should be greater than or equal to %ld, but got %ld.",
+                MIN_NUM_CLASSES, numClasses);
         return false;
     }
     return true;
@@ -121,14 +119,16 @@ static bool CheckMaxNumClasses(const aclTensor* self, int64_t numClasses)
 static bool CheckAxisRange(const aclTensor* self, int64_t axis)
 {
     if (axis < MIN_AXIS) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The axis should be greater and equal than %ld, but got %ld.", MIN_AXIS, axis);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The axis should be greater than or equal to %ld, but got %ld.", MIN_AXIS,
+                axis);
         return false;
     }
 
     op::Shape selfShape = self->GetViewShape();
     int64_t selfDimNum = selfShape.GetDimNum();
     if (axis > selfDimNum) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The axis should be lower and equal than %ld, but got %ld.", selfDimNum, axis);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The axis should be less than or equal to %ld, but got %ld.", selfDimNum,
+                axis);
         return false;
     }
     return true;
@@ -155,9 +155,8 @@ static bool CheckShapeValid(const aclTensor* self, int64_t numClasses, int64_t a
     return true;
 }
 
-static inline aclnnStatus CheckParams(
-    const aclTensor* self, int64_t numClasses, const aclTensor* onValue, const aclTensor* offValue, int64_t axis,
-    const aclTensor* out)
+static inline aclnnStatus CheckParams(const aclTensor* self, int64_t numClasses, const aclTensor* onValue,
+                                      const aclTensor* offValue, int64_t axis, const aclTensor* out)
 {
     // 1. 检查参数是否为空指针
     CHECK_COND(CheckNotNull(self, onValue, offValue, out), ACLNN_ERR_PARAM_NULLPTR, "CheckNotNull failed!");
@@ -180,9 +179,9 @@ static inline aclnnStatus CheckParams(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnOneHotGetWorkspaceSize(
-    const aclTensor* self, int numClasses, const aclTensor* onValue, const aclTensor* offValue, int64_t axis,
-    aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnOneHotGetWorkspaceSize(const aclTensor* self, int numClasses, const aclTensor* onValue,
+                                        const aclTensor* offValue, int64_t axis, aclTensor* out,
+                                        uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 

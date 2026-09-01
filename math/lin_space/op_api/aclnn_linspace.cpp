@@ -119,7 +119,7 @@ inline static aclnnStatus CheckParamsLogic(const aclTensor* out, int64_t steps)
 {
     // steps不能小于0
     if (steps < 0) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "number of steps must be non-negative.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "number of steps must be non-negative, but got %ld.", steps);
         return ACLNN_ERR_PARAM_INVALID;
     }
     // 检查out size与steps是否相同
