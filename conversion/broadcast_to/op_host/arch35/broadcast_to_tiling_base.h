@@ -18,45 +18,11 @@
 #include <cstdint>
 
 #include "broadcast_to_tiling_arch35.h"
+#include "../../op_kernel/arch35/broadcast_to_struct.h"
 #include "register/tilingdata_base.h"
 #include "tiling/tiling_api.h"
 
 namespace optiling {
-constexpr size_t brctoMaxDMADimNum = 0x5;
-constexpr size_t brctoMaxADimNum = static_cast<size_t>(0x8) * 3; // axisSize, axisInASize, axisOutASize
-constexpr size_t brctoMaxBDimNum = static_cast<size_t>(0x8) * 2; // axisSize, axisASize
-
-BEGIN_TILING_DATA_DEF(BroadcastToTilingData)
-TILING_DATA_FIELD_DEF(int64_t, tilingKey);
-TILING_DATA_FIELD_DEF(int64_t, dFactor);
-TILING_DATA_FIELD_DEF(uint8_t, doubleMode);
-TILING_DATA_FIELD_DEF(uint8_t, uAxisCnt);  // axis count in ub
-TILING_DATA_FIELD_DEF(uint8_t, bufferCnt); // buffer count in ub
-TILING_DATA_FIELD_DEF(uint8_t, blockAxis); // 0: A, 1: B, 2, U
-TILING_DATA_FIELD_DEF(uint32_t, tensorSize);
-TILING_DATA_FIELD_DEF(int64_t, usedCoreCnt);
-TILING_DATA_FIELD_DEF(int64_t, ntcALen);
-TILING_DATA_FIELD_DEF(int64_t, tcALen);
-TILING_DATA_FIELD_DEF(int64_t, ntcBLen);
-TILING_DATA_FIELD_DEF(int64_t, tcBLen);
-TILING_DATA_FIELD_DEF(int64_t, ntcULen);
-TILING_DATA_FIELD_DEF(int64_t, tcULen);
-TILING_DATA_FIELD_DEF(int64_t, aLpUnit);
-TILING_DATA_FIELD_DEF(int64_t, uLpUnit);
-TILING_DATA_FIELD_DEF(int64_t, uInOffset);
-TILING_DATA_FIELD_DEF(int64_t, uOutOffset);
-TILING_DATA_FIELD_DEF(int32_t, isUNotB);
-TILING_DATA_FIELD_DEF(int32_t, isLastDimB); // 0: A, 1:B
-TILING_DATA_FIELD_DEF(int32_t, aAxesNum);
-TILING_DATA_FIELD_DEF(int32_t, bAxesNum);
-TILING_DATA_FIELD_DEF_ARR(uint64_t, brctoMaxDMADimNum, xSrcStride);
-TILING_DATA_FIELD_DEF_ARR(uint32_t, brctoMaxDMADimNum, xDstStride);
-TILING_DATA_FIELD_DEF_ARR(uint32_t, brctoMaxDMADimNum, xSize);
-TILING_DATA_FIELD_DEF_ARR(int64_t, brctoMaxADimNum, aAxesParams);
-TILING_DATA_FIELD_DEF_ARR(int64_t, brctoMaxBDimNum, bAxesParams);
-END_TILING_DATA_DEF;
-
-REGISTER_TILING_DATA_CLASS(BroadcastTo, BroadcastToTilingData);
 
 ge::graphStatus Tiling4BroadcastToAscendC(gert::TilingContext* context, const gert::Shape* inShapePtr,
                                           const gert::Shape* outShapePtr);
@@ -74,7 +40,6 @@ constexpr size_t BRCTO_MAX_DIM_NUM = 0x8;
 constexpr size_t aParamUnit = 3;
 constexpr size_t bParamUnit = 2;
 constexpr int64_t nTwo = 2;
-constexpr size_t kSyncWorkSpaceSize = static_cast<size_t>(16) * 1024 * 1024;
 constexpr int64_t maxDataSize = static_cast<int64_t>(128) * 1024;
 constexpr float coreFactor = 0.75;
 constexpr int64_t LAST_DIM_GATE = 8;
@@ -156,7 +121,7 @@ private:
     gert::TilingContext* context_ = nullptr;
     const gert::Shape* inShapePtr_ = nullptr;
     const gert::Shape* outShapePtr_ = nullptr;
-    BroadcastToTilingData tilingData_;
+    BroadcastToTilingData* tilingData_ = nullptr;
 
     int64_t coreNum_{0};
     int64_t ubSize_{0};
@@ -197,11 +162,11 @@ private:
     int32_t isLastDimB_{0};
     int32_t aAxesNum_{0};
     int32_t bAxesNum_{0};
-    uint64_t xSrcStride_[brctoMaxDMADimNum]{0};
-    uint32_t xDstStride_[brctoMaxDMADimNum]{0};
-    uint32_t xSize_[brctoMaxDMADimNum]{1, 1, 1, 1, 1};
-    int64_t aAxesParams_[brctoMaxADimNum]{0};
-    int64_t bAxesParams_[brctoMaxBDimNum]{0};
+    uint64_t xSrcStride_[BRC_TO_MAX_DMA_DIM_NUM]{0};
+    uint32_t xDstStride_[BRC_TO_MAX_DMA_DIM_NUM]{0};
+    uint32_t xSize_[BRC_TO_MAX_DMA_DIM_NUM]{1, 1, 1, 1, 1};
+    int64_t aAxesParams_[BRC_TO_MAX_A_DIM_NUM]{0};
+    int64_t bAxesParams_[BRC_TO_MAX_B_DIM_NUM]{0};
 };
 
 } // namespace brcto

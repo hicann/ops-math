@@ -13,6 +13,7 @@
  * \brief calc tiling for tile
  */
 #include "tile_tiling_arch35.h"
+#include "conversion/broadcast_to/op_host/arch35/broadcast_to_tiling_base.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 #include "tiling/tiling_api.h"

@@ -264,7 +264,7 @@ void BroadcastToTilingAscendC::GetUAxisInfo()
         res = Ops::Base::CeilAlign(res, blockSize_ / dtypeSize_);
     }
 
-    size_t maxUbAxisCnt = (tilingKey_ != TILING_MODE_NDDMA) ? brctoMaxDMADimNum - 1 : brctoMaxDMADimNum;
+    size_t maxUbAxisCnt = (tilingKey_ != TILING_MODE_NDDMA) ? BRC_TO_MAX_DMA_DIM_NUM - 1 : BRC_TO_MAX_DMA_DIM_NUM;
     if ((CalcDimSize(outShapePtr_, 0, dimNum - 1) * res <= tensorSize_ && dimNum <= maxUbAxisCnt) || dimNum == 1) {
         uAxis_ = size_t(0);
         uLpUnit_ = outShapePtr_->GetDim(0);
@@ -301,7 +301,7 @@ void BroadcastToTilingAscendC::GetUAxisInfo()
 
 void BroadcastToTilingAscendC::UpdateTilingKey()
 {
-    if (uAxisCnt_ == int8_t(brctoMaxDMADimNum)) {
+    if (uAxisCnt_ == int8_t(BRC_TO_MAX_DMA_DIM_NUM)) {
         tilingKey_ = TILING_MODE_FULL_NDDMA;
         return;
     }
@@ -669,39 +669,44 @@ ge::graphStatus BroadcastToTilingAscendC::WriteTilingData()
         return ge::GRAPH_FAILED;
     }
 
-    tilingData_.set_tilingKey(tilingKey_);
-    tilingData_.set_doubleMode(static_cast<uint8_t>(doubleMode_));
-    tilingData_.set_dFactor(dFactor_);
-    tilingData_.set_tensorSize(static_cast<uint32_t>(tensorSize_));
-    tilingData_.set_usedCoreCnt(usedCoreCnt_);
-    tilingData_.set_blockAxis(static_cast<uint8_t>(blockAxis_));
-    tilingData_.set_ntcALen(ntcALen_);
-    tilingData_.set_tcALen(tcALen_);
-    tilingData_.set_ntcBLen(ntcBLen_);
-    tilingData_.set_tcBLen(tcBLen_);
-    tilingData_.set_ntcULen(ntcULen_);
-    tilingData_.set_tcULen(tcULen_);
-    tilingData_.set_aLpUnit(aLpUnit_);
-    tilingData_.set_uLpUnit(uLpUnit_);
-    tilingData_.set_uInOffset(uInOffset_);
-    tilingData_.set_uOutOffset(uOutOffset_);
-    tilingData_.set_isUNotB(isUNotB_);
-    tilingData_.set_isLastDimB(isLastDimB_);
-    tilingData_.set_uAxisCnt(static_cast<uint8_t>(uAxisCnt_));
-    tilingData_.set_bufferCnt(static_cast<uint8_t>(bufferCnt_));
-    tilingData_.set_xSrcStride(xSrcStride_);
-    tilingData_.set_xDstStride(xDstStride_);
-    tilingData_.set_xSize(xSize_);
-    tilingData_.set_aAxesNum(aAxesNum_);
-    tilingData_.set_bAxesNum(bAxesNum_);
-    tilingData_.set_aAxesParams(aAxesParams_);
-    tilingData_.set_bAxesParams(bAxesParams_);
-    tilingData_.SaveToBuffer(context_->GetRawTilingData()->GetData(), context_->GetRawTilingData()->GetCapacity());
-    context_->GetRawTilingData()->SetDataSize(tilingData_.GetDataSize());
+    tilingData_ = context_->GetTilingData<BroadcastToTilingData>();
+    tilingData_->tilingKey = tilingKey_;
+    tilingData_->doubleMode = static_cast<uint8_t>(doubleMode_);
+    tilingData_->dFactor = dFactor_;
+    tilingData_->tensorSize = static_cast<uint32_t>(tensorSize_);
+    tilingData_->usedCoreCnt = usedCoreCnt_;
+    tilingData_->blockAxis = static_cast<uint8_t>(blockAxis_);
+    tilingData_->ntcALen = ntcALen_;
+    tilingData_->tcALen = tcALen_;
+    tilingData_->ntcBLen = ntcBLen_;
+    tilingData_->tcBLen = tcBLen_;
+    tilingData_->ntcULen = ntcULen_;
+    tilingData_->tcULen = tcULen_;
+    tilingData_->aLpUnit = aLpUnit_;
+    tilingData_->uLpUnit = uLpUnit_;
+    tilingData_->uInOffset = uInOffset_;
+    tilingData_->uOutOffset = uOutOffset_;
+    tilingData_->isUNotB = isUNotB_;
+    tilingData_->isLastDimB = isLastDimB_;
+    tilingData_->uAxisCnt = static_cast<uint8_t>(uAxisCnt_);
+    tilingData_->bufferCnt = static_cast<uint8_t>(bufferCnt_);
+    for (size_t i = 0; i < BRC_TO_MAX_DMA_DIM_NUM; i++) {
+        tilingData_->xSrcStride[i] = xSrcStride_[i];
+        tilingData_->xDstStride[i] = xDstStride_[i];
+        tilingData_->xSize[i] = xSize_[i];
+    }
+    tilingData_->aAxesNum = aAxesNum_;
+    tilingData_->bAxesNum = bAxesNum_;
+    for (size_t i = 0; i < BRC_TO_MAX_A_DIM_NUM; i++) {
+        tilingData_->aAxesParams[i] = aAxesParams_[i];
+    }
+    for (size_t i = 0; i < BRC_TO_MAX_B_DIM_NUM; i++) {
+        tilingData_->bAxesParams[i] = bAxesParams_[i];
+    }
 
     size_t* currentWorkspace = context_->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, currentWorkspace);
-    currentWorkspace[0] = kSyncWorkSpaceSize;
+    currentWorkspace[0] = 0;
 
     OP_LOGI("BroadcastToTilingAscendC", "The tiling data is: %s", PrintTilingData().c_str());
 
@@ -735,7 +740,7 @@ std::string BroadcastToTilingAscendC::PrintTilingData()
     tilingStr += std::to_string(aAxesNum_) + ",";
     tilingStr += std::to_string(bAxesNum_) + " ";
     tilingStr += ",DMA: ";
-    for (size_t i = 0; i < brctoMaxDMADimNum; i++) {
+    for (size_t i = 0; i < BRC_TO_MAX_DMA_DIM_NUM; i++) {
         tilingStr += std::to_string(xSrcStride_[i]) + " ";
         tilingStr += std::to_string(xDstStride_[i]) + " ";
         tilingStr += std::to_string(xSize_[i]) + " ";

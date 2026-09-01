@@ -15,12 +15,10 @@
 
 #ifndef OPS_BUILT_IN_OP_TILING_RUNTIME_EXPAND_H_
 #define OPS_BUILT_IN_OP_TILING_RUNTIME_EXPAND_H_
-#include "conversion/broadcast_to/op_host/arch35/broadcast_to_tiling_base.h"
+#include "conversion/broadcast_to/op_kernel/arch35/broadcast_to_struct.h"
 #include "register/tilingdata_base.h"
 
 namespace optiling {
-
-REGISTER_TILING_DATA_CLASS(Expand, BroadcastToTilingData);
 
 struct ExpandCompileInfo {
     int64_t coreNum;

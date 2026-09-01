@@ -21,8 +21,7 @@
 
 using namespace ge;
 
-class TileTiling : public testing::Test
-{
+class TileTiling : public testing::Test {
 protected:
     static void SetUpTestCase() { std::cout << "TileTiling SetUp" << std::endl; }
 
@@ -33,7 +32,7 @@ TEST_F(TileTiling, TileTiling_001)
 {
     optiling::TileCompileInfo compileInfo;
     compileInfo.coreNum = 64;
-    compileInfo.ubSize = 245760;  // 240 * 1024
+    compileInfo.ubSize = 245760; // 240 * 1024
     compileInfo.clSize = 256;
     compileInfo.vRegSize = 256;
     compileInfo.blockSize = 32;
@@ -41,12 +40,10 @@ TEST_F(TileTiling, TileTiling_001)
     gert::StorageShape shape = {{2, 3, 1, 1, 2, 2}, {2, 3, 1, 1, 2, 2}};
     gert::StorageShape yShape = {{4, 9, 1, 1000, 2, 2}, {4, 9, 1, 1000, 2, 2}};
     gert::TilingContextPara tilingContextPara(
-        "Tile",
-        {{ xShape, ge::DT_FLOAT, ge::FORMAT_ND }, { shape, ge::DT_INT32, ge::FORMAT_ND }},
-        {{ yShape, ge::DT_FLOAT, ge::FORMAT_ND }},
-        &compileInfo);
+        "Tile", {{xShape, ge::DT_FLOAT, ge::FORMAT_ND}, {shape, ge::DT_INT32, ge::FORMAT_ND}},
+        {{yShape, ge::DT_FLOAT, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11000;
-    std::vector<size_t> expectedWorkspaces = { 16777216 };
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 

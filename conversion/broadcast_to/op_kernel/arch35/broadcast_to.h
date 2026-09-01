@@ -39,11 +39,6 @@ using namespace BrcTo;
 // for other operator(ex: tile) to use
 __aicore__ void inline broadcast_to_impl(GM_ADDR x, GM_ADDR shape, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
-    if (workspace == nullptr) {
-        return;
-    }
-    SetSysWorkspace(workspace);
-
     constexpr auto b8 = sizeof(uint8_t);
     constexpr auto b16 = sizeof(uint16_t);
     constexpr auto b32 = sizeof(uint32_t);

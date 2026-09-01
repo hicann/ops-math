@@ -41,7 +41,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_test_failed_1)
         "BroadcastTo", {{shape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{shape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11006;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -57,7 +57,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_test_success_2)
         "BroadcastTo", {{inshape, ge::DT_UINT8, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_UINT8, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11007;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -73,7 +73,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_test_failed_3)
         "BroadcastTo", {{inshape, ge::DT_UINT8, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_UINT8, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 1;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -89,7 +89,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_1d_ub_brc_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11007;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -105,7 +105,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_last_dim_large_a_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11006;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -121,7 +121,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_ub_brc_2d_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11002;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -137,7 +137,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_nddma_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11007;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -153,7 +153,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_input_more_dims_than_output_001
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -169,7 +169,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_output_dims_exceed_max_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -185,7 +185,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_empty_shape_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -201,7 +201,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_broadcast_rule_violation_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -217,7 +217,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_int64_shape_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT64, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11007;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -233,7 +233,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_float32_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11007;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -249,7 +249,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_a_axis_split_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11006;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -265,7 +265,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_b_axis_split_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11001;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -281,7 +281,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_1d_no_broadcast_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11006;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -297,7 +297,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_last_dim_small_a_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11000;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -313,7 +313,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_4d_mixed_axes_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11000;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -329,7 +329,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_int8_dtype_001)
         "BroadcastTo", {{inshape, ge::DT_INT8, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_INT8, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11005;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -345,7 +345,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_bf16_dtype_001)
         "BroadcastTo", {{inshape, ge::DT_BF16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_BF16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11002;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -361,7 +361,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_int64_dtype_001)
         "BroadcastTo", {{inshape, ge::DT_INT64, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_INT64, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11002;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -377,7 +377,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_5d_shape_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11001;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -393,7 +393,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_zero_ubsize_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -409,7 +409,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_zero_blocksize_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -425,7 +425,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_zero_clsize_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -441,7 +441,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_zero_vregsize_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -457,7 +457,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_all_b_axes_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11007;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -473,7 +473,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_brwd_path_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11001;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -489,7 +489,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_small_last_dim_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11000;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -506,7 +506,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_all_one_dims_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11006;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -523,7 +523,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_large_last_dim_a_ub_gate_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11002;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -540,7 +540,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_ub_brc_last_dim_b_large_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11007;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -557,7 +557,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_6d_shape_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11005;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -573,7 +573,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_ub_brc_multi_b_001)
         "BroadcastTo", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11007;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -589,7 +589,7 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_uint32_dtype_001)
         "BroadcastTo", {{inshape, ge::DT_UINT32, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_UINT32, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11002;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -605,6 +605,6 @@ TEST_F(BroadcastToTilingTest, BroadcastTo_tiling_bool_dtype_001)
         "BroadcastTo", {{inshape, ge::DT_BOOL, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_BOOL, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11005;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }

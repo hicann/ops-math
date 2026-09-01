@@ -15,19 +15,17 @@
 
 #ifndef OPS_BUILT_IN_OP_TILING_RUNTIME_TILE_H_
 #define OPS_BUILT_IN_OP_TILING_RUNTIME_TILE_H_
-#include "conversion/broadcast_to/op_host/arch35/broadcast_to_tiling_base.h"
+#include "conversion/broadcast_to/op_kernel/arch35/broadcast_to_struct.h"
 #include "register/tilingdata_base.h"
 
 namespace optiling {
 
-REGISTER_TILING_DATA_CLASS(Tile, BroadcastToTilingData);
-
 struct TileCompileInfo {
-  int64_t coreNum;
-  int64_t ubSize;
-  uint32_t clSize;
-  uint32_t vRegSize;
-  int64_t blockSize;
+    int64_t coreNum;
+    int64_t ubSize;
+    uint32_t clSize;
+    uint32_t vRegSize;
+    int64_t blockSize;
 };
-}  // namespace optiling
-#endif  // OPS_BUILT_IN_OP_TILING_RUNTIME_TILE_H_
+} // namespace optiling
+#endif // OPS_BUILT_IN_OP_TILING_RUNTIME_TILE_H_

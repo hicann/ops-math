@@ -104,7 +104,7 @@ static ge::graphStatus Tiling4SingleAxis(gert::TilingContext* context, const ger
 
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, currentWorkspace);
-    currentWorkspace[0] = brcto::kSyncWorkSpaceSize;
+    currentWorkspace[0] = 0;
 
     OP_LOGI(context->GetNodeName(),
             "SingleAxis tiling: key=%lu, shapeSize=%lu, blockFactor=%lu, mainCoreNum=%lu, usedCoreNum=%lu, "

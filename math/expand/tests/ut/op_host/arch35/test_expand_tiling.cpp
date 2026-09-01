@@ -24,17 +24,14 @@ using namespace std;
 using namespace ge;
 
 class ExpandTilingTest : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "ExpandTiling SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() { std::cout << "ExpandTiling SetUp" << std::endl; }
 
-  static void TearDownTestCase() {
-    std::cout << "ExpandTiling TearDown" << std::endl;
-  }
+    static void TearDownTestCase() { std::cout << "ExpandTiling TearDown" << std::endl; }
 };
 
-TEST_F(ExpandTilingTest, Expand_tiling_test_success_1) {
+TEST_F(ExpandTilingTest, Expand_tiling_test_success_1)
+{
     optiling::ExpandCompileInfo compileInfo;
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 245760;
@@ -48,16 +45,15 @@ TEST_F(ExpandTilingTest, Expand_tiling_test_success_1) {
     int32_t shapes[4] = {1, 1, 313, 199};
 
     gert::TilingContextPara tilingContextPara(
-        "Expand",
-        {{ inshape, ge::DT_UINT8, ge::FORMAT_ND }, { shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
-        {{ outshape, ge::DT_UINT8, ge::FORMAT_ND }},
-        &compileInfo);
+        "Expand", {{inshape, ge::DT_UINT8, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
+        {{outshape, ge::DT_UINT8, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11003;
-    std::vector<size_t> expectedWorkspaces = { 16777216 };
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
-TEST_F(ExpandTilingTest, Expand_tiling_test_fail_2) {
+TEST_F(ExpandTilingTest, Expand_tiling_test_fail_2)
+{
     optiling::ExpandCompileInfo compileInfo;
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 245760;
@@ -71,12 +67,10 @@ TEST_F(ExpandTilingTest, Expand_tiling_test_fail_2) {
     int32_t shapes[4] = {1, 1, 313, 199};
 
     gert::TilingContextPara tilingContextPara(
-        "Expand",
-        {{ inshape, ge::DT_UINT8, ge::FORMAT_ND }, { shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
-        {{ outshape, ge::DT_UINT8, ge::FORMAT_ND }},
-        &compileInfo);
+        "Expand", {{inshape, ge::DT_UINT8, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
+        {{outshape, ge::DT_UINT8, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11002;
-    std::vector<size_t> expectedWorkspaces = { 16777216 };
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -99,7 +93,7 @@ TEST_F(ExpandTilingTest, Expand_tiling_int64_shape_001)
         "Expand", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT64, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11003;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -123,7 +117,7 @@ TEST_F(ExpandTilingTest, Expand_tiling_invalid_dtype_001)
         "Expand", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_FLOAT, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -146,7 +140,7 @@ TEST_F(ExpandTilingTest, Expand_tiling_empty_tensor_001)
         "Expand", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -169,7 +163,7 @@ TEST_F(ExpandTilingTest, Expand_tiling_empty_tensor_y_only_001)
         "Expand", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -193,7 +187,7 @@ TEST_F(ExpandTilingTest, Expand_tiling_input_more_dims_001)
         "Expand", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -216,7 +210,7 @@ TEST_F(ExpandTilingTest, Expand_tiling_output_exceed_max_dims_001)
         "Expand", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -239,7 +233,7 @@ TEST_F(ExpandTilingTest, Expand_tiling_negative_one_shape_001)
         "Expand", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11001;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -262,7 +256,7 @@ TEST_F(ExpandTilingTest, Expand_tiling_out_dim_1_x_not_1_001)
         "Expand", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11001;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -285,7 +279,7 @@ TEST_F(ExpandTilingTest, Expand_tiling_mixed_axes_001)
         "Expand", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11005;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -308,7 +302,7 @@ TEST_F(ExpandTilingTest, Expand_tiling_1d_after_delete_001)
         "Expand", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 11003;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -331,7 +325,7 @@ TEST_F(ExpandTilingTest, Expand_tiling_negative_corenum_001)
         "Expand", {{inshape, ge::DT_UINT8, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_UINT8, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -354,7 +348,7 @@ TEST_F(ExpandTilingTest, Expand_tiling_zero_ubsize_001)
         "Expand", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -377,7 +371,7 @@ TEST_F(ExpandTilingTest, Expand_tiling_zero_clsize_001)
         "Expand", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -400,7 +394,7 @@ TEST_F(ExpandTilingTest, Expand_tiling_zero_blocksize_001)
         "Expand", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -423,6 +417,6 @@ TEST_F(ExpandTilingTest, Expand_tiling_zero_vregsize_001)
         "Expand", {{inshape, ge::DT_FLOAT16, ge::FORMAT_ND}, {shape1, ge::DT_INT32, ge::FORMAT_ND, true, &shapes}},
         {{outshape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
