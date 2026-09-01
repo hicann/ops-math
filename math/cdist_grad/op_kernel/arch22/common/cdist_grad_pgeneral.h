@@ -45,6 +45,15 @@ using namespace AscendC;
 // and rounds it to the operator dtype).
 constexpr float MAX_FINITE_F32 = 3.4028235e38f;
 
+// Number of low significand bits cleared by SplitHead. fp32 carries 24 significand bits, so
+// splitting at half that width leaves two 12-bit heads whose product is still exact in fp32.
+constexpr int32_t SPLIT_HEAD_SHIFT_BITS = 12;
+
+// Largest integer exponent still served by PowIntExp. Up to this many repeated multiplies stay
+// cheaper than the exp/ln path and, unlike it, are exact; beyond it the multiply chain wins on
+// neither count.
+constexpr int64_t POW_INT_FASTPATH_MAX_EXP = 16;
+
 // dst = src^expInt via repeated multiplication for small integer expInt (exact, no exp/ln).
 __aicore__ inline void PowIntExp(LocalTensor<float>& dst, const LocalTensor<float>& src, int64_t expInt, uint32_t count)
 {
@@ -63,12 +72,12 @@ __aicore__ inline void PowIntExp(LocalTensor<float>& dst, const LocalTensor<floa
 __aicore__ inline void SplitHead(LocalTensor<int32_t>& hiI, const LocalTensor<float>& src, uint32_t count)
 {
     LocalTensor<float> s = src;
-    AscendC::ShiftRight<int32_t>(hiI, s.template ReinterpretCast<int32_t>(), static_cast<int32_t>(12), count);
-    AscendC::ShiftLeft<int32_t>(hiI, hiI, static_cast<int32_t>(12), count);
+    AscendC::ShiftRight<int32_t>(hiI, s.template ReinterpretCast<int32_t>(), SPLIT_HEAD_SHIFT_BITS, count);
+    AscendC::ShiftLeft<int32_t>(hiI, hiI, SPLIT_HEAD_SHIFT_BITS, count);
 }
 
 // dst = num / den, correctly rounded to fp32 (<= 0.5 ulp) and EXACT whenever num == den.
-//
+
 // Two Newton-Raphson reciprocal refinements on their own leave up to ~3 ulp and, in
 // particular, return num/num == 1.0f only about 60% of the time. That matters far more than
 // the raw ulp count suggests, because the quotient feeds ln(): its RELATIVE error lands as
@@ -78,12 +87,12 @@ __aicore__ inline void SplitHead(LocalTensor<int32_t>& hiI, const LocalTensor<fl
 // where the reference is perfect: whenever the feature dim is 1, cdist is |diff| bit for
 // bit, so the true factor is 1 and the CPU benchmark (exp(q*log(1))) gets every such term
 // exactly right while we contribute a fresh ulp on each one.
-//
+
 // So the quotient is finished with one residual correction, q1 = q0 + (num - den*q0)/den,
 // where den*q0 is formed exactly as a two-product (head/tail split above). num - den*q0 is
 // then exact by Sterbenz, and the correction only needs the low-precision reciprocal we
 // already have.
-//
+
 // tmp supplies 9 fp32 rows of `count` elements; dst may alias num or den (only the final
 // Add writes to it).
 __aicore__ inline void DivHighPrec(LocalTensor<float>& dst, const LocalTensor<float>& num,
@@ -227,7 +236,7 @@ __aicore__ inline void PowGeneral(LocalTensor<float>& dst, const LocalTensor<flo
                                   LocalTensor<float>& gBuf, LocalTensor<int32_t>& i32Buf, uint32_t count)
 {
     int64_t eInt = static_cast<int64_t>(exp);
-    if (exp == static_cast<float>(eInt) && eInt >= 1 && eInt <= 16) {
+    if (exp == static_cast<float>(eInt) && eInt >= 1 && eInt <= POW_INT_FASTPATH_MAX_EXP) {
         PowIntExp(dst, base, eInt, count);
         return;
     }
@@ -248,19 +257,19 @@ public:
 };
 
 // Compensated accumulation, tmp rows [9e, 13e).
-//
+
 // The reduce over j cancels catastrophically on these shapes -- measured up to 2.6e6:1 -- so
 // once J gets past a few hundred terms it is the fp32 accumulator's OWN rounding, not the term
 // math, that sets the error floor. Summing the exact terms in fp32 sequentially already
 // reproduces essentially all of the CPU benchmark's error on such a case, which is why simply
 // making the terms more accurate cannot get us below it.
-//
+
 // The other paths (p = 0/1/2/inf) compute a term that is bit-identical to the benchmark's, so
 // their plain accumulate reproduces the benchmark error exactly and there is nothing to win.
 // Only here do our terms differ from the reference's (it evaluates pow(|diff|,q)/pow(cdist,q)
 // for 1 < p < 2 while we evaluate exp(q*ln(|diff|/cdist))), so our summation error compounds
 // with a term difference instead of cancelling against it.
-//
+
 // Knuth's two-sum is used rather than Kahan's: it is branch-free, needs no mask register, and
 // its residual is exact even when the running sum is smaller than the addend -- which is
 // exactly what heavy cancellation produces.
@@ -268,7 +277,7 @@ public:
 // The residual is carried in a separate row and folded back once per M-segment. Row 9e must
 // therefore stay live across every ComputeForJ of the segment, which is why the compensation
 // sits above the [0, 9e) block that DivHighPrec and PowGeneral recycle.
-//
+
 // ONLY for p > 1. The two regimes are genuinely opposed, and which error dominates flips with
 // the sign of p-1:
 //   p > 1: r = |diff|/cdist <= 1, so every term is bounded by |grad| and the terms sit within
