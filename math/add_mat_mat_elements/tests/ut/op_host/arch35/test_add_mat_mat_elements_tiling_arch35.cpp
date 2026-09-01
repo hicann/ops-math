@@ -18,103 +18,87 @@ using namespace std;
 using namespace ge;
 using namespace optiling;
 
-namespace optiling {
-struct AddMatMatElementsCompileInfo {};
-}
-
 // 输入顺序与 op_def / proto.h 一致：c, a, b, beta, alpha
 // beta/alpha 为 1-element 标量 tensor
 class AddMatMatElementsTilingTest : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "AddMatMatElementsTilingTest SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() { std::cout << "AddMatMatElementsTilingTest SetUp" << std::endl; }
 
-  static void TearDownTestCase() {
-    std::cout << "AddMatMatElementsTilingTest TearDown" << std::endl;
-  }
+    static void TearDownTestCase() { std::cout << "AddMatMatElementsTilingTest TearDown" << std::endl; }
 };
 
-TEST_F(AddMatMatElementsTilingTest, add_mat_mat_elements_tiling_fp32_basic) {
-  gert::StorageShape shape = {{32, 32}, {32, 32}};
-  gert::StorageShape scalarShape = {{1}, {1}};
+TEST_F(AddMatMatElementsTilingTest, add_mat_mat_elements_tiling_fp32_basic)
+{
+    gert::StorageShape shape = {{32, 32}, {32, 32}};
+    gert::StorageShape scalarShape = {{1}, {1}};
 
-  AddMatMatElementsCompileInfo compileInfo;
+    AddMatMatElementsCompileInfo compileInfo;
 
-  gert::TilingContextPara tilingContextPara(
-      "AddMatMatElements",
-      {{shape, ge::DT_FLOAT, ge::FORMAT_ND},        // c
-       {shape, ge::DT_FLOAT, ge::FORMAT_ND},        // a
-       {shape, ge::DT_FLOAT, ge::FORMAT_ND},        // b
-       {scalarShape, ge::DT_FLOAT, ge::FORMAT_ND},  // beta
-       {scalarShape, ge::DT_FLOAT, ge::FORMAT_ND}}, // alpha
-      {{shape, ge::DT_FLOAT, ge::FORMAT_ND}},
-      {},
-      &compileInfo);
+    gert::TilingContextPara tilingContextPara("AddMatMatElements",
+                                              {{shape, ge::DT_FLOAT, ge::FORMAT_ND},        // c
+                                               {shape, ge::DT_FLOAT, ge::FORMAT_ND},        // a
+                                               {shape, ge::DT_FLOAT, ge::FORMAT_ND},        // b
+                                               {scalarShape, ge::DT_FLOAT, ge::FORMAT_ND},  // beta
+                                               {scalarShape, ge::DT_FLOAT, ge::FORMAT_ND}}, // alpha
+                                              {{shape, ge::DT_FLOAT, ge::FORMAT_ND}}, {}, &compileInfo);
 
-  TilingInfo tilingInfo;
-  EXPECT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+    TilingInfo tilingInfo;
+    EXPECT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
 }
 
-TEST_F(AddMatMatElementsTilingTest, add_mat_mat_elements_tiling_fp16_basic) {
-  gert::StorageShape shape = {{16, 64}, {16, 64}};
-  gert::StorageShape scalarShape = {{1}, {1}};
+TEST_F(AddMatMatElementsTilingTest, add_mat_mat_elements_tiling_fp16_basic)
+{
+    gert::StorageShape shape = {{16, 64}, {16, 64}};
+    gert::StorageShape scalarShape = {{1}, {1}};
 
-  AddMatMatElementsCompileInfo compileInfo;
+    AddMatMatElementsCompileInfo compileInfo;
 
-  gert::TilingContextPara tilingContextPara(
-      "AddMatMatElements",
-      {{shape, ge::DT_FLOAT16, ge::FORMAT_ND},
-       {shape, ge::DT_FLOAT16, ge::FORMAT_ND},
-       {shape, ge::DT_FLOAT16, ge::FORMAT_ND},
-       {scalarShape, ge::DT_FLOAT16, ge::FORMAT_ND},
-       {scalarShape, ge::DT_FLOAT16, ge::FORMAT_ND}},
-      {{shape, ge::DT_FLOAT16, ge::FORMAT_ND}},
-      {},
-      &compileInfo);
+    gert::TilingContextPara tilingContextPara("AddMatMatElements",
+                                              {{shape, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {shape, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {shape, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {scalarShape, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                               {scalarShape, ge::DT_FLOAT16, ge::FORMAT_ND}},
+                                              {{shape, ge::DT_FLOAT16, ge::FORMAT_ND}}, {}, &compileInfo);
 
-  TilingInfo tilingInfo;
-  EXPECT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+    TilingInfo tilingInfo;
+    EXPECT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
 }
 
-TEST_F(AddMatMatElementsTilingTest, add_mat_mat_elements_tiling_bf16_basic) {
-  gert::StorageShape shape = {{8, 128}, {8, 128}};
-  gert::StorageShape scalarShape = {{1}, {1}};
+TEST_F(AddMatMatElementsTilingTest, add_mat_mat_elements_tiling_rejects_bf16)
+{
+    gert::StorageShape shape = {{8, 128}, {8, 128}};
+    gert::StorageShape scalarShape = {{1}, {1}};
 
-  AddMatMatElementsCompileInfo compileInfo;
+    AddMatMatElementsCompileInfo compileInfo;
 
-  gert::TilingContextPara tilingContextPara(
-      "AddMatMatElements",
-      {{shape, ge::DT_BF16, ge::FORMAT_ND},
-       {shape, ge::DT_BF16, ge::FORMAT_ND},
-       {shape, ge::DT_BF16, ge::FORMAT_ND},
-       {scalarShape, ge::DT_BF16, ge::FORMAT_ND},
-       {scalarShape, ge::DT_BF16, ge::FORMAT_ND}},
-      {{shape, ge::DT_BF16, ge::FORMAT_ND}},
-      {},
-      &compileInfo);
+    gert::TilingContextPara tilingContextPara("AddMatMatElements",
+                                              {{shape, ge::DT_BF16, ge::FORMAT_ND},
+                                               {shape, ge::DT_BF16, ge::FORMAT_ND},
+                                               {shape, ge::DT_BF16, ge::FORMAT_ND},
+                                               {scalarShape, ge::DT_BF16, ge::FORMAT_ND},
+                                               {scalarShape, ge::DT_BF16, ge::FORMAT_ND}},
+                                              {{shape, ge::DT_BF16, ge::FORMAT_ND}}, {}, &compileInfo);
 
-  TilingInfo tilingInfo;
-  EXPECT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+    TilingInfo tilingInfo;
+    EXPECT_FALSE(ExecuteTiling(tilingContextPara, tilingInfo));
 }
 
-TEST_F(AddMatMatElementsTilingTest, add_mat_mat_elements_tiling_fp32_large) {
-  gert::StorageShape shape = {{1024, 1024}, {1024, 1024}};
-  gert::StorageShape scalarShape = {{1}, {1}};
+TEST_F(AddMatMatElementsTilingTest, add_mat_mat_elements_tiling_fp32_large)
+{
+    gert::StorageShape shape = {{1024, 1024}, {1024, 1024}};
+    gert::StorageShape scalarShape = {{1}, {1}};
 
-  AddMatMatElementsCompileInfo compileInfo;
+    AddMatMatElementsCompileInfo compileInfo;
 
-  gert::TilingContextPara tilingContextPara(
-      "AddMatMatElements",
-      {{shape, ge::DT_FLOAT, ge::FORMAT_ND},
-       {shape, ge::DT_FLOAT, ge::FORMAT_ND},
-       {shape, ge::DT_FLOAT, ge::FORMAT_ND},
-       {scalarShape, ge::DT_FLOAT, ge::FORMAT_ND},
-       {scalarShape, ge::DT_FLOAT, ge::FORMAT_ND}},
-      {{shape, ge::DT_FLOAT, ge::FORMAT_ND}},
-      {},
-      &compileInfo);
+    gert::TilingContextPara tilingContextPara("AddMatMatElements",
+                                              {{shape, ge::DT_FLOAT, ge::FORMAT_ND},
+                                               {shape, ge::DT_FLOAT, ge::FORMAT_ND},
+                                               {shape, ge::DT_FLOAT, ge::FORMAT_ND},
+                                               {scalarShape, ge::DT_FLOAT, ge::FORMAT_ND},
+                                               {scalarShape, ge::DT_FLOAT, ge::FORMAT_ND}},
+                                              {{shape, ge::DT_FLOAT, ge::FORMAT_ND}}, {}, &compileInfo);
 
-  TilingInfo tilingInfo;
-  EXPECT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+    TilingInfo tilingInfo;
+    EXPECT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
 }

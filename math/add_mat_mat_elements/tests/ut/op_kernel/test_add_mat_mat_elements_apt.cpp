@@ -20,15 +20,49 @@
 
 using namespace std;
 
-extern "C" __global__ __aicore__ void add_mat_mat_elements(
-    GM_ADDR c, GM_ADDR a, GM_ADDR b, GM_ADDR beta, GM_ADDR alpha,
-    GM_ADDR cOut, GM_ADDR workspace, GM_ADDR tiling);
+extern "C" __global__ __aicore__ void add_mat_mat_elements(GM_ADDR c, GM_ADDR a, GM_ADDR b, GM_ADDR beta, GM_ADDR alpha,
+                                                           GM_ADDR cOut, GM_ADDR workspace, GM_ADDR tiling);
 
 class AddMatMatElementsKernelTest : public testing::Test {
 protected:
     static void SetUpTestCase() { cout << "AddMatMatElementsKernelTest SetUp" << endl; }
     static void TearDownTestCase() { cout << "AddMatMatElementsKernelTest TearDown" << endl; }
 };
+
+static void InitTilingData(AddMatMatElementsTilingData* tilingData, int64_t numElements, int64_t tileLength,
+                           int64_t blockDim)
+{
+    std::memset(tilingData, 0, sizeof(*tilingData));
+
+    constexpr int64_t rank = ADD_MAT_MAT_ELEMENTS_RANK_MAX;
+    constexpr int64_t lastAxis = rank - 1;
+    tilingData->split.axis = rank;
+    tilingData->split.a_i = tileLength;
+    tilingData->split.a_o = numElements / tileLength;
+    tilingData->split.a_i_tail = numElements % tileLength;
+
+    int64_t totalTiles = tilingData->split.a_o + (tilingData->split.a_i_tail > 0 ? 1 : 0);
+    tilingData->multicore.num_cores = blockDim;
+    tilingData->multicore.total_tiles = totalTiles;
+    tilingData->multicore.tiles_main = totalTiles / blockDim;
+    tilingData->multicore.cores_tail = totalTiles % blockDim;
+    tilingData->rank = rank;
+    tilingData->per_buf_bytes = tileLength * sizeof(float);
+    tilingData->num_inputs = ADD_MAT_MAT_ELEMENTS_MAX_INPUT_SLOTS;
+    tilingData->num_outputs = ADD_MAT_MAT_ELEMENTS_MAX_OUTPUT_SLOTS;
+
+    for (int64_t d = 0; d < rank; d++) {
+        int64_t dim = (d == lastAxis) ? numElements : 1;
+        int64_t stride = (d == lastAxis) ? 1 : 0;
+        tilingData->max_bro_shape[d] = dim;
+        tilingData->output_shapes[0][d] = dim;
+        tilingData->output_strides[0][d] = stride;
+        for (int64_t input = 0; input < ADD_MAT_MAT_ELEMENTS_MAX_INPUT_SLOTS; input++) {
+            tilingData->input_shapes[input][d] = dim;
+            tilingData->input_strides[input][d] = stride;
+        }
+    }
+}
 
 TEST_F(AddMatMatElementsKernelTest, test_fp32_basic)
 {
@@ -47,13 +81,8 @@ TEST_F(AddMatMatElementsKernelTest, test_fp32_basic)
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(1024 * 1024);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingSize);
 
-    AddMatMatElementsTilingData* tilingData =
-        reinterpret_cast<AddMatMatElementsTilingData*>(tiling);
-    tilingData->totalLength = numElements;
-    tilingData->tileLength = numElements;
-    tilingData->blockNum = blockDim;
-    tilingData->blockLength = numElements;
-    tilingData->lastBlockLength = numElements;
+    AddMatMatElementsTilingData* tilingData = reinterpret_cast<AddMatMatElementsTilingData*>(tiling);
+    InitTilingData(tilingData, numElements, numElements, blockDim);
 
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_RUN_KF(add_mat_mat_elements, blockDim, c, a, b, beta, alpha, cOut, workspace, tiling);
@@ -85,13 +114,8 @@ TEST_F(AddMatMatElementsKernelTest, test_fp32_large)
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(1024 * 1024);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingSize);
 
-    AddMatMatElementsTilingData* tilingData =
-        reinterpret_cast<AddMatMatElementsTilingData*>(tiling);
-    tilingData->totalLength = numElements;
-    tilingData->tileLength = 1024;
-    tilingData->blockNum = blockDim;
-    tilingData->blockLength = numElements;
-    tilingData->lastBlockLength = numElements;
+    AddMatMatElementsTilingData* tilingData = reinterpret_cast<AddMatMatElementsTilingData*>(tiling);
+    InitTilingData(tilingData, numElements, 1024, blockDim);
 
     AscendC::SetKernelMode(KernelMode::AIV_MODE);
     ICPU_RUN_KF(add_mat_mat_elements, blockDim, c, a, b, beta, alpha, cOut, workspace, tiling);

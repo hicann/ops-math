@@ -10,12 +10,7 @@
 
 /*!
  * \file add_mat_mat_elements_tiling_key.h
- * \brief AddMatMatElements TilingKey 模板参数定义
- *
- * 模板参数 D_T：数据类型（C_DT_FLOAT16 / C_DT_FLOAT / C_DT_BF16）
- *   - TilingKey_0: D_T = C_DT_FLOAT16 (fp16 直接路径)
- *   - TilingKey_1: D_T = C_DT_FLOAT   (fp32 直接路径)
- *   - TilingKey_2: D_T = C_DT_BF16    (bf16 Cast 绕行路径)
+ * \brief AddMatMatElements TilingKey template parameters (arch35)
  */
 
 #ifndef ADD_MAT_MAT_ELEMENTS_TILING_KEY_H_
@@ -24,24 +19,21 @@
 #ifndef __CCE_KT_TEST__
 #include "ascendc/host_api/tiling/template_argument.h"
 
-// 声明模板参数：D_T 从输入 tensor 0 的 dtype 中选取
-ASCENDC_TPL_ARGS_DECL(AddMatMatElements,
-    ASCENDC_TPL_DATATYPE_DECL(D_T, C_DT_FLOAT16, C_DT_FLOAT, C_DT_BF16,
-                               ASCENDC_TPL_INPUT(0)),
-);
+#define ADD_MAT_MAT_ELEMENTS_RANK_4 4
+#define ADD_MAT_MAT_ELEMENTS_RANK_8 8
 
-// 显式枚举所有合法 TilingKey 组合
-ASCENDC_TPL_SEL(
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_FLOAT16)
-    ),
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_FLOAT)
-    ),
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_BF16)
-    ),
-);
+ASCENDC_TPL_ARGS_DECL(AddMatMatElements, ASCENDC_TPL_DATATYPE_DECL(D_T, C_DT_FLOAT16, C_DT_FLOAT, ASCENDC_TPL_INPUT(0)),
+                      ASCENDC_TPL_UINT_DECL(RANK, 8, ASCENDC_TPL_UI_LIST, ADD_MAT_MAT_ELEMENTS_RANK_4,
+                                            ADD_MAT_MAT_ELEMENTS_RANK_8));
+
+ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_FLOAT16),
+                                     ASCENDC_TPL_UINT_SEL(RANK, ASCENDC_TPL_UI_LIST, ADD_MAT_MAT_ELEMENTS_RANK_4)),
+                ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_FLOAT),
+                                     ASCENDC_TPL_UINT_SEL(RANK, ASCENDC_TPL_UI_LIST, ADD_MAT_MAT_ELEMENTS_RANK_4)),
+                ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_FLOAT16),
+                                     ASCENDC_TPL_UINT_SEL(RANK, ASCENDC_TPL_UI_LIST, ADD_MAT_MAT_ELEMENTS_RANK_8)),
+                ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_FLOAT),
+                                     ASCENDC_TPL_UINT_SEL(RANK, ASCENDC_TPL_UI_LIST, ADD_MAT_MAT_ELEMENTS_RANK_8)));
 #endif
 
-#endif  // ADD_MAT_MAT_ELEMENTS_TILING_KEY_H_
+#endif // ADD_MAT_MAT_ELEMENTS_TILING_KEY_H_
