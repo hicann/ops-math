@@ -166,7 +166,7 @@ static graphStatus GetInputConstData(gert::InferShapeContext* context, const ger
     OP_CHECK_NULL_WITH_CONTEXT(context, indicesTensor);
     auto indicesDtype = indicesTensor->GetDataType();
     OP_CHECK_IF(indicesDtype != DT_INT32,
-                OP_LOGE(context->GetNodeName(), "the indices dtype only support int32, but now get a %s",
+                OP_LOGE(context->GetNodeName(), "the indices dtype only supports int32, but now get a %s",
                         Ops::Base::ToString(indicesDtype).c_str()),
                 return GRAPH_FAILED);
     const int32_t* indicesTensorData = indicesTensor->GetData<int32_t>();
@@ -175,7 +175,7 @@ static graphStatus GetInputConstData(gert::InferShapeContext* context, const ger
             int32_t currValue = static_cast<int32_t>(*(indicesTensorData + j));
             OP_CHECK_IF(
                 currValue < 0,
-                OP_LOGE(context->GetNodeName(), "the indices'value must be a positive value, but got %d", currValue),
+                OP_LOGE(context->GetNodeName(), "the indices' value must be non-negative, but got %d", currValue),
                 return GRAPH_FAILED);
             maxIndex = std::max(maxIndex, currValue);
         }
