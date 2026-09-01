@@ -16,6 +16,7 @@
 #include <climits>
 #include "log/log.h"
 #include "register/op_impl_registry.h"
+#include "util/shape_util.h"
 #include <algorithm>
 
 using namespace ge;
@@ -25,11 +26,19 @@ static constexpr int64_t IDX_0 = 0;
 
 static ge::graphStatus InferShapeMatrixDiagPart(gert::InferShapeContext* context)
 {
+    OP_LOGD(context->GetNodeName(), "Enter InferShapeMatrixDiagPart");
+
     const gert::Shape* xShape = context->GetInputShape(IDX_0);
     OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
 
     gert::Shape* yShape = context->GetOutputShape(IDX_0);
     OP_CHECK_NULL_WITH_CONTEXT(context, yShape);
+
+    // Unknown rank (-2): rank is unknown, cannot infer the diag shape; pass through as unknown rank
+    if (Ops::Base::IsUnknownRank(*xShape)) {
+        Ops::Base::SetUnknownRank(*yShape);
+        return GRAPH_SUCCESS;
+    }
 
     auto xShapeSize = xShape->GetDimNum();
     if (xShapeSize < 2) {

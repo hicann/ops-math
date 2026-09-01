@@ -188,6 +188,7 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 
 static ge::graphStatus CosineSimilarityTilingFunc(gert::TilingContext* context)
 {
+    OP_LOGD(context, "Enter TilingCosineSimilarity");
     OP_CHECK_IF(ValidateDtypes(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "ValidateDtypes error"),
                 return ge::GRAPH_FAILED);
 

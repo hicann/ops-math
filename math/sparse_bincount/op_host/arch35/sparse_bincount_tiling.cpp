@@ -62,6 +62,7 @@ struct SparseBincountCompileInfo {};
 
 static ge::graphStatus SparseBincountTilingFunc(gert::TilingContext* context)
 {
+    OP_LOGD(context, "Enter TilingSparseBincount");
     // 1. Get platform info
     fe::PlatFormInfos* platformInfoPtr = context->GetPlatformInfo();
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfoPtr);

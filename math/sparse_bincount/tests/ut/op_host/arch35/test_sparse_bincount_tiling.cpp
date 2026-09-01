@@ -31,7 +31,7 @@ protected:
     static void TearDownTestCase() { std::cout << "SparseBincountTiling TearDown" << std::endl; }
 };
 
-std::map<std::string, std::string> soc_version_infos = {{"Short_SoC_version", "Ascend950"}};
+static std::map<std::string, std::string> soc_version_infos = {{"Short_SoC_version", "Ascend950"}};
 
 // Test case 1: 1D mode, values=int32, size=int32, with weights
 // indices: [4, 1] int64, values: [4] int32, dense_shape: [1] int64,

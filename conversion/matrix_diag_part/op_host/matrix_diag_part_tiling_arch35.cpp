@@ -43,13 +43,9 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& u
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus MatrixDiagPartTilingFunc(gert::TilingContext* context)
+static ge::graphStatus ValidateInputAndComputeDims(gert::TilingContext* context, int64_t& d, int64_t& n,
+                                                   int64_t& matrixSize, int64_t& totalOutputElements)
 {
-    uint64_t ubSize;
-    int64_t coreNum;
-    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
-
     auto inputX = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
     auto inputShapeX = Ops::Base::EnsureNotScalar(inputX->GetStorageShape());
@@ -68,19 +64,23 @@ static ge::graphStatus MatrixDiagPartTilingFunc(gert::TilingContext* context)
     }
 
     int64_t M = inputShapeX.GetDim(rank - 2);
-    int64_t N = inputShapeX.GetDim(rank - 1);
-    int64_t d = std::min(M, N);
-    int64_t matrixSize = M * N;
+    n = inputShapeX.GetDim(rank - 1);
+    d = std::min(M, n);
+    matrixSize = M * n;
     int64_t totalInputElements = inputShapeX.GetShapeSize();
     int64_t batchTotal = (matrixSize > 0) ? (totalInputElements / matrixSize) : 0;
-    int64_t totalOutputElements = batchTotal * d;
+    totalOutputElements = batchTotal * d;
 
     if (d < 0) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "diagLen", std::to_string(d).c_str(),
                                               "diagLen must be greater than or equal to 0");
         return ge::GRAPH_FAILED;
     }
+    return ge::GRAPH_SUCCESS;
+}
 
+static ge::graphStatus CheckDtype(gert::TilingContext* context)
+{
     const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT32, ge::DT_INT8,
                                                    ge::DT_UINT8};
     auto inputDesc = context->GetInputDesc(0);
@@ -91,6 +91,41 @@ static ge::graphStatus MatrixDiagPartTilingFunc(gert::TilingContext* context)
                                               "only support float16, float32, int32, int8, uint8");
         return ge::GRAPH_FAILED;
     }
+    return ge::GRAPH_SUCCESS;
+}
+
+static ge::graphStatus SetupMemoryAndWorkspace(gert::TilingContext* context, uint64_t ubSize)
+{
+    auto res = context->SetLocalMemorySize(static_cast<uint32_t>(ubSize - DCACHE_SIZE - STATIC_UB_ESTIMATE));
+    OP_CHECK_IF((res != ge::GRAPH_SUCCESS),
+                OP_LOGE(context, "SetLocalMemorySize failed, ubSize=%lu, DCACHE_SIZE=%u, STATIC_UB_ESTIMATE=%u", ubSize,
+                        DCACHE_SIZE, STATIC_UB_ESTIMATE),
+                return ge::GRAPH_FAILED);
+
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
+    uint64_t sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
+    size_t* currentWorkspace = context->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context, currentWorkspace);
+    currentWorkspace[0] = static_cast<size_t>(sysWorkspaceSize);
+    return ge::GRAPH_SUCCESS;
+}
+
+static ge::graphStatus MatrixDiagPartTilingFunc(gert::TilingContext* context)
+{
+    OP_LOGD(context, "Enter TilingMatrixDiagPart");
+    uint64_t ubSize;
+    int64_t coreNum;
+    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+
+    int64_t d = 0;
+    int64_t n = 0;
+    int64_t matrixSize = 0;
+    int64_t totalOutputElements = 0;
+    OP_CHECK_IF(ValidateInputAndComputeDims(context, d, n, matrixSize, totalOutputElements) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "ValidateInputAndComputeDims error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckDtype(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "CheckDtype error"),
+                return ge::GRAPH_FAILED);
 
     MatrixDiagPartTilingData* tiling = context->GetTilingData<MatrixDiagPartTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
@@ -98,7 +133,7 @@ static ge::graphStatus MatrixDiagPartTilingFunc(gert::TilingContext* context)
                 OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
     tiling->totalOutputElements = totalOutputElements;
     tiling->diagLen = d;
-    tiling->inputRowStride = N + 1;
+    tiling->inputRowStride = n + 1;
     tiling->matrixSize = matrixSize;
 
     int64_t perCoreElements = Ops::Base::CeilDiv(totalOutputElements, coreNum);
@@ -108,20 +143,11 @@ static ge::graphStatus MatrixDiagPartTilingFunc(gert::TilingContext* context)
     int64_t needCoreNum = (totalOutputElements == 0) ? 1 : Ops::Base::CeilDiv(totalOutputElements, perCoreElements);
     context->SetBlockDim(needCoreNum);
 
-    auto res = context->SetLocalMemorySize(static_cast<uint32_t>(ubSize - DCACHE_SIZE - STATIC_UB_ESTIMATE));
-    OP_CHECK_IF((res != ge::GRAPH_SUCCESS),
-                OP_LOGE(context, "SetLocalMemorySize failed, ubSize=%lu, DCACHE_SIZE=%u, STATIC_UB_ESTIMATE=%u", ubSize,
-                        DCACHE_SIZE, STATIC_UB_ESTIMATE),
-                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(SetupMemoryAndWorkspace(context, ubSize) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "SetupMemoryAndWorkspace error"), return ge::GRAPH_FAILED);
 
     uint64_t tilingKey = GET_TPL_TILING_KEY(MODE_DEFAULT);
     context->SetTilingKey(tilingKey);
-
-    auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
-    uint64_t sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
-    size_t* currentWorkspace = context->GetWorkspaceSizes(1);
-    OP_CHECK_NULL_WITH_CONTEXT(context, currentWorkspace);
-    currentWorkspace[0] = static_cast<size_t>(sysWorkspaceSize);
 
     return ge::GRAPH_SUCCESS;
 }

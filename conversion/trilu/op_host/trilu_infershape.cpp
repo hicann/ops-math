@@ -22,6 +22,7 @@ using namespace ge;
 namespace ops {
 static ge::graphStatus InferShapeTrilu(gert::InferShapeContext* context)
 {
+    OP_LOGD(context->GetNodeName(), "Enter InferShapeTrilu");
     const gert::Shape* xShape = context->GetInputShape(0);
     gert::Shape* yShape = context->GetOutputShape(0);
 
@@ -38,4 +39,4 @@ static ge::graphStatus InferShapeTrilu(gert::InferShapeContext* context)
     return GRAPH_SUCCESS;
 }
 IMPL_OP_INFERSHAPE(Trilu).InferShape(InferShapeTrilu);
-}  // namespace ops
+} // namespace ops

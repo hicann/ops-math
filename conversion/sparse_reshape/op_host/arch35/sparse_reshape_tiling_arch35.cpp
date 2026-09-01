@@ -32,41 +32,36 @@ constexpr int64_t PER_CORE_MIN = 1024;
 constexpr uint32_t DCACHE_SIZE = 128 * 1024;
 constexpr uint32_t STATIC_UB_ESTIMATE = 0;
 
-static ge::graphStatus GetPlatformInfo(gert::TilingContext* context,
-    uint64_t& ubSize, int64_t& coreNum)
+static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& ubSize, int64_t& coreNum)
 {
     fe::PlatFormInfos* platformInfoPtr = context->GetPlatformInfo();
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfoPtr);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfoPtr);
     coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(coreNum == 0,
-        OP_LOGE(context, "coreNum is 0"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(coreNum == 0, OP_LOGE(context, "coreNum is 0"), return ge::GRAPH_FAILED);
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
-    OP_CHECK_IF(ubSize == 0,
-        OP_LOGE(context, "ubSize is 0"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ubSize == 0, OP_LOGE(context, "ubSize is 0"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 // Read tensor data values as int64, handling both int32 and int64 dtypes
-static ge::graphStatus ReadTensorData(gert::TilingContext* context,
-    int32_t inputIdx, int64_t* outData, int64_t dataSize)
+static ge::graphStatus ReadTensorData(gert::TilingContext* context, int32_t inputIdx, int64_t* outData,
+                                      int64_t dataSize)
 {
     auto inputTensor = context->GetInputTensor(inputIdx);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputTensor);
     auto dtype = inputTensor->GetDataType();
     if (dtype == ge::DT_INT64) {
         const int64_t* srcData = inputTensor->GetData<int64_t>();
-        OP_CHECK_IF(srcData == nullptr,
-            OP_LOGE(context, "GetData<int64_t> failed for input %d", inputIdx),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(srcData == nullptr, OP_LOGE(context, "GetData<int64_t> failed for input %d", inputIdx),
+                    return ge::GRAPH_FAILED);
         for (int64_t i = 0; i < dataSize; i++) {
             outData[i] = srcData[i];
         }
     } else {
         const int32_t* srcData = inputTensor->GetData<int32_t>();
-        OP_CHECK_IF(srcData == nullptr,
-            OP_LOGE(context, "GetData<int32_t> failed for input %d", inputIdx),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(srcData == nullptr, OP_LOGE(context, "GetData<int32_t> failed for input %d", inputIdx),
+                    return ge::GRAPH_FAILED);
         for (int64_t i = 0; i < dataSize; i++) {
             outData[i] = static_cast<int64_t>(srcData[i]);
         }
@@ -75,9 +70,8 @@ static ge::graphStatus ReadTensorData(gert::TilingContext* context,
 }
 
 // Resolve -1 dimension in new_shape
-static ge::graphStatus ResolveMinusOne(gert::TilingContext* context,
-    const int64_t* shapeData, int32_t inputRank,
-    int64_t* resolvedShape, int32_t outputRank)
+static ge::graphStatus ResolveMinusOne(gert::TilingContext* context, const int64_t* shapeData, int32_t inputRank,
+                                       int64_t* resolvedShape, int32_t outputRank)
 {
     int64_t denseSize = 1;
     for (int32_t d = 0; d < inputRank; d++) {
@@ -87,21 +81,16 @@ static ge::graphStatus ResolveMinusOne(gert::TilingContext* context,
     int32_t unknownIdx = -1;
     for (int32_t d = 0; d < outputRank; d++) {
         if (resolvedShape[d] == -1) {
-            OP_CHECK_IF(unknownIdx != -1,
-                OP_LOGE(context, "At most one -1 dimension allowed"),
-                return ge::GRAPH_FAILED);
+            OP_CHECK_IF(unknownIdx != -1, OP_LOGE(context, "At most one -1 dimension allowed"),
+                        return ge::GRAPH_FAILED);
             unknownIdx = d;
         } else {
-            OP_CHECK_IF(resolvedShape[d] <= 0,
-                OP_LOGE(context, "input dimension is error"),
-                return ge::GRAPH_FAILED);
+            OP_CHECK_IF(resolvedShape[d] <= 0, OP_LOGE(context, "input dimension is error"), return ge::GRAPH_FAILED);
             product *= resolvedShape[d];
         }
     }
     if (unknownIdx != -1) {
-        OP_CHECK_IF(product == 0,
-            OP_LOGE(context, "Cannot infer -1 dim with zero product"),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(product == 0, OP_LOGE(context, "Cannot infer -1 dim with zero product"), return ge::GRAPH_FAILED);
         resolvedShape[unknownIdx] = denseSize / product;
     }
     return ge::GRAPH_SUCCESS;
@@ -110,7 +99,9 @@ static ge::graphStatus ResolveMinusOne(gert::TilingContext* context,
 // Compute strides (row-major, last dim stride = 1)
 static void ComputeStrides(const int64_t* shape, int32_t rank, int64_t* strides)
 {
-    if (rank <= 0) { return; }
+    if (rank <= 0) {
+        return;
+    }
     strides[rank - 1] = 1;
     for (int32_t d = rank - 2; d >= 0; d--) {
         strides[d] = strides[d + 1] * shape[d + 1];
@@ -118,18 +109,58 @@ static void ComputeStrides(const int64_t* shape, int32_t rank, int64_t* strides)
 }
 
 // Detect identity reshape (input_shape == output_shape)
-static int32_t DetectIdentityReshape(const int64_t* shapeData,
-    const int64_t* resolvedShape, int32_t inputRank, int32_t outputRank)
+static int32_t DetectIdentityReshape(const int64_t* shapeData, const int64_t* resolvedShape, int32_t inputRank,
+                                     int32_t outputRank)
 {
-    if (inputRank != outputRank) { return 0; }
+    if (inputRank != outputRank) {
+        return 0;
+    }
     for (int32_t d = 0; d < inputRank; d++) {
-        if (shapeData[d] != resolvedShape[d]) { return 0; }
+        if (shapeData[d] != resolvedShape[d]) {
+            return 0;
+        }
     }
     return 1;
 }
 
-static ge::graphStatus ComputeSparseReshapeTiling(gert::TilingContext* context,
-    SparseReshapeTilingData* tiling, int64_t coreNum)
+// Read shape/new_shape tensor data and resolve -1 dimension
+static ge::graphStatus ReadAndResolveShapes(gert::TilingContext* context, int32_t inputRank, int32_t outputRank,
+                                            int64_t* shapeData, int64_t* resolvedShape)
+{
+    int64_t newShapeData[MAX_RANK] = {};
+    OP_CHECK_IF(ReadTensorData(context, IDX_SHAPE, shapeData, inputRank) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "ReadTensorData(shape) failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ReadTensorData(context, IDX_NEW_SHAPE, newShapeData, outputRank) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "ReadTensorData(new_shape) failed"), return ge::GRAPH_FAILED);
+    for (int32_t d = 0; d < outputRank; d++) {
+        resolvedShape[d] = newShapeData[d];
+    }
+    OP_CHECK_IF(ResolveMinusOne(context, shapeData, inputRank, resolvedShape, outputRank) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "ResolveMinusOne failed"), return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
+
+// 校验 input shape 与 resolved new_shape 总元素数一致 (SE §1.4)
+static ge::graphStatus ValidateTotalElements(gert::TilingContext* context, const int64_t* shapeData, int32_t inputRank,
+                                             const int64_t* resolvedShape, int32_t outputRank)
+{
+    int64_t inputTotalElements = 1;
+    for (int32_t d = 0; d < inputRank; d++) {
+        inputTotalElements *= shapeData[d];
+    }
+    int64_t outputTotalElements = 1;
+    for (int32_t d = 0; d < outputRank; d++) {
+        outputTotalElements *= resolvedShape[d];
+    }
+    OP_CHECK_IF(
+        inputTotalElements != outputTotalElements,
+        OP_LOGE(context, "Total elements mismatch: input=%ld vs output=%ld", inputTotalElements, outputTotalElements),
+        return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
+
+static ge::graphStatus ComputeSparseReshapeTiling(gert::TilingContext* context, SparseReshapeTilingData* tiling,
+                                                  int64_t coreNum)
 {
     auto indicesShape = context->GetInputShape(IDX_INDICES);
     OP_CHECK_NULL_WITH_CONTEXT(context, indicesShape);
@@ -138,35 +169,19 @@ static ge::graphStatus ComputeSparseReshapeTiling(gert::TilingContext* context,
     int64_t nnz = indicesShape->GetShape().GetDim(0);
     int32_t inputRank = static_cast<int32_t>(indicesShape->GetShape().GetDim(1));
     int32_t outputRank = static_cast<int32_t>(newShapeShape->GetShape().GetDim(0));
-    OP_CHECK_IF(inputRank > MAX_RANK || outputRank > MAX_RANK,
-        OP_LOGE(context, "rank exceeds MAX_RANK=%d", MAX_RANK),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputRank > MAX_RANK || outputRank > MAX_RANK, OP_LOGE(context, "rank exceeds MAX_RANK=%d", MAX_RANK),
+                return ge::GRAPH_FAILED);
     int64_t shapeData[MAX_RANK] = {};
-    int64_t newShapeData[MAX_RANK] = {};
-    OP_CHECK_IF(ReadTensorData(context, IDX_SHAPE, shapeData, inputRank) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "ReadTensorData(shape) failed"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(ReadTensorData(context, IDX_NEW_SHAPE, newShapeData, outputRank) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "ReadTensorData(new_shape) failed"), return ge::GRAPH_FAILED);
     int64_t resolvedShape[MAX_RANK] = {};
-    for (int32_t d = 0; d < outputRank; d++) { resolvedShape[d] = newShapeData[d]; }
-    OP_CHECK_IF(ResolveMinusOne(context, shapeData, inputRank, resolvedShape, outputRank)
-        != ge::GRAPH_SUCCESS, OP_LOGE(context, "ResolveMinusOne failed"),
-        return ge::GRAPH_FAILED);
-    // 校验 input shape 与 resolved new_shape 总元素数一致 (SE §1.4)
-    int64_t inputTotalElements = 1;
-    for (int32_t d = 0; d < inputRank; d++) { inputTotalElements *= shapeData[d]; }
-    int64_t outputTotalElements = 1;
-    for (int32_t d = 0; d < outputRank; d++) { outputTotalElements *= resolvedShape[d]; }
-    OP_CHECK_IF(inputTotalElements != outputTotalElements,
-        OP_LOGE(context, "Total elements mismatch: input=%ld vs output=%ld",
-            inputTotalElements, outputTotalElements),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ReadAndResolveShapes(context, inputRank, outputRank, shapeData, resolvedShape) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "ReadAndResolveShapes failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ValidateTotalElements(context, shapeData, inputRank, resolvedShape, outputRank) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "ValidateTotalElements failed"), return ge::GRAPH_FAILED);
     int64_t inputStrides[MAX_RANK] = {};
     int64_t outputStrides[MAX_RANK] = {};
     ComputeStrides(shapeData, inputRank, inputStrides);
     ComputeStrides(resolvedShape, outputRank, outputStrides);
-    int32_t isIdentity = DetectIdentityReshape(shapeData, resolvedShape,
-        inputRank, outputRank);
+    int32_t isIdentity = DetectIdentityReshape(shapeData, resolvedShape, inputRank, outputRank);
     tiling->nnz = nnz;
     tiling->inputRank = inputRank;
     tiling->outputRank = outputRank;
@@ -177,7 +192,9 @@ static ge::graphStatus ComputeSparseReshapeTiling(gert::TilingContext* context,
         tiling->outputShape[d] = resolvedShape[d];
     }
     int64_t perCore = (nnz > 0) ? Ops::Base::CeilDiv(nnz, coreNum) : 0;
-    if (perCore > 0 && perCore < PER_CORE_MIN) { perCore = PER_CORE_MIN; }
+    if (perCore > 0 && perCore < PER_CORE_MIN) {
+        perCore = PER_CORE_MIN;
+    }
     int64_t needCoreNum = (nnz > 0) ? Ops::Base::CeilDiv(nnz, perCore) : 1;
     context->SetBlockDim(static_cast<uint32_t>(needCoreNum));
     return ge::GRAPH_SUCCESS;
@@ -185,37 +202,32 @@ static ge::graphStatus ComputeSparseReshapeTiling(gert::TilingContext* context,
 
 static ge::graphStatus SparseReshapeTilingFunc(gert::TilingContext* context)
 {
+    OP_LOGD(context, "Enter TilingSparseReshape");
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
     OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
     SparseReshapeTilingData* tiling = context->GetTilingData<SparseReshapeTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(memset_s(tiling, sizeof(SparseReshapeTilingData), 0,
-        sizeof(SparseReshapeTilingData)) != EOK,
-        OP_LOGE(context, "memset tiling data error"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(ComputeSparseReshapeTiling(context, tiling, coreNum)
-        != ge::GRAPH_SUCCESS, OP_LOGE(context, "ComputeSparseReshapeTiling error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(SparseReshapeTilingData), 0, sizeof(SparseReshapeTilingData)) != EOK,
+                OP_LOGE(context, "memset tiling data error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ComputeSparseReshapeTiling(context, tiling, coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "ComputeSparseReshapeTiling error"), return ge::GRAPH_FAILED);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
     uint64_t sysWS = ascendcPlatform.GetLibApiWorkSpaceSize();
     size_t* ws = context->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, ws);
     ws[0] = static_cast<size_t>(static_cast<int64_t>(sysWS));
     OP_CHECK_IF((ubSize <= DCACHE_SIZE + STATIC_UB_ESTIMATE),
-        OP_LOGE(context, "ubSize %lu <= DCACHE_SIZE + STATIC_UB_ESTIMATE", ubSize),
-        return ge::GRAPH_FAILED);
-    auto res = context->SetLocalMemorySize(
-        static_cast<uint32_t>(ubSize - DCACHE_SIZE - STATIC_UB_ESTIMATE));
-    OP_CHECK_IF((res != ge::GRAPH_SUCCESS),
-        OP_LOGE(context, "SetLocalMemorySize failed"), return ge::GRAPH_FAILED);
+                OP_LOGE(context, "ubSize %lu <= DCACHE_SIZE + STATIC_UB_ESTIMATE", ubSize), return ge::GRAPH_FAILED);
+    auto res = context->SetLocalMemorySize(static_cast<uint32_t>(ubSize - DCACHE_SIZE - STATIC_UB_ESTIMATE));
+    OP_CHECK_IF((res != ge::GRAPH_SUCCESS), OP_LOGE(context, "SetLocalMemorySize failed"), return ge::GRAPH_FAILED);
     uint64_t tilingKey = GET_TPL_TILING_KEY(SPARSE_RESHAPE_TPL_SCH_MODE_DEFAULT);
     context->SetTilingKey(tilingKey);
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus TilingParseForSparseReshape(
-    [[maybe_unused]] gert::TilingParseContext* context)
+static ge::graphStatus TilingParseForSparseReshape([[maybe_unused]] gert::TilingParseContext* context)
 {
     return ge::GRAPH_SUCCESS;
 }
@@ -225,4 +237,4 @@ IMPL_OP_OPTILING(SparseReshape)
     .TilingParse<SparseReshapeCompileInfo>(TilingParseForSparseReshape)
     .TilingInputsDataDependency({1, 2});
 
-}  // namespace optiling
+} // namespace optiling

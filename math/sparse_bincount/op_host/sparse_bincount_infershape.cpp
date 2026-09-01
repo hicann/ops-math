@@ -20,6 +20,7 @@
 
 #include "register/op_impl_registry.h"
 #include "log/log.h"
+#include "util/shape_util.h"
 
 using namespace ge;
 
@@ -49,6 +50,14 @@ static ge::graphStatus InferShapeSparseBincount(gert::InferShapeContext* context
     gert::Shape* yShape = context->GetOutputShape(IDX_OUTPUT);
     OP_CHECK_NULL_WITH_CONTEXT(context, yShape);
 
+    // dense_shape 为 unknown rank(-2) / unknown shape(-1) 时无法判断输出是 1D 还是 multi-dim，
+    // 输出透传为 unknown rank
+    if (Ops::Base::IsUnknownRank(*denseShapeShape) || Ops::Base::IsUnknownShape(*denseShapeShape)) {
+        Ops::Base::SetUnknownRank(*yShape);
+        OP_LOGD(context->GetNodeName(), "dense_shape is unknown rank/shape, set output to unknown rank");
+        return GRAPH_SUCCESS;
+    }
+
     // Read size tensor value
     const auto* sizeTensor = context->GetInputTensor(IDX_SIZE);
     OP_CHECK_NULL_WITH_CONTEXT(context, sizeTensor);
@@ -61,13 +70,11 @@ static ge::graphStatus InferShapeSparseBincount(gert::InferShapeContext* context
     int64_t sizeValue = 0;
     if (sizeDtype == DT_INT32) {
         const int32_t* sizeData = sizeTensor->GetData<int32_t>();
-        OP_CHECK_IF(sizeData == nullptr,
-            OP_LOGE(context, "size data is null"), return GRAPH_FAILED);
+        OP_CHECK_IF(sizeData == nullptr, OP_LOGE(context, "size data is null"), return GRAPH_FAILED);
         sizeValue = static_cast<int64_t>(sizeData[0]);
     } else {
         const int64_t* sizeData = sizeTensor->GetData<int64_t>();
-        OP_CHECK_IF(sizeData == nullptr,
-            OP_LOGE(context, "size data is null"), return GRAPH_FAILED);
+        OP_CHECK_IF(sizeData == nullptr, OP_LOGE(context, "size data is null"), return GRAPH_FAILED);
         sizeValue = sizeData[0];
     }
 
@@ -80,8 +87,7 @@ static ge::graphStatus InferShapeSparseBincount(gert::InferShapeContext* context
         const auto* denseShapeTensor = context->GetInputTensor(IDX_DENSE_SHAPE);
         OP_CHECK_NULL_WITH_CONTEXT(context, denseShapeTensor);
         const int64_t* denseShapeData = denseShapeTensor->GetData<int64_t>();
-        OP_CHECK_IF(denseShapeData == nullptr,
-            OP_LOGE(context, "dense_shape data is null"), return GRAPH_FAILED);
+        OP_CHECK_IF(denseShapeData == nullptr, OP_LOGE(context, "dense_shape data is null"), return GRAPH_FAILED);
         int64_t denseShapeRows = denseShapeData[0];
 
         yShape->SetDimNum(2);
@@ -96,4 +102,4 @@ static ge::graphStatus InferShapeSparseBincount(gert::InferShapeContext* context
 }
 
 IMPL_OP_INFERSHAPE(SparseBincount).InferShape(InferShapeSparseBincount);
-}  // namespace ops
+} // namespace ops

@@ -25,6 +25,7 @@
 
 #include "register/op_impl_registry.h"
 #include "log/log.h"
+#include "util/shape_util.h"
 
 namespace ops {
 static constexpr int64_t IDX_NET_DERIV = 0;
@@ -54,6 +55,16 @@ static ge::graphStatus SetAtomVirialShape(gert::InferShapeContext* context, int6
     // 校验 natoms shape size >= 3（910b 兼容）
     const auto* natomsShape = context->GetInputShape(IDX_NATOMS);
     OP_CHECK_NULL_WITH_CONTEXT(context, natomsShape);
+
+    // natoms 为 unknown rank(-2) / unknown shape(-1) 时无法读取尺寸，
+    // 按动态 shape 处理：atom_virial shape[1] = -1
+    if (Ops::Base::IsUnknownRank(*natomsShape) || Ops::Base::IsUnknownShape(*natomsShape)) {
+        atomVirialShape->SetDimNum(2);
+        atomVirialShape->SetDim(0, nframes);
+        atomVirialShape->SetDim(1, -1);
+        return ge::GRAPH_SUCCESS;
+    }
+
     OP_CHECK_IF(natomsShape->GetShapeSize() < 3,
                 OP_LOGE(context, "natoms size must be >= 3, got %ld", natomsShape->GetShapeSize()),
                 return ge::GRAPH_FAILED);
@@ -105,6 +116,18 @@ static ge::graphStatus InferShapeProdVirialSeA(gert::InferShapeContext* context)
     // 1. 获取输入 shape
     const auto* netDerivShape = context->GetInputShape(IDX_NET_DERIV);
     OP_CHECK_NULL_WITH_CONTEXT(context, netDerivShape);
+
+    // net_deriv 为 unknown rank(-2) 时无法推导，两个输出均透传为 unknown rank
+    if (Ops::Base::IsUnknownRank(*netDerivShape)) {
+        auto* virialShape = context->GetOutputShape(IDX_VIRIAL);
+        OP_CHECK_NULL_WITH_CONTEXT(context, virialShape);
+        Ops::Base::SetUnknownRank(*virialShape);
+        auto* atomVirialShape = context->GetOutputShape(IDX_ATOM_VIRIAL);
+        OP_CHECK_NULL_WITH_CONTEXT(context, atomVirialShape);
+        Ops::Base::SetUnknownRank(*atomVirialShape);
+        return ge::GRAPH_SUCCESS;
+    }
+
     int64_t nframes = netDerivShape->GetDim(0);
 
     // 2. 设置 virial shape = [nframes, 9]

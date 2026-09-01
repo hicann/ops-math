@@ -25,7 +25,7 @@ protected:
     static void TearDownTestCase() { std::cout << "ExpandvTiling TearDown" << std::endl; }
 };
 
-std::map<std::string, std::string> soc_version_infos = {{"Short_SoC_version", "Ascend910B"}};
+static std::map<std::string, std::string> soc_version_infos = {{"Short_SoC_version", "Ascend910B"}};
 
 TEST_F(ExpandvTiling, expandv_example_0)
 {
@@ -44,8 +44,8 @@ TEST_F(ExpandvTiling, expandv_example_0)
         },
         &compileInfo); // 已修正原始笔误（删除多余的attrs,）
     uint64_t expectTilingKey = 0;
-    std::string expectTilingData =
-        "64 72 1 1 8184 64 72 0 3 3 4 1 3 0 0 0 0 0 0 0 4 5 3 0 0 0 0 0 0 0 3 3 1 0 0 0 0 0 0 0 15 3 1 0 0 0 0 0 0 0 ";
+    std::string expectTilingData = "64 72 1 1 8184 64 72 0 3 3 4 1 3 0 0 0 0 0 0 0 4 5 3 0 0 0 0 0 0 0 3 3 1 0 0 0 0 0 "
+                                   "0 0 15 3 1 0 0 0 0 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {1024 * 1024 * 16};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
@@ -67,8 +67,8 @@ TEST_F(ExpandvTiling, expandv_example_1)
         },
         &compileInfo);
     uint64_t expectTilingKey = 2;
-    std::string expectTilingData =
-        "64 80 1 1 16368 64 80 0 3 3 4 1 3 0 0 0 0 0 0 0 4 5 3 0 0 0 0 0 0 0 3 3 1 0 0 0 0 0 0 0 15 3 1 0 0 0 0 0 0 0 ";
+    std::string expectTilingData = "64 80 1 1 16368 64 80 0 3 3 4 1 3 0 0 0 0 0 0 0 4 5 3 0 0 0 0 0 0 0 3 3 1 0 0 0 0 "
+                                   "0 0 0 15 3 1 0 0 0 0 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {1024 * 1024 * 16};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

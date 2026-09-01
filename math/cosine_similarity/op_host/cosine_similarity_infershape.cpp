@@ -12,6 +12,7 @@
 
 #include "register/op_impl_registry.h"
 #include "log/log.h"
+#include "util/shape_util.h"
 
 using namespace ge;
 
@@ -19,6 +20,7 @@ namespace ops {
 static constexpr int64_t IDX_0 = 0;
 static constexpr int64_t IDX_1 = 1;
 static constexpr int32_t MAX_DIMS = 8;
+static constexpr int64_t UNKNOWN_DIM = -1;
 
 static ge::graphStatus InferShapeCosineSimilarity(gert::InferShapeContext* context)
 {
@@ -32,16 +34,21 @@ static ge::graphStatus InferShapeCosineSimilarity(gert::InferShapeContext* conte
     gert::Shape* yShape = context->GetOutputShape(IDX_0);
     OP_CHECK_NULL_WITH_CONTEXT(context, yShape);
 
+    // Unknown rank (-2): rank is unknown, cannot infer the reduced shape; pass through as unknown rank
+    if (Ops::Base::IsUnknownRank(*x1Shape) || Ops::Base::IsUnknownRank(*x2Shape)) {
+        Ops::Base::SetUnknownRank(*yShape);
+        return GRAPH_SUCCESS;
+    }
+
     // Get input dimensions
     size_t x1Dims = x1Shape->GetDimNum();
     size_t x2Dims = x2Shape->GetDimNum();
     size_t ndim = (x1Dims > x2Dims) ? x1Dims : x2Dims;
 
     if (ndim > static_cast<size_t>(MAX_DIMS)) {
-        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
-            context->GetNodeName(), "x1 and x2",
-            (std::to_string(x1Dims) + " and " + std::to_string(x2Dims)).c_str(),
-            "broadcast ndim must not exceed 8");
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(context->GetNodeName(), "x1 and x2",
+                                                  (std::to_string(x1Dims) + " and " + std::to_string(x2Dims)).c_str(),
+                                                  "broadcast ndim must not exceed 8");
         return GRAPH_FAILED;
     }
 
@@ -65,11 +72,13 @@ static ge::graphStatus InferShapeCosineSimilarity(gert::InferShapeContext* conte
         x2Padded[x2Offset + i] = x2Shape->GetDim(i);
     }
 
-    // Compute broadcast shape
+    // Compute broadcast shape (unknown dim(-1) 逐维通配：任一侧未知则该维结果为 -1)
     for (int32_t d = 0; d < static_cast<int32_t>(ndim); d++) {
         int64_t s1 = x1Padded[d];
         int64_t s2 = x2Padded[d];
-        if (s1 == s2) {
+        if (s1 == UNKNOWN_DIM || s2 == UNKNOWN_DIM) {
+            bcastShape[d] = UNKNOWN_DIM;
+        } else if (s1 == s2) {
             bcastShape[d] = s1;
         } else if (s1 == 1) {
             bcastShape[d] = s2;
@@ -77,9 +86,8 @@ static ge::graphStatus InferShapeCosineSimilarity(gert::InferShapeContext* conte
             bcastShape[d] = s1;
         } else {
             std::string shapeMsg = std::to_string(s1) + " and " + std::to_string(s2);
-            OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-                context->GetNodeName(), "x1 and x2", shapeMsg.c_str(),
-                ("shapes not broadcastable at dim " + std::to_string(d)).c_str());
+            OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x1 and x2", shapeMsg.c_str(),
+                                                   ("shapes not broadcastable at dim " + std::to_string(d)).c_str());
             return GRAPH_FAILED;
         }
     }
@@ -97,9 +105,8 @@ static ge::graphStatus InferShapeCosineSimilarity(gert::InferShapeContext* conte
         dim += static_cast<int32_t>(ndim);
     }
     if (dim < 0 || dim >= static_cast<int32_t>(ndim)) {
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context->GetNodeName(), "dim", std::to_string(dim).c_str(),
-            ("dim must be in range [0, " + std::to_string(ndim) + ")").c_str());
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "dim", std::to_string(dim).c_str(),
+                                              ("dim must be in range [0, " + std::to_string(ndim) + ")").c_str());
         return GRAPH_FAILED;
     }
 
@@ -117,7 +124,8 @@ static ge::graphStatus InferShapeCosineSimilarity(gert::InferShapeContext* conte
         yShape->SetDimNum(outDims);
         size_t outIdx = 0;
         for (int32_t d = 0; d < static_cast<int32_t>(ndim); d++) {
-            if (d == dim) continue;
+            if (d == dim)
+                continue;
             yShape->SetDim(outIdx++, bcastShape[d]);
         }
     }
@@ -130,4 +138,4 @@ static ge::graphStatus InferShapeCosineSimilarity(gert::InferShapeContext* conte
 }
 
 IMPL_OP_INFERSHAPE(CosineSimilarity).InferShape(InferShapeCosineSimilarity);
-}  // namespace ops
+} // namespace ops

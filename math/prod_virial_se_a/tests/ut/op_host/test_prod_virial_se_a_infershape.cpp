@@ -43,6 +43,98 @@ TEST_F(ProdVirialSeAInfershapeTest, prod_virial_se_a_infershape_float32)
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
+TEST_F(ProdVirialSeAInfershapeTest, prod_virial_se_a_infershape_unknown_shape)
+{
+    // Unknown shape (-1): all inputs unknown shape,
+    // virial -> {-1, 9}, atom_virial -> {-1, -1}
+    gert::InfershapeContextPara infershapeContextPara("ProdVirialSeA",
+                                                      {
+                                                          {{{-1, -1}, {-1, -1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{-1, -1}, {-1, -1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{-1, -1}, {-1, -1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{-1, -1}, {-1, -1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                          {{{-1}, {-1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-1, 9},
+        {-1, -1},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(ProdVirialSeAInfershapeTest, prod_virial_se_a_infershape_unknown_rank)
+{
+    // Unknown rank (-2): all inputs unknown rank, outputs {-2}
+    gert::InfershapeContextPara infershapeContextPara("ProdVirialSeA",
+                                                      {
+                                                          {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{-2}, {-2}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                          {{{-2}, {-2}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-2},
+        {-2},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(ProdVirialSeAInfershapeTest, prod_virial_se_a_infershape_unknown_shape_mixed)
+{
+    // Mixed unknown dim (-1) with known dims: net_deriv {-1, 72}，其余输入已知，
+    // nframes=-1 逐维透传，natoms 非 const -> atom_virial shape[1] = -1
+    // virial -> {-1, 9}, atom_virial -> {-1, -1}
+    gert::InfershapeContextPara infershapeContextPara("ProdVirialSeA",
+                                                      {
+                                                          {{{-1, 72}, {-1, 72}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{2, 72}, {2, 72}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{2, 18}, {2, 18}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{2, 18}, {2, 18}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                          {{{3}, {3}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-1, 9},
+        {-1, -1},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(ProdVirialSeAInfershapeTest, prod_virial_se_a_infershape_unknown_rank_mixed)
+{
+    // Mixed: natoms unknown rank {-2}，其余输入已知 shape，
+    // virial 不依赖 natoms -> {2, 9}，atom_virial 依赖 natoms -> {2, -1}
+    gert::InfershapeContextPara infershapeContextPara("ProdVirialSeA",
+                                                      {
+                                                          {{{2, 72}, {2, 72}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{2, 72}, {2, 72}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{2, 18}, {2, 18}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{2, 18}, {2, 18}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                          {{{-2}, {-2}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {2, 9},
+        {2, -1},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
 TEST_F(ProdVirialSeAInfershapeTest, prod_virial_se_a_infershape_float16)
 {
     gert::InfershapeContextPara infershapeContextPara("ProdVirialSeA",

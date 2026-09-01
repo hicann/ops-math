@@ -20,18 +20,11 @@
 #include "infershape_context_faker.h"
 #include "infershape_case_executor.h"
 
-class TriluInfershape : public testing::Test
-{
+class TriluInfershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "TriluInfershape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "TriluInfershape SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "TriluInfershape TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "TriluInfershape TearDown" << std::endl; }
 };
 
 TEST_F(TriluInfershape, trilu_infershape_test1)
@@ -46,6 +39,55 @@ TEST_F(TriluInfershape, trilu_infershape_test1)
         });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {1, -1, -1, 64},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(TriluInfershape, trilu_infershape_unknown_shape)
+{
+    // Unknown shape (-1): {-1, -1, -1} -> shape passthrough {-1, -1, -1}
+    gert::InfershapeContextPara infershapeContextPara("Trilu",
+                                                      {
+                                                          {{{-1, -1, -1}, {-1, -1, -1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-1, -1, -1},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(TriluInfershape, trilu_infershape_unknown_shape_mixed)
+{
+    // Mixed unknown dim (-1) with known dims: {-1, 2, 4, -1} -> shape passthrough {-1, 2, 4, -1}
+    gert::InfershapeContextPara infershapeContextPara(
+        "Trilu",
+        {
+            {{{-1, 2, 4, -1}, {-1, 2, 4, -1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-1, 2, 4, -1},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(TriluInfershape, trilu_infershape_unknown_rank)
+{
+    // Unknown rank (-2): {-2} -> shape passthrough {-2}
+    gert::InfershapeContextPara infershapeContextPara("Trilu",
+                                                      {
+                                                          {{{-2}, {-2}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-2},
     };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }

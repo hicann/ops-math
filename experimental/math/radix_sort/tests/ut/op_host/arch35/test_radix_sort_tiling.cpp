@@ -21,18 +21,12 @@ using namespace ge;
 
 class RadixSortTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "RadixSortTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "RadixSortTiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "RadixSortTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "RadixSortTiling TearDown" << std::endl; }
 };
 
-std::map<std::string, std::string> soc_version_infos = {{"Short_SoC_version", "Ascend950"}};
+static std::map<std::string, std::string> soc_version_infos = {{"Short_SoC_version", "Ascend950"}};
 
 TEST_F(RadixSortTiling, radix_sort_int32_ascending_2048)
 {

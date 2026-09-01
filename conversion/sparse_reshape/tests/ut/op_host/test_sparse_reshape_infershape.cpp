@@ -20,18 +20,11 @@
 #include "infershape_context_faker.h"
 #include "infershape_case_executor.h"
 
-class SparseReshapeInfershape : public testing::Test
-{
+class SparseReshapeInfershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "SparseReshapeInfershape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "SparseReshapeInfershape SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "SparseReshapeInfershape TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "SparseReshapeInfershape TearDown" << std::endl; }
 };
 
 // Test case 1: reshape [2,3] -> [3,2], nnz=4, int64
@@ -42,13 +35,13 @@ TEST_F(SparseReshapeInfershape, sparse_reshape_infershape_test1)
     gert::InfershapeContextPara infershapeContextPara(
         "SparseReshape",
         {
-            {{{4, 2}, {4, 2}}, ge::DT_INT64, ge::FORMAT_ND},   // indices: (nnz=4, input_rank=2)
-            {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND},          // shape: (input_rank=2,)
-            {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND},          // new_shape: (output_rank=2,)
+            {{{4, 2}, {4, 2}}, ge::DT_INT64, ge::FORMAT_ND}, // indices: (nnz=4, input_rank=2)
+            {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND},       // shape: (input_rank=2,)
+            {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND},       // new_shape: (output_rank=2,)
         },
         {
-            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},            // y_indices: shape inferred
-            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},            // y_shape: shape inferred
+            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND}, // y_indices: shape inferred
+            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND}, // y_shape: shape inferred
         });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {4, 2},
@@ -64,13 +57,13 @@ TEST_F(SparseReshapeInfershape, sparse_reshape_infershape_test2)
     gert::InfershapeContextPara infershapeContextPara(
         "SparseReshape",
         {
-            {{{4, 2}, {4, 2}}, ge::DT_INT32, ge::FORMAT_ND},   // indices: (nnz=4, input_rank=2)
-            {{{2}, {2}}, ge::DT_INT32, ge::FORMAT_ND},          // shape: (input_rank=2,)
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},          // new_shape: (output_rank=1,)
+            {{{4, 2}, {4, 2}}, ge::DT_INT32, ge::FORMAT_ND}, // indices: (nnz=4, input_rank=2)
+            {{{2}, {2}}, ge::DT_INT32, ge::FORMAT_ND},       // shape: (input_rank=2,)
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND},       // new_shape: (output_rank=1,)
         },
         {
-            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},            // y_indices
-            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND},            // y_shape
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND}, // y_indices
+            {{{}, {}}, ge::DT_INT32, ge::FORMAT_ND}, // y_shape
         });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {4, 1},
@@ -87,16 +80,106 @@ TEST_F(SparseReshapeInfershape, sparse_reshape_infershape_test3)
         "SparseReshape",
         {
             {{{10, 3}, {10, 3}}, ge::DT_INT64, ge::FORMAT_ND}, // indices: (nnz=10, input_rank=3)
-            {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND},          // shape: (input_rank=3,)
-            {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND},          // new_shape: (output_rank=2,)
+            {{{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND},         // shape: (input_rank=3,)
+            {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND},         // new_shape: (output_rank=2,)
         },
         {
-            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},            // y_indices
-            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND},            // y_shape
+            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND}, // y_indices
+            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND}, // y_shape
         });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {10, 2},
         {2},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test case 4: Unknown shape (-1)
+// indices: {-1, -1}, shape: {-1}, new_shape: {-1}
+// y_indices = {-1, -1}, y_shape = {-1}
+TEST_F(SparseReshapeInfershape, sparse_reshape_infershape_unknown_shape)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "SparseReshape",
+        {
+            {{{-1, -1}, {-1, -1}}, ge::DT_INT64, ge::FORMAT_ND}, // indices
+            {{{-1}, {-1}}, ge::DT_INT64, ge::FORMAT_ND},         // shape
+            {{{-1}, {-1}}, ge::DT_INT64, ge::FORMAT_ND},         // new_shape
+        },
+        {
+            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND}, // y_indices
+            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND}, // y_shape
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-1, -1},
+        {-1},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test case 5: Unknown rank (-2)
+// All inputs unknown rank, y_indices = {-1, -1}, y_shape = {-1}
+TEST_F(SparseReshapeInfershape, sparse_reshape_infershape_unknown_rank)
+{
+    gert::InfershapeContextPara infershapeContextPara("SparseReshape",
+                                                      {
+                                                          {{{-2}, {-2}}, ge::DT_INT64, ge::FORMAT_ND}, // indices
+                                                          {{{-2}, {-2}}, ge::DT_INT64, ge::FORMAT_ND}, // shape
+                                                          {{{-2}, {-2}}, ge::DT_INT64, ge::FORMAT_ND}, // new_shape
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND}, // y_indices
+                                                          {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND}, // y_shape
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-1, -1},
+        {-1},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test case 6: Mixed unknown dim (-1) with known dims
+// indices: {-1, 2}（nnz 未知，input_rank=2 已知）, shape: {2}, new_shape: {-1}（output_rank 未知）
+// input_rank(2) == shape.shape[0](2) 校验通过，output_rank=-1 逐维透传
+// y_indices = {-1, -1}, y_shape = {-1}
+TEST_F(SparseReshapeInfershape, sparse_reshape_infershape_unknown_shape_mixed)
+{
+    gert::InfershapeContextPara infershapeContextPara("SparseReshape",
+                                                      {
+                                                          {{{-1, 2}, {-1, 2}}, ge::DT_INT64, ge::FORMAT_ND}, // indices
+                                                          {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND},         // shape
+                                                          {{{-1}, {-1}}, ge::DT_INT64, ge::FORMAT_ND}, // new_shape
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND}, // y_indices
+                                                          {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND}, // y_shape
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-1, -1},
+        {-1},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test case 7: Mixed unknown rank (-2) with partial unknown shape
+// indices: {-1, -1} 部分未知, shape: {-2} unknown rank, new_shape: {2}
+// 任一输入 unknown rank -> y_indices = {-1, -1}, y_shape = {-1}
+TEST_F(SparseReshapeInfershape, sparse_reshape_infershape_unknown_rank_mixed)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "SparseReshape",
+        {
+            {{{-1, -1}, {-1, -1}}, ge::DT_INT64, ge::FORMAT_ND}, // indices
+            {{{-2}, {-2}}, ge::DT_INT64, ge::FORMAT_ND},         // shape
+            {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND},           // new_shape
+        },
+        {
+            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND}, // y_indices
+            {{{}, {}}, ge::DT_INT64, ge::FORMAT_ND}, // y_shape
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-1, -1},
+        {-1},
     };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }

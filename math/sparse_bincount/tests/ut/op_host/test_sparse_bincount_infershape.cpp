@@ -15,18 +15,11 @@
 #include "infershape_context_faker.h"
 #include "infershape_case_executor.h"
 
-class SparseBincountInfershape : public testing::Test
-{
+class SparseBincountInfershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "SparseBincountInfershape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "SparseBincountInfershape SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "SparseBincountInfershape TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "SparseBincountInfershape TearDown" << std::endl; }
 };
 
 // Test case 1: 1D mode
@@ -43,14 +36,16 @@ TEST_F(SparseBincountInfershape, sparse_bincount_1d_test)
     gert::InfershapeContextPara infershapeContextPara(
         "SparseBincount",
         {
-            gert::InfershapeContextPara::TensorDescription({{4, 1}, {4, 1}}, ge::DT_INT64, ge::FORMAT_ND),  // indices
-            gert::InfershapeContextPara::TensorDescription({{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND),        // values
-            gert::InfershapeContextPara::TensorDescription({{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, denseShapeData),  // dense_shape (const)
-            gert::InfershapeContextPara::TensorDescription({{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, sizeData),        // size (const)
-            gert::InfershapeContextPara::TensorDescription({{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND),        // weights
+            gert::InfershapeContextPara::TensorDescription({{4, 1}, {4, 1}}, ge::DT_INT64, ge::FORMAT_ND), // indices
+            gert::InfershapeContextPara::TensorDescription({{4}, {4}}, ge::DT_INT32, ge::FORMAT_ND),       // values
+            gert::InfershapeContextPara::TensorDescription({{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true,
+                                                           denseShapeData), // dense_shape (const)
+            gert::InfershapeContextPara::TensorDescription({{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true,
+                                                           sizeData),                                // size (const)
+            gert::InfershapeContextPara::TensorDescription({{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND), // weights
         },
         {
-            gert::InfershapeContextPara::TensorDescription({{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND),          // output
+            gert::InfershapeContextPara::TensorDescription({{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND), // output
         });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {8},
@@ -72,14 +67,95 @@ TEST_F(SparseBincountInfershape, sparse_bincount_nd_test)
     gert::InfershapeContextPara infershapeContextPara(
         "SparseBincount",
         {
-            gert::InfershapeContextPara::TensorDescription({{4, 2}, {4, 2}}, ge::DT_INT64, ge::FORMAT_ND),  // indices
-            gert::InfershapeContextPara::TensorDescription({{4}, {4}}, ge::DT_INT64, ge::FORMAT_ND),        // values
-            gert::InfershapeContextPara::TensorDescription({{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, denseShapeData),  // dense_shape (const)
-            gert::InfershapeContextPara::TensorDescription({{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, sizeData),        // size (const)
-            gert::InfershapeContextPara::TensorDescription({{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND),        // weights
+            gert::InfershapeContextPara::TensorDescription({{4, 2}, {4, 2}}, ge::DT_INT64, ge::FORMAT_ND), // indices
+            gert::InfershapeContextPara::TensorDescription({{4}, {4}}, ge::DT_INT64, ge::FORMAT_ND),       // values
+            gert::InfershapeContextPara::TensorDescription({{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true,
+                                                           denseShapeData), // dense_shape (const)
+            gert::InfershapeContextPara::TensorDescription({{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true,
+                                                           sizeData),                                // size (const)
+            gert::InfershapeContextPara::TensorDescription({{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND), // weights
         },
         {
-            gert::InfershapeContextPara::TensorDescription({{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND),          // output
+            gert::InfershapeContextPara::TensorDescription({{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND), // output
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {4, 8},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test case 3: Unknown shape (-1)
+// indices/values/weights are unknown shape; dense_shape and size are const (value dependency)
+// Expected output shape: [dense_shape[0], size] = [4, 8]
+TEST_F(SparseBincountInfershape, sparse_bincount_unknown_shape_test)
+{
+    int32_t sizeData[1] = {8};
+    int64_t denseShapeData[2] = {4, 5};
+
+    gert::InfershapeContextPara infershapeContextPara(
+        "SparseBincount",
+        {
+            gert::InfershapeContextPara::TensorDescription({{-1, -1}, {-1, -1}}, ge::DT_INT64,
+                                                           ge::FORMAT_ND),                             // indices
+            gert::InfershapeContextPara::TensorDescription({{-1}, {-1}}, ge::DT_INT32, ge::FORMAT_ND), // values
+            gert::InfershapeContextPara::TensorDescription({{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true,
+                                                           denseShapeData), // dense_shape (const)
+            gert::InfershapeContextPara::TensorDescription({{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true,
+                                                           sizeData),                                  // size (const)
+            gert::InfershapeContextPara::TensorDescription({{-1}, {-1}}, ge::DT_FLOAT, ge::FORMAT_ND), // weights
+        },
+        {
+            gert::InfershapeContextPara::TensorDescription({{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND), // output
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {4, 8},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test case 4: Unknown rank (-2)
+// dense_shape is unknown rank, output rank cannot be decided -> {-2}
+TEST_F(SparseBincountInfershape, sparse_bincount_unknown_rank_test)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "SparseBincount",
+        {
+            gert::InfershapeContextPara::TensorDescription({{-2}, {-2}}, ge::DT_INT64, ge::FORMAT_ND), // indices
+            gert::InfershapeContextPara::TensorDescription({{-2}, {-2}}, ge::DT_INT32, ge::FORMAT_ND), // values
+            gert::InfershapeContextPara::TensorDescription({{-2}, {-2}}, ge::DT_INT64, ge::FORMAT_ND), // dense_shape
+            gert::InfershapeContextPara::TensorDescription({{-2}, {-2}}, ge::DT_INT32, ge::FORMAT_ND), // size
+            gert::InfershapeContextPara::TensorDescription({{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND), // weights
+        },
+        {
+            gert::InfershapeContextPara::TensorDescription({{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND), // output
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-2},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test case 5: Mixed unknown rank/shape
+// indices unknown rank {-2}、values/weights 部分未知 {-1}，dense_shape/size 为 const（值依赖）
+// 输出仅依赖 dense_shape 与 size，其余输入 shape 不参与推导 -> [4, 8]
+TEST_F(SparseBincountInfershape, sparse_bincount_mixed_unknown_test)
+{
+    int32_t sizeData[1] = {8};
+    int64_t denseShapeData[2] = {4, 5};
+
+    gert::InfershapeContextPara infershapeContextPara(
+        "SparseBincount",
+        {
+            gert::InfershapeContextPara::TensorDescription({{-2}, {-2}}, ge::DT_INT64, ge::FORMAT_ND), // indices
+            gert::InfershapeContextPara::TensorDescription({{-1}, {-1}}, ge::DT_INT32, ge::FORMAT_ND), // values
+            gert::InfershapeContextPara::TensorDescription({{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true,
+                                                           denseShapeData), // dense_shape (const)
+            gert::InfershapeContextPara::TensorDescription({{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true,
+                                                           sizeData),                                  // size (const)
+            gert::InfershapeContextPara::TensorDescription({{-1}, {-1}}, ge::DT_FLOAT, ge::FORMAT_ND), // weights
+        },
+        {
+            gert::InfershapeContextPara::TensorDescription({{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND), // output
         });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {4, 8},

@@ -221,6 +221,7 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 
 static ge::graphStatus ProdVirialSeATilingFunc(gert::TilingContext* context)
 {
+    OP_LOGD(context, "Enter TilingProdVirialSeA");
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
     OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,

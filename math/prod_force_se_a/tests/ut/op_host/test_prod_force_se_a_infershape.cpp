@@ -53,3 +53,106 @@ TEST_F(ProdForceSeAInfershape, prod_force_se_a_infershape_test1)
     };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
+
+TEST_F(ProdForceSeAInfershape, prod_force_se_a_infershape_unknown_shape)
+{
+    // Unknown shape (-1): all inputs unknown shape,
+    // natoms 尺寸/值不可读 -> nall=-1，已知维保留（坐标维固定为 3），output shape {-1, -1, 3}
+    int64_t nASel = 2;
+    int64_t nRSel = 1;
+    gert::InfershapeContextPara infershapeContextPara("ProdForceSeA",
+                                                      {
+                                                          {{{-1, -1}, {-1, -1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{-1, -1}, {-1, -1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{-1, -1}, {-1, -1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                          {{{-1}, {-1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"n_a_sel", Ops::Math::AnyValue::CreateFrom<int64_t>(nASel)},
+                                                          {"n_r_sel", Ops::Math::AnyValue::CreateFrom<int64_t>(nRSel)},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-1, -1, 3},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(ProdForceSeAInfershape, prod_force_se_a_infershape_unknown_shape_mixed)
+{
+    // Mixed unknown dim (-1) with known dims: net_deriv {-1, 36}、in_deriv {2, -1}、nlist {2, 9}，
+    // 帧数一致性校验遇 -1 跳过；natoms const [3, 5, 2] -> nall=5，output shape {-1, 5, 3}
+    static int32_t natomsData[] = {3, 5, 2};
+    int64_t nASel = 2;
+    int64_t nRSel = 1;
+    gert::InfershapeContextPara infershapeContextPara("ProdForceSeA",
+                                                      {
+                                                          {{{-1, 36}, {-1, 36}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{2, -1}, {2, -1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{2, 9}, {2, 9}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                          {{{3}, {3}}, ge::DT_INT32, ge::FORMAT_ND, true, natomsData},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"n_a_sel", Ops::Math::AnyValue::CreateFrom<int64_t>(nASel)},
+                                                          {"n_r_sel", Ops::Math::AnyValue::CreateFrom<int64_t>(nRSel)},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-1, 5, 3},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(ProdForceSeAInfershape, prod_force_se_a_infershape_unknown_rank_mixed)
+{
+    // Mixed: natoms unknown rank {-2}，其余输入已知 shape，输出透传为 unknown rank {-2}
+    int64_t nASel = 2;
+    int64_t nRSel = 1;
+    gert::InfershapeContextPara infershapeContextPara("ProdForceSeA",
+                                                      {
+                                                          {{{2, 36}, {2, 36}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{2, 108}, {2, 108}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{2, 9}, {2, 9}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                          {{{-2}, {-2}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"n_a_sel", Ops::Math::AnyValue::CreateFrom<int64_t>(nASel)},
+                                                          {"n_r_sel", Ops::Math::AnyValue::CreateFrom<int64_t>(nRSel)},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-2},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(ProdForceSeAInfershape, prod_force_se_a_infershape_unknown_rank)
+{
+    // Unknown rank (-2): all inputs unknown rank, output shape {-2}
+    int64_t nASel = 2;
+    int64_t nRSel = 1;
+    gert::InfershapeContextPara infershapeContextPara("ProdForceSeA",
+                                                      {
+                                                          {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{-2}, {-2}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                          {{{-2}, {-2}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"n_a_sel", Ops::Math::AnyValue::CreateFrom<int64_t>(nASel)},
+                                                          {"n_r_sel", Ops::Math::AnyValue::CreateFrom<int64_t>(nRSel)},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-2},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}

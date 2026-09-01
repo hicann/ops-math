@@ -112,3 +112,67 @@ TEST_F(MatrixDiagPartInfershape, matrix_diag_part_infershape_dynamic_shape)
     };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
+
+TEST_F(MatrixDiagPartInfershape, matrix_diag_part_infershape_unknown_shape)
+{
+    // Unknown shape (-1): input shape {-1, -1, -1}, output shape {-1, -1}
+    gert::InfershapeContextPara infershapeContextPara("MatrixDiagPart",
+                                                      {
+                                                          {{{-1, -1, -1}, {-1, -1, -1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-1, -1},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(MatrixDiagPartInfershape, matrix_diag_part_infershape_unknown_shape_mixed)
+{
+    // Mixed unknown dim (-1) with known dims: input shape {4, -1, 3}, min(-1, 3) = -1, output shape {4, -1}
+    gert::InfershapeContextPara infershapeContextPara("MatrixDiagPart",
+                                                      {
+                                                          {{{4, -1, 3}, {4, -1, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {4, -1},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(MatrixDiagPartInfershape, matrix_diag_part_infershape_unknown_shape_rank_mixed)
+{
+    // Mixed: origin shape {-1, 2, 3} with unknown rank shape range {-2}, min(2, 3) = 2, output shape {-1, 2}
+    gert::InfershapeContextPara infershapeContextPara("MatrixDiagPart",
+                                                      {
+                                                          {{{-1, 2, 3}, {-2}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-1, 2},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(MatrixDiagPartInfershape, matrix_diag_part_infershape_unknown_rank)
+{
+    // Unknown rank (-2): input shape {-2}, output shape {-2}
+    gert::InfershapeContextPara infershapeContextPara("MatrixDiagPart",
+                                                      {
+                                                          {{{-2}, {-2}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-2},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}

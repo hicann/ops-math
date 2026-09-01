@@ -40,6 +40,102 @@ static constexpr int64_t ATTR_INDEX_N_A_SEL = 0; // n_a_sel 属性索引
 static constexpr int64_t ATTR_INDEX_N_R_SEL = 1; // n_r_sel 属性索引
 static constexpr int64_t OUTPUT_DIM_NUM = 3;     // 输出维度数
 static constexpr int64_t COORD_DIM_SIZE = 3;     // 坐标维度大小 (x,y,z)
+static constexpr int64_t UNKNOWN_DIM = -1;       // unknown dim 值
+
+// 帧数一致性校验 (SE 1.4)，unknown dim(-1) 时跳过对应校验
+static ge::graphStatus CheckFramesConsistency(const char* opName, const gert::Shape* netDerivShape,
+                                              const gert::Shape* inDerivShape, const gert::Shape* nlistShape,
+                                              int64_t& nframes)
+{
+    nframes = netDerivShape->GetDim(IDX_0);
+    int64_t inDerivFrames = inDerivShape->GetDim(IDX_0);
+    int64_t nlistFrames = nlistShape->GetDim(IDX_0);
+    if (nframes != UNKNOWN_DIM && inDerivFrames != UNKNOWN_DIM && nframes != inDerivFrames) {
+        std::string shapeMsg = std::to_string(nframes) + " and " + std::to_string(inDerivFrames);
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(opName, "net_deriv and in_deriv", shapeMsg.c_str(),
+                                               "net_deriv.shape[0] and in_deriv.shape[0] should be same");
+        return GRAPH_FAILED;
+    }
+    if (nframes != UNKNOWN_DIM && nlistFrames != UNKNOWN_DIM && nframes != nlistFrames) {
+        std::string shapeMsg = std::to_string(nlistFrames) + " and " + std::to_string(nframes);
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(opName, "net_deriv and nlist", shapeMsg.c_str(),
+                                               "net_deriv.shape[0] and nlist.shape[0] should be same");
+        return GRAPH_FAILED;
+    }
+    return GRAPH_SUCCESS;
+}
+
+// dtype 一致性校验 (SE 1.4)
+static ge::graphStatus CheckDtypeConsistency(gert::InferShapeContext* context, const char* opName)
+{
+    const auto* netDerivDesc = context->GetInputDesc(IDX_0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, netDerivDesc);
+    const auto* inDerivDesc = context->GetInputDesc(IDX_1);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inDerivDesc);
+    if (netDerivDesc->GetDataType() != inDerivDesc->GetDataType()) {
+        std::string dtypeMsg = Ops::Base::ToString(netDerivDesc->GetDataType()) + " and " +
+                               Ops::Base::ToString(inDerivDesc->GetDataType());
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(opName, "net_deriv and in_deriv", dtypeMsg.c_str(),
+                                               "dtype of net_deriv and in_deriv should be same");
+        return GRAPH_FAILED;
+    }
+    return GRAPH_SUCCESS;
+}
+
+// natoms 值依赖读取与校验 (SE 1.4)
+// natoms 为 unknown shape(-1) 时无法读取尺寸与值，nall 按 unknown dim(-1) 处理
+static ge::graphStatus ReadAndValidateNatoms(gert::InferShapeContext* context, const gert::Shape* natomsShape,
+                                             const char* opName, int64_t& nall)
+{
+    nall = UNKNOWN_DIM;
+    if (Ops::Base::IsUnknownShape(*natomsShape)) {
+        return GRAPH_SUCCESS;
+    }
+    const gert::Tensor* natomsTensor = context->GetInputTensor(IDX_3);
+    OP_CHECK_NULL_WITH_CONTEXT(context, natomsTensor);
+    int64_t natomsNum = natomsTensor->GetStorageShape().GetShapeSize();
+    if (natomsNum < MIN_NATOMS_SIZE) {
+        OP_LOGE_FOR_INVALID_SHAPESIZE(opName, "natoms", std::to_string(natomsNum).c_str(), ">= 3");
+        return GRAPH_FAILED;
+    }
+    const int32_t* natomsData = natomsTensor->GetData<int32_t>();
+    OP_CHECK_NULL_WITH_CONTEXT(context, natomsData);
+    int64_t nloc = static_cast<int64_t>(natomsData[0]);
+    nall = static_cast<int64_t>(natomsData[1]);
+    if (nloc < 0) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName, "nloc", std::to_string(nloc).c_str(),
+                                              "nloc should be greater than or equal to 0");
+        return GRAPH_FAILED;
+    }
+    if (nall < nloc) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName, "nall", std::to_string(nall).c_str(),
+                                              "nall should be greater than or equal to nloc");
+        return GRAPH_FAILED;
+    }
+    return GRAPH_SUCCESS;
+}
+
+// 属性校验 (SE 1.4)
+static ge::graphStatus ValidateAttrs(gert::InferShapeContext* context, const char* opName)
+{
+    const gert::RuntimeAttrs* attrs = context->GetAttrs();
+    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
+    int32_t nASel = *(attrs->GetAttrPointer<int32_t>(ATTR_INDEX_N_A_SEL));
+    int32_t nRSel = *(attrs->GetAttrPointer<int32_t>(ATTR_INDEX_N_R_SEL));
+    if (nASel < 0 || nRSel < 0) {
+        std::string valMsg = std::to_string(nASel) + " and " + std::to_string(nRSel);
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(opName, "n_a_sel and n_r_sel", valMsg.c_str(),
+                                               "n_a_sel and n_r_sel should be greater than or equal to 0");
+        return GRAPH_FAILED;
+    }
+    int32_t nnei = nASel + nRSel;
+    if (nnei == 0) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName, "nnei", std::to_string(nnei).c_str(),
+                                              "nnei should be greater than 0");
+        return GRAPH_FAILED;
+    }
+    return GRAPH_SUCCESS;
+}
 
 static ge::graphStatus InferShapeProdForceSeA(gert::InferShapeContext* context)
 {
@@ -65,83 +161,24 @@ static ge::graphStatus InferShapeProdForceSeA(gert::InferShapeContext* context)
         OP_LOGD(opName, "Input is unknown rank, set output to unknown rank");
         return GRAPH_SUCCESS;
     }
-    if (Ops::Base::IsUnknownShape(*netDerivShape) || Ops::Base::IsUnknownShape(*inDerivShape) ||
-        Ops::Base::IsUnknownShape(*nlistShape) || Ops::Base::IsUnknownShape(*natomsShape)) {
-        Ops::Base::SetUnknownShape(OUTPUT_DIM_NUM, *forceShape);
-        OP_LOGD(opName, "Input is unknown shape, set output to unknown shape");
-        return GRAPH_SUCCESS;
-    }
 
-    // ===== 3. 帧数一致性校验 (SE 1.4) =====
-    int64_t nframes = netDerivShape->GetDim(IDX_0);
-    int64_t inDerivFrames = inDerivShape->GetDim(IDX_0);
-    int64_t nlistFrames = nlistShape->GetDim(IDX_0);
-    if (nframes != inDerivFrames) {
-        std::string shapeMsg = std::to_string(nframes) + " and " + std::to_string(inDerivFrames);
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(opName, "net_deriv and in_deriv", shapeMsg.c_str(),
-                                               "net_deriv.shape[0] and in_deriv.shape[0] should be same");
-        return GRAPH_FAILED;
-    }
-    if (nframes != nlistFrames) {
-        std::string shapeMsg = std::to_string(nlistFrames) + " and " + std::to_string(nframes);
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(opName, "net_deriv and nlist", shapeMsg.c_str(),
-                                               "net_deriv.shape[0] and nlist.shape[0] should be same");
-        return GRAPH_FAILED;
-    }
+    // ===== 3. 帧数一致性校验 =====
+    int64_t nframes = 0;
+    OP_CHECK_IF(CheckFramesConsistency(opName, netDerivShape, inDerivShape, nlistShape, nframes) != GRAPH_SUCCESS,
+                OP_LOGE(opName, "CheckFramesConsistency failed"), return GRAPH_FAILED);
 
-    // ===== 4. dtype 一致性校验 (SE 1.4) =====
-    const auto* netDerivDesc = context->GetInputDesc(IDX_0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, netDerivDesc);
-    const auto* inDerivDesc = context->GetInputDesc(IDX_1);
-    OP_CHECK_NULL_WITH_CONTEXT(context, inDerivDesc);
-    if (netDerivDesc->GetDataType() != inDerivDesc->GetDataType()) {
-        std::string dtypeMsg = Ops::Base::ToString(netDerivDesc->GetDataType()) + " and " +
-                               Ops::Base::ToString(inDerivDesc->GetDataType());
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(opName, "net_deriv and in_deriv", dtypeMsg.c_str(),
-                                               "dtype of net_deriv and in_deriv should be same");
-        return GRAPH_FAILED;
-    }
+    // ===== 4. dtype 一致性校验 =====
+    OP_CHECK_IF(CheckDtypeConsistency(context, opName) != GRAPH_SUCCESS,
+                OP_LOGE(opName, "CheckDtypeConsistency failed"), return GRAPH_FAILED);
 
-    // ===== 5. natoms 值依赖读取与校验 (SE 1.4) =====
-    const gert::Tensor* natomsTensor = context->GetInputTensor(IDX_3);
-    OP_CHECK_NULL_WITH_CONTEXT(context, natomsTensor);
-    int64_t natomsNum = natomsTensor->GetStorageShape().GetShapeSize();
-    if (natomsNum < MIN_NATOMS_SIZE) {
-        OP_LOGE_FOR_INVALID_SHAPESIZE(opName, "natoms", std::to_string(natomsNum).c_str(), ">= 3");
-        return GRAPH_FAILED;
-    }
-    const int32_t* natomsData = natomsTensor->GetData<int32_t>();
-    OP_CHECK_NULL_WITH_CONTEXT(context, natomsData);
-    int64_t nloc = static_cast<int64_t>(natomsData[0]);
-    int64_t nall = static_cast<int64_t>(natomsData[1]);
-    if (nloc < 0) {
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName, "nloc", std::to_string(nloc).c_str(),
-                                              "nloc should be greater than or equal to 0");
-        return GRAPH_FAILED;
-    }
-    if (nall < nloc) {
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName, "nall", std::to_string(nall).c_str(),
-                                              "nall should be greater than or equal to nloc");
-        return GRAPH_FAILED;
-    }
+    // ===== 5. natoms 值依赖读取与校验 =====
+    int64_t nall = UNKNOWN_DIM;
+    OP_CHECK_IF(ReadAndValidateNatoms(context, natomsShape, opName, nall) != GRAPH_SUCCESS,
+                OP_LOGE(opName, "ReadAndValidateNatoms failed"), return GRAPH_FAILED);
 
-    // ===== 6. 属性校验 (SE 1.4) =====
-    const gert::RuntimeAttrs* attrs = context->GetAttrs();
-    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
-    int32_t nASel = *(attrs->GetAttrPointer<int32_t>(ATTR_INDEX_N_A_SEL));
-    int32_t nRSel = *(attrs->GetAttrPointer<int32_t>(ATTR_INDEX_N_R_SEL));
-    if (nASel < 0 || nRSel < 0) {
-        std::string valMsg = std::to_string(nASel) + " and " + std::to_string(nRSel);
-        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(opName, "n_a_sel and n_r_sel", valMsg.c_str(),
-                                               "n_a_sel and n_r_sel should be greater than or equal to 0");
-        return GRAPH_FAILED;
-    }
-    int32_t nnei = nASel + nRSel;
-    if (nnei == 0) {
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName, "nnei", std::to_string(nnei).c_str(),
-                                              "nnei should be greater than 0");
-        return GRAPH_FAILED;
-    }
+    // ===== 6. 属性校验 =====
+    OP_CHECK_IF(ValidateAttrs(context, opName) != GRAPH_SUCCESS, OP_LOGE(opName, "ValidateAttrs failed"),
+                return GRAPH_FAILED);
 
     // ===== 7. 设置输出 shape: [nframes, nall, 3] =====
     forceShape->SetDimNum(OUTPUT_DIM_NUM);

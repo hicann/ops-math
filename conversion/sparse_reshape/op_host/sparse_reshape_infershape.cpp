@@ -15,6 +15,7 @@
  */
 #include "register/op_impl_registry.h"
 #include "log/log.h"
+#include "util/shape_util.h"
 
 using namespace ge;
 
@@ -25,31 +26,29 @@ static constexpr int64_t IDX_2 = 2;
 static constexpr int64_t MAX_RANK = 8;
 static constexpr int64_t INDICES_TENSOR_RANK = 2;
 
-static ge::graphStatus ValidateInputs(gert::InferShapeContext* context,
-    const gert::Shape* indicesShape, const gert::Shape* shapeShape,
-    const gert::Shape* newShapeShape)
+static ge::graphStatus ValidateInputs(gert::InferShapeContext* context, const gert::Shape* indicesShape,
+                                      const gert::Shape* shapeShape, const gert::Shape* newShapeShape)
 {
     OP_CHECK_IF(indicesShape->GetDimNum() != INDICES_TENSOR_RANK,
-        OP_LOGE(context, "indices must be a matrix, got rank %zu",
-            indicesShape->GetDimNum()), return GRAPH_FAILED);
+                OP_LOGE(context, "indices must be a matrix, got rank %zu", indicesShape->GetDimNum()),
+                return GRAPH_FAILED);
     OP_CHECK_IF(shapeShape->GetDimNum() != 1,
-        OP_LOGE(context, "shape must be a vector, got rank %zu",
-            shapeShape->GetDimNum()), return GRAPH_FAILED);
+                OP_LOGE(context, "shape must be a vector, got rank %zu", shapeShape->GetDimNum()), return GRAPH_FAILED);
     OP_CHECK_IF(newShapeShape->GetDimNum() != 1,
-        OP_LOGE(context, "new_shape must be a vector, got rank %zu",
-            newShapeShape->GetDimNum()), return GRAPH_FAILED);
+                OP_LOGE(context, "new_shape must be a vector, got rank %zu", newShapeShape->GetDimNum()),
+                return GRAPH_FAILED);
     int64_t inputRank = indicesShape->GetDim(1);
     int64_t outputRank = newShapeShape->GetDim(0);
     int64_t shapeRank = shapeShape->GetDim(0);
-    OP_CHECK_IF(inputRank > MAX_RANK,
-        OP_LOGE(context, "input_rank %ld > MAX_RANK %ld", inputRank, MAX_RANK),
-        return GRAPH_FAILED);
-    OP_CHECK_IF(outputRank > MAX_RANK,
-        OP_LOGE(context, "output_rank %ld > MAX_RANK %ld", outputRank, MAX_RANK),
-        return GRAPH_FAILED);
-    OP_CHECK_IF(inputRank != shapeRank,
-        OP_LOGE(context, "indices.shape[1] (%ld) != shape.shape[0] (%ld)",
-            inputRank, shapeRank), return GRAPH_FAILED);
+    OP_CHECK_IF(inputRank > MAX_RANK, OP_LOGE(context, "input_rank %ld > MAX_RANK %ld", inputRank, MAX_RANK),
+                return GRAPH_FAILED);
+    OP_CHECK_IF(outputRank > MAX_RANK, OP_LOGE(context, "output_rank %ld > MAX_RANK %ld", outputRank, MAX_RANK),
+                return GRAPH_FAILED);
+    // 维度值未知(-1) 时跳过该维一致性校验
+    constexpr int64_t UNKNOWN_DIM = -1;
+    OP_CHECK_IF(inputRank != UNKNOWN_DIM && shapeRank != UNKNOWN_DIM && inputRank != shapeRank,
+                OP_LOGE(context, "indices.shape[1] (%ld) != shape.shape[0] (%ld)", inputRank, shapeRank),
+                return GRAPH_FAILED);
     return GRAPH_SUCCESS;
 }
 
@@ -62,9 +61,27 @@ static ge::graphStatus InferShapeSparseReshape(gert::InferShapeContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, shapeShape);
     const gert::Shape* newShapeShape = context->GetInputShape(IDX_2);
     OP_CHECK_NULL_WITH_CONTEXT(context, newShapeShape);
-    OP_CHECK_IF(ValidateInputs(context, indicesShape, shapeShape, newShapeShape)
-        != GRAPH_SUCCESS, OP_LOGE(context, "ValidateInputs failed"),
-        return GRAPH_FAILED);
+
+    // Unknown rank(-2) 处理：与 canndev 原始实现对齐，
+    // y_indices 为 {-1, -1}（固定 rank 2，维度未知），y_shape 为 {-1}（固定 rank 1，维度未知）
+    if (Ops::Base::IsUnknownRank(*indicesShape) || Ops::Base::IsUnknownRank(*shapeShape) ||
+        Ops::Base::IsUnknownRank(*newShapeShape)) {
+        constexpr int64_t UNKNOWN_DIM = -1;
+        gert::Shape* yIndicesShape = context->GetOutputShape(IDX_0);
+        OP_CHECK_NULL_WITH_CONTEXT(context, yIndicesShape);
+        yIndicesShape->SetDimNum(INDICES_TENSOR_RANK);
+        yIndicesShape->SetDim(IDX_0, UNKNOWN_DIM);
+        yIndicesShape->SetDim(IDX_1, UNKNOWN_DIM);
+        gert::Shape* yShapeShape = context->GetOutputShape(IDX_1);
+        OP_CHECK_NULL_WITH_CONTEXT(context, yShapeShape);
+        yShapeShape->SetDimNum(1);
+        yShapeShape->SetDim(IDX_0, UNKNOWN_DIM);
+        OP_LOGD(context->GetNodeName(), "Input is unknown rank, set outputs to unknown dims");
+        return GRAPH_SUCCESS;
+    }
+
+    OP_CHECK_IF(ValidateInputs(context, indicesShape, shapeShape, newShapeShape) != GRAPH_SUCCESS,
+                OP_LOGE(context, "ValidateInputs failed"), return GRAPH_FAILED);
     int64_t nnz = indicesShape->GetDim(0);
     int64_t outputRank = newShapeShape->GetDim(0);
     gert::Shape* yIndicesShape = context->GetOutputShape(IDX_0);
@@ -83,7 +100,5 @@ static ge::graphStatus InferShapeSparseReshape(gert::InferShapeContext* context)
     return GRAPH_SUCCESS;
 }
 
-IMPL_OP_INFERSHAPE(SparseReshape)
-    .InferShape(InferShapeSparseReshape)
-    .InputsDataDependency({1, 2});
-}  // namespace ops
+IMPL_OP_INFERSHAPE(SparseReshape).InferShape(InferShapeSparseReshape).InputsDataDependency({1, 2});
+} // namespace ops

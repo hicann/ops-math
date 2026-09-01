@@ -290,6 +290,7 @@ static ge::graphStatus SetTilingDataAndConfig(gert::TilingContext* context, int3
 
 static ge::graphStatus ProdForceSeATilingFunc(gert::TilingContext* context)
 {
+    OP_LOGD(context, "Enter TilingProdForceSeA");
     uint64_t ubCapacity;
     int64_t aivCoreNum;
     if (GetPlatformInfo(context, ubCapacity, aivCoreNum) != ge::GRAPH_SUCCESS) {

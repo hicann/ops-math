@@ -21,6 +21,7 @@
 #include <string>
 
 #include "conversion/triu/op_host/arch35/triu_tiling.h"
+#include "log/log.h"
 #include "register/op_impl_registry.h"
 #include "register/tilingdata_base.h"
 
@@ -119,6 +120,7 @@ static ge::graphStatus ValidateDtypes(gert::TilingContext* context)
 
 static ge::graphStatus TriluTilingFunc(gert::TilingContext* context)
 {
+    OP_LOGD(context, "Enter TilingTrilu");
     if (ValidateDtypes(context) != ge::GRAPH_SUCCESS) {
         return ge::GRAPH_FAILED;
     }

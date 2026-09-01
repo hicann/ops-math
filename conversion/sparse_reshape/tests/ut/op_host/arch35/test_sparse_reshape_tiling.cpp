@@ -26,18 +26,12 @@ using namespace ge;
 
 class SparseReshapeTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "SparseReshapeTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "SparseReshapeTiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "SparseReshapeTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "SparseReshapeTiling TearDown" << std::endl; }
 };
 
-std::map<std::string, std::string> soc_version_infos = {{"Short_SoC_version", "Ascend950PR"}};
+static std::map<std::string, std::string> soc_version_infos = {{"Short_SoC_version", "Ascend950PR"}};
 
 // Test case 1: reshape [2,3] -> [3,2], nnz=4, int64
 TEST_F(SparseReshapeTiling, sparse_reshape_int64)
@@ -51,7 +45,8 @@ TEST_F(SparseReshapeTiling, sparse_reshape_int64)
         {
             gert::TilingContextPara::TensorDescription({{4, 2}, {4, 2}}, ge::DT_INT64, ge::FORMAT_ND),
             gert::TilingContextPara::TensorDescription({{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, (void*)shapeData),
-            gert::TilingContextPara::TensorDescription({{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, (void*)newShapeData),
+            gert::TilingContextPara::TensorDescription({{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true,
+                                                       (void*)newShapeData),
         },
         {
             gert::TilingContextPara::TensorDescription({{4, 2}, {4, 2}}, ge::DT_INT64, ge::FORMAT_ND),
@@ -88,8 +83,10 @@ TEST_F(SparseReshapeTiling, sparse_reshape_int32)
         "SparseReshape",
         {
             gert::TilingContextPara::TensorDescription({{4, 2}, {4, 2}}, ge::DT_INT32, ge::FORMAT_ND),
-            gert::TilingContextPara::TensorDescription({{2}, {2}}, ge::DT_INT32, ge::FORMAT_ND, true, (void*)shapeData32),
-            gert::TilingContextPara::TensorDescription({{2}, {2}}, ge::DT_INT32, ge::FORMAT_ND, true, (void*)newShapeData32),
+            gert::TilingContextPara::TensorDescription({{2}, {2}}, ge::DT_INT32, ge::FORMAT_ND, true,
+                                                       (void*)shapeData32),
+            gert::TilingContextPara::TensorDescription({{2}, {2}}, ge::DT_INT32, ge::FORMAT_ND, true,
+                                                       (void*)newShapeData32),
         },
         {
             gert::TilingContextPara::TensorDescription({{4, 2}, {4, 2}}, ge::DT_INT32, ge::FORMAT_ND),
@@ -115,13 +112,14 @@ TEST_F(SparseReshapeTiling, sparse_reshape_identity)
     struct SparseReshapeCompileInfo {
     } compileInfo;
     int64_t shapeData[] = {2, 3};
-    int64_t newShapeData[] = {2, 3};  // same as input shape -> identity
+    int64_t newShapeData[] = {2, 3}; // same as input shape -> identity
     gert::TilingContextPara tilingContextPara(
         "SparseReshape",
         {
             gert::TilingContextPara::TensorDescription({{4, 2}, {4, 2}}, ge::DT_INT64, ge::FORMAT_ND),
             gert::TilingContextPara::TensorDescription({{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, (void*)shapeData),
-            gert::TilingContextPara::TensorDescription({{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, (void*)newShapeData),
+            gert::TilingContextPara::TensorDescription({{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true,
+                                                       (void*)newShapeData),
         },
         {
             gert::TilingContextPara::TensorDescription({{4, 2}, {4, 2}}, ge::DT_INT64, ge::FORMAT_ND),
@@ -154,7 +152,8 @@ TEST_F(SparseReshapeTiling, sparse_reshape_rank_change)
         {
             gert::TilingContextPara::TensorDescription({{10, 3}, {10, 3}}, ge::DT_INT64, ge::FORMAT_ND),
             gert::TilingContextPara::TensorDescription({{3}, {3}}, ge::DT_INT64, ge::FORMAT_ND, true, (void*)shapeData),
-            gert::TilingContextPara::TensorDescription({{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, (void*)newShapeData),
+            gert::TilingContextPara::TensorDescription({{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true,
+                                                       (void*)newShapeData),
         },
         {
             gert::TilingContextPara::TensorDescription({{10, 2}, {10, 2}}, ge::DT_INT64, ge::FORMAT_ND),
