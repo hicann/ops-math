@@ -38,7 +38,7 @@
   \right.
   $$
 
-- 计算公式（复数情况，其中real和下面各分别表示取实部和虚部）：
+- 计算公式（复数情况，其中real和imag下面各分别表示取实部和虚部）：
 
   $$
   resultput_i = \alpha \cdot cos(\theta_i) + \beta \cdot sin(\theta_i) \\
@@ -52,13 +52,13 @@
   \\
   \beta = \left\{
   \begin{aligned}
-  1,\quad image(input_i) > 0 \\
-  0,\quad image(input_i) = 0 \\
-  -1,\quad image(input_i) < 0 \\
+  1,\quad imag(input_i) > 0 \\
+  0,\quad imag(input_i) = 0 \\
+  -1,\quad imag(input_i) < 0 \\
   \end{aligned}
   \right.
   \\
-  \theta_i = arctan(\frac{image(input_i)}{real(input_i)})
+  \theta_i = arctan(\frac{imag(input_i)}{real(input_i)})
   $$
 
 ## 参数说明
@@ -83,17 +83,20 @@
       <td>x</td>
       <td>输入</td>
       <td>待进行sign计算的入参，公式中的input_i。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT64</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT64、DOUBLE、INT8、INT16、UINT8、UINT16、UINT32、UINT64、COMPLEX64、COMPLEX128、BOOL</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
       <td>进行sign计算的出参，公式中的resultput_i。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT64</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT64、DOUBLE、INT8、INT16、UINT8、UINT16、UINT32、UINT64、COMPLEX64、COMPLEX128、BOOL</td>
       <td>ND</td>
     </tr>
   </tbody></table>
+
+- INT8、INT16、UINT8、UINT16、UINT32、UINT64类型，只有geir调用支持。
+- BOOL、DOUBLE、COMPLEX64、COMPLEX128类型，只有aclnn调用支持。
 
 ## 约束说明
 
