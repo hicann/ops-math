@@ -35,6 +35,8 @@ namespace ge {
  * @par Restrictions:
  * Warning: THIS FUNCTION IS EXPERIMENTAL.  Please do not use.
  */
+#ifndef OPS_PROTO_DEF_INPLACETOPKDISTANCE
+#define OPS_PROTO_DEF_INPLACETOPKDISTANCE
 REG_OP(InplaceTopKDistance)
     .INPUT(topk_pq_distance, TensorType({DT_FLOAT16, DT_FLOAT}))
     .INPUT(topk_pq_index, TensorType({DT_INT32}))
@@ -44,6 +46,7 @@ REG_OP(InplaceTopKDistance)
     .INPUT(pq_ivf, TensorType({DT_INT32}))
     .ATTR(order, String, "asc")
     .OP_END_FACTORY_REG(InplaceTopKDistance)
+#endif
 } // namespace ge
 
 #endif

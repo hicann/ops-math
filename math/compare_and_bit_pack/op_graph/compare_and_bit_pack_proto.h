@@ -31,12 +31,14 @@ namespace ge {
  *@par Third-party framework compatibility
  *Compatible with tensorflow CompareAndBitpack operator.
  */
-
+#ifndef OPS_PROTO_DEF_COMPAREANDBITPACK
+#define OPS_PROTO_DEF_COMPAREANDBITPACK
 REG_OP(CompareAndBitpack)
     .INPUT(x, TensorType({DT_FLOAT, DT_FLOAT16, DT_DOUBLE, DT_INT8, DT_INT16, DT_INT32, DT_INT64, DT_BOOL}))
     .INPUT(threshold, TensorType({DT_FLOAT, DT_FLOAT16, DT_DOUBLE, DT_INT8, DT_INT16, DT_INT32, DT_INT64, DT_BOOL}))
     .OUTPUT(y, TensorType(DT_UINT8))
     .OP_END_FACTORY_REG(CompareAndBitpack)
+#endif
 } // namespace ge
 
 #endif

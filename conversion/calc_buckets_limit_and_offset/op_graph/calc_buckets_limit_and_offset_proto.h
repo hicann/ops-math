@@ -29,6 +29,8 @@ namespace ge {
 * @li buckets_limit: A 1-D tensor of type int32 with the sum <= total_limit. \n
 * @li buckets_offset: A 1-D tensor of type int32 or int64 with the value of ivf_offset corresponding to bucket_list. \n
 */
+#ifndef OPS_PROTO_DEF_CALCBUCKETSLIMITANDOFFSET
+#define OPS_PROTO_DEF_CALCBUCKETSLIMITANDOFFSET
 REG_OP(CalcBucketsLimitAndOffset)
     .INPUT(bucket_list, TensorType({DT_INT32}))
     .INPUT(ivf_counts, TensorType({DT_INT32}))
@@ -37,6 +39,7 @@ REG_OP(CalcBucketsLimitAndOffset)
     .OUTPUT(buckets_offset, TensorType({DT_INT32, DT_INT64}))
     .REQUIRED_ATTR(total_limit, Int)
     .OP_END_FACTORY_REG(CalcBucketsLimitAndOffset)
+#endif
 } // namespace ge
 
 #endif

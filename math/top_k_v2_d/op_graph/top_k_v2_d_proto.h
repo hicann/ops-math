@@ -29,6 +29,8 @@ namespace ge {
  *@li values: A Tensor of same type as x, containing the k largest/smallest values.
  *@li indices: A Tensor of type int32, containing the indices of the k largest/smallest values.
  */
+#ifndef OPS_PROTO_DEF_TOPKV2D
+#define OPS_PROTO_DEF_TOPKV2D
 REG_OP(TopKV2D)
     .INPUT(x, TensorType::RealNumberType())
     .INPUT(k, TensorType({DT_INT32}))
@@ -39,6 +41,7 @@ REG_OP(TopKV2D)
     .ATTR(dim, Int, -1)
     .ATTR(largest, Bool, true)
     .OP_END_FACTORY_REG(TopKV2D)
+#endif
 } // namespace ge
 
 #endif // TOP_K_V2_D_PROTO_H_

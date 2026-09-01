@@ -34,6 +34,8 @@ namespace ge {
  * @par Restrictions:
  * Warning: THIS FUNCTION IS EXPERIMENTAL.  Please do not use.
  */
+#ifndef OPS_PROTO_DEF_TOPKPQDISTANCE
+#define OPS_PROTO_DEF_TOPKPQDISTANCE
 REG_OP(TopKPQDistance)
     .DYNAMIC_INPUT(actual_count, TensorType({DT_INT32}))
     .DYNAMIC_INPUT(pq_distance, TensorType({DT_FLOAT16, DT_FLOAT}))
@@ -47,6 +49,7 @@ REG_OP(TopKPQDistance)
     .REQUIRED_ATTR(k, Int)
     .REQUIRED_ATTR(group_size, Int)
     .OP_END_FACTORY_REG(TopKPQDistance)
+#endif
 } // namespace ge
 
 #endif // OPS_OP_PROTO_TOP_K_PQ_DISTANCE_H_

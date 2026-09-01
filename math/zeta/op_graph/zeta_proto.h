@@ -31,11 +31,14 @@ namespace ge {
  *@par Third-party framework compatibility.
  *Compatible with tensorflow Zeta operator.
  */
+#ifndef OPS_PROTO_DEF_ZETA
+#define OPS_PROTO_DEF_ZETA
 REG_OP(Zeta)
     .INPUT(x, TensorType({DT_DOUBLE, DT_FLOAT}))
     .INPUT(q, TensorType({DT_DOUBLE, DT_FLOAT}))
     .OUTPUT(z, TensorType({DT_DOUBLE, DT_FLOAT}))
     .OP_END_FACTORY_REG(Zeta)
+#endif
 } // namespace ge
 
 #endif // ZETA_PROTO_H_

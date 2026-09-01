@@ -32,12 +32,14 @@ use for lu decomposition
 *@par Outputs:
 *y: A Tensor of type int32.
 */
+#ifndef OPS_PROTO_DEF_CASECONDITION
+#define OPS_PROTO_DEF_CASECONDITION
 REG_OP(CaseCondition)
     .INPUT(x, TensorType({DT_INT32, DT_INT64, DT_UINT64}))
     .OUTPUT(y, TensorType({DT_INT32}))
     .ATTR(algorithm, String, "LU")
     .OP_END_FACTORY_REG(CaseCondition)
-
+#endif
 } // namespace ge
 
 #endif // OPS_MATH_CASE_CONDITION_PROTO_H_

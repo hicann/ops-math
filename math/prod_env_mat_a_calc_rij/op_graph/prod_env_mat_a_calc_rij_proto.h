@@ -46,6 +46,8 @@ namespace ge {
  * @par Restrictions:
  * Warning: THIS FUNCTION IS EXPERIMENTAL. Please do not use.
  */
+#ifndef OPS_PROTO_DEF_PRODENVMATACALCRIJ
+#define OPS_PROTO_DEF_PRODENVMATACALCRIJ
 REG_OP(ProdEnvMatACalcRij)
     .INPUT(coord, TensorType({DT_FLOAT, DT_DOUBLE}))
     .INPUT(type, TensorType({DT_INT32}))
@@ -64,6 +66,7 @@ REG_OP(ProdEnvMatACalcRij)
     .ATTR(sel_a, ListInt, {})
     .ATTR(sel_r, ListInt, {})
     .OP_END_FACTORY_REG(ProdEnvMatACalcRij)
+#endif
 } // namespace ge
 
 #endif

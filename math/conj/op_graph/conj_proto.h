@@ -31,9 +31,12 @@ namespace ge {
  *@par Third-party framework compatibility.
  *Compatible with tensorflow output operator.
  */
+#ifndef OPS_PROTO_DEF_CONJ
+#define OPS_PROTO_DEF_CONJ
 REG_OP(Conj)
     .INPUT(input, TensorType({DT_COMPLEX64, DT_COMPLEX128}))
     .OUTPUT(output, TensorType({DT_COMPLEX64, DT_COMPLEX128}))
     .OP_END_FACTORY_REG(Conj)
+#endif
 } // namespace ge
 #endif

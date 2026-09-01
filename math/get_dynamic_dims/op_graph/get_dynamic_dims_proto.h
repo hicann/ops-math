@@ -32,11 +32,14 @@ namespace ge {
 *@par Outputs:
 *dims: GE unknown dims, a vector of int32 or int64. \n
 */
+#ifndef OPS_PROTO_DEF_GETDYNAMICDIMS
+#define OPS_PROTO_DEF_GETDYNAMICDIMS
 REG_OP(GetDynamicDims)
     .DYNAMIC_INPUT(input, TensorType({DT_INT32, DT_INT64}))
     .OUTPUT(dims, TensorType({DT_INT32, DT_INT64}))
     .REQUIRED_ATTR(shape_info, ListInt)
     .REQUIRED_ATTR(N, Int)
     .OP_END_FACTORY_REG(GetDynamicDims)
+#endif
 } // namespace ge
 #endif // GET_DYNAMIC_DIMS_PROTO_H_

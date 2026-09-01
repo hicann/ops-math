@@ -38,6 +38,8 @@ namespace ge {
  * @li group_size: Int, the group size of the extremum, required.
  *
  */
+#ifndef OPS_PROTO_DEF_TOPKPQDISTANCEV2
+#define OPS_PROTO_DEF_TOPKPQDISTANCEV2
 REG_OP(TopKPQDistanceV2)
     .INPUT(pq_distance, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT32}))
     .INPUT(grouped_extreme_distance, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT32}))
@@ -47,6 +49,7 @@ REG_OP(TopKPQDistanceV2)
     .REQUIRED_ATTR(k, Int)
     .REQUIRED_ATTR(group_size, Int)
     .OP_END_FACTORY_REG(TopKPQDistanceV2)
+#endif
 } // namespace ge
 
 #endif

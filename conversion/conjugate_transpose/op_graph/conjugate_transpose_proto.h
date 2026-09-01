@@ -34,10 +34,13 @@ complex128,
 * @par Third-party framework compatibility.
 * Compatible with tensorflow ConjugateTranspose operator.
 */
+#ifndef OPS_PROTO_DEF_CONJUGATETRANSPOSE
+#define OPS_PROTO_DEF_CONJUGATETRANSPOSE
 REG_OP(ConjugateTranspose)
     .INPUT(x, TensorType::BasicType())
     .INPUT(perm, TensorType::IndexNumberType())
     .OUTPUT(y, TensorType::BasicType())
     .OP_END_FACTORY_REG(ConjugateTranspose)
+#endif
 } // namespace ge
 #endif
