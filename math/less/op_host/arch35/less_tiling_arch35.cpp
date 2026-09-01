@@ -24,15 +24,9 @@ namespace optiling {
 
 constexpr static uint64_t LESS_COMMON_TILING_PRIORITY = 0;
 
-ge::graphStatus LessTiling::GetShapeAttrsInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus LessTiling::GetShapeAttrsInfo() { return ge::GRAPH_SUCCESS; }
 
-bool LessTiling::IsCapable()
-{
-    return true;
-}
+bool LessTiling::IsCapable() { return true; }
 
 ge::graphStatus LessTiling::DoOpTiling()
 {
@@ -46,8 +40,8 @@ ge::graphStatus LessTiling::DoOpTiling()
     if (input0DType != input1DType) {
         std::string dtypesStr = ge::TypeUtils::DataTypeToSerialString(input0DType) + " and " +
                                 ge::TypeUtils::DataTypeToSerialString(input1DType);
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1 and x2",
-            dtypesStr.c_str(), "The dtypes of x1 and x2 must be the same");
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1 and x2", dtypesStr.c_str(),
+                                               "The dtypes of x1 and x2 must be the same");
         return ge::GRAPH_FAILED;
     }
 
@@ -87,41 +81,26 @@ ge::graphStatus LessTiling::DoOpTiling()
     } else {
         std::string dtypeStr = ge::TypeUtils::DataTypeToSerialString(input0DType);
         OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1", dtypeStr.c_str(),
-            "uint64, int64, int32, float16, bf16, float, uint8, int8, bool or double");
+                                  "uint64, int64, int32, float16, bf16, float, uint8, int8, bool or double");
         return ge::GRAPH_FAILED;
     }
 
     return ret;
 }
 
-ge::graphStatus LessTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus LessTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t LessTiling::GetTilingKey() const
-{
-    return tilingKey;
-}
+uint64_t LessTiling::GetTilingKey() const { return tilingKey; }
 
-ge::graphStatus LessTiling::GetWorkspaceSize()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus LessTiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus LessTiling::PostTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus LessTiling::PostTiling() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus LessTiling::GetPlatformInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus LessTiling::GetPlatformInfo() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus TilingForLess(gert::TilingContext* context)
 {
-    OP_LOGD("LessTiling", "Enter TilingForLess");
+    OP_LOGD("TilingForLess", "Enter TilingForLess");
     if (context == nullptr) {
         OP_LOGE("TilingForLess", "Tiling context is nullptr");
         return ge::GRAPH_FAILED;

@@ -21,7 +21,7 @@ namespace ops {
 
 static ge::graphStatus InferShape4LessEqual(gert::InferShapeContext* context)
 {
-    OP_LOGI("Begin InferShape4Less");
+    OP_LOGI("Begin InferShape4LessEqual");
     return Ops::Base::InferShape4Broadcast(context);
 }
 

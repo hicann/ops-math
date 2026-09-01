@@ -99,9 +99,9 @@ static inline bool CheckPromoteType(const aclScalar* element, const aclTensor* t
     // 检查element和testElements能否做数据类型推导
     auto promoteType = PromoteTypeScalar(element, testElements);
     if (promoteType == DataType::DT_UNDEFINED) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Expected element %s and testElements %s can promote dtype but check failed.",
-            op::ToString(element->GetDataType()).GetString(), op::ToString(testElements->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expected element %s and testElements %s can promote dtype but check failed.",
+                op::ToString(element->GetDataType()).GetString(),
+                op::ToString(testElements->GetDataType()).GetString());
         return false;
     }
 
@@ -162,9 +162,9 @@ static const aclIntArray* GetAllDims(const aclTensor* tensor, aclOpExecutor* exe
     return executor->AllocIntArray(dims.data(), input_dim_num);
 }
 
-aclnnStatus aclnnIsInScalarTensorGetWorkspaceSize(
-    const aclScalar* element, const aclTensor* testElements, bool assumeUnique, bool invert, aclTensor* out,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnIsInScalarTensorGetWorkspaceSize(const aclScalar* element, const aclTensor* testElements,
+                                                  bool assumeUnique, bool invert, aclTensor* out,
+                                                  uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnIsInScalarTensor, DFX_IN(element, testElements, assumeUnique, invert), DFX_OUT(out));
     // 固定写法，创建OpExecutor
@@ -188,7 +188,7 @@ aclnnStatus aclnnIsInScalarTensorGetWorkspaceSize(
     }
 
     if (testElements->GetStorageFormat() != Format::FORMAT_ND) {
-        OP_LOGW("Format only support ND");
+        OP_LOGW("Format only supports ND");
     }
     // testElement如果非连续，需要转连续
     auto testElementsContiguous = l0op::Contiguous(testElements, uniqueExecutor.get());
