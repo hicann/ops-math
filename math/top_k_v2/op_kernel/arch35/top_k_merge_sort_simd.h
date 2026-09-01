@@ -16,10 +16,11 @@
 #include "kernel_operator.h"
 #include "top_k_util_type_simd.h"
 #include "top_k_constant_var_simd.h"
+#include "top_k_small_size_bitonic_sort.h"
 
 using namespace AscendC;
 namespace topkV2 {
-template <typename T, typename CONVERT_TYPE, bool IS_DESCEND>
+template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, bool IS_BITONIC_SORT = false>
 struct KernelVbsMergeSort {
 public:
     __aicore__ inline KernelVbsMergeSort() {}
@@ -27,10 +28,10 @@ public:
                                                uint32_t mergSortAcApiNeedBufferSize);
     __aicore__ inline void VbsMergeSort(LocalTensor<T> xLocal, LocalTensor<T> sortedValueLocal,
                                         LocalTensor<uint32_t> sortedValueIndexLocal, uint32_t currTileSize,
-                                        uint32_t nowCoreRealRowNum);
+                                        uint32_t nowCoreRealRowNum, uint32_t outputK);
     __aicore__ inline void VbsMergeSortBf16(LocalTensor<bfloat16_t> xLocal, LocalTensor<T> sortedValueLocal,
                                             LocalTensor<uint32_t> sortedValueIndexLocal, uint32_t currTileSize,
-                                            uint32_t nowCoreRealRowNum);
+                                            uint32_t nowCoreRealRowNum, uint32_t outputK);
     __aicore__ inline void flipSignBit(LocalTensor<CONVERT_TYPE> xLocal, uint32_t offsetOneRow, uint32_t aglinTileSize);
     __aicore__ inline void SetPipe(TPipe* pipe) { Ppipe = pipe; }
 
@@ -46,8 +47,8 @@ public:
     LocalTensor<uint32_t> indexLocal_;
 };
 
-template <typename T, typename CONVERT_TYPE, bool IS_DESCEND>
-__aicore__ inline void KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND>::MergeSortInitBuffer(
+template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, bool IS_BITONIC_SORT>
+__aicore__ inline void KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND, IS_BITONIC_SORT>::MergeSortInitBuffer(
     uint32_t currTileSize, uint32_t oneCoreRowNum, uint32_t mergSortAcApiNeedBufferSize)
 {
     uint32_t aglinTileSize = ((currTileSize + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE) * UB_AGLIN_VALUE;
@@ -78,10 +79,10 @@ __aicore__ inline void KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND>::MergeSor
     }
 }
 
-template <typename T, typename CONVERT_TYPE, bool IS_DESCEND>
-__aicore__ inline void KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND>::VbsMergeSort(
+template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, bool IS_BITONIC_SORT>
+__aicore__ inline void KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND, IS_BITONIC_SORT>::VbsMergeSort(
     LocalTensor<T> xLocal, LocalTensor<T> sortedValueLocal, LocalTensor<uint32_t> sortedValueIndexLocal,
-    uint32_t currTileSize, uint32_t nowCoreRealRowNum)
+    uint32_t currTileSize, uint32_t nowCoreRealRowNum, uint32_t outputK)
 {
     uint32_t aglinTileSize = ((currTileSize + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE) * UB_AGLIN_VALUE;
     uint32_t sortRepeatTimes = (aglinTileSize + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE;
@@ -106,13 +107,18 @@ __aicore__ inline void KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND>::VbsMerge
         if constexpr (!IS_DESCEND) {
             flipSignBit(sortedValueLocal, offsetOneRow, aglinTileSize);
         }
+        if constexpr (IS_BITONIC_SORT) {
+            RunBitonicSmallTopKFinalize<T, uint32_t, IS_DESCEND>(sortedValueLocal[offsetOneRow],
+                                                                 sortedValueIndexLocal[offsetOneRow], outputK, 1U,
+                                                                 aglinTileSize, aglinTileSize);
+        }
     }
 }
 
-template <typename T, typename CONVERT_TYPE, bool IS_DESCEND>
-__aicore__ inline void KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND>::VbsMergeSortBf16(
+template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, bool IS_BITONIC_SORT>
+__aicore__ inline void KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND, IS_BITONIC_SORT>::VbsMergeSortBf16(
     LocalTensor<bfloat16_t> xLocal, LocalTensor<T> sortedValueLocal, LocalTensor<uint32_t> sortedValueIndexLocal,
-    uint32_t currTileSize, uint32_t nowCoreRealRowNum)
+    uint32_t currTileSize, uint32_t nowCoreRealRowNum, uint32_t outputK)
 {
     uint32_t aglinTileSize = ((currTileSize + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE) * UB_AGLIN_VALUE;
     uint32_t sortRepeatTimes = (aglinTileSize + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE;
@@ -141,12 +147,16 @@ __aicore__ inline void KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND>::VbsMerge
     }
     AscendC::Cast(sortedValueLocal, sortedValueLocalCast, AscendC::RoundMode::CAST_RINT,
                   aglinTileSize * nowCoreRealRowNum);
+    if constexpr (IS_BITONIC_SORT) {
+        RunBitonicSmallTopKFinalize<T, uint32_t, IS_DESCEND>(sortedValueLocal, sortedValueIndexLocal, outputK,
+                                                             static_cast<uint32_t>(nowCoreRealRowNum), aglinTileSize,
+                                                             aglinTileSize);
+    }
 }
 
-template <typename T, typename CONVERT_TYPE, bool IS_DESCEND>
-__aicore__ inline void KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND>::flipSignBit(LocalTensor<CONVERT_TYPE> xLocal,
-                                                                                    uint32_t offsetOneRow,
-                                                                                    uint32_t aglinTileSize)
+template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, bool IS_BITONIC_SORT>
+__aicore__ inline void KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND, IS_BITONIC_SORT>::flipSignBit(
+    LocalTensor<CONVERT_TYPE> xLocal, uint32_t offsetOneRow, uint32_t aglinTileSize)
 {
     if constexpr (is_same<float, CONVERT_TYPE>::value) {
         AscendC::LocalTensor<int32_t> castTensor = xLocal[offsetOneRow].template ReinterpretCast<int32_t>();

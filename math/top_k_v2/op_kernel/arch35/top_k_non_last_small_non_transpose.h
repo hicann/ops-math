@@ -11,12 +11,12 @@
 /**
  * @file top_k_non_last_small_non_transpose.h
  * @brief TopK算子实现 - 非尾轴且轴长度较小的场景（无需转置输入张量）
- * 
+ *
  * @details 该文件实现TopK算子的一种优化版本，专门针对以下场景：
  *          1. TopK操作的目标轴不是最后一维（dim < ndim-1）
  *          2. 目标轴长度较小（可完整放入UB，无需分块）
  *          3. 通过局部转置技术，避免对整个输入张量进行全局转置
- * 
+ *
  * @section design_design 设计思路
  * - **数据布局转换**：
  *   输入：[outer][inner][axis]，其中axis是TopK目标轴
@@ -30,13 +30,13 @@
  * - **算法选择**：
  *   - UseMergeSort=false：使用TopK API（RADIX_SELECT算法）
  *   - UseMergeSort=true：使用Sort API（MERGE_SORT算法），适合bfloat16
- * 
+ *
  * @section type_strategy 类型策略
  * - **SortT**：bfloat16+MergeSort时转为float提高精度，其他保持原类型
  * - **RangeType**：根据输入类型大小自动选择int16或int32
  * - **IdxType**：根据输入类型大小自动选择uint16或uint32
  * - **CastType**：uint8转uint16，int8转int16，其他保持原类型
- * 
+ *
  * @section inheritance 继承关系
  * - 继承自SmallAxisCommon::NonLastSmallAxisBase基类
  * - 复用基类的通用逻辑：数据加载、局部转置、内存管理等
@@ -53,6 +53,7 @@
 #include "op_kernel/platform_util.h"
 #include "simt_api/asc_simt.h"
 #include "../../sort/arch35/common/non_last_small_axis_base.h"
+#include "top_k_small_size_bitonic_sort.h"
 #include "top_k_util_type_simd.h"
 
 namespace topkV2 {
@@ -61,10 +62,12 @@ using namespace AscendC;
 constexpr uint32_t TOPK_NON_LAST_DIM_TRANSPOSE_THREAD_NUM = 1024;
 
 template <typename T, typename SortT, typename OutIdxT>
-__simt_vf__ LAUNCH_BOUND(TOPK_NON_LAST_DIM_TRANSPOSE_THREAD_NUM) __aicore__ void StoreTopKNonTransPoseLastOutput(
-    uint32_t kValue, uint32_t curInnerChunk, uint32_t threadNum, uint32_t valueRowElems, uint32_t indexRowElems,
-    uint64_t baseOffset, uint64_t innerStart, uint64_t innerSize, __ubuf__ SortT* topkValue,
-    __ubuf__ uint32_t* topkIndex, __gm__ volatile T* outputValue, __gm__ volatile OutIdxT* outputIndex)
+__simt_vf__ LAUNCH_BOUND(TOPK_NON_LAST_DIM_TRANSPOSE_THREAD_NUM) __aicore__
+    void StoreTopKNonTransPoseLastOutput(uint32_t kValue, uint32_t curInnerChunk, uint32_t threadNum,
+                                         uint32_t valueRowElems, uint32_t indexRowElems, uint64_t baseOffset,
+                                         uint64_t innerStart, uint64_t innerSize, __ubuf__ SortT* topkValue,
+                                         __ubuf__ uint32_t* topkIndex, __gm__ volatile T* outputValue,
+                                         __gm__ volatile OutIdxT* outputIndex)
 {
     uint32_t total = kValue * curInnerChunk;
     for (uint32_t idx = static_cast<uint32_t>(threadIdx.x); idx < total; idx += threadNum) {
@@ -76,17 +79,17 @@ __simt_vf__ LAUNCH_BOUND(TOPK_NON_LAST_DIM_TRANSPOSE_THREAD_NUM) __aicore__ void
     }
 }
 
-template <typename T, typename OutIdxT, bool IsLargest, bool IsSorted, bool UseMergeSort>
+template <typename T, typename OutIdxT, bool IsLargest, bool IsSorted, bool UseMergeSort, bool IS_BITONIC_SORT = false>
 class TopKNonLastSmallAxisNonTranspose
     : public SmallAxisCommon::NonLastSmallAxisBase<
-          TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, IsSorted, UseMergeSort>, T,
+          TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, IsSorted, UseMergeSort, IS_BITONIC_SORT>, T,
           std::conditional_t<UseMergeSort && std::is_same_v<T, bfloat16_t>, float, T>,
           std::conditional_t<sizeof(T) <= sizeof(int16_t), int16_t, int32_t>,
           std::conditional_t<sizeof(T) <= sizeof(int16_t), uint16_t, uint32_t>,
           std::conditional_t<sizeof(T) == 1, std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>,
           IsLargest, UseMergeSort, UseMergeSort && std::is_same_v<T, bfloat16_t>> {
     using Base = SmallAxisCommon::NonLastSmallAxisBase<
-        TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, IsSorted, UseMergeSort>, T,
+        TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, IsSorted, UseMergeSort, IS_BITONIC_SORT>, T,
         std::conditional_t<UseMergeSort && std::is_same_v<T, bfloat16_t>, float, T>,
         std::conditional_t<sizeof(T) <= sizeof(int16_t), int16_t, int32_t>,
         std::conditional_t<sizeof(T) <= sizeof(int16_t), uint16_t, uint32_t>,
@@ -95,16 +98,16 @@ class TopKNonLastSmallAxisNonTranspose
 
 public:
     __aicore__ inline TopKNonLastSmallAxisNonTranspose() {}
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR values, GM_ADDR indices, const TopKV2TilingDataSimd* tilingData, TPipe* pipe);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR values, GM_ADDR indices, const TopKV2TilingDataSimd* tilingData,
+                                TPipe* pipe);
     __aicore__ inline void Process();
 
 private:
     using SortT = std::conditional_t<UseMergeSort && std::is_same_v<T, bfloat16_t>, float, T>;
     using RangeType = std::conditional_t<sizeof(T) <= sizeof(int16_t), int16_t, int32_t>;
     using IdxType = std::conditional_t<sizeof(T) <= sizeof(int16_t), uint16_t, uint32_t>;
-    using CastType = 
-        std::conditional_t<sizeof(T) == 1, std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
+    using CastType = std::conditional_t<sizeof(T) == 1,
+                                        std::conditional_t<std::is_same_v<T, uint8_t>, uint16_t, int16_t>, T>;
     static constexpr bool IsBf16Merge = UseMergeSort && std::is_same_v<T, bfloat16_t>;
 
     __aicore__ inline uint32_t GetCurrentInnerChunk(uint32_t innerTileId) const;
@@ -116,12 +119,12 @@ private:
 
     GlobalTensor<T> outputValueGm_;       // 输出值Global Tensor
     GlobalTensor<OutIdxT> outputIndexGm_; // 输出索引Global Tensor
-    
-    TBuf<TPosition::VECCALC> topkValueBuf_;  // TopK值输出的UB Buffer
-    TBuf<TPosition::VECCALC> topkIndexBuf_;  // TopK索引输出的UB Buffer
 
-    LocalTensor<SortT> topkValue_;    // TopK值输出Local Tensor，存储排序后的值
-    LocalTensor<uint32_t> topkIndex_; // TopK索引输出Local Tensor，存储排序后的索引
+    TBuf<TPosition::VECCALC> topkValueBuf_; // TopK值输出的UB Buffer
+    TBuf<TPosition::VECCALC> topkIndexBuf_; // TopK索引输出的UB Buffer
+
+    LocalTensor<SortT> topkValue_;       // TopK值输出Local Tensor，存储排序后的值
+    LocalTensor<uint32_t> topkIndex_;    // TopK索引输出Local Tensor，存储排序后的索引
     LocalTensor<int32_t> srcIndexLocal_; // 源索引Local Tensor，用于TopK API
 
     uint32_t kValue_ = 0;            // TopK的k值，即要选取的最大/最小元素个数
@@ -135,8 +138,9 @@ private:
     uint32_t inputCastRowElems_ = 0; // MergeSort场景下，bfloat16转float后的每行元素个数
 };
 
-template <typename T, typename OutIdxT, bool IsLargest, bool IsSorted, bool UseMergeSort>
-__aicore__ inline void TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, IsSorted, UseMergeSort>::Init(
+template <typename T, typename OutIdxT, bool IsLargest, bool IsSorted, bool UseMergeSort, bool IS_BITONIC_SORT>
+__aicore__ inline void
+TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, IsSorted, UseMergeSort, IS_BITONIC_SORT>::Init(
     GM_ADDR x, GM_ADDR values, GM_ADDR indices, const TopKV2TilingDataSimd* tilingData, TPipe* pipe)
 {
     if (tilingData == nullptr || pipe == nullptr) {
@@ -145,19 +149,19 @@ __aicore__ inline void TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, I
     this->pipe_ = pipe;
     this->blockIdx_ = GetBlockIdx();
     this->blockDim_ = GetBlockNum();
-    
+
     // 从TilingData解析核心参数
-    this->axisLen_ = static_cast<uint32_t>(tilingData->lastAxisNum);   // TopK操作的目标轴长度
-    kValue_ = static_cast<uint32_t>(tilingData->topKRealValue);        // TopK的k值
-    this->outerSize_ = tilingData->oneCoreRowNum;                      // 每个核处理的outer维度数据量
-    this->innerSize_ = tilingData->unsortedDimNum;                     // inner维度的总大小
-    this->innerChunk_ = tilingData->keyParams1;                        // inner维度的分块大小
-    this->innerLoopNum_ = tilingData->keyParams2;                      // inner维度的分块循环次数
+    this->axisLen_ = static_cast<uint32_t>(tilingData->lastAxisNum); // TopK操作的目标轴长度
+    kValue_ = static_cast<uint32_t>(tilingData->topKRealValue);      // TopK的k值
+    this->outerSize_ = tilingData->oneCoreRowNum;                    // 每个核处理的outer维度数据量
+    this->innerSize_ = tilingData->unsortedDimNum;                   // inner维度的总大小
+    this->innerChunk_ = tilingData->keyParams1;                      // inner维度的分块大小
+    this->innerLoopNum_ = tilingData->keyParams2;                    // inner维度的分块循环次数
 
     // 解析内存布局相关参数
     this->inputRowBytes_ = tilingData->keyParams3; // 转置前：基于innerChunk列、axisLen行的原始每行输入字节数
-    axisRowBytes_ = tilingData->keyParams4;        // 转置后：基于innerChunk行、axisLen列的每行输入字节数（TopK API的输入）
-    valueRowBytes_ = tilingData->keyParams5;       // TopK值输出的每行字节数
+    axisRowBytes_ = tilingData->keyParams4; // 转置后：基于innerChunk行、axisLen列的每行输入字节数（TopK API的输入）
+    valueRowBytes_ = tilingData->keyParams5; // TopK值输出的每行字节数
     this->sortCount_ = tilingData->numTileDataSize;
     uint32_t indexCount = UseMergeSort ? this->sortCount_ : kValue_;
     indexRowBytes_ = ROUND_UP_AGLIN(indexCount * sizeof(uint32_t)); // topk输出索引的字节数
@@ -206,17 +210,18 @@ __aicore__ inline void TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, I
     this->inputValueAxisElems_ = inputCastRowElems_;
 }
 
-template <typename T, typename OutIdxT, bool IsLargest, bool IsSorted, bool UseMergeSort>
+template <typename T, typename OutIdxT, bool IsLargest, bool IsSorted, bool UseMergeSort, bool IS_BITONIC_SORT>
 __aicore__ inline uint32_t
-TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, IsSorted, UseMergeSort>::GetCurrentInnerChunk(
+TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, IsSorted, UseMergeSort, IS_BITONIC_SORT>::GetCurrentInnerChunk(
     uint32_t innerTileId) const
 {
     return Base::GetCurrentInnerChunk(innerTileId);
 }
 
-template <typename T, typename OutIdxT, bool IsLargest, bool IsSorted, bool UseMergeSort>
-__aicore__ inline void TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, IsSorted, UseMergeSort>::LoadTile(
-    uint64_t baseOffset, uint32_t curInnerChunk)
+template <typename T, typename OutIdxT, bool IsLargest, bool IsSorted, bool UseMergeSort, bool IS_BITONIC_SORT>
+__aicore__ inline void TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, IsSorted, UseMergeSort,
+                                                        IS_BITONIC_SORT>::LoadTile(uint64_t baseOffset,
+                                                                                   uint32_t curInnerChunk)
 {
     Base::LoadTile(static_cast<int64_t>(baseOffset), curInnerChunk);
 }
@@ -227,16 +232,16 @@ __aicore__ inline void TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, I
  *          使每行包含一个axis位置的完整inner数据，便于按行调用TopK API
  *          调用基类的TransposeToSortMajor方法完成转置
  */
-template <typename T, typename OutIdxT, bool IsLargest, bool IsSorted, bool UseMergeSort>
-__aicore__ inline void TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, IsSorted,
-                                                        UseMergeSort>::TransposeToTopKMajor(uint32_t curInnerChunk)
+template <typename T, typename OutIdxT, bool IsLargest, bool IsSorted, bool UseMergeSort, bool IS_BITONIC_SORT>
+__aicore__ inline void TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, IsSorted, UseMergeSort,
+                                                        IS_BITONIC_SORT>::TransposeToTopKMajor(uint32_t curInnerChunk)
 {
     Base::TransposeToSortMajor(curInnerChunk);
 }
 
-template <typename T, typename OutIdxT, bool IsLargest, bool IsSorted, bool UseMergeSort>
-__aicore__ inline void TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, IsSorted, UseMergeSort>::RunTopK(
-    uint32_t curInnerChunk)
+template <typename T, typename OutIdxT, bool IsLargest, bool IsSorted, bool UseMergeSort, bool IS_BITONIC_SORT>
+__aicore__ inline void TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, IsSorted, UseMergeSort,
+                                                        IS_BITONIC_SORT>::RunTopK(uint32_t curInnerChunk)
 {
     LocalTensor<bool> emptyFinishLocal;
     TopkTiling emptyTopkTiling;
@@ -251,24 +256,31 @@ __aicore__ inline void TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, I
             topkValue_[inner * valueRowElems_], topkIndexI32, this->sortInput_[inner * axisRowElems_], srcIndexLocal_,
             emptyFinishLocal, this->tmp_, static_cast<int32_t>(kValue_), emptyTopkTiling, topKInfo, IsLargest);
     }
+    RunBitonicSmallTopKFinalizeNonLast<SortT, IsLargest, IS_BITONIC_SORT>(
+        topkValue_, topkIndex_, this->sortInput_, this->axisLen_, kValue_, curInnerChunk, axisRowElems_, valueRowElems_,
+        indexRowElems_);
 }
 
-template <typename T, typename OutIdxT, bool IsLargest, bool IsSorted, bool UseMergeSort>
-__aicore__ inline void TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, IsSorted, UseMergeSort>::RunMergeSort(
-    uint32_t curInnerChunk)
+template <typename T, typename OutIdxT, bool IsLargest, bool IsSorted, bool UseMergeSort, bool IS_BITONIC_SORT>
+__aicore__ inline void TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, IsSorted, UseMergeSort,
+                                                        IS_BITONIC_SORT>::RunMergeSort(uint32_t curInnerChunk)
 {
     static constexpr SortConfig sortConfig{SortType::MERGE_SORT, IsLargest};
     for (uint32_t inner = 0; inner < curInnerChunk; ++inner) {
-        LocalTensor<SortT> dst = topkValue_[inner * valueRowElems_];          // 排序后的值输出
-        LocalTensor<uint32_t> dstIndex = topkIndex_[inner * indexRowElems_];  // 排序后的索引输出
-        LocalTensor<SortT> src = this->sortInput_[inner * axisRowElems_];     // 待排序的输入数据
+        LocalTensor<SortT> dst = topkValue_[inner * valueRowElems_];         // 排序后的值输出
+        LocalTensor<uint32_t> dstIndex = topkIndex_[inner * indexRowElems_]; // 排序后的索引输出
+        LocalTensor<SortT> src = this->sortInput_[inner * axisRowElems_];    // 待排序的输入数据
         AscendC::Sort<SortT, true, sortConfig>(dst, dstIndex, src, this->tmp_, this->sortCount_);
+        RunBitonicSmallMergeSortFinalizeNonLast<SortT, IsLargest, IS_BITONIC_SORT>(dst, dstIndex, kValue_,
+                                                                                   valueRowElems_, indexRowElems_);
     }
 }
 
-template <typename T, typename OutIdxT, bool IsLargest, bool IsSorted, bool UseMergeSort>
-__aicore__ inline void TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, IsSorted, UseMergeSort>::StoreTile(
-    uint64_t outputBaseOffset, uint64_t innerStart, uint32_t curInnerChunk)
+template <typename T, typename OutIdxT, bool IsLargest, bool IsSorted, bool UseMergeSort, bool IS_BITONIC_SORT>
+__aicore__ inline void TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, IsSorted, UseMergeSort,
+                                                        IS_BITONIC_SORT>::StoreTile(uint64_t outputBaseOffset,
+                                                                                    uint64_t innerStart,
+                                                                                    uint32_t curInnerChunk)
 {
     event_t eventId = static_cast<event_t>(this->pipe_->FetchEventID(HardEvent::V_S));
     SetFlag<HardEvent::V_S>(eventId);
@@ -283,8 +295,9 @@ __aicore__ inline void TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, I
     WaitFlag<HardEvent::V_S>(eventIdVToS);
 }
 
-template <typename T, typename OutIdxT, bool IsLargest, bool IsSorted, bool UseMergeSort>
-__aicore__ inline void TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, IsSorted, UseMergeSort>::Process()
+template <typename T, typename OutIdxT, bool IsLargest, bool IsSorted, bool UseMergeSort, bool IS_BITONIC_SORT>
+__aicore__ inline void
+TopKNonLastSmallAxisNonTranspose<T, OutIdxT, IsLargest, IsSorted, UseMergeSort, IS_BITONIC_SORT>::Process()
 {
     if (this->blockIdx_ >= this->blockDim_ || this->axisLen_ == 0 || kValue_ == 0 || this->innerChunk_ == 0 ||
         this->innerLoopNum_ == 0) {

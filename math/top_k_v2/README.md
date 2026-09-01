@@ -95,6 +95,13 @@
       <td>Int</td>
       <td>-</td>
     </tr>
+    <tr>
+      <td>sort_policy</td>
+      <td>属性</td>
+      <td>可选整型，默认为0。表示TopK候选结果的排序策略。0表示使用原有排序行为，1表示在sorted=True且小k值（2≤k≤32）场景下启用Bitonic Small TopK路径。</td>
+      <td>Int</td>
+      <td>-</td>
+    </tr>
   </tbody></table>
 
   - <term>Atlas 200I/500 A2 推理产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。

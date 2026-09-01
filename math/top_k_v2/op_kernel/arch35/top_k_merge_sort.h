@@ -16,10 +16,13 @@
 #include <cmath>
 #include "kernel_operator.h"
 #include "top_k_constant_var_simd.h"
+#include "top_k_small_size_bitonic_sort.h"
+#include "top_k_util_type_simd.h"
 #include "top_k_merge_sort_simd.h"
 using namespace AscendC;
 namespace topkV2 {
-template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
+template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE,
+          bool IS_BITONIC_SORT = false>
 struct MergeSort {
     __aicore__ inline MergeSort() {}
     __aicore__ inline void Init(GM_ADDR inputValue, GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace,
@@ -60,11 +63,12 @@ public:
     uint32_t outputLastDimValue_ = 0;
     uint32_t bufferNum_ = DOUBLE_BUFFER;
     // merge sort kernel
-    topkV2::KernelVbsMergeSort<T, CONVERT_TYPE, IS_LARGEST> vbsSort;
+    topkV2::KernelVbsMergeSort<T, CONVERT_TYPE, IS_LARGEST, IS_BITONIC_SORT> vbsSort;
 };
 
-template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
-__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE>::Init(
+template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE,
+          bool IS_BITONIC_SORT>
+__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE, IS_BITONIC_SORT>::Init(
     GM_ADDR inputValue, GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace, const TILING_DATA_TYPE* tilingData,
     TPipe* pipe)
 {
@@ -74,9 +78,10 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
     InitVbs(pipe);
 }
 
-template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
-__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE>::InitTilingData(
-    const TILING_DATA_TYPE* tilingData)
+template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE,
+          bool IS_BITONIC_SORT>
+__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE,
+                                 IS_BITONIC_SORT>::InitTilingData(const TILING_DATA_TYPE* tilingData)
 {
     // 尾轴size 512
     outputLastDimValue_ = tilingData->outputLastDimValue;
@@ -90,9 +95,11 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
     mergSortAcApiNeedBufferSize_ = tilingData->mergSortAcApiNeedBufferSize;
 }
 
-template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
-__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE>::InitBuffers(
-    GM_ADDR inputValue, GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace, TPipe* pipe)
+template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE,
+          bool IS_BITONIC_SORT>
+__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE,
+                                 IS_BITONIC_SORT>::InitBuffers(GM_ADDR inputValue, GM_ADDR value, GM_ADDR indices,
+                                                               GM_ADDR workSpace, TPipe* pipe)
 {
     inputValueGm_.SetGlobalBuffer((__gm__ T*)(inputValue));
     outValueGm_.SetGlobalBuffer((__gm__ T*)(value));
@@ -105,16 +112,20 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
     pipe->InitBuffer(outIndexQueue_, bufferNum_, ROUND_UP_AGLIN(realNum * sizeof(INDEX_TYPE)));
 }
 
-template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
-__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE>::InitVbs(TPipe* pipe)
+template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE,
+          bool IS_BITONIC_SORT>
+__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE, IS_BITONIC_SORT>::InitVbs(
+    TPipe* pipe)
 {
     // vbs init
     vbsSort.SetPipe(pipe);
     vbsSort.MergeSortInitBuffer(numTileData_, oneCoreRowNum_, mergSortAcApiNeedBufferSize_);
 }
 
-template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
-__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE>::ProcessSort()
+template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE,
+          bool IS_BITONIC_SORT>
+__aicore__ inline void
+MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE, IS_BITONIC_SORT>::ProcessSort()
 {
     for (int32_t i = 0; i < sortLoopTimes_; i++) {
         sortLoopRound_ = i;
@@ -123,9 +134,10 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
     }
 }
 
-template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
-__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE>::ProcessSingleBlockSort(
-    GlobalTensor<T> inputX)
+template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE,
+          bool IS_BITONIC_SORT>
+__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE,
+                                 IS_BITONIC_SORT>::ProcessSingleBlockSort(GlobalTensor<T> inputX)
 {
     uint32_t tileId = GetBlockIdx();
     uint32_t unsortedDimIndex = (GetBlockIdx() + sortLoopRound_ * unsortedDimParallel_) * oneCoreRowNum_;
@@ -151,9 +163,11 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
     CopyDataIn(inputX, tileOffset, numTileData_, nowCoreRealRowNum);
     AscendC::LocalTensor<T> xLocal = inQueueX_.DeQue<T>();
     if constexpr (is_same<bfloat16_t, T>::value) {
-        vbsSort.VbsMergeSortBf16(xLocal, sortedValueLocal, sortedValueIndexLocal, numTileData_, nowCoreRealRowNum);
+        vbsSort.VbsMergeSortBf16(xLocal, sortedValueLocal, sortedValueIndexLocal, numTileData_, nowCoreRealRowNum,
+                                 outputLastDimValue_);
     } else {
-        vbsSort.VbsMergeSort(xLocal, sortedValueLocal, sortedValueIndexLocal, numTileData_, nowCoreRealRowNum);
+        vbsSort.VbsMergeSort(xLocal, sortedValueLocal, sortedValueIndexLocal, numTileData_, nowCoreRealRowNum,
+                             outputLastDimValue_);
     }
     // 支持int64,此时把sort后的int32_t索引改为int64_t即可，里面的计算都用offset控制，输出再cast回去int32_t和int64_t即可
     if constexpr (is_same<int64_t, INDEX_TYPE>::value) {
@@ -174,9 +188,11 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
     CopyValue2Gm(gmOffset, answerTileOffset, outputLastDimValue_, nowCoreRealRowNum);
 }
 
-template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
-__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE>::CopyDataIn(
-    GlobalTensor<T> inputX, uint64_t tileOffset, uint32_t currTileSize, uint32_t oneCoreRowNum)
+template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE,
+          bool IS_BITONIC_SORT>
+__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE,
+                                 IS_BITONIC_SORT>::CopyDataIn(GlobalTensor<T> inputX, uint64_t tileOffset,
+                                                              uint32_t currTileSize, uint32_t oneCoreRowNum)
 {
     LocalTensor<T> xLocal = inQueueX_.AllocTensor<T>();
     uint32_t aglinOneRowTileSize = ROUND_UP_AGLIN(currTileSize);
@@ -201,9 +217,11 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
     inQueueX_.EnQue(xLocal);
 }
 
-template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE>
-__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE>::CopyValue2Gm(
-    uint64_t gmOffset, uint64_t tileOffset, uint32_t outputLastDimValue, uint32_t oneCoreRowNum)
+template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE,
+          bool IS_BITONIC_SORT>
+__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE,
+                                 IS_BITONIC_SORT>::CopyValue2Gm(uint64_t gmOffset, uint64_t tileOffset,
+                                                                uint32_t outputLastDimValue, uint32_t oneCoreRowNum)
 {
     uint32_t aglinOneRowTileSize = ROUND_UP_AGLIN(numTileData_);
     // value stride

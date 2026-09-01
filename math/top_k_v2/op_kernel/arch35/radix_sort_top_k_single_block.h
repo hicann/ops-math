@@ -17,12 +17,15 @@
 
 #include "kernel_operator.h"
 #include "radix_sort_top_k_base.h"
+#include "top_k_small_size_bitonic_sort.h"
+#include "top_k_util_type_simd.h"
 
 #include <algorithm>
 
 using namespace AscendC;
 using namespace topkV2;
-template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO>
+template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO,
+          bool IS_BITONIC_SORT = false>
 struct RadixSortTopKSingleBlock : public RadixSortTopKBase<T, T_INDEX, T_INDEX_TO> {
     __aicore__ inline RadixSortTopKSingleBlock(){};
     __aicore__ inline void Init(GM_ADDR inputValue, GM_ADDR k, GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace,
@@ -45,10 +48,13 @@ private:
     uint32_t tailBatchNum_ = 0;
 };
 
-template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO>
-__aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO>::Init(
-    GM_ADDR inputValue, GM_ADDR k, GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace,
-    const TopKV2TilingDataSimd* topkV2TilingData, TPipe* tPipe)
+template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO,
+          bool IS_BITONIC_SORT>
+__aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO,
+                                                IS_BITONIC_SORT>::Init(GM_ADDR inputValue, GM_ADDR k, GM_ADDR value,
+                                                                       GM_ADDR indices, GM_ADDR workSpace,
+                                                                       const TopKV2TilingDataSimd* topkV2TilingData,
+                                                                       TPipe* tPipe)
 {
     this->BaseInit(inputValue, k, value, indices, topkV2TilingData, tPipe);
 
@@ -64,17 +70,21 @@ __aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS
     this->tPipe_->InitBuffer(this->topKApiTmpTBuf_, ROUND_UP_AGLIN(this->topKApiTmpSize_));
 }
 
-template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO>
-__aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO>::Process()
+template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO,
+          bool IS_BITONIC_SORT>
+__aicore__ inline void
+RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO, IS_BITONIC_SORT>::Process()
 {
     for (int32_t i = 0; i < this->sortLoopTimes_; i++) {
         ProcessSingleTime(i);
     }
 }
 
-template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO>
-__aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO>::CopyIn(
-    uint64_t offset, uint32_t count, uint32_t parallelBatchNum)
+template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO,
+          bool IS_BITONIC_SORT>
+__aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO,
+                                                IS_BITONIC_SORT>::CopyIn(uint64_t offset, uint32_t count,
+                                                                         uint32_t parallelBatchNum)
 {
     LocalTensor<T> xLocal = this->inputXQue_.template AllocTensor<T>();
     uint32_t countAlign = ROUND_UP_AGLIN(count);
@@ -98,9 +108,10 @@ __aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS
     this->inputXQue_.template EnQue(xLocal);
 }
 
-template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO>
-__aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS_SORT, T_INDEX,
-                                                T_INDEX_TO>::ProcessSingleTime(int32_t loopTime)
+template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO,
+          bool IS_BITONIC_SORT>
+__aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO,
+                                                IS_BITONIC_SORT>::ProcessSingleTime(int32_t loopTime)
 {
     if (this->blockIndex_ >= unsortedDimParallel_) {
         return;
@@ -156,6 +167,11 @@ __aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS
             this->srcIndexLocal, emptyFinishLocal, tmpBuffer, static_cast<int32_t>(this->k_), emptyTopkTiling, topKInfo,
             IS_LARGEST);
     }
+    if constexpr (IS_BITONIC_SORT) {
+        RunBitonicSmallTopKFinalize<T, int32_t, IS_LARGEST>(valuesLocal, indicesOutTmp, this->k_,
+                                                            static_cast<uint32_t>(parallelBatchNum), aglinValuesOffset,
+                                                            aglinIndicesOffset);
+    }
     if (needsCast) {
         AscendC::Cast(indicesLocal, indicesOutTmp, RoundMode::CAST_NONE,
                       static_cast<int32_t>(parallelBatchNum * aglinIndicesOffset));
@@ -168,9 +184,10 @@ __aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS
     this->inputXQue_.template FreeTensor(xLocal);
 }
 
-template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO>
-__aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO>::CopyOut(
-    uint64_t offset, uint32_t parallelBatchNum)
+template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO,
+          bool IS_BITONIC_SORT>
+__aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO,
+                                                IS_BITONIC_SORT>::CopyOut(uint64_t offset, uint32_t parallelBatchNum)
 {
     // copy sorted value
     AscendC::LocalTensor<T> valuesLocal = this->valuesQue_.template DeQue<T>();

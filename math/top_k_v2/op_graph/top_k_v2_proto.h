@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -27,9 +27,9 @@ namespace ge {
 * @par Inputs:
 * Two inputs, including:
 * @li x: A 1D-8D tensor, with the last dimension at least "k".
-* Supported type: float16, float32, int16, int8, uint8, int32, int64, bfloat16, uint32, uint16, uint64. 
+* Supported type: float16, float32, int16, int8, uint8, int32, int64, bfloat16, uint32, uint16, uint64.
 * Supported format: ND.
-* @li k: A 0D Tensor. Supported type: int32, int64. 
+* @li k: A 0D Tensor. Supported type: int32, int64.
 * Supported format: ND.
 * Number of top elements to look for along the last dimension (along each row
 * for matrices) . \n
@@ -42,7 +42,11 @@ namespace ge {
 * @li largest: An optional bool, controls whether to return largest or smallest elements. Defaults to true.
 * If "True", the "k" largest elements are returned in descending order.
 * If "False", the "k" smallest elements are returned in ascending order. \n
-* @li indices_dtype: An optional attribute indicates the sort result of indices' dtype, either "DT_INT32(3)" or "DT_INT64(9)". Defaults to "DT_INT32(3)". \n
+* @li indices_dtype: An optional attribute indicates the sort result of indices' dtype, either "DT_INT32(3)" or
+"DT_INT64(9)". Defaults to "DT_INT32(3)". \n
+* @li sort_policy: An optional int. Defaults to 0. Controls the sorting strategy of TopK candidates.
+* If 0, uses the original sorting behavior.
+* If 1, enables the Bitonic Small TopK path when sorted is "True" and k is in [2, 32]. \n
 
 * @par Outputs:
 * @li values: A Tensor, specifying the sorted data. Has the same type and format as
@@ -62,9 +66,9 @@ REG_OP(TopKV2)
     .ATTR(dim, Int, -1)
     .ATTR(largest, Bool, true)
     .ATTR(indices_dtype, Int, DT_INT32)
+    .ATTR(sort_policy, Int, 0)
     .OP_END_FACTORY_REG(TopKV2)
 
 } // namespace ge
 
 #endif // OPS_OP_PROTO_INC_TOP_K_V2_H_
-

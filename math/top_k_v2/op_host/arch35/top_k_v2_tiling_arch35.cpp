@@ -1171,6 +1171,9 @@ ge::graphStatus TileModeSortAndTopK(gert::TilingContext* context, TopKV2TilingDa
                                                       "The value of GetRadixSortMoreCore must be GRAPH_SUCCESS."),
                 return ge::GRAPH_FAILED);
     auto dataTypeKey = topkV2DataInfo::tilingDataTypeKeyMap.find(computeNowTileSizeInfo.dataType)->second;
+    if (IsBitonicSmallTopkMode(computeNowTileSizeInfo.kValue, topkTilingData.get_sortPolicy())) {
+        dataTypeKey += topkV2DataInfo::BITONIC_SORT_TILING_OFFSET;
+    }
     context->SetTilingKey(dataTypeKey);
     context->SetBlockDim(sortTileInfo.coreNumNeed);
     context->SetLocalMemorySize(sortTileInfo.ubSize);
@@ -1400,19 +1403,29 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
     const bool* isSorted = attrs->GetAttrPointer<bool>(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, isSorted);
-    OP_LOGI(context->GetNodeName(), "isSorted=%u", *isSorted);
+    OP_LOGD(context->GetNodeName(), "isSorted=%u", *isSorted);
     const int* dimValuePtr = attrs->GetAttrPointer<int>(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, dimValuePtr);
-    OP_LOGI(context->GetNodeName(), "dimValuePtr=%d", *dimValuePtr);
+    OP_LOGD(context->GetNodeName(), "dimValuePtr=%d", *dimValuePtr);
     const bool* isLargest = attrs->GetAttrPointer<bool>(2);
     OP_CHECK_NULL_WITH_CONTEXT(context, isLargest);
-    OP_LOGI(context->GetNodeName(), "isLargest=%d", *isLargest);
+    OP_LOGD(context->GetNodeName(), "isLargest=%d", *isLargest);
 
     // check the indices_dtype attr and actual value of indices output
     const int* indicesDTypeValuePtr = attrs->GetAttrPointer<int>(3);
     OP_CHECK_NULL_WITH_CONTEXT(context, indicesDTypeValuePtr);
-    OP_LOGI(context->GetNodeName(), "indicesDTypeValuePtr=%d, outPutIndexType=%ld.", *indicesDTypeValuePtr,
+    OP_LOGD(context->GetNodeName(), "indicesDTypeValuePtr=%d, outPutIndexType=%ld.", *indicesDTypeValuePtr,
             static_cast<int64_t>(indicesDType));
+
+    const int* sortPolicy = attrs->GetAttrPointer<int>(4);
+    OP_CHECK_NULL_WITH_CONTEXT(context, sortPolicy);
+    OP_LOGD(context->GetNodeName(), "topk sortPolicy=%d.", *sortPolicy);
+    OP_CHECK_IF(*sortPolicy != 0 && *sortPolicy != 1,
+                OP_LOGE_WITH_INVALID_ATTR(context->GetNodeName(), "sort_policy", std::to_string(*sortPolicy).c_str(),
+                                          "range [0, 1]"),
+                return ge::GRAPH_FAILED);
+    // 设置排序策略
+    topkTilingData.set_sortPolicy(*sortPolicy);
 
     // 获取输入张量的维度数量
     size_t inputDimNum = inputShape.GetDimNum();
@@ -1430,6 +1443,7 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
     if (dimValue < 0) {
         dimValue += static_cast<int32_t>(inputDimNum);
     }
+
     int64_t lastAxisNum = inputShape.GetDim(inputDimNum - 1);
     OP_CHECK_IF(
         lastAxisNum <= 0,
@@ -1486,8 +1500,18 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
         computeNowTileSizeInfo.lastAxisNum = inputShape.GetDim(dimValue);
         computeNowTileSizeInfo.kValue = outShape.GetDim(dimValue);
         computeNowTileSizeInfo.isInInt32Range = computeNowTileSizeInfo.lastAxisNum <= int32Max;
+        if (IsBitonicSmallTopkMode(computeNowTileSizeInfo.kValue, topkTilingData.get_sortPolicy(),
+                                   computeNowTileSizeInfo.isSort)) {
+            dataTypeKey += topkV2DataInfo::BITONIC_SORT_TILING_OFFSET;
+        }
         return TileModeNonLastSmallAxisTopK(context, topkTilingData, computeNowTileSizeInfo, inputShape, dimValue,
                                             dataTypeKey, originUbSizePlatForm);
+    }
+
+    // 尾轴场景：kValue 已正确设置为 outLastAxisNum
+    if (IsBitonicSmallTopkMode(computeNowTileSizeInfo.kValue, topkTilingData.get_sortPolicy(),
+                               computeNowTileSizeInfo.isSort)) {
+        dataTypeKey += topkV2DataInfo::BITONIC_SORT_TILING_OFFSET;
     }
 
     // 处理尾轴的场景
@@ -1605,7 +1629,7 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
     // set userWorkSpaceSize
     size_t* userWorkSpaceSize = context->GetWorkspaceSizes(1);
     userWorkSpaceSize[0] = usrSize + topkV2DataInfo::SYS_WORK_SPACE_SIZE;
-    OP_LOGI("[TopKV2Tiling]", "user & system WorkSpace Size is : %lu", userWorkSpaceSize[0]);
+    OP_LOGI("[TopKV2Tiling]", "total WorkSpace Size is : %lu", userWorkSpaceSize[0]);
     context->SetLocalMemorySize(ubSizePlatForm);
     context->SetScheduleMode(1);
     OP_LOGI("TopKV2TilingForAscendC", "TopKV2Tiling end");

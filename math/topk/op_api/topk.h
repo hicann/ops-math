@@ -17,6 +17,9 @@
 namespace l0op {
 std::tuple<aclTensor*, aclTensor*> Topk(const aclTensor* self, int64_t k, int64_t dim, bool largest, bool sorted,
                                         op::DataType indicesDType, aclOpExecutor* executor);
-}
+
+std::tuple<aclTensor*, aclTensor*> Topk(const aclTensor* self, int64_t k, int64_t dim, bool largest, bool sorted,
+                                        op::DataType indicesDType, int64_t sortPolicy, aclOpExecutor* executor);
+} // namespace l0op
 
 #endif // OP_API_OP_API_COMMON_INC_LEVEL0_OP_TOPK_H_

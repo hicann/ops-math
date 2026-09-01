@@ -16,6 +16,7 @@
 #define RADIX_SORT_TOP_K_INTER_CORE_TEMPLATE_OPTIMIZATION_H
 
 #include "kernel_operator.h"
+#include "top_k_small_size_bitonic_sort.h"
 #include "top_k_util_type_simd.h"
 #include "radix_topk_util.h"
 #include <algorithm>
@@ -24,7 +25,7 @@ using namespace AscendC;
 using namespace topkV2;
 
 // 类比当前文件
-template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO>
+template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO, bool IS_BITONIC_SORT = false>
 struct RadixSortTopKMultiCoreOptimization {
     __aicore__ inline RadixSortTopKMultiCoreOptimization(){};
     __aicore__ inline void Init(GM_ADDR inputValue, GM_ADDR k, GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace,
@@ -73,8 +74,8 @@ public:
     GlobalTensor<T_INDEX_TO> topkValueIndexGm_;
 };
 
-template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO>
-__aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO>::Init(
+template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO, bool IS_BITONIC_SORT>
+__aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO, IS_BITONIC_SORT>::Init(
     GM_ADDR inputValue, GM_ADDR k, GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace,
     const TopKV2TilingDataSimd* tilingData)
 {
@@ -96,8 +97,9 @@ __aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT
     tempSortIndexDataGm_.SetGlobalBuffer((__gm__ int32_t*)workspace_ + workSpaceOffset, sortIndexOffset);
 }
 
-template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO>
-__aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO>::InitPara(
+template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO, bool IS_BITONIC_SORT>
+__aicore__ inline void
+RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO, IS_BITONIC_SORT>::InitPara(
     GM_ADDR inputValue, GM_ADDR k, GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace,
     const TopKV2TilingDataSimd* tilingData)
 {
@@ -118,8 +120,9 @@ __aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT
     topkValueIndexGm_.SetGlobalBuffer((__gm__ T_INDEX_TO*)(indices));
 }
 
-template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO>
-__aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO>::Process()
+template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO, bool IS_BITONIC_SORT>
+__aicore__ inline void
+RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO, IS_BITONIC_SORT>::Process()
 {
     for (int32_t i = 0; i < this->sortLoopTimes_; i++) {
         uint64_t loopOffset = i * unsortedDimParallel_ * totalDataNum_;
@@ -127,9 +130,10 @@ __aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT
     }
 }
 
-template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO>
-__aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO>::ProcessSingleLoop(
-    GlobalTensor<T> inputX, int32_t sortLoopRound)
+template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO, bool IS_BITONIC_SORT>
+__aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO,
+                                                          IS_BITONIC_SORT>::ProcessSingleLoop(GlobalTensor<T> inputX,
+                                                                                              int32_t sortLoopRound)
 {
     int tileCount = (totalDataNum_ + numTileData_ - 1) / numTileData_;
     uint32_t unsortedAxisId = GetBlockIdx() / lastDimRealCore_;
@@ -228,6 +232,10 @@ __aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT
             AscendC::TopK<T, true, false, false, TopKMode::TOPK_NORMAL, topkConfig>(
                 topkOutValue, topkOutIndexValue, xLocal, xIndexLocal, emptyFinishLocal, shareTmpBuffer,
                 static_cast<int32_t>(this->topkValueInput_), emptyTopkTiling, topKInfo, IS_LARGEST);
+            if constexpr (IS_BITONIC_SORT) {
+                RunBitonicSmallTopKFinalize<T, int32_t, IS_LARGEST>(topkOutValue, topkOutIndexValue, topkValueInput_,
+                                                                    1U, topkValueInput_, topkValueInput_);
+            }
 
             // convert index from int32_t to int64_t if needed
             AscendC::LocalTensor<T_INDEX_TO> tempConversionLocal;
@@ -257,9 +265,11 @@ __aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT
     }
 }
 
-template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO>
-__aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO>::CopyDataIn(
-    GlobalTensor<T> inputX, uint64_t tileOffset, uint32_t currTileSize)
+template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO, bool IS_BITONIC_SORT>
+__aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO,
+                                                          IS_BITONIC_SORT>::CopyDataIn(GlobalTensor<T> inputX,
+                                                                                       uint64_t tileOffset,
+                                                                                       uint32_t currTileSize)
 {
     LocalTensor<T> xLocal = inQueueX_.AllocTensor<T>();
     uint32_t countAlign = ROUND_UP_AGLIN(currTileSize);
@@ -281,9 +291,11 @@ __aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT
     inQueueX_.EnQue(xLocal);
 }
 
-template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO>
-__aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO>::CopyIndexIn(
-    GlobalTensor<int32_t> inputX, uint64_t tileOffset, uint32_t currTileSize)
+template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO, bool IS_BITONIC_SORT>
+__aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO,
+                                                          IS_BITONIC_SORT>::CopyIndexIn(GlobalTensor<int32_t> inputX,
+                                                                                        uint64_t tileOffset,
+                                                                                        uint32_t currTileSize)
 {
     LocalTensor<int32_t> xLocal = inQueueIndexX_.AllocTensor<int32_t>();
     uint32_t countAlign = ROUND_UP_AGLIN(currTileSize);
@@ -305,8 +317,9 @@ __aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT
     inQueueIndexX_.EnQue(xLocal);
 }
 
-template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO>
-__aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO>::CopyFinalResultToGm(
+template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO, bool IS_BITONIC_SORT>
+__aicore__ inline void
+RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO, IS_BITONIC_SORT>::CopyFinalResultToGm(
     GlobalTensor<T> valueGm, uint64_t valueOffset, GlobalTensor<T_INDEX_TO> indexGm, uint64_t indexOffset)
 {
     // copy sorted value
@@ -337,8 +350,9 @@ __aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT
  * @param [in] indexOffset：排序出的k个数的索引应该在GM的存放位置
  * @param [in] indexValueOffset：排序出的k个数的索引应该加上的偏移量
  */
-template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO>
-__aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO>::CopyIndexOutWithOffset(
+template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO, bool IS_BITONIC_SORT>
+__aicore__ inline void
+RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO, IS_BITONIC_SORT>::CopyIndexOutWithOffset(
     GlobalTensor<T> valueGm, uint64_t valueOffset, GlobalTensor<int32_t> indexGm, uint64_t indexOffset)
 {
     // copy sorted value

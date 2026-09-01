@@ -12,8 +12,14 @@
 set(SUPPORT_COMPUTE_UNIT "ascend950" "mc62")
 # 设置每种芯片类型对应的tiling文件目录，即采用op_host目录下哪个文件夹下的tiling文件编译
 set(SUPPORT_TILING_DIR "arch35" "arch35")
-add_all_modules_sources(OPTYPE top_k_v2 ACLNNTYPE aclnn_exclude 
-    COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT} 
-    TILING_DIR ${SUPPORT_TILING_DIR} 
+add_all_modules_sources(OPTYPE top_k_v2 ACLNNTYPE aclnn_exclude
+    COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT}
+    TILING_DIR ${SUPPORT_TILING_DIR}
     DISABLE_IN_OPP TRUE
     DEPENDENCIES sort sort_with_index)
+
+# Keep graph_base loaded for the Host UT shared library under --as-needed linkers.
+if(OP_HOST_UT AND TARGET ${OP_TILING_MODULE_NAME}_cases_obj)
+    target_link_libraries(${OP_TILING_MODULE_NAME}_cases_obj INTERFACE
+        "-Wl,--no-as-needed,$<TARGET_FILE:graph_base>,--as-needed")
+endif()

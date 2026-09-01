@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -29,10 +29,20 @@ struct is_same : public false_type {};
 template <typename Tp>
 struct is_same<Tp, Tp> : public true_type {};
 
-constexpr uint32_t UB_BLOCK_SIZE = Ops::Base::GetUbBlockSize();  // UB block size in bytes
+constexpr uint32_t UB_BLOCK_SIZE = Ops::Base::GetUbBlockSize(); // UB block size in bytes
 
-__aicore__ inline uint32_t ROUND_UP_AGLIN(uint32_t x) {
+__aicore__ inline uint32_t ROUND_UP_AGLIN(uint32_t x)
+{
     return (x + UB_AGLIN_VALUE - 1) / UB_AGLIN_VALUE * UB_AGLIN_VALUE;
+}
+
+template <bool IS_SORT, bool IS_BITONIC_SORT>
+__aicore__ inline bool IsUseRadixGather(bool isB32OrB64Integer, bool needSortWithIndex)
+{
+    if constexpr (!IS_SORT || !IS_BITONIC_SORT) {
+        return false;
+    }
+    return isB32OrB64Integer && !needSortWithIndex;
 }
 
 __aicore__ inline uint32_t CeilDivMul(uint32_t a, uint32_t b)
@@ -44,7 +54,7 @@ __aicore__ inline uint32_t CeilDivMul(uint32_t a, uint32_t b)
 }
 
 template <typename T>
-__aicore__ auto CeilAlignDivMul(uint64_t a, uint64_t b) ->T const
+__aicore__ auto CeilAlignDivMul(uint64_t a, uint64_t b) -> T const
 {
     if (b == 0) {
         return static_cast<T>(a);
@@ -58,25 +68,20 @@ __aicore__ inline T SortGetMin(T left, T right)
     return (left > right ? right : left);
 }
 template <typename T>
-struct DoubleBufferSimd
-{
+struct DoubleBufferSimd {
     AscendC::GlobalTensor<T> doubleBuffer_[2];
     int selector_ = 0;
     __aicore__ inline DoubleBufferSimd() {}
-    __aicore__ inline void SetDoubleBuffer(AscendC::GlobalTensor<T> currentBuffer, AscendC::GlobalTensor<T> alternateBuffer) {
+    __aicore__ inline void SetDoubleBuffer(AscendC::GlobalTensor<T> currentBuffer,
+                                           AscendC::GlobalTensor<T> alternateBuffer)
+    {
         selector_ = 0;
         doubleBuffer_[0] = currentBuffer;
         doubleBuffer_[1] = alternateBuffer;
     }
-    __aicore__ inline AscendC::GlobalTensor<T> Current() const {
-        return doubleBuffer_[selector_];
-    }
-    __aicore__ inline AscendC::GlobalTensor<T> Alternate() const {
-        return doubleBuffer_[selector_ ^ 1];
-    }
-    __aicore__ inline void UpdateSelect() {
-        selector_ = selector_ ^ 1;
-    }
+    __aicore__ inline AscendC::GlobalTensor<T> Current() const { return doubleBuffer_[selector_]; }
+    __aicore__ inline AscendC::GlobalTensor<T> Alternate() const { return doubleBuffer_[selector_ ^ 1]; }
+    __aicore__ inline void UpdateSelect() { selector_ = selector_ ^ 1; }
 };
-}
+} // namespace topkV2
 #endif

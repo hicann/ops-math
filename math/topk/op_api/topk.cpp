@@ -150,23 +150,24 @@ static bool IsAscendCSupport(const aclTensor* self, int64_t k)
 
 // AICORE算子kernel
 std::tuple<aclTensor*, aclTensor*> TopkV2AiCore(const aclTensor* self, const aclTensor* k, int64_t dim, bool largest,
-                                                bool sorted, aclTensor* values, aclTensor* indices,
-                                                aclOpExecutor* executor)
+                                                bool sorted, op::DataType indicesDType, int64_t sortPolicy,
+                                                aclTensor* values, aclTensor* indices, aclOpExecutor* executor)
 {
     L0_DFX(TopkV2AiCore, self, k, dim, largest, sorted, values, indices);
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore TopKV2算子加入任务队列
-    ADD_TO_LAUNCHER_LIST_AICORE(TopKV2, OP_INPUT(self, k), OP_OUTPUT(values, indices), OP_ATTR(sorted, dim, largest));
+    ADD_TO_LAUNCHER_LIST_AICORE(TopKV2, OP_INPUT(self, k), OP_OUTPUT(values, indices),
+                                OP_ATTR(sorted, dim, largest, indicesDType, sortPolicy));
     return std::tuple<aclTensor*, aclTensor*>(values, indices);
 }
 
 std::tuple<aclTensor*, aclTensor*> TopkV2AiCoreForDavid(const aclTensor* self, const aclTensor* k, int64_t dim,
                                                         bool largest, bool sorted, aclTensor* values,
                                                         aclTensor* indices, op::DataType indicesDType,
-                                                        aclOpExecutor* executor)
+                                                        int64_t sortPolicy, aclOpExecutor* executor)
 {
     L0_DFX(TopkV2AiCoreForDavid, self, k, dim, largest, sorted, values, indices, indicesDType);
     ADD_TO_LAUNCHER_LIST_AICORE(TopKV2, OP_INPUT(self, k), OP_OUTPUT(values, indices),
-                                OP_ATTR(sorted, dim, largest, indicesDType));
+                                OP_ATTR(sorted, dim, largest, indicesDType, sortPolicy));
     return std::tuple<aclTensor*, aclTensor*>(values, indices);
 }
 
@@ -213,8 +214,8 @@ std::tuple<aclTensor*, aclTensor*> TopkAiCpu(const aclTensor* self, const aclTen
     }
     return std::tuple<aclTensor*, aclTensor*>(values, indices);
 }
-std::tuple<aclTensor*, aclTensor*> Topk(const aclTensor* self, int64_t k, int64_t dim, bool largest, bool sorted,
-                                        op::DataType indicesDType, aclOpExecutor* executor)
+std::tuple<aclTensor*, aclTensor*> TopkCommon(const aclTensor* self, int64_t k, int64_t dim, bool largest, bool sorted,
+                                              op::DataType indicesDType, int64_t sortPolicy, aclOpExecutor* executor)
 {
     op::Shape outShape = self->GetStorageShape();
     outShape.SetDim(dim, k);
@@ -239,11 +240,12 @@ std::tuple<aclTensor*, aclTensor*> Topk(const aclTensor* self, int64_t k, int64_
         } else {
             if (IsRegBase()) {
                 return TopkV2AiCoreForDavid(self, kTensor, dim, largest, sorted, valuesOut, indicesOut, indicesDType,
-                                            executor);
+                                            sortPolicy, executor);
             } else if (IsRadixTopKSupport(self, k)) {
                 return RadixTopK(self, kTensor, dim, largest, sorted, valuesOut, indicesOut, indicesDType, executor);
             } else {
-                return TopkV2AiCore(self, kTensor, dim, largest, sorted, valuesOut, indicesOut, executor);
+                return TopkV2AiCore(self, kTensor, dim, largest, sorted, ge::DT_INT32, sortPolicy, valuesOut,
+                                    indicesOut, executor);
             }
         }
     } else {
@@ -260,4 +262,20 @@ std::tuple<aclTensor*, aclTensor*> Topk(const aclTensor* self, int64_t k, int64_
         return std::tuple<aclTensor*, aclTensor*>(valuesOut, indicesInt32);
     }
 }
+
+/**
+ * 新增接口，可传入 sortPolicy 参数
+ */
+std::tuple<aclTensor*, aclTensor*> Topk(const aclTensor* self, int64_t k, int64_t dim, bool largest, bool sorted,
+                                        op::DataType indicesDType, int64_t sortPolicy, aclOpExecutor* executor)
+{
+    return TopkCommon(self, k, dim, largest, sorted, indicesDType, sortPolicy, executor);
+}
+
+std::tuple<aclTensor*, aclTensor*> Topk(const aclTensor* self, int64_t k, int64_t dim, bool largest, bool sorted,
+                                        op::DataType indicesDType, aclOpExecutor* executor)
+{
+    return TopkCommon(self, k, dim, largest, sorted, indicesDType, 0, executor);
+}
+
 } // namespace l0op

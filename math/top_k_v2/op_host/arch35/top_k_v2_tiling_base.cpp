@@ -442,6 +442,13 @@ bool needSortWithIndex(TopKV2TilingDataSimd& topkTilingData, bool isSorted, ge::
     return false;
 }
 
+bool IsBitonicSmallTopkMode(int64_t kValue, int64_t sortPolicy, bool isSort)
+{
+    return isSort && static_cast<uint64_t>(kValue) >= topkV2DataInfo::BITONIC_SMALL_TOPK_MIN_K &&
+           static_cast<uint64_t>(kValue) <= topkV2DataInfo::BITONIC_SMALL_TOPK_MAX_K &&
+           static_cast<uint64_t>(sortPolicy) == topkV2DataInfo::BITONIC_SMALL_TOPK_POLICY;
+}
+
 // ==================== NonLastSmallAxis Calculation Helpers ====================
 
 bool SearchTopkNonLastSmallAxisPlan(

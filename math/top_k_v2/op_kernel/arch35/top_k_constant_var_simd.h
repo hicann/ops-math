@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -27,7 +27,8 @@ const uint16_t TWO_BIT_SORT_VALUE_2 = 2;
 const uint16_t TWO_BIT_SORT_VALUE_3 = 3;
 const uint8_t TWO_BIT_SORT_OFFSET_STEP = 2;
 const uint16_t RADIX_SORT_BIN_NUM = 256;
-const uint32_t SHIFT_BIT_NUM = 8;
+const uint32_t SHIFT_BIT_NUM = 8; // radix sort 每趟处理的位数（8 bit/pass -> 256 bins）
+const uint32_t BITS_PER_BYTE = 8; // 每字节的位数，用于 bit 掩码字节数换算
 const uint32_t B_64_CONV_NUM = 4;
 const uint32_t XOR_OP_VALUE = 0x80000000;
 const uint64_t XOR_OP_VALUE_B64 = 0x8000000000000000;
@@ -48,6 +49,7 @@ const uint32_t B8_BITE_SIZE = 1;
 const uint32_t LAST_DIM_SINGLE_CORE_MOD = 1;
 const uint32_t CLEAR_UB_VALUE = 0;
 const uint32_t UB_AGLIN_VALUE = 32;
+const uint32_t GATHER_AGLIN_VALUE = 256; // GatherMask/Compares API 要求的对齐字节数
 const uint32_t DOUBLE_BUFFER_FACTOR = 2;
 const uint32_t AGGREGATE_READY_MASK = 0x40000000;
 const uint32_t PREFIX_READY_MASK = 0x80000000;
@@ -66,5 +68,6 @@ const int16_t XOR_OP_VALUE_HALF = 0x8000;
 const int32_t SMALL_SORT_MAX_DATA_SIZE = 128;
 const uint32_t CONCAT_AGLIN_VALUE = 16;
 const uint32_t DOUBLE_BUFFER = 2;
-}
+constexpr uint32_t BITONIC_SMALL_TOPK_SIZE = 32U; // Bitonic Small TopK 双调排序网络上限
+} // namespace topkV2
 #endif

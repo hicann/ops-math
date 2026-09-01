@@ -42,6 +42,10 @@ const uint32_t SINGLE_CORE_DATA_NUM_B64 = 10240;
 const uint64_t AGLIN_FACTOR = 32;
 const uint32_t SMALL_MAX_DATA_SZIE = 1024;
 const uint32_t MERGE_SORT_TILING_OFFSET = 10000;
+const uint32_t BITONIC_SORT_TILING_OFFSET = 50000;
+const uint32_t BITONIC_SMALL_TOPK_MIN_K = 2;
+const uint32_t BITONIC_SMALL_TOPK_MAX_K = 32;
+const uint64_t BITONIC_SMALL_TOPK_POLICY = 1;
 const uint32_t SINGLE_CORE_MODE = 1;
 const uint32_t MULT_CORE_MODE = 2;
 const uint32_t MULT_CORE_OPTIM_MODE = 4;
@@ -259,6 +263,7 @@ void SetMergeSortTmpSize(gert::TilingContext* context, ge::DataType dataType, in
 // ==================== Mode Judgment Functions ====================
 
 bool needSortWithIndex(TopKV2TilingDataSimd& topkTilingData, bool isSorted, ge::DataType dataType);
+bool IsBitonicSmallTopkMode(int64_t kValue, int64_t sortPolicy, bool isSort = true);
 
 // ==================== NonLastSmallAxis Calculation Helpers ====================
 

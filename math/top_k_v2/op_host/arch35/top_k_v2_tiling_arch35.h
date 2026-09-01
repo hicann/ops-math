@@ -25,6 +25,7 @@ BEGIN_TILING_DATA_DEF(TopKV2TilingDataSimd)
 // TopK field
 TILING_DATA_FIELD_DEF(int32_t, isLargest);
 TILING_DATA_FIELD_DEF(int32_t, isSort);
+TILING_DATA_FIELD_DEF(int64_t, sortPolicy);
 TILING_DATA_FIELD_DEF(uint64_t, sortLoopTimes);
 TILING_DATA_FIELD_DEF(uint32_t, unsortedDimParallel);
 TILING_DATA_FIELD_DEF(uint64_t, unsortedDimNum);
