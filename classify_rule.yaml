@@ -233,7 +233,7 @@ math@ops-math:
       opensource_style: null
       kernel_style: null
     unrelease:
-      test_code: 
+      test_code:
         - ops/ops-math/math/accumulate_nv2/examples/
         - ops/ops-math/math/accumulate_nv2/tests/
         - ops/ops-math/math/acos/examples/
@@ -700,7 +700,7 @@ VC2@ops-math:
       kernel_style: null
     unrelease:
       test_code:
-        
+
         - ops/ops-math/conversion/fill/examples/
         - ops/ops-math/conversion/fill/tests/
         - ops/ops-math/conversion/fills/examples/
@@ -1139,15 +1139,24 @@ VC6@ops-math:
         - ops/ops-math/random/drop_out_v3/op_host/
         - ops/ops-math/random/drop_out_v3/op_kernel/
         - ops/ops-math/random/drop_out_v3/op_graph/fusion_pass/
+        - ops/ops-math/random/drop_out_v3/docs/
+        - ops/ops-math/random/drop_out_v3/op_api/
+        - ops/ops-math/random/drop_out_v3/op_graph/
         # drop_out_do_mask
         - ops/ops-math/random/drop_out_do_mask/op_host/
         - ops/ops-math/random/drop_out_do_mask/op_kernel/
         # drop_out_v3_grad
         - ops/ops-math/random/drop_out_v3_grad/op_host/
         - ops/ops-math/random/drop_out_v3_grad/op_kernel/
+        - ops/ops-math/random/drop_out_v3_grad/docs/
+        - ops/ops-math/random/drop_out_v3_grad/op_api/
+        - ops/ops-math/random/drop_out_v3_grad/README.md
         # stateless_drop_out_gen_mask
         - ops/ops-math/random/stateless_drop_out_gen_mask/op_host/
         - ops/ops-math/random/stateless_drop_out_gen_mask/op_kernel/
+        - ops/ops-math/random/stateless_drop_out_gen_mask/op_api/
+        - ops/ops-math/random/stateless_drop_out_gen_mask/README.md
+        - ops/ops-math/random/stateless_drop_out_gen_mask/op_graph/
         # stateless_normal
         - ops/ops-math/random/stateless_normal/
         - ops/ops-math/random/stateless_normal/op_host/
@@ -1159,6 +1168,10 @@ VC6@ops-math:
         # stateless_random_normal_v2
         - ops/ops-math/random/stateless_random_normal_v2/op_host/
         - ops/ops-math/random/stateless_random_normal_v2/op_kernel/
+        - ops/ops-math/random/stateless_random_normal_v2/docs/
+        - ops/ops-math/random/stateless_random_normal_v2/op_api/
+        - ops/ops-math/random/stateless_random_normal_v2/README.md
+        - ops/ops-math/random/stateless_random_normal_v2/op_graph/
         # random_common
         - ops/ops-math/random/random_common/op_kernel/
         - ops/ops-math/random/random_common/op_host/
@@ -1166,13 +1179,16 @@ VC6@ops-math:
         - ops/ops-math/random/stateless_random_normal_v3/
         - ops/ops-math/random/stateless_random_normal_v3/op_host/
         - ops/ops-math/random/stateless_random_normal_v3/op_kernel/
-        # truncated_normal_v2   
+        # truncated_normal_v2
         - ops/ops-math/random/truncated_normal_v2/op_graph/fusion_pass/
         - ops/ops-math/random/truncated_normal_v2/op_kernel/
         - ops/ops-math/random/truncated_normal_v2/op_host/
         # stateless_random_uniform_v2
         - ops/ops-math/random/stateless_random_uniform_v2/op_host/
         - ops/ops-math/random/stateless_random_uniform_v2/op_kernel/
+        - ops/ops-math/random/stateless_random_uniform_v2/op_api/
+        - ops/ops-math/random/stateless_random_uniform_v2/README.md
+        - ops/ops-math/random/stateless_random_uniform_v2/op_graph/
         # stateless_random_uniform_v3
         - ops/ops-math/random/stateless_random_uniform_v3/
         - ops/ops-math/random/stateless_random_uniform_v3/op_host/
@@ -1478,34 +1494,6 @@ conversion@ops-math:
         - ops/ops-math/random/sim_thread_exponential/op_kernel/
         - ops/ops-math/random/sim_thread_exponential/op_host/
         - ops/ops-math/random/sim_thread_exponential/op_graph/
-        - ops/ops-math/random/stateless_random_normal_v2/docs/
-        - ops/ops-math/random/stateless_random_normal_v2/op_api/
-        - ops/ops-math/random/stateless_random_normal_v2/README.md
-        - ops/ops-math/random/stateless_random_normal_v2/op_graph/
-        - ops/ops-math/random/stateless_random_normal_v3/docs/
-        - ops/ops-math/random/stateless_random_normal_v3/op_api/
-        - ops/ops-math/random/stateless_random_normal_v3/README.md
-        - ops/ops-math/random/stateless_random_normal_v3/op_graph/
-        - ops/ops-math/random/stateless_truncated_normal_v2/op_api/
-        - ops/ops-math/random/stateless_truncated_normal_v2/README.md
-        - ops/ops-math/random/stateless_truncated_normal_v2/op_graph/
-        - ops/ops-math/random/stateless_normal/op_api/
-        - ops/ops-math/random/stateless_normal/README.md
-        - ops/ops-math/random/stateless_normal/op_graph/
-        - ops/ops-math/random/drop_out_v3/docs/
-        - ops/ops-math/random/drop_out_v3/op_api/
-        - ops/ops-math/random/drop_out_v3/op_graph/
-        - ops/ops-math/random/stateless_random_uniform_v2/op_api/
-        - ops/ops-math/random/stateless_random_uniform_v2/README.md
-        - ops/ops-math/random/stateless_random_uniform_v2/op_graph/
-        - ops/ops-math/random/stateless_random_uniform_v3/op_api/
-        - ops/ops-math/random/stateless_random_uniform_v3/README.md
-        - ops/ops-math/random/stateless_uniform/op_api/
-        - ops/ops-math/random/stateless_uniform/op_graph/
-        - ops/ops-math/random/stateless_uniform/README.md
-        - ops/ops-math/random/stateless_random/op_api/
-        - ops/ops-math/random/stateless_random/op_graph/
-        - ops/ops-math/random/stateless_random/README.md
         - ops/ops-math/random/stateless_randperm/docs/
         - ops/ops-math/random/stateless_randperm/op_api/
         - ops/ops-math/random/stateless_randperm/op_host/stateless_randperm_tiling_for_sort.h
@@ -1518,19 +1506,6 @@ conversion@ops-math:
         - ops/ops-math/random/drop_out_do_mask/op_api/
         - ops/ops-math/random/drop_out_do_mask/README.md
         - ops/ops-math/random/drop_out_do_mask/op_graph/
-        - ops/ops-math/random/drop_out_v3_grad/docs/
-        - ops/ops-math/random/drop_out_v3_grad/op_api/
-        - ops/ops-math/random/drop_out_v3_grad/README.md
-        - ops/ops-math/random/stateless_drop_out_gen_mask/op_api/
-        - ops/ops-math/random/stateless_drop_out_gen_mask/README.md
-        - ops/ops-math/random/stateless_drop_out_gen_mask/op_graph/
-        - ops/ops-math/random/drop_out_do_mask_v3/README.md
-        - ops/ops-math/random/drop_out_do_mask_v3/op_host/drop_out_do_mask_v3_infershape.cpp
-        - ops/ops-math/random/drop_out_do_mask_v3/op_graph/
-        - ops/ops-math/random/drop_out_do_mask_v3_d/README.md
-        - ops/ops-math/random/drop_out_do_mask_v3_d/op_kernel/
-        - ops/ops-math/random/drop_out_do_mask_v3_d/op_host/drop_out_do_mask_v3_d_infershape.cpp
-        - ops/ops-math/random/drop_out_do_mask_v3_d/op_graph/
         - ops/ops-math/random/dsa_gen_bit_mask/docs/
         - ops/ops-math/random/dsa_gen_bit_mask/README.md
         - ops/ops-math/random/dsa_gen_bit_mask/op_host/
