@@ -79,12 +79,11 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const
 static bool CheckComputeDtype(const aclTensor* self, const aclTensor* other, const aclTensor* out)
 {
     // 根据平台选择数据类型推导方式
-    op::DataType promoteType =
-        IsRegBase() ? op::BinaryOpTypePromote(self, other) : op::PromoteType(self->GetDataType(), other->GetDataType());
+    op::DataType promoteType = IsRegBase() ? op::BinaryOpTypePromote(self, other) :
+                                             op::PromoteType(self->GetDataType(), other->GetDataType());
     if (promoteType == DataType::DT_UNDEFINED) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
         return false;
     }
 
@@ -114,8 +113,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other, co
 }
 
 // RegBase平台计算类型优化，输入类型安全时直接计算，否则推导后统一转换
-static void GetComputeType(
-    const aclTensor* self, const aclTensor* other, const aclTensor* out, DataType& computeType, bool& needOutputCast)
+static void GetComputeType(const aclTensor* self, const aclTensor* other, const aclTensor* out, DataType& computeType,
+                           bool& needOutputCast)
 {
     needOutputCast = true;
     if (!IsRegBase()) {
@@ -136,8 +135,8 @@ static void GetComputeType(
     }
 }
 
-aclnnStatus aclnnMinimumGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnMinimumGetWorkspaceSize(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                         uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnMinimum, DFX_IN(self, other), DFX_OUT(out));
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -150,7 +149,7 @@ aclnnStatus aclnnMinimumGetWorkspaceSize(
         return ACLNN_SUCCESS;
     }
     if (self->GetStorageFormat() != Format::FORMAT_ND) {
-        OP_LOGW("Format only support ND");
+        OP_LOGW("Format only supports ND");
     }
     DataType computeType = DataType::DT_UNDEFINED;
     bool needOutputCast = true;

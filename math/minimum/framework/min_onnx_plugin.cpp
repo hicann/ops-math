@@ -84,7 +84,7 @@ static Status ParseOpToGraphMin(const ge::Operator& op, Graph& graph)
     std::vector<ge::Operator> inputs;
     std::vector<std::pair<ge::Operator, std::vector<size_t>>> output_indexs;
     if (input_size == 0) {
-        OP_LOGE(GetOpName(op).c_str(), "input_size must ge 1");
+        OP_LOGE(GetOpName(op).c_str(), "input_size must be >= 1");
         return FAILED;
     } else if (input_size == 1) {
         auto data_op = op::Data((ori_name + "_data_0").c_str()).set_attr_index(0);
@@ -118,8 +118,7 @@ REGISTER_CUSTOM_OP("PartitionedCall")
 
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::8::Min"),
-                   ge::AscendString("ai.onnx::9::Min"),
+    .OriginOpType({ge::AscendString("ai.onnx::8::Min"), ge::AscendString("ai.onnx::9::Min"),
                    ge::AscendString("ai.onnx::10::Min")})
     .ParseParamsFn(ParseParamsMinCallV9)
     .ParseOpToGraphFn(ParseOpToGraphMin)
@@ -134,13 +133,10 @@ REGISTER_CUSTOM_OP("PartitionedCall")
 
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::13::Min"),
-                   ge::AscendString("ai.onnx::14::Min"),
-                   ge::AscendString("ai.onnx::15::Min"),
-                   ge::AscendString("ai.onnx::16::Min"),
-                   ge::AscendString("ai.onnx::17::Min"),
-                   ge::AscendString("ai.onnx::18::Min")})
+    .OriginOpType({ge::AscendString("ai.onnx::13::Min"), ge::AscendString("ai.onnx::14::Min"),
+                   ge::AscendString("ai.onnx::15::Min"), ge::AscendString("ai.onnx::16::Min"),
+                   ge::AscendString("ai.onnx::17::Min"), ge::AscendString("ai.onnx::18::Min")})
     .ParseParamsFn(ParseParamsMinCallV13)
     .ParseOpToGraphFn(ParseOpToGraphMin)
     .ImplyType(ImplyType::TVM);
-}  // namespace domi
+} // namespace domi

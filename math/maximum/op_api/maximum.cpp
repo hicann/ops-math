@@ -50,8 +50,8 @@ static bool IsAiCoreSupport(const aclTensor* self)
 }
 
 // AICORE算子kernel
-static const aclTensor* MaximumAiCore(
-    const aclTensor* self, const aclTensor* other, const aclTensor* maximumOut, aclOpExecutor* executor)
+static const aclTensor* MaximumAiCore(const aclTensor* self, const aclTensor* other, const aclTensor* maximumOut,
+                                      aclOpExecutor* executor)
 {
     L0_DFX(MaximumAiCore, self, other, maximumOut)
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将Maximum算子加入任务队列
@@ -61,8 +61,8 @@ static const aclTensor* MaximumAiCore(
 }
 
 // AICPU算子kernel
-static const aclTensor* MaximumAiCpu(
-    const aclTensor* self, const aclTensor* other, aclTensor* maximumOut, aclOpExecutor* executor)
+static const aclTensor* MaximumAiCpu(const aclTensor* self, const aclTensor* other, aclTensor* maximumOut,
+                                     aclOpExecutor* executor)
 {
     L0_DFX(MaximumAiCpu, self, other, maximumOut)
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCpu Maximum算子加入任务队列
@@ -77,9 +77,8 @@ const aclTensor* Maximum(const aclTensor* self, const aclTensor* other, aclOpExe
 {
     op::Shape broadcastShape;
     if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
-            op::ToString(self->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
+                op::ToString(other->GetViewShape()).GetString());
         return nullptr;
     }
 

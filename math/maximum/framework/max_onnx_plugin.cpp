@@ -50,7 +50,7 @@ static Status ParseOpToGraphMax(const ge::Operator& op, Graph& graph)
     std::vector<ge::Operator> inputs;
     std::vector<std::pair<ge::Operator, std::vector<size_t>>> output_indexs;
     if (input_size == 0) {
-        OP_LOGE(GetOpName(op).c_str(), "input_size must >= 1");
+        OP_LOGE(GetOpName(op).c_str(), "input_size must be >= 1");
         return FAILED;
     } else if (input_size == 1) {
         auto data_op = op::Data((ori_name + "_data_0").c_str()).set_attr_index(0);
@@ -77,18 +77,13 @@ static Status ParseOpToGraphMax(const ge::Operator& op, Graph& graph)
 
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::8::Max"),
-                   ge::AscendString("ai.onnx::9::Max"),
-                   ge::AscendString("ai.onnx::10::Max"),
-                   ge::AscendString("ai.onnx::11::Max"),
-                   ge::AscendString("ai.onnx::12::Max"),
-                   ge::AscendString("ai.onnx::13::Max"),
-                   ge::AscendString("ai.onnx::14::Max"),
-                   ge::AscendString("ai.onnx::15::Max"),
-                   ge::AscendString("ai.onnx::16::Max"),
-                   ge::AscendString("ai.onnx::17::Max"),
+    .OriginOpType({ge::AscendString("ai.onnx::8::Max"), ge::AscendString("ai.onnx::9::Max"),
+                   ge::AscendString("ai.onnx::10::Max"), ge::AscendString("ai.onnx::11::Max"),
+                   ge::AscendString("ai.onnx::12::Max"), ge::AscendString("ai.onnx::13::Max"),
+                   ge::AscendString("ai.onnx::14::Max"), ge::AscendString("ai.onnx::15::Max"),
+                   ge::AscendString("ai.onnx::16::Max"), ge::AscendString("ai.onnx::17::Max"),
                    ge::AscendString("ai.onnx::18::Max")})
     .ParseParamsFn(ParseParamsMaxCall)
     .ParseOpToGraphFn(ParseOpToGraphMax)
     .ImplyType(ImplyType::TVM);
-}  // namespace domi
+} // namespace domi

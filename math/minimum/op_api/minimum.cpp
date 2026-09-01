@@ -49,8 +49,8 @@ static bool IsAiCoreSupport(const aclTensor* self)
 }
 
 // AICORE算子kernel
-static const aclTensor* MinimumAiCore(
-    const aclTensor* self, const aclTensor* other, const aclTensor* minimumOut, aclOpExecutor* executor)
+static const aclTensor* MinimumAiCore(const aclTensor* self, const aclTensor* other, const aclTensor* minimumOut,
+                                      aclOpExecutor* executor)
 {
     L0_DFX(MinimumAiCore, self, other, minimumOut)
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将Minimum算子加入任务队列
@@ -60,8 +60,8 @@ static const aclTensor* MinimumAiCore(
 }
 
 // AICPU算子kernel
-static const aclTensor* MinimumAiCpu(
-    const aclTensor* self, const aclTensor* other, aclTensor* minimumOut, aclOpExecutor* executor)
+static const aclTensor* MinimumAiCpu(const aclTensor* self, const aclTensor* other, aclTensor* minimumOut,
+                                     aclOpExecutor* executor)
 {
     L0_DFX(MinimumAiCpu, self, other, minimumOut)
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCpu Minimum算子加入任务队列
@@ -76,9 +76,8 @@ const aclTensor* Minimum(const aclTensor* self, const aclTensor* other, aclOpExe
 {
     op::Shape broadcastShape;
     if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
-            op::ToString(self->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
+                op::ToString(other->GetViewShape()).GetString());
         return nullptr;
     }
 

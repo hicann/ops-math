@@ -38,15 +38,9 @@ const std::vector<ge::DataType> DTYPE_LIST = {ge::DataType::DT_FLOAT16, ge::Data
                                               ge::DataType::DT_INT32,   ge::DataType::DT_INT64, ge::DataType::DT_INT8,
                                               ge::DataType::DT_UINT8};
 
-ge::graphStatus MinimumTiling::GetShapeAttrsInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus MinimumTiling::GetShapeAttrsInfo() { return ge::GRAPH_SUCCESS; }
 
-bool MinimumTiling::IsCapable()
-{
-    return true;
-}
+bool MinimumTiling::IsCapable() { return true; }
 
 ge::graphStatus MinimumTiling::DoOpTiling()
 {
@@ -59,8 +53,8 @@ ge::graphStatus MinimumTiling::DoOpTiling()
     if (x1DType != x2DType) {
         std::string dtypesStr = TypeUtils::DataTypeToSerialString(x1DType) + " and " +
                                 TypeUtils::DataTypeToSerialString(x2DType);
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1 and x2",
-            dtypesStr.c_str(), "The dtypes of x1 and x2 must be the same");
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1 and x2", dtypesStr.c_str(),
+                                               "The dtypes of x1 and x2 must be the same");
         return ge::GRAPH_FAILED;
     }
 
@@ -68,18 +62,17 @@ ge::graphStatus MinimumTiling::DoOpTiling()
     OP_CHECK_NULL_WITH_CONTEXT(context_, outputDesc);
     ge::DataType yDType = outputDesc->GetDataType();
     if (x1DType != yDType) {
-        std::string dtypesStr =
-            TypeUtils::DataTypeToSerialString(x1DType) + " and " + TypeUtils::DataTypeToSerialString(yDType);
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            context_->GetNodeName(), "x1 and y", dtypesStr.c_str(), "The dtypes of x1 and y must be the same");
+        std::string dtypesStr = TypeUtils::DataTypeToSerialString(x1DType) + " and " +
+                                TypeUtils::DataTypeToSerialString(yDType);
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1 and y", dtypesStr.c_str(),
+                                               "The dtypes of x1 and y must be the same");
         return ge::GRAPH_FAILED;
     }
 
     OP_CHECK_IF(
         std::find(DTYPE_LIST.begin(), DTYPE_LIST.end(), x1DType) == DTYPE_LIST.end(),
-        OP_LOGE_FOR_INVALID_DTYPE(
-            context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(x1DType).c_str(),
-            "fp16, bf16, fp32, int64, int32, int8 or uint8"),
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(x1DType).c_str(),
+                                  "fp16, bf16, fp32, int64, int32, int8 or uint8"),
         return ge::GRAPH_FAILED);
 
     ge::graphStatus ret = ge::GRAPH_SUCCESS;
@@ -112,30 +105,15 @@ ge::graphStatus MinimumTiling::DoOpTiling()
     return ret;
 }
 
-ge::graphStatus MinimumTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus MinimumTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t MinimumTiling::GetTilingKey() const
-{
-    return tilingKey;
-}
+uint64_t MinimumTiling::GetTilingKey() const { return tilingKey; }
 
-ge::graphStatus MinimumTiling::GetWorkspaceSize()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus MinimumTiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus MinimumTiling::PostTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus MinimumTiling::PostTiling() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus MinimumTiling::GetPlatformInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus MinimumTiling::GetPlatformInfo() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus TilingForMinimum(gert::TilingContext* context)
 {
@@ -154,7 +132,7 @@ ge::graphStatus TilingForMinimum(gert::TilingContext* context)
 
 ge::graphStatus TilingPrepareForMinimum(gert::TilingParseContext* context)
 {
-    OP_LOGD(context, "Enter TilingPrepareForMaximum");
+    OP_LOGD(context, "Enter TilingPrepareForMinimum");
     return ge::GRAPH_SUCCESS;
 }
 

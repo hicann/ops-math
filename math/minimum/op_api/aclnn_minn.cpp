@@ -70,8 +70,8 @@ static inline bool CheckDtypeValid(const aclTensorList* tensors, const aclTensor
     for (uint64_t i = 0; i < tensors->Size(); i++) {
         OP_CHECK_DTYPE_NOT_SUPPORT((*tensors)[i], DTYPE_SUPPORT_LIST, return false);
         // 检查Format
-        if((*tensors)[i]->GetStorageFormat() != Format::FORMAT_ND){
-            OP_LOGW("Format only support ND");
+        if ((*tensors)[i]->GetStorageFormat() != Format::FORMAT_ND) {
+            OP_LOGW("Format only supports ND");
         }
         // self和out数据类型必须一样
         OP_CHECK_DTYPE_NOT_SAME((*tensors)[i], out, return false);
@@ -101,9 +101,8 @@ static inline bool CheckInAndOutShape(const aclTensorList* tensors, const aclTen
     op::Shape broadcastShape = (*tensors)[0]->GetViewShape();
     for (uint64_t i = 1; i < tensors->Size(); i++) {
         if (!BroadcastInferShape((*tensors)[i]->GetViewShape(), broadcastShape, broadcastShape)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "the size of tensor %s must match the size of tensor %s.",
-                op::ToString((*tensors)[i]->GetViewShape()).GetString(), op::ToString(broadcastShape).GetString());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "the size of tensor %s must match the size of tensor %s.",
+                    op::ToString((*tensors)[i]->GetViewShape()).GetString(), op::ToString(broadcastShape).GetString());
             return false;
         }
     }
@@ -129,8 +128,8 @@ static aclnnStatus CheckParams(const aclTensorList* tensors, aclTensor* out, con
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnMinNGetWorkspaceSize(
-    const aclTensorList* tensors, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnMinNGetWorkspaceSize(const aclTensorList* tensors, aclTensor* out, uint64_t* workspaceSize,
+                                      aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnMinN, DFX_IN(tensors), DFX_OUT(out));
 
