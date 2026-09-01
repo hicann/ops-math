@@ -18,6 +18,9 @@
 
 using namespace ge;
 namespace ops {
+constexpr size_t FUSED_MUL_ADD_ADD_INPUT_X1_INDEX = 0;
+constexpr size_t FUSED_MUL_ADD_ADD_OUTPUT_Y_INDEX = 0;
+
 static ge::graphStatus InferShape4FusedMulAddAdd(gert::InferShapeContext* context)
 {
     OP_LOGD(context->GetNodeName(), "Begin to do InferShape4FusedMulAddAdd in ops-math");
@@ -45,5 +48,14 @@ static ge::graphStatus InferShape4FusedMulAddAdd(gert::InferShapeContext* contex
     *yShape = *x1Shape;
     return ge::GRAPH_SUCCESS;
 }
-IMPL_OP_INFERSHAPE(FusedMulAddAdd).InferShape(InferShape4FusedMulAddAdd);
+
+static ge::graphStatus InferDataType4FusedMulAddAdd(gert::InferDataTypeContext* context)
+{
+    OP_LOGD(context->GetNodeName(), "Begin to do InferDataType4FusedMulAddAdd in ops-math");
+    // Align with op_proto: output dtype is the same as input x1.
+    context->SetOutputDataType(FUSED_MUL_ADD_ADD_OUTPUT_Y_INDEX,
+                               context->GetInputDataType(FUSED_MUL_ADD_ADD_INPUT_X1_INDEX));
+    return ge::GRAPH_SUCCESS;
+}
+IMPL_OP_INFERSHAPE(FusedMulAddAdd).InferShape(InferShape4FusedMulAddAdd).InferDataType(InferDataType4FusedMulAddAdd);
 } // namespace ops

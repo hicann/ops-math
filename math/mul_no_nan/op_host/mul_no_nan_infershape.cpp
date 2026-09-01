@@ -18,6 +18,8 @@
 
 using namespace ge;
 namespace ops {
+constexpr size_t MUL_NO_NAN_INPUT_X1_INDEX = 0;
+constexpr size_t MUL_NO_NAN_OUTPUT_Y_INDEX = 0;
 
 static ge::graphStatus InferShape4MulNoNan(gert::InferShapeContext* context)
 {
@@ -25,6 +27,14 @@ static ge::graphStatus InferShape4MulNoNan(gert::InferShapeContext* context)
     return Ops::Base::InferShape4Broadcast(context);
 }
 
-IMPL_OP_INFERSHAPE(MulNoNan).InferShape(InferShape4MulNoNan);
+static ge::graphStatus InferDataType4MulNoNan(gert::InferDataTypeContext* context)
+{
+    OP_LOGD(context->GetNodeName(), "Begin to do InferDataType4MulNoNan in ops-math");
+    // Align with op_proto: output dtype is the same as input x1.
+    context->SetOutputDataType(MUL_NO_NAN_OUTPUT_Y_INDEX, context->GetInputDataType(MUL_NO_NAN_INPUT_X1_INDEX));
+    return ge::GRAPH_SUCCESS;
+}
+
+IMPL_OP_INFERSHAPE(MulNoNan).InferShape(InferShape4MulNoNan).InferDataType(InferDataType4MulNoNan);
 
 } // namespace ops

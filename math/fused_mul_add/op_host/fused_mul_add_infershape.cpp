@@ -18,11 +18,22 @@
 
 using namespace ge;
 namespace ops {
+constexpr size_t FUSED_MUL_ADD_INPUT_X1_INDEX = 0;
+constexpr size_t FUSED_MUL_ADD_OUTPUT_Y_INDEX = 0;
+
 static ge::graphStatus InferShape4FusedMulAdd(gert::InferShapeContext* context)
 {
     OP_LOGD(context->GetNodeName(), "Begin to do InferShape4FusedMulAdd in ops-math");
     const size_t INPUT_NUM_THREE = 3;
     return Ops::Base::InferShape4Broadcast(context, INPUT_NUM_THREE);
 }
-IMPL_OP_INFERSHAPE(FusedMulAdd).InferShape(InferShape4FusedMulAdd);
+
+static ge::graphStatus InferDataType4FusedMulAdd(gert::InferDataTypeContext* context)
+{
+    OP_LOGD(context->GetNodeName(), "Begin to do InferDataType4FusedMulAdd in ops-math");
+    // Align with op_proto: output dtype is the same as input x1.
+    context->SetOutputDataType(FUSED_MUL_ADD_OUTPUT_Y_INDEX, context->GetInputDataType(FUSED_MUL_ADD_INPUT_X1_INDEX));
+    return ge::GRAPH_SUCCESS;
+}
+IMPL_OP_INFERSHAPE(FusedMulAdd).InferShape(InferShape4FusedMulAdd).InferDataType(InferDataType4FusedMulAdd);
 } // namespace ops
