@@ -21,7 +21,22 @@ add_infershape_ut_modules(${OP_INFERSHAPE_MODULE_NAME})
 add_framework_ut_modules(${OP_FRAMEWORK_MODULE_NAME})
 
 if(EXISTS ${OPS_MATH_DIR}/common/tests/ut/framework/CMakeLists.txt)
+    # 全量模式(ASCEND_OP_NAME 空)接入；--ops 模式仅当命中 common 框架插件算子时接入，
+    # 避免无关算子 trigger 时白编一坨 common framework UT
+    set(_math_include_common_fw OFF)
     if(NOT ASCEND_OP_NAME)
+        set(_math_include_common_fw ON)
+    else()
+        file(GLOB _fw_plugins ${OPS_MATH_DIR}/common/src/framework/*_onnx_plugin.cpp)
+        foreach(_p ${_fw_plugins})
+            get_filename_component(_n ${_p} NAME_WE)
+            string(REGEX REPLACE "_onnx_plugin$" "" _op "${_n}")
+            if(_op IN_LIST ASCEND_OP_NAME)
+                set(_math_include_common_fw ON)
+            endif()
+        endforeach()
+    endif()
+    if(_math_include_common_fw)
         add_subdirectory(${OPS_MATH_DIR}/common/tests/ut/framework
                          ${CMAKE_CURRENT_BINARY_DIR}/common_op_framework)
     endif()

@@ -23,27 +23,19 @@
 #include "stub_ops.h"
 #include "register/register.h"
 #include "graph/operator.h"
+#include "math_onnx_plugin_util.h"
 #include "graph/graph.h"
 #include "base/err_msg.h"
 #include "log/log.h"
 #include "onnx/proto/ge_onnx.pb.h"
 
 namespace domi {
-template <typename T>
-inline std::string GetOpName(const T& op)
-{
-    ge::AscendString op_ascend_name;
-    ge::graphStatus ret = op.GetName(op_ascend_name);
-    if (ret != ge::GRAPH_SUCCESS) {
-        std::string op_name = "None";
-        return op_name;
-    }
-    return op_ascend_name.GetString();
-}
+// GetOpName has been moved to math_onnx_plugin_util.h (a protobuf-free header) so that
+// plugins decoupled from protobuf can reuse it without including ge_onnx.pb.h.
 
 template <typename T>
-inline ge::Tensor Vec2Tensor(
-    vector<T>& vals, const vector<int64_t>& dims, ge::DataType dtype, ge::Format format = ge::FORMAT_ND)
+inline ge::Tensor Vec2Tensor(vector<T>& vals, const vector<int64_t>& dims, ge::DataType dtype,
+                             ge::Format format = ge::FORMAT_ND)
 {
     ge::Shape shape(dims);
     ge::TensorDesc desc(shape, format, dtype);

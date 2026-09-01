@@ -933,6 +933,17 @@ endfunction()
 # check whether the compiled operators meet expectations
 # ######################################################################################################################
 function(check_compiled_ops)
+  # common/src/framework 下的 onnx 插件无独立算子目录，--ops=<此类插件> 时 COMPILED_OPS 为空会 FATAL；
+  # 主动扫描这些插件，按文件名注入算子名到 COMPILED_OPS（仅用于校验通过，不改变实际编译范围，
+  # common 插件源码本就由 add_onnx_plugin_sources 无条件 glob 编进 oponnx_plugin_math_obj）
+  file(GLOB _fw_onnx_plugin_srcs ${OPS_MATH_DIR}/common/src/framework/*_onnx_plugin.cpp)
+  foreach(_plugin_src ${_fw_onnx_plugin_srcs})
+    get_filename_component(_plugin_name ${_plugin_src} NAME_WE)
+    string(REGEX REPLACE "_onnx_plugin$" "" _op_name "${_plugin_name}")
+    if(_op_name AND NOT _op_name IN_LIST COMPILED_OPS)
+      set(COMPILED_OPS ${COMPILED_OPS} ${_op_name} CACHE STRING "Compiled Ops" FORCE)
+    endif()
+  endforeach()
   message(STATUS "Ops for this compilation contains: ${COMPILED_OPS}")
   if(COMPILED_OPS STREQUAL "")
     message(FATAL_ERROR "Specified ops not found in this depository, please check --ops parameter")

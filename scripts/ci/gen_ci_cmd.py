@@ -66,6 +66,12 @@ RULES = [
     {"pattern": r"experimental/(?:math|conversion|random)/([^/]+)", "type": "exp_ops"},
     # 普通算子
     {"pattern": r"^(?:math|conversion|random)/([^/]+)", "type": "ops"},
+    # common 集中目录下的 onnx 插件框架（源码 common/src/framework/<op>_onnx_plugin.cpp
+    # 或用例 common/tests/ut/framework/test_<op>_onnx_plugin.cpp）：按文件名提算子名，触发 ophost UT
+    {
+        "pattern": r"^common/(?:src/framework|tests/ut/framework)/(?:test_)?([^/]+)_onnx_plugin\.cpp$",
+        "type": "ops",
+    },
 ]
 
 # 默认SOC（用于pkg和run_example命令的SOC过滤）
@@ -377,6 +383,17 @@ def build_ut_commands(filepath, experimental=False, cann_3rd_lib_path=None):
     for op in ops:
         # 按算子维度获取 UT 类型和 SOC
         uts, op_socs = get_op_ut_types(op, files, experimental)
+        # common 集中目录下的 onnx 插件框架算子（文件在 common/src/framework、common/tests/ut/framework）
+        # 不含 op_host/op_api/... 路径，get_op_ut_types 检测不到 UT 类型；其 UT 为 framework 用例，随 ophost 跑。
+        # 仅对这类框架算子回退 ophost，避免影响普通算子（如仅改 CMakeLists 等非 UT 文件）的既有行为
+        if not uts and any(
+            re.search(
+                rf"common/(?:src/framework|tests/ut/framework)/(?:test_)?{re.escape(op)}_onnx_plugin\.cpp$",
+                f,
+            )
+            for f in files
+        ):
+            uts = {"ophost"}
 
         # 该算子的 SOC 列表：默认 + 该算子检测到的 arch35
         op_socs_to_run = {DEFAULT_SOC} | op_socs
