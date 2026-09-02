@@ -9,7 +9,7 @@
  */
 
 #include "onnx_common.h"
-#include "op_math_proto_extend.h"
+#include "conversion/trilu/op_graph/trilu_proto.h"
 
 using namespace std;
 using namespace ge;
