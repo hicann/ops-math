@@ -72,7 +72,7 @@
 - y和dy的shape必须完全相同，不支持广播。
 - 支持0-8维tensor，支持空tensor（0元素）。
 - y的值域应在 [-1, 1] 范围内。当 |y| = 1时，计算结果为inf；当 |y| > 1时，计算结果为NaN。
-- FLOAT16走native FP16计算；BFLOAT16走BF16 → FP32中间计算；FLOAT32直接FP32计算。
+- FLOAT16、BFLOAT16均转换为FLOAT32进行中间计算，计算结果再转换回输入数据类型；FLOAT32直接进行FLOAT32计算。
 
 ## 调用说明
 

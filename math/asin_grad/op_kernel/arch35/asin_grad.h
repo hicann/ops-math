@@ -33,7 +33,7 @@
  *   - fp16/bf16 path: TQue for low-precision I/O + TBuf<VECCALC> for float intermediate compute
  *     (Cast to fp32 to avoid precision loss when 1 - y^2 approaches 0 near |y|=1)
  *   - 6 TilingKey combinations: {half, float, bfloat16_t} x {BUFFER_MODE=0, BUFFER_MODE=1}
- *   - Edge cases: empty tensor (blockDim=0, no kernel launch), scalar (dim=0 -> shape={1})
+ *   - Edge cases: empty tensor (blockDim=1, Process() early-returns), scalar (dim=0 -> shape={1})
  */
 #ifndef ASIN_GRAD_H
 #define ASIN_GRAD_H
@@ -53,10 +53,9 @@ class AsinGrad {
     static constexpr bool NEED_CAST = !std::is_same_v<StorageT, ComputeT>;
 
 public:
-    __aicore__ inline AsinGrad() {};
+    __aicore__ inline AsinGrad(){};
 
-    __aicore__ inline void Init(GM_ADDR y, GM_ADDR dy, GM_ADDR z,
-                                const AsinGradTilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR y, GM_ADDR dy, GM_ADDR z, const AsinGradTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -93,8 +92,8 @@ private:
 };
 
 template <typename StorageT, typename ComputeT, int BUFFER_MODE>
-__aicore__ inline void AsinGrad<StorageT, ComputeT, BUFFER_MODE>::Init(
-    GM_ADDR y, GM_ADDR dy, GM_ADDR z, const AsinGradTilingData* tilingData)
+__aicore__ inline void AsinGrad<StorageT, ComputeT, BUFFER_MODE>::Init(GM_ADDR y, GM_ADDR dy, GM_ADDR z,
+                                                                       const AsinGradTilingData* tilingData)
 {
     int64_t remainderLength = tilingData->totalNum - tilingData->blockFactor * AscendC::GetBlockIdx();
     blockLength_ = (remainderLength > tilingData->blockFactor) ? tilingData->blockFactor : remainderLength;
@@ -130,8 +129,7 @@ __aicore__ inline void AsinGrad<StorageT, ComputeT, BUFFER_MODE>::Init(
 }
 
 template <typename StorageT, typename ComputeT, int BUFFER_MODE>
-__aicore__ inline void AsinGrad<StorageT, ComputeT, BUFFER_MODE>::CopyIn(
-    int64_t progress, int64_t currentNum)
+__aicore__ inline void AsinGrad<StorageT, ComputeT, BUFFER_MODE>::CopyIn(int64_t progress, int64_t currentNum)
 {
     AscendC::LocalTensor<StorageT> yLocal = yInQueue.template AllocTensor<StorageT>();
     AscendC::LocalTensor<StorageT> dyLocal = dyInQueue.template AllocTensor<StorageT>();
@@ -150,8 +148,7 @@ __aicore__ inline void AsinGrad<StorageT, ComputeT, BUFFER_MODE>::CopyIn(
 }
 
 template <typename StorageT, typename ComputeT, int BUFFER_MODE>
-__aicore__ inline void AsinGrad<StorageT, ComputeT, BUFFER_MODE>::CopyOut(
-    int64_t progress, int64_t currentNum)
+__aicore__ inline void AsinGrad<StorageT, ComputeT, BUFFER_MODE>::CopyOut(int64_t progress, int64_t currentNum)
 {
     AscendC::LocalTensor<StorageT> zLocal = zOutQueue.template DeQue<StorageT>();
 
@@ -235,6 +232,9 @@ __aicore__ inline void AsinGrad<StorageT, ComputeT, BUFFER_MODE>::Compute(int64_
 template <typename StorageT, typename ComputeT, int BUFFER_MODE>
 __aicore__ inline void AsinGrad<StorageT, ComputeT, BUFFER_MODE>::Process()
 {
+    if (blockLength_ <= 0) {
+        return; // empty tensor: tiling data is all-zero, ubLength_ == 0 would divide by zero below
+    }
     int64_t loopCount = (blockLength_ + ubLength_ - 1) / ubLength_;
     for (int64_t i = 0; i < loopCount; i++) {
         int64_t currentNum = (i == (loopCount - 1)) ? (blockLength_ - ubLength_ * i) : ubLength_;

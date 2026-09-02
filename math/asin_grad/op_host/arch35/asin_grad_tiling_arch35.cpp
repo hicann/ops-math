@@ -146,10 +146,14 @@ static ge::graphStatus AsinGradTilingFunc(gert::TilingContext* context)
                 return ge::GRAPH_FAILED);
     // Handle empty tensor
     if (totalNum == 0) {
-        context->SetBlockDim(0);
+        // BlockDim must be >= 1 (block_dim=0 is rejected by runtime/TTK as INVALID_TILING);
+        // kernel Process() early-returns when blockLength_ <= 0, so 1 idle core is launched.
+        // ubFactor=1 keeps InitBuffer away from zero-size allocation.
+        context->SetBlockDim(1);
         AsinGradTilingData* tiling = context->GetTilingData<AsinGradTilingData>();
         OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
         memset_s(tiling, sizeof(AsinGradTilingData), 0, sizeof(AsinGradTilingData));
+        tiling->ubFactor = 1;
         // Still need to set TilingKey for empty case
         uint64_t useDoubleBuffer = 0;
         ASCENDC_TPL_SEL_PARAM(context, useDoubleBuffer);
