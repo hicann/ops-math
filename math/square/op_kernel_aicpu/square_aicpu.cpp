@@ -125,7 +125,7 @@ inline std::uint32_t ComputeSquare(const CpuKernelContext& ctx, const int64_t pa
 inline std::uint32_t SquareExtraCheck(const CpuKernelContext& ctx)
 {
     if (ctx.Input(0)->GetDataType() != ctx.Output(0)->GetDataType()) {
-        KERNEL_LOG_ERROR("The data type of the input [%s] need be the same as the ouput [%s].",
+        KERNEL_LOG_ERROR("The data type of the input [%s] need be the same as the output [%s].",
                          DTypeStr(ctx.Input(0)->GetDataType()).c_str(), DTypeStr(ctx.Output(0)->GetDataType()).c_str());
         return KERNEL_STATUS_PARAM_INVALID;
     }
