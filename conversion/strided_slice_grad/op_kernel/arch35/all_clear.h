@@ -18,13 +18,11 @@
 
 #include "kernel_operator.h"
 
-namespace StridedSliceGrad
-{
+namespace StridedSliceGrad {
 using namespace AscendC;
 
 template <typename T>
-class AllClear
-{
+class AllClear {
 public:
     __aicore__ inline AllClear(){};
     __aicore__ inline void Init(GM_ADDR output, const StridedSliceGradTilingData& tilingData, TPipe& pipeIn);
@@ -36,7 +34,7 @@ public:
     GlobalTensor<T> outputGm_;
 
     uint32_t usedCoreNum_;
-    uint32_t normalCoreProcessNum_;
+    int64_t normalCoreProcessNum_;
     uint32_t tailCoreProcessNum_;
     uint32_t blockIdx_;
 };
@@ -88,6 +86,6 @@ __aicore__ inline void AllClear<T>::SyncALLCoresSimt()
     PipeBarrier<PIPE_ALL>();
     SyncAll();
 }
-}  // namespace StridedSliceGrad
+} // namespace StridedSliceGrad
 
-#endif  // ALL_CLEAR_H
+#endif // ALL_CLEAR_H

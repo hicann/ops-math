@@ -31,20 +31,20 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_DIM) inline void CopyOut(__ubuf__ T* 
                                                                     __ubuf__ uint32_t* simtB32Local,
                                                                     __ubuf__ int64_t* simtB64Local,
                                                                     uint32_t curLoopBlockNum, uint32_t blockIdx,
-                                                                    uint32_t normalCoreProcessNum, uint32_t loopNum,
+                                                                    int64_t normalCoreProcessNum, uint32_t loopNum,
                                                                     uint32_t normalLoopBlockNum, uint32_t inputDimNum)
 {
     for (int32_t i = threadIdx.x; i < curLoopBlockNum; i += blockDim.x) {
-        int32_t idx = blockIdx * normalCoreProcessNum + loopNum * normalLoopBlockNum + i;
+        int64_t idx = static_cast<int64_t>(blockIdx) * normalCoreProcessNum +
+                      static_cast<int64_t>(loopNum) * normalLoopBlockNum + i;
         int32_t srcIndex = i;
         int64_t dstIndex = 0;
 
 #pragma unroll
-        for (int32_t k = (MAX_SUPPORT_DIM - inputDimNum); k <= DIM0; k++) { // [8 - inputDimNum, 7]
-            uint32_t t2 = __umulhi(static_cast<uint32_t>(idx), simtB32Local[k]);
-            t2 = t2 + idx;
-            uint32_t newIndex = t2 >> simtB32Local[k + MAX_SUPPORT_DIM];
-            uint32_t curDimIndex = idx - simtB64Local[k] * newIndex;
+        for (int32_t k = (MAX_SUPPORT_DIM - inputDimNum); k <= DIM0; k++) {
+            int64_t fusedSliceInner = simtB64Local[k];
+            int64_t newIndex = idx / fusedSliceInner;
+            int64_t curDimIndex = idx - fusedSliceInner * newIndex;
             dstIndex += ((simtB64Local[k + MAX_SUPPORT_DIM] + newIndex * simtB64Local[k + MAX_SUPPORT_DIM * 2]) *
                          simtB64Local[k + MAX_SUPPORT_DIM * 3]);
             idx = curDimIndex;

@@ -18,8 +18,7 @@
 
 #include "kernel_operator.h"
 
-namespace StridedSliceGrad
-{
+namespace StridedSliceGrad {
 using namespace AscendC;
 
 constexpr int32_t DB_BUFFER = 2;
@@ -40,7 +39,7 @@ constexpr uint32_t DIM7 = 0;
 constexpr uint64_t TOTAL_DIGITS = 64;
 constexpr uint64_t OFFSET = 32;
 
-struct arrayParam{
+struct arrayParam {
     uint32_t m[MAX_SUPPORT_DIM];
     uint32_t shift[MAX_SUPPORT_DIM];
     int64_t fusedSliceInnerShape[MAX_SUPPORT_DIM];
@@ -49,8 +48,7 @@ struct arrayParam{
     int64_t fusedOutputInnerShape[MAX_SUPPORT_DIM];
 };
 
-class StridedSliceGradBase
-{
+class StridedSliceGradBase {
 public:
     __aicore__ inline StridedSliceGradBase(){};
 
@@ -59,7 +57,7 @@ public:
     uint64_t bufferSize_;
     uint32_t inputDimNum_;
     uint32_t bytesForOneData_;
-    uint32_t normalCoreProcessNum_;
+    int64_t normalCoreProcessNum_;
     uint32_t tailCoreProcessNum_;
 
     uint32_t curCoreProcessNum_;
@@ -110,6 +108,6 @@ __aicore__ inline void StridedSliceGradBase::CopyArray(const int64_t* src, int64
     }
 }
 
-}  // namespace StridedSliceGrad
+} // namespace StridedSliceGrad
 
-#endif  // STRIDED_SLICE_GRAD_BASE_H
+#endif // STRIDED_SLICE_GRAD_BASE_H

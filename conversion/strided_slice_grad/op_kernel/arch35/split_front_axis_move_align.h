@@ -18,13 +18,11 @@
 
 #include "strided_slice_grad_base.h"
 
-namespace StridedSliceGrad
-{
+namespace StridedSliceGrad {
 using namespace AscendC;
 
 template <typename T>
-class SplitFrontAxisMoveAlign : public StridedSliceGradBase
-{
+class SplitFrontAxisMoveAlign : public StridedSliceGradBase {
 public:
     __aicore__ inline SplitFrontAxisMoveAlign(){};
     __aicore__ inline void Init(GM_ADDR dy, GM_ADDR output, const StridedSliceGradTilingData& tilingData,
@@ -72,8 +70,8 @@ __aicore__ inline void SplitFrontAxisMoveAlign<T>::Init(GM_ADDR dy, GM_ADDR outp
     }
 
     burstLen_ = inputShape_[DIM0];
-    burstLenAlgin_ =
-        (burstLen_ * bytesForOneData_ + ONE_BLOCK_BYTES - 1) / ONE_BLOCK_BYTES * ONE_BLOCK_BYTES / bytesForOneData_;
+    burstLenAlgin_ = (burstLen_ * bytesForOneData_ + ONE_BLOCK_BYTES - 1) / ONE_BLOCK_BYTES * ONE_BLOCK_BYTES /
+                     bytesForOneData_;
     burstNum_ = bufferSize_ / sizeof(T) / burstLenAlgin_;
 
     // shield normal core and tail core
@@ -122,7 +120,7 @@ __aicore__ inline void SplitFrontAxisMoveAlign<T>::CopyOut()
 {
     LocalTensor<T> yLocal = dataQueue_.DeQue<T>();
     for (uint32_t srcIndex = 0; srcIndex < curLoopBlockNum_; srcIndex++) {
-        uint32_t absolutelyIdx = blockIdx_ * normalCoreProcessNum_ + loopNum_ * burstNum_ + srcIndex;
+        uint64_t absolutelyIdx = blockIdx_ * normalCoreProcessNum_ + loopNum_ * burstNum_ + srcIndex;
         uint32_t incremenDim7Idx = absolutelyIdx / fusedSliceNoEndAxis_[DIM7];
         uint32_t incremenDim7Tail = absolutelyIdx % fusedSliceNoEndAxis_[DIM7];
         uint32_t incremenDim6Idx = incremenDim7Tail / fusedSliceNoEndAxis_[DIM6];
@@ -162,6 +160,6 @@ __aicore__ inline void SplitFrontAxisMoveAlign<T>::InitCopyParams()
     padParams_ = {false, static_cast<uint8_t>(0), static_cast<uint8_t>(0), static_cast<T>(0)};
 }
 
-}  // namespace StridedSliceGrad
+} // namespace StridedSliceGrad
 
-#endif  // SPLIT_FRONT_AXIS_MOVE_ALIGN_H
+#endif // SPLIT_FRONT_AXIS_MOVE_ALIGN_H

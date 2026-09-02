@@ -93,7 +93,7 @@ template <typename T>
 __aicore__ inline bool SplitFrontAxisNddma<T>::IsNeedNddma()
 {
     uint32_t dimIdx = 0;
-    uint32_t dimIdxTail = blockIdx_ * normalCoreProcessNum_ + loopNum_;
+    int64_t dimIdxTail = blockIdx_ * normalCoreProcessNum_ + loopNum_;
     for (uint32_t dimNum = 0; dimNum <= splitUbAxisIndex_; dimNum++) {
         dimIdx = dimIdxTail / fusedOutputShapeNoInnerUb_[dimNum];
         dimIdxTail = dimIdxTail % fusedOutputShapeNoInnerUb_[dimNum];
