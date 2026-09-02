@@ -44,49 +44,121 @@
   - aclnnSinc：需新建一个输出张量对象存储计算结果。
   - aclnnInplaceSinc：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 
-- 每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnSincGetWorkspaceSize”或者”aclnnInplaceSincGetWorkspaceSize“接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnSinc”或者”aclnnInplaceSinc“接口执行计算。
+- 每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnSincGetWorkspaceSize”或者“aclnnInplaceSincGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnSinc”或者“aclnnInplaceSinc”接口执行计算。
 
-  - `aclnnStatus aclnnSincGetWorkspaceSize(const aclTensor *self,  aclTensor *out, uint64_t *workspaceSize, aclOpExecutor **executor)`
-  - `aclnnStatus aclnnSinc(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
-  - `aclnnStatus aclnnInplaceSincGetWorkspaceSize(aclTensor* selfRef, uint64_t* workspace_size, aclOpExecutor** executor)`
-  - `aclnnStatus aclnnInplaceSinc(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream)`
+```Cpp
+aclnnStatus aclnnSincGetWorkspaceSize(
+  const aclTensor *self,
+  aclTensor       *out,
+  uint64_t        *workspaceSize,
+  aclOpExecutor  **executor)
+```
+
+```Cpp
+aclnnStatus aclnnSinc(
+  void          *workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor *executor,
+  aclrtStream    stream)
+```
+
+```Cpp
+aclnnStatus aclnnInplaceSincGetWorkspaceSize(
+  aclTensor      *selfRef,
+  uint64_t       *workspaceSize,
+  aclOpExecutor **executor)
+```
+
+```Cpp
+aclnnStatus aclnnInplaceSinc(
+  void          *workspace,
+  uint64_t       workspaceSize,
+  aclOpExecutor *executor,
+  aclrtStream    stream)
+```
 
 ## aclnnSincGetWorkspaceSize
 
 - **参数说明：**
 
-  - self(aclTensor*,计算输入): 公式中的self，当数据类型为INT8、INT16、INT32、INT64、 UINT8、BOOL时，转化为FLOAT进行运算，输出FLOAT类型。支持[非连续的Tensor](../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../docs/zh/context/data_format.md)支持ND，shape维度不大于8，且shape需要与out一致。
+  <table style="table-layout: fixed; width: 1580px"><colgroup>
+  <col style="width: 239px">
+  <col style="width: 132px">
+  <col style="width: 232px">
+  <col style="width: 291px">
+  <col style="width: 273px">
+  <col style="width: 125px">
+  <col style="width: 143px">
+  <col style="width: 145px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>self（aclTensor*）</td>
+      <td>输入</td>
+      <td>输入tensor。</td>
+      <td>shape需要与out一致，和out的数据类型满足数据类型<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>。当输入的数据类型为INT8、INT16、INT32、INT64、UINT8、BOOL时，会转换为FLOAT数据类型做计算，输出FLOAT类型。</td>
+      <td>INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
+      <td>ND</td>
+      <td>不大于8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>out（aclTensor*）</td>
+      <td>输出</td>
+      <td>输出tensor。</td>
+      <td>和self的数据类型满足数据类型<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>。</td>
+      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
+      <td>ND</td>
+      <td>需要与self一致</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
-    <!-- npu="910" id7 -->
-    - <term>Atlas 训练系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE。
-    <!-- end id7 -->
-    <!-- npu="A3,910b" id8 -->
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE、BFLOAT16。
-    <!-- end id8 -->
-
-  - out(aclTensor *，计算输出): 公式中的out，支持[非连续的Tensor](../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../docs/zh/context/data_format.md)支持ND，维度不大于8，且shape需要与self一致，和self的数据类型[满足数据类型推导规则](../../../docs/zh/context/deduction_relationship.md)。
-
-    <!-- npu="910" id9 -->
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE。
-    <!-- end id9 -->
-    <!-- npu="A3,910b" id10 -->
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16。
-    <!-- end id10 -->
-
-  - workspaceSize(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。
-
-  - executor(aclOpExecutor \**，出参)：返回op执行器，包含了算子计算流程。
+  <!-- npu="910" id7 -->
+  - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
+  <!-- end id7 -->
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
-  第一段接口完成入参校验，出现以下场景时报错：
+  第一段接口完成入参校验，出现如下场景时报错：
 
-  <table style="table-layout: fixed; width: 1136px"><colgroup>
-  <col style="width: 304px">
+  <table style="table-layout: fixed; width: 1142px"><colgroup>
+  <col style="width: 305px">
   <col style="width: 138px">
-  <col style="width: 694px">
+  <col style="width: 699px">
   </colgroup>
   <thead>
     <tr>
@@ -103,16 +175,16 @@
     <tr>
       <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="4">161002</td>
-      <td>self和out的数据类型不在支持的范围之内。</td>
+      <td>self和out的数据类型和数据格式不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>self和out的shape不一致。</td>
+      <td>self和out的数据类型不满足数据类型推导规则。</td>
     </tr>
     <tr>
       <td>self和out的维度大于8。</td>
     </tr>
     <tr>
-      <td>self的输入类型在当前版本不支持。</td>
+      <td>self和out的shape不一致。</td>
     </tr>
   </tbody>
   </table>
@@ -164,28 +236,74 @@
 
 - **参数说明：**
 
-  - selfRef(aclTensor*,计算输入|计算输出)：输入输出tensor，即公式中的self与out。支持[非连续的Tensor](../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../docs/zh/context/data_format.md)支持ND，shape维度不大于8。
+  <table style="table-layout: fixed; width: 1494px"><colgroup>
+  <col style="width: 247px">
+  <col style="width: 131px">
+  <col style="width: 263px">
+  <col style="width: 179px">
+  <col style="width: 262px">
+  <col style="width: 124px">
+  <col style="width: 141px">
+  <col style="width: 147px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>selfRef（aclTensor*）</td>
+      <td>输入/输出</td>
+      <td>-</td>
+      <td>-</td>
+      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
+      <td>ND</td>
+      <td>不大于8</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
-    <!-- npu="910" id11 -->
-    - <term>Atlas 训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE。
-    <!-- end id11 -->
-    <!-- npu="A3,910b" id12 -->
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16。
-    <!-- end id12 -->
-
-  - workspace_size(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。
-  - executor(aclOpExecutor \**，出参)：返回op执行器，包含了算子计算流程。
+  <!-- npu="910" id8 -->
+  - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
+  <!-- end id8 -->
 
 - **返回值：**
 
   aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
-  第一段接口完成入参校验，出现以下场景时报错：
+  第一段接口完成入参校验，出现如下场景时报错：
 
-  <table style="table-layout: fixed; width: 1136px"><colgroup>
+  <table style="table-layout: fixed; width: 1140px"><colgroup>
   <col style="width: 304px">
   <col style="width: 138px">
-  <col style="width: 694px">
+  <col style="width: 698px">
   </colgroup>
   <thead>
     <tr>
@@ -200,15 +318,12 @@
       <td>传入的selfRef是空指针。</td>
     </tr>
     <tr>
-      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="3">161002</td>
-      <td>selfRef的数据类型不在支持的范围之内。</td>
+      <td rowspan="2">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="2">161002</td>
+      <td>selfRef数据类型和数据格式不在支持的范围之内。</td>
     </tr>
     <tr>
       <td>selfRef的维度大于8。</td>
-    </tr>
-    <tr>
-      <td>selfRef的输入类型在当前版本不支持。</td>
     </tr>
   </tbody>
   </table>
