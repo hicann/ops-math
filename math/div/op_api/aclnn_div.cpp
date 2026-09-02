@@ -189,7 +189,7 @@ static inline aclnnStatus CheckDivModComplexDtype(const op::DataType promoteType
 {
     if ((mode == MODE_TRUNC_DIV || mode == MODE_FLOOR_DIV) &&
         (promoteType == op::DataType::DT_COMPLEX128 || promoteType == op::DataType::DT_COMPLEX64)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "promoteType do not support DT_COMPLEX128 or DT_COMPLEX64.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "promoteType does not support DT_COMPLEX128 or DT_COMPLEX64.");
         return ACLNN_ERR_PARAM_INVALID;
     }
     return ACLNN_SUCCESS;
@@ -231,7 +231,7 @@ static aclnnStatus CompatibleInferDivModeDtype(const op::DataType selfDtype, con
     promoteType = op::PromoteType(selfDtype, otherDtype);
     if ((mode == MODE_TRUNC_DIV || mode == MODE_FLOOR_DIV) &&
         (promoteType == op::DataType::DT_COMPLEX128 || promoteType == op::DataType::DT_COMPLEX64)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "promoteType do not support DT_COMPLEX128 or DT_COMPLEX64.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "promoteType does not support DT_COMPLEX128 or DT_COMPLEX64.");
         return ACLNN_ERR_PARAM_INVALID;
     }
     // 根据mode分三种场景调用算子计算
@@ -257,7 +257,7 @@ static aclnnStatus CompatibleInferDivsModeDtype(const op::DataType selfDtype, co
     promoteType = op::PromoteType(selfDtype, otherDtype);
     if ((mode == MODE_TRUNC_DIV || mode == MODE_FLOOR_DIV) &&
         (promoteType == op::DataType::DT_COMPLEX128 || promoteType == op::DataType::DT_COMPLEX64)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "promoteType do not support DT_COMPLEX128 or DT_COMPLEX64.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "promoteType does not support DT_COMPLEX128 or DT_COMPLEX64.");
         return ACLNN_ERR_PARAM_INVALID;
     }
     // 根据mode分三种场景调用算子计算
@@ -377,17 +377,17 @@ static bool CheckFormat(const aclTensor* self, const aclTensor* other, const acl
     // 格式不能是私有格式
     // 校验self格式
     if (IsPrivateFormat(self->GetStorageFormat())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only supports ND, NCHW, NHWC, HWCN, NDHWC, NCDHW.");
         return false;
     }
     // 校验other格式
     if (IsPrivateFormat(other->GetStorageFormat())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only supports ND, NCHW, NHWC, HWCN, NDHWC, NCDHW.");
         return false;
     }
     // 校验out格式
     if (IsPrivateFormat(out->GetStorageFormat())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only supports ND, NCHW, NHWC, HWCN, NDHWC, NCDHW.");
         return false;
     }
 
@@ -399,12 +399,12 @@ static bool CheckFormatScalar(const aclTensor* self, const aclTensor* out)
     // 格式不能是私有格式
     // 校验out格式
     if (IsPrivateFormat(out->GetStorageFormat())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only supports ND, NCHW, NHWC, HWCN, NDHWC, NCDHW.");
         return false;
     }
     // 校验self格式
     if (IsPrivateFormat(self->GetStorageFormat())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only supports ND, NCHW, NHWC, HWCN, NDHWC, NCDHW.");
         return false;
     }
     return true;

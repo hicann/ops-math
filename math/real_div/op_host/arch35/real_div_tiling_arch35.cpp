@@ -25,19 +25,12 @@ using namespace AscendC;
 using namespace ge;
 using namespace Ops::Base;
 
-namespace optiling
-{
+namespace optiling {
 constexpr static uint64_t REAL_DIV_COMMON_TILING_PRIORITY = 0;
 
-ge::graphStatus RealDivTiling::GetShapeAttrsInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus RealDivTiling::GetShapeAttrsInfo() { return ge::GRAPH_SUCCESS; }
 
-bool RealDivTiling::IsCapable()
-{
-    return true;
-}
+bool RealDivTiling::IsCapable() { return true; }
 
 ge::graphStatus RealDivTiling::DoOpTiling()
 {
@@ -48,34 +41,30 @@ ge::graphStatus RealDivTiling::DoOpTiling()
     OP_CHECK_NULL_WITH_CONTEXT(context_, input1Desc);
     ge::DataType input1DType = input1Desc->GetDataType();
     if (input0DType != input1DType) {
-        std::string dtypeMsg = Ops::Base::ToString(input0DType) + " and " +
-                               Ops::Base::ToString(input1DType);
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            context_->GetNodeName(), "x1 and x2", dtypeMsg.c_str(), "The dtypes of x1 and x2 must be the same");
+        std::string dtypeMsg = Ops::Base::ToString(input0DType) + " and " + Ops::Base::ToString(input1DType);
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1 and x2", dtypeMsg.c_str(),
+                                               "The dtypes of x1 and x2 must be the same");
         return ge::GRAPH_FAILED;
     }
     auto outputDesc = context_->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, outputDesc);
     ge::DataType outputDType = outputDesc->GetDataType();
     if ((input0DType == ge::DT_INT32) && (outputDType != ge::DT_FLOAT && outputDType != ge::DT_INT32)) {
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-            context_->GetNodeName(), "y", Ops::Base::ToString(outputDType).c_str(),
-            "The dtype of y must be int32 or fp32 when the dtype of x1 is int32");
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "y", Ops::Base::ToString(outputDType).c_str(),
+                                              "The dtype of y must be int32 or fp32 when the dtype of x1 is int32");
         return ge::GRAPH_FAILED;
     }
 
     if ((input0DType == ge::DT_BOOL) && (outputDType != ge::DT_FLOAT)) {
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-            context_->GetNodeName(), "y", Ops::Base::ToString(outputDType).c_str(),
-            "The dtype of y must be fp32 when the dtype of x1 is bool");
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "y", Ops::Base::ToString(outputDType).c_str(),
+                                              "The dtype of y must be fp32 when the dtype of x1 is bool");
         return ge::GRAPH_FAILED;
     }
 
     if (input0DType != ge::DT_INT32 && input0DType != ge::DT_BOOL && input0DType != outputDType) {
-        std::string dtypeMsg = Ops::Base::ToString(input0DType) + " and " +
-                               Ops::Base::ToString(outputDType);
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            context_->GetNodeName(), "x1 and y", dtypeMsg.c_str(), "The dtypes of x1 and y must be the same");
+        std::string dtypeMsg = Ops::Base::ToString(input0DType) + " and " + Ops::Base::ToString(outputDType);
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1 and y", dtypeMsg.c_str(),
+                                               "The dtypes of x1 and y must be the same");
         return ge::GRAPH_FAILED;
     }
 
@@ -105,39 +94,23 @@ ge::graphStatus RealDivTiling::DoOpTiling()
         ret = brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(
-            context_->GetNodeName(), "x1", Ops::Base::ToString(input0DType).c_str(),
-            "fp16, bf16, fp32, int32 or bool");
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1", Ops::Base::ToString(input0DType).c_str(),
+                                  "fp16, bf16, fp32, int32, int64 or bool");
         return ge::GRAPH_FAILED;
     }
 
     return ret;
 }
 
-ge::graphStatus RealDivTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus RealDivTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t RealDivTiling::GetTilingKey() const
-{
-    return tilingKey;
-}
+uint64_t RealDivTiling::GetTilingKey() const { return tilingKey; }
 
-ge::graphStatus RealDivTiling::GetWorkspaceSize()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus RealDivTiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus RealDivTiling::PostTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus RealDivTiling::PostTiling() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus RealDivTiling::GetPlatformInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus RealDivTiling::GetPlatformInfo() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus TilingForRealDiv(gert::TilingContext* context)
 {
@@ -159,4 +132,4 @@ ge::graphStatus TilingPrepareForRealDiv([[maybe_unused]] gert::TilingParseContex
 IMPL_OP_OPTILING(RealDiv).Tiling(TilingForRealDiv).TilingParse<BroadcastCompileInfo>(TilingPrepareForRealDiv);
 
 REGISTER_OPS_TILING_TEMPLATE(RealDiv, RealDivTiling, REAL_DIV_COMMON_TILING_PRIORITY);
-}  // namespace optiling
+} // namespace optiling

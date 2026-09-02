@@ -171,7 +171,7 @@ const aclTensor* RealDivInplace(const aclTensor* self, const aclTensor* divisor,
     }
 
     if (self->GetDataType() != divisor->GetDataType()) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Inplace RealDiv does not support an output dtype different from divisor.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Inplace RealDiv does not support a self dtype different from divisor.");
         return nullptr;
     }
 
