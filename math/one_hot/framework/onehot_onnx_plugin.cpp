@@ -14,6 +14,7 @@
 #include "math/add/op_graph/add_proto.h"
 #include "math/mod/op_graph/mod_proto.h"
 #include "math/one_hot/op_graph/one_hot_proto.h"
+#include "math/cast/op_graph/cast_proto.h"
 #include "conversion/identity/op_graph/identity_proto.h"
 #include "conversion/split/op_graph/split_proto.h"
 
@@ -50,6 +51,35 @@ static Status ParseParamsOnehotCall(const Message* op_src, ge::Operator& op_dest
     return SUCCESS;
 }
 
+// OneHot算子不支持bool类型的on_value/off_value，values为bool时前后插Cast转为int8处理
+// values为图输入时从入参desc获取类型；values为常量(Initializer)时desc未填充，从常量数据获取类型
+static bool IsValuesBool(const ge::Operator& op)
+{
+    ge::TensorDesc values_desc = op.GetDynamicInputDesc("x", 2);
+    if (values_desc.GetDataType() == ge::DT_BOOL) {
+        return true;
+    }
+    ge::Tensor values_const_data;
+    return op.GetInputConstData("x2", values_const_data) == ge::GRAPH_SUCCESS &&
+           values_const_data.GetTensorDesc().GetDataType() == ge::DT_BOOL;
+}
+
+static ge::Operator BuildValuesOp(const std::string& ori_name, ge::Operator values_data, bool is_values_bool)
+{
+    if (!is_values_bool) {
+        return values_data;
+    }
+    return op::Cast((ori_name + "_Cast_values").c_str()).set_input_x(values_data).set_attr_dst_type(ge::DT_INT8);
+}
+
+static ge::Operator BuildOutputOp(const std::string& ori_name, ge::Operator onehot_op, bool is_values_bool)
+{
+    if (!is_values_bool) {
+        return onehot_op;
+    }
+    return op::Cast((ori_name + "_Cast_output").c_str()).set_input_x(onehot_op, 0).set_attr_dst_type(ge::DT_BOOL);
+}
+
 static Status ParseOpToGraphOnehot(const ge::Operator& op, Graph& graph)
 {
     std::string ori_name;
@@ -65,6 +95,9 @@ static Status ParseOpToGraphOnehot(const ge::Operator& op, Graph& graph)
     auto data2 = op::Data((ori_name + "_depth").c_str()).set_attr_index(1);
     auto data3 = op::Data((ori_name + "_values").c_str()).set_attr_index(2);
 
+    bool is_values_bool = IsValuesBool(op);
+    ge::Operator values_op = BuildValuesOp(ori_name, data3, is_values_bool);
+
     int32_t split_dim = 0;
     ge::Tensor scalar_split_dim = CreateScalar(split_dim, ge::DT_INT32);
     auto split_const_op = op::Const((ori_name + "_split_dim").c_str()).set_attr_value(scalar_split_dim);
@@ -72,7 +105,7 @@ static Status ParseOpToGraphOnehot(const ge::Operator& op, Graph& graph)
     // onnx support
     auto split_d_op = op::Split((ori_name + "_Split").c_str())
                           .create_dynamic_output_y(2)
-                          .set_input_x(data3)
+                          .set_input_x(values_op)
                           .set_input_split_dim(split_const_op)
                           .set_attr_num_split(2);
 
@@ -87,26 +120,22 @@ static Status ParseOpToGraphOnehot(const ge::Operator& op, Graph& graph)
                          .set_input_on_value(split_d_op, 1)
                          .set_input_off_value(split_d_op, 0)
                          .set_attr_axis(axis);
+    ge::Operator output_op = BuildOutputOp(ori_name, onehot_op, is_values_bool);
     std::vector<ge::Operator> inputs{data1, data2, data3};
     std::vector<std::pair<ge::Operator, std::vector<size_t>>> output_indexs;
-    output_indexs.emplace_back(onehot_op, std::vector<size_t>{0});
+    output_indexs.emplace_back(output_op, std::vector<size_t>{0});
     graph.SetInputs(inputs).SetOutputs(output_indexs);
     return SUCCESS;
 }
 
 REGISTER_CUSTOM_OP("PartitionedCall")
-  .FrameworkType(ONNX)
-  .OriginOpType({ge::AscendString("ai.onnx::9::OneHot"),
-                 ge::AscendString("ai.onnx::10::OneHot"),
-                 ge::AscendString("ai.onnx::11::OneHot"),
-                 ge::AscendString("ai.onnx::12::OneHot"),
-                 ge::AscendString("ai.onnx::13::OneHot"),
-                 ge::AscendString("ai.onnx::14::OneHot"),
-                 ge::AscendString("ai.onnx::15::OneHot"),
-                 ge::AscendString("ai.onnx::16::OneHot"),
-                 ge::AscendString("ai.onnx::17::OneHot"),
-                 ge::AscendString("ai.onnx::18::OneHot")})
-  .ParseParamsFn(ParseParamsOnehotCall)
-  .ParseOpToGraphFn(ParseOpToGraphOnehot)
-  .ImplyType(ImplyType::TVM);
-}  // namespace domi
+    .FrameworkType(ONNX)
+    .OriginOpType({ge::AscendString("ai.onnx::9::OneHot"), ge::AscendString("ai.onnx::10::OneHot"),
+                   ge::AscendString("ai.onnx::11::OneHot"), ge::AscendString("ai.onnx::12::OneHot"),
+                   ge::AscendString("ai.onnx::13::OneHot"), ge::AscendString("ai.onnx::14::OneHot"),
+                   ge::AscendString("ai.onnx::15::OneHot"), ge::AscendString("ai.onnx::16::OneHot"),
+                   ge::AscendString("ai.onnx::17::OneHot"), ge::AscendString("ai.onnx::18::OneHot")})
+    .ParseParamsFn(ParseParamsOnehotCall)
+    .ParseOpToGraphFn(ParseOpToGraphOnehot)
+    .ImplyType(ImplyType::TVM);
+} // namespace domi
