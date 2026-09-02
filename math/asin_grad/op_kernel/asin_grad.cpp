@@ -18,15 +18,16 @@
  * 输出：z (grad input)
  *
  * Template parameters (matching asin_grad_tiling_key.h ASCENDC_TPL_ARGS_DECL):
- *   - D_T: Data type, defined by ASCENDC_TPL_DATATYPE_DECL
  *   - BUFFER_MODE: Buffer mode (0=single, 1=double), defined by ASCENDC_TPL_UINT_DECL
+ *
+ * dtype 由 def.cpp 驱动，构建系统通过 DTYPE_Y 宏注入实际存储类型，
+ * kernel 中直接使用 DTYPE_Y 作为 StorageT，无需 TilingKey 编码 dtype。
  */
 
 #include "arch35/asin_grad.h"
 
 #ifdef __CCE_KT_TEST__
-extern "C" __global__ __aicore__ void asin_grad(
-    GM_ADDR y, GM_ADDR dy, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
+extern "C" __global__ __aicore__ void asin_grad(GM_ADDR y, GM_ADDR dy, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
 {
     GET_TILING_DATA_WITH_STRUCT(AsinGradTilingData, tilingData, tiling);
     NsAsinGrad::AsinGrad<DTYPE_Y, float, 0> op;
@@ -34,13 +35,13 @@ extern "C" __global__ __aicore__ void asin_grad(
     op.Process();
 }
 #else
-template <typename D_T, int BUFFER_MODE>
+template <int BUFFER_MODE>
 __global__ __aicore__ void asin_grad(GM_ADDR y, GM_ADDR dy, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(AsinGradTilingData);
     GET_TILING_DATA_WITH_STRUCT(AsinGradTilingData, tilingData, tiling);
 
-    NsAsinGrad::AsinGrad<D_T, float, BUFFER_MODE> op;
+    NsAsinGrad::AsinGrad<DTYPE_Y, float, BUFFER_MODE> op;
     op.Init(y, dy, z, &tilingData);
     op.Process();
 }

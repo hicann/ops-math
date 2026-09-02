@@ -20,17 +20,29 @@
  *   z  : output gradient     (canndev OUTPUT(z))
  *
  * Formula: z = -dy / sqrt(1 - y^2)
+ *
+ * def 驱动 dtype 模式：dtype 由 def.cpp DataType 列表驱动，
+ * 构建系统注入 DTYPE_Y 编译宏（按输入名 y 大写），kernel 直接使用 DTYPE_Y 获取实际类型。
  */
 
 #include "arch35/acos_grad.h"
 
-template <typename D_T>
-__global__ __aicore__ void acos_grad(GM_ADDR y, GM_ADDR dy, GM_ADDR z,
-                                      GM_ADDR workspace, GM_ADDR tiling)
+#ifdef __CCE_KT_TEST__
+extern "C" __global__ __aicore__ void acos_grad(GM_ADDR y, GM_ADDR dy, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
 {
-    REGISTER_TILING_DEFAULT(AcosGradTilingData);
     GET_TILING_DATA_WITH_STRUCT(AcosGradTilingData, tilingData, tiling);
-    NsAcosGrad::KernelAcosGrad<D_T> op;
+    NsAcosGrad::KernelAcosGrad<DTYPE_Y> op;
     op.Init(y, dy, z, &tilingData);
     op.Process();
 }
+#else
+template <int BUFFER_MODE>
+__global__ __aicore__ void acos_grad(GM_ADDR y, GM_ADDR dy, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling)
+{
+    REGISTER_TILING_DEFAULT(AcosGradTilingData);
+    GET_TILING_DATA_WITH_STRUCT(AcosGradTilingData, tilingData, tiling);
+    NsAcosGrad::KernelAcosGrad<DTYPE_Y> op;
+    op.Init(y, dy, z, &tilingData);
+    op.Process();
+}
+#endif

@@ -15,8 +15,10 @@
  * \brief AsinGrad TilingKey template parameter definition
  *
  * Template parameters:
- *   - D_T: Input data type (C_DT_FLOAT16, C_DT_FLOAT, C_DT_BF16)
  *   - BUFFER_MODE: Buffer mode (0=single buffer, 1=double buffer)
+ *
+ * dtype 由 def.cpp 的 DataType({DT_FLOAT16, DT_FLOAT, DT_BF16}) 驱动，
+ * 构建系统通过 DTYPE_Y 宏注入实际类型，TilingKey 不再重复编码 dtype。
  */
 
 #ifndef __ASIN_GRAD_TILING_KEY_H__
@@ -25,25 +27,9 @@
 #ifndef __CCE_KT_TEST__
 #include "ascendc/host_api/tiling/template_argument.h"
 
-ASCENDC_TPL_ARGS_DECL(AsinGrad,
-    ASCENDC_TPL_DATATYPE_DECL(D_T, C_DT_FLOAT16, C_DT_FLOAT, C_DT_BF16, ASCENDC_TPL_INPUT(0)),
-    ASCENDC_TPL_UINT_DECL(BUFFER_MODE, 8, ASCENDC_TPL_UI_LIST, 0, 1)
-);
+ASCENDC_TPL_ARGS_DECL(AsinGrad, ASCENDC_TPL_UINT_DECL(BUFFER_MODE, 8, ASCENDC_TPL_UI_LIST, 0, 1));
 
-ASCENDC_TPL_SEL(
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_FLOAT16),
-        ASCENDC_TPL_UINT_SEL(BUFFER_MODE, ASCENDC_TPL_UI_LIST, 0, 1)
-    ),
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_FLOAT),
-        ASCENDC_TPL_UINT_SEL(BUFFER_MODE, ASCENDC_TPL_UI_LIST, 0, 1)
-    ),
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_BF16),
-        ASCENDC_TPL_UINT_SEL(BUFFER_MODE, ASCENDC_TPL_UI_LIST, 0, 1)
-    ),
-);
+ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_UINT_SEL(BUFFER_MODE, ASCENDC_TPL_UI_LIST, 0, 1)), );
 #endif
 
 #endif

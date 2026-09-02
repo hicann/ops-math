@@ -76,14 +76,10 @@ static ge::graphStatus GetShapeInfo(gert::TilingContext* context, uint64_t& tota
     OP_CHECK_NULL_WITH_CONTEXT(context, outputZ);
     auto zShape = EnsureNotScalar(outputZ->GetStorageShape());
 
-    OP_CHECK_IF(
-        yShape.GetShapeSize() != dyShape.GetShapeSize() ||
-            yShape.GetShapeSize() != zShape.GetShapeSize(),
-        OP_LOGE(
-            context,
-            "AcosGrad: shape size mismatch: y=%ld, dy=%ld, z=%ld",
-            yShape.GetShapeSize(), dyShape.GetShapeSize(), zShape.GetShapeSize()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(yShape.GetShapeSize() != dyShape.GetShapeSize() || yShape.GetShapeSize() != zShape.GetShapeSize(),
+                OP_LOGE(context, "AcosGrad: shape size mismatch: y=%ld, dy=%ld, z=%ld", yShape.GetShapeSize(),
+                        dyShape.GetShapeSize(), zShape.GetShapeSize()),
+                return ge::GRAPH_FAILED);
 
     totalLength = static_cast<uint64_t>(yShape.GetShapeSize());
 
@@ -106,8 +102,7 @@ static ge::graphStatus SetWorkspaceSize(gert::TilingContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-static void CalcTilingParams(uint64_t totalLength, uint32_t availCoreNum,
-                              ge::DataType dataType, AcosGradTilingData* tiling)
+static void CalcBlockParams(uint64_t totalLength, uint32_t availCoreNum, uint32_t& blockFormer, uint32_t& blockNum)
 {
     uint32_t coreNum = static_cast<uint32_t>(
         CeilDiv(static_cast<int64_t>(totalLength), static_cast<int64_t>(ELEM_ALIGN)));
@@ -120,31 +115,38 @@ static void CalcTilingParams(uint64_t totalLength, uint32_t availCoreNum,
 
     uint32_t blockFormerRaw = static_cast<uint32_t>(
         CeilDiv(static_cast<int64_t>(totalLength), static_cast<int64_t>(coreNum)));
-    uint32_t blockFormer = static_cast<uint32_t>(
+    blockFormer = static_cast<uint32_t>(
         CeilDiv(static_cast<int64_t>(blockFormerRaw), static_cast<int64_t>(ELEM_ALIGN)) * ELEM_ALIGN);
     if (blockFormer < ELEM_ALIGN) {
         blockFormer = ELEM_ALIGN;
     }
 
-    uint32_t blockNum = static_cast<uint32_t>(
-        CeilDiv(static_cast<int64_t>(totalLength), static_cast<int64_t>(blockFormer)));
+    blockNum = static_cast<uint32_t>(CeilDiv(static_cast<int64_t>(totalLength), static_cast<int64_t>(blockFormer)));
     if (blockNum < 1U) {
         blockNum = 1U;
     }
+}
+
+static void CalcTilingParams(uint64_t totalLength, uint32_t availCoreNum, ge::DataType dataType,
+                             AcosGradTilingData* tiling)
+{
+    uint32_t blockFormer = 0U;
+    uint32_t blockNum = 0U;
+    CalcBlockParams(totalLength, availCoreNum, blockFormer, blockNum);
 
     uint32_t bytesPerElem;
     uint32_t alignFactor;
 
     if (dataType == ge::DT_FLOAT) {
         bytesPerElem = 32U;
-        alignFactor  = 64U;
+        alignFactor = 64U;
     } else {
         bytesPerElem = 28U;
-        alignFactor  = 128U;
+        alignFactor = 128U;
     }
 
     uint32_t ubFormerRaw = static_cast<uint32_t>(UB_SIZE_BYTES / bytesPerElem);
-    uint32_t ubFormer    = static_cast<uint32_t>(
+    uint32_t ubFormer = static_cast<uint32_t>(
         FloorDiv(static_cast<int64_t>(ubFormerRaw), static_cast<int64_t>(alignFactor)) * alignFactor);
     if (ubFormer < alignFactor) {
         ubFormer = alignFactor;
@@ -154,9 +156,7 @@ static void CalcTilingParams(uint64_t totalLength, uint32_t availCoreNum,
     }
 
     uint64_t tailBlockStart = static_cast<uint64_t>(blockNum - 1) * blockFormer;
-    uint32_t tailBlockLen   = (tailBlockStart < totalLength)
-                                ? static_cast<uint32_t>(totalLength - tailBlockStart)
-                                : 0U;
+    uint32_t tailBlockLen = (tailBlockStart < totalLength) ? static_cast<uint32_t>(totalLength - tailBlockStart) : 0U;
 
     uint32_t ubLoopOfFormerBlock = (ubFormer > 0U) ? (blockFormer / ubFormer) : 0U;
     uint32_t ubTailOfFormerBlock = (ubFormer > 0U) ? (blockFormer % ubFormer) : blockFormer;
@@ -164,70 +164,62 @@ static void CalcTilingParams(uint64_t totalLength, uint32_t availCoreNum,
     uint32_t ubLoopOfTailBlock = (ubFormer > 0U && tailBlockLen > 0U) ? (tailBlockLen / ubFormer) : 0U;
     uint32_t ubTailOfTailBlock = (ubFormer > 0U && tailBlockLen > 0U) ? (tailBlockLen % ubFormer) : tailBlockLen;
 
-    tiling->totalLength           = totalLength;
-    tiling->blockFormer           = blockFormer;
-    tiling->blockNum              = blockNum;
-    tiling->ubFormer              = ubFormer;
-    tiling->ubLoopOfFormerBlock   = ubLoopOfFormerBlock;
-    tiling->ubTailOfFormerBlock   = ubTailOfFormerBlock;
-    tiling->ubLoopOfTailBlock     = ubLoopOfTailBlock;
-    tiling->ubTailOfTailBlock     = ubTailOfTailBlock;
+    tiling->totalLength = totalLength;
+    tiling->blockFormer = blockFormer;
+    tiling->blockNum = blockNum;
+    tiling->ubFormer = ubFormer;
+    tiling->ubLoopOfFormerBlock = ubLoopOfFormerBlock;
+    tiling->ubTailOfFormerBlock = ubTailOfFormerBlock;
+    tiling->ubLoopOfTailBlock = ubLoopOfTailBlock;
+    tiling->ubTailOfTailBlock = ubTailOfTailBlock;
 }
 
 static ge::graphStatus AcosGradTilingFunc(gert::TilingContext* context)
 {
     OP_LOGI(context->GetNodeName(), "Enter AcosGradTilingFunc");
-    uint64_t ubSize  = 0UL;
+    uint64_t ubSize = 0UL;
     uint32_t coreNum = 0U;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "AcosGrad: GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "AcosGrad: GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     OP_LOGI(context, "[AcosGrad Tiling] coreNum=%u, ubSize=%lu", coreNum, ubSize);
 
     uint64_t totalLength = 0UL;
     ge::DataType dataType;
-    OP_CHECK_IF(
-        GetShapeInfo(context, totalLength, dataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "AcosGrad: GetShapeInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetShapeInfo(context, totalLength, dataType) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "AcosGrad: GetShapeInfo error"), return ge::GRAPH_FAILED);
 
-    OP_CHECK_IF(
-        SetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "AcosGrad: SetWorkspaceSize error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(SetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "AcosGrad: SetWorkspaceSize error"),
+                return ge::GRAPH_FAILED);
 
     if (totalLength == 0UL) {
         AcosGradTilingData* tiling = context->GetTilingData<AcosGradTilingData>();
         OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
         memset_s(tiling, sizeof(AcosGradTilingData), 0, sizeof(AcosGradTilingData));
         context->SetBlockDim(1U);
-        uint32_t dTypeX = static_cast<uint32_t>(dataType);
-        ASCENDC_TPL_SEL_PARAM(context, dTypeX);
+        uint64_t useDoubleBuffer = 0;
+        ASCENDC_TPL_SEL_PARAM(context, useDoubleBuffer);
         return ge::GRAPH_SUCCESS;
     }
 
     AcosGradTilingData* tiling = context->GetTilingData<AcosGradTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(AcosGradTilingData), 0, sizeof(AcosGradTilingData)) != EOK,
-        OP_LOGE(context, "AcosGrad: memset_s tiling data error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(memset_s(tiling, sizeof(AcosGradTilingData), 0, sizeof(AcosGradTilingData)) != EOK,
+                OP_LOGE(context, "AcosGrad: memset_s tiling data error"), return ge::GRAPH_FAILED);
 
     CalcTilingParams(totalLength, coreNum, dataType, tiling);
 
     context->SetBlockDim(tiling->blockNum);
 
-    OP_LOGI(context,
-        "[AcosGrad Tiling] totalLength=%lu, blockFormer=%u, blockNum=%u, ubFormer=%u, "
-        "ubLoopFormer=%u, ubTailFormer=%u, ubLoopTail=%u, ubTailTail=%u",
-        tiling->totalLength, tiling->blockFormer, tiling->blockNum, tiling->ubFormer,
-        tiling->ubLoopOfFormerBlock, tiling->ubTailOfFormerBlock,
-        tiling->ubLoopOfTailBlock, tiling->ubTailOfTailBlock);
+    uint64_t useDoubleBuffer = (totalLength > 1024UL) ? 1 : 0;
+    ASCENDC_TPL_SEL_PARAM(context, useDoubleBuffer);
 
-    uint32_t dTypeX = static_cast<uint32_t>(dataType);
-    ASCENDC_TPL_SEL_PARAM(context, dTypeX);
+    OP_LOGI(context,
+            "[AcosGrad Tiling] totalLength=%lu, blockFormer=%u, blockNum=%u, ubFormer=%u, "
+            "ubLoopFormer=%u, ubTailFormer=%u, ubLoopTail=%u, ubTailTail=%u",
+            tiling->totalLength, tiling->blockFormer, tiling->blockNum, tiling->ubFormer, tiling->ubLoopOfFormerBlock,
+            tiling->ubTailOfFormerBlock, tiling->ubLoopOfTailBlock, tiling->ubTailOfTailBlock);
+
     return ge::GRAPH_SUCCESS;
 }
 
