@@ -91,7 +91,7 @@ static bool CheckSliceInfo(const gert::Shape* x_shape, const SliceConstParams& s
         OP_LOGD("CheckSliceInfo", "will check size const value.");
         OP_CHECK_IF(slice_infer_info.size.GetDimNum() != input_dim,
                     OP_LOGE("CheckSliceInfo", "%s",
-                            ops::ConcatString("size num and input rank must be the same, but offset_value is ",
+                            ops::ConcatString("size num and input rank must be the same, but size_value is ",
                                               Ops::Base::ToString(slice_infer_info.size).c_str(), ", input shape is ",
                                               Ops::Base::ToString(*x_shape).c_str())
                                 .c_str()),
