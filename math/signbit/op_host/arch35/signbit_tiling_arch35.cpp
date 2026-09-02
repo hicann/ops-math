@@ -35,7 +35,7 @@ constexpr static uint64_t SIGNBIT_COMMON_TILING_PRIORITY = 0;
 
 class SignbitTiling {
 public:
-    explicit SignbitTiling(gert::TilingContext* context) : tilingContext(context){};
+    explicit SignbitTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunTiling();
 
 protected:
@@ -53,34 +53,28 @@ ge::graphStatus SignbitTiling::CheckDtype()
     auto inputDesc = tilingContext->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, inputDesc);
     this->inputDtype = inputDesc->GetDataType();
-    OP_CHECK_IF(
-        std::find(DTYPE_LIST.begin(), DTYPE_LIST.end(), inputDtype) == DTYPE_LIST.end(),
-        OP_LOGE(
-            tilingContext->GetNodeName(),
-            "input1's dtype must be bf16/fp16/fp32/int8/uint8/int32/int64/uint64/bool/double,but: %s",
-            ge::TypeUtils::DataTypeToSerialString(inputDtype).c_str()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(std::find(DTYPE_LIST.begin(), DTYPE_LIST.end(), inputDtype) == DTYPE_LIST.end(),
+                OP_LOGE(tilingContext->GetNodeName(),
+                        "input1's dtype must be bf16/fp16/fp32/int8/uint8/int32/int64/uint64/bool/double,but: %s",
+                        ge::TypeUtils::DataTypeToSerialString(inputDtype).c_str()),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus SignbitTiling::CheckShape() const
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus SignbitTiling::CheckShape() const { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus SignbitTiling::RunTiling()
 {
     OP_LOGD(tilingContext->GetNodeName(), "SignbitTiling RunTiling enter.");
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
-    OP_CHECK_IF(
-        CheckDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check dtype failed"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check dtype failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"),
+                return ge::GRAPH_FAILED);
 
     tiling = tilingContext->GetTilingData<SignbitTilingData>();
-    OP_CHECK_IF(
-        (tiling == nullptr), OP_LOGE(tilingContext->GetNodeName(), "Get SignbitTiling from GE context failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((tiling == nullptr), OP_LOGE(tilingContext->GetNodeName(), "Get SignbitTiling from GE context failed"),
+                return ge::GRAPH_FAILED);
 
     ge::graphStatus ret = ge::GRAPH_FAILED;
     if (inputDtype == ge::DT_INT64) {
@@ -88,8 +82,8 @@ ge::graphStatus SignbitTiling::RunTiling()
         ret = elewiseBaseTiling.DoTiling<SignbitIntegralOp::SignbitIntegralCompute<int64_t>::OpDag>(tiling->baseTiling);
     } else if (inputDtype == ge::DT_UINT64) {
         dType = TPL_UINT64;
-        ret =
-            elewiseBaseTiling.DoTiling<SignbitIntegralOp::SignbitIntegralCompute<uint64_t>::OpDag>(tiling->baseTiling);
+        ret = elewiseBaseTiling.DoTiling<SignbitIntegralOp::SignbitIntegralCompute<uint64_t>::OpDag>(
+            tiling->baseTiling);
     } else if (inputDtype == ge::DT_INT32) {
         dType = TPL_INT32;
         ret = elewiseBaseTiling.DoTiling<SignbitIntegralOp::SignbitIntegralCompute<int32_t>::OpDag>(tiling->baseTiling);
@@ -115,9 +109,8 @@ ge::graphStatus SignbitTiling::RunTiling()
         dType = TPL_DOUBLE;
         ret = elewiseBaseTiling.DoTiling<SignbitDoubleCompute<double>::OpDag>(tiling->baseTiling);
     } else {
-        OP_LOGE(
-            tilingContext->GetNodeName(),
-            "input dtype is only support uint64, int64, int32, float16, bf16, float, uint8, int8, bool, double!");
+        OP_LOGE(tilingContext->GetNodeName(),
+                "input dtype is only supported uint64, int64, int32, float16, bf16, float, uint8, int8, bool, double!");
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_IF(ret == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"), return ge::GRAPH_FAILED);

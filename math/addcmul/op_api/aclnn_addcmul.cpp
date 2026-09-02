@@ -54,8 +54,7 @@ static const std::initializer_list<op::DataType> ASCEND910B_AXPY_V2_DTYPE_SUPPOR
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 ||
-        IsRegBase()) {
+    if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93 || IsRegBase()) {
         return ASCEND910B_DTYPE_SUPPORT_LIST;
     } else {
         return ASCEND910_DTYPE_SUPPORT_LIST;
@@ -72,8 +71,8 @@ static op::DataType GetScalarDefaultDtype(const op::DataType input)
     return input;
 }
 
-static bool CheckNotNull(
-    const aclTensor* self, const aclTensor* tensor1, const aclTensor* tensor2, const aclScalar* value, aclTensor* out)
+static bool CheckNotNull(const aclTensor* self, const aclTensor* tensor1, const aclTensor* tensor2,
+                         const aclScalar* value, aclTensor* out)
 {
     OP_CHECK_NULL(self, return false);
     OP_CHECK_NULL(tensor1, return false);
@@ -98,34 +97,31 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* tensor1, con
     return true;
 }
 
-static bool CheckPromoteType(
-    const aclTensor* self, const aclTensor* tensor1, const aclTensor* tensor2, const aclTensor* out)
+static bool CheckPromoteType(const aclTensor* self, const aclTensor* tensor1, const aclTensor* tensor2,
+                             const aclTensor* out)
 {
     // 检查tensor1和tensor2能否做数据类型推导
     op::DataType promoteType = op::PromoteType(tensor1->GetDataType(), tensor2->GetDataType());
     if (promoteType == DataType::DT_UNDEFINED) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "tensor1 dtype %s and tensor2 dtype %s can not promote dtype.",
-            op::ToString(tensor1->GetDataType()).GetString(), op::ToString(tensor2->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "tensor1 dtype %s and tensor2 dtype %s can not promote dtype.",
+                op::ToString(tensor1->GetDataType()).GetString(), op::ToString(tensor2->GetDataType()).GetString());
         return false;
     }
 
     // 检查self和tensor1 * tensor2的结果能否做数据类型推导
     promoteType = op::PromoteType(self->GetDataType(), promoteType);
     if (promoteType == DataType::DT_UNDEFINED) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "self dtype %s and tensor1 * tensor2 dtype %s * %s can not promote dtype.",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(tensor1->GetDataType()).GetString(),
-            op::ToString(tensor2->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self dtype %s and tensor1 * tensor2 dtype %s * %s can not promote dtype.",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(tensor1->GetDataType()).GetString(),
+                op::ToString(tensor2->GetDataType()).GetString());
         return false;
     }
 
     if (CheckType(promoteType, PROMOTE_UN_SUPPORT_LIST)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "addcmul can not support promote dtype %s, self dtype is %s and tensor1 * tensor2 dtype is %s * %s",
-            op::ToString(promoteType).GetString(), op::ToString(self->GetDataType()).GetString(),
-            op::ToString(tensor1->GetDataType()).GetString(), op::ToString(tensor2->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "addcmul can not support promote dtype %s, self dtype is %s and tensor1 * tensor2 dtype is %s * %s",
+                op::ToString(promoteType).GetString(), op::ToString(self->GetDataType()).GetString(),
+                op::ToString(tensor1->GetDataType()).GetString(), op::ToString(tensor2->GetDataType()).GetString());
         return false;
     }
 
@@ -141,7 +137,7 @@ static bool CheckFormat(const aclTensor* self, const aclTensor* tensor1, const a
         op::IsPrivateFormat(tensor2->GetStorageFormat()) || op::IsPrivateFormat(out->GetStorageFormat())) {
         OP_LOGE(
             ACLNN_ERR_PARAM_INVALID,
-            "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW, self [%s], tensor1 [%s], tensor2 [%s], out [%s].",
+            "Format only supports ND, NCHW, NHWC, HWCN, NDHWC, NCDHW, self [%s], tensor1 [%s], tensor2 [%s], out [%s].",
             op::ToString(self->GetStorageFormat()).GetString(), op::ToString(tensor1->GetStorageFormat()).GetString(),
             op::ToString(tensor2->GetStorageFormat()).GetString(), op::ToString(out->GetStorageFormat()).GetString());
         return false;
@@ -162,21 +158,20 @@ static bool CheckShape(const aclTensor* self, const aclTensor* tensor1, const ac
     }
 
     if (!BroadcastInferShape(self->GetViewShape(), broadcastShape, broadcastShape)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of self and other can't broadcast.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of self and broadcast(tensor1, tensor2) can't broadcast.");
         return false;
     }
 
     if (broadcastShape != out->GetViewShape()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
-            op::ToString(broadcastShape).GetString(), op::ToString(out->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
+                op::ToString(broadcastShape).GetString(), op::ToString(out->GetViewShape()).GetString());
         return false;
     }
     return true;
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* self, const aclTensor* tensor1, const aclTensor* tensor2, const aclScalar* value, aclTensor* out)
+static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* tensor1, const aclTensor* tensor2,
+                               const aclScalar* value, aclTensor* out)
 {
     // 错误码等DFX方案细化后刷新，错误日志在check接口内打印
     // 1. 检查参数是否为空指针
@@ -234,9 +229,9 @@ static bool CanXBroadcastToY(const aclTensor* tensorX, const aclTensor* tensorY)
     return true;
 }
 
-aclnnStatus aclnnAddcmulGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* tensor1, const aclTensor* tensor2, const aclScalar* value, aclTensor* out,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnAddcmulGetWorkspaceSize(const aclTensor* self, const aclTensor* tensor1, const aclTensor* tensor2,
+                                         const aclScalar* value, aclTensor* out, uint64_t* workspaceSize,
+                                         aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
@@ -259,8 +254,8 @@ aclnnStatus aclnnAddcmulGetWorkspaceSize(
     }
 
     // 对输入做隐式数据类型转换，根据具体算子语义按需调用
-    auto promoteType =
-        op::PromoteType(self->GetDataType(), op::PromoteType(tensor1->GetDataType(), tensor2->GetDataType()));
+    auto promoteType = op::PromoteType(self->GetDataType(),
+                                       op::PromoteType(tensor1->GetDataType(), tensor2->GetDataType()));
 
     auto self_contiguous = l0op::Contiguous(self, uniqueExecutor.get());
     CHECK_COND(self_contiguous != nullptr, ACLNN_ERR_INNER_NULLPTR, "InitializeTensor self failed!");
@@ -281,8 +276,7 @@ aclnnStatus aclnnAddcmulGetWorkspaceSize(
     CHECK_COND(tensor2_casted != nullptr, ACLNN_ERR_INNER_NULLPTR, "cast tensor2 failed!");
 
     // 如果是混合数据类型（self为bf16或float16,且value为float32），则value dtype保持float32类型
-    bool isToFloat = IsRegBase() &&
-                     IsMixedDType(self, value) && promoteType != op::DataType::DT_DOUBLE;
+    bool isToFloat = IsRegBase() && IsMixedDType(self, value) && promoteType != op::DataType::DT_DOUBLE;
     auto valueDtype = isToFloat ? op::DataType::DT_FLOAT : promoteType;
     auto valueTensor = uniqueExecutor.get()->ConvertToTensor(value, valueDtype);
 
@@ -309,9 +303,9 @@ aclnnStatus aclnnAddcmulGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceAddcmulGetWorkspaceSize(
-    const aclTensor* selfRef, const aclTensor* tensor1, const aclTensor* tensor2, const aclScalar* value,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceAddcmulGetWorkspaceSize(const aclTensor* selfRef, const aclTensor* tensor1,
+                                                const aclTensor* tensor2, const aclScalar* value,
+                                                uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     auto out = const_cast<aclTensor*>(selfRef);
     return aclnnAddcmulGetWorkspaceSize(selfRef, tensor1, tensor2, value, out, workspaceSize, executor);
