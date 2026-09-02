@@ -330,7 +330,7 @@ __aicore__ inline void KthValueRadixMoreInnerCore<T1, T2, UT, T3, isDescend, Ena
 
 // Phase 1: compute the global scatter base of every radix bucket for the current tile, then barrier.
 #define KTH_VALUE_BUILD_GLOBAL_BUCKET_BASES()                                                           \
-    {                                                                                                   \
+    do {                                                                                                \
         for (int i = threadIdx.x; i < RADIX_SORT_NUM; i += THREAD_DIM_NUM) {                            \
             T3 blockHistCumsumVal = blockHistFlagAddr[i];                                               \
             if constexpr (IsSameType<T3, uint32_t>::value) {                                            \
@@ -344,13 +344,13 @@ __aicore__ inline void KthValueRadixMoreInnerCore<T1, T2, UT, T3, isDescend, Ena
             T3 finalpos = globalKeyOffsetVal + blockHistCumsumVal - blockHistVal - blockExcusiveSumVal; \
             blockDataInGlobalPosAddr[i] = finalpos;                                                     \
         }                                                                                               \
-    }                                                                                                   \
-    asc_syncthreads()
+        asc_syncthreads();                                                                              \
+    } while (0)
 
 // Phase 2: locate the bucket whose global range contains the selected position and write
 // that element's value and original index to the compact outputs.
 #define KTH_VALUE_WRITE_SELECTED_OUTPUT(SELECTED_K)                                                               \
-    {                                                                                                             \
+    do {                                                                                                          \
         for (int i = threadIdx.x; i < RADIX_SORT_NUM; i += THREAD_DIM_NUM) {                                      \
             T3 localBucketStart = static_cast<T3>(blockExcusiveSumAddr[i]);                                       \
             T3 localBucketEnd = localBucketStart + static_cast<T3>(blockHistAddr[i]);                             \
@@ -369,7 +369,7 @@ __aicore__ inline void KthValueRadixMoreInnerCore<T1, T2, UT, T3, isDescend, Ena
                 kthIndexGmAddr[outputRow] = static_cast<KthIdxT>(dataInitIndex);                                  \
             }                                                                                                     \
         }                                                                                                         \
-    }
+    } while (0)
 
 template <typename T1, typename T2, typename T3, typename KthIdxT, int32_t round>
 __simt_vf__ LAUNCH_BOUND(THREAD_DIM_NUM) __aicore__

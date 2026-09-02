@@ -521,6 +521,9 @@ static bool AddBankRotationPadding(uint32_t blockBytes, uint32_t& rowBytes)
     // A merge row stride spanning a multiple of four 32-byte blocks repeatedly addresses the same bank groups.
     // One allocated block of padding rotates successive row starts without changing the logical Sort length.
     constexpr uint32_t bankConcentrationStrideBlocks = 4U;
+    if (blockBytes == 0U || blockBytes > std::numeric_limits<uint32_t>::max() / bankConcentrationStrideBlocks) {
+        return false;
+    }
     uint32_t bankConcentrationGranularityBytes = bankConcentrationStrideBlocks * blockBytes;
     if (rowBytes % bankConcentrationGranularityBytes != 0U) {
         return true;

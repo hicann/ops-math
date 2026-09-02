@@ -112,18 +112,20 @@ private:
 
     __aicore__ inline void LoadGroupedOuterBatchWithNddma(uint64_t outerStart, uint32_t validOuter)
     {
+        constexpr uint32_t NDDMA_DIM_NUM = 3U;
         uint32_t innerSize = static_cast<uint32_t>(innerSize_);
         uint32_t outerElems = segmentLen_ * innerSize;
         // Map contiguous GM [outer, axis, inner] slices directly to dense UB [outer, inner, axis].
-        NdDmaLoopInfo<3> loopInfo{{1, innerSize, static_cast<uint64_t>(outerElems)},
-                                  {segmentLen_, 1, outerElems},
-                                  {innerSize, segmentLen_, validOuter},
-                                  {0, 0, 0},
-                                  {0, 0, 0}};
-        NdDmaParams<T, 3> params{loopInfo, static_cast<T>(0)};
+        NdDmaLoopInfo<NDDMA_DIM_NUM> loopInfo{{1, innerSize, static_cast<uint64_t>(outerElems)},
+                                              {segmentLen_, 1, outerElems},
+                                              {innerSize, segmentLen_, validOuter},
+                                              {0, 0, 0},
+                                              {0, 0, 0}};
+        NdDmaParams<T, NDDMA_DIM_NUM> params{loopInfo, static_cast<T>(0)};
         NdDmaDci();
         static constexpr NdDmaConfig config;
-        DataCopy<T, 3, config>(inputValues_, inputXGm_[outerStart * static_cast<uint64_t>(outerElems)], params);
+        DataCopy<T, NDDMA_DIM_NUM, config>(inputValues_, inputXGm_[outerStart * static_cast<uint64_t>(outerElems)],
+                                           params);
         event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
         SetFlag<HardEvent::MTE2_V>(eventId);
         WaitFlag<HardEvent::MTE2_V>(eventId);
