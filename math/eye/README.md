@@ -48,10 +48,24 @@
       <td>-</td>
     </tr>
     <tr>
+      <td>batch_shape</td>
+      <td>输入</td>
+      <td>可选，表示输出张量的batch维度，Host侧的整型列表，每项必须大于0。未指定时输出为二维。</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>dtype</td>
+      <td>输入</td>
+      <td>可选，表示输出张量的数据类型，Host侧的整型，对应数据类型枚举值。默认值为FLOAT32。</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
       <td>out</td>
       <td>输出</td>
-      <td>表示输出张量，Device侧的aclTensor。维度只支持二维，shape需为(n，m)。</td>
-      <td>FLOAT16、FLOAT32、INT32、INT16、INT8、UINT8、INT64、BOOL</td>
+      <td>表示输出张量，Device侧的aclTensor。shape为batch_shape + (n, m)，未指定batch_shape时为二维(n, m)。</td>
+      <td>BFLOAT16、FLOAT16、FLOAT32、INT32、INT16、INT8、UINT8、INT64、BOOL</td>
       <td>ND</td>
     </tr>
   </tbody>
