@@ -33,9 +33,6 @@ namespace TanhDag1 {
 using namespace Ops::Base;
 using namespace AscendC;
 
-constexpr int CAST_MODE_NONE = 0;
-constexpr int CAST_MODE_RINT = 1;
-
 constexpr float FP32_ZERO_015 = 0.0157396831f;
 constexpr float FP32_ZERO_NEG_052 = -0.0523039624f;
 constexpr float FP32_ZERO_133 = 0.133152977f;
@@ -138,15 +135,11 @@ private:
 };
 } // namespace TanhDag1
 
-template <typename U, typename T = float>
+template <typename U>
 struct TanhDAG {
     using OpCopyIn0 = Ops::Base::Bind<Ops::Base::Vec::CopyIn<U>, Ops::Base::Placeholder::In0<U>>;
-
-    using OpCopyIn0Cast = Ops::Base::Bind<Ops::Base::Vec::Cast<T, U, TanhDag1::CAST_MODE_NONE>, OpCopyIn0>;
-    using OpResult1 = Ops::Base::Bind<TanhDag1::TanhCustom<T>, OpCopyIn0Cast>;
-    using OpResultCast = Ops::Base::Bind<Ops::Base::Vec::Cast<U, T, TanhDag1::CAST_MODE_RINT>, OpResult1>;
-
-    using OpCopyOut = Ops::Base::Bind<Ops::Base::Vec::CopyOut<U>, Ops::Base::Placeholder::Out0<U>, OpResultCast>;
+    using OpResult1 = Ops::Base::Bind<TanhDag1::TanhCustom<U>, OpCopyIn0>;
+    using OpCopyOut = Ops::Base::Bind<Ops::Base::Vec::CopyOut<U>, Ops::Base::Placeholder::Out0<U>, OpResult1>;
 
     using Outputs = Ops::Base::Elems<OpCopyOut>;
     using MemCfg = Ops::Base::MemOptCfg<Ops::Base::MemLevel::LEVEL_2>;
