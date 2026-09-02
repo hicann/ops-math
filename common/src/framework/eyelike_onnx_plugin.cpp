@@ -12,6 +12,7 @@
 #include "op_math_proto_extend.h"
 #include "conversion/squeeze/op_graph/squeeze_proto.h"
 #include "math/cast/op_graph/cast_proto.h"
+#include "math/adds/op_graph/adds_proto.h"
 #include "conversion/split/op_graph/split_proto.h"
 #include "conversion/fill/op_graph/fill_proto.h"
 #include "math/shape/op_graph/shape_proto.h"
@@ -123,13 +124,12 @@ static Status ParseOpToGraphEyeLike(const ge::Operator& op, Graph& graph)
 // register ROIAlign op info to GE
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType(
-        {ge::AscendString("ai.onnx::8::EyeLike"), ge::AscendString("ai.onnx::9::EyeLike"),
-         ge::AscendString("ai.onnx::10::EyeLike"), ge::AscendString("ai.onnx::11::EyeLike"),
-         ge::AscendString("ai.onnx::12::EyeLike"), ge::AscendString("ai.onnx::13::EyeLike"),
-         ge::AscendString("ai.onnx::14::EyeLike"), ge::AscendString("ai.onnx::15::EyeLike"),
-         ge::AscendString("ai.onnx::16::EyeLike"), ge::AscendString("ai.onnx::17::EyeLike"),
-         ge::AscendString("ai.onnx::18::EyeLike")})
+    .OriginOpType({ge::AscendString("ai.onnx::8::EyeLike"), ge::AscendString("ai.onnx::9::EyeLike"),
+                   ge::AscendString("ai.onnx::10::EyeLike"), ge::AscendString("ai.onnx::11::EyeLike"),
+                   ge::AscendString("ai.onnx::12::EyeLike"), ge::AscendString("ai.onnx::13::EyeLike"),
+                   ge::AscendString("ai.onnx::14::EyeLike"), ge::AscendString("ai.onnx::15::EyeLike"),
+                   ge::AscendString("ai.onnx::16::EyeLike"), ge::AscendString("ai.onnx::17::EyeLike"),
+                   ge::AscendString("ai.onnx::18::EyeLike")})
     .ParseParamsFn(ParseParamsEyeLike)
     .ParseOpToGraphFn(ParseOpToGraphEyeLike)
     .ImplyType(ImplyType::TVM);

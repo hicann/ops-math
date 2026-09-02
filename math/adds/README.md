@@ -78,4 +78,4 @@
 
 | 调用方式 | 样例代码  | 说明     |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| 图模式调用 | [test\_geir\_adds](./examples/test_geir_adds.cpp) | 通过[算子IR](../../common/inc/op_graph/op_math_proto_extend.h)构图方式调用Adds算子。 |
+| 图模式调用 | [test\_geir\_adds](./examples/test_geir_adds.cpp) | 通过[算子IR](./op_graph/adds_proto.h)构图方式调用Adds算子。 |
