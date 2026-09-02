@@ -150,14 +150,23 @@ protected:
     {
         uint32_t curBytes = curInnerChunk * sizeof(T);
         uint32_t curAlignedBytes = ROUND_UP_AGLIN(curBytes);
-        uint32_t dstStride = (this->inputRowBytes_ > curAlignedBytes) ?
-                                 (this->inputRowBytes_ - curAlignedBytes) / UB_BLOCK_SIZE :
-                                 0;
-        uint32_t rightPadding = this->inputRowElems_ > curInnerChunk ? this->inputRowElems_ - curInnerChunk : 0;
-        int64_t gmStride = (this->innerSize_ - static_cast<int64_t>(curInnerChunk)) * static_cast<int64_t>(sizeof(T));
-        DataCopyExtParams copyParam{static_cast<uint16_t>(this->axisLen_), curBytes, gmStride, dstStride, 0};
+        uint32_t rightPadding = (curAlignedBytes - curBytes) / sizeof(T);
         DataCopyPadExtParams<T> padParam{true, 0, static_cast<uint8_t>(rightPadding), static_cast<T>(0)};
-        DataCopyPad(this->inputTile_, this->inputGm_[baseOffset], copyParam, padParam);
+        if (curAlignedBytes == this->inputRowBytes_) {
+            int64_t gmStride = (this->innerSize_ - static_cast<int64_t>(curInnerChunk)) *
+                               static_cast<int64_t>(sizeof(T));
+            DataCopyExtParams copyParam{static_cast<uint16_t>(this->axisLen_), curBytes, gmStride, 0, 0};
+            DataCopyPad(this->inputTile_, this->inputGm_[baseOffset], copyParam, padParam);
+        } else {
+            // A tail tile can leave one or more complete data blocks between UB rows. Keep each
+            // row copy contiguous instead of combining burst padding with a destination gap.
+            DataCopyExtParams copyParam{1, curBytes, 0, 0, 0};
+            for (uint32_t axis = 0; axis < this->axisLen_; ++axis) {
+                int64_t gmOffset = baseOffset + static_cast<int64_t>(axis) * this->innerSize_;
+                DataCopyPad(this->inputTile_[axis * this->inputRowElems_], this->inputGm_[gmOffset], copyParam,
+                            padParam);
+            }
+        }
         event_t eventId = static_cast<event_t>(this->pipe_->FetchEventID(HardEvent::MTE2_V));
         SetFlag<HardEvent::MTE2_V>(eventId);
         WaitFlag<HardEvent::MTE2_V>(eventId);
