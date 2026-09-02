@@ -446,7 +446,7 @@ uint32_t TransDataCpuKernel::DispatchDealData(DataType dt, void* input_data_temp
             return DealData(reinterpret_cast<Eigen::half*>(input_data_temp),
                             reinterpret_cast<Eigen::half*>(output_data_temp), input_tensor, output_tensor, group);
         default:
-            KERNEL_LOG_WARN("DateType is not DT_INT8 or DT_FLOAT or DT_FLOAT16, and current "
+            KERNEL_LOG_WARN("DataType is not DT_INT8 or DT_FLOAT or DT_FLOAT16, and current "
                             "DataType is [%d]",
                             static_cast<int32_t>(dt));
             return KERNEL_STATUS_PARAM_INVALID;
