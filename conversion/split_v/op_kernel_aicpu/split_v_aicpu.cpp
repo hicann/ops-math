@@ -289,7 +289,7 @@ uint32_t SplitVCpuKernel::Compute(CpuKernelContext& ctx)
         case DT_UINT64:
             return DoCompute<uint64_t>();
         default:
-            KERNEL_LOG_ERROR("Unsupport datatype[%s]", DTypeStr(data_type_).c_str());
+            KERNEL_LOG_ERROR("Unsupported datatype[%s]", DTypeStr(data_type_).c_str());
             return KERNEL_STATUS_PARAM_INVALID;
     }
 }
