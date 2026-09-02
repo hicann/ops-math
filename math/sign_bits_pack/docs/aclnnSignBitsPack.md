@@ -23,7 +23,7 @@
 
 ## 功能说明
 
-将float16类型或者float32类型的1位Adam打包为uint8。
+将FLOAT16类型或者FLOAT32类型的1位Adam打包为UINT8。
 
 ## 函数原型
 

@@ -47,12 +47,12 @@
 
     biasShape为xShape[axis:axis + numAxes]
 
-  - 当scaleFromBlob为False时（axis转换为正数， numAxes为-1时表示到最前轴）：
+  - 当scaleFromBlob为False时（axis转换为正数，numAxes为-1时表示到最前轴）：
 
     scaleShape为xShape[axis:axis + rank(scaleShape)]
 
     biasShape为xShape[axis:axis + rank(scaleShape)]
-  - 示例:
+  - 示例：
 
     - scaleFromBlob = True：
 
@@ -412,8 +412,8 @@ int main() {
   aclTensor* out = nullptr;
 
   std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
-  std::vector<float> tensor1HostData = {2, 2, 2, 2, 2, 2, 2, 2};
-  std::vector<float> tensor2HostData = {2, 2, 2, 2, 2, 2, 2, 2};
+  std::vector<float> tensor1HostData = {2, 2, 2, 2};
+  std::vector<float> tensor2HostData = {2, 2, 2, 2};
   std::vector<float> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
   int64_t axis = 0;
   int64_t numAxes = 1;

@@ -146,9 +146,9 @@ int main()
     auto ret = Init(deviceId, &stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
-    // 执行InplaceLtScalar操作
+    // 执行LtScalar操作
     ret = ExecuteLtScalarOperator(stream);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("ExecuteInplaceLtScalarOperator failed. ERROR: %d\n", ret); return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("ExecuteLtScalarOperator failed. ERROR: %d\n", ret); return ret);
 
     // 重置设备和终结ACL
     aclrtDestroyStream(stream);

@@ -438,7 +438,7 @@ aclnnStatus aclnnInplaceNanToNum(
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
-**aclnnNanToNum接口调用示例代码：**
+**aclnnNanToNum 接口调用示例代码：**
 
 ```Cpp
 #include <iostream>
@@ -518,8 +518,8 @@ int main() {
   float nanValue = 0;
   float posInfValue = 1.0;
   float negInfValue = -1.0;
-  std::vector<float> selfHostData = {0, 1, 2, 3, 4, 0, 1, -1};
-  std::vector<float> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
+  std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5};
+  std::vector<float> outHostData = {0, 0, 0, 0, 0, 0};
   // 创建self aclTensor
   ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -575,7 +575,7 @@ int main() {
 }
 ```
 
-**aclnnInplaceNanToNum接口调用示例代码：**
+**aclnnInplaceNanToNum 接口调用示例代码：**
 
 ```Cpp
 #include <iostream>
@@ -652,7 +652,7 @@ int main() {
   float nanValue = 0;
   float posInfValue = 1.0;
   float negInfValue = -1.0;
-  std::vector<float> selfHostData = {0, 1, 2, 3, 4, 0, 1, -1};
+  std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5};
   // 创建self aclTensor
   ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);

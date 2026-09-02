@@ -111,7 +111,7 @@ int main()
     DeviceMemPtr outDeviceAddr(nullptr, &aclrtFree);
     TensorPtr self(nullptr, &aclDestroyTensor);
     TensorPtr out(nullptr, &aclDestroyTensor);
-    std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+    std::vector<float> selfHostData = {1, 2, 3, 4, 5, 6, 7, 8};
     std::vector<float> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
 
     // 创建self aclTensor

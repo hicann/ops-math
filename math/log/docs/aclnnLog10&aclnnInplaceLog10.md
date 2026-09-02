@@ -45,7 +45,7 @@
 
 - 每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用"aclnnLog10GetWorkspaceSize"或者"aclnnInplaceLog10GetWorkspaceSize"接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用"aclnnLog10"或者"aclnnInplaceLog10"接口执行计算。
 
-```Cpp
+```cpp
 aclnnStatus aclnnLog10GetWorkspaceSize(
   const aclTensor*          self,
   aclTensor*                out,
@@ -53,7 +53,7 @@ aclnnStatus aclnnLog10GetWorkspaceSize(
   aclOpExecutor**           executor)
 ```
 
-```Cpp
+```cpp
 aclnnStatus aclnnLog10(
   void*                     workspace,
   uint64_t                  workspaceSize,
@@ -61,14 +61,14 @@ aclnnStatus aclnnLog10(
   aclrtStream               stream)
 ```
 
-```Cpp
+```cpp
 aclnnStatus aclnnInplaceLog10GetWorkspaceSize(
   aclTensor*                selfRef,
   uint64_t*                 workspaceSize,
   aclOpExecutor**           executor)
 ```
 
-```Cpp
+```cpp
 aclnnStatus aclnnInplaceLog10(
   void*                     workspace,
   uint64_t                  workspaceSize,
@@ -366,7 +366,7 @@ aclnnStatus aclnnInplaceLog10(
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
-```Cpp
+```cpp
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
@@ -442,7 +442,7 @@ int main() {
   void* outDeviceAddr = nullptr;
   aclTensor* self = nullptr;
   aclTensor* out = nullptr;
-  std::vector<double> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+  std::vector<double> selfHostData = {1, 2, 3, 4, 5, 6, 7, 8};
   std::vector<double> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
 
   // 创建self aclTensor
@@ -500,7 +500,7 @@ int main() {
 
 **aclnnInplaceLog10示例代码：**
 
-```CPP
+```cpp
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
@@ -576,7 +576,7 @@ int main() {
   void* outDeviceAddr = nullptr;
   aclTensor* self = nullptr;
   aclTensor* out = nullptr;
-  std::vector<double> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+  std::vector<double> selfHostData = {1, 2, 3, 4, 5, 6, 7, 8};
   std::vector<double> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
 
   // 创建self aclTensor

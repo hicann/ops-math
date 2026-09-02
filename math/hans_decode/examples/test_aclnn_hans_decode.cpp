@@ -185,7 +185,7 @@ int main()
         CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
         workspaceAddrDecode.reset(rawWorkspaceAddr);
     }
-    // 调用aclnnHansEncode第二段接口
+    // 调用aclnnHansDecode第二段接口
     ret = aclnnHansDecode(workspaceAddrDecode.get(), workspaceSizeDecode, executorDecode, stream.get());
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnHansDecode failed. ERROR: %d\n", ret); return ret);
 

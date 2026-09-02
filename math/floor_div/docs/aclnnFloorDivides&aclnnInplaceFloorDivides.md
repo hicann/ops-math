@@ -485,7 +485,6 @@ int main() {
   std::vector<int64_t> otherShape = {4, 2};
   std::vector<int64_t> outShape = {4, 2};
   void* selfDeviceAddr = nullptr;
-  void* otherDeviceAddr = nullptr;
   void* outDeviceAddr = nullptr;
   aclTensor* self = nullptr;
   aclScalar* other = nullptr;
@@ -564,7 +563,6 @@ int main() {
 
   // 7. 释放device资源，需要根据具体API的接口定义修改
   aclrtFree(selfDeviceAddr);
-  aclrtFree(otherDeviceAddr);
   aclrtFree(outDeviceAddr);
   if (workspaceSize > 0) {
     aclrtFree(workspaceAddr);

@@ -105,7 +105,7 @@ int main()
 
     // 2. 构造输入与输出，需要根据API的接口自定义构造
     std::vector<int64_t> selfShape = {4, 2};
-    // 如果keepDim的值为true，则indicesShape和outShape的shape为{1, 2}
+    // 如果keepdim的值为true，则indicesShape和outShape的shape为{1, 2}
     std::vector<int64_t> indicesShape = {2};
     std::vector<int64_t> outShape = {2};
     DeviceMemPtr selfDeviceAddr(nullptr, &aclrtFree);

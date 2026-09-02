@@ -309,7 +309,6 @@ int main() {
   void* outDeviceAddr = nullptr;
   aclScalar* start = nullptr;
   aclScalar* end = nullptr;
-  aclScalar* steps = nullptr;
   aclTensor* out = nullptr;
   std::vector<float> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
   float startValue = 0.0f;
@@ -322,9 +321,6 @@ int main() {
   // 创建end aclScalar
   end = aclCreateScalar(&endValue, aclDataType::ACL_FLOAT);
   CHECK_RET(end != nullptr, return ret);
-  // 创建steps aclScalar
-  steps = aclCreateScalar(&stepsValue, aclDataType::ACL_INT64);
-  CHECK_RET(steps != nullptr, return ret);
   // 创建out aclTensor
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
