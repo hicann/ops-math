@@ -67,6 +67,24 @@ constexpr int64_t kHlVectorMMin = 32;
 constexpr int64_t kHlVectorMEx = 16;
 constexpr int64_t kHlVectorMaxPR = 262144;
 
+// ============================================================
+// UB-BRC / multi-batch 通用常量
+// ============================================================
+// M 下限：M>=2 才进入 HL 矢量路径（M==1 走独立 broadcast 路由）。
+constexpr int64_t kHlMMin = 2;
+// 迭代收敛求 elemNum 的最大迭代次数（UB 容量与 aliveBig 的耦合求解）。
+constexpr int64_t kUbConvergeMaxIter = 8;
+// multi-batch 打包分支标识（brcBranch==2 表示每 tile 打包多个 batch）。
+constexpr int64_t kBrcBranchMultiBatch = 2;
+// multi-batch 启用门槛：P/R 任一侧上限（P<=64 且 R<=64 才打包，避免大 plane 撑满 UB）。
+constexpr int64_t kMultiBatchMaxSide = 64;
+// multi-batch 启用门槛：B 下限（B>=128 时打包才摊薄/并行收益，B 小回退 UB-BRC）。
+constexpr int64_t kMultiBatchMinBatch = 128;
+// multi-batch 收敛迭代上限（收缩 batchPerTile 直到 UB 装得下）。
+constexpr int64_t kMultiBatchConvergeMaxIter = 8;
+// multi-batch 生效下限：batchPerTile>=2 才有打包意义。
+constexpr int64_t kMultiBatchMinBatchPerTile = 2;
+
 ge::graphStatus CdistTiling::CheckParams()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Start CheckParams.");
@@ -464,7 +482,7 @@ void CdistTiling::DoTiling()
     bool hlVectorWins = !isInf && !smallRBad && !p2SmallMBad && !smallMRBad && !midMBad && !p1SmallMBad &&
                         !genpSmallMBad &&
                         ((M_ >= kHlVectorMMin) || (M_ >= kHlVectorMEx && (P_ * R_) <= kHlVectorMaxPR));
-    if (M_ >= 2 && M_ <= M_SIZE && hlVectorWins) {
+    if (M_ >= kHlMMin && M_ <= M_SIZE && hlVectorWins) {
         is_small_m_ = 0;    // launch on the Normal-shaped tiling
         use_reduce_hl_ = 1; // but dispatch to the high-level reduce kernel (KERNEL_MODE=3)
         // Reserve UB for the two fixed HL fp32 compute planes (x1exp + diff, 4096 elems each = 32KB) plus
@@ -513,9 +531,7 @@ void CdistTiling::CapUbFactorRForHL()
     tilingData_.ubTailFactorR = r0 % maxUbR; // 0 => last chunk is a full ubFactorR (kernel derives via subtraction)
 }
 
-// 方案2: 填充 Broadcast fast path tiling（逐行照抄直调 operators/cdist/final_optimized/cdist_host_tiling.cpp
-// 的 DoBrcTiling，选型/守卫/切分/strides 数学一字不改，只把 SimpleShape 裸接口换成 register 接口 dtypeSize_/
-// ubSize_/coreNum_/tilingData_.p）。合 batch 后 out=(B,P,R), x1=(B,P), x2=(B,R), M==1。
+// 方案2: 填充 Broadcast fast path tiling
 void CdistTiling::DoBrcTiling()
 {
     CdistBrcTilingData& t = brcTilingData_;
@@ -567,7 +583,7 @@ void CdistTiling::DoBrcTiling()
     elemNum = (elemNum / alignFp) * alignFp;
     if (elemNum < alignFp)
         elemNum = alignFp;
-    for (int iter = 0; iter < 8; ++iter) {
+    for (int iter = 0; iter < kUbConvergeMaxIter; ++iter) {
         int64_t rSegTmp, rowsPTmp;
         if (R_ <= elemNum) {
             rSegTmp = R_;
@@ -598,26 +614,24 @@ void CdistTiling::DoBrcTiling()
     }
 
     // 缺陷② 修复：小 tile 场景（whole (P,R) plane 装得下 UB，且 P*R 小到可打包 >=2 个 batch）走
-    // multi-batch(brcBranch==2)，把每 tile 只处理 1 batch 的 256 元素小 tile 打包成每 tile 多 batch，
-    // 消除 30896 次 per-tile 固定开销。门槛与 issue 小 tile 思路一致（P,R 都很小时才打包）。
+    // multi-batch(brcBranch==2)，把每 tile 只处理 1 batch 的 256 元素小 tile 打包成每 tile 多 batch
     {
         int64_t plane = P_ * R_;                   // 单 batch 输出元素数
         const int64_t alignFp32 = BLOCK_BYTES / 4; // fp32 32B = 8 元素
         // 打包需求：整块 (P,R) 装得下 UB（R<=elemNum 且 P*R<=elemNum），且能装 >=2 个 batch；
         // 且 plane 必须 32B(fp32 8 元素)对齐——否则逐 batch Broadcast 的 dst 局部偏移 j*plane 未对齐，
-        // Broadcast 在小 plane+大 batchPerTile 下会 aicore 异常(507035)。非对齐 plane 回落 brcBranch==1
-        // (原正确 UB-BRC 路径)。181 plane=256 对齐 → 走快路径。
+        // 非对齐 plane 回落 brcBranch==1 (原正确 UB-BRC 路径)。181 plane=256 对齐 → 走快路径。
         // B 极小(<128)时回退 UB-BRC：multi-batch 每 tile 打包 batchPerTile=min(elemNum/plane,B) 个 batch，
-        // B 小意味着 plane 大(plane>=485 才进 broadcast)，UB 被少数大 plane 撑满，Broadcast 高阶 API 内部
-        // 栈(PopStackBuffer)申请越界 → 507035/VEC_ERROR(实测 plane=648 B=50、plane=1936 B=32 触发)；
-        // 且 B 小时 multi-batch 摊薄/并行收益消失(实测与 SIMT 持平)，回退 UB-BRC 更安全。
-        if (plane > 0 && (plane % alignFp32 == 0) && R_ <= elemNum && plane * 2 <= elemNum && P_ <= 64 && R_ <= 64 &&
-            B_ >= 128) {
+        // B 小意味着 plane 大(plane>=485 才进 broadcast)，UB 被少数大 plane 撑满，且 B 小时 multi-batch
+        // 摊薄/并行收益消失(实测与 SIMT 持平)，回退 UB-BRC 更安全。
+        if (plane > 0 && (plane % alignFp32 == 0) && R_ <= elemNum && plane * kMultiBatchMinBatchPerTile <= elemNum &&
+            P_ <= kMultiBatchMaxSide && R_ <= kMultiBatchMaxSide && B_ >= kMultiBatchMinBatch) {
             int64_t batchPerTile = elemNum / plane; // 每 tile 打包的 batch 数
             if (batchPerTile > B_)
                 batchPerTile = B_;
             // UB 检查：brcBranch==2 的 src buffer 随 batchPerTile 增长，需验证不超 UB
-            for (int gIter = 0; gIter < 8 && batchPerTile >= 2; ++gIter) {
+            for (int gIter = 0; gIter < kMultiBatchConvergeMaxIter && batchPerTile >= kMultiBatchMinBatchPerTile;
+                 ++gIter) {
                 int64_t g = batchPerTile;
                 int64_t s1 = ((g * P_ + alignT - 1) / alignT) * alignT;
                 int64_t s2 = ((g * R_ + alignT - 1) / alignT) * alignT;
@@ -629,8 +643,8 @@ void CdistTiling::DoBrcTiling()
                 int64_t shrinkG = (overshoot / ((2 * dtypeSize_ + fp32Bytes) * (P_ + R_))) + 1;
                 batchPerTile -= shrinkG;
             }
-            if (batchPerTile >= 2) {
-                t.brcBranch = 2;
+            if (batchPerTile >= kMultiBatchMinBatchPerTile) {
+                t.brcBranch = kBrcBranchMultiBatch;
                 t.B = B_;
                 t.P = P_;
                 t.R = R_;
