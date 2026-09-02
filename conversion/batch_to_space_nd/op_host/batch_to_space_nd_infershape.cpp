@@ -35,6 +35,9 @@ public:
 
 private:
     ge::graphStatus Init();
+    ge::graphStatus AppendBatchDim();
+    void AppendSpatialDims();
+    void AppendRemainDims();
 
 private:
     gert::InferShapeContext* context_;
@@ -77,6 +80,45 @@ ge::graphStatus BatchToSpaceNDInferShapeHelper::Init()
     return ge::GRAPH_SUCCESS;
 }
 
+ge::graphStatus BatchToSpaceNDInferShapeHelper::AppendBatchDim()
+{
+    // batch
+    int64_t batch = xShape_->GetDim(0);
+    if (batch != UNKNOWN_DIM) {
+        for (size_t i = 0; i < blockNum_; ++i) {
+            OP_CHECK_IF(blockVec_.GetDim(i) == 0,
+                        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "block_shape", "0",
+                                                              "The value of block_shape cannot be zero"),
+                        return ge::GRAPH_FAILED);
+            batch = batch / blockVec_.GetDim(i);
+        }
+    }
+    yShape_->AppendDim(batch);
+    return ge::GRAPH_SUCCESS;
+}
+
+void BatchToSpaceNDInferShapeHelper::AppendSpatialDims()
+{
+    // spatial shape
+    for (size_t i = 1; i <= blockNum_; ++i) {
+        size_t j = i - 1;
+        if (xShape_->GetDim(i) != UNKNOWN_DIM && isConstCrops_) {
+            int64_t totalCrop = cropsVec_.GetDim(CROPS_LENGTH * j) + cropsVec_.GetDim(CROPS_LENGTH * j + 1);
+            yShape_->AppendDim(xShape_->GetDim(i) * blockVec_.GetDim(j) - totalCrop);
+        } else {
+            yShape_->AppendDim(UNKNOWN_DIM);
+        }
+    }
+}
+
+void BatchToSpaceNDInferShapeHelper::AppendRemainDims()
+{
+    // remain shape
+    for (size_t i = blockNum_ + 1; i < xShape_->GetDimNum(); ++i) {
+        yShape_->AppendDim(xShape_->GetDim(i));
+    }
+}
+
 ge::graphStatus BatchToSpaceNDInferShapeHelper::Inference()
 {
     auto ret = Init();
@@ -90,35 +132,12 @@ ge::graphStatus BatchToSpaceNDInferShapeHelper::Inference()
     }
 
     yShape_->SetDimNum(0);
-
-    // batch
-    int64_t batch = xShape_->GetDim(0);
-    if (batch != UNKNOWN_DIM) {
-        for (size_t i = 0; i < blockNum_; ++i) {
-            OP_CHECK_IF(blockVec_.GetDim(i) == 0,
-                        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "block_shape", "0",
-                                                              "The value of block_shape cannot be zero"),
-                        return ge::GRAPH_FAILED);
-            batch = batch / blockVec_.GetDim(i);
-        }
+    auto batchRet = AppendBatchDim();
+    if (batchRet != ge::GRAPH_SUCCESS) {
+        return batchRet;
     }
-    yShape_->AppendDim(batch);
-
-    // spatial shape
-    for (size_t i = 1; i <= blockNum_; ++i) {
-        size_t j = i - 1;
-        if (xShape_->GetDim(i) != UNKNOWN_DIM && isConstCrops_) {
-            int64_t totalCrop = cropsVec_.GetDim(CROPS_LENGTH * j) + cropsVec_.GetDim(CROPS_LENGTH * j + 1);
-            yShape_->AppendDim(xShape_->GetDim(i) * blockVec_.GetDim(j) - totalCrop);
-        } else {
-            yShape_->AppendDim(UNKNOWN_DIM);
-        }
-    }
-
-    // remain shape
-    for (size_t i = blockNum_ + 1; i < xShape_->GetDimNum(); ++i) {
-        yShape_->AppendDim(xShape_->GetDim(i));
-    }
+    AppendSpatialDims();
+    AppendRemainDims();
 
     return ge::GRAPH_SUCCESS;
 }

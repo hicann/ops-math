@@ -48,9 +48,8 @@ TEST_F(DepthToSpaceTiling, test_nhwc_dcr_float16_success_001)
          gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("DCR")),
          gert::TilingContextPara::OpAttr("data_format", Ops::Math::AnyValue::CreateFrom<std::string>("NHWC"))},
         &compileInfo);
-    // TODO: Update these values after running the test to get actual tiling results
     uint64_t expectTilingKey = 10001;
-    string expectTilingData = "4 0 0 0 0 0 0 32 1 0 253952 1 0 0 0 0 0 0 0 2 2 2 4 0 0 0 0 2 2 2 4 0 0 0 0 0 2 1 3 0 0 "
+    string expectTilingData = "4 0 0 0 0 0 0 1 32 0 253952 1 0 0 0 0 0 0 0 2 2 2 4 0 0 0 0 2 2 2 4 0 0 0 0 0 2 1 3 0 0 "
                               "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1 0 0 0 0 0 1 3 2 4 1 2 2 2 4 1 2 2 2 4 1 0 2 2 4 1 0 2 "
                               "2 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 2 2 4 1 0 2 2 4 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -77,9 +76,8 @@ TEST_F(DepthToSpaceTiling, test_nchw_dcr_float16_success_001)
          gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("DCR")),
          gert::TilingContextPara::OpAttr("data_format", Ops::Math::AnyValue::CreateFrom<std::string>("NCHW"))},
         &compileInfo);
-    // TODO: Update these values after running the test to get actual tiling results
     uint64_t expectTilingKey = 10001;
-    string expectTilingData = "4 0 0 0 0 0 0 32 1 0 253952 1 0 0 0 0 0 0 0 2 2 4 2 0 0 0 0 4 2 2 2 0 0 0 0 2 0 3 1 0 0 "
+    string expectTilingData = "4 0 0 0 0 0 0 1 32 0 253952 1 0 0 0 0 0 0 0 2 2 4 2 0 0 0 0 4 2 2 2 0 0 0 0 2 0 3 1 0 0 "
                               "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1 0 0 0 0 0 3 1 4 2 1 2 2 4 2 1 4 2 2 2 1 2 2 0 2 1 0 2 "
                               "2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 2 2 0 2 1 0 2 2 2 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -106,9 +104,8 @@ TEST_F(DepthToSpaceTiling, test_nhwc_crd_float16_success_001)
          gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("CRD")),
          gert::TilingContextPara::OpAttr("data_format", Ops::Math::AnyValue::CreateFrom<std::string>("NHWC"))},
         &compileInfo);
-    // TODO: Update these values after running the test to get actual tiling results
     uint64_t expectTilingKey = 10001;
-    string expectTilingData = "5 0 0 0 0 0 0 32 1 0 253952 1 0 0 0 0 0 0 0 2 2 2 2 2 0 0 0 2 2 2 2 2 0 0 0 0 3 1 4 2 0 "
+    string expectTilingData = "5 0 0 0 0 0 0 1 32 0 253952 1 0 0 0 0 0 0 0 2 2 2 2 2 0 0 0 2 2 2 2 2 0 0 0 0 3 1 4 2 0 "
                               "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1 0 0 0 0 0 3 1 4 2 2 2 2 2 2 2 2 2 2 2 0 2 2 2 2 0 2 2 "
                               "2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 2 2 2 0 2 2 2 2 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -135,9 +132,8 @@ TEST_F(DepthToSpaceTiling, test_nchw_crd_float16_success_001)
          gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("CRD")),
          gert::TilingContextPara::OpAttr("data_format", Ops::Math::AnyValue::CreateFrom<std::string>("NCHW"))},
         &compileInfo);
-    // TODO: Update these values after running the test to get actual tiling results
     uint64_t expectTilingKey = 10001;
-    string expectTilingData = "5 0 0 0 0 0 0 32 1 0 253952 1 0 0 0 0 0 0 0 2 2 2 2 2 0 0 0 2 2 2 2 2 0 0 0 0 3 1 4 2 0 "
+    string expectTilingData = "5 0 0 0 0 0 0 1 32 0 253952 1 0 0 0 0 0 0 0 2 2 2 2 2 0 0 0 2 2 2 2 2 0 0 0 0 3 1 4 2 0 "
                               "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1 0 0 0 0 0 3 1 4 2 2 2 2 2 2 2 2 2 2 2 0 2 2 2 2 0 2 2 "
                               "2 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 2 2 2 0 2 2 2 2 ";
     std::vector<size_t> expectWorkspaces = {16777216};

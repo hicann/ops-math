@@ -52,6 +52,48 @@ static ge::graphStatus BroadcastToInferShapeWithShapeValues(const gert::InferSha
     return ge::GRAPH_SUCCESS;
 }
 
+static ge::graphStatus ValidateShapeDtype(const gert::InferShapeContext* context, DataType data_type)
+{
+    OP_CHECK_IF(
+        (data_type != DT_INT32) && (data_type != DT_INT64),
+        OP_LOGE(context->GetNodeName(), "%s",
+                ConcatString("shape's dtype ", Ops::Base::ToString(data_type), " must be in (int32,int64)!").c_str()),
+        return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
+
+static void DispatchGetConstValue(const gert::Tensor* shape_tensor, size_t shape_size, DataType data_type,
+                                  gert::Shape* out_shape)
+{
+    if (data_type == DT_INT32) {
+        GetConstValueToShape<int32_t>(shape_tensor, shape_size, out_shape);
+    } else {
+        GetConstValueToShape<int64_t>(shape_tensor, shape_size, out_shape);
+    }
+}
+
+static ge::graphStatus ResolveBroadcastDim(const gert::InferShapeContext* context, const gert::Shape* x_shape,
+                                           gert::Shape* out_shape, size_t i, size_t diff)
+{
+    if (out_shape->GetDim(i) == -1) {
+        if (i >= diff) {
+            out_shape->SetDim(i, x_shape->GetDim(i - diff));
+        } else {
+            out_shape->SetDim(i, 1);
+        }
+    }
+    if (i < diff) {
+        return ge::GRAPH_SUCCESS;
+    }
+    OP_CHECK_IF((out_shape->GetDim(i) != x_shape->GetDim(i - diff)) && (1 != x_shape->GetDim(i - diff)),
+                OP_LOGE(context->GetNodeName(), "%s",
+                        ConcatString(Ops::Base::ToString(*x_shape).c_str(), " can not broadcast to ",
+                                     Ops::Base::ToString(*out_shape).c_str())
+                            .c_str()),
+                return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
+
 static ge::graphStatus BroadcastToInferShapeWithShapeTensor(const gert::InferShapeContext* context,
                                                             const gert::Shape* x_shape,
                                                             const gert::Tensor* shape_tensor, gert::Shape* out_shape)
@@ -66,35 +108,17 @@ static ge::graphStatus BroadcastToInferShapeWithShapeTensor(const gert::InferSha
     out_shape->SetDimNum(shape_size);
     OP_LOGD(context->GetNodeName(), "shape_size is %zu", shape_size);
     DataType data_type = shape_tensor->GetDataType();
-    OP_CHECK_IF(
-        (data_type != DT_INT32) && (data_type != DT_INT64),
-        OP_LOGE(context->GetNodeName(), "%s",
-                ConcatString("shape's dtype ", Ops::Base::ToString(data_type), " must be in (int32,int64)!").c_str()),
-        return ge::GRAPH_FAILED);
-
-    size_t diff = shape_size - x_shape->GetDimNum();
-    if (data_type == DT_INT32) {
-        GetConstValueToShape<int32_t>(shape_tensor, shape_size, out_shape);
-    } else {
-        GetConstValueToShape<int64_t>(shape_tensor, shape_size, out_shape);
+    ge::graphStatus status = ValidateShapeDtype(context, data_type);
+    if (status != ge::GRAPH_SUCCESS) {
+        return status;
     }
+    size_t diff = shape_size - x_shape->GetDimNum();
+    DispatchGetConstValue(shape_tensor, shape_size, data_type, out_shape);
     for (size_t i = 0; i < shape_size; i++) {
-        if (out_shape->GetDim(i) == -1) {
-            if (i >= diff) {
-                out_shape->SetDim(i, x_shape->GetDim(i - diff));
-            } else {
-                out_shape->SetDim(i, 1);
-            }
+        status = ResolveBroadcastDim(context, x_shape, out_shape, i, diff);
+        if (status != ge::GRAPH_SUCCESS) {
+            return status;
         }
-        if (i < diff) {
-            continue;
-        }
-        OP_CHECK_IF((out_shape->GetDim(i) != x_shape->GetDim(i - diff)) && (1 != x_shape->GetDim(i - diff)),
-                    OP_LOGE(context->GetNodeName(), "%s",
-                            ConcatString(Ops::Base::ToString(*x_shape).c_str(), " can not broadcast to ",
-                                         Ops::Base::ToString(*out_shape).c_str())
-                                .c_str()),
-                    return ge::GRAPH_FAILED);
     }
     return GRAPH_SUCCESS;
 }

@@ -44,6 +44,11 @@ private:
     ge::graphStatus CheckFormatAndShape(int64_t xDimNum, int64_t yDimNum, ge::Format xFormat, ge::Format yFormat);
     ge::graphStatus CheckAttrValues(ge::Format xFormat);
     void SetPermAndOutShape(ShapeInfo& shapeInfo, const int64_t* perm);
+    void SetInShapeNhwcDcr(ShapeInfo& shapeInfo);
+    void SetInShapeNchwDcr(ShapeInfo& shapeInfo);
+    void SetInShapeNhwcCrd(ShapeInfo& shapeInfo);
+    void SetInShapeNchwCrd(ShapeInfo& shapeInfo);
+    void BuildInShapeByFormatMode(ShapeInfo& shapeInfo);
     gert::TilingContext* tilingContext_ = nullptr;
     ParamInfo paramInfo_{};
     int64_t nhwcDcrPerm_[DIM_SIX] = {0, 1, 3, 2, 4, 5};

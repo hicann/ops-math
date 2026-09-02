@@ -173,7 +173,8 @@ std::string Shape2String(const T& shape)
     return oss.str();
 }
 
-ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& inShape, gert::Shape& outShape)
+static ge::graphStatus GetInputOutputShapes(const gert::TilingContext* context, gert::Shape& inShape,
+                                            gert::Shape& outShape)
 {
     auto xStorage = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, xStorage);
@@ -181,7 +182,11 @@ ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& in
     auto yStorage = context->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, yStorage);
     outShape = Ops::Base::EnsureNotScalar(yStorage->GetStorageShape());
+    return ge::GRAPH_SUCCESS;
+}
 
+static void WarnIfConstShapeMismatch(const gert::TilingContext* context, const gert::Shape& outShape)
+{
     gert::Shape constShape_{};
     constexpr int64_t constIdx = 1;
     if (Ops::Base::GetConstIntToShape(context, constIdx, constShape_) &&
@@ -189,8 +194,11 @@ ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& in
         OP_LOGW(context->GetNodeName(), "Output shape %s is different from input const shape %s!",
                 Shape2String(outShape).c_str(), Shape2String(constShape_).c_str());
     }
+}
 
-    auto outDimNum = outShape.GetDimNum();
+static ge::graphStatus CheckDimNumLimits(const gert::TilingContext* context, const gert::Shape& inShape,
+                                         size_t outDimNum)
+{
     if (inShape.GetDimNum() > outDimNum) {
         std::string dimMsg = std::to_string(inShape.GetDimNum()) + " and " + std::to_string(outDimNum);
         std::string reasonMsg = "The input shape should not have more dimensions than output shape.";
@@ -204,7 +212,12 @@ ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& in
         OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), "y", dimMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
-    AdjustShapesToSameDimNum(inShape, outDimNum);
+    return ge::GRAPH_SUCCESS;
+}
+
+static ge::graphStatus CheckShapesValid(const gert::TilingContext* context, const gert::Shape& inShape,
+                                        const gert::Shape& outShape)
+{
     if (inShape.GetShapeSize() == 0 || outShape.GetShapeSize() == 0) {
         std::string shapeMsg = Shape2String(inShape) + " and " + Shape2String(outShape);
         std::string reasonMsg = "The input or output shape must not be empty.";
@@ -217,9 +230,11 @@ ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& in
         OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x and y", shapeMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
-    OP_LOGI(context->GetNodeName(), "The input and output are: %s and %s", Shape2String(inShape).c_str(),
-            Shape2String(outShape).c_str());
+    return ge::GRAPH_SUCCESS;
+}
 
+static ge::graphStatus ReshapeAxes(const gert::TilingContext* context, gert::Shape& inShape, gert::Shape& outShape)
+{
     if (DeleteOneSizeAxis(context, inShape, outShape) != ge::GRAPH_SUCCESS) {
         std::string shapeMsg = Shape2String(inShape) + " and " + Shape2String(outShape);
         std::string reasonMsg = "Failed to delete one size axes.";
@@ -241,6 +256,32 @@ ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& in
     return ge::GRAPH_SUCCESS;
 }
 
+ge::graphStatus GetShapeInfo(const gert::TilingContext* context, gert::Shape& inShape, gert::Shape& outShape)
+{
+    if (GetInputOutputShapes(context, inShape, outShape) != ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
+
+    WarnIfConstShapeMismatch(context, outShape);
+
+    auto outDimNum = outShape.GetDimNum();
+    if (CheckDimNumLimits(context, inShape, outDimNum) != ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
+    AdjustShapesToSameDimNum(inShape, outDimNum);
+    if (CheckShapesValid(context, inShape, outShape) != ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
+    OP_LOGI(context->GetNodeName(), "The input and output are: %s and %s", Shape2String(inShape).c_str(),
+            Shape2String(outShape).c_str());
+
+    if (ReshapeAxes(context, inShape, outShape) != ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
+
+    return ge::GRAPH_SUCCESS;
+}
+
 void BroadcastToTilingAscendC::GetUAxisInfo()
 {
     auto dimNum = outShapePtr_->GetDimNum();
@@ -248,14 +289,7 @@ void BroadcastToTilingAscendC::GetUAxisInfo()
 
     isLastDimB_ = int32_t(abInfo_[dimNum - 1]);
 
-    if (res >= tensorSize_) {
-        uAxis_ = dimNum - 1;
-        uLpUnit_ = tensorSize_;
-        uAxisLen_ = res;
-        uInOffset_ = 1;
-        uOutOffset_ = 1;
-        isUNotB_ = int32_t(!abInfo_[dimNum - 1]);
-        uAxisCnt_ = 1;
+    if (TrySetULastDim(dimNum, res)) {
         return;
     }
 
@@ -265,6 +299,30 @@ void BroadcastToTilingAscendC::GetUAxisInfo()
     }
 
     size_t maxUbAxisCnt = (tilingKey_ != TILING_MODE_NDDMA) ? BRC_TO_MAX_DMA_DIM_NUM - 1 : BRC_TO_MAX_DMA_DIM_NUM;
+    if (TrySetUWholeFit(dimNum, res, maxUbAxisCnt)) {
+        return;
+    }
+
+    SetUAxisBySearch(dimNum, res, maxUbAxisCnt);
+}
+
+bool BroadcastToTilingAscendC::TrySetULastDim(size_t dimNum, int64_t res)
+{
+    if (res >= tensorSize_) {
+        uAxis_ = dimNum - 1;
+        uLpUnit_ = tensorSize_;
+        uAxisLen_ = res;
+        uInOffset_ = 1;
+        uOutOffset_ = 1;
+        isUNotB_ = int32_t(!abInfo_[dimNum - 1]);
+        uAxisCnt_ = 1;
+        return true;
+    }
+    return false;
+}
+
+bool BroadcastToTilingAscendC::TrySetUWholeFit(size_t dimNum, int64_t res, size_t maxUbAxisCnt)
+{
     if ((CalcDimSize(outShapePtr_, 0, dimNum - 1) * res <= tensorSize_ && dimNum <= maxUbAxisCnt) || dimNum == 1) {
         uAxis_ = size_t(0);
         uLpUnit_ = outShapePtr_->GetDim(0);
@@ -273,9 +331,13 @@ void BroadcastToTilingAscendC::GetUAxisInfo()
         uOutOffset_ = CalcDimSize(outShapePtr_, 1, dimNum);
         isUNotB_ = int32_t(!abInfo_[0]);
         uAxisCnt_ = int8_t(dimNum);
-        return;
+        return true;
     }
+    return false;
+}
 
+void BroadcastToTilingAscendC::SetUAxisBySearch(size_t dimNum, int64_t res, size_t maxUbAxisCnt)
+{
     int64_t curDim = 0;
     size_t curIdx = 1;
     for (int8_t i = int8_t(dimNum - nTwo); i >= 0; i--) {
@@ -532,19 +594,29 @@ int64_t BroadcastToTilingAscendC::CalcTensorSize4Brwd(int64_t aDims, int64_t bDi
     return tmpTensorSize;
 }
 
+bool BroadcastToTilingAscendC::IsNBrwdFastPath(int64_t aDims, int64_t bDims, int64_t coreGate)
+{
+    return aDims >= coreGate || bDims >= coreGate ||
+           (aDims >= bDims && aDims * bDims >= coreGate && aDims <= coreNum_ / nTwo);
+}
+
+int64_t BroadcastToTilingAscendC::CalcNBrwdSlowTensorSize(int64_t dimSize, int64_t aDims, int64_t bDims)
+{
+    if ((aDims * nTwo <= coreNum_ && bDims * nTwo <= coreNum_)) {
+        dimSize = outShapePtr_->GetShapeSize();
+    }
+    return Ops::Base::CeilDiv(Ops::Base::CeilDiv(dimSize, minTensorSize_), coreNum_) * minTensorSize_;
+}
+
 int64_t BroadcastToTilingAscendC::CalcTensorSize4NBrwd(int64_t aDims, int64_t bDims, int64_t outLastDim)
 {
     int64_t tmpTensorSize = 0;
     int64_t dimSize = (outLastDim < maxTensorSize_) ? outShapePtr_->GetShapeSize() : outLastDim;
     int64_t coreGate = int64_t(coreFactor * coreNum_);
-    if (aDims >= coreGate || bDims >= coreGate ||
-        (aDims >= bDims && aDims * bDims >= coreGate && aDims <= coreNum_ / nTwo)) {
+    if (IsNBrwdFastPath(aDims, bDims, coreGate)) {
         tmpTensorSize = std::min(outLastDim, maxTensorSize_);
     } else {
-        if ((aDims * nTwo <= coreNum_ && bDims * nTwo <= coreNum_)) {
-            dimSize = outShapePtr_->GetShapeSize();
-        }
-        tmpTensorSize = Ops::Base::CeilDiv(Ops::Base::CeilDiv(dimSize, minTensorSize_), coreNum_) * minTensorSize_;
+        tmpTensorSize = CalcNBrwdSlowTensorSize(dimSize, aDims, bDims);
     }
     return tmpTensorSize;
 }
@@ -563,22 +635,8 @@ void BroadcastToTilingAscendC::CalcTensorSize()
     bool isBrwd = false;
 
     int64_t ubGate = maxTensorSize_ / nTwo / nTwo;
-    int64_t r4DimSize = minTensorSize_;
-    if (dimNum > DIM_NUM_THRESHOLD_FOR_R4_SIZE) {
-        r4DimSize = CalcDimSize(inShapePtr_, dimNum - TRAILING_DIM_NUM_FOR_R4_SIZE, dimNum);
-    }
-
-    isDMABrcA_ = (dimNum > 1 &&
-                  (nTwo * outLastDim <= LAST_DIM_GATE ||
-                   (outLastDim == LAST_DIM_GATE / nTwo + 1 && outShapePtr_->GetDim(dimNum - nTwo) <= LAST_DIM_GATE) ||
-                   ((outLastDim < LAST_DIM_GATE) && (r4DimSize < minTensorSize_))));
-    if ((!abInfo_[dimNum - 1] && outLastDim <= ubGate && !isDMABrcA_) ||
-        (abInfo_[dimNum - 1] && outLastDim >= LAST_DIM_GATE)) { // UB broadcast
-        tmpTensorSize = std::min(ubGate, MAX_TENSOR_SIZE);
-    } else if (!abInfo_[dimNum - 1] && outLastDim >= ubGate) { // data copy
-        tmpTensorSize = std::min(ubGate * nTwo, MAX_TENSOR_SIZE);
-    }
-    maxTensorSize_ = tmpTensorSize;
+    isDMABrcA_ = CalcIsDMABrcAFlag(dimNum, outLastDim);
+    maxTensorSize_ = AdjustMaxTensorSizeForUbBrc(tmpTensorSize, dimNum, outLastDim, ubGate);
 
     if (dimNum == 1) {
         tmpTensorSize = Ops::Base::CeilDiv(Ops::Base::CeilDiv(outLastDim, minTensorSize_), coreNum_) * minTensorSize_;
@@ -601,6 +659,30 @@ void BroadcastToTilingAscendC::CalcTensorSize()
     tensorSize_ = minTensorSize_;
 }
 
+bool BroadcastToTilingAscendC::CalcIsDMABrcAFlag(size_t dimNum, int64_t outLastDim)
+{
+    int64_t r4DimSize = minTensorSize_;
+    if (dimNum > DIM_NUM_THRESHOLD_FOR_R4_SIZE) {
+        r4DimSize = CalcDimSize(inShapePtr_, dimNum - TRAILING_DIM_NUM_FOR_R4_SIZE, dimNum);
+    }
+    return (dimNum > 1 &&
+            (nTwo * outLastDim <= LAST_DIM_GATE ||
+             (outLastDim == LAST_DIM_GATE / nTwo + 1 && outShapePtr_->GetDim(dimNum - nTwo) <= LAST_DIM_GATE) ||
+             ((outLastDim < LAST_DIM_GATE) && (r4DimSize < minTensorSize_))));
+}
+
+int64_t BroadcastToTilingAscendC::AdjustMaxTensorSizeForUbBrc(int64_t tmpTensorSize, size_t dimNum, int64_t outLastDim,
+                                                              int64_t ubGate)
+{
+    if ((!abInfo_[dimNum - 1] && outLastDim <= ubGate && !isDMABrcA_) ||
+        (abInfo_[dimNum - 1] && outLastDim >= LAST_DIM_GATE)) { // UB broadcast
+        tmpTensorSize = std::min(ubGate, MAX_TENSOR_SIZE);
+    } else if (!abInfo_[dimNum - 1] && outLastDim >= ubGate) { // data copy
+        tmpTensorSize = std::min(ubGate * nTwo, MAX_TENSOR_SIZE);
+    }
+    return tmpTensorSize;
+}
+
 void BroadcastToTilingAscendC::CalcTilingKey()
 {
     auto dimNum = outShapePtr_->GetDimNum();
@@ -610,18 +692,31 @@ void BroadcastToTilingAscendC::CalcTilingKey()
         return;
     }
     bool ubSizeCheck = tensorSize_ <= ubSize_ / blockSize_ * blockSize_ / dtypeSize_ / nTwo / nTwo;
-    if ((lastDim >= tensorSize_ && abInfo_[dimNum - 1]) && ubSizeCheck) {
+    if (IsLastDimLargeB(dimNum, lastDim, ubSizeCheck)) {
         tilingKey_ = TILING_MODE_LAST_DIM_LARGE_B;
         return;
     }
-    if (((dimNum == 1 && !abInfo_[dimNum - 1]) ||
-         (lastDim <= tensorSize_ &&
-          ((!abInfo_[dimNum - 1] && !isDMABrcA_) || (abInfo_[dimNum - 1] && lastDim >= LAST_DIM_GATE)))) &&
-        ubSizeCheck) {
+    if (IsUbBrcMode(dimNum, lastDim, ubSizeCheck)) {
         tilingKey_ = TILING_MODE_UB_BRC;
         return;
     }
     tilingKey_ = TILING_MODE_NDDMA;
+}
+
+bool BroadcastToTilingAscendC::IsLastDimLargeB(size_t dimNum, int64_t lastDim, bool ubSizeCheck)
+{
+    return (lastDim >= tensorSize_ && abInfo_[dimNum - 1]) && ubSizeCheck;
+}
+
+bool BroadcastToTilingAscendC::IsUbBrcMode(size_t dimNum, int64_t lastDim, bool ubSizeCheck)
+{
+    return ((dimNum == 1 && !abInfo_[dimNum - 1]) || (lastDim <= tensorSize_ && IsUbBrcInnerCond(dimNum, lastDim))) &&
+           ubSizeCheck;
+}
+
+bool BroadcastToTilingAscendC::IsUbBrcInnerCond(size_t dimNum, int64_t lastDim)
+{
+    return (!abInfo_[dimNum - 1] && !isDMABrcA_) || (abInfo_[dimNum - 1] && lastDim >= LAST_DIM_GATE);
 }
 
 void BroadcastToTilingAscendC::CalcTilingData()

@@ -139,6 +139,69 @@ void DepthToSpaceTiling::SetPermAndOutShape(ShapeInfo& shapeInfo, const int64_t*
     }
 }
 
+void DepthToSpaceTiling::SetInShapeNhwcDcr(ShapeInfo& shapeInfo)
+{
+    shapeInfo.inShape[DIM_ZERO] = paramInfo_.xShape[DIM_ZERO];
+    shapeInfo.inShape[DIM_ONE] = paramInfo_.xShape[DIM_ONE];
+    shapeInfo.inShape[DIM_TWO] = paramInfo_.xShape[DIM_TWO];
+    shapeInfo.inShape[DIM_THREE] = paramInfo_.blockSize;
+    shapeInfo.inShape[DIM_FOUR] = paramInfo_.blockSize;
+    shapeInfo.inShape[DIM_FIVE] = paramInfo_.xShape[DIM_THREE] / (paramInfo_.blockSize * paramInfo_.blockSize);
+    SetPermAndOutShape(shapeInfo, nhwcDcrPerm_);
+}
+
+void DepthToSpaceTiling::SetInShapeNchwDcr(ShapeInfo& shapeInfo)
+{
+    shapeInfo.inShape[DIM_ZERO] = paramInfo_.xShape[DIM_ZERO];
+    shapeInfo.inShape[DIM_ONE] = paramInfo_.blockSize;
+    shapeInfo.inShape[DIM_TWO] = paramInfo_.blockSize;
+    shapeInfo.inShape[DIM_THREE] = paramInfo_.xShape[DIM_ONE] / (paramInfo_.blockSize * paramInfo_.blockSize);
+    shapeInfo.inShape[DIM_FOUR] = paramInfo_.xShape[DIM_TWO];
+    shapeInfo.inShape[DIM_FIVE] = paramInfo_.xShape[DIM_THREE];
+    SetPermAndOutShape(shapeInfo, nchwDcrPerm_);
+}
+
+void DepthToSpaceTiling::SetInShapeNhwcCrd(ShapeInfo& shapeInfo)
+{
+    shapeInfo.inShape[DIM_ZERO] = paramInfo_.xShape[DIM_ZERO];
+    shapeInfo.inShape[DIM_ONE] = paramInfo_.xShape[DIM_ONE];
+    shapeInfo.inShape[DIM_TWO] = paramInfo_.xShape[DIM_TWO];
+    shapeInfo.inShape[DIM_THREE] = paramInfo_.xShape[DIM_THREE] / (paramInfo_.blockSize * paramInfo_.blockSize);
+    shapeInfo.inShape[DIM_FOUR] = paramInfo_.blockSize;
+    shapeInfo.inShape[DIM_FIVE] = paramInfo_.blockSize;
+    SetPermAndOutShape(shapeInfo, crdPerm_);
+}
+
+void DepthToSpaceTiling::SetInShapeNchwCrd(ShapeInfo& shapeInfo)
+{
+    shapeInfo.inShape[DIM_ZERO] = paramInfo_.xShape[DIM_ZERO];
+    shapeInfo.inShape[DIM_ONE] = paramInfo_.xShape[DIM_ONE] / (paramInfo_.blockSize * paramInfo_.blockSize);
+    shapeInfo.inShape[DIM_TWO] = paramInfo_.blockSize;
+    shapeInfo.inShape[DIM_THREE] = paramInfo_.blockSize;
+    shapeInfo.inShape[DIM_FOUR] = paramInfo_.xShape[DIM_TWO];
+    shapeInfo.inShape[DIM_FIVE] = paramInfo_.xShape[DIM_THREE];
+    SetPermAndOutShape(shapeInfo, crdPerm_);
+}
+
+void DepthToSpaceTiling::BuildInShapeByFormatMode(ShapeInfo& shapeInfo)
+{
+    if (strcmp(paramInfo_.dataFormatPtr, "NHWC") == 0 && strcmp(paramInfo_.modePtr, "DCR") == 0) {
+        SetInShapeNhwcDcr(shapeInfo);
+    } else if (strcmp(paramInfo_.dataFormatPtr, "NCHW") == 0 && strcmp(paramInfo_.modePtr, "DCR") == 0) {
+        SetInShapeNchwDcr(shapeInfo);
+    } else if (strcmp(paramInfo_.dataFormatPtr, "NHWC") == 0 && strcmp(paramInfo_.modePtr, "CRD") == 0) {
+        SetInShapeNhwcCrd(shapeInfo);
+    } else if (strcmp(paramInfo_.dataFormatPtr, "NCHW") == 0 && strcmp(paramInfo_.modePtr, "CRD") == 0) {
+        SetInShapeNchwCrd(shapeInfo);
+    } else {
+        std::string incorrectFormats = std::string(paramInfo_.dataFormatPtr) + "+" + paramInfo_.modePtr;
+        OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(
+            tilingContext_->GetNodeName(), "data_format and mode", incorrectFormats.c_str(),
+            "The formats of these parameters support only the following combinations: (NCHW+DCR), (NCHW+CRD), "
+            "(NHWC+DCR), (NHWC+CRD)");
+    }
+}
+
 void DepthToSpaceTiling::ProcessShapeInfo(ShapeInfo& shapeInfo)
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Start DepthToSpaceTiling ProcessShapeInfo.");
@@ -148,45 +211,7 @@ void DepthToSpaceTiling::ProcessShapeInfo(ShapeInfo& shapeInfo)
     shapeInfo.outShapeSize = DIM_SIX;
     shapeInfo.dim = DIM_SIX;
     shapeInfo.origDim = DIM_SIX;
-    if (strcmp(paramInfo_.dataFormatPtr, "NHWC") == 0 && strcmp(paramInfo_.modePtr, "DCR") == 0) {
-        shapeInfo.inShape[DIM_ZERO] = paramInfo_.xShape[DIM_ZERO];
-        shapeInfo.inShape[DIM_ONE] = paramInfo_.xShape[DIM_ONE];
-        shapeInfo.inShape[DIM_TWO] = paramInfo_.xShape[DIM_TWO];
-        shapeInfo.inShape[DIM_THREE] = paramInfo_.blockSize;
-        shapeInfo.inShape[DIM_FOUR] = paramInfo_.blockSize;
-        shapeInfo.inShape[DIM_FIVE] = paramInfo_.xShape[DIM_THREE] / (paramInfo_.blockSize * paramInfo_.blockSize);
-        SetPermAndOutShape(shapeInfo, nhwcDcrPerm_);
-    } else if (strcmp(paramInfo_.dataFormatPtr, "NCHW") == 0 && strcmp(paramInfo_.modePtr, "DCR") == 0) {
-        shapeInfo.inShape[DIM_ZERO] = paramInfo_.xShape[DIM_ZERO];
-        shapeInfo.inShape[DIM_ONE] = paramInfo_.blockSize;
-        shapeInfo.inShape[DIM_TWO] = paramInfo_.blockSize;
-        shapeInfo.inShape[DIM_THREE] = paramInfo_.xShape[DIM_ONE] / (paramInfo_.blockSize * paramInfo_.blockSize);
-        shapeInfo.inShape[DIM_FOUR] = paramInfo_.xShape[DIM_TWO];
-        shapeInfo.inShape[DIM_FIVE] = paramInfo_.xShape[DIM_THREE];
-        SetPermAndOutShape(shapeInfo, nchwDcrPerm_);
-    } else if (strcmp(paramInfo_.dataFormatPtr, "NHWC") == 0 && strcmp(paramInfo_.modePtr, "CRD") == 0) {
-        shapeInfo.inShape[DIM_ZERO] = paramInfo_.xShape[DIM_ZERO];
-        shapeInfo.inShape[DIM_ONE] = paramInfo_.xShape[DIM_ONE];
-        shapeInfo.inShape[DIM_TWO] = paramInfo_.xShape[DIM_TWO];
-        shapeInfo.inShape[DIM_THREE] = paramInfo_.xShape[DIM_THREE] / (paramInfo_.blockSize * paramInfo_.blockSize);
-        shapeInfo.inShape[DIM_FOUR] = paramInfo_.blockSize;
-        shapeInfo.inShape[DIM_FIVE] = paramInfo_.blockSize;
-        SetPermAndOutShape(shapeInfo, crdPerm_);
-    } else if (strcmp(paramInfo_.dataFormatPtr, "NCHW") == 0 && strcmp(paramInfo_.modePtr, "CRD") == 0) {
-        shapeInfo.inShape[DIM_ZERO] = paramInfo_.xShape[DIM_ZERO];
-        shapeInfo.inShape[DIM_ONE] = paramInfo_.xShape[DIM_ONE] / (paramInfo_.blockSize * paramInfo_.blockSize);
-        shapeInfo.inShape[DIM_TWO] = paramInfo_.blockSize;
-        shapeInfo.inShape[DIM_THREE] = paramInfo_.blockSize;
-        shapeInfo.inShape[DIM_FOUR] = paramInfo_.xShape[DIM_TWO];
-        shapeInfo.inShape[DIM_FIVE] = paramInfo_.xShape[DIM_THREE];
-        SetPermAndOutShape(shapeInfo, crdPerm_);
-    } else {
-        std::string incorrectFormats = std::string(paramInfo_.dataFormatPtr) + "+" + paramInfo_.modePtr;
-        OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(
-            tilingContext_->GetNodeName(), "data_format and mode", incorrectFormats.c_str(),
-            "The formats of these parameters support only the following combinations: (NCHW+DCR), (NCHW+CRD), "
-            "(NHWC+DCR), (NHWC+CRD)");
-    }
+    BuildInShapeByFormatMode(shapeInfo);
 }
 
 ge::graphStatus DepthToSpaceTilingForAscendC(gert::TilingContext* context,

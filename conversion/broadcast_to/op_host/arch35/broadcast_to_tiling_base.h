@@ -98,6 +98,9 @@ private:
     int64_t CalcDimSize(const gert::Shape*& shapePtr, size_t begDim, size_t endDim);
     int64_t UpdateTensorSize(int64_t tensorSize);
     void GetUAxisInfo();
+    bool TrySetULastDim(size_t dimNum, int64_t res);
+    bool TrySetUWholeFit(size_t dimNum, int64_t res, size_t maxUbAxisCnt);
+    void SetUAxisBySearch(size_t dimNum, int64_t res, size_t maxUbAxisCnt);
     void GetDMAAxesParams();
     void GetABAxesParams();
     void GetAxesInfo();
@@ -107,9 +110,16 @@ private:
     void CheckBrwd(int64_t& aDims, int64_t& bDims, int64_t& brwAxis, bool& isBrwd);
     int64_t CalcTensorSize4Brwd(int64_t aDims, int64_t bDims, int64_t brwAxis);
     int64_t CalcTensorSize4NBrwd(int64_t aDims, int64_t bDims, int64_t outLastDim);
+    bool IsNBrwdFastPath(int64_t aDims, int64_t bDims, int64_t coreGate);
+    int64_t CalcNBrwdSlowTensorSize(int64_t dimSize, int64_t aDims, int64_t bDims);
     void AdjustBrwdSize(int64_t& brwSize, int64_t uAxis);
     void CalcTensorSize();
+    bool CalcIsDMABrcAFlag(size_t dimNum, int64_t outLastDim);
+    int64_t AdjustMaxTensorSizeForUbBrc(int64_t tmpTensorSize, size_t dimNum, int64_t outLastDim, int64_t ubGate);
     void CalcTilingKey();
+    bool IsLastDimLargeB(size_t dimNum, int64_t lastDim, bool ubSizeCheck);
+    bool IsUbBrcMode(size_t dimNum, int64_t lastDim, bool ubSizeCheck);
+    bool IsUbBrcInnerCond(size_t dimNum, int64_t lastDim);
     void CalcDBMode();
     void UpdateTilingKey();
     ge::graphStatus WriteTilingData();

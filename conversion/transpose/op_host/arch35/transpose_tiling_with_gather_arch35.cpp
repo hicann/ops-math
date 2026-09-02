@@ -140,81 +140,133 @@ void TransposeGatherTiling::AdjustUbCutAxisFactor(int32_t& axisFactor, int8_t ax
     int64_t dstOutUbAxesSize = 1;
 
     // dst 侧（输出视角）：outUbPerm 前 cnt-1 根轴（非切分轴）的乘积
-    std::set<int8_t> viceUbPerm0(allUbPerm_);
-    for (int8_t i = 0; i < outUbPerm_.cnt - 1; ++i) {
-        dstOutUbAxesSize *= shapeInfo_.reducedInShape[outUbPerm_.perm[i]];
-        viceUbPerm0.erase(outUbPerm_.perm[i]);
-    }
     // dst 侧输入贡献：inUbPerm 中还未被 outUbPerm 占用的轴
-    for (int8_t i = 0; i < inUbPerm_.cnt - 1; ++i) {
-        if (viceUbPerm0.find(inUbPerm_.perm[i]) != viceUbPerm0.end()) {
-            dstInUbAxesSize *= shapeInfo_.reducedInShape[inUbPerm_.perm[i]];
-        }
-    }
+    CalcUbAxesSizes(outUbPerm_, inUbPerm_, dstOutUbAxesSize, dstInUbAxesSize);
     // src 侧（输入视角）：inUbPerm 前 cnt-1 根非切分轴
-    std::set<int8_t> viceUbPerm1(allUbPerm_);
-    for (int8_t i = 0; i < inUbPerm_.cnt - 1; ++i) {
-        srcInUbAxesSize *= shapeInfo_.reducedInShape[inUbPerm_.perm[i]];
-        viceUbPerm1.erase(inUbPerm_.perm[i]);
-    }
     // src 侧输出贡献：outUbPerm 中还未被 inUbPerm 占用的轴
-    for (int8_t i = 0; i < outUbPerm_.cnt - 1; ++i) {
-        if (viceUbPerm1.find(outUbPerm_.perm[i]) != viceUbPerm1.end()) {
-            srcOutUbAxesSize *= shapeInfo_.reducedInShape[outUbPerm_.perm[i]];
-        }
-    }
+    CalcUbAxesSizes(inUbPerm_, outUbPerm_, srcInUbAxesSize, srcOutUbAxesSize);
 
     int64_t elemPerBlock = platInfo_.ubBlockSize / shapeInfo_.eleLenInBytes;
-    int64_t dstFactor = 0;
-    int64_t srcFactor = 0;
     // in and out ub cut same axis
     if (axisFlag == 0) {
-        bool isDstUbOverflow = (dstInUbAxesSize * Ops::Base::CeilAlign(dstOutUbAxesSize * axisFactor, elemPerBlock) >
-                                elemInTensor);
-        bool isSrcUbOverflow = (srcOutUbAxesSize * Ops::Base::CeilAlign(srcInUbAxesSize * axisFactor, elemPerBlock) >
-                                elemInTensor);
-        if (isDstUbOverflow || isSrcUbOverflow) {
-            dstFactor = elemInTensor / dstInUbAxesSize / elemPerBlock * elemPerBlock / dstOutUbAxesSize;
-            srcFactor = elemInTensor / srcOutUbAxesSize / elemPerBlock * elemPerBlock / srcInUbAxesSize;
-            axisFactor = static_cast<int32_t>(std::min(dstFactor, srcFactor));
-        }
+        AdjustUbCutFactorSameAxis(axisFactor, dstInUbAxesSize, dstOutUbAxesSize, srcInUbAxesSize, srcOutUbAxesSize,
+                                  elemInTensor, elemPerBlock);
         // out ub cut axis
     } else if (axisFlag == 1 || axisFlag == NUM_THREE) {
-        if (axisFlag == NUM_THREE) {
-            dstInUbAxesSize *= ubSplitInfo_.inUbCutAxisFactor;
-        }
-        if (axisFlag == 1) {
-            srcOutUbAxesSize /= ubSplitInfo_.inUbCutAxisFactor;
-        }
-        bool isDstUbOverflow = (dstInUbAxesSize * Ops::Base::CeilAlign(dstOutUbAxesSize * axisFactor, elemPerBlock) >
-                                elemInTensor);
-        bool isSrcUbOverflow = (axisFactor * srcOutUbAxesSize *
-                                    Ops::Base::CeilAlign(srcInUbAxesSize * ubSplitInfo_.inUbCutAxisFactor,
-                                                         elemPerBlock) >
-                                elemInTensor);
-        if (isDstUbOverflow || isSrcUbOverflow) {
-            dstFactor = elemInTensor / dstInUbAxesSize / elemPerBlock * elemPerBlock / dstOutUbAxesSize;
-            srcFactor = Ops::Base::FloorDiv(
-                elemInTensor / srcOutUbAxesSize,
-                Ops::Base::CeilAlign(srcInUbAxesSize * ubSplitInfo_.inUbCutAxisFactor, elemPerBlock));
-            axisFactor = static_cast<int32_t>(std::min(dstFactor, srcFactor));
-        }
+        AdjustUbCutFactorOutAxis(axisFactor, dstInUbAxesSize, dstOutUbAxesSize, srcInUbAxesSize, srcOutUbAxesSize,
+                                 elemInTensor, elemPerBlock, axisFlag);
         // in ub cut axis
     } else if (axisFlag == NUM_TWO) {
-        dstInUbAxesSize /= ubSplitInfo_.outUbCutAxisFactor;
-        bool isDstUbOverflow = (axisFactor * dstInUbAxesSize *
-                                    Ops::Base::CeilAlign(dstOutUbAxesSize * ubSplitInfo_.outUbCutAxisFactor,
-                                                         elemPerBlock) >
-                                elemInTensor);
-        bool isSrcUbOverflow = (srcOutUbAxesSize * Ops::Base::CeilAlign(srcInUbAxesSize * axisFactor, elemPerBlock) >
-                                elemInTensor);
-        if (isDstUbOverflow || isSrcUbOverflow) {
-            dstFactor = Ops::Base::FloorDiv(
-                elemInTensor / dstInUbAxesSize,
-                Ops::Base::CeilAlign(dstOutUbAxesSize * ubSplitInfo_.outUbCutAxisFactor, elemPerBlock));
-            srcFactor = elemInTensor / srcOutUbAxesSize / elemPerBlock * elemPerBlock / srcInUbAxesSize;
-            axisFactor = static_cast<int32_t>(std::min(dstFactor, srcFactor));
+        AdjustUbCutFactorInAxis(axisFactor, dstInUbAxesSize, dstOutUbAxesSize, srcInUbAxesSize, srcOutUbAxesSize,
+                                elemInTensor, elemPerBlock);
+    }
+}
+
+/**
+ * @brief 计算 UB 内主/辅视角的轴尺寸乘积对（dst/src 对称段参数化）
+ *
+ * main 侧：mainUbPerm 前 cnt-1 根轴（非切分轴）的乘积，并从 allUbPerm 剔除；
+ * vice 侧：viceUbPerm 中还未被 mainUbPerm 占用的轴的乘积。
+ * dst 侧调用 (outUbPerm_, inUbPerm_, dstOutUbAxesSize, dstInUbAxesSize)，
+ * src 侧调用 (inUbPerm_, outUbPerm_, srcInUbAxesSize, srcOutUbAxesSize)。
+ *
+ * @param mainUbPerm   主视角轴表（dst 侧为 outUbPerm，src 侧为 inUbPerm）
+ * @param viceUbPerm   辅视角轴表（dst 侧为 inUbPerm，src 侧为 outUbPerm）
+ * @param mainUbAxesSize [in,out] main 侧轴乘积（传入初始值 1）
+ * @param viceUbAxesSize [in,out] vice 侧轴乘积（传入初始值 1）
+ */
+void TransposeGatherTiling::CalcUbAxesSizes(const UbPermInfo& mainUbPerm, const UbPermInfo& viceUbPerm,
+                                            int64_t& mainUbAxesSize, int64_t& viceUbAxesSize)
+{
+    std::set<int8_t> viceUbPermLeft(allUbPerm_);
+    for (int8_t i = 0; i < mainUbPerm.cnt - 1; ++i) {
+        mainUbAxesSize *= shapeInfo_.reducedInShape[mainUbPerm.perm[i]];
+        viceUbPermLeft.erase(mainUbPerm.perm[i]);
+    }
+    for (int8_t i = 0; i < viceUbPerm.cnt - 1; ++i) {
+        if (viceUbPermLeft.find(viceUbPerm.perm[i]) != viceUbPermLeft.end()) {
+            viceUbAxesSize *= shapeInfo_.reducedInShape[viceUbPerm.perm[i]];
         }
+    }
+}
+
+/**
+ * @brief AdjustUbCutAxisFactor 的 axisFlag==0 场景：in/out 切同一条轴
+ * @param axisFactor [in,out] 待回调的切分因子
+ */
+void TransposeGatherTiling::AdjustUbCutFactorSameAxis(int32_t& axisFactor, int64_t dstInUbAxesSize,
+                                                      int64_t dstOutUbAxesSize, int64_t srcInUbAxesSize,
+                                                      int64_t srcOutUbAxesSize, int64_t elemInTensor,
+                                                      int64_t elemPerBlock)
+{
+    int64_t dstFactor = 0;
+    int64_t srcFactor = 0;
+    bool isDstUbOverflow = (dstInUbAxesSize * Ops::Base::CeilAlign(dstOutUbAxesSize * axisFactor, elemPerBlock) >
+                            elemInTensor);
+    bool isSrcUbOverflow = (srcOutUbAxesSize * Ops::Base::CeilAlign(srcInUbAxesSize * axisFactor, elemPerBlock) >
+                            elemInTensor);
+    if (isDstUbOverflow || isSrcUbOverflow) {
+        dstFactor = elemInTensor / dstInUbAxesSize / elemPerBlock * elemPerBlock / dstOutUbAxesSize;
+        srcFactor = elemInTensor / srcOutUbAxesSize / elemPerBlock * elemPerBlock / srcInUbAxesSize;
+        axisFactor = static_cast<int32_t>(std::min(dstFactor, srcFactor));
+    }
+}
+
+/**
+ * @brief AdjustUbCutAxisFactor 的 axisFlag==1/NUM_THREE 场景：切输出轴
+ *        （1 与 3 仅差预调整两行，故传 axisFlag 区分）
+ * @param axisFactor [in,out] 待回调的切分因子
+ */
+void TransposeGatherTiling::AdjustUbCutFactorOutAxis(int32_t& axisFactor, int64_t dstInUbAxesSize,
+                                                     int64_t dstOutUbAxesSize, int64_t srcInUbAxesSize,
+                                                     int64_t srcOutUbAxesSize, int64_t elemInTensor,
+                                                     int64_t elemPerBlock, int8_t axisFlag)
+{
+    int64_t dstFactor = 0;
+    int64_t srcFactor = 0;
+    if (axisFlag == NUM_THREE) {
+        dstInUbAxesSize *= ubSplitInfo_.inUbCutAxisFactor;
+    }
+    if (axisFlag == 1) {
+        srcOutUbAxesSize /= ubSplitInfo_.inUbCutAxisFactor;
+    }
+    bool isDstUbOverflow = (dstInUbAxesSize * Ops::Base::CeilAlign(dstOutUbAxesSize * axisFactor, elemPerBlock) >
+                            elemInTensor);
+    bool isSrcUbOverflow = (axisFactor * srcOutUbAxesSize *
+                                Ops::Base::CeilAlign(srcInUbAxesSize * ubSplitInfo_.inUbCutAxisFactor, elemPerBlock) >
+                            elemInTensor);
+    if (isDstUbOverflow || isSrcUbOverflow) {
+        dstFactor = elemInTensor / dstInUbAxesSize / elemPerBlock * elemPerBlock / dstOutUbAxesSize;
+        srcFactor = Ops::Base::FloorDiv(
+            elemInTensor / srcOutUbAxesSize,
+            Ops::Base::CeilAlign(srcInUbAxesSize * ubSplitInfo_.inUbCutAxisFactor, elemPerBlock));
+        axisFactor = static_cast<int32_t>(std::min(dstFactor, srcFactor));
+    }
+}
+
+/**
+ * @brief AdjustUbCutAxisFactor 的 axisFlag==NUM_TWO 场景：切输入轴
+ * @param axisFactor [in,out] 待回调的切分因子
+ */
+void TransposeGatherTiling::AdjustUbCutFactorInAxis(int32_t& axisFactor, int64_t dstInUbAxesSize,
+                                                    int64_t dstOutUbAxesSize, int64_t srcInUbAxesSize,
+                                                    int64_t srcOutUbAxesSize, int64_t elemInTensor,
+                                                    int64_t elemPerBlock)
+{
+    int64_t dstFactor = 0;
+    int64_t srcFactor = 0;
+    dstInUbAxesSize /= ubSplitInfo_.outUbCutAxisFactor;
+    bool isDstUbOverflow = (axisFactor * dstInUbAxesSize *
+                                Ops::Base::CeilAlign(dstOutUbAxesSize * ubSplitInfo_.outUbCutAxisFactor, elemPerBlock) >
+                            elemInTensor);
+    bool isSrcUbOverflow = (srcOutUbAxesSize * Ops::Base::CeilAlign(srcInUbAxesSize * axisFactor, elemPerBlock) >
+                            elemInTensor);
+    if (isDstUbOverflow || isSrcUbOverflow) {
+        dstFactor = Ops::Base::FloorDiv(
+            elemInTensor / dstInUbAxesSize,
+            Ops::Base::CeilAlign(dstOutUbAxesSize * ubSplitInfo_.outUbCutAxisFactor, elemPerBlock));
+        srcFactor = elemInTensor / srcOutUbAxesSize / elemPerBlock * elemPerBlock / srcInUbAxesSize;
+        axisFactor = static_cast<int32_t>(std::min(dstFactor, srcFactor));
     }
 }
 
@@ -225,17 +277,15 @@ void TransposeGatherTiling::AdjustUbCutAxisFactor(int32_t& axisFactor, int8_t ax
  * 根据"输入 last 轴 / 输出 last 轴是否还剩余（isLastInPermLeft / isLastOutPermLeft）"
  * 分 4 种 case 求因子：
  *
- *   1) 两 last 都剩余（∈viceAllUbPerm）：
- *      a. 两 last 轴不同：
- *         - 若 in/out 无重叠（cnt 之和 == ubAxesCnt）：两因子各取
- *           sqrtedTensor / savedElems（正方形近似）
- *         - 有重叠：先按共用轴计算 newSqrtedTensor 再分别除以非共用轴乘积
- *      b. 两 last 轴相同：因子取 min(inUbCutAxisSize, maxCutAxisSize, maxOutCutAxisSize)
- *         并让 outUbCutAxisFactor = inUbCutAxisFactor（同轴同切）
+ *   1) 两 last 都剩余（∈viceAllUbPerm）：转 CalcUbCutFactorBothLeft
+ *      - last 轴不同：转 CalcUbCutFactorDiffLastAxis（无重叠取 sqrtedTensor/savedElems；
+ *        有重叠按共用轴算 newSqrtedTensor 后回调 flag NUM_THREE）
+ *      - last 轴相同：取 min(inUbCutAxisSize, maxCutAxisSize, maxOutCutAxisSize) 并
+ *        让 outUbCutAxisFactor = inUbCutAxisFactor（同轴同切，flag 0）
  *   2) 都不剩余：取完整 cutAxisSize（该轴全量进 UB，无需切）
- *   3) 只剩输入 last：outCutAxisFactor 取完整，inCutAxisFactor 取
- *      min(inUbCutAxisSize, maxCutAxisSize) 并回调
- *   4) 只剩输出 last：对称处理
+ *   3) 只剩输入 last：转 CalcUbCutFactorInLeftOnly（outCutAxisFactor 取完整，
+ *      inCutAxisFactor 取 min(inUbCutAxisSize, maxCutAxisSize) 并回调 flag NUM_TWO）
+ *   4) 只剩输出 last：转 CalcUbCutFactorOutLeftOnly（对称处理，回调 flag 1）
  *
  * maxOutCutAxisSize 额外限制：为 gather 索引预留 1/4 UB（NUM_FOUR 分母）。
  *
@@ -264,46 +314,118 @@ void TransposeGatherTiling::CalcUbAxisCutFactor(int64_t elemInTensor, int64_t sq
     int64_t maxCutAxisSize = elemInTensor / allSavedElems;
 
     if (isLastInPermLeft && isLastOutPermLeft) {
-        if (inUbPerm_.perm[inUbPerm_.cnt - 1] != outUbPerm_.perm[outUbPerm_.cnt - 1]) {
-            if (outUbPerm_.cnt + inUbPerm_.cnt == ubSplitInfo_.ubAxesCnt) {
-                ubSplitInfo_.inUbCutAxisFactor = std::min(ubSplitInfo_.inUbCutAxisSize, sqrtedTensor / inSavedElems);
-                ubSplitInfo_.outUbCutAxisFactor = std::min(ubSplitInfo_.outUbCutAxisSize, sqrtedTensor / outSavedElems);
-            } else {
-                int64_t comSavedElems = 1;
-                for (int8_t idx = 0; idx < outUbPerm_.cnt - 1; ++idx) {
-                    if (inUbPermSet_.find(outUbPerm_.perm[idx]) != inUbPermSet_.end()) {
-                        comSavedElems *= shapeInfo_.reducedInShape[outUbPerm_.perm[idx]];
-                    }
-                }
-                int64_t newSqrtedTensor = static_cast<int64_t>(
-                    std::sqrt(elemInTensor / comSavedElems / elemPerBlock * elemPerBlock));
-                int64_t inLeft = inSavedElems / comSavedElems;
-                int64_t outLeft = outSavedElems / comSavedElems;
-                ubSplitInfo_.inUbCutAxisFactor = std::min(ubSplitInfo_.inUbCutAxisSize, newSqrtedTensor / inLeft);
-                ubSplitInfo_.outUbCutAxisFactor = std::min(ubSplitInfo_.outUbCutAxisSize, newSqrtedTensor / outLeft);
-                AdjustUbCutAxisFactor(ubSplitInfo_.outUbCutAxisFactor, NUM_THREE, elemInTensor);
-            }
-        } else {
-            ubSplitInfo_.inUbCutAxisFactor = std::min(std::min(ubSplitInfo_.inUbCutAxisSize, maxCutAxisSize),
-                                                      maxOutCutAxisSize);
-            AdjustUbCutAxisFactor(ubSplitInfo_.inUbCutAxisFactor, 0, elemInTensor);
-            ubSplitInfo_.outUbCutAxisFactor = ubSplitInfo_.inUbCutAxisFactor;
-        }
+        CalcUbCutFactorBothLeft(elemInTensor, sqrtedTensor, outSavedElems, inSavedElems, elemPerBlock, maxCutAxisSize,
+                                maxOutCutAxisSize);
     } else if (!isLastInPermLeft && !isLastOutPermLeft) {
         ubSplitInfo_.inUbCutAxisFactor = ubSplitInfo_.inUbCutAxisSize;
         ubSplitInfo_.outUbCutAxisFactor = ubSplitInfo_.outUbCutAxisSize;
     } else {
         if (!isLastInPermLeft) {
-            ubSplitInfo_.inUbCutAxisFactor = ubSplitInfo_.inUbCutAxisSize;
-            ubSplitInfo_.outUbCutAxisFactor = std::min(std::min(ubSplitInfo_.outUbCutAxisSize, maxCutAxisSize),
-                                                       maxOutCutAxisSize);
-            AdjustUbCutAxisFactor(ubSplitInfo_.outUbCutAxisFactor, 1, elemInTensor);
+            CalcUbCutFactorOutLeftOnly(elemInTensor, maxCutAxisSize, maxOutCutAxisSize);
         } else {
-            ubSplitInfo_.outUbCutAxisFactor = ubSplitInfo_.outUbCutAxisSize;
-            ubSplitInfo_.inUbCutAxisFactor = std::min(ubSplitInfo_.inUbCutAxisSize, maxCutAxisSize);
-            AdjustUbCutAxisFactor(ubSplitInfo_.inUbCutAxisFactor, NUM_TWO, elemInTensor);
+            CalcUbCutFactorInLeftOnly(elemInTensor, maxCutAxisSize);
         }
     }
+}
+
+/**
+ * @brief CalcUbAxisCutFactor 的 isLastInPermLeft && isLastOutPermLeft 场景：两 last 轴都剩余
+ *
+ * 原函数 both-left 分支逐行搬移：last 轴不同转 CalcUbCutFactorDiffLastAxis，
+ * last 轴相同则按 maxCutAxisSize/maxOutCutAxisSize 取因子并同轴同切（flag 0）。
+ *
+ * @param elemInTensor    数据 tensor 元素容量上限
+ * @param sqrtedTensor    block 边长预算
+ * @param outSavedElems   输出侧已分配元素数
+ * @param inSavedElems    输入侧已分配元素数
+ * @param elemPerBlock    每个 block 的元素数
+ * @param maxCutAxisSize  最大切分尺寸（受 allSavedElems 约束）
+ * @param maxOutCutAxisSize 最大输出切分尺寸（为 gather 索引预留 1/4 UB）
+ */
+void TransposeGatherTiling::CalcUbCutFactorBothLeft(int64_t elemInTensor, int64_t sqrtedTensor, int64_t outSavedElems,
+                                                    int64_t inSavedElems, int64_t elemPerBlock, int64_t maxCutAxisSize,
+                                                    int64_t maxOutCutAxisSize)
+{
+    if (inUbPerm_.perm[inUbPerm_.cnt - 1] != outUbPerm_.perm[outUbPerm_.cnt - 1]) {
+        CalcUbCutFactorDiffLastAxis(elemInTensor, sqrtedTensor, outSavedElems, inSavedElems, elemPerBlock);
+    } else {
+        ubSplitInfo_.inUbCutAxisFactor = std::min(std::min(ubSplitInfo_.inUbCutAxisSize, maxCutAxisSize),
+                                                  maxOutCutAxisSize);
+        AdjustUbCutAxisFactor(ubSplitInfo_.inUbCutAxisFactor, 0, elemInTensor);
+        ubSplitInfo_.outUbCutAxisFactor = ubSplitInfo_.inUbCutAxisFactor;
+    }
+}
+
+/**
+ * @brief CalcUbAxisCutFactor 的 both-left 且 last 轴不同场景
+ *
+ * 原函数 both-left/diff-last 分支逐行搬移：
+ *   - 无重叠（cnt 之和 == ubAxesCnt）：两因子各取 sqrtedTensor / savedElems
+ *   - 有重叠：先按共用轴算 newSqrtedTensor 再分别除以非共用轴乘积，回调 flag NUM_THREE
+ *
+ * @param elemInTensor    数据 tensor 元素容量上限
+ * @param sqrtedTensor    block 边长预算
+ * @param outSavedElems   输出侧已分配元素数
+ * @param inSavedElems    输入侧已分配元素数
+ * @param elemPerBlock    每个 block 的元素数
+ */
+void TransposeGatherTiling::CalcUbCutFactorDiffLastAxis(int64_t elemInTensor, int64_t sqrtedTensor,
+                                                        int64_t outSavedElems, int64_t inSavedElems,
+                                                        int64_t elemPerBlock)
+{
+    if (outUbPerm_.cnt + inUbPerm_.cnt == ubSplitInfo_.ubAxesCnt) {
+        ubSplitInfo_.inUbCutAxisFactor = std::min(ubSplitInfo_.inUbCutAxisSize, sqrtedTensor / inSavedElems);
+        ubSplitInfo_.outUbCutAxisFactor = std::min(ubSplitInfo_.outUbCutAxisSize, sqrtedTensor / outSavedElems);
+    } else {
+        int64_t comSavedElems = 1;
+        for (int8_t idx = 0; idx < outUbPerm_.cnt - 1; ++idx) {
+            if (inUbPermSet_.find(outUbPerm_.perm[idx]) != inUbPermSet_.end()) {
+                comSavedElems *= shapeInfo_.reducedInShape[outUbPerm_.perm[idx]];
+            }
+        }
+        int64_t newSqrtedTensor = static_cast<int64_t>(
+            std::sqrt(elemInTensor / comSavedElems / elemPerBlock * elemPerBlock));
+        int64_t inLeft = inSavedElems / comSavedElems;
+        int64_t outLeft = outSavedElems / comSavedElems;
+        ubSplitInfo_.inUbCutAxisFactor = std::min(ubSplitInfo_.inUbCutAxisSize, newSqrtedTensor / inLeft);
+        ubSplitInfo_.outUbCutAxisFactor = std::min(ubSplitInfo_.outUbCutAxisSize, newSqrtedTensor / outLeft);
+        AdjustUbCutAxisFactor(ubSplitInfo_.outUbCutAxisFactor, NUM_THREE, elemInTensor);
+    }
+}
+
+/**
+ * @brief CalcUbAxisCutFactor 的只剩输出 last 场景（isLastOutPermLeft && !isLastInPermLeft）
+ *
+ * 原函数 single-left/out 分支逐行搬移：输入因子取完整尺寸，输出因子受
+ * maxCutAxisSize/maxOutCutAxisSize 约束并回调 flag 1。
+ *
+ * @param elemInTensor     数据 tensor 元素容量上限
+ * @param maxCutAxisSize   最大切分尺寸
+ * @param maxOutCutAxisSize 最大输出切分尺寸
+ */
+void TransposeGatherTiling::CalcUbCutFactorOutLeftOnly(int64_t elemInTensor, int64_t maxCutAxisSize,
+                                                       int64_t maxOutCutAxisSize)
+{
+    ubSplitInfo_.inUbCutAxisFactor = ubSplitInfo_.inUbCutAxisSize;
+    ubSplitInfo_.outUbCutAxisFactor = std::min(std::min(ubSplitInfo_.outUbCutAxisSize, maxCutAxisSize),
+                                               maxOutCutAxisSize);
+    AdjustUbCutAxisFactor(ubSplitInfo_.outUbCutAxisFactor, 1, elemInTensor);
+}
+
+/**
+ * @brief CalcUbAxisCutFactor 的只剩输入 last 场景（isLastInPermLeft && !isLastOutPermLeft）
+ *
+ * 原函数 single-left/in 分支逐行搬移：输出因子取完整尺寸，输入因子受
+ * maxCutAxisSize 约束并回调 flag NUM_TWO。
+ *
+ * @param elemInTensor   数据 tensor 元素容量上限
+ * @param maxCutAxisSize 最大切分尺寸
+ */
+void TransposeGatherTiling::CalcUbCutFactorInLeftOnly(int64_t elemInTensor, int64_t maxCutAxisSize)
+{
+    ubSplitInfo_.outUbCutAxisFactor = ubSplitInfo_.outUbCutAxisSize;
+    ubSplitInfo_.inUbCutAxisFactor = std::min(ubSplitInfo_.inUbCutAxisSize, maxCutAxisSize);
+    AdjustUbCutAxisFactor(ubSplitInfo_.inUbCutAxisFactor, NUM_TWO, elemInTensor);
 }
 
 /**
@@ -329,6 +451,25 @@ ge::graphStatus TransposeGatherTiling::CalcUbAxesInfo(const int64_t (&tmpInAxes)
                                                       const int64_t (&tmpOutAxes)[MAX_TRANS_AXIS_NUM],
                                                       const int8_t (&tmpOutPerm)[MAX_TRANS_AXIS_NUM])
 {
+    CompactUbAxes(tmpInAxes, tmpOutAxes, tmpOutPerm);
+    if (CheckUbHwConstraint() == ge::GRAPH_FAILED) {
+        return ge::GRAPH_FAILED;
+    }
+    MapUbCutPosToOut();
+    return ge::GRAPH_SUCCESS;
+}
+
+/**
+ * @brief CalcUbAxesInfo 的压实段：把 tmpInAxes/tmpOutAxes/tmpOutPerm 压实为 UB 轴信息
+ *
+ * 原函数首个 for 循环逐行搬移：遍历 MAX_TRANS_AXIS_NUM，非零 tmpOutAxes[j] 填入
+ * outUbAxes[outIdx] 并按 allUbPerm 序号填 ubPerm[outIdx]；非零 tmpInAxes[j] 填入
+ * inUbAxes[inIdx]。inIdx/outIdx 为本段局部变量（原函数对应分支逐行同名同形）。
+ */
+void TransposeGatherTiling::CompactUbAxes(const int64_t (&tmpInAxes)[MAX_TRANS_AXIS_NUM],
+                                          const int64_t (&tmpOutAxes)[MAX_TRANS_AXIS_NUM],
+                                          const int8_t (&tmpOutPerm)[MAX_TRANS_AXIS_NUM])
+{
     int8_t inIdx = 0;
     int8_t outIdx = 0;
     for (int8_t j = 0; j < MAX_TRANS_AXIS_NUM; ++j) {
@@ -343,7 +484,19 @@ ge::graphStatus TransposeGatherTiling::CalcUbAxesInfo(const int64_t (&tmpInAxes)
             ubSplitInfo_.inUbAxes[inIdx++] = static_cast<int32_t>(tmpInAxes[j]);
         }
     }
+}
 
+/**
+ * @brief CalcUbAxesInfo 的硬件校验段：MTE 效率门槛 + gather 索引 bank 冲突
+ *
+ * 原函数中段逐行搬移：totalSizeInUb = eleLenInBytes × inUbAxes 乘积；
+ * indexStep = ubPerm 末轴右侧 inUbAxes 乘积。totalSizeInUb < MTE_GATE 或
+ * CheckBC(indexStep) 为真则返回 GRAPH_FAILED。totalSizeInUb/indexStep 为本段局部变量。
+ *
+ * @return GRAPH_SUCCESS 校验通过；GRAPH_FAILED MTE 效率不足或 bank 冲突
+ */
+ge::graphStatus TransposeGatherTiling::CheckUbHwConstraint()
+{
     int32_t totalSizeInUb = static_cast<int32_t>(shapeInfo_.eleLenInBytes);
     for (int8_t i = 0; i < ubSplitInfo_.ubAxesCnt; ++i) {
         totalSizeInUb *= ubSplitInfo_.inUbAxes[i];
@@ -361,7 +514,17 @@ ge::graphStatus TransposeGatherTiling::CalcUbAxesInfo(const int64_t (&tmpInAxes)
         OP_LOGD(context_, "may bank conflict, indexStep=%ld", indexStep);
         return ge::GRAPH_FAILED;
     }
+    return ge::GRAPH_SUCCESS;
+}
 
+/**
+ * @brief CalcUbAxesInfo 的映射段：输入侧切分轴位置映射到输出侧
+ *
+ * 原函数末段 for 循环逐行搬移：扫描 ubPerm[0..allUbPerm.size()-1]，
+ * ubPerm[k]==inUbInCutPos 记 outUbInCutPos=k，==inUbOutCutPos 记 outUbOutCutPos=k。
+ */
+void TransposeGatherTiling::MapUbCutPosToOut()
+{
     for (int8_t k = 0; k < static_cast<int8_t>(allUbPerm_.size()); ++k) {
         if (ubSplitInfo_.ubPerm[k] == ubSplitInfo_.inUbInCutPos) {
             ubSplitInfo_.outUbInCutPos = k;
@@ -370,7 +533,6 @@ ge::graphStatus TransposeGatherTiling::CalcUbAxesInfo(const int64_t (&tmpInAxes)
             ubSplitInfo_.outUbOutCutPos = k;
         }
     }
-    return ge::GRAPH_SUCCESS;
 }
 
 /**
@@ -475,28 +637,69 @@ void TransposeGatherTiling::CalcUbSplitInfo4MTE()
     int8_t axisIdx = 0;
 
     if (outUbPerm_.perm[0] < inUbPerm_.perm[inUbPerm_.cnt - 1]) {
-        // to make sure output last dim and move in cube are consecutive
-        ubSplitInfo_.axis0InSrcStride = CalcShapeSize(shapeInfo_.reducedInShape, outUbPerm_.perm[0] + 1, dim);
-        for (int8_t i = inUbPerm_.perm[inUbPerm_.cnt - 1] - 1; i >= 0; --i) {
-            if (allUbPerm_.find(i) != allUbPerm_.end() && i != outUbPerm_.perm[0] && axisIdx == 0) {
-                ubSplitInfo_.axis1InSrcStride = CalcShapeSize(shapeInfo_.reducedInShape, i + 1, dim);
-                ++axisIdx;
-            } else if (allUbPerm_.find(i) != allUbPerm_.end() && i != outUbPerm_.perm[0] && axisIdx == 1) {
-                ubSplitInfo_.axis2InSrcStride = CalcShapeSize(shapeInfo_.reducedInShape, i + 1, dim);
-            }
-        }
+        CalcInSrcStrideConsecutive(dim, axisIdx);
     } else {
-        for (int8_t i = inUbPerm_.perm[inUbPerm_.cnt - 1] - 1; i >= 0; --i) {
-            if (allUbPerm_.find(i) != allUbPerm_.end() && axisIdx == 0) {
-                ubSplitInfo_.axis0InSrcStride = CalcShapeSize(shapeInfo_.reducedInShape, i + 1, dim);
-                ++axisIdx;
-            } else if (allUbPerm_.find(i) != allUbPerm_.end() && axisIdx == 1) {
-                ubSplitInfo_.axis1InSrcStride = CalcShapeSize(shapeInfo_.reducedInShape, i + 1, dim);
-            }
-        }
+        CalcInSrcStrideDefault(dim, axisIdx);
     }
 
     axisIdx = 0;
+    CalcOutDstStride(dim, axisIdx);
+}
+
+/**
+ * @brief CalcUbSplitInfo4MTE 的 if 分支：输出末维 < 输入切轴（连续搬入）
+ *
+ * 原函数 if 分支逐行搬移：预置 axis0InSrcStride 为输出末维右侧乘积，
+ * 再从输入切轴向前扫描 UB 内轴（跳过输出末维），填 axis1/axis2InSrcStride。
+ *
+ * @param dim     简化后维度数
+ * @param axisIdx [in,out] 循环内轴序号计数器
+ */
+void TransposeGatherTiling::CalcInSrcStrideConsecutive(int64_t dim, int8_t& axisIdx)
+{
+    // to make sure output last dim and move in cube are consecutive
+    ubSplitInfo_.axis0InSrcStride = CalcShapeSize(shapeInfo_.reducedInShape, outUbPerm_.perm[0] + 1, dim);
+    for (int8_t i = inUbPerm_.perm[inUbPerm_.cnt - 1] - 1; i >= 0; --i) {
+        if (allUbPerm_.find(i) != allUbPerm_.end() && i != outUbPerm_.perm[0] && axisIdx == 0) {
+            ubSplitInfo_.axis1InSrcStride = CalcShapeSize(shapeInfo_.reducedInShape, i + 1, dim);
+            ++axisIdx;
+        } else if (allUbPerm_.find(i) != allUbPerm_.end() && i != outUbPerm_.perm[0] && axisIdx == 1) {
+            ubSplitInfo_.axis2InSrcStride = CalcShapeSize(shapeInfo_.reducedInShape, i + 1, dim);
+        }
+    }
+}
+
+/**
+ * @brief CalcUbSplitInfo4MTE 的 else 分支：默认顺序搬入
+ *
+ * 原函数 else 分支逐行搬移：从输入切轴向前扫描 UB 内轴，填 axis0/1InSrcStride。
+ *
+ * @param dim     简化后维度数
+ * @param axisIdx [in,out] 循环内轴序号计数器
+ */
+void TransposeGatherTiling::CalcInSrcStrideDefault(int64_t dim, int8_t& axisIdx)
+{
+    for (int8_t i = inUbPerm_.perm[inUbPerm_.cnt - 1] - 1; i >= 0; --i) {
+        if (allUbPerm_.find(i) != allUbPerm_.end() && axisIdx == 0) {
+            ubSplitInfo_.axis0InSrcStride = CalcShapeSize(shapeInfo_.reducedInShape, i + 1, dim);
+            ++axisIdx;
+        } else if (allUbPerm_.find(i) != allUbPerm_.end() && axisIdx == 1) {
+            ubSplitInfo_.axis1InSrcStride = CalcShapeSize(shapeInfo_.reducedInShape, i + 1, dim);
+        }
+    }
+}
+
+/**
+ * @brief CalcUbSplitInfo4MTE 的搬出跨步段：计算 OutDstStride
+ *
+ * 原函数 OutDstStride 循环逐行搬移：从输出侧向前扫描 UB 内轴，
+ * 填 axis0/1/2OutDstStride。
+ *
+ * @param dim     简化后维度数
+ * @param axisIdx [in,out] 循环内轴序号计数器
+ */
+void TransposeGatherTiling::CalcOutDstStride(int64_t dim, int8_t& axisIdx)
+{
     for (int8_t j = dim - outUbPerm_.cnt - 1; j >= 0; --j) {
         if (allUbPerm_.find(shapeInfo_.reducedPerm[j]) != allUbPerm_.end() && axisIdx == 0) {
             ubSplitInfo_.axis0OutDstStride = CalcShapeSize(shapeInfo_.reducedOutShape, j + 1, dim);
@@ -527,45 +730,100 @@ void TransposeGatherTiling::AdjustInUbAxesPosition()
     int8_t axis0Gap = ubSplitInfo_.inUbInCutPos - 1 - outLastDimInPos;
     // only for brorrow axis case, to make output last dim to be the axis0 when move data in
     if (axis0Gap > 0) {
-        for (int8_t i = 0; i < axis0Gap; ++i) {
-            ubSplitInfo_.inUbAxes[outLastDimInPos + i] = ubSplitInfo_.inUbAxes[outLastDimInPos + i + 1];
-        }
-        ubSplitInfo_.inUbAxes[outLastDimInPos + axis0Gap] = ubSplitInfo_.outUbAxes[ubSplitInfo_.ubAxesCnt - 1];
-        if (outLastDimInPos < ubSplitInfo_.inUbOutCutPos && ubSplitInfo_.inUbOutCutPos < ubSplitInfo_.inUbInCutPos) {
-            ubSplitInfo_.inUbOutCutPos -= 1;
-        }
+        ShiftInUbAxes4Borrow(outLastDimInPos, axis0Gap);
 
         if (outUbPerm_.cnt == NUM_TWO) {
-            ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_TWO] = 0;
-            ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - 1] = 1;
+            AdjustUbPerm4BorrowCntTwo();
         } else if (outUbPerm_.cnt == NUM_THREE) {
-            /*           no overlap: 2 1 0 -> 1 0 2
-             *                       2 0 1 -> 1 0 2
-             *                       0 2 1 -> 0 1 2
-             *                       1 2 0 -> 0 1 2
-             *              overlap: x 1 0 -> x 0 1
-             *                       1 x 0 -> 0 x 1
-             */
-            if (inUbPerm_.cnt + outUbPerm_.cnt == ubSplitInfo_.ubAxesCnt) {
-                if (ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_THREE] == NUM_TWO) {
-                    ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_THREE] = 1;
-                    ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_TWO] = 0;
-                    ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - 1] = NUM_TWO;
-                } else if (ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_TWO] == NUM_TWO) {
-                    ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_THREE] = 0;
-                    ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_TWO] = 1;
-                    ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - 1] = NUM_TWO;
-                }
-            } else {
-                if (ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_THREE] >= NUM_TWO) {
-                    ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_TWO] = 0;
-                    ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - 1] = 1;
-                } else if (ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_TWO] >= NUM_TWO) {
-                    ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_THREE] = 0;
-                    ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - 1] = 1;
-                }
-            }
+            AdjustUbPerm4BorrowCntThree();
         }
+    }
+}
+
+/**
+ * @brief AdjustInUbAxesPosition 的 axis0Gap>0 共享段：借轴位移 inUbAxes
+ *
+ * 原函数 shift 段逐行搬移：把 inUbAxes 中元素向左移位 axis0Gap 格，
+ * 把输出末维那根轴（outUbAxes 末项）搬到 axis0 位置，并修正 inUbOutCutPos。
+ *
+ * @param outLastDimInPos 输出末维在 UB 轴序列中的位置
+ * @param axis0Gap        需左移的格数（inUbInCutPos - 1 - outLastDimInPos）
+ */
+void TransposeGatherTiling::ShiftInUbAxes4Borrow(int8_t outLastDimInPos, int8_t axis0Gap)
+{
+    for (int8_t i = 0; i < axis0Gap; ++i) {
+        ubSplitInfo_.inUbAxes[outLastDimInPos + i] = ubSplitInfo_.inUbAxes[outLastDimInPos + i + 1];
+    }
+    ubSplitInfo_.inUbAxes[outLastDimInPos + axis0Gap] = ubSplitInfo_.outUbAxes[ubSplitInfo_.ubAxesCnt - 1];
+    if (outLastDimInPos < ubSplitInfo_.inUbOutCutPos && ubSplitInfo_.inUbOutCutPos < ubSplitInfo_.inUbInCutPos) {
+        ubSplitInfo_.inUbOutCutPos -= 1;
+    }
+}
+
+/**
+ * @brief AdjustInUbAxesPosition 的 outUbPerm_.cnt==NUM_TWO 场景：ubPerm 重排
+ *
+ * 原函数 cnt==2 分支体逐行搬移：末两位置为 [0, 1]。
+ */
+void TransposeGatherTiling::AdjustUbPerm4BorrowCntTwo()
+{
+    ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_TWO] = 0;
+    ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - 1] = 1;
+}
+
+/**
+ * @brief AdjustInUbAxesPosition 的 outUbPerm_.cnt==NUM_THREE 场景：ubPerm 重排分发
+ *
+ * 原函数 cnt==3 分支逐行搬移：按 in/out 轴是否无重叠（cnt 之和 == ubAxesCnt）
+ * 分发到 NoOverlap / Overlap 两个子函数。
+ */
+void TransposeGatherTiling::AdjustUbPerm4BorrowCntThree()
+{
+    /*           no overlap: 2 1 0 -> 1 0 2
+     *                       2 0 1 -> 1 0 2
+     *                       0 2 1 -> 0 1 2
+     *                       1 2 0 -> 0 1 2
+     *              overlap: x 1 0 -> x 0 1
+     *                       1 x 0 -> 0 x 1
+     */
+    if (inUbPerm_.cnt + outUbPerm_.cnt == ubSplitInfo_.ubAxesCnt) {
+        AdjustUbPermCntThreeNoOverlap();
+    } else {
+        AdjustUbPermCntThreeOverlap();
+    }
+}
+
+/**
+ * @brief cnt==3 无重叠场景（inUbPerm_.cnt + outUbPerm_.cnt == ubAxesCnt）
+ *
+ * 原函数 cnt==3 / no-overlap 分支体逐行搬移：末三轴 perm 中含 2 的位置决定重排。
+ */
+void TransposeGatherTiling::AdjustUbPermCntThreeNoOverlap()
+{
+    if (ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_THREE] == NUM_TWO) {
+        ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_THREE] = 1;
+        ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_TWO] = 0;
+        ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - 1] = NUM_TWO;
+    } else if (ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_TWO] == NUM_TWO) {
+        ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_THREE] = 0;
+        ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_TWO] = 1;
+        ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - 1] = NUM_TWO;
+    }
+}
+
+/**
+ * @brief cnt==3 有重叠场景（inUbPerm_.cnt + outUbPerm_.cnt != ubAxesCnt）
+ *
+ * 原函数 cnt==3 / overlap 分支体逐行搬移：末三轴 perm 中 >= 2 的位置决定重排。
+ */
+void TransposeGatherTiling::AdjustUbPermCntThreeOverlap()
+{
+    if (ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_THREE] >= NUM_TWO) {
+        ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_TWO] = 0;
+        ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - 1] = 1;
+    } else if (ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_TWO] >= NUM_TWO) {
+        ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - NUM_THREE] = 0;
+        ubSplitInfo_.ubPerm[ubSplitInfo_.ubAxesCnt - 1] = 1;
     }
 }
 
@@ -667,41 +925,8 @@ ge::graphStatus TransposeGatherTiling::CalcUbSplitInfo()
  */
 ge::graphStatus TransposeGatherTiling::CalcBlockSplitInfo()
 {
-    int8_t dim = shapeInfo_.dim;
-    int64_t axisFactor = 1;
     int64_t totalElems = 1;
-    for (int8_t i = 0; i < dim; ++i) {
-        if (allUbPerm_.find(i) == allUbPerm_.end()) {
-            axisFactor = 1;
-        } else if (i == inUbPerm_.perm[inUbPerm_.cnt - 1] &&
-                   ubSplitInfo_.inUbCutAxisSize != ubSplitInfo_.inUbCutAxisFactor) {
-            axisFactor = ubSplitInfo_.inUbCutAxisFactor;
-            if (ubSplitInfo_.inUbCutAxisSize % ubSplitInfo_.inUbCutAxisFactor != 0) {
-                blkSplitInfo_.blkInUbCutPos = blkSplitInfo_.blkAxesCnt;
-            }
-        } else if (i == outUbPerm_.perm[outUbPerm_.cnt - 1] &&
-                   ubSplitInfo_.outUbCutAxisSize != ubSplitInfo_.outUbCutAxisFactor) {
-            axisFactor = ubSplitInfo_.outUbCutAxisFactor;
-            if (ubSplitInfo_.outUbCutAxisSize % ubSplitInfo_.outUbCutAxisFactor != 0) {
-                blkSplitInfo_.blkOutUbCutPos = blkSplitInfo_.blkAxesCnt;
-            }
-        } else {
-            continue;
-        }
-        int64_t axisLpSize = Ops::Base::CeilDiv(shapeInfo_.reducedInShape[i], axisFactor);
-        blkSplitInfo_.blkAxes[blkSplitInfo_.blkAxesCnt] = axisLpSize;
-        blkSplitInfo_.blkAxesInAOffset[blkSplitInfo_.blkAxesCnt] = CalcShapeSize(shapeInfo_.reducedInShape, i + 1,
-                                                                                 dim) *
-                                                                   axisFactor;
-        auto iter = std::find(shapeInfo_.reducedPerm.begin(), shapeInfo_.reducedPerm.end(), i);
-        int8_t gap = static_cast<int8_t>(std::distance(shapeInfo_.reducedPerm.begin(), iter));
-        blkSplitInfo_.blkAxesOutAOffset[blkSplitInfo_.blkAxesCnt] = CalcShapeSize(shapeInfo_.reducedOutShape, gap + 1,
-                                                                                  dim) *
-                                                                    axisFactor;
-        ++blkSplitInfo_.blkAxesCnt;
-        totalElems *= axisLpSize;
-    }
-
+    CollectBlkAxes(totalElems);
     blkSplitInfo_.usedCoreCnt = Ops::Base::CeilDiv(totalElems, Ops::Base::CeilDiv(totalElems, platInfo_.coreNum));
     if (blkSplitInfo_.usedCoreCnt < static_cast<uint32_t>(platInfo_.coreNum / NUM_TWO)) {
         return ge::GRAPH_FAILED;
@@ -710,6 +935,85 @@ ge::graphStatus TransposeGatherTiling::CalcBlockSplitInfo()
     blkSplitInfo_.blkTailFactor = totalElems - (blkSplitInfo_.usedCoreCnt - 1) * blkSplitInfo_.blkFactor;
     OP_LOGD(context_->GetNodeName(), "Block tiling is done!");
     return ge::GRAPH_SUCCESS;
+}
+
+/**
+ * @brief 逐轴收集块级循环轴（CollectBlkAxes，从 CalcBlockSplitInfo 循环体提取）
+ *
+ * 循环体与原函数逐行同名：4 分支 dispatch 决定 axisFactor / 是否跳过；
+ * in/out 切尾段对称参数化为 CalcBlkUbCutAxis（调用两次），共享偏移计算落入 CalcBlkAxesOffset。
+ *
+ * @param totalElems [in,out] 块级循环总块数乘积（初值 1，与原函数局部变量同名同序）
+ */
+void TransposeGatherTiling::CollectBlkAxes(int64_t& totalElems)
+{
+    int8_t dim = shapeInfo_.dim;
+    int64_t axisFactor = 1;
+    for (int8_t i = 0; i < dim; ++i) {
+        if (allUbPerm_.find(i) == allUbPerm_.end()) {
+            axisFactor = 1;
+        } else if (i == inUbPerm_.perm[inUbPerm_.cnt - 1] &&
+                   ubSplitInfo_.inUbCutAxisSize != ubSplitInfo_.inUbCutAxisFactor) {
+            CalcBlkUbCutAxis(axisFactor, ubSplitInfo_.inUbCutAxisSize, ubSplitInfo_.inUbCutAxisFactor,
+                             blkSplitInfo_.blkInUbCutPos, blkSplitInfo_.blkAxesCnt);
+        } else if (i == outUbPerm_.perm[outUbPerm_.cnt - 1] &&
+                   ubSplitInfo_.outUbCutAxisSize != ubSplitInfo_.outUbCutAxisFactor) {
+            CalcBlkUbCutAxis(axisFactor, ubSplitInfo_.outUbCutAxisSize, ubSplitInfo_.outUbCutAxisFactor,
+                             blkSplitInfo_.blkOutUbCutPos, blkSplitInfo_.blkAxesCnt);
+        } else {
+            continue;
+        }
+        CalcBlkAxesOffset(i, dim, axisFactor, totalElems);
+    }
+}
+
+/**
+ * @brief 设置块级切分轴因子并记录尾块位置（in/out 镜像段参数化，调用两次）
+ *
+ * 与原函数 in/out 分支逐行同名：
+ *   axisFactor = cutAxisFactor;
+ *   if (cutAxisSize % cutAxisFactor != 0) cutPos = blkAxesCnt;
+ * 类型提升保留：cutAxisSize 为 int64_t、cutAxisFactor 为 int32_t（与 ubSplitInfo_ 字段同型）。
+ *
+ * @param axisFactor     [in,out] 块级循环轴因子（置为切分轴主块因子）
+ * @param cutAxisSize    切分轴完整尺寸（in/outUbCutAxisSize）
+ * @param cutAxisFactor  切分轴主块因子（in/outUbCutAxisFactor）
+ * @param cutPos         [in,out] 块级切尾位置（blkIn/OutUbCutPos）
+ * @param blkAxesCnt     当前块级轴计数（blkAxesCnt）
+ */
+void TransposeGatherTiling::CalcBlkUbCutAxis(int64_t& axisFactor, int64_t cutAxisSize, int32_t cutAxisFactor,
+                                             int8_t& cutPos, int8_t blkAxesCnt)
+{
+    axisFactor = cutAxisFactor;
+    if (cutAxisSize % cutAxisFactor != 0) {
+        cutPos = blkAxesCnt;
+    }
+}
+
+/**
+ * @brief 计算单轴块级循环次数与输入/输出地址跨步（从 CalcBlockSplitInfo 偏移尾段提取）
+ *
+ * 与原函数 if-else-if 之后的共享尾段逐行同名：axisLpSize、blkAxes/InAOffset/OutAOffset、
+ * ++blkAxesCnt、totalElems 累乘，算式（CeilDiv 参数、CalcShapeSize 区间、std::find 距离）逐字保留。
+ *
+ * @param i          当前轴索引
+ * @param dim        简化后维度数（原函数局部变量 dim）
+ * @param axisFactor 当前轴块级循环因子
+ * @param totalElems [in,out] 块级循环总块数乘积
+ */
+void TransposeGatherTiling::CalcBlkAxesOffset(int8_t i, int8_t dim, int64_t axisFactor, int64_t& totalElems)
+{
+    int64_t axisLpSize = Ops::Base::CeilDiv(shapeInfo_.reducedInShape[i], axisFactor);
+    blkSplitInfo_.blkAxes[blkSplitInfo_.blkAxesCnt] = axisLpSize;
+    blkSplitInfo_.blkAxesInAOffset[blkSplitInfo_.blkAxesCnt] = CalcShapeSize(shapeInfo_.reducedInShape, i + 1, dim) *
+                                                               axisFactor;
+    auto iter = std::find(shapeInfo_.reducedPerm.begin(), shapeInfo_.reducedPerm.end(), i);
+    int8_t gap = static_cast<int8_t>(std::distance(shapeInfo_.reducedPerm.begin(), iter));
+    blkSplitInfo_.blkAxesOutAOffset[blkSplitInfo_.blkAxesCnt] = CalcShapeSize(shapeInfo_.reducedOutShape, gap + 1,
+                                                                              dim) *
+                                                                axisFactor;
+    ++blkSplitInfo_.blkAxesCnt;
+    totalElems *= axisLpSize;
 }
 
 ge::graphStatus TransposeGatherTiling::SetTilingKeyAndCore()

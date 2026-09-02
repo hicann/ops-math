@@ -163,15 +163,49 @@ private:
     void CalcOutUbPerm(int64_t sqrtedTensor);
     void CalcUbAxisCutFactor(int64_t elemInTensor, int64_t sqrtedTensor, bool isLastInPermLeft, bool isLastOutPermLeft,
                              const std::set<int8_t>& viceAllUbPerm);
+    void CalcUbCutFactorBothLeft(int64_t elemInTensor, int64_t sqrtedTensor, int64_t outSavedElems,
+                                 int64_t inSavedElems, int64_t elemPerBlock, int64_t maxCutAxisSize,
+                                 int64_t maxOutCutAxisSize);
+    void CalcUbCutFactorDiffLastAxis(int64_t elemInTensor, int64_t sqrtedTensor, int64_t outSavedElems,
+                                     int64_t inSavedElems, int64_t elemPerBlock);
+    void CalcUbCutFactorOutLeftOnly(int64_t elemInTensor, int64_t maxCutAxisSize, int64_t maxOutCutAxisSize);
+    void CalcUbCutFactorInLeftOnly(int64_t elemInTensor, int64_t maxCutAxisSize);
     ge::graphStatus CalcUbAxesInfo(const int64_t (&tmpInAxes)[MAX_TRANS_AXIS_NUM],
                                    const int64_t (&tmpOutAxes)[MAX_TRANS_AXIS_NUM],
                                    const int8_t (&tmpOutPerm)[MAX_TRANS_AXIS_NUM]);
+    void CompactUbAxes(const int64_t (&tmpInAxes)[MAX_TRANS_AXIS_NUM], const int64_t (&tmpOutAxes)[MAX_TRANS_AXIS_NUM],
+                       const int8_t (&tmpOutPerm)[MAX_TRANS_AXIS_NUM]);
+    ge::graphStatus CheckUbHwConstraint();
+    void MapUbCutPosToOut();
     ge::graphStatus CalcUbSplitInfo4Gather(int64_t elemInTensor, int64_t sqrtedTensor);
     void CalcUbSplitInfo4MTE();
+    void CalcInSrcStrideConsecutive(int64_t dim, int8_t& axisIdx);
+    void CalcInSrcStrideDefault(int64_t dim, int8_t& axisIdx);
+    void CalcOutDstStride(int64_t dim, int8_t& axisIdx);
     void AdjustInUbAxesPosition();
+    void ShiftInUbAxes4Borrow(int8_t outLastDimInPos, int8_t axis0Gap);
+    void AdjustUbPerm4BorrowCntTwo();
+    void AdjustUbPerm4BorrowCntThree();
+    void AdjustUbPermCntThreeNoOverlap();
+    void AdjustUbPermCntThreeOverlap();
     void AdjustUbCutAxisFactor(int32_t& axisFactor, int8_t axisFlag, int64_t elemInTensor);
+    void CalcUbAxesSizes(const UbPermInfo& mainUbPerm, const UbPermInfo& viceUbPerm, int64_t& mainUbAxesSize,
+                         int64_t& viceUbAxesSize);
+    void AdjustUbCutFactorSameAxis(int32_t& axisFactor, int64_t dstInUbAxesSize, int64_t dstOutUbAxesSize,
+                                   int64_t srcInUbAxesSize, int64_t srcOutUbAxesSize, int64_t elemInTensor,
+                                   int64_t elemPerBlock);
+    void AdjustUbCutFactorOutAxis(int32_t& axisFactor, int64_t dstInUbAxesSize, int64_t dstOutUbAxesSize,
+                                  int64_t srcInUbAxesSize, int64_t srcOutUbAxesSize, int64_t elemInTensor,
+                                  int64_t elemPerBlock, int8_t axisFlag);
+    void AdjustUbCutFactorInAxis(int32_t& axisFactor, int64_t dstInUbAxesSize, int64_t dstOutUbAxesSize,
+                                 int64_t srcInUbAxesSize, int64_t srcOutUbAxesSize, int64_t elemInTensor,
+                                 int64_t elemPerBlock);
     ge::graphStatus CalcUbSplitInfo();
     ge::graphStatus CalcBlockSplitInfo();
+    void CollectBlkAxes(int64_t& totalElems);
+    void CalcBlkUbCutAxis(int64_t& axisFactor, int64_t cutAxisSize, int32_t cutAxisFactor, int8_t& cutPos,
+                          int8_t blkAxesCnt);
+    void CalcBlkAxesOffset(int8_t i, int8_t dim, int64_t axisFactor, int64_t& totalElems);
     void WriteTilingData();
     std::string PrintTilingData();
     ge::graphStatus SetTilingKeyAndCore();
