@@ -10,6 +10,7 @@
 
 #include "tile_aicpu.h"
 
+#include <atomic>
 #include <complex>
 #include <iostream>
 
@@ -177,25 +178,41 @@ uint32_t TileCpuKernel::TileComputeWith2DNotUsingEigen(const CpuKernelContext& c
     KERNEL_CHECK_FALSE((output_data_size >= static_cast<uint64_t>(x_second_dim * sizeof(T))), KERNEL_STATUS_INNER_ERROR,
                        "memcpy size=[%ld] should less or equal to output data size=[%lu]", x_second_dim * sizeof(T),
                        output_data_size);
-    uint32_t result = KERNEL_STATUS_OK;
+    // result is shared by every ParallelFor worker, so it must be atomic. It is written only on the
+    // error path, which also keeps the copy loop free of stores to the shared cache line.
+    std::atomic<uint32_t> result(KERNEL_STATUS_OK);
     auto first_sharder = [&](int64_t start, int64_t end) {
         for (int64_t i = start; i < end; i++) {
-            result = CallCopyHook(output_data + i * mul_second_dim * x_second_dim, input_x_data + i * x_second_dim,
-                                  x_second_dim * sizeof(T));
+            const uint32_t one_ret = CallCopyHook(output_data + i * mul_second_dim * x_second_dim,
+                                                  input_x_data + i * x_second_dim, x_second_dim * sizeof(T));
+            if (one_ret != KERNEL_STATUS_OK) {
+                result.store(one_ret, std::memory_order_relaxed);
+                return;
+            }
         }
-        return result;
     };
-    (void)CpuKernelUtils::ParallelFor(ctx, x_first_dim, 1, first_sharder);
+    KERNEL_HANDLE_ERROR(CpuKernelUtils::ParallelFor(ctx, x_first_dim, 1, first_sharder),
+                        "Tile first_sharder parallel for failed.");
+    if (result.load(std::memory_order_relaxed) != KERNEL_STATUS_OK) {
+        return result.load(std::memory_order_relaxed);
+    }
     auto second_sharder = [&](int64_t start, int64_t end) {
         for (int64_t i = start; i < end; i++) {
             for (int64_t j = 1; j < mul_second_dim; j++) {
-                result = CallCopyHook(output_data + i * last_axes_dims + j * x_second_dim,
-                                      output_data + i * last_axes_dims, x_second_dim * sizeof(T));
+                const uint32_t one_ret = CallCopyHook(output_data + i * last_axes_dims + j * x_second_dim,
+                                                      output_data + i * last_axes_dims, x_second_dim * sizeof(T));
+                if (one_ret != KERNEL_STATUS_OK) {
+                    result.store(one_ret, std::memory_order_relaxed);
+                    return;
+                }
             }
         }
-        return result;
     };
-    (void)CpuKernelUtils::ParallelFor(ctx, x_first_dim, 1, second_sharder);
+    KERNEL_HANDLE_ERROR(CpuKernelUtils::ParallelFor(ctx, x_first_dim, 1, second_sharder),
+                        "Tile second_sharder parallel for failed.");
+    if (result.load(std::memory_order_relaxed) != KERNEL_STATUS_OK) {
+        return result.load(std::memory_order_relaxed);
+    }
     KERNEL_CHECK_FALSE((output_data_size >= static_cast<uint64_t>(x_first_dim * last_axes_dims * sizeof(T))),
                        KERNEL_STATUS_INNER_ERROR, "memcpy size=[%ld] should less or equal to output data size=[%lu]",
                        x_first_dim * last_axes_dims * sizeof(T), output_data_size);
@@ -203,13 +220,17 @@ uint32_t TileCpuKernel::TileComputeWith2DNotUsingEigen(const CpuKernelContext& c
         int64_t cpy_size = x_first_dim * last_axes_dims;
         for (int64_t i = start; i < end; i++) {
             if (i != 0) {
-                result = CallCopyHook(output_data + i * cpy_size, output_data, cpy_size * sizeof(T));
+                const uint32_t one_ret = CallCopyHook(output_data + i * cpy_size, output_data, cpy_size * sizeof(T));
+                if (one_ret != KERNEL_STATUS_OK) {
+                    result.store(one_ret, std::memory_order_relaxed);
+                    return;
+                }
             }
         }
-        return result;
     };
-    (void)CpuKernelUtils::ParallelFor(ctx, mul_first_dim, 1, third_sharder);
-    return result;
+    KERNEL_HANDLE_ERROR(CpuKernelUtils::ParallelFor(ctx, mul_first_dim, 1, third_sharder),
+                        "Tile third_sharder parallel for failed.");
+    return result.load(std::memory_order_relaxed);
 }
 
 template <typename T>
@@ -476,19 +497,25 @@ uint32_t TileCpuKernel::TileCompute3DSharderFirst(const CpuKernelContext& ctx, T
                                                   int64_t x_first_dim, int64_t x_second_dim, int64_t x_third_dim,
                                                   int64_t last_axes_dims, int64_t second_axes_dims)
 {
-    uint32_t result = KERNEL_STATUS_OK;
+    // result is shared by every ParallelFor worker, so it must be atomic. It is written only on the
+    // error path, which also keeps the copy loop free of stores to the shared cache line.
+    std::atomic<uint32_t> result(KERNEL_STATUS_OK);
     auto sharder = [&](int64_t start, int64_t end) {
         for (int64_t i = start; i < end; i++) {
             for (int64_t j = 0; j < x_second_dim; j++) {
-                result = CallCopyHook(output_data + i * last_axes_dims * second_axes_dims + j * last_axes_dims,
-                                      input_x_data + i * x_third_dim * x_second_dim + j * x_third_dim,
-                                      x_third_dim * sizeof(T));
+                const uint32_t one_ret = CallCopyHook(
+                    output_data + i * last_axes_dims * second_axes_dims + j * last_axes_dims,
+                    input_x_data + i * x_third_dim * x_second_dim + j * x_third_dim, x_third_dim * sizeof(T));
+                if (one_ret != KERNEL_STATUS_OK) {
+                    result.store(one_ret, std::memory_order_relaxed);
+                    return;
+                }
             }
         }
-        return result;
     };
-    (void)CpuKernelUtils::ParallelFor(ctx, x_first_dim, 1, sharder);
-    return result;
+    KERNEL_HANDLE_ERROR(CpuKernelUtils::ParallelFor(ctx, x_first_dim, 1, sharder),
+                        "Tile 3D first sharder parallel for failed.");
+    return result.load(std::memory_order_relaxed);
 }
 
 template <typename T>
@@ -496,21 +523,27 @@ uint32_t TileCpuKernel::TileCompute3DSharderSecond(const CpuKernelContext& ctx, 
                                                    int64_t x_second_dim, int64_t x_third_dim, int64_t mul_third_dim,
                                                    int64_t last_axes_dims, int64_t last_two_axes_dims)
 {
-    uint32_t result = KERNEL_STATUS_OK;
+    // result is shared by every ParallelFor worker, so it must be atomic. It is written only on the
+    // error path, which also keeps the copy loop free of stores to the shared cache line.
+    std::atomic<uint32_t> result(KERNEL_STATUS_OK);
     auto sharder = [&](int64_t start, int64_t end) {
         for (int64_t i = start; i < end; i++) {
             for (int64_t j = 0; j < x_second_dim; j++) {
                 for (int64_t k = 1; k < mul_third_dim; k++) {
-                    result = CallCopyHook(output_data + i * last_two_axes_dims + j * last_axes_dims + k * x_third_dim,
-                                          output_data + i * last_two_axes_dims + j * last_axes_dims,
-                                          x_third_dim * sizeof(T));
+                    const uint32_t one_ret = CallCopyHook(
+                        output_data + i * last_two_axes_dims + j * last_axes_dims + k * x_third_dim,
+                        output_data + i * last_two_axes_dims + j * last_axes_dims, x_third_dim * sizeof(T));
+                    if (one_ret != KERNEL_STATUS_OK) {
+                        result.store(one_ret, std::memory_order_relaxed);
+                        return;
+                    }
                 }
             }
         }
-        return result;
     };
-    (void)CpuKernelUtils::ParallelFor(ctx, x_first_dim, 1, sharder);
-    return result;
+    KERNEL_HANDLE_ERROR(CpuKernelUtils::ParallelFor(ctx, x_first_dim, 1, sharder),
+                        "Tile 3D second sharder parallel for failed.");
+    return result.load(std::memory_order_relaxed);
 }
 
 template <typename T>
@@ -518,36 +551,49 @@ uint32_t TileCpuKernel::TileCompute3DSharderThird(const CpuKernelContext& ctx, T
                                                   int64_t x_second_dim, int64_t mul_second_dim, int64_t last_axes_dims,
                                                   int64_t last_two_axes_dims)
 {
-    uint32_t result = KERNEL_STATUS_OK;
+    // result is shared by every ParallelFor worker, so it must be atomic. It is written only on the
+    // error path, which also keeps the copy loop free of stores to the shared cache line.
+    std::atomic<uint32_t> result(KERNEL_STATUS_OK);
     auto sharder = [&](int64_t start, int64_t end) {
         for (int64_t i = start; i < end; i++) {
             for (int64_t j = 1; j < mul_second_dim; j++) {
-                result = CallCopyHook(output_data + i * last_two_axes_dims + j * last_axes_dims * x_second_dim,
-                                      output_data + i * last_two_axes_dims, last_axes_dims * x_second_dim * sizeof(T));
+                const uint32_t one_ret = CallCopyHook(
+                    output_data + i * last_two_axes_dims + j * last_axes_dims * x_second_dim,
+                    output_data + i * last_two_axes_dims, last_axes_dims * x_second_dim * sizeof(T));
+                if (one_ret != KERNEL_STATUS_OK) {
+                    result.store(one_ret, std::memory_order_relaxed);
+                    return;
+                }
             }
         }
-        return result;
     };
-    (void)CpuKernelUtils::ParallelFor(ctx, x_first_dim, 1, sharder);
-    return result;
+    KERNEL_HANDLE_ERROR(CpuKernelUtils::ParallelFor(ctx, x_first_dim, 1, sharder),
+                        "Tile 3D third sharder parallel for failed.");
+    return result.load(std::memory_order_relaxed);
 }
 
 template <typename T>
 uint32_t TileCpuKernel::TileCompute3DSharderFourth(const CpuKernelContext& ctx, T* output_data, int64_t mul_first_dim,
                                                    int64_t last_two_axes_dims, int64_t x_first_dim)
 {
-    uint32_t result = KERNEL_STATUS_OK;
+    // result is shared by every ParallelFor worker, so it must be atomic. It is written only on the
+    // error path, which also keeps the copy loop free of stores to the shared cache line.
+    std::atomic<uint32_t> result(KERNEL_STATUS_OK);
     auto sharder = [&](int64_t start, int64_t end) {
         for (int64_t i = start; i < end; i++) {
             if (i != 0) {
-                result = CallCopyHook(output_data + i * last_two_axes_dims * x_first_dim, output_data,
-                                      last_two_axes_dims * x_first_dim * sizeof(T));
+                const uint32_t one_ret = CallCopyHook(output_data + i * last_two_axes_dims * x_first_dim, output_data,
+                                                      last_two_axes_dims * x_first_dim * sizeof(T));
+                if (one_ret != KERNEL_STATUS_OK) {
+                    result.store(one_ret, std::memory_order_relaxed);
+                    return;
+                }
             }
         }
-        return result;
     };
-    (void)CpuKernelUtils::ParallelFor(ctx, mul_first_dim, 1, sharder);
-    return result;
+    KERNEL_HANDLE_ERROR(CpuKernelUtils::ParallelFor(ctx, mul_first_dim, 1, sharder),
+                        "Tile 3D fourth sharder parallel for failed.");
+    return result.load(std::memory_order_relaxed);
 }
 
 template <typename T>
