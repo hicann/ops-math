@@ -197,6 +197,7 @@ __aicore__ inline void RadixTopKUb<T, largest>::SubProcess(uint64_t batchId)
         // 找到topk，提前退出
         if (Update(roundId))
             break;
+        SyncAll();
         this->andMask16_ >>= BITS_PER_ROUND;
     }
     SyncAll();
@@ -293,6 +294,7 @@ __aicore__ inline void RadixTopKUb<T, largest>::HandleLastRoundBoundary(LocalTen
                                                                         LocalTensor<float>& tileHistFp32)
 {
     PipeBarrier<PIPE_V>();
+    SToVSync();
     if (this->boundaryBinPrev < this->numValue_) {
         Sub(resTensor, tileHist[this->boundaryBin * this->tileNumAlign_],
             tileHist[this->boundaryBinPrev * this->tileNumAlign_], this->tileNum_);
@@ -372,6 +374,7 @@ __aicore__ inline void RadixTopKUb<T, largest>::TileTopK(const uint64_t& batchId
     LocalTensor<int32_t> tileTopK = tileTopKBuf_.Get<int32_t>();
     LocalTensor<int32_t> tmpLocal = tempBuf_.Get<int32_t>();
     uint64_t coreTopKOffset = this->CopyInCoreTopK(tmpLocal);
+    SyncAll();
     uint64_t batchIndexOffset = batchId * this->kValue_;
     coreTopKOffset += batchIndexOffset;
 

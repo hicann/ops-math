@@ -147,6 +147,9 @@ ge::graphStatus RadixTopKTiling::GetWorkspaceSize()
         workspaceSize_ = (NUM_VALUE_2BIT * tilingData_.coreNum + tilingData_.coreNum + tilingData_.coreNum) *
                          sizeof(int32_t);
     }
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(context_->GetPlatformInfo());
+    uint64_t sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
+    workspaceSize_ += sysWorkspaceSize;
     return ge::GRAPH_SUCCESS;
 }
 

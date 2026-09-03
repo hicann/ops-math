@@ -206,6 +206,7 @@ __aicore__ inline void RadixTopKWs<T, largest>::SubProcess(uint64_t batchId)
         this->andMask16_ >>= BITS_PER_ROUND;
         if (Update(roundId))
             break;
+        SyncAll();
     }
     SyncAll();
     TileTopK(batchId, blockOffset);
@@ -270,6 +271,7 @@ __aicore__ inline void RadixTopKWs<T, largest>::HandleLastRoundBoundary(LocalTen
                                                                         LocalTensor<float>& tileHistFp32)
 {
     uint32_t reduceSumValue = 0;
+    SToMTE2Sync();
     for (int32_t i = 0; i <= tileNumBy2RepeatTimes_; i++) {
         uint32_t dataNum = i == tileNumBy2RepeatTimes_ ? tileNumBy2Remain_ : MAX_TILE_NUM_IN_UB_BY2;
         if (dataNum == 0)

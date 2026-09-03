@@ -38,92 +38,6 @@ static constexpr uint32_t FLOAT32_SAFE_INT = 16777216;
 static constexpr uint32_t BITS_PER_ROUND = 2;
 
 /**
- * @brief 从 srcTensor 复制 dataNum 个元素到 dstTensor
- * @param dstTensor 目标 Tensor
- * @param srcTensor 源 Tensor
- * @param dataNum 复制数据量
- */
-template <typename IT>
-__aicore__ inline void CopyData(const LocalTensor<IT>& dstTensor, const LocalTensor<IT>& srcTensor,
-                                const uint64_t& dataNum)
-{
-    uint64_t numPerRepeat = REPEAT_SIZE / sizeof(IT);
-    uint64_t repeatTimes = dataNum / numPerRepeat;
-    uint64_t remain = dataNum % numPerRepeat;
-    if (repeatTimes > 0) {
-        Copy(dstTensor, srcTensor, numPerRepeat, repeatTimes, {1, 1, 8, 8});
-    }
-    if (remain > 0) {
-        Copy(dstTensor[repeatTimes * numPerRepeat], srcTensor[repeatTimes * numPerRepeat], remain, 1, {1, 1, 8, 8});
-    }
-}
-
-/**
- * @brief 通过分段 Adds 生成索引序列
- * @param dstTensor 目标索引 Tensor
- * @param srcTensor 源索引 Tensor（包含 [0, 1, ..., baseDataNum-1]）
- * @param dataNum 需生成的索引总数
- * @param baseDataNum 每段基础索引长度
- */
-template <typename IT>
-__aicore__ inline void CreateVecIndexDataByAdds(const LocalTensor<IT>& dstTensor, const LocalTensor<IT>& srcTensor,
-                                                const uint32_t& dataNum, const uint32_t& baseDataNum)
-{
-    uint32_t repeatTimes = dataNum / baseDataNum;
-    uint32_t remain = dataNum % baseDataNum;
-    for (int i = 1; i < repeatTimes; i++) {
-        Adds(dstTensor[i * baseDataNum], srcTensor, static_cast<IT>(i * baseDataNum),
-             static_cast<int32_t>(baseDataNum));
-    }
-    if (remain > 0) {
-        Adds(dstTensor[repeatTimes * baseDataNum], srcTensor, static_cast<IT>(repeatTimes * baseDataNum),
-             static_cast<int32_t>(remain));
-    }
-}
-
-/**
- * @brief 创建索引：先用 CreateVecIndex 生成基索引，不足部分由 CreateVecIndexDataByAdds 补充
- * @param dstTensor 目标索引 Tensor
- * @param firstValue 索引起始值
- * @param dataNum 需生成的索引总数
- * @param baseDataNum 基索引长度
- */
-template <typename IT>
-__aicore__ inline void CreateVecIndexData(const LocalTensor<IT>& dstTensor, const IT& firstValue,
-                                          const uint32_t& dataNum, const uint32_t& baseDataNum)
-{
-    CreateVecIndex(dstTensor, firstValue, baseDataNum);
-    if (dataNum == baseDataNum)
-        return;
-    CreateVecIndexDataByAdds(dstTensor, dstTensor, dataNum, baseDataNum);
-}
-
-/**
- * @brief 性能优化的索引生成，根据 dataNum 大小选择最优 baseDataNum
- * @param dstTensor 目标索引 Tensor
- * @param firstValue 索引起始值
- * @param dataNum 需生成的索引总数
- */
-template <typename IT>
-__aicore__ inline void CreateVecIndexPerf(const LocalTensor<IT>& dstTensor, const IT& firstValue,
-                                          const uint32_t& dataNum)
-{
-    if (dataNum == 0)
-        return;
-    if (dataNum < 32) {
-        CreateVecIndexData<IT>(dstTensor, firstValue, dataNum, dataNum);
-    } else if (dataNum < 256) {
-        CreateVecIndexData<IT>(dstTensor, firstValue, dataNum, 32);
-    } else if (dataNum < 2048) {
-        CreateVecIndexData<IT>(dstTensor, firstValue, dataNum, 256);
-    } else if (dataNum < 7680) {
-        CreateVecIndexData<IT>(dstTensor, firstValue, dataNum, 512);
-    } else {
-        CreateVecIndexData<IT>(dstTensor, firstValue, dataNum, 1024);
-    }
-}
-
-/**
  * @brief MTE3 → MTE2 同步
  */
 __aicore__ inline void MTE3ToMTE2Sync()
@@ -241,6 +155,94 @@ __aicore__ inline void MTE2ToSSync()
     event_t eventIDMTE2ToS = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_S));
     SetFlag<HardEvent::MTE2_S>(eventIDMTE2ToS);
     WaitFlag<HardEvent::MTE2_S>(eventIDMTE2ToS);
+}
+
+/**
+ * @brief 从 srcTensor 复制 dataNum 个元素到 dstTensor
+ * @param dstTensor 目标 Tensor
+ * @param srcTensor 源 Tensor
+ * @param dataNum 复制数据量
+ */
+template <typename IT>
+__aicore__ inline void CopyData(const LocalTensor<IT>& dstTensor, const LocalTensor<IT>& srcTensor,
+                                const uint64_t& dataNum)
+{
+    uint64_t numPerRepeat = REPEAT_SIZE / sizeof(IT);
+    uint64_t repeatTimes = dataNum / numPerRepeat;
+    uint64_t remain = dataNum % numPerRepeat;
+    if (repeatTimes > 0) {
+        Copy(dstTensor, srcTensor, numPerRepeat, repeatTimes, {1, 1, 8, 8});
+    }
+    if (remain > 0) {
+        Copy(dstTensor[repeatTimes * numPerRepeat], srcTensor[repeatTimes * numPerRepeat], remain, 1, {1, 1, 8, 8});
+    }
+}
+
+/**
+ * @brief 通过分段 Adds 生成索引序列
+ * @param dstTensor 目标索引 Tensor
+ * @param srcTensor 源索引 Tensor（包含 [0, 1, ..., baseDataNum-1]）
+ * @param dataNum 需生成的索引总数
+ * @param baseDataNum 每段基础索引长度
+ */
+template <typename IT>
+__aicore__ inline void CreateVecIndexDataByAdds(const LocalTensor<IT>& dstTensor, const LocalTensor<IT>& srcTensor,
+                                                const uint32_t& dataNum, const uint32_t& baseDataNum)
+{
+    uint32_t repeatTimes = dataNum / baseDataNum;
+    uint32_t remain = dataNum % baseDataNum;
+    for (int i = 1; i < repeatTimes; i++) {
+        Adds(dstTensor[i * baseDataNum], srcTensor, static_cast<IT>(i * baseDataNum),
+             static_cast<int32_t>(baseDataNum));
+    }
+    if (remain > 0) {
+        Adds(dstTensor[repeatTimes * baseDataNum], srcTensor, static_cast<IT>(repeatTimes * baseDataNum),
+             static_cast<int32_t>(remain));
+    }
+}
+
+/**
+ * @brief 创建索引：先用 CreateVecIndex 生成基索引，不足部分由 CreateVecIndexDataByAdds 补充
+ * @param dstTensor 目标索引 Tensor
+ * @param firstValue 索引起始值
+ * @param dataNum 需生成的索引总数
+ * @param baseDataNum 基索引长度
+ */
+template <typename IT>
+__aicore__ inline void CreateVecIndexData(const LocalTensor<IT>& dstTensor, const IT& firstValue,
+                                          const uint32_t& dataNum, const uint32_t& baseDataNum)
+{
+    CreateVecIndex(dstTensor, firstValue, baseDataNum);
+    if (dataNum == baseDataNum)
+        return;
+    CreateVecIndexDataByAdds(dstTensor, dstTensor, dataNum, baseDataNum);
+}
+
+/**
+ * @brief 性能优化的索引生成，根据 dataNum 大小选择最优 baseDataNum
+ * @param dstTensor 目标索引 Tensor
+ * @param firstValue 索引起始值
+ * @param dataNum 需生成的索引总数
+ */
+template <typename IT>
+__aicore__ inline void CreateVecIndexPerf(const LocalTensor<IT>& dstTensor, const IT& firstValue,
+                                          const uint32_t& dataNum)
+{
+    if (dataNum == 0)
+        return;
+    MTE3ToSSync();
+    VToSSync();
+    if (dataNum < 32) {
+        CreateVecIndexData<IT>(dstTensor, firstValue, dataNum, dataNum);
+    } else if (dataNum < 256) {
+        CreateVecIndexData<IT>(dstTensor, firstValue, dataNum, 32);
+    } else if (dataNum < 2048) {
+        CreateVecIndexData<IT>(dstTensor, firstValue, dataNum, 256);
+    } else if (dataNum < 7680) {
+        CreateVecIndexData<IT>(dstTensor, firstValue, dataNum, 512);
+    } else {
+        CreateVecIndexData<IT>(dstTensor, firstValue, dataNum, 1024);
+    }
 }
 
 } // namespace RadixTopK

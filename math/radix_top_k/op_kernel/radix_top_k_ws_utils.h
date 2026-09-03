@@ -131,6 +131,7 @@ __aicore__ inline void RadixTopKWs<T, largest>::CopyTileHistInWs(const uint32_t&
         DataCopyExtParams tileHistOutParams{static_cast<uint16_t>(1), static_cast<uint32_t>(sizeof(int32_t) * dataNum),
                                             0, 0, 0};
         DataCopyPad(tileHistGm_[dstOffset + i * MAX_TILE_NUM_IN_UB], tileHist, tileHistOutParams);
+        MTE3ToMTE2Sync();
     }
 }
 
