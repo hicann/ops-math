@@ -25,15 +25,9 @@ namespace optiling {
 constexpr static uint64_t GCD_COMMON_TILING_PRIORITY = 0;
 constexpr static int64_t DCACHE_SIZE = 32 * 1024;
 
-ge::graphStatus GcdTiling::GetShapeAttrsInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus GcdTiling::GetShapeAttrsInfo() { return ge::GRAPH_SUCCESS; }
 
-bool GcdTiling::IsCapable()
-{
-    return true;
-}
+bool GcdTiling::IsCapable() { return true; }
 
 ge::graphStatus GcdTiling::DoOpTiling()
 {
@@ -51,8 +45,8 @@ ge::graphStatus GcdTiling::DoOpTiling()
         std::string dtypeMsg = ge::TypeUtils::DataTypeToSerialString(input0DType) + ", " +
                                ge::TypeUtils::DataTypeToSerialString(input1DType) + " and " +
                                ge::TypeUtils::DataTypeToSerialString(outputDtype);
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            context_->GetNodeName(), "x1, x2 and y", dtypeMsg.c_str(), "The dtypes of x1, x2 and y must be the same");
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1, x2 and y", dtypeMsg.c_str(),
+                                               "The dtypes of x1, x2 and y must be the same");
         return ge::GRAPH_FAILED;
     }
 
@@ -81,29 +75,20 @@ ge::graphStatus GcdTiling::DoOpTiling()
         ret = brcBaseTiling.DoTiling(extraSize, extraBufferNum);
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(
-            context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0DType).c_str(),
-            "uint8, int8, int16, int32 and int64");
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1",
+                                  ge::TypeUtils::DataTypeToSerialString(input0DType).c_str(),
+                                  "uint8, int8, int16, int32 and int64");
         return ge::GRAPH_FAILED;
     }
-    
+
     return ret;
 }
 
-ge::graphStatus GcdTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus GcdTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t GcdTiling::GetTilingKey() const
-{
-    return tilingKey;
-}
+uint64_t GcdTiling::GetTilingKey() const { return tilingKey; }
 
-ge::graphStatus GcdTiling::GetWorkspaceSize()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus GcdTiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus GcdTiling::PostTiling()
 {
@@ -118,13 +103,13 @@ ge::graphStatus GcdTiling::GetPlatformInfo()
         auto compileInfoPtr = reinterpret_cast<const BroadcastCompileInfo*>(context_->GetCompileInfo());
         OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_, "compile info is null"), return ge::GRAPH_FAILED);
         ubSize_ = compileInfoPtr->ubSize;
-        OP_LOGD(context_->GetNodeName(), "Get ubSize form compileInfo is: %ld", ubSize_);
+        OP_LOGD(context_->GetNodeName(), "Get ubSize from compileInfo is: %ld", ubSize_);
     } else {
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
         uint64_t ubSizePlatform;
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatform);
         ubSize_ = static_cast<int64_t>(ubSizePlatform);
-        OP_LOGD(context_->GetNodeName(), "Get ubSize form ascendcPlatform is: %ld", ubSize_);
+        OP_LOGD(context_->GetNodeName(), "Get ubSize from ascendcPlatform is: %ld", ubSize_);
     }
     return ge::GRAPH_SUCCESS;
 }
