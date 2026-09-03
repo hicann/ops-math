@@ -13,10 +13,19 @@
 #ifndef _ACCUMULATE_NV2_TILING_DATA_H_
 #define _ACCUMULATE_NV2_TILING_DATA_H_
 
+#include <cstdint>
+
+constexpr int32_t ACCUMULATE_NV2_MAX_RANK = 8;
+constexpr int32_t ACCUMULATE_NV2_MAX_INPUT_NUM = 32;
+
 struct AccumulateNV2TilingData {
     int64_t totalNum = 0;
     int64_t blockFactor = 0;
     int64_t ubFactor = 0;
     int32_t inputNum = 0;
+    int32_t rank = 0;
+    int32_t needBroadcast = 0;
+    int64_t outputShape[ACCUMULATE_NV2_MAX_RANK] = {};
+    int64_t inputStrides[ACCUMULATE_NV2_MAX_INPUT_NUM][ACCUMULATE_NV2_MAX_RANK] = {};
 };
 #endif

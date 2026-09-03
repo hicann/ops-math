@@ -19,10 +19,10 @@
 
 namespace optiling {
 
-using Ops::Base::CeilDiv;
 using Ops::Base::CeilAlign;
-using Ops::Base::FloorDiv;
+using Ops::Base::CeilDiv;
 using Ops::Base::FloorAlign;
+using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
@@ -30,22 +30,29 @@ constexpr int64_t MIN_SPLIT_THRESHOLD = 1024;
 
 static const gert::Shape g_vec_1_shape = {1};
 
-static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape) {
-    if (in_shape.GetDimNum() == 0) {
+static inline const gert::Shape EnsureNotScalar(const gert::Shape& inShape)
+{
+    if (inShape.GetDimNum() == 0) {
         return g_vec_1_shape;
     }
-    return in_shape;
+    return inShape;
 }
 
 static inline int64_t GetDtypeSize(ge::DataType dataType)
 {
     switch (dataType) {
-        case ge::DT_FLOAT: return 4;
-        case ge::DT_FLOAT16: return 2;
-        case ge::DT_INT32: return 4;
-        case ge::DT_INT8: return 1;
-        case ge::DT_UINT8: return 1;
-        default: return 4;
+        case ge::DT_FLOAT:
+            return 4;
+        case ge::DT_FLOAT16:
+            return 2;
+        case ge::DT_INT32:
+            return 4;
+        case ge::DT_INT8:
+            return 1;
+        case ge::DT_UINT8:
+            return 1;
+        default:
+            return 0;
     }
 }
 
@@ -76,76 +83,164 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
+static ge::graphStatus GetInputNum(gert::TilingContext* context, int32_t& inputNum)
+{
+    auto computeNodeInfo = context->GetComputeNodeInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(context, computeNodeInfo);
+    auto inputInstanceInfo = computeNodeInfo->GetInputInstanceInfo(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputInstanceInfo);
+    inputNum = static_cast<int32_t>(inputInstanceInfo->GetInstanceNum());
+    OP_CHECK_IF(inputNum < 1 || inputNum > ACCUMULATE_NV2_MAX_INPUT_NUM,
+                OP_LOGE(context, "input number must be in [1, %d], but got %d", ACCUMULATE_NV2_MAX_INPUT_NUM, inputNum),
+                return ge::GRAPH_FAILED);
+
+    auto attrs = context->GetAttrs();
+    if (attrs != nullptr && attrs->GetAttrNum() > 0) {
+        const int64_t* attrN = attrs->GetAttrPointer<int64_t>(0);
+        OP_CHECK_NULL_WITH_CONTEXT(context, attrN);
+        OP_CHECK_IF(
+            *attrN != inputNum,
+            OP_LOGE(context, "attr N must equal input number, but got N=%ld and input number=%d", *attrN, inputNum),
+            return ge::GRAPH_FAILED);
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
+static ge::graphStatus FillBroadcastInfo(gert::TilingContext* context, int32_t inputNum,
+                                         AccumulateNV2TilingData* tiling, ge::DataType& dataType)
+{
+    auto outputShapePtr = context->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, outputShapePtr);
+    auto outputShape = EnsureNotScalar(outputShapePtr->GetStorageShape());
+    size_t outputRank = outputShape.GetDimNum();
+    OP_CHECK_IF(outputRank > ACCUMULATE_NV2_MAX_RANK,
+                OP_LOGE(context, "output rank must be <= %d, but got %zu", ACCUMULATE_NV2_MAX_RANK, outputRank),
+                return ge::GRAPH_FAILED);
+
+    auto outputDesc = context->GetOutputDesc(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, outputDesc);
+    dataType = outputDesc->GetDataType();
+    OP_CHECK_IF(GetDtypeSize(dataType) == 0, OP_LOGE(context, "unsupported output data type"), return ge::GRAPH_FAILED);
+
+    tiling->rank = static_cast<int32_t>(outputRank);
+    tiling->totalNum = outputShape.GetShapeSize();
+    int64_t broadcastShape[ACCUMULATE_NV2_MAX_RANK] = {};
+    for (size_t d = 0; d < outputRank; ++d) {
+        int64_t dim = outputShape.GetDim(d);
+        OP_CHECK_IF(dim < 0, OP_LOGE(context, "output shape must be concrete during tiling"), return ge::GRAPH_FAILED);
+        tiling->outputShape[d] = dim;
+        broadcastShape[d] = 1;
+    }
+
+    for (int32_t i = 0; i < inputNum; ++i) {
+        auto inputDesc = context->GetDynamicInputDesc(0, i);
+        OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
+        OP_CHECK_IF(inputDesc->GetDataType() != dataType,
+                    OP_LOGE(context, "all inputs and output must have the same data type"), return ge::GRAPH_FAILED);
+
+        auto inputShapePtr = context->GetDynamicInputShape(0, i);
+        OP_CHECK_NULL_WITH_CONTEXT(context, inputShapePtr);
+        auto inputShape = EnsureNotScalar(inputShapePtr->GetStorageShape());
+        size_t inputRank = inputShape.GetDimNum();
+        OP_CHECK_IF(inputRank > outputRank,
+                    OP_LOGE(context, "input rank %zu cannot exceed output rank %zu", inputRank, outputRank),
+                    return ge::GRAPH_FAILED);
+
+        size_t rankOffset = outputRank - inputRank;
+        for (size_t d = 0; d < inputRank; ++d) {
+            int64_t inputDim = inputShape.GetDim(d);
+            OP_CHECK_IF(inputDim < 0, OP_LOGE(context, "input shape must be concrete during tiling"),
+                        return ge::GRAPH_FAILED);
+            size_t outputDimIndex = rankOffset + d;
+            int64_t currentDim = broadcastShape[outputDimIndex];
+            OP_CHECK_IF(currentDim != 1 && inputDim != 1 && currentDim != inputDim,
+                        OP_LOGE(context, "input shapes cannot broadcast at output dimension %zu", outputDimIndex),
+                        return ge::GRAPH_FAILED);
+            if (currentDim == 1) {
+                broadcastShape[outputDimIndex] = inputDim;
+            }
+        }
+    }
+
+    for (size_t d = 0; d < outputRank; ++d) {
+        OP_CHECK_IF(broadcastShape[d] != tiling->outputShape[d],
+                    OP_LOGE(context, "broadcast result does not match output shape at dimension %zu", d),
+                    return ge::GRAPH_FAILED);
+    }
+
+    for (int32_t i = 0; i < inputNum; ++i) {
+        auto inputShapePtr = context->GetDynamicInputShape(0, i);
+        OP_CHECK_NULL_WITH_CONTEXT(context, inputShapePtr);
+        auto inputShape = EnsureNotScalar(inputShapePtr->GetStorageShape());
+        int32_t inputRank = static_cast<int32_t>(inputShape.GetDimNum());
+        int32_t rankOffset = tiling->rank - inputRank;
+        int64_t contiguousStride = 1;
+        for (int32_t d = inputRank - 1; d >= 0; --d) {
+            int32_t outputDimIndex = rankOffset + d;
+            int64_t inputDim = inputShape.GetDim(d);
+            int64_t outputDim = tiling->outputShape[outputDimIndex];
+            tiling->inputStrides[i][outputDimIndex] = (inputDim == 1 && outputDim != 1) ? 0 : contiguousStride;
+            if (inputDim != outputDim) {
+                tiling->needBroadcast = 1;
+            }
+            contiguousStride *= inputDim;
+        }
+        for (int32_t d = 0; d < rankOffset; ++d) {
+            if (tiling->outputShape[d] != 1) {
+                tiling->needBroadcast = 1;
+            }
+        }
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
 static ge::graphStatus AccumulateNV2TilingFunc(gert::TilingContext* context)
 {
     uint64_t ubSize;
     int64_t coreNum;
-    OP_CHECK_IF(
-        GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
-    int32_t inputNum = static_cast<int32_t>(context->GetComputeNodeInputNum());
+    int32_t inputNum = 0;
+    OP_CHECK_IF(GetInputNum(context, inputNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetInputNum error"),
+                return ge::GRAPH_FAILED);
 
-    auto inputX = context->GetInputShape(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
-    auto inputShape = EnsureNotScalar(inputX->GetStorageShape());
-    int64_t totalNum = inputShape.GetShapeSize();
-
-    auto inputDesc = context->GetInputDesc(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
-    ge::DataType dataType = inputDesc->GetDataType();
-    int64_t typeSize = GetDtypeSize(dataType);
-
-    OP_CHECK_IF(
-        GetWorkspaceSize(context) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetWorkspaceSize error"),
-        return ge::GRAPH_FAILED);
-
-    if (totalNum <= 0) {
-        AccumulateNV2TilingData* tiling = context->GetTilingData<AccumulateNV2TilingData>();
-        OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-        OP_CHECK_IF(
-            memset_s(tiling, sizeof(AccumulateNV2TilingData), 0, sizeof(AccumulateNV2TilingData)) != EOK,
-            OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
-        context->SetBlockDim(1);
-        context->SetTilingKey(210010000UL);
-        return ge::GRAPH_SUCCESS;
-    }
-
-    int64_t ubBlockSize = GetUbBlockSize(context);
-    int64_t blockFactor = CeilAlign(CeilDiv(totalNum, coreNum), ubBlockSize);
-    int64_t usedCoreNum = CeilDiv(totalNum, blockFactor);
-
-    uint64_t usableUbSize = (ubSize > 8192) ? (ubSize - 8192) : ubSize;
-    uint64_t useDoubleBuffer = (totalNum > MIN_SPLIT_THRESHOLD) ? 1 : 0;
-    int64_t bufferNum = useDoubleBuffer ? 6 : 3;
-    if (typeSize <= 0) {
-        OP_LOGE(context, "typeSize is 0, invalid data type");
-        return ge::GRAPH_FAILED;
-    }
-    int64_t ubFactor = FloorAlign(
-        FloorDiv(static_cast<int64_t>(usableUbSize) / typeSize, bufferNum),
-        ubBlockSize);
-    OP_CHECK_IF(ubFactor <= 0, OP_LOGE(context, "ubFactor is 0, UB too small for this operator"),
+    OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
                 return ge::GRAPH_FAILED);
 
     AccumulateNV2TilingData* tiling = context->GetTilingData<AccumulateNV2TilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-    OP_CHECK_IF(
-        memset_s(tiling, sizeof(AccumulateNV2TilingData), 0, sizeof(AccumulateNV2TilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
-
-    tiling->totalNum = totalNum;
-    tiling->blockFactor = blockFactor;
-    tiling->ubFactor = ubFactor;
+    OP_CHECK_IF(memset_s(tiling, sizeof(AccumulateNV2TilingData), 0, sizeof(AccumulateNV2TilingData)) != EOK,
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
     tiling->inputNum = inputNum;
 
+    ge::DataType dataType;
+    OP_CHECK_IF(FillBroadcastInfo(context, inputNum, tiling, dataType) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context, "check broadcast information failed"), return ge::GRAPH_FAILED);
+
+    if (tiling->totalNum <= 0) {
+        context->SetBlockDim(1);
+        uint64_t useDoubleBuffer = 0U;
+        ASCENDC_TPL_SEL_PARAM(context, useDoubleBuffer);
+        return ge::GRAPH_SUCCESS;
+    }
+
+    int64_t typeSize = GetDtypeSize(dataType);
+    int64_t ubBlockSize = GetUbBlockSize(context);
+    int64_t blockFactor = CeilAlign(CeilDiv(tiling->totalNum, coreNum), ubBlockSize);
+    int64_t usedCoreNum = CeilDiv(tiling->totalNum, blockFactor);
+
+    uint64_t usableUbSize = (ubSize > 8192) ? (ubSize - 8192) : ubSize;
+    uint64_t useDoubleBuffer = (tiling->totalNum > MIN_SPLIT_THRESHOLD) ? 1 : 0;
+    int64_t bufferNum = useDoubleBuffer ? 6 : 3;
+    int64_t ubFactor = FloorAlign(FloorDiv(static_cast<int64_t>(usableUbSize) / typeSize, bufferNum), ubBlockSize);
+    OP_CHECK_IF(ubFactor <= 0, OP_LOGE(context, "ubFactor is 0, UB too small for this operator"),
+                return ge::GRAPH_FAILED);
+
+    tiling->blockFactor = blockFactor;
+    tiling->ubFactor = ubFactor;
     context->SetBlockDim(usedCoreNum);
-
-    uint64_t tilingKey = (useDoubleBuffer == 0) ? 210010000UL : 210000000UL;
-    context->SetTilingKey(tilingKey);
-
+    ASCENDC_TPL_SEL_PARAM(context, useDoubleBuffer);
     return ge::GRAPH_SUCCESS;
 }
 
