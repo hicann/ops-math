@@ -17,7 +17,7 @@ namespace ops {
 using namespace ge;
 using namespace fusion;
 
-class __attribute__((visibility("default"))) GlobalavgpoolPass : public PatternFusionPass {
+class __attribute__((visibility("default"))) Globalavgpoolpass : public PatternFusionPass {
 protected:
     std::vector<PatternUniqPtr> Patterns() override;
 
@@ -26,5 +26,5 @@ protected:
     std::unique_ptr<Graph> Replacement(const std::unique_ptr<MatchResult>& match_result) override;
 };
 
-} //namespace ops
+} // namespace ops
 #endif // MATH_GLOBALAVGPOOL_FUSION_PASS_H

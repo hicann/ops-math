@@ -25,7 +25,7 @@ using namespace fe;
 using namespace fusion;
 using namespace ops;
 
-class GlobalavgpoolPassTest : public testing::Test {
+class GlobalavgpoolpassTest : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
@@ -50,54 +50,55 @@ protected:
     }
 };
 
-TEST_F(GlobalavgpoolPassTest, pattern_test)
+TEST_F(GlobalavgpoolpassTest, pattern_test)
 {
-    ops::GlobalavgpoolPass pass;
+    ops::Globalavgpoolpass pass;
     std::vector<PatternUniqPtr> patterns = pass.Patterns();
     EXPECT_GT(patterns.size(), 0);
 }
 
-TEST_F(GlobalavgpoolPassTest, fusion_success_3d)
+TEST_F(GlobalavgpoolpassTest, fusion_success_3d)
 {
-    std::vector<int64_t> dims_x{2, 3, 4};  // 3D input
+    std::vector<int64_t> dims_x{2, 3, 4}; // 3D input
     Shape shape_x(dims_x);
 
     auto graph_builder = es::EsGraphBuilder("globalavgpool_fusion_test");
     auto x = graph_builder.CreateInput(0, "x", DT_FLOAT, FORMAT_ND, shape_x.GetDims());
-    
+
     // 设置输入节点的输出描述（形状和数据类型）在连接边之前
     TensorDesc x_output_desc;
     x.GetProducer()->GetOutputDesc(0, x_output_desc);
     x_output_desc.SetDataType(DT_FLOAT);
     x_output_desc.SetShape(shape_x);
     x.GetProducer()->UpdateOutputDesc(0, x_output_desc);
-    
+
     // 创建 GlobalAveragePool 节点（使用 CompliantNodeBuilder）
     // 需要获取Graph对象
     auto* graph = graph_builder.GetCGraphBuilder()->GetGraph();
     auto globalAvgPool = es::CompliantNodeBuilder(graph)
-        .OpType("GlobalAveragePool")
-        .Name("global_avg_pool")
-        .IrDefInputs({
-            {"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""},
-        })
-        .IrDefOutputs({
-            {"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""},
-        })
-        .Build();
-    
+                             .OpType("GlobalAveragePool")
+                             .Name("global_avg_pool")
+                             .IrDefInputs({
+                                 {"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""},
+                             })
+                             .IrDefOutputs({
+                                 {"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""},
+                             })
+                             .Build();
+
     // 使用AddEdgeAndUpdatePeerDesc连接边
-    if (es::AddEdgeAndUpdatePeerDesc(*graph, *x.GetProducer(), x.GetProducerOutIndex(), globalAvgPool, 0) != GRAPH_SUCCESS) {
+    if (es::AddEdgeAndUpdatePeerDesc(*graph, *x.GetProducer(), x.GetProducerOutIndex(), globalAvgPool, 0) !=
+        GRAPH_SUCCESS) {
         FAIL() << "Failed to add edge in test";
     }
-    
+
     // 更新GlobalAveragePool节点的输入描述，确保形状信息传递
     TensorDesc pool_input_desc;
     globalAvgPool.GetInputDesc(0, pool_input_desc);
     pool_input_desc.SetDataType(DT_FLOAT);
     pool_input_desc.SetShape(shape_x);
     globalAvgPool.UpdateInputDesc(0, pool_input_desc);
-    
+
     // 获取输出张量
     auto y = graph_builder.GetCGraphBuilder()->GetTensorHolderFromNode(globalAvgPool, 0);
 
@@ -106,7 +107,7 @@ TEST_F(GlobalavgpoolPassTest, fusion_success_3d)
     outputs.push_back(ge::es::EsTensorHolder(y));
     std::shared_ptr<Graph> graph_ptr = graph_builder.BuildAndReset(outputs);
     CustomPassContext pass_context;
-    ops::GlobalavgpoolPass pass;
+    ops::Globalavgpoolpass pass;
     Status status = pass.Run(graph_ptr, pass_context);
     EXPECT_EQ(status, SUCCESS);
 
@@ -130,47 +131,48 @@ TEST_F(GlobalavgpoolPassTest, fusion_success_3d)
     EXPECT_TRUE(findReduceMean);
 }
 
-TEST_F(GlobalavgpoolPassTest, fusion_success_4d)
+TEST_F(GlobalavgpoolpassTest, fusion_success_4d)
 {
-    std::vector<int64_t> dims_x{2, 3, 4, 5};  // 4D input
+    std::vector<int64_t> dims_x{2, 3, 4, 5}; // 4D input
     Shape shape_x(dims_x);
 
     auto graph_builder = es::EsGraphBuilder("globalavgpool_fusion_test");
     auto x = graph_builder.CreateInput(0, "x", DT_FLOAT16, FORMAT_ND, shape_x.GetDims());
-    
+
     // 设置输入节点的输出描述（形状和数据类型）在连接边之前
     TensorDesc x_output_desc;
     x.GetProducer()->GetOutputDesc(0, x_output_desc);
     x_output_desc.SetDataType(DT_FLOAT16);
     x_output_desc.SetShape(shape_x);
     x.GetProducer()->UpdateOutputDesc(0, x_output_desc);
-    
+
     // 创建 GlobalAveragePool 节点（使用 CompliantNodeBuilder）
     // 需要获取Graph对象
     auto* graph = graph_builder.GetCGraphBuilder()->GetGraph();
     auto globalAvgPool = es::CompliantNodeBuilder(graph)
-        .OpType("GlobalAveragePool")
-        .Name("global_avg_pool")
-        .IrDefInputs({
-            {"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""},
-        })
-        .IrDefOutputs({
-            {"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""},
-        })
-        .Build();
-    
+                             .OpType("GlobalAveragePool")
+                             .Name("global_avg_pool")
+                             .IrDefInputs({
+                                 {"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""},
+                             })
+                             .IrDefOutputs({
+                                 {"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""},
+                             })
+                             .Build();
+
     // 使用AddEdgeAndUpdatePeerDesc连接边
-    if (es::AddEdgeAndUpdatePeerDesc(*graph, *x.GetProducer(), x.GetProducerOutIndex(), globalAvgPool, 0) != GRAPH_SUCCESS) {
+    if (es::AddEdgeAndUpdatePeerDesc(*graph, *x.GetProducer(), x.GetProducerOutIndex(), globalAvgPool, 0) !=
+        GRAPH_SUCCESS) {
         FAIL() << "Failed to add edge in test";
     }
-    
+
     // 更新GlobalAveragePool节点的输入描述，确保形状信息传递
     TensorDesc pool_input_desc;
     globalAvgPool.GetInputDesc(0, pool_input_desc);
     pool_input_desc.SetDataType(DT_FLOAT16);
     pool_input_desc.SetShape(shape_x);
     globalAvgPool.UpdateInputDesc(0, pool_input_desc);
-    
+
     // 获取输出张量
     auto y = graph_builder.GetCGraphBuilder()->GetTensorHolderFromNode(globalAvgPool, 0);
 
@@ -179,7 +181,7 @@ TEST_F(GlobalavgpoolPassTest, fusion_success_4d)
     outputs.push_back(ge::es::EsTensorHolder(y));
     std::shared_ptr<Graph> graph_ptr = graph_builder.BuildAndReset(outputs);
     CustomPassContext pass_context;
-    ops::GlobalavgpoolPass pass;
+    ops::Globalavgpoolpass pass;
     Status status = pass.Run(graph_ptr, pass_context);
     EXPECT_EQ(status, SUCCESS);
 
@@ -203,47 +205,48 @@ TEST_F(GlobalavgpoolPassTest, fusion_success_4d)
     EXPECT_TRUE(findReduceMean);
 }
 
-TEST_F(GlobalavgpoolPassTest, fusion_success_5d)
+TEST_F(GlobalavgpoolpassTest, fusion_success_5d)
 {
-    std::vector<int64_t> dims_x{2, 3, 4, 5, 6};  // 5D input
+    std::vector<int64_t> dims_x{2, 3, 4, 5, 6}; // 5D input
     Shape shape_x(dims_x);
 
     auto graph_builder = es::EsGraphBuilder("globalavgpool_fusion_test");
     auto x = graph_builder.CreateInput(0, "x", DT_INT32, FORMAT_ND, shape_x.GetDims());
-    
+
     // 设置输入节点的输出描述（形状和数据类型）在连接边之前
     TensorDesc x_output_desc;
     x.GetProducer()->GetOutputDesc(0, x_output_desc);
     x_output_desc.SetDataType(DT_INT32);
     x_output_desc.SetShape(shape_x);
     x.GetProducer()->UpdateOutputDesc(0, x_output_desc);
-    
+
     // 创建 GlobalAveragePool 节点（使用 CompliantNodeBuilder）
     // 需要获取Graph对象
     auto* graph = graph_builder.GetCGraphBuilder()->GetGraph();
     auto globalAvgPool = es::CompliantNodeBuilder(graph)
-        .OpType("GlobalAveragePool")
-        .Name("global_avg_pool")
-        .IrDefInputs({
-            {"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""},
-        })
-        .IrDefOutputs({
-            {"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""},
-        })
-        .Build();
-    
+                             .OpType("GlobalAveragePool")
+                             .Name("global_avg_pool")
+                             .IrDefInputs({
+                                 {"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""},
+                             })
+                             .IrDefOutputs({
+                                 {"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""},
+                             })
+                             .Build();
+
     // 使用AddEdgeAndUpdatePeerDesc连接边
-    if (es::AddEdgeAndUpdatePeerDesc(*graph, *x.GetProducer(), x.GetProducerOutIndex(), globalAvgPool, 0) != GRAPH_SUCCESS) {
+    if (es::AddEdgeAndUpdatePeerDesc(*graph, *x.GetProducer(), x.GetProducerOutIndex(), globalAvgPool, 0) !=
+        GRAPH_SUCCESS) {
         FAIL() << "Failed to add edge in test";
     }
-    
+
     // 更新GlobalAveragePool节点的输入描述，确保形状信息传递
     TensorDesc pool_input_desc;
     globalAvgPool.GetInputDesc(0, pool_input_desc);
     pool_input_desc.SetDataType(DT_INT32);
     pool_input_desc.SetShape(shape_x);
     globalAvgPool.UpdateInputDesc(0, pool_input_desc);
-    
+
     // 获取输出张量
     auto y = graph_builder.GetCGraphBuilder()->GetTensorHolderFromNode(globalAvgPool, 0);
 
@@ -252,7 +255,7 @@ TEST_F(GlobalavgpoolPassTest, fusion_success_5d)
     outputs.push_back(ge::es::EsTensorHolder(y));
     std::shared_ptr<Graph> graph_ptr = graph_builder.BuildAndReset(outputs);
     CustomPassContext pass_context;
-    ops::GlobalavgpoolPass pass;
+    ops::Globalavgpoolpass pass;
     Status status = pass.Run(graph_ptr, pass_context);
     EXPECT_EQ(status, SUCCESS);
 
@@ -276,47 +279,48 @@ TEST_F(GlobalavgpoolPassTest, fusion_success_5d)
     EXPECT_TRUE(findReduceMean);
 }
 
-TEST_F(GlobalavgpoolPassTest, unsupported_dims_fail)
+TEST_F(GlobalavgpoolpassTest, unsupported_dims_fail)
 {
-    std::vector<int64_t> dims_x{2, 3};  // 2D input, not supported
+    std::vector<int64_t> dims_x{2, 3}; // 2D input, not supported
     Shape shape_x(dims_x);
 
     auto graph_builder = es::EsGraphBuilder("globalavgpool_fusion_test");
     auto x = graph_builder.CreateInput(0, "x", DT_FLOAT, FORMAT_ND, shape_x.GetDims());
-    
+
     // 设置输入节点的输出描述（形状和数据类型）在连接边之前
     TensorDesc x_output_desc;
     x.GetProducer()->GetOutputDesc(0, x_output_desc);
     x_output_desc.SetDataType(DT_FLOAT);
     x_output_desc.SetShape(shape_x);
     x.GetProducer()->UpdateOutputDesc(0, x_output_desc);
-    
+
     // 创建 GlobalAveragePool 节点（使用 CompliantNodeBuilder）
     // 需要获取Graph对象
     auto* graph = graph_builder.GetCGraphBuilder()->GetGraph();
     auto globalAvgPool = es::CompliantNodeBuilder(graph)
-        .OpType("GlobalAveragePool")
-        .Name("global_avg_pool")
-        .IrDefInputs({
-            {"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""},
-        })
-        .IrDefOutputs({
-            {"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""},
-        })
-        .Build();
-    
+                             .OpType("GlobalAveragePool")
+                             .Name("global_avg_pool")
+                             .IrDefInputs({
+                                 {"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""},
+                             })
+                             .IrDefOutputs({
+                                 {"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""},
+                             })
+                             .Build();
+
     // 使用AddEdgeAndUpdatePeerDesc连接边
-    if (es::AddEdgeAndUpdatePeerDesc(*graph, *x.GetProducer(), x.GetProducerOutIndex(), globalAvgPool, 0) != GRAPH_SUCCESS) {
+    if (es::AddEdgeAndUpdatePeerDesc(*graph, *x.GetProducer(), x.GetProducerOutIndex(), globalAvgPool, 0) !=
+        GRAPH_SUCCESS) {
         FAIL() << "Failed to add edge in test";
     }
-    
+
     // 更新GlobalAveragePool节点的输入描述，确保形状信息传递
     TensorDesc pool_input_desc;
     globalAvgPool.GetInputDesc(0, pool_input_desc);
     pool_input_desc.SetDataType(DT_FLOAT);
     pool_input_desc.SetShape(shape_x);
     globalAvgPool.UpdateInputDesc(0, pool_input_desc);
-    
+
     // 获取输出张量
     auto y = graph_builder.GetCGraphBuilder()->GetTensorHolderFromNode(globalAvgPool, 0);
 
@@ -325,12 +329,12 @@ TEST_F(GlobalavgpoolPassTest, unsupported_dims_fail)
     outputs.push_back(ge::es::EsTensorHolder(y));
     std::shared_ptr<Graph> graph_ptr = graph_builder.BuildAndReset(outputs);
     CustomPassContext pass_context;
-    ops::GlobalavgpoolPass pass;
+    ops::Globalavgpoolpass pass;
     Status status = pass.Run(graph_ptr, pass_context);
     EXPECT_EQ(status, GRAPH_NOT_CHANGED);
 }
 
-TEST_F(GlobalavgpoolPassTest, fusion_success_950)
+TEST_F(GlobalavgpoolpassTest, fusion_success_950)
 {
     fe::PlatformInfo platformInfo;
     fe::OptionalInfo optiCompilationInfo;
@@ -345,40 +349,41 @@ TEST_F(GlobalavgpoolPassTest, fusion_success_950)
 
     auto graph_builder = es::EsGraphBuilder("globalavgpool_fusion_test");
     auto x = graph_builder.CreateInput(0, "x", DT_FLOAT, FORMAT_ND, shape_x.GetDims());
-    
+
     // 设置输入节点的输出描述（形状和数据类型）在连接边之前
     TensorDesc x_output_desc;
     x.GetProducer()->GetOutputDesc(0, x_output_desc);
     x_output_desc.SetDataType(DT_FLOAT);
     x_output_desc.SetShape(shape_x);
     x.GetProducer()->UpdateOutputDesc(0, x_output_desc);
-    
+
     // 创建 GlobalAveragePool 节点（使用 CompliantNodeBuilder）
     // 需要获取Graph对象
     auto* graph = graph_builder.GetCGraphBuilder()->GetGraph();
     auto globalAvgPool = es::CompliantNodeBuilder(graph)
-        .OpType("GlobalAveragePool")
-        .Name("global_avg_pool")
-        .IrDefInputs({
-            {"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""},
-        })
-        .IrDefOutputs({
-            {"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""},
-        })
-        .Build();
-    
+                             .OpType("GlobalAveragePool")
+                             .Name("global_avg_pool")
+                             .IrDefInputs({
+                                 {"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""},
+                             })
+                             .IrDefOutputs({
+                                 {"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""},
+                             })
+                             .Build();
+
     // 使用AddEdgeAndUpdatePeerDesc连接边
-    if (es::AddEdgeAndUpdatePeerDesc(*graph, *x.GetProducer(), x.GetProducerOutIndex(), globalAvgPool, 0) != GRAPH_SUCCESS) {
+    if (es::AddEdgeAndUpdatePeerDesc(*graph, *x.GetProducer(), x.GetProducerOutIndex(), globalAvgPool, 0) !=
+        GRAPH_SUCCESS) {
         FAIL() << "Failed to add edge in test";
     }
-    
+
     // 更新GlobalAveragePool节点的输入描述，确保形状信息传递
     TensorDesc pool_input_desc;
     globalAvgPool.GetInputDesc(0, pool_input_desc);
     pool_input_desc.SetDataType(DT_FLOAT);
     pool_input_desc.SetShape(shape_x);
     globalAvgPool.UpdateInputDesc(0, pool_input_desc);
-    
+
     // 获取输出张量
     auto y = graph_builder.GetCGraphBuilder()->GetTensorHolderFromNode(globalAvgPool, 0);
 
@@ -387,7 +392,7 @@ TEST_F(GlobalavgpoolPassTest, fusion_success_950)
     outputs.push_back(ge::es::EsTensorHolder(y));
     std::shared_ptr<Graph> graph_ptr = graph_builder.BuildAndReset(outputs);
     CustomPassContext pass_context;
-    ops::GlobalavgpoolPass pass;
+    ops::Globalavgpoolpass pass;
     Status status = pass.Run(graph_ptr, pass_context);
     EXPECT_EQ(status, SUCCESS);
 
@@ -414,21 +419,18 @@ TEST_F(GlobalavgpoolPassTest, fusion_success_950)
 // ==================== Compatibility tests ====================
 
 // Verify that the pass compiles and the version guard is active.
-TEST_F(GlobalavgpoolPassTest, compileTimeVersionGuard)
-{
-    EXPECT_GE(GE_COMPILER_VERSION_NUM, 90000000);
-}
+TEST_F(GlobalavgpoolpassTest, compileTimeVersionGuard) { EXPECT_GE(GE_COMPILER_VERSION_NUM, 90000000); }
 
 // Verify that the pass can be instantiated and returns patterns.
-TEST_F(GlobalavgpoolPassTest, passInstantiationTest)
+TEST_F(GlobalavgpoolpassTest, passInstantiationTest)
 {
-    ops::GlobalavgpoolPass pass;
+    ops::Globalavgpoolpass pass;
     auto patterns = pass.Patterns();
     EXPECT_GT(patterns.size(), 0);
 }
 
 // Verify the pass works correctly with the kCompatibleInherited stage mechanism.
-TEST_F(GlobalavgpoolPassTest, compatibleInheritedStageTest)
+TEST_F(GlobalavgpoolpassTest, compatibleInheritedStageTest)
 {
     std::vector<int64_t> dimsX{2, 3, 4};
     Shape shapeX(dimsX);
@@ -444,14 +446,14 @@ TEST_F(GlobalavgpoolPassTest, compatibleInheritedStageTest)
 
     auto* graph = graphBuilder.GetCGraphBuilder()->GetGraph();
     auto globalAvgPool = es::CompliantNodeBuilder(graph)
-        .OpType("GlobalAveragePool")
-        .Name("global_avg_pool")
-        .IrDefInputs({{"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""}})
-        .IrDefOutputs({{"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""}})
-        .Build();
+                             .OpType("GlobalAveragePool")
+                             .Name("global_avg_pool")
+                             .IrDefInputs({{"x", es::CompliantNodeBuilder::kEsIrInputRequired, ""}})
+                             .IrDefOutputs({{"y", es::CompliantNodeBuilder::kEsIrOutputRequired, ""}})
+                             .Build();
 
-    if (es::AddEdgeAndUpdatePeerDesc(*graph, *x.GetProducer(), x.GetProducerOutIndex(),
-        globalAvgPool, 0) != GRAPH_SUCCESS) {
+    if (es::AddEdgeAndUpdatePeerDesc(*graph, *x.GetProducer(), x.GetProducerOutIndex(), globalAvgPool, 0) !=
+        GRAPH_SUCCESS) {
         FAIL() << "Failed to add edge in test";
     }
 
@@ -468,7 +470,7 @@ TEST_F(GlobalavgpoolPassTest, compatibleInheritedStageTest)
     std::shared_ptr<Graph> graphPtr = graphBuilder.BuildAndReset(outputs);
 
     CustomPassContext passContext;
-    ops::GlobalavgpoolPass pass;
+    ops::Globalavgpoolpass pass;
     Status status = pass.Run(graphPtr, passContext);
     EXPECT_EQ(status, SUCCESS);
 
