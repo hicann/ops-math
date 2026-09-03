@@ -16,31 +16,24 @@
  *
  * 数据流（bf16/fp16/int16/int32/int64）:
  * input (GM) -> CopyIn<T> -> Cast<T,float> -> Adds<float,scalar> -> Cast<float,T> -> CopyOut<T> -> output (GM)
- * 
+ *
  * 数据流（fp32）:
  * input (GM) -> CopyIn<float> -> Adds<float,scalar> -> CopyOut<float> -> output (GM)
  * （Cast fp32→fp32会被模板优化掉）
- * 
+ *
  * 标量参数通过 Placeholder::Var<float, 0> 占位，Kernel 入口通过 SetVar<float, 0>(value) 注入
  */
 
 #ifndef ADDS_DAG_H
 #define ADDS_DAG_H
 
-// Host 编译时 mock __aicore__（Kernel 编译器已内置定义）
-#ifndef __CCE_AICORE__
-#ifndef __aicore__
-#define __aicore__
-#endif
-#endif
-
 #include "atvoss/util/dag.h"
 #include "atvoss/util/vec.h"
 #include "atvoss/util/placeholder.h"
 
-using namespace Ops::Base;
-
 namespace NsAdds {
+
+using namespace Ops::Base;
 
 constexpr int CAST_MODE_NONE = 0;
 constexpr int CAST_MODE_RINT = 1;
@@ -88,4 +81,4 @@ struct AddsOp {
 
 } // namespace NsAdds
 
-#endif  // ADDS_DAG_H
+#endif // ADDS_DAG_H

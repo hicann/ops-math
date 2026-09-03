@@ -186,7 +186,7 @@ static ge::graphStatus Tiling4TensorMove(gert::TilingContext* context)
     OP_CHECK_IF(CheckTensorMoveShape(context) != ge::GRAPH_SUCCESS,
                 OP_LOGE(context->GetNodeName(), "The shape check failed."), return ge::GRAPH_FAILED);
 
-    auto compileInfo = reinterpret_cast<const TensorMoveCompileInfo*>(context->GetCompileInfo());
+    auto compileInfo = context->GetCompileInfo<TensorMoveCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     TensorMoveTilingParam tilingParam;

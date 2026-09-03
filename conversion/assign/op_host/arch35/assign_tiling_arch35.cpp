@@ -185,7 +185,7 @@ static ge::graphStatus AssignTilingForAscendC(gert::TilingContext* context)
     OP_CHECK_IF(CheckShapeForAssign(context, tilingParam) != ge::GRAPH_SUCCESS,
                 OP_LOGE(context->GetNodeName(), "The shape check failed."), return ge::GRAPH_FAILED);
 
-    auto compileInfo = reinterpret_cast<const AssignCompileInfo*>(context->GetCompileInfo());
+    auto compileInfo = context->GetCompileInfo<AssignCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
 
     tilingParam.totalCoreNum = compileInfo->coreNum;

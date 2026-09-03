@@ -22,7 +22,6 @@
 #include "platform/platform_ascendc.h"
 #include "register/op_impl_registry.h"
 
-
 namespace optiling {
 
 struct MemSetCompileInfoArch35 {
@@ -32,26 +31,16 @@ struct MemSetCompileInfoArch35 {
 
 class MemSetTilingClass : public Ops::Base::TilingBaseClass {
 public:
-    explicit MemSetTilingClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit MemSetTilingClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
-    void Reset(gert::TilingContext* context) override
-    {
-        Ops::Base::TilingBaseClass::Reset(context);
-    }
+    void Reset(gert::TilingContext* context) override { Ops::Base::TilingBaseClass::Reset(context); }
 
 protected:
     ge::graphStatus GetShapeAttrsInfo() override;
     ge::graphStatus GetPlatformInfo() override;
-    bool IsCapable() override
-    {
-        return true;
-    }
+    bool IsCapable() override { return true; }
     ge::graphStatus DoOpTiling() override;
-    ge::graphStatus DoLibApiTiling() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus DoLibApiTiling() override { return ge::GRAPH_SUCCESS; }
     ge::graphStatus GetWorkspaceSize() override;
     ge::graphStatus PostTiling() override;
     uint64_t GetTilingKey() const override;
@@ -63,6 +52,8 @@ private:
     void PostDo();
     template <uint16_t Count>
     void CheckTilingData(MemSetTilingData<Count>* tilingDataPostAtr);
+    template <size_t Idx>
+    void DispatchPostDo(size_t targetIdx);
 
 private:
     void* tilingDataPostAtr_ = nullptr;
@@ -90,22 +81,16 @@ public:
      * Get workspaceSize list
      * @return workspaceSize list
      */
-    const gert::ContinuousVector* GetCleanWorkspaceSizes() const
-    {
-        return GetInputPointer<gert::ContinuousVector>(0);
-    }
+    const gert::ContinuousVector* GetCleanWorkspaceSizes() const { return GetInputPointer<gert::ContinuousVector>(0); }
 
     /**
      * Get the size of the output memory to be cleared by the output index
      * @param index output index
      * @return Size of output memory to be cleaned
      */
-    uint64_t GetCleanOutputSize(size_t index) const
-    {
-        return GetInputValue<uint64_t>(index + 1U);
-    }
+    uint64_t GetCleanOutputSize(size_t index) const { return GetInputValue<uint64_t>(index + 1U); }
 };
-static_assert(
-    std::is_standard_layout<AtomicCleanTilingContext>::value, "The class AtomicCleanTilingContext must be a POD");
+static_assert(std::is_standard_layout<AtomicCleanTilingContext>::value,
+              "The class AtomicCleanTilingContext must be a POD");
 } // namespace ops
 #endif

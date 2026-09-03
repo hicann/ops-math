@@ -38,6 +38,8 @@ static const size_t POWER_ASCEND_WORKSPACE = 16 * 1024 * 1024;
 // isclose 判等使用的绝对/相对容差，与 math/is_close 默认参数对齐。
 static constexpr float POWER_ISCLOSE_ATOL = 1e-8f;
 static constexpr float POWER_ISCLOSE_RTOL = 1e-5f;
+// 整数幂奇偶性判断的模数: intPow % 2 决定 (-1)^intPow 的符号
+static constexpr int POWER_PARITY_MODULUS = 2;
 
 // 浮点近似相等：|a - b| <= atol + rtol * |b|。
 // 用于在 host 端容忍浮点误差地判断 power/scale/shift 是否落到 0/1/2/3 等关键点。
@@ -65,9 +67,7 @@ ge::graphStatus PowerTiling::CalcInputDtype()
     OP_CHECK_IF(
         this->inputDtype != ge::DT_FLOAT16 && this->inputDtype != ge::DT_BF16 && this->inputDtype != ge::DT_FLOAT,
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-            tilingContext->GetNodeName(),
-            "x",
-            Ops::Base::ToString(this->inputDtype).c_str(),
+            tilingContext->GetNodeName(), "x", Ops::Base::ToString(this->inputDtype).c_str(),
             "The dtype of x must be within the range [DT_FLOAT16, DT_BF16, DT_FLOAT]."),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
@@ -79,14 +79,12 @@ ge::graphStatus PowerTiling::CalcOutputDtype()
     auto outputDesc = tilingContext->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     this->outputDtype = outputDesc->GetDataType();
-    OP_CHECK_IF(
-        this->outputDtype != this->inputDtype,
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            tilingContext->GetNodeName(),
-            "x, y",
-            (Ops::Base::ToString(this->inputDtype) + ", " + Ops::Base::ToString(this->outputDtype)).c_str(),
-            "The dtypes of x and y must be the same."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(this->outputDtype != this->inputDtype,
+                OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+                    tilingContext->GetNodeName(), "x, y",
+                    (Ops::Base::ToString(this->inputDtype) + ", " + Ops::Base::ToString(this->outputDtype)).c_str(),
+                    "The dtypes of x and y must be the same."),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -102,14 +100,12 @@ ge::graphStatus PowerTiling::CheckShape()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
     const gert::Shape& yShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
-    OP_CHECK_IF(
-        xShape != yShape,
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-            tilingContext->GetNodeName(),
-            "x, y",
-            (Ops::Base::ToString(xShape) + ", " + Ops::Base::ToString(yShape)).c_str(),
-            "The shapes of x and y must be the same."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(xShape != yShape,
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                    tilingContext->GetNodeName(), "x, y",
+                    (Ops::Base::ToString(xShape) + ", " + Ops::Base::ToString(yShape)).c_str(),
+                    "The shapes of x and y must be the same."),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -129,18 +125,17 @@ ge::graphStatus PowerTiling::SetAttr()
     const float* shiftPtr = attrs->GetAttrPointer<float>(2);
     this->attrShift = shiftPtr != nullptr ? *shiftPtr : 0.0f;
 
-    OP_LOGD(
-        tilingContext->GetNodeName(), "Power attrs: power=%f, scale=%f, shift=%f",
-        this->attrPower, this->attrScale, this->attrShift);
+    OP_LOGD(tilingContext->GetNodeName(), "Power attrs: power=%f, scale=%f, shift=%f", this->attrPower, this->attrScale,
+            this->attrShift);
     return ge::GRAPH_SUCCESS;
 }
 
 // -----------------------------------------------------------------------------
 // 模板辅助函数：根据 dtype 分发 DoTiling 调用（单模板参数 DAG）。
 // -----------------------------------------------------------------------------
-template<template<typename> class DagT>
-ge::graphStatus DispatchTilingByDtype(
-    ElewiseBaseTiling& tiling, ge::DataType dtype, Ops::Base::EleBaseTilingData& baseTiling)
+template <template <typename> class DagT>
+ge::graphStatus DispatchTilingByDtype(ElewiseBaseTiling& tiling, ge::DataType dtype,
+                                      Ops::Base::EleBaseTilingData& baseTiling)
 {
     if (dtype == ge::DT_FLOAT16) {
         return tiling.DoTiling<typename DagT<half>::OpDag>(baseTiling);
@@ -154,9 +149,9 @@ ge::graphStatus DispatchTilingByDtype(
 // -----------------------------------------------------------------------------
 // 模板辅助函数：根据 dtype 分发 DoTiling 调用（双模板参数 DAG，用于 GENERIC_POW）。
 // -----------------------------------------------------------------------------
-template<template<typename, int> class DagT, int PowSign>
-ge::graphStatus DispatchTilingByDtypeGeneric(
-    ElewiseBaseTiling& tiling, ge::DataType dtype, Ops::Base::EleBaseTilingData& baseTiling)
+template <template <typename, int> class DagT, int PowSign>
+ge::graphStatus DispatchTilingByDtypeGeneric(ElewiseBaseTiling& tiling, ge::DataType dtype,
+                                             Ops::Base::EleBaseTilingData& baseTiling)
 {
     if (dtype == ge::DT_FLOAT16) {
         return tiling.DoTiling<typename DagT<half, PowSign>::OpDag>(baseTiling);
@@ -225,9 +220,11 @@ bool PowerTiling::DecideCulType()
     }
 
     // 分支2：优化整数幂 1/2/3，避免 exp/log 开销
-    if (IsCloseScalar(this->attrPower, 1.0f) || IsCloseScalar(this->attrPower, 2.0f) || IsCloseScalar(this->attrPower, 3.0f)) {
+    if (IsCloseScalar(this->attrPower, 1.0f) || IsCloseScalar(this->attrPower, 2.0f) ||
+        IsCloseScalar(this->attrPower, 3.0f)) {
         culType = IsCloseScalar(this->attrPower, 1.0f) ? CulTypeEnum::LINEAR :
-                  IsCloseScalar(this->attrPower, 2.0f) ? CulTypeEnum::SQUARE : CulTypeEnum::CUBE;
+                  IsCloseScalar(this->attrPower, 2.0f) ? CulTypeEnum::SQUARE :
+                                                         CulTypeEnum::CUBE;
         scalar0 = this->attrScale;
         scalar1 = this->attrShift;
         return true;
@@ -239,7 +236,7 @@ bool PowerTiling::DecideCulType()
     scalar1 = this->attrShift;
     scalar2 = this->attrPower;
     long long intPow = static_cast<long long>(std::llround(this->attrPower));
-    scalar3 = powerIsInt ? ((std::llabs(intPow) % 2 == 0) ? 1.0f : -1.0f) : kNaN;
+    scalar3 = powerIsInt ? ((std::llabs(intPow) % POWER_PARITY_MODULUS == 0) ? 1.0f : -1.0f) : kNaN;
     return true;
 }
 
@@ -251,20 +248,16 @@ bool PowerTiling::DecideCulType()
 // -----------------------------------------------------------------------------
 ge::graphStatus PowerTiling::PerformValidationChecks()
 {
-    OP_CHECK_IF(
-        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get output dtype failed"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        SetAttr() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "set attrs failed"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        !DecideCulType(), OP_LOGE(tilingContext->GetNodeName(), "DecideCulType failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get input dtype failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "get output dtype failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "check shape failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(SetAttr() == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "set attrs failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(!DecideCulType(), OP_LOGE(tilingContext->GetNodeName(), "DecideCulType failed"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -278,9 +271,7 @@ ge::graphStatus PowerTiling::MapOutputDtypeToTplKey()
         dType = POWER_TPL_DTYPE_FP32;
     } else {
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-            tilingContext->GetNodeName(),
-            "y",
-            Ops::Base::ToString(this->outputDtype).c_str(),
+            tilingContext->GetNodeName(), "y", Ops::Base::ToString(this->outputDtype).c_str(),
             "The dtype of y must be within the range [DT_FLOAT16, DT_BF16, DT_FLOAT].");
         return ge::GRAPH_FAILED;
     }
@@ -289,9 +280,9 @@ ge::graphStatus PowerTiling::MapOutputDtypeToTplKey()
 
 ge::graphStatus PowerTiling::SetTilingResults(PowerOp::PowerTilingData* powerTilingData)
 {
-    powerTilingData->scale     = scalar0;
-    powerTilingData->shift     = scalar1;
-    powerTilingData->power     = scalar2;
+    powerTilingData->scale = scalar0;
+    powerTilingData->shift = scalar1;
+    powerTilingData->power = scalar2;
     powerTilingData->negScalar = scalar3;
 
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
@@ -318,19 +309,16 @@ ge::graphStatus PowerTiling::RunTiling()
     }
 
     culTypeKey = static_cast<uint64_t>(culType);
-    OP_LOGD(
-        tilingContext->GetNodeName(),
-        "Power culType=%lu (scalar0=%f, scalar1=%f, scalar2=%f, scalar3=%f)",
-        culTypeKey, scalar0, scalar1, scalar2, scalar3);
+    OP_LOGD(tilingContext->GetNodeName(), "Power culType=%lu (scalar0=%f, scalar1=%f, scalar2=%f, scalar3=%f)",
+            culTypeKey, scalar0, scalar1, scalar2, scalar3);
 
     if (MapOutputDtypeToTplKey() != ge::GRAPH_SUCCESS) {
         return ge::GRAPH_FAILED;
     }
 
     ge::graphStatus baseTilingResult = DispatchTilingByCulType(elewiseBaseTiling, powerTilingData);
-    OP_CHECK_IF(
-        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext->GetNodeName(), "elewiseBaseTiling failed"),
+                return ge::GRAPH_FAILED);
 
     return SetTilingResults(powerTilingData);
 }

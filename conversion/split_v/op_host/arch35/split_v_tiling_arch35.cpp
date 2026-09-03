@@ -74,6 +74,14 @@ constexpr int64_t SIMT_CHUNK_TOTAL_ELEM_THRESHOLD = 131072; // 1024 block * 128 
 constexpr int64_t SIMT_REJECT_RELATIVE_SKEW_UPPER = 16;     // SIMT拒绝后回退Chunk的相对偏差上界
 constexpr int64_t SIMT_REJECT_ABSOLUTE_SKEW_UPPER = 2048;   // SIMT拒绝后回退Chunk的绝对偏差上界
 
+// IsDoSplitVSIMT 强制走 SIMT 的特定输入 shape [256, 16] 及 numSplit 上限
+constexpr size_t SIMT_FORCE_INPUT_DIM_NUM = 2;
+constexpr int64_t SIMT_FORCE_INPUT_DIM0 = 256;
+constexpr int64_t SIMT_FORCE_INPUT_DIM1 = 16;
+constexpr int64_t SIMT_FORCE_MAX_NUM_SPLIT = 16;
+// host 侧 uint64 fast-div 计算中的 uint64 位宽
+constexpr int64_t UINT64_BIT_WIDTH = 64;
+
 template <typename T>
 std::string SplitVTiling::ArrayToString(const T* vec, size_t num) const
 {
@@ -893,8 +901,8 @@ bool SplitVTiling::IsDoSplitVSIMT(int32_t maxCoreNum)
     if (isSameLenMode_) {
         return false;
     }
-    if (inputShape_.GetDimNum() == 2 && inputShape_.GetDim(0) == 256 && inputShape_.GetDim(1) == 16 && splitDim_ == 1 &&
-        numSplit_ <= 16) {
+    if (inputShape_.GetDimNum() == SIMT_FORCE_INPUT_DIM_NUM && inputShape_.GetDim(0) == SIMT_FORCE_INPUT_DIM0 &&
+        inputShape_.GetDim(1) == SIMT_FORCE_INPUT_DIM1 && splitDim_ == 1 && numSplit_ <= SIMT_FORCE_MAX_NUM_SPLIT) {
         CalInputDataSize();
         OP_LOGI(context_->GetNodeName(), "Force SIMT for shape [256, 16]");
         return true;
@@ -1034,19 +1042,19 @@ static inline void HostGetUintDivMagicAndShift64(uint64_t& magic, uint32_t& shif
         shift = 0;
         return;
     }
-    // pos = 64 - clz(divisor) = floor(log2(divisor)) + 1
-    int64_t pos = 64 - static_cast<int64_t>(__builtin_clzll(divisor));
+    // pos = UINT64_BIT_WIDTH - clz(divisor) = floor(log2(divisor)) + 1
+    int64_t pos = UINT64_BIT_WIDTH - static_cast<int64_t>(__builtin_clzll(divisor));
     int64_t cnt1 = static_cast<int64_t>(__builtin_popcountll(divisor));
     shift = (cnt1 == 1) ? static_cast<uint32_t>(pos - 1) : static_cast<uint32_t>(pos);
     uint64_t dividend = 0;
-    if (shift < 64) {
+    if (shift < UINT64_BIT_WIDTH) {
         dividend = (1ULL << shift) - divisor;
     } else {
-        // shift == 64, 2^64 - divisor
+        // shift == UINT64_BIT_WIDTH, 2^64 - divisor
         dividend = 0xFFFFFFFFFFFFFFFFULL - divisor + 1;
     }
     // magic = floor(2^64 * dividend / divisor) + 1
-    __uint128_t num = (static_cast<__uint128_t>(dividend) << 64);
+    __uint128_t num = (static_cast<__uint128_t>(dividend) << UINT64_BIT_WIDTH);
     magic = static_cast<uint64_t>(num / divisor) + 1;
 }
 
@@ -1103,12 +1111,9 @@ void SplitVTiling::DoSplitVSIMTChunkPreTiling(int32_t maxCoreNum)
     //    diff >= 0 (欠分配): 差值全部补到拷贝量最大的 output
     //    diff <  0 (超分配): 按拷贝量降序逐个扣减, 每个非空 output 保留至少 1 块, 避免下游 q=total/blkCnt 除零
     if (maxCopyIdx >= 0) {
-        // int32_t diff = logicBlockNum_ - blkSum;
         int32_t diff = maxLogicBlockByCore - blkSum;
         if (diff >= 0) {
-            // blockPrefixBuf_[maxCopyIdx] = static_cast<uint32_t>(static_cast<int32_t>(blockPrefixBuf_[maxCopyIdx]) +
-            //                                                     diff);
-            realCoreNum_ = CeilDiv(blkSum, 16);
+            realCoreNum_ = CeilDiv(blkSum, LOGIC_BLOCK_PER_CORE);
         } else {
             int32_t need = -diff;
             // 收集可扣减的输出(blk > 1), 按拷贝量 M*wi 降序排序后贪心扣减
@@ -1175,7 +1180,6 @@ void SplitVTiling::DoSplitVSIMTChunkPreTiling(int32_t maxCoreNum)
     }
 
     // 5) 1024 逻辑 block = 64 核 * 16
-    // realCoreNum_ = std::min(maxCoreNum, SIMT_VECTOR_CORE_NUM);
     blockDim_ = realCoreNum_;
     tilingKey_ = SIMT_CHUNK_KEY;
 
@@ -1226,11 +1230,6 @@ ge::graphStatus SplitVTiling::DoSplitVTiling(int32_t maxCoreNum, uint32_t ubSize
     if (IsDoSplitVSIMT(maxCoreNum)) {
         return DoSplitVSIMTTiling(maxCoreNum);
     }
-    // if (IsFallbackToChunk()) {
-    //     DoSplitVSIMTChunkPreTiling(maxCoreNum);
-    //     // DoSplitVSIMTChunkTiling(maxCoreNum);
-    //     return ge::GRAPH_SUCCESS;
-    // }
     if (numSplit_ != 0 && numSplit_ != 1 && isSameLenMode_) {
         // SamLenMode fuse to [M G N]
         FuseInputShapeSameLen();
@@ -1476,7 +1475,6 @@ void SplitVTiling::CalcSameLenSplitTilingInfo(int64_t halfUbEleNum, int64_t bloc
     int64_t newGBF = 0, newGBCount = 0, newGBFT = 0;
     int64_t newTiles = 0;
     bool smallGAvail = FloorAlign(factorTmp, blockEleNum) >= numSplit_;
-
     if (smallGAvail) {
         newGBF = numSplit_;
         int64_t tmp = FloorAlign(halfUbEleNum / fusedShape_[1] / newGBF, blockEleNum);

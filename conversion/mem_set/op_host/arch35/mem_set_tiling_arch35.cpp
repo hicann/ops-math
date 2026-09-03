@@ -29,6 +29,9 @@ std::set<ge::DataType> SUPPORT_TYPE_LIST = {ge::DT_INT8,   ge::DT_INT32, ge::DT_
 std::set<ge::DataType> SUPPORT_TYPE_INT_LIST = {ge::DT_INT8,   ge::DT_INT32,  ge::DT_UINT8, ge::DT_INT16,
                                                 ge::DT_UINT16, ge::DT_UINT32, ge::DT_INT64, ge::DT_UINT64};
 constexpr uint64_t BLOCK_SIZE = 512;
+constexpr int TILING_COUNTS[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 32, 64, 128, 192, 256};
+constexpr size_t TILING_COUNTS_NUM = sizeof(TILING_COUNTS) / sizeof(TILING_COUNTS[0]);
+constexpr int MAX_TILING_COUNT = TILING_COUNTS[TILING_COUNTS_NUM - 1];
 
 template <uint16_t Count>
 void MemSetTilingClass::CheckTilingData(MemSetTilingData<Count>* tilingDataPostAtr)
@@ -69,82 +72,28 @@ void MemSetTilingClass::PostDo()
     CheckTilingData<Count>(tilingDataPostAtr);
 }
 
+template <size_t Idx>
+void MemSetTilingClass::DispatchPostDo(size_t targetIdx)
+{
+    if (targetIdx == Idx) {
+        PostDo<static_cast<uint16_t>(TILING_COUNTS[Idx])>();
+        return;
+    }
+    if constexpr (Idx + 1 < TILING_COUNTS_NUM) {
+        DispatchPostDo<Idx + 1>(targetIdx);
+    }
+}
+
 ge::graphStatus MemSetTilingClass::PostTiling()
 {
-    // Different sizes of tiling data templates
-    const std::vector<int> validNums = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 32, 64, 128, 192, 256};
-    if (inputCount_ > validNums.back()) {
+    if (inputCount_ > MAX_TILING_COUNT) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "TensorNum", std::to_string(inputCount_).c_str(),
                                               "The value of TensorNum must be within the range [1, 256].");
         return ge::GRAPH_FAILED;
     }
-    auto it = std::lower_bound(validNums.begin(), validNums.end(), inputCount_);
-    int targetNum = *it;
-    switch (targetNum) {
-        case 1:
-            PostDo<1>();
-            break;
-        case 2:
-            PostDo<2>();
-            break;
-        case 3:
-            PostDo<3>();
-            break;
-        case 4:
-            PostDo<4>();
-            break;
-        case 5:
-            PostDo<5>();
-            break;
-        case 6:
-            PostDo<6>();
-            break;
-        case 7:
-            PostDo<7>();
-            break;
-        case 8:
-            PostDo<8>();
-            break;
-        case 9:
-            PostDo<9>();
-            break;
-        case 10:
-            PostDo<10>();
-            break;
-        case 11:
-            PostDo<11>();
-            break;
-        case 12:
-            PostDo<12>();
-            break;
-        case 13:
-            PostDo<13>();
-            break;
-        case 14:
-            PostDo<14>();
-            break;
-        case 15:
-            PostDo<15>();
-            break;
-        case 16:
-            PostDo<16>();
-            break;
-        case 32:
-            PostDo<32>();
-            break;
-        case 64:
-            PostDo<64>();
-            break;
-        case 128:
-            PostDo<128>();
-            break;
-        case 196:
-            PostDo<196>();
-            break;
-        case 256:
-            PostDo<256>();
-            break;
-    }
+    auto it = std::lower_bound(TILING_COUNTS, TILING_COUNTS + TILING_COUNTS_NUM, static_cast<int>(inputCount_));
+    size_t targetIdx = static_cast<size_t>(std::distance(TILING_COUNTS, it));
+    DispatchPostDo<0>(targetIdx);
     context_->SetBlockDim(aicoreParams_.numBlocks);
     return ge::GRAPH_SUCCESS;
 }
