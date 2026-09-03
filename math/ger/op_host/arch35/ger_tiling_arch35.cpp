@@ -22,8 +22,7 @@
 #include "math/ger/op_kernel/arch35/ger_dag.h"
 #include "math/ger/op_kernel/arch35/ger_struct.h"
 
-namespace optiling
-{
+namespace optiling {
 using namespace AscendC;
 using namespace ge;
 using namespace GerDag;
@@ -41,8 +40,8 @@ constexpr static int32_t NTWO = 2;
 
 // 封装分块操作逻辑，将参数类型改为 gert::TilingContext*
 template <typename OpDag>
-ge::graphStatus DoGerTiling(gert::TilingContext* context, uint64_t& tilingKey,
-                            int64_t extraSize = 0, int64_t extraBufferNum = 0)
+ge::graphStatus DoGerTiling(gert::TilingContext* context, uint64_t& tilingKey, int64_t extraSize = 0,
+                            int64_t extraBufferNum = 0)
 {
     BroadcastBaseTiling<OpDag> brcBaseTiling(context);
     auto x1StorageShape = context->GetInputShape(INPUT_IDX_X1);
@@ -62,8 +61,7 @@ ge::graphStatus DoGerTiling(gert::TilingContext* context, uint64_t& tilingKey,
 
     brcBaseTiling.SetOpInputStorageShapes(inputShapes);
     OP_CHECK_IF((brcBaseTiling.DoTiling(extraSize, extraBufferNum) != ge::GRAPH_SUCCESS),
-        OP_LOGE(context->GetNodeName(), "Broadcast template do base tiling failed."),
-        return ge::GRAPH_FAILED);
+                OP_LOGE(context->GetNodeName(), "Broadcast template do base tiling failed."), return ge::GRAPH_FAILED);
     tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     return ge::GRAPH_SUCCESS;
 }
@@ -75,14 +73,16 @@ struct DtypeCombination {
     ge::DataType output;
 
     // 重载相等运算符，用于哈希表的查找
-    bool operator==(const DtypeCombination& other) const {
+    bool operator==(const DtypeCombination& other) const
+    {
         return input0 == other.input0 && input1 == other.input1 && output == other.output;
     }
 };
 
 // 自定义哈希函数
 struct DtypeCombinationHash {
-    std::size_t operator()(const DtypeCombination& comb) const {
+    std::size_t operator()(const DtypeCombination& comb) const
+    {
         const std::size_t prime = HASH_PRIME;
         std::size_t hash = HASH_INIT;
         hash = hash * prime + std::hash<ge::DataType>()(comb.input0);
@@ -105,19 +105,14 @@ const std::unordered_map<DtypeCombination, TilingFunc, DtypeCombinationHash> GER
          OP_LOGD("GerTiling", "Enter fp16 branch.");
          return DoGerTiling<GerOp<half>::OpDag>(tiling->GetContext(), tiling->tilingKey_);
      }},
-    {{ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT},
-     [](GerTiling* tiling) {
+    {{ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT}, [](GerTiling* tiling) {
          OP_LOGD("GerTiling", "Enter no cast branch.");
          return DoGerTiling<GerOp<float>::OpDag>(tiling->GetContext(), tiling->tilingKey_);
      }}};
 
-ge::graphStatus GerTiling::GetShapeAttrsInfo() {
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus GerTiling::GetShapeAttrsInfo() { return ge::GRAPH_SUCCESS; }
 
-bool GerTiling::IsCapable() {
-    return true;
-}
+bool GerTiling::IsCapable() { return true; }
 
 bool GerTiling::CheckShapes()
 {
@@ -135,15 +130,17 @@ bool GerTiling::CheckShapes()
         std::string sizesStr = std::to_string(x1Shape_.GetShapeSize()) + ", " +
                                std::to_string(x2Shape_.GetShapeSize()) + " and " +
                                std::to_string(yShape_.GetShapeSize());
-        OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(context_->GetNodeName(), "x1, x2 and y",
-            sizesStr.c_str(), "The shape sizes of x1, x2 and y should be greater than 0");
+        OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(context_->GetNodeName(), "x1, x2 and y", sizesStr.c_str(),
+                                                   "The shape sizes of x1, x2 and y should be greater than 0");
         return false;
     }
     // 校验x1，x2为1维
-    OP_CHECK_IF(x1Shape_.GetDimNum() != 1,
+    OP_CHECK_IF(
+        x1Shape_.GetDimNum() != 1,
         OP_LOGE_FOR_INVALID_SHAPEDIM(context_->GetNodeName(), "x1", std::to_string(x1Shape_.GetDimNum()).c_str(), "1"),
         return false);
-    OP_CHECK_IF(x2Shape_.GetDimNum() != 1,
+    OP_CHECK_IF(
+        x2Shape_.GetDimNum() != 1,
         OP_LOGE_FOR_INVALID_SHAPEDIM(context_->GetNodeName(), "x2", std::to_string(x2Shape_.GetDimNum()).c_str(), "1"),
         return false);
 
@@ -151,13 +148,15 @@ bool GerTiling::CheckShapes()
     OP_CHECK_IF(
         yShape_.GetDimNum() != NTWO ||
             (yShape_.GetDim(0) != x1Shape_.GetDim(0) || yShape_.GetDim(1) != x2Shape_.GetDim(0)),
-        OP_LOGE_FOR_INVALID_SHAPE(context_->GetNodeName(), "y", Ops::Base::ToString(yShape_).c_str(),
+        OP_LOGE_FOR_INVALID_SHAPE(
+            context_->GetNodeName(), "y", Ops::Base::ToString(yShape_).c_str(),
             ("[" + std::to_string(x1Shape_.GetDim(0)) + "," + std::to_string(x2Shape_.GetDim(0)) + "]").c_str()),
         return false);
     return true;
 }
 
-ge::graphStatus GerTiling::DoOpTiling() {
+ge::graphStatus GerTiling::DoOpTiling()
+{
     OP_CHECK_IF(!CheckShapes(), OP_LOGE(context_->GetNodeName(), "CheckShapes error!"), return ge::GRAPH_FAILED);
 
     auto input0Desc = context_->GetInputDesc(0);
@@ -185,45 +184,41 @@ ge::graphStatus GerTiling::DoOpTiling() {
     std::string dtypesStr = ge::TypeUtils::DataTypeToSerialString(input0DType) + ", " +
                             ge::TypeUtils::DataTypeToSerialString(input1DType) + " and " +
                             ge::TypeUtils::DataTypeToSerialString(outputDType);
-    OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1, x2 and y", dtypesStr.c_str(),
+    OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+        context_->GetNodeName(), "x1, x2 and y", dtypesStr.c_str(),
         "The dtypes of x1, x2 and y must be the same, and must be float16, bfloat16 or float");
     return ge::GRAPH_FAILED;
 }
 
-ge::graphStatus GerTiling::DoLibApiTiling() {
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus GerTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t GerTiling::GetTilingKey() const {
-    return tilingKey_;
-}
+uint64_t GerTiling::GetTilingKey() const { return tilingKey_; }
 
-ge::graphStatus GerTiling::GetWorkspaceSize() {
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus GerTiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus GerTiling::PostTiling() {
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus GerTiling::PostTiling() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus GerTiling::GetPlatformInfo() {
+ge::graphStatus GerTiling::GetPlatformInfo()
+{
     auto platformInfo = context_->GetPlatformInfo();
     if (platformInfo == nullptr) {
         auto compileInfoPtr = reinterpret_cast<const BroadcastCompileInfo*>(context_->GetCompileInfo());
-        OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_->GetNodeName(), "compile info is null"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_->GetNodeName(), "compile info is null"),
+                    return ge::GRAPH_FAILED);
         ubSize_ = compileInfoPtr->ubSize;
-        OP_LOGD(context_->GetNodeName(), "Get ubSize form compileInfo is: %ld", ubSize_);
+        OP_LOGD(context_->GetNodeName(), "Get ubSize from compileInfo is: %ld", ubSize_);
     } else {
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
         uint64_t ubSizePlatform;
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatform);
         ubSize_ = static_cast<int64_t>(ubSizePlatform);
-        OP_LOGD(context_->GetNodeName(), "Get ubSize form ascendcPlatform is: %ld", ubSize_);
+        OP_LOGD(context_->GetNodeName(), "Get ubSize from ascendcPlatform is: %ld", ubSize_);
     }
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus TilingForGer(gert::TilingContext* context) {
+ge::graphStatus TilingForGer(gert::TilingContext* context)
+{
     OP_LOGD("GerTiling", "Enter TilingForGer");
     if (context == nullptr) {
         OP_LOGE("GerTiling", "Tiling context is nullptr");
@@ -234,11 +229,9 @@ ge::graphStatus TilingForGer(gert::TilingContext* context) {
     return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 
-ge::graphStatus TilingPrepareForGer([[maybe_unused]] gert::TilingParseContext *context) {
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus TilingPrepareForGer([[maybe_unused]] gert::TilingParseContext* context) { return ge::GRAPH_SUCCESS; }
 
 IMPL_OP_OPTILING(Ger).Tiling(TilingForGer).TilingParse<BroadcastCompileInfo>(TilingPrepareForGer);
 
 REGISTER_OPS_TILING_TEMPLATE(Ger, GerTiling, GER_COMMON_TILING_PRIORITY);
-}  // namespace optiling
+} // namespace optiling
