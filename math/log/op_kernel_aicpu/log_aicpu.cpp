@@ -240,12 +240,12 @@ uint32_t LogCpuKernel::LogOpCheck(CpuKernelContext& ctx)
         input_type == DT_INT64 || input_type == DT_BOOL) {
         KERNEL_CHECK_FALSE((output_type == DT_FLOAT), KERNEL_STATUS_PARAM_INVALID,
                            "When the log op input data is [%s], the output type"
-                           " must be [DT_FLOAT32]. Current ouput tye is [%s].",
+                           " must be [DT_FLOAT32]. Current output type is [%s].",
                            DTypeStr(input_type).c_str(), DTypeStr(output_type).c_str())
     } else {
         KERNEL_CHECK_FALSE((input_type == output_type), KERNEL_STATUS_PARAM_INVALID,
-                           "The data type of output [%s] need be same with input [%s].", DTypeStr(output_type).c_str(),
-                           DTypeStr(input_type).c_str())
+                           "The data type of output [%s] need to be the same as input [%s].",
+                           DTypeStr(output_type).c_str(), DTypeStr(input_type).c_str())
     }
 
     AttrValue* base_attr = ctx.GetAttr("base");
@@ -253,7 +253,7 @@ uint32_t LogCpuKernel::LogOpCheck(CpuKernelContext& ctx)
     KERNEL_CHECK_FALSE((IsValueEqual<float>(base_, -1.0f) || (base_ > 0 && !IsValueEqual<float>(base_, 1.0f))),
                        KERNEL_STATUS_PARAM_INVALID,
                        "The Log op base attribute "
-                       "[%f] is invaild, please user -1.0, (0, 1) and (1, inf).",
+                       "[%f] is invaild, please use -1.0, (0, 1) and (1, inf).",
                        base_)
 
     AttrValue* shift_attr = ctx.GetAttr("shift");
@@ -262,7 +262,7 @@ uint32_t LogCpuKernel::LogOpCheck(CpuKernelContext& ctx)
     AttrValue* scale_attr = ctx.GetAttr("scale");
     scale_ = (scale_attr == nullptr) ? 1.0f : (scale_attr->GetFloat());
 
-    KERNEL_LOG_DEBUG("Log op check params successed. base = %f, shift = %f, scale = %f.", base_, shift_, scale_);
+    KERNEL_LOG_DEBUG("Log op check params succeeded. base = %f, shift = %f, scale = %f.", base_, shift_, scale_);
     return KERNEL_STATUS_OK;
 }
 

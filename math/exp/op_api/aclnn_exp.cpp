@@ -52,8 +52,8 @@ static inline bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     bool is910BSocVersion = (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch));
-    const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_CURRENT =
-        is910BSocVersion ? DTYPE_SUPPORT_LIST_910B : DTYPE_SUPPORT_LIST_910;
+    const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_CURRENT = is910BSocVersion ? DTYPE_SUPPORT_LIST_910B :
+                                                                                          DTYPE_SUPPORT_LIST_910;
 
     // 检查数据类型是否在Exp算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST_CURRENT, return false);
@@ -99,8 +99,8 @@ static aclnnStatus CheckInplaceParamsExp(aclTensor* selfRef)
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus GetWorkspaceSizeCommon(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus GetWorkspaceSizeCommon(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                          aclOpExecutor** executor)
 {
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -117,8 +117,8 @@ static aclnnStatus GetWorkspaceSizeCommon(
         return ACLNN_SUCCESS;
     }
     // 检查Format
-    if(self->GetStorageFormat() != Format::FORMAT_ND){
-        OP_LOGW("Format only support ND");
+    if (self->GetStorageFormat() != Format::FORMAT_ND) {
+        OP_LOGW("Format only supports ND");
     }
     // 固定写法，将输入self转换成连续的Tensor
     auto contiguousSelf = l0op::Contiguous(self, uniqueExecutor.get());
@@ -148,8 +148,8 @@ static aclnnStatus GetWorkspaceSizeCommon(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnExpGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnExpGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                     aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnExp, DFX_IN(self), DFX_OUT(out));
     return GetWorkspaceSizeCommon(self, out, workspaceSize, executor);
@@ -167,7 +167,7 @@ aclnnStatus aclnnInplaceExpGetWorkspaceSize(aclTensor* selfRef, uint64_t* worksp
     L2_DFX_PHASE_1(aclnnInplaceExp, DFX_IN(selfRef), DFX_OUT(selfRef));
     auto ret = CheckInplaceParamsExp(selfRef);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
-    
+
     return GetWorkspaceSizeCommon(selfRef, selfRef, workspaceSize, executor);
 }
 

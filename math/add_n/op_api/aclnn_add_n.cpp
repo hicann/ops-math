@@ -133,7 +133,7 @@ static aclnnStatus CheckParams(const aclTensorList* tensors, const aclTensor* ou
 
     // 检查数据格式是否为ND
     if (IsPrivateFormat((*tensors)[0]->GetStorageFormat())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND, NCHW, NHWC, HWCN, NDHWC, NCDHW.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only supports ND, NCHW, NHWC, HWCN, NDHWC, NCDHW.");
         return ACLNN_ERR_PARAM_INVALID;
     }
 

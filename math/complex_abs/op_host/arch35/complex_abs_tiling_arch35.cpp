@@ -77,7 +77,7 @@ ge::graphStatus ComplexAbsTiling::RunTiling()
     } else if (this->inputDtype == ge::DT_COMPLEX32) {
         res = elewiseBaseTiling.DoTiling<ComplexAbsOp::ComplexAbsDag<int32_t, half>::OpDag>(tiling->baseTiling);
     } else {
-        OP_LOGE(tilingContext, "data type check failed. getype:%u", static_cast<uint32_t>(this->inputDtype));
+        OP_LOGE(tilingContext, "data dtype check failed. getype:%u", static_cast<uint32_t>(this->inputDtype));
         return ge::GRAPH_FAILED;
     }
 

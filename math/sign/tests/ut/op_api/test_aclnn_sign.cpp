@@ -23,15 +23,9 @@ using namespace std;
 
 class sign_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "sign_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "sign_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "sign_test TeastDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "sign_test TearDown" << endl; }
 };
 
 // TEST_F(sign_test, test_sign_dataType_error)

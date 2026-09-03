@@ -82,15 +82,12 @@ uint32_t SqrtGradCpuKernel::SqrtGradParamCheck(CpuKernelContext& ctx)
 
     DataType input0_type = input_0->GetDataType();
     DataType input1_type = input_1->GetDataType();
-    KERNEL_CHECK_FALSE(
-        (input0_type == input1_type), KERNEL_STATUS_PARAM_INVALID,
-        "The data type of input0 [%s] need be same with "
-        "input1 [%s].",
-        DTypeStr(input0_type).c_str(), DTypeStr(input1_type).c_str())
-    KERNEL_LOG_DEBUG(
-        "SqrtGradCpuKernel[%s], input0: size[%lu];"
-        "input1: size[%lu], output: size[%lu].",
-        ctx.GetOpType().c_str(), input_0->GetDataSize(), input_1->GetDataSize(), output->GetDataSize());
+    KERNEL_CHECK_FALSE((input0_type == input1_type), KERNEL_STATUS_PARAM_INVALID,
+                       "The data type of input0 [%s] need to be the same as input1 [%s].",
+                       DTypeStr(input0_type).c_str(), DTypeStr(input1_type).c_str())
+    KERNEL_LOG_DEBUG("SqrtGradCpuKernel[%s], input0: size[%lu];"
+                     "input1: size[%lu], output: size[%lu].",
+                     ctx.GetOpType().c_str(), input_0->GetDataSize(), input_1->GetDataSize(), output->GetDataSize());
 
     return KERNEL_STATUS_OK;
 }
@@ -153,9 +150,8 @@ uint32_t SqrtGradCpuKernel::NoBcastCompute(CpuKernelContext& ctx)
         if (static_cast<int>(max_core_num) == 0) {
             return KERNEL_STATUS_PARAM_INVALID;
         }
-        KERNEL_HANDLE_ERROR(
-            CpuKernelUtils::ParallelFor(ctx, data_num, data_num / max_core_num, sharder_sqrtgrad),
-            "SqrtGrad Compute failed.")
+        KERNEL_HANDLE_ERROR(CpuKernelUtils::ParallelFor(ctx, data_num, data_num / max_core_num, sharder_sqrtgrad),
+                            "SqrtGrad Compute failed.")
     } else {
         SpecialCompute<T>(0, data_num, in0, in1, out);
     }
@@ -190,9 +186,8 @@ uint32_t SqrtGradCpuKernel::NoBcastComputeComplex(CpuKernelContext& ctx)
         if (static_cast<int>(max_core_num) == 0) {
             return KERNEL_STATUS_PARAM_INVALID;
         }
-        KERNEL_HANDLE_ERROR(
-            CpuKernelUtils::ParallelFor(ctx, data_nums, data_nums / max_core_num, sharder_sqrtgrad),
-            "SqrtGrad Compute failed.")
+        KERNEL_HANDLE_ERROR(CpuKernelUtils::ParallelFor(ctx, data_nums, data_nums / max_core_num, sharder_sqrtgrad),
+                            "SqrtGrad Compute failed.")
     } else {
         SpecialComputeComplex<T>(0, data_nums, input0, input1, out);
     }
@@ -209,9 +204,8 @@ uint32_t SqrtGradCpuKernel::SqrtGradCompute(CpuKernelContext& ctx)
     auto input1_shape = input1_tensor->GetTensorShape()->GetDimSizes();
     int64_t input1_elements_nums = input1_tensor->NumElements();
     if (input0_elements_nums != input1_elements_nums) {
-        KERNEL_LOG_WARN(
-            "Invalid element numbers, got[%d] and [%d]", static_cast<int32_t>(input0_elements_nums),
-            static_cast<int32_t>(input1_elements_nums));
+        KERNEL_LOG_WARN("Invalid element numbers, got[%d] and [%d]", static_cast<int32_t>(input0_elements_nums),
+                        static_cast<int32_t>(input1_elements_nums));
         return KERNEL_STATUS_PARAM_INVALID;
     } else {
         return NoBcastCompute<T>(ctx);
@@ -229,9 +223,8 @@ uint32_t SqrtGradCpuKernel::SqrtGradComputeComplex(CpuKernelContext& ctx)
     auto input1_shape = input1_tensor->GetTensorShape()->GetDimSizes();
     int64_t input1_elements_nums = input1_tensor->NumElements();
     if (input0_elements_nums != input1_elements_nums) {
-        KERNEL_LOG_WARN(
-            "Invalid element numbers, got[%d] and [%d]", static_cast<int32_t>(input0_elements_nums),
-            static_cast<int32_t>(input1_elements_nums));
+        KERNEL_LOG_WARN("Invalid element numbers, got[%d] and [%d]", static_cast<int32_t>(input0_elements_nums),
+                        static_cast<int32_t>(input1_elements_nums));
         return KERNEL_STATUS_PARAM_INVALID;
     } else {
         return NoBcastComputeComplex<T>(ctx);

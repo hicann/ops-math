@@ -77,7 +77,7 @@ static void CheckFormat(const aclTensor* self)
 {
     ge::Format selfStorageFormat = self->GetStorageFormat();
     if (selfStorageFormat != ge::Format::FORMAT_ND) {
-        OP_LOGW("Format only support ND.");
+        OP_LOGW("Format only supports ND.");
     }
 }
 

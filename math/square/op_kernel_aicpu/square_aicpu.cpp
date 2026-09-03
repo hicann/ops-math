@@ -125,7 +125,7 @@ inline std::uint32_t ComputeSquare(const CpuKernelContext& ctx, const int64_t pa
 inline std::uint32_t SquareExtraCheck(const CpuKernelContext& ctx)
 {
     if (ctx.Input(0)->GetDataType() != ctx.Output(0)->GetDataType()) {
-        KERNEL_LOG_ERROR("The data type of the input [%s] need be the same as the output [%s].",
+        KERNEL_LOG_ERROR("The data type of the input [%s] need to be the same as the output [%s].",
                          DTypeStr(ctx.Input(0)->GetDataType()).c_str(), DTypeStr(ctx.Output(0)->GetDataType()).c_str());
         return KERNEL_STATUS_PARAM_INVALID;
     }
@@ -134,14 +134,14 @@ inline std::uint32_t SquareExtraCheck(const CpuKernelContext& ctx)
     std::vector<int64_t> input_dims = ctx.Input(0)->GetTensorShape()->GetDimSizes();
     std::vector<int64_t> output_dims = ctx.Output(0)->GetTensorShape()->GetDimSizes();
     if (input_dims.size() != output_dims.size()) {
-        KERNEL_LOG_ERROR("The data dim of the input size [%lu] need be the same as the output "
+        KERNEL_LOG_ERROR("The data dim of the input size [%lu] need to be the same as the output "
                          "size [%lu].",
                          input_dims.size(), output_dims.size());
         return KERNEL_STATUS_PARAM_INVALID;
     }
     for (size_t index = 0; index < input_dims.size(); index++) {
         if (input_dims[index] != output_dims[index]) {
-            KERNEL_LOG_ERROR("The data dim[%lu]=%ld of the input need be the same as the output "
+            KERNEL_LOG_ERROR("The data dim[%lu]=%ld of the input need to be the same as the output "
                              "dim[%lu]=%ld.",
                              index, input_dims[index], index, output_dims[index]);
             return KERNEL_STATUS_PARAM_INVALID;

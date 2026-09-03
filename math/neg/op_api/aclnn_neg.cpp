@@ -48,18 +48,15 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* out)
 
 static bool CheckDtypeValid(const aclTensor* self)
 {
-    bool isAfterV200 =
-        (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-         IsRegBase());
+    bool isAfterV200 = (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+                        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase());
     bool isSupport = isAfterV200 ? CheckType(self->GetDataType(), dtype_support_list_afterV200) :
                                    CheckType(self->GetDataType(), dtype_support_list);
     if (!isSupport) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s should be in dtype support list %s.",
-            ToString(self->GetDataType()).GetString(),
-            isAfterV200 ? ToString(dtype_support_list_afterV200).GetString() :
-                          ToString(dtype_support_list).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s should be in dtype support list %s.",
+                ToString(self->GetDataType()).GetString(),
+                isAfterV200 ? ToString(dtype_support_list_afterV200).GetString() :
+                              ToString(dtype_support_list).GetString());
         return false;
     }
     return true;
@@ -97,8 +94,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out)
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnNegGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnNegGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                     aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnNeg, DFX_IN(self), DFX_OUT(out));
     // 固定写法，参数检查
@@ -114,8 +111,8 @@ aclnnStatus aclnnNegGetWorkspaceSize(
         return ACLNN_SUCCESS;
     }
     // 检查Format
-    if(self->GetStorageFormat() != Format::FORMAT_ND){
-        OP_LOGW("Format only support ND");
+    if (self->GetStorageFormat() != Format::FORMAT_ND) {
+        OP_LOGW("Format only supports ND");
     }
     // 固定写法，将输入self转换成连续的tensor
     auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());

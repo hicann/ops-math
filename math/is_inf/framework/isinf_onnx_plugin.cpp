@@ -31,7 +31,7 @@ static Status ParseParamsIsinf(const Message* op_src, ge::Operator& op_dst)
         }
     }
     if (detect_negative != 1 || detect_positive != 1) {
-        OP_LOGE(GetOpName(op_dst).c_str(), "The operator will computes both positive and negative cases!");
+        OP_LOGE(GetOpName(op_dst).c_str(), "The operator will compute both positive and negative cases!");
         return FAILED;
     }
 
@@ -39,16 +39,12 @@ static Status ParseParamsIsinf(const Message* op_src, ge::Operator& op_dst)
 }
 
 REGISTER_CUSTOM_OP("IsInf")
-  .FrameworkType(ONNX)
-  .OriginOpType({ge::AscendString("ai.onnx::10::IsInf"),
-                 ge::AscendString("ai.onnx::11::IsInf"),
-                 ge::AscendString("ai.onnx::12::IsInf"),
-                 ge::AscendString("ai.onnx::13::IsInf"),
-                 ge::AscendString("ai.onnx::14::IsInf"),
-                 ge::AscendString("ai.onnx::15::IsInf"),
-                 ge::AscendString("ai.onnx::16::IsInf"),
-                 ge::AscendString("ai.onnx::17::IsInf"),
-                 ge::AscendString("ai.onnx::18::IsInf")})
-  .ParseParamsFn(ParseParamsIsinf)
-  .ImplyType(ImplyType::TVM);
-}  // namespace domi
+    .FrameworkType(ONNX)
+    .OriginOpType({ge::AscendString("ai.onnx::10::IsInf"), ge::AscendString("ai.onnx::11::IsInf"),
+                   ge::AscendString("ai.onnx::12::IsInf"), ge::AscendString("ai.onnx::13::IsInf"),
+                   ge::AscendString("ai.onnx::14::IsInf"), ge::AscendString("ai.onnx::15::IsInf"),
+                   ge::AscendString("ai.onnx::16::IsInf"), ge::AscendString("ai.onnx::17::IsInf"),
+                   ge::AscendString("ai.onnx::18::IsInf")})
+    .ParseParamsFn(ParseParamsIsinf)
+    .ImplyType(ImplyType::TVM);
+} // namespace domi
