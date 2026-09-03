@@ -10,30 +10,25 @@
 
 /*!
  * \file cdist_reduce_hl.h
- * \brief 方案三 (reduce_highlevel): cdist M∈[2,256] 融合内核 —— broadcast + 高层 ReduceRepeat<SUM> M 轴归约.
+ * \brief 方案三 (reduce_highlevel): cdist M∈[2,256] 融合内核 —— broadcast + WholeReduceSum M轴归约.
  *
- *   与方案二的差别：B2/B4 的 reduce 相位用高层 adv_api ReduceRepeat<ReduceType::SUM>（WholeReduceSum
- *   语义：逐 repeat 对 mask 个元素归约成一个 outLane）替代方案二/Normal 的 VF Reg::ReduceSum 手写 scope。
+ *   用基础API WholeReduceSum替代方案VF Reg::ReduceSum手写scope。
  *   elementwise（Sub/Mul/Abs/Sqrt/Ln/Exp/Muls）全部走高层向量 API。
- *
- *   骨架（CopyIn/CopyOut/tiling）✅ 直接复用 Normal 路径 cdist.h（同一份已验证的 block/UB 切分 + M-split +
- *   尾块 + 各 dtype cast），仅替换 compute 相位为高层 API。这样天然打通 M>256 Normal 边界、且最大化复用
- *   已验证代码，只有 reduce 策略变为高层 ReduceRepeat（本方案就是要对比高层 API vs VF）。
  *
  *   计算布局（每个 UB tile, mSize 列）:
  *     x1 UB-resident [bSize,pSize,MAlign], x2 UB-resident [bSize,rSize,MAlign]（Normal CopyIn 已搬入，
  *     每行 x1[b,p,:] / x2[b,r,:] 各只搬一次，p×r 网格在 UB 内复用 —— 即 broadcast+reuse，GM 流量 ÷(P·R)）。
  *     逐 (b,p): Broadcast x1[b,p,:M] [1,M]->[rSize,M] (rank2 axis0) 到 x1exp；
  *               Sub(diff, x1exp, x2[b], rSize*MAlign)；Abs/Mul（按 p）；
- *               ReduceRepeat<SUM>(acc[b,p,0:rSize], diff, mask=mSize, repeat=rSize,
- *                                 dstRepStride=1, srcBlkStride=1, srcRepStride=MAlign/blk) → 每 r 一个和；
+ *               WholeReduceSum(acc[b,p,0:rSize], diff, mask=mSize, repeat=rSize,
+ *                              dstRepStride=1, srcBlkStride=1, srcRepStride=MAlign/blk) → 每 r 一个和；
  *               M-split(ubLoopNumM>1) 时把段和累加到 yFp32_（p!=inf: Add; p==inf: Max），末段再归一。
  */
 #ifndef CDIST_REDUCE_HL_H
 #define CDIST_REDUCE_HL_H
 
-#include "kernel_operator.h" // adv_api Broadcast/GetBroadcastTilingInfo/ReduceRepeat/BlockReduceMax + 基础向量 API (register-invoke: no cdist_local_deps.h)
-#include "../cdist_tiling_data.h" // REG 主 tiling 结构 CdistTilingData（Normal 形态，方案三复用）
+#include "kernel_operator.h"
+#include "../cdist_tiling_data.h"
 
 #if !defined(__NPU_HOST__)
 
@@ -99,7 +94,7 @@ private:
     TQue<QuePosition::VECCALC, 1> tmpQueue_; // segment result buffer for M-split (like Normal tmpLocal_)
     TBuf<QuePosition::VECCALC> x1ExpBuf_;    // x1 broadcast plane [rSize, MAlign] fp32
     TBuf<QuePosition::VECCALC> diffBuf_;     // |diff|^p plane      [rSize, MAlign] fp32
-    TBuf<QuePosition::VECCALC> partBuf_;     // ReduceRepeat partial scratch (M>64), <=hlRTile lanes
+    TBuf<QuePosition::VECCALC> partBuf_;     // WholeReduceSum partial scratch (M>64), <=hlRTile lanes
     GlobalTensor<T> x1GM_;
     GlobalTensor<T> x2GM_;
     GlobalTensor<T> yGM_;
@@ -185,11 +180,11 @@ __aicore__ inline void CdistReduceHL<T>::Init(GM_ADDR x1, GM_ADDR x2, GM_ADDR y,
     // HL compute planes (fp32): x1 broadcast + diff, each capped at HL_PLANE_ELEMS. R is chunked inside
     // ComputeOneSizeHL to hlRTile_ = HL_PLANE_ELEMS / MAlign rows so the planes never overflow UB
     // (decoupled from the Normal tiling's ubFactorR/ubFactorM which sizes only x1/x2/y). x1ExpBuf_ head
-    // is also reused as the ReduceRepeat partial scratch (>= hlRTile_ lanes, guaranteed since
+    // is also reused as the WholeReduceSum partial scratch (>= hlRTile_ lanes, guaranteed since
     // hlRTile_ <= HL_PLANE_ELEMS/1).
     pipe_->InitBuffer(x1ExpBuf_, HL_PLANE_ELEMS * sizeof(float));
     pipe_->InitBuffer(diffBuf_, HL_PLANE_ELEMS * sizeof(float));
-    // Dedicated ReduceRepeat partial scratch (one lane per reduced row, rep <= REDUCE_MAX_REPEAT=255
+    // Dedicated WholeReduceSum partial scratch (one lane per reduced row, rep <= REDUCE_MAX_REPEAT=255
     // and ReduceRowsMax redOut <= 248 lanes; 256 for block alignment). Must NOT alias x1exp/diff.
     pipe_->InitBuffer(partBuf_, 256 * sizeof(float));
     // yQueue_ holds float compute results (BUFFER_NUM=2). yFp32_ is DeQue'd/EnQue'd per iteration
@@ -391,7 +386,7 @@ __aicore__ inline void CdistReduceHL<T>::CopyOut(uint64_t Offset)
 }
 
 // Per-row (per output element) sum-reduce of `rows` rows of `mLen` fp32 columns (row stride = mAlign),
-// using high-level ReduceRepeat<ReduceType::SUM>. Chunks mask over REDUCE_MAX_MASK (64) and rows over
+// using WholeReduceSum. Chunks mask over REDUCE_MAX_MASK (64) and rows over
 // REDUCE_MAX_REPEAT (255). acc[row] gets the running total (accumulate=false: overwrite; true: add).
 template <typename T>
 __aicore__ inline void CdistReduceHL<T>::ReduceRowsSum(const LocalTensor<float>& acc, const LocalTensor<float>& src,
@@ -407,13 +402,11 @@ __aicore__ inline void CdistReduceHL<T>::ReduceRowsSum(const LocalTensor<float>&
         for (uint32_t m0 = 0; m0 < mLen; m0 += REDUCE_MAX_MASK) {
             uint32_t mask = (mLen - m0 > (uint32_t)REDUCE_MAX_MASK) ? (uint32_t)REDUCE_MAX_MASK : (mLen - m0);
             if (first) {
-                ReduceRepeat<ReduceType::SUM, float, float>(accChunk, srcChunk[m0], (int32_t)mask, (int32_t)rep, 1, 1,
-                                                            (int32_t)blkStrideRep);
+                WholeReduceSum<float>(accChunk, srcChunk[m0], (int32_t)mask, (int32_t)rep, 1, 1, (int32_t)blkStrideRep);
                 first = false;
             } else {
                 LocalTensor<float> part = partBuf_.Get<float>();
-                ReduceRepeat<ReduceType::SUM, float, float>(part, srcChunk[m0], (int32_t)mask, (int32_t)rep, 1, 1,
-                                                            (int32_t)blkStrideRep);
+                WholeReduceSum<float>(part, srcChunk[m0], (int32_t)mask, (int32_t)rep, 1, 1, (int32_t)blkStrideRep);
                 Add(accChunk, accChunk, part, rep);
             }
         }
@@ -607,7 +600,7 @@ __aicore__ inline void CdistReduceHL<T>::ProcessNoSplitM(uint32_t bOffset, uint3
     // MAlign_ = T-typed block-aligned row stride (elements). Used for BOTH the T-typed compact CopyIn
     // and the fp32 compute plane: Cast(dst,src,count) preserves element layout, so after cast the fp32
     // rows share the same MAlign_ element stride. MAlign_*4 is 32B-aligned (fp16 MAlign multiple of 16,
-    // fp32 multiple of 8) → valid ReduceRepeat srcRepStride. Keeps a single consistent stride.
+    // fp32 multiple of 8) → valid WholeReduceSum srcRepStride. Keeps a single consistent stride.
     MAlign_ = ((M_ * sizeof(T) + BLOCK_SIZE - 1) / BLOCK_SIZE * BLOCK_SIZE) / sizeof(T);
     CopyInX1(offsetX1);
     for (uint32_t rIdx = 0; rIdx < ubLoopNumR_; rIdx++) {
