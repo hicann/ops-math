@@ -24,19 +24,13 @@
 
 using namespace std;
 
-extern "C" __global__ __aicore__ void circular_pad(
-    GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling);
+extern "C" __global__ __aicore__ void circular_pad(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, GM_ADDR workspace,
+                                                   GM_ADDR tiling);
 
 class circualr_pad_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "circualr_pad_test SetUp\n" << endl;
-    }
-    static void TearDownTestCase()
-    {
-        cout << "circualr_pad_test TearDown\n" << endl;
-    }
+    static void SetUpTestCase() { cout << "circular_pad_test SetUp\n" << endl; }
+    static void TearDownTestCase() { cout << "circular_pad_test TearDown\n" << endl; }
 };
 
 TEST_F(circualr_pad_test, test_case_fp32_smallshape_2d)

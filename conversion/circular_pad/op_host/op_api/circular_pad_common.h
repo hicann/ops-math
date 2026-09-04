@@ -41,7 +41,7 @@ inline static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 inline static bool CheckFormat(const aclTensor* self, const aclTensor* out)
 {
     if (op::IsPrivateFormat(self->GetStorageFormat())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW、NCL");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND, NCHW, NHWC, HWCN, NDHWC, NCDHW, NCL");
         return false;
     }
     OP_CHECK(
@@ -138,7 +138,7 @@ inline static aclnnStatus HandleEmptyTensor(const aclTensor* self, size_t minDim
 {
     if (self->GetViewShape().GetDimNum() == minDim) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "Expected %zuD or %zuD tensor with possibly 0 batch size and other non-zero dimentions for inpit.",
+                "Expected %zuD or %zuD tensor with possibly 0 batch size and other non-zero dimensions for input.",
                 minDim, maxDim);
         return ACLNN_ERR_PARAM_INVALID;
     }
@@ -152,7 +152,7 @@ inline static aclnnStatus HandleEmptyTensor(const aclTensor* self, size_t minDim
         }
         if (hasZeroDim) {
             OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                    "Expected %zuD or %zuD tensor with possibly 0 batch size and other non-zero dimentions for inpit.",
+                    "Expected %zuD or %zuD tensor with possibly 0 batch size and other non-zero dimensions for input.",
                     minDim, maxDim);
             return ACLNN_ERR_PARAM_INVALID;
         }

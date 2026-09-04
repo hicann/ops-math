@@ -44,7 +44,7 @@ static ge::graphStatus PadV2Infershape(const gert::InferShapeContext* context, c
 
     // input shape check
     size_t input_dim_size = x_shape->GetDimNum();
-    OP_CHECK_IF(input_dim_size == 0, OP_LOGE(context->GetNodeName(), "input shape cannot empty"),
+    OP_CHECK_IF(input_dim_size == 0, OP_LOGE(context->GetNodeName(), "input shape cannot be empty"),
                 return ge::GRAPH_FAILED);
 
     // pad size check

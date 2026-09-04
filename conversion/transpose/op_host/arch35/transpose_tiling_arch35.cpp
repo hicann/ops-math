@@ -337,7 +337,7 @@ ge::graphStatus TransposeNddmaTiling::CheckShapeInfo()
             oss << "The shape of y must be the same as the shape consisting of the axes of x. "
                 << "The " << i << "-th axis is determined by value " << shapeInfo_.perm[i] << " of perm. "
                 << "When the value of perm is a negative number, the " << i << "-th axis is equal to the "
-                << std::abs(shapeInfo_.perm[i]) << "-th axis couted from the end of shape of x";
+                << std::abs(shapeInfo_.perm[i]) << "-th axis counted from the end of shape of x";
             OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
                 tilingContext_->GetNodeName(), "x and y",
                 Ops::Math::Join(shapeInfo_.inShape[shapeInfo_.perm[i]], shapeInfo_.outShape[i]).c_str(),

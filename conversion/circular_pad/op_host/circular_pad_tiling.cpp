@@ -106,7 +106,7 @@ ge::graphStatus CircularPadTiling::CheckFrontAndBack()
 ge::graphStatus CircularPadTiling::CheckInput()
 {
     if ((inputW >= (int64_t)ubSize / BUFFER_NUM / tSize)) {
-        OP_LOGE(context_->GetNodeName(), "The last DIM of x is valid.");
+        OP_LOGE(context_->GetNodeName(), "The last DIM of x is invalid.");
         return ge::GRAPH_FAILED;
     }
     if ((outputH != inputH + top + bottom || outputW != inputW + left + right || outputL != inputL + front + back)) {
@@ -148,7 +148,7 @@ ge::graphStatus CircularPadTiling::CheckDtype()
         dataType = TYPE_MODE5;
         tSize = sizeof(int32_t);
     } else {
-        OP_LOGE(context_->GetNodeName(), "Unsupport type.");
+        OP_LOGE(context_->GetNodeName(), "Unsupported type.");
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;

@@ -88,7 +88,7 @@ static bool CheckAttrValid(const aclTensor* self, const int64_t groups)
     auto channels = selfShape.GetDim(SECOND_DIM);
     if (channels % groups != 0) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "Number of channels must be divisible by groups.Got %ld channels and %ld groups.", channels, groups);
+                "Number of channels must be divisible by groups. Got %ld channels and %ld groups.", channels, groups);
         return false;
     }
     return true;

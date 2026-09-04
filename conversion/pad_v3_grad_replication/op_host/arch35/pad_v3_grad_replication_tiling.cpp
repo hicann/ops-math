@@ -254,18 +254,18 @@ bool PadV3GradReplicationTiling::CalcUbBudget(uint32_t axis, uint64_t perUnitByt
     // 两个 buf 各自 CeilAlign 到 BLOCK_SIZE，最坏多占 2 × (BLOCK_SIZE - 1)
     const uint64_t alignSlack = 2 * blockSize_;
     if (perUnitBytes == 0) {
-        OP_LOGI(context_->GetNodeName(), "axis=%u failed: perUnitBytes=0 (invalid shape)", axis);
+        OP_LOGI(context_->GetNodeName(), "axis=%u skipped: perUnitBytes=0 (invalid shape)", axis);
         return false;
     }
     // 阶梯式从 ubAvailable 减 fixedBytes / alignSlack，避免任何中间值 uint64 翻转
     if (fixedBytes >= ubAvailable) {
-        OP_LOGI(context_->GetNodeName(), "axis=%u failed: fixedBytes=%lu >= ubAvailable=%lu (both pads exceed UB)",
+        OP_LOGI(context_->GetNodeName(), "axis=%u skipped: fixedBytes=%lu >= ubAvailable=%lu (both pads exceed UB)",
                 axis, fixedBytes, ubAvailable);
         return false;
     }
     uint64_t budget = ubAvailable - fixedBytes;
     if (alignSlack >= budget) {
-        OP_LOGI(context_->GetNodeName(), "axis=%u failed: alignSlack=%lu >= remaining budget=%lu", axis, alignSlack,
+        OP_LOGI(context_->GetNodeName(), "axis=%u skipped: alignSlack=%lu >= remaining budget=%lu", axis, alignSlack,
                 budget);
         return false;
     }
@@ -274,7 +274,7 @@ bool PadV3GradReplicationTiling::CalcUbBudget(uint32_t axis, uint64_t perUnitByt
     // 解 splitSize：perUnitBytes × splitSize ≤ budget
     unitsPerTile = budget / perUnitBytes;
     if (unitsPerTile == 0) {
-        OP_LOGI(context_->GetNodeName(), "axis=%u failed: unitsPerTile=0", axis);
+        OP_LOGI(context_->GetNodeName(), "axis=%u skipped: unitsPerTile=0", axis);
         return false;
     }
     return true;
@@ -291,7 +291,7 @@ bool PadV3GradReplicationTiling::AdjustSingleTile(uint32_t axis, uint64_t pL, ui
         const uint64_t bothFixedBytes = worstFactor * innerProdUb * (pL + pR) * dataBufSz;
         if (bothFixedBytes + alignSlack >= ubAvailable) {
             if (inputShape_[axis] <= 1) {
-                OP_LOGI(context_->GetNodeName(), "axis=%u failed: singleTile both pads exceed UB and shape=1", axis);
+                OP_LOGI(context_->GetNodeName(), "axis=%u skipped: singleTile both pads exceed UB and shape=1", axis);
                 return false;
             }
             splitSize_ = static_cast<uint32_t>(inputShape_[axis] - 1);
@@ -311,7 +311,7 @@ bool PadV3GradReplicationTiling::AdjustSingleTile(uint32_t axis, uint64_t pL, ui
                             splitSize_);
                 } else {
                     OP_LOGI(context_->GetNodeName(),
-                            "axis=%u failed: single-tile pads fit but no room for data with shape=1", axis);
+                            "axis=%u skipped: single-tile pads fit but no room for data with shape=1", axis);
                     return false;
                 }
             } else {
@@ -367,13 +367,13 @@ bool PadV3GradReplicationTiling::ApplyIndexLimit(uint32_t axis, uint64_t pL, uin
                 if (indexCoef == 0 || maxDataBufElements < indexCoef * effectivePad) {
                     OP_LOGI(
                         context_->GetNodeName(),
-                        "axis=%u failed: pad overhead exceeds uint16_t index limit (indexCoef=%lu, effectivePad=%lu)",
+                        "axis=%u skipped: pad overhead exceeds uint16_t index limit (indexCoef=%lu, effectivePad=%lu)",
                         axis, indexCoef, effectivePad);
                     return false;
                 }
                 uint64_t allowedSlice = maxDataBufElements / indexCoef; // splitSize + effectivePad
                 if (allowedSlice <= effectivePad) {
-                    OP_LOGI(context_->GetNodeName(), "axis=%u failed: allowedSlice=%lu ≤ effectivePad=%lu", axis,
+                    OP_LOGI(context_->GetNodeName(), "axis=%u skipped: allowedSlice=%lu ≤ effectivePad=%lu", axis,
                             allowedSlice, effectivePad);
                     return false;
                 }
@@ -441,7 +441,7 @@ bool PadV3GradReplicationTiling::TrySplitAxis(uint32_t axis, uint64_t ubAvailabl
 
     // 计算 splitCount：每个 tile = 外层(axis<k) 1 个位置 + 当前轴 splitSize 单位 + 内层(axis>k) 全量
     if (splitSize_ == 0) {
-        OP_LOGI(context_->GetNodeName(), "axis=%u failed: splitSize=0 after adjustments", axis);
+        OP_LOGI(context_->GetNodeName(), "axis=%u skipped: splitSize=0 after adjustments", axis);
         return false;
     }
     uint64_t outerCombos = 1;
@@ -491,7 +491,7 @@ void PadV3GradReplicationTiling::CalcSplitStrategy()
     splitCount_ = static_cast<uint32_t>(outerCombos);
 
     OP_LOGI(context_->GetNodeName(),
-            "CalcSplitStrategy: non-tail axes failed, force tail axis=%u (edge_simt), "
+            "CalcSplitStrategy: non-tail axes skipped, force tail axis=%u (edge_simt), "
             "splitSize=%u, splitCount=%u",
             splitAxis_, splitSize_, splitCount_);
 }

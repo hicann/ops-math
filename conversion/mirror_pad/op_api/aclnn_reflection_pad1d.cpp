@@ -102,7 +102,7 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* padding, const 
     // check padding value. 0, 1 are indexes
     OP_CHECK((*padding)[0] < self->GetViewShape().GetDim(selfDimnum - 1) &&
                  (*padding)[1] < self->GetViewShape().GetDim(selfDimnum - 1),
-             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "padding size should be less than the corresponding self dimention."),
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "padding size should be less than the corresponding self dimension."),
              return false);
 
     // check the last dim value of out. 0, 1 are indexes
@@ -147,7 +147,7 @@ aclnnStatus aclnnReflectionPad1dGetWorkspaceSize(const aclTensor* self, const ac
         // 2 is dim number
         if (self->GetViewShape().GetDimNum() == 2) {
             OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                    "Expected 2D or 3D tensor with possibly 0 batch size and other non-zero dimentions for input.");
+                    "Expected 2D or 3D tensor with possibly 0 batch size and other non-zero dimensions for input.");
             return ACLNN_ERR_PARAM_INVALID;
         }
         // 3 is dim number
@@ -155,7 +155,7 @@ aclnnStatus aclnnReflectionPad1dGetWorkspaceSize(const aclTensor* self, const ac
             // 1, 2 are indexes
             if (self->GetViewShape().GetDim(1) == 0 || self->GetViewShape().GetDim(2) == 0) {
                 OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                        "Expected 2D or 3D tensor with possibly 0 batch size and other non-zero dimentions for input.");
+                        "Expected 2D or 3D tensor with possibly 0 batch size and other non-zero dimensions for input.");
                 return ACLNN_ERR_PARAM_INVALID;
             }
         }

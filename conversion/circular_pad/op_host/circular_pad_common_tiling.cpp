@@ -36,9 +36,8 @@ ge::graphStatus CircularPadCommonTiling::GetShapeAttrsInfo()
     auto paddings = context_->GetInputTensor(DIM_1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, paddings);
     auto paddingsNum = paddings->GetShapeSize();
-    OP_CHECK_IF(
-        paddingsNum < DIM_4, OP_LOGE(context_->GetNodeName(), "paddings num should be greater than 4"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(paddingsNum < DIM_4, OP_LOGE(context_->GetNodeName(), "paddings num should be greater than 4"),
+                return ge::GRAPH_FAILED);
     auto padding_valus = paddings->GetData<int64_t>();
     int32_t paddingDim = paddingsNum - DIM_4;
     top = padding_valus[paddingDim];
@@ -54,8 +53,8 @@ ge::graphStatus CircularPadCommonTiling::GetShapeAttrsInfo()
     auto x_shape = context_->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, x_shape);
     auto xDimNum = x_shape->GetStorageShape().GetDimNum();
-    OP_CHECK_IF(
-        xDimNum < DIM_2, OP_LOGE(context_->GetNodeName(), "x dims should be greater than 2"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(xDimNum < DIM_2, OP_LOGE(context_->GetNodeName(), "x dims should be greater than 2"),
+                return ge::GRAPH_FAILED);
     int32_t xDim = xDimNum - DIM_2;
     for (int32_t i = 0; i < xDim; i++) {
         auto shape = x_shape->GetStorageShape().GetDim(i);
@@ -71,8 +70,8 @@ ge::graphStatus CircularPadCommonTiling::GetShapeAttrsInfo()
     auto y_shape = context_->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, y_shape);
     auto yDimNum = y_shape->GetStorageShape().GetDimNum();
-    OP_CHECK_IF(
-        yDimNum < DIM_2, OP_LOGE(context_->GetNodeName(), "y dims should be greater than 2"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(yDimNum < DIM_2, OP_LOGE(context_->GetNodeName(), "y dims should be greater than 2"),
+                return ge::GRAPH_FAILED);
     int32_t yDim = yDimNum - DIM_2;
     outputH = y_shape->GetStorageShape().GetDim(yDim);
     outputW = y_shape->GetStorageShape().GetDim(yDim + DIM_1);
@@ -161,10 +160,7 @@ void CircularPadCommonTiling::SetTilingKey()
     }
 }
 
-uint64_t CircularPadCommonTiling::GetTilingKey()
-{
-    return tilingKey_;
-}
+uint64_t CircularPadCommonTiling::GetTilingKey() { return tilingKey_; }
 
 void CircularPadCommonTiling::SetTilingData()
 {
@@ -191,7 +187,7 @@ int32_t CircularPadCommonTiling::DoDumpTilingInfo()
     auto buf = (int64_t*)context_->GetRawTilingData()->GetData();
     auto bufLen = context_->GetRawTilingData()->GetDataSize();
     std::ostringstream oss;
-    oss << "Start to dump tiling info. tilingkey:" << context_->GetTilingKey() << ", tiling data size:" << bufLen
+    oss << "Start to dump tiling info. tilingkey:" << context_->GetTilingKey() << ", tiling data size(bytes):" << bufLen
         << ", content:";
     for (size_t i = 0; i < bufLen / sizeof(int64_t); i++) {
         oss << *(buf + i) << ",";
@@ -204,8 +200,5 @@ int32_t CircularPadCommonTiling::DoDumpTilingInfo()
     return 0;
 }
 
-void CircularPadCommonTiling::DumpTilingInfo()
-{
-    OP_LOGD(context_, "%d", DoDumpTilingInfo());
-}
+void CircularPadCommonTiling::DumpTilingInfo() { OP_LOGD(context_, "%d", DoDumpTilingInfo()); }
 } // namespace optiling

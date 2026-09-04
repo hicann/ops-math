@@ -95,7 +95,7 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* pad, const aclT
 
     // pad元素个数必须为偶数
     if (padLen % SIZE_T_TWICE != 0) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Pad len must be divisible by 2");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Pad len must be divisible by 2, but got %zu.", padLen);
         return false;
     }
     // 判断pad数组是否符合要求

@@ -172,7 +172,7 @@ uint32_t TileCpuKernel::TileComputeWith2DNotUsingEigen(const CpuKernelContext& c
     const int64_t x_second_dim = input_x_dims[kIndexOne];
     const int64_t mul_second_dim = multiples_[kIndexOne];
     KERNEL_CHECK_FALSE(CheckInt64MulOverflow(x_second_dim, mul_second_dim), KERNEL_STATUS_INNER_ERROR,
-                       "int64 mul over flow");
+                       "int64 mul overflow");
     const int64_t last_axes_dims = x_second_dim * mul_second_dim;
     const uint64_t output_data_size = output->GetDataSize();
     KERNEL_CHECK_FALSE((output_data_size >= static_cast<uint64_t>(x_second_dim * sizeof(T))), KERNEL_STATUS_INNER_ERROR,
@@ -249,10 +249,10 @@ uint32_t TileCpuKernel::TileComputeWith3DNotUsingEigen(const CpuKernelContext& c
     const int64_t mul_third_dim = multiples_[kIndexTwo];
     const int64_t last_axes_dims = x_third_dim * mul_third_dim;
     KERNEL_CHECK_FALSE(CheckInt64MulOverflow(x_third_dim, mul_third_dim), KERNEL_STATUS_INNER_ERROR,
-                       "int64 mul over flow");
+                       "int64 mul overflow");
     const int64_t second_axes_dims = x_second_dim * mul_second_dim;
     KERNEL_CHECK_FALSE(CheckInt64MulOverflow(last_axes_dims, second_axes_dims), KERNEL_STATUS_INNER_ERROR,
-                       "int64 mul over flow");
+                       "int64 mul overflow");
     const int64_t last_two_axes_dims = last_axes_dims * second_axes_dims;
     const uint64_t output_data_size = output->GetDataSize();
     KERNEL_CHECK_FALSE((output_data_size >= static_cast<uint64_t>(x_third_dim * sizeof(T))), KERNEL_STATUS_INNER_ERROR,
@@ -291,7 +291,7 @@ uint32_t TileCpuKernel::TileKernelCompute(const CpuKernelContext& ctx)
     const int64_t output_rank = output_shape->GetDims();
     KERNEL_CHECK_FALSE((input_rank == output_rank), KERNEL_STATUS_PARAM_INVALID,
                        "output rank must be equal to input rank, current input "
-                       "rand [%d], output rank [%ld]",
+                       "rank [%d], output rank [%ld]",
                        input_rank, output_rank);
     const std::vector<int64_t> input_x_dims = x_shape->GetDimSizes(), output_dims = output_shape->GetDimSizes();
     auto input_x_data = static_cast<T*>(input_x->GetData());
@@ -440,7 +440,7 @@ uint32_t TileCpuKernel::TileParamCheck(const CpuKernelContext& ctx)
             return KERNEL_STATUS_OK;
         }
         KERNEL_CHECK_FALSE((0 <= multiple_value), KERNEL_STATUS_PARAM_INVALID,
-                           "Expected mtp[%ld] shoule be greater than or equal to 0 but got [%ld].", i, multiple_value)
+                           "Expected mtp[%ld] should be greater than or equal to 0 but got [%ld].", i, multiple_value)
         shape_output[i] = input_x_dims.at(i) * multiple_value;
     }
     std::shared_ptr<TensorShape> output_shape = output_tensor->GetTensorShape();
@@ -484,7 +484,7 @@ uint32_t TileCpuKernel::Compute(CpuKernelContext& ctx)
         TILE_COMPUTE_CASE(DT_COMPLEX64, std::complex<float>, ctx)
         TILE_COMPUTE_CASE(DT_COMPLEX128, std::complex<double>, ctx)
         default:
-            KERNEL_LOG_ERROR("Tile kernel data type [%u] not support.", x_dtype);
+            KERNEL_LOG_ERROR("Tile kernel data type [%u] not supported.", x_dtype);
             return KERNEL_STATUS_PARAM_INVALID;
     }
     return KERNEL_STATUS_OK;

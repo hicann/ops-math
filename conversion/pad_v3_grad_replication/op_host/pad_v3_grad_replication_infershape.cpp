@@ -54,8 +54,10 @@ static ge::graphStatus InferShape4PadV3GradReplication(gert::InferShapeContext* 
         if (xDim != UNKNOWN_DIM) {
             const int64_t zDim = xDim - paddings.GetDim(PADDING_PAIR_SIZE * i) -
                                  paddings.GetDim(PADDING_PAIR_SIZE * i + 1);
-            OP_CHECK_IF(zDim < 0, OP_LOGE(context->GetNodeName(), "The output dimension must not be negative."),
-                        return ge::GRAPH_FAILED);
+            OP_CHECK_IF(
+                zDim < 0,
+                OP_LOGE(context->GetNodeName(), "The output dimension must not be negative, but got %ld.", zDim),
+                return ge::GRAPH_FAILED);
             zShape->SetDim(i, zDim);
         }
     }

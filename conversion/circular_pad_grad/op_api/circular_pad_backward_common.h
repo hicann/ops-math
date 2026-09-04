@@ -53,7 +53,7 @@ inline static bool CheckDtypeValid(const aclTensor* gradOutput, const aclTensor*
 inline static bool CheckFormat(const aclTensor* gradOutput, const aclTensor* self, const aclTensor* gradInput)
 {
     if (op::IsPrivateFormat(gradOutput->GetStorageFormat())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW、NCL");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND, NCHW, NHWC, HWCN, NDHWC, NCDHW, NCL");
         return false;
     }
     OP_CHECK(

@@ -35,10 +35,10 @@ static bool PadInfershape(const gert::InferShapeContext* context, const gert::Sh
     OP_LOGD(context->GetNodeName(), "Begin to do PadInfershape");
     OP_LOGD(context->GetNodeName(), "input x = %s", ToString(*x_shape).c_str());
     size_t input_dim_size = x_shape->GetDimNum();
-    OP_CHECK_IF(input_dim_size == 0, OP_LOGE(context->GetNodeName(), "input shape cannot empty"), return false);
+    OP_CHECK_IF(input_dim_size == 0, OP_LOGE(context->GetNodeName(), "input shape cannot be empty"), return false);
     if (input_dim_size * INT_DATA_2 != paddings_size) {
         OP_LOGE(context->GetNodeName(),
-                "the paddings num must be twice of the input x rank."
+                "the paddings num must be twice of the input x rank. "
                 "but paddings num is %zu, input x rank is %zu",
                 paddings_size, input_dim_size);
         return false;

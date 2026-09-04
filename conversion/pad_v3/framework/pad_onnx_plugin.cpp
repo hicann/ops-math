@@ -64,7 +64,8 @@ static Status parse_params_pad_v9(const Message* op_src, ge::Operator& op_dest)
             if (len & 1) {
                 OP_LOGE(
                     GetOpName(op_dest).c_str(),
-                    "the length of pads must be even, such as [x1_begin, x2_begin...x1_end, x2_end,...]");
+                    "the length of pads must be even, but got %u, such as [x1_begin, x2_begin...x1_end, x2_end,...]",
+                    len);
                 return FAILED;
             }
             unsigned int half = len / 2;
@@ -78,7 +79,7 @@ static Status parse_params_pad_v9(const Message* op_src, ge::Operator& op_dest)
     }
 
     if (!set_pads_flag) {
-        OP_LOGE(GetOpName(op_dest).c_str(), "Dynamic cast op_src to NodeProto failed.");
+        OP_LOGE(GetOpName(op_dest).c_str(), "The pads attribute is missing in the node.");
         return FAILED;
     }
 
@@ -139,8 +140,7 @@ static Status ParseOpToGraphPad(const Operator& op, Graph& graph)
 
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::8::Pad"),
-                   ge::AscendString("ai.onnx::9::Pad"),
+    .OriginOpType({ge::AscendString("ai.onnx::8::Pad"), ge::AscendString("ai.onnx::9::Pad"),
                    ge::AscendString("ai.onnx::10::Pad")})
     .ParseParamsFn(parse_params_pad_v9)
     .ParseOpToGraphFn(ParseOpToGraphPad)
@@ -148,14 +148,10 @@ REGISTER_CUSTOM_OP("PartitionedCall")
 
 REGISTER_CUSTOM_OP("PadV3")
     .FrameworkType(ONNX)
-    .OriginOpType({ge::AscendString("ai.onnx::11::Pad"),
-                   ge::AscendString("ai.onnx::12::Pad"),
-                   ge::AscendString("ai.onnx::13::Pad"),
-                   ge::AscendString("ai.onnx::14::Pad"),
-                   ge::AscendString("ai.onnx::15::Pad"),
-                   ge::AscendString("ai.onnx::16::Pad"),
-                   ge::AscendString("ai.onnx::17::Pad"),
-                   ge::AscendString("ai.onnx::18::Pad")})
+    .OriginOpType({ge::AscendString("ai.onnx::11::Pad"), ge::AscendString("ai.onnx::12::Pad"),
+                   ge::AscendString("ai.onnx::13::Pad"), ge::AscendString("ai.onnx::14::Pad"),
+                   ge::AscendString("ai.onnx::15::Pad"), ge::AscendString("ai.onnx::16::Pad"),
+                   ge::AscendString("ai.onnx::17::Pad"), ge::AscendString("ai.onnx::18::Pad")})
     .ParseParamsFn(parse_params_pad_v11)
     .ImplyType(ImplyType::TVM);
-}  // namespace domi
+} // namespace domi

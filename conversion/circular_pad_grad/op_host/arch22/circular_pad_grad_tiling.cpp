@@ -33,16 +33,16 @@ ge::graphStatus CircularPadGradTiling::CheckLeftAndRight()
 {
     std::stringstream ss;
     if (left > 0 && right > 0 && (left + right > inputW * DIM_2 / DIM_3)) {
-        ss << "left + right should not be greater than inputW * 2 / 3," << "when left/right is greater than 0.";
+        ss << "left + right should not be greater than inputW * 2 / 3, " << "when left/right is greater than 0.";
         OP_LOGE(context_->GetNodeName(), "%s", ss.str().c_str());
         return ge::GRAPH_FAILED;
     } else if (left > 0 && right <= 0 && (left > inputW / DIM_2)) {
-        ss << "left should not be greater than inputW / 2,"
+        ss << "left should not be greater than inputW / 2, "
            << "when left is greater than 0 and right is not greater than 0.";
         OP_LOGE(context_->GetNodeName(), "%s", ss.str().c_str());
         return ge::GRAPH_FAILED;
     } else if (left <= 0 && right > 0 && (right > inputW / DIM_2)) {
-        ss << "right should not be greater than inputW / 2,"
+        ss << "right should not be greater than inputW / 2, "
            << "when right is greater than 0 and left is not greater than 0.";
         OP_LOGE(context_->GetNodeName(), "%s", ss.str().c_str());
         return ge::GRAPH_FAILED;
@@ -54,16 +54,16 @@ ge::graphStatus CircularPadGradTiling::CheckTopAndBottom()
 {
     std::stringstream ss;
     if (top > 0 && bottom > 0 && (top + bottom > inputH * DIM_2 / DIM_3)) {
-        ss << "top + bottom should not be greater than inputH * 2 / 3," << "when top/bottom is greater than 0.";
+        ss << "top + bottom should not be greater than inputH * 2 / 3, " << "when top/bottom is greater than 0.";
         OP_LOGE(context_->GetNodeName(), "%s", ss.str().c_str());
         return ge::GRAPH_FAILED;
     } else if (top > 0 && bottom <= 0 && (top > inputH / DIM_2)) {
-        ss << "top should not be greater than inputH / 2,"
+        ss << "top should not be greater than inputH / 2, "
            << "when top is greater than 0 and bottom is not greater than 0.";
         OP_LOGE(context_->GetNodeName(), "%s", ss.str().c_str());
         return ge::GRAPH_FAILED;
     } else if (top <= 0 && bottom > 0 && (bottom > inputH / DIM_2)) {
-        ss << "bottom should not be greater than inputH  / 2,"
+        ss << "bottom should not be greater than inputH / 2, "
            << "when bottom is greater than 0 and top is not greater than 0.";
         OP_LOGE(context_->GetNodeName(), "%s", ss.str().c_str());
         return ge::GRAPH_FAILED;
@@ -75,16 +75,16 @@ ge::graphStatus CircularPadGradTiling::CheckFrontAndBack()
 {
     std::stringstream ss;
     if (front > 0 && back > 0 && (front + back > inputL * DIM_2 / DIM_3)) {
-        ss << "front + back should not be greater than inputL / 2," << "when front/back is greater than 0.";
+        ss << "front + back should not be greater than inputL / 2, " << "when front/back is greater than 0.";
         OP_LOGE(context_->GetNodeName(), "%s", ss.str().c_str());
         return ge::GRAPH_FAILED;
     } else if (front > 0 && back <= 0 && (front > inputL / DIM_2)) {
-        ss << "front should not be greater than inputL / 2,"
+        ss << "front should not be greater than inputL / 2, "
            << "when front is greater than 0 and back is not greater than 0.";
         OP_LOGE(context_->GetNodeName(), "%s", ss.str().c_str());
         return ge::GRAPH_FAILED;
     } else if (front <= 0 && back > 0 && (back > inputL / DIM_2)) {
-        ss << "back should not be greater than inputL / 2,"
+        ss << "back should not be greater than inputL / 2, "
            << "when back is greater than 0 and front is not greater than 0.";
         OP_LOGE(context_->GetNodeName(), "%s", ss.str().c_str());
         return ge::GRAPH_FAILED;
@@ -95,7 +95,7 @@ ge::graphStatus CircularPadGradTiling::CheckFrontAndBack()
 ge::graphStatus CircularPadGradTiling::CheckInput()
 {
     if (inputW >= usedUBSize / tSize) {
-        OP_LOGE(context_->GetNodeName(), "The last DIM of x is valid.");
+        OP_LOGE(context_->GetNodeName(), "The last DIM of x is invalid.");
         return ge::GRAPH_FAILED;
     }
     if ((outputH != inputH - top - bottom || outputW != inputW - left - right || outputL != inputL - front - back)) {
@@ -131,7 +131,7 @@ ge::graphStatus CircularPadGradTiling::CheckDtype()
         dataType = TYPE_MODE3;
         tSize = sizeof(uint16_t);
     } else {
-        OP_LOGE(context_->GetNodeName(), "Unsupport type.");
+        OP_LOGE(context_->GetNodeName(), "Unsupported type.");
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
