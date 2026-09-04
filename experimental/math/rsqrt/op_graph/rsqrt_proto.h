@@ -35,10 +35,13 @@ namespace ge {
 *Compatible with the TensorFlow operator Rsqrt.
 *
 */
+#ifndef OPS_PROTO_DEF_RSQRT
+#define OPS_PROTO_DEF_RSQRT
 REG_OP(Rsqrt)
     .INPUT(x, TensorType({DT_FLOAT16, DT_FLOAT, DT_BF16, DT_INT32, DT_INT16, DT_UINT8, DT_INT8, DT_BOOL}))
     .OUTPUT(y, TensorType({DT_FLOAT16, DT_FLOAT, DT_BF16, DT_INT32, DT_INT16, DT_UINT8, DT_INT8, DT_BOOL}))
     .OP_END_FACTORY_REG(Rsqrt)
+#endif // OPS_PROTO_DEF_RSQRT
 
 } // namespace ge
 
