@@ -105,8 +105,9 @@ ge::graphStatus TilingDiagFlat(gert::TilingContext* context)
     // set ubSize
     int64_t ubSize = compileInfo->ubSizePlatForm;
     auto dataType = input->GetDataType();
-    auto auxMatrix = SCALAR_THRESHOLD_NUM * SCALAR_THRESHOLD_NUM * sizeof(dataType);
-    auto outputDataSize = SCALAR_THRESHOLD_NUM * SCALAR_THRESHOLD_NUM * sizeof(dataType);
+    int32_t dtypeSize = ge::GetSizeByDataType(dataType);
+    auto auxMatrix = SCALAR_THRESHOLD_NUM * SCALAR_THRESHOLD_NUM * dtypeSize;
+    auto outputDataSize = SCALAR_THRESHOLD_NUM * SCALAR_THRESHOLD_NUM * dtypeSize;
     auto inputDataSize = ubSize - auxMatrix - outputDataSize;
     tilingData.set_ubInputSize(inputDataSize);
     tilingData.set_ubOutputSize(outputDataSize);
