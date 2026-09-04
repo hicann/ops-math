@@ -63,28 +63,28 @@ static inline bool IsAiCoreSupport(const aclTensor* self)
     return CheckType(self->GetDataType(), GetAiCoreDtypeSupportListBySocVersion());
 }
 
-bool IsAddSupportNonContiguous(const aclTensor* self, const aclTensor *other) {
-  bool isSupportNonContiguous = IsRegBase();
-  return isSupportNonContiguous && IsAiCoreSupport(self) && IsAiCoreSupport(other);
+bool IsAddSupportNonContiguous(const aclTensor* self, const aclTensor* other)
+{
+    bool isSupportNonContiguous = IsRegBase();
+    return isSupportNonContiguous && IsAiCoreSupport(self) && IsAiCoreSupport(other);
 }
 
 // AICORE算子kernel
-static const aclTensor* AddAiCore(
-    const aclTensor* self, const aclTensor* other, aclTensor* addOut, aclOpExecutor* executor)
+static const aclTensor* AddAiCore(const aclTensor* self, const aclTensor* other, aclTensor* addOut,
+                                  aclOpExecutor* executor)
 {
     L0_DFX(AddAiCore, self, other, addOut);
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore Add算子加入任务队列
     // Add是算子的OpType，self、other是算子的输入，addOut是算子的输出
     auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Add, OP_INPUT(self, other), OP_OUTPUT(addOut));
-    OP_CHECK(
-        ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AddAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-        return nullptr);
+    OP_CHECK(ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AddAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
+             return nullptr);
     return addOut;
 }
 
 // AICPU算子kernel
-static const aclTensor* AddAiCpu(
-    const aclTensor* self, const aclTensor* other, aclTensor* addOut, aclOpExecutor* executor)
+static const aclTensor* AddAiCpu(const aclTensor* self, const aclTensor* other, aclTensor* addOut,
+                                 aclOpExecutor* executor)
 {
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICPU，将AiCpu Add算子加入任务队列
     // Add是算子的OpType，self、other是算子的输入，addOut是算子的输出
@@ -92,9 +92,8 @@ static const aclTensor* AddAiCpu(
 
     static internal::AicpuTaskSpace space("Add");
     auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Add, OP_ATTR_NAMES(), OP_INPUT(self, other), OP_OUTPUT(addOut));
-    OP_CHECK(
-        ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AddAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
-        return nullptr);
+    OP_CHECK(ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AddAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
+             return nullptr);
     return addOut;
 }
 
@@ -102,9 +101,8 @@ const aclTensor* Add(const aclTensor* self, const aclTensor* other, aclOpExecuto
 {
     Shape broadcastShape;
     if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
-            op::ToString(other->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
+                op::ToString(other->GetViewShape()).GetString());
         return nullptr;
     }
 
@@ -126,16 +124,17 @@ const aclTensor* AddInplace(const aclTensor* self, const aclTensor* other, aclOp
 {
     Shape broadcastShape;
     if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
-            op::ToString(other->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
+                op::ToString(other->GetViewShape()).GetString());
         return nullptr;
     }
 
     // 校验输出tensor的shape和other tensor一致
     if (broadcastShape != other->GetViewShape()) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self and other broadcastShape [%s] not equal to other shape [%s], do no support inplace from the 'other' tensor!", 
-            op::ToString(broadcastShape).GetString(), op::ToString(other->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "self and other broadcastShape [%s] not equal to other shape [%s], do not support inplace from the "
+                "'other' tensor!",
+                op::ToString(broadcastShape).GetString(), op::ToString(other->GetViewShape()).GetString());
         return nullptr;
     }
 
@@ -145,12 +144,14 @@ const aclTensor* AddInplace(const aclTensor* self, const aclTensor* other, aclOp
                          (self->GetDataType() == DataType::DT_BF16 && other->GetDataType() == DataType::DT_FLOAT) ||
                          (self->GetDataType() == DataType::DT_FLOAT && other->GetDataType() == DataType::DT_BF16);
     if (isMixDataType && (other->GetDataType() == DataType::DT_FLOAT16 || other->GetDataType() == DataType::DT_BF16)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "out dtype DataType::DT_FLOAT not equal to other dtype [%s], do no support inplace from the 'other' tensor!", 
-            op::ToString(other->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "out dtype DataType::DT_FLOAT not equal to other dtype [%s], do not support inplace from the 'other' "
+                "tensor!",
+                op::ToString(other->GetDataType()).GetString());
         return nullptr;
     }
 
-    auto addOut = const_cast<aclTensor *>(other);
+    auto addOut = const_cast<aclTensor*>(other);
 
     if (isMixDataType || (IsAiCoreSupport(self) && IsAiCoreSupport(other))) {
         return AddAiCore(self, other, addOut, executor);
