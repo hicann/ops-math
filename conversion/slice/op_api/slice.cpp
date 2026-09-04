@@ -39,12 +39,11 @@ static constexpr int64_t FP32_BLOCK_NUM = 8;
 static constexpr int64_t FP16_BYTE = 2;
 static constexpr int64_t FP32_BYTE = 4;
 // dsl实现 尾轴切分双对齐模板中,当输出维度积小于该值时,会开启少核优化
-static constexpr int64_t DMA_CORE_THRESHOLD = 1048576;  // slice dsl实现中的参数
-static constexpr int64_t DMA_CORE_NUMBER = 4;  // slice dsl实现中的参数
+static constexpr int64_t DMA_CORE_THRESHOLD = 1048576; // slice dsl实现中的参数
+static constexpr int64_t DMA_CORE_NUMBER = 4;          // slice dsl实现中的参数
 static constexpr int64_t BYTE64 = 64;
-static constexpr int64_t LAST_DIM_THRESHOLD = 192;  // 尾轴切分双对齐场景尾轴限制参数
-static constexpr int64_t LAST_DIM_RATIO = 2;  // 尾轴切分双对齐场景尾轴限制参数
-
+static constexpr int64_t LAST_DIM_THRESHOLD = 192; // 尾轴切分双对齐场景尾轴限制参数
+static constexpr int64_t LAST_DIM_RATIO = 2;       // 尾轴切分双对齐场景尾轴限制参数
 
 // "float", "float16", "bfloat16"
 static const std::initializer_list<op::DataType> SLICEV2_AICORE_DTYPE_SUPPORT_LIST = {
@@ -68,15 +67,13 @@ static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST_ASCEND910
 // "uint32", "uint64", "bool", "bfloat16", "hifloat8", "float8_e5m2", "float8_e4m3fn"
 // "float8_e8m0", "float4_e2m1", "float4_e1m2"
 static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST_ASCEND910D = {
-    DataType::DT_FLOAT,    DataType::DT_FLOAT16,     DataType::DT_INT8,         DataType::DT_INT16,
-    DataType::DT_INT32,    DataType::DT_UINT8,       DataType::DT_UINT16,       DataType::DT_UINT32,
-    DataType::DT_INT64,    DataType::DT_UINT64,      DataType::DT_BOOL,         DataType::DT_BF16,
-    DataType::DT_HIFLOAT8, DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT8_E8M0,
+    DataType::DT_FLOAT,       DataType::DT_FLOAT16,     DataType::DT_INT8,          DataType::DT_INT16,
+    DataType::DT_INT32,       DataType::DT_UINT8,       DataType::DT_UINT16,        DataType::DT_UINT32,
+    DataType::DT_INT64,       DataType::DT_UINT64,      DataType::DT_BOOL,          DataType::DT_BF16,
+    DataType::DT_HIFLOAT8,    DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT8_E8M0,
     DataType::DT_FLOAT4_E2M1, DataType::DT_FLOAT4_E1M2};
 
-
-static bool IsSliceV2ARAFullLoadSupport(const aclTensor *self, const aclIntArray *offsets,
-    const aclIntArray *size)
+static bool IsSliceV2ARAFullLoadSupport(const aclTensor* self, const aclIntArray* offsets, const aclIntArray* size)
 {
     auto selfDimNum = self->GetViewShape().GetDimNum();
     int64_t curOffset = 0, curSize = 0, curXDim = 0;
@@ -118,8 +115,7 @@ static bool IsSliceV2ARAFullLoadSupport(const aclTensor *self, const aclIntArray
     return true;
 }
 
-static bool IsSliceV2BothAlignLastDimSupport(const aclTensor *self, const aclIntArray *offsets,
-    const aclIntArray *size)
+static bool IsSliceV2BothAlignLastDimSupport(const aclTensor* self, const aclIntArray* offsets, const aclIntArray* size)
 {
     auto selfDimNum = self->GetViewShape().GetDimNum();
     int64_t selfRowNum = 1, sizeRowNum = 1;
@@ -149,7 +145,7 @@ static bool IsSliceV2BothAlignLastDimSupport(const aclTensor *self, const aclInt
     return false;
 }
 
-static bool IsSliceV2AiCoreSupport(const aclTensor *self, const aclIntArray *offsets, const aclIntArray *size)
+static bool IsSliceV2AiCoreSupport(const aclTensor* self, const aclIntArray* offsets, const aclIntArray* size)
 {
     bool IsSupport = false;
     auto selfDimNum = self->GetViewShape().GetDimNum();
@@ -173,13 +169,13 @@ static bool IsSliceV2AiCoreSupport(const aclTensor *self, const aclIntArray *off
     return false;
 }
 
-const aclTensor *SliceV2AiCore(const aclTensor *x, const aclTensor *y, const aclTensor *offsets,
-    const aclTensor *size, aclOpExecutor *executor)
+const aclTensor* SliceV2AiCore(const aclTensor* x, const aclTensor* y, const aclTensor* offsets, const aclTensor* size,
+                               aclOpExecutor* executor)
 {
     L0_DFX(SliceV2AiCore, x, y, offsets, size);
     auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(SliceV2, OP_INPUT(x, offsets, size), OP_OUTPUT(y));
     OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(retAicore != ACLNN_SUCCESS, return nullptr,
-       "SliceV2 ADD_TO_LAUNCHER_LIST_AICORE failed.");
+                                         "SliceV2 ADD_TO_LAUNCHER_LIST_AICORE failed.");
     return y;
 }
 
@@ -194,28 +190,27 @@ static bool IsAiCoreSupport(const aclTensor* self)
     return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_ASCEND910);
 }
 
-const aclTensor* SliceAiCore(
-    const aclTensor* x, const aclTensor* y, const aclTensor* offset, const aclTensor* size, aclOpExecutor* executor)
+const aclTensor* SliceAiCore(const aclTensor* x, const aclTensor* y, const aclTensor* offset, const aclTensor* size,
+                             aclOpExecutor* executor)
 {
     L0_DFX(SliceAiCore, x, y, offset, size);
     ADD_TO_LAUNCHER_LIST_AICORE(Slice, OP_INPUT(x, offset, size), OP_OUTPUT(y));
     return y;
 }
 
-const aclTensor* SliceAiCpu(
-    const aclTensor* x, const aclTensor* y, const aclTensor* offset, const aclTensor* size, aclOpExecutor* executor)
+const aclTensor* SliceAiCpu(const aclTensor* x, const aclTensor* y, const aclTensor* offset, const aclTensor* size,
+                            aclOpExecutor* executor)
 {
     L0_DFX(SliceAiCpu, x, y, offset, size);
     static internal::AicpuTaskSpace space("Slice", ge::DEPEND_CONST_VALUE, true);
-    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(
-        Slice, OP_ATTR_NAMES({"T", "Index"}), OP_INPUT(x, offset, size), OP_OUTPUT(y),
-        OP_ATTR(x->GetDataType(), size->GetDataType()));
+    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Slice, OP_ATTR_NAMES({"T", "Index"}), OP_INPUT(x, offset, size), OP_OUTPUT(y),
+                                          OP_ATTR(x->GetDataType(), size->GetDataType()));
     CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
     return y;
 }
 
-const aclTensor* Slice(
-    const aclTensor* x, const aclTensor* y, const aclTensor* offset, const aclTensor* size, aclOpExecutor* executor)
+const aclTensor* Slice(const aclTensor* x, const aclTensor* y, const aclTensor* offset, const aclTensor* size,
+                       aclOpExecutor* executor)
 {
     if (IsAiCoreSupport(x)) {
         return SliceAiCore(x, y, offset, size, executor);
@@ -225,7 +220,7 @@ const aclTensor* Slice(
 
 const aclTensor* Slice(const aclTensor* x, const aclIntArray* offsets, const aclIntArray* size, aclOpExecutor* executor)
 {
-    auto out = executor->AllocTensor(x->GetDataType(), x->GetStorageFormat(), x->GetOriginalFormat());
+    auto out = executor->AllocTensor(x->GetDataType(), op::Format::FORMAT_ND, op::Format::FORMAT_ND);
     auto offsetTensor = executor->ConvertToTensor(offsets, ToOpDataType(ACL_INT64));
     auto sizeTensor = executor->ConvertToTensor(size, ToOpDataType(ACL_INT64));
     INFER_SHAPE(Slice, OP_INPUT(x, offsetTensor, sizeTensor), OP_OUTPUT(out), OP_EMPTY_ARG);
