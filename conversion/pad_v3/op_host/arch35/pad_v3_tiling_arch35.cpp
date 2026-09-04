@@ -181,6 +181,8 @@ void PadACTiling::DoFindSplitAxis(bool isBigLastDim)
 void PadACTiling::CalculateGatherOrScatter()
 {
     OP_LOGD(context_, "Start PadACTiling CalculateTilingKey CalculateGatherOrScatter.");
+    OP_CHECK_IF(dimNum_ == 0, OP_LOGE(context_, "dimNum must not be zero when choosing gather or scatter branch."),
+                return);
     uint8_t vlAxis = dimNum_ - 1;
     uint64_t dimSizeInVL = dtypeBytes_;
 
@@ -950,7 +952,8 @@ void PadACTiling::MergeZeroPadRun(uint16_t& fastDim, uint16_t originalRank, uint
 
 bool PadACTiling::IsUnitDimToDrop(uint64_t inShapeV, int64_t padFront, int64_t padBack)
 {
-    return inShapeV == 1 && (inShapeV + padFront + padBack) == 1;
+    const int64_t dimSize = static_cast<int64_t>(inShapeV);
+    return dimSize == 1 && (dimSize + padFront + padBack) == 1;
 }
 
 ge::graphStatus PadACTiling::DimensionCollapseMode()

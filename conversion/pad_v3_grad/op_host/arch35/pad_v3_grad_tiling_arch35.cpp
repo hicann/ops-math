@@ -612,7 +612,8 @@ void PadV3GradACTiling::FoldZeroPadDims(uint16_t& scanIdx, uint16_t rankLimit, u
 
 bool PadV3GradACTiling::IsUnitDimToDrop(uint64_t inShapeV, int64_t padFront, int64_t padBack)
 {
-    return inShapeV == 1 && (inShapeV + padFront + padBack) == 1;
+    const int64_t dimSize = static_cast<int64_t>(inShapeV);
+    return dimSize == 1 && (dimSize + padFront + padBack) == 1;
 }
 
 ge::graphStatus PadV3GradACTiling::DimensionCollapseMode()
