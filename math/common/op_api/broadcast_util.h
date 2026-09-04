@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -8,17 +8,21 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef OP_API_INC_LEVEL0_GREATER_EQUAL_H_
-#define OP_API_INC_LEVEL0_GREATER_EQUAL_H_
+/*!
+ * \file broadcast_util.h
+ * \brief Broadcast template non-contiguous tensor support utility
+ */
 
-#include "opdev/op_executor.h"
+#ifndef CANN_OPS_BUILT_IN_BROADCAST_UTIL_H_
+#define CANN_OPS_BUILT_IN_BROADCAST_UTIL_H_
 
-namespace l0op {
+#include <vector>
+#include "op_api/aclnn_check.h"
 
-const aclTensor* GreaterEqual(const aclTensor* self, const aclTensor* other, aclOpExecutor* executor);
+namespace op {
 
-// 判断tensor是否支持非连续
-bool IsGreaterEqualSupportNonContiguous(const aclTensor* self, const aclTensor* other, const op::Shape& outputShape);
-} // namespace l0op
+bool IsBroadcastTemplateNonContiguousSupport(const std::vector<const aclTensor*>& inputs, const op::Shape& outputShape);
 
-#endif // OP_API_INC_LEVEL0_GREATER_EQUAL_H_
+} // namespace op
+
+#endif // CANN_OPS_BUILT_IN_BROADCAST_UTIL_H_

@@ -203,7 +203,7 @@ TEST_F(RealDivTest, RealDiv_with_isScalar_false)
 TEST_F(RealDivTest, RealDiv_is_support_non_contiguous)
 {
     auto self = CreateAclTensor({2, 3}, ACL_FLOAT);
-    bool result = l0op::IsRealDivSupportNonContiguous(self);
+    bool result = l0op::IsRealDivSupportNonContiguous(self, nullptr, self->GetViewShape());
     // 返回值取决于平台，仅验证不崩溃
     (void)result;
 }

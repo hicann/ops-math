@@ -18,7 +18,7 @@ const aclTensor* RealDiv(const aclTensor* self, const aclTensor* other, aclOpExe
 const aclTensor* RealDivInplace(const aclTensor* self, const aclTensor* divisor, aclOpExecutor* executor);
 const aclTensor* RealDiv(const aclTensor* self, const aclTensor* other, const int mode, aclOpExecutor* executor);
 const aclTensor* RealDiv(const aclTensor* self, const aclTensor* other, bool isScalar, aclOpExecutor* executor);
-bool IsRealDivSupportNonContiguous(const aclTensor* self);
+bool IsRealDivSupportNonContiguous(const aclTensor* self, const aclTensor* other, const op::Shape& outputShape);
 } // namespace l0op
 
 #endif // PTA_NPU_OP_API_INC_LEVEL0_OP_REAL_DIV_OP_H_

@@ -944,6 +944,24 @@ function(check_compiled_ops)
       set(COMPILED_OPS ${COMPILED_OPS} ${_op_name} CACHE STRING "Compiled Ops" FORCE)
     endif()
   endforeach()
+
+  # 公共目录白名单，这些目录不是算子，不需要检查
+  set(COMMON_DIRS "common")
+
+  # 过滤掉公共目录，得到真正需要编译的算子列表
+  set(real_ops_to_compile)
+  foreach(op_name IN LISTS NEED_COMPILE_OPS)
+    if(NOT op_name IN_LIST COMMON_DIRS)
+      list(APPEND real_ops_to_compile ${op_name})
+    endif()
+  endforeach()
+
+  # 用户显式指定了算子但过滤后为空（即只指定了公共目录），无需检查算子编译结果，直接返回；
+  # 未指定算子（全量编译）时不提前返回，继续走 COMPILED_OPS 空时的 FATAL_ERROR 兜底
+  if(NEED_COMPILE_OPS AND NOT real_ops_to_compile)
+    return()
+  endif()
+
   message(STATUS "Ops for this compilation contains: ${COMPILED_OPS}")
   if(COMPILED_OPS STREQUAL "")
     message(FATAL_ERROR "Specified ops not found in this depository, please check --ops parameter")
@@ -956,7 +974,7 @@ function(check_compiled_ops)
 
   # 指定了但未参与编译的算子，即为无效算子名，应该报错
   set(not_compiled_ops)
-  foreach(op_name IN LISTS NEED_COMPILE_OPS)
+  foreach(op_name IN LISTS real_ops_to_compile)
     if(NOT op_name IN_LIST COMPILED_OPS)
       list(APPEND not_compiled_ops ${op_name})
     endif()

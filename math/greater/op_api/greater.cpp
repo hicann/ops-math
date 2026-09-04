@@ -7,7 +7,9 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#include <vector>
 #include "greater.h"
+#include "math/common/op_api/broadcast_util.h"
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/op_def.h"
@@ -61,36 +63,39 @@ static bool IsAiCoreSupport(const aclTensor* self)
 }
 
 // 判断tensor是否支持非连续
-bool IsGreaterSupportNonContiguous(const aclTensor* self) {
-  bool isSupportNonContiguous = IsRegBase();
-  return isSupportNonContiguous && IsAiCoreSupport(self);
+bool IsGreaterSupportNonContiguous(const aclTensor* self)
+{
+    if (!IsRegBase() || !IsAiCoreSupport(self)) {
+        return false;
+    }
+    bool supported = IsBroadcastTemplateNonContiguousSupport({self}, self->GetViewShape());
+    OP_LOGD("IsGreaterSupportNonContiguous: supported %d", supported);
+    return supported;
 }
 
 // AICORE算子kernel
-static const aclTensor* GreaterAiCore(
-    const aclTensor* self, const aclTensor* other, aclTensor* gtOut, aclOpExecutor* executor)
+static const aclTensor* GreaterAiCore(const aclTensor* self, const aclTensor* other, aclTensor* gtOut,
+                                      aclOpExecutor* executor)
 {
     L0_DFX(GreaterAiCore, self, other, gtOut);
     // 使用框架宏 ADD_TO_LAUNCHER_LIST_AICORE，将Greater算子加入任务队列
     auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Greater, OP_INPUT(self, other), OP_OUTPUT(gtOut));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "GreaterAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-        return nullptr);
+    OP_CHECK(ret == ACLNN_SUCCESS,
+             OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "GreaterAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."), return nullptr);
     return gtOut;
 }
 
 // AICPU算子kernel
-static const aclTensor* GreaterAiCpu(
-    const aclTensor* self, const aclTensor* other, aclTensor* gtOut, aclOpExecutor* executor)
+static const aclTensor* GreaterAiCpu(const aclTensor* self, const aclTensor* other, aclTensor* gtOut,
+                                     aclOpExecutor* executor)
 {
     L0_DFX(GreaterAiCpu, self, other);
 
     static internal::AicpuTaskSpace space("Greater");
     // 使用框架宏 ADD_TO_LAUNCHER_LIST_AICPU，将Greater算子加入任务队列
     auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Greater, OP_ATTR_NAMES(), OP_INPUT(self, other), OP_OUTPUT(gtOut));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "GreaterAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
-        return nullptr);
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "GreaterAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
+             return nullptr);
     return gtOut;
 }
 
@@ -98,9 +103,8 @@ const aclTensor* Greater(const aclTensor* self, const aclTensor* other, aclOpExe
 {
     op::Shape outShape;
     if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), outShape)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
-            op::ToString(other->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
+                op::ToString(other->GetViewShape()).GetString());
         return nullptr;
     }
 

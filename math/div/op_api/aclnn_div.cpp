@@ -486,6 +486,31 @@ static aclnnStatus HandleMixDataTypeDiv(const aclTensor* self, const aclTensor* 
     return ACLNN_SUCCESS;
 }
 
+static aclnnStatus CastDivInput(const aclTensor* input, op::DataType promoteType, aclOpExecutor* executor,
+                                const aclTensor*& processed)
+{
+    auto contiguous = l0op::Contiguous(input, executor);
+    CHECK_RET(contiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    processed = l0op::Cast(contiguous, promoteType, executor);
+    CHECK_RET(processed != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    return ACLNN_SUCCESS;
+}
+
+static aclnnStatus SelectDivInputByNC(bool ncSupported, const aclTensor* original, aclOpExecutor* executor,
+                                      const aclTensor*& processed)
+{
+    if (ncSupported) {
+        processed = executor->CreateView(original, original->GetViewShape(), original->GetStorageShape(),
+                                         original->GetViewStrides(), original->GetViewOffset());
+        CHECK_RET(processed != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    } else {
+        auto contiguous = l0op::Contiguous(original, executor);
+        CHECK_RET(contiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        processed = contiguous;
+    }
+    return ACLNN_SUCCESS;
+}
+
 static aclnnStatus HandleNotMixDataTypeDiv(const aclTensor* self, const aclTensor* other, aclOpExecutor* executor,
                                            const aclTensor** divOpOut)
 {
@@ -495,35 +520,39 @@ static aclnnStatus HandleNotMixDataTypeDiv(const aclTensor* self, const aclTenso
                            CompatibleInferDivDtype(self->GetDataType(), other->GetDataType()) :
                            InferDivModeDtype(self->GetDataType(), other->GetDataType(), MODE_REAL_DIV);
 
-    // 处理self输入
+    op::Shape broadcastShape;
+    if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape)) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
+                op::ToString(other->GetViewShape()).GetString());
+        return ACLNN_ERR_PARAM_INVALID;
+    }
+
+    const bool selfNeedsCast = self->GetDataType() != promoteType;
+    const bool otherNeedsCast = other->GetDataType() != promoteType;
     const aclTensor* selfProcessed = nullptr;
-    if (self->GetDataType() == promoteType && l0op::IsRealDivSupportNonContiguous(self)) {
-        selfProcessed = executor->CreateView(self, self->GetViewShape(), self->GetStorageShape(),
-                                             self->GetViewStrides(), self->GetViewOffset());
-    } else {
-        // 固定写法，将输入self转换成连续的tensor
-        auto selfContiguous = l0op::Contiguous(self, executor);
-        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-        // 将输入self的数据类型转换成隐式数据类型，根据具体算子语义按需调用
-        selfProcessed = l0op::Cast(selfContiguous, promoteType, executor);
+    if (selfNeedsCast) {
+        auto ret = CastDivInput(self, promoteType, executor, selfProcessed);
+        CHECK_RET(ret == ACLNN_SUCCESS, ret);
     }
-    CHECK_RET(selfProcessed != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    // 处理other输入
     const aclTensor* otherProcessed = nullptr;
-    if (other->GetDataType() == promoteType && l0op::IsRealDivSupportNonContiguous(other)) {
-        otherProcessed = executor->CreateView(other, other->GetViewShape(), other->GetStorageShape(),
-                                              other->GetViewStrides(), other->GetViewOffset());
-    } else {
-        // 固定写法，将输入other转换成连续的tensor
-        auto otherContiguous = l0op::Contiguous(other, executor);
-        CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-        // 将输入other的数据类型转换成隐式数据类型，根据具体算子语义按需调用
-        otherProcessed = l0op::Cast(otherContiguous, promoteType, executor);
+    if (otherNeedsCast) {
+        auto ret = CastDivInput(other, promoteType, executor, otherProcessed);
+        CHECK_RET(ret == ACLNN_SUCCESS, ret);
     }
-    CHECK_RET(otherProcessed != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    const aclTensor* selfForCheck = selfNeedsCast ? selfProcessed : self;
+    const aclTensor* otherForCheck = otherNeedsCast ? otherProcessed : other;
+    bool ncSupported = l0op::IsRealDivSupportNonContiguous(selfForCheck, otherForCheck, broadcastShape);
+
+    // 不需 Cast 的输入按门限结果选择非连续直通或转连续（需 Cast 的沿用 Cast 产物）
+    if (!selfNeedsCast) {
+        auto ret = SelectDivInputByNC(ncSupported, self, executor, selfProcessed);
+        CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    }
+    if (!otherNeedsCast) {
+        auto ret = SelectDivInputByNC(ncSupported, other, executor, otherProcessed);
+        CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    }
 
     // 调用l0算子RealDiv进行计算
     *divOpOut = l0op::RealDiv(selfProcessed, otherProcessed, MODE_REAL_DIV, executor);
@@ -728,7 +757,8 @@ aclnnStatus aclnnDivsGetWorkspaceSize(const aclTensor* self, const aclScalar* ot
         }
 
         bool canUseMuls = CanUseMuls(self, other);
-        if (self->GetDataType() == promoteType && l0op::IsRealDivSupportNonContiguous(self) && !canUseMuls) {
+        if (self->GetDataType() == promoteType &&
+            l0op::IsRealDivSupportNonContiguous(self, nullptr, self->GetViewShape()) && !canUseMuls) {
             // aclScalar转aclTensor
             auto otherConvert = uniqueExecutor.get()->ConvertToTensor(other, promoteType);
             CHECK_RET(otherConvert != nullptr, ACLNN_ERR_INNER_NULLPTR);

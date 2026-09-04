@@ -9,6 +9,7 @@
  */
 
 #include "realdiv.h"
+#include "math/common/op_api/broadcast_util.h"
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/op_def.h"
@@ -66,10 +67,21 @@ static bool is910BInt32Supported(const aclTensor* self, const aclTensor* other)
            self->GetDataType() == op::DataType::DT_INT32 && other->GetDataType() == op::DataType::DT_INT32;
 }
 
-bool IsRealDivSupportNonContiguous(const aclTensor* self)
+bool IsRealDivSupportNonContiguous(const aclTensor* self, const aclTensor* other, const op::Shape& outputShape)
 {
-    bool isSupportNonContiguous = IsRegBase();
-    return isSupportNonContiguous && IsAiCoreSupport(self);
+    if (!IsRegBase() || !IsAiCoreSupport(self)) {
+        return false;
+    }
+    // divs 标量路径（other 为 nullptr），已过 IsRegBase 与 IsAiCoreSupport 门限
+    if (other == nullptr) {
+        return true;
+    }
+    if (!IsAiCoreSupport(other)) {
+        return false;
+    }
+    // div 双 tensor 路径，走广播模板非连续门限
+    std::vector<const aclTensor*> inputs = {self, other};
+    return IsBroadcastTemplateNonContiguousSupport(inputs, outputShape);
 }
 
 // AICORE算子kernel
