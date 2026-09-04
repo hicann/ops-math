@@ -379,13 +379,6 @@ static aclnnStatus Check95NdToNzCalculateSizeAndFormatInputs(const aclTensor* sr
     if (IsFloat8E8m0NdToNn(srcDtype, additionalDtype, srcFormat, static_cast<op::Format>(dstFormat))) {
         return CheckFloat8E8m0NnShape(viewShape);
     }
-    for (size_t i = 0; i < viewShapeDim; i++) {
-        OP_CHECK(
-            viewShape.GetDim(i) != 0,
-            OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(ACLNN_NAME, "srcTensor", op::ToString(viewShape).GetString(),
-                                                  "srcTensor must not be empty tensor, each dimension must not be 0"),
-            return ACLNN_ERR_PARAM_INVALID);
-    }
     // check input shape
     if (additionalDtype != static_cast<int>(srcDtype)) {
         aclnnStatus ret = ValidateWeightQuantMatmulParams(srcDtype, additionalDtype, viewShapeDim, dstFormat);
@@ -553,13 +546,15 @@ static bool ValidNzShape(const aclTensor* srcTensor)
                  ACLNN_NAME, "srcTensor", std::to_string(srcStorageShapeDim).c_str(),
                  "The StorageShape dim of srcTensor must be between 4 and 8 for input tensor in Nz format"),
              return false);
-    // 校验输入Nz格式tensor不含有值为0的轴
-    for (uint64_t i = 0; i < srcStorageShapeDim; ++i) {
-        OP_CHECK(
-            srcStorageShape[i] != 0,
-            OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(ACLNN_NAME, "srcTensor", op::ToString(srcStorageShape).GetString(),
-                                                  "srcTensor cannot be empty, each axis of storageShape cannot be 0"),
-            return false);
+    // 非空tensor的NZ storageShape不允许含0；空tensor保留由逻辑shape推导出的0维
+    if (!srcTensor->IsEmpty()) {
+        for (uint64_t i = 0; i < srcStorageShapeDim; ++i) {
+            OP_CHECK(srcStorageShape[i] != 0,
+                     OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
+                         ACLNN_NAME, "srcTensor", op::ToString(srcStorageShape).GetString(),
+                         "Each axis of storageShape must not be 0 when srcTensor is not empty"),
+                     return false);
+        }
     }
     // c0需要和shape匹配
     int64_t c0 = static_cast<int64_t>(srcStorageShape.GetDim(srcStorageShapeDim - 1)); // 倒数第1维为Nz shape的C0轴
@@ -1294,6 +1289,38 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(const aclTensor* srcTensor, aclTe
     OP_CHECK(ret == ACLNN_SUCCESS,
              OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Failed to check aclnnNpuFormatCastGetWorkSpaceSizeInputs."),
              return ACLNN_ERR_PARAM_INVALID);
+
+    const bool isNdToNz = IsNzFormat(dstFormat) &&
+                          ((srcFormat == op::Format::FORMAT_ND || srcFormat == op::Format::FORMAT_NCL) ||
+                           (srcTensor->GetDataType() == dstTensor->GetDataType() &&
+                            CheckInputFormatSupportedToNz(srcFormat)));
+    const bool isNzToNd = IsNz2Nd(srcFormat, dstFormat);
+    if (IsRegBase() && srcTensor->IsEmpty() && (isNdToNz || isNzToNd)) {
+        OP_CHECK(dstTensor->IsEmpty(),
+                 OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(ACLNN_NAME, "dstTensor",
+                                                       op::ToString(dstTensor->GetViewShape()).GetString(),
+                                                       "dstTensor must be empty when srcTensor is empty"),
+                 return ACLNN_ERR_PARAM_INVALID);
+        OP_CHECK(
+            srcTensor->GetViewShape() == dstTensor->GetViewShape(),
+            OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(ACLNN_NAME, "srcTensor, dstTensor",
+                                                   std::string(op::ToString(srcTensor->GetViewShape()).GetString()) +
+                                                       ", " + op::ToString(dstTensor->GetViewShape()).GetString(),
+                                                   "srcTensor and dstTensor must have the same view shape"),
+            return ACLNN_ERR_PARAM_INVALID);
+        const aclTensor* nzTensor = isNdToNz ? dstTensor : srcTensor;
+        const aclTensor* ndTensor = isNdToNz ? srcTensor : dstTensor;
+        OP_CHECK(ValidNzShape(nzTensor),
+                 OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The storage shape of empty Nz tensor is invalid."),
+                 return ACLNN_ERR_PARAM_INVALID);
+        OP_CHECK(ValidNz2NdShape(nzTensor, ndTensor),
+                 OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                         "The storage shape of empty Nz tensor does not match the view shape of empty ND tensor."),
+                 return ACLNN_ERR_PARAM_INVALID);
+        *workspaceSize = 0;
+        uniqueExecutor.ReleaseTo(executor);
+        return ACLNN_SUCCESS;
+    }
 
     aclTensor* formatTensor;
     if (IsRegBase()) {
