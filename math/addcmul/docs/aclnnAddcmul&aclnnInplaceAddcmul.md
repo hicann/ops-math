@@ -746,7 +746,7 @@ int main() {
   void* selfDeviceAddr = nullptr;
   void* tensor1DeviceAddr = nullptr;
   void* tensor2DeviceAddr = nullptr;
-  aclTensor* self = nullptr;
+  aclTensor* selfRef = nullptr;
   aclTensor* tensor1 = nullptr;
   aclTensor* tensor2 = nullptr;
   aclScalar* value = nullptr;

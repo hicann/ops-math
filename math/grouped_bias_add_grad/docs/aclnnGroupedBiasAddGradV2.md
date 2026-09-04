@@ -34,7 +34,7 @@ $$
 &emsp;&emsp;(2)有可选输入groupIdxOptional，且groupIdxType为1时：
 
 $$
-groupIdx(i) = \sum_{i=0}^{j} groupIdxOptional(j), j=0...G
+groupIdx(j) = \sum_{i=0}^{j} groupIdxOptional(i), j=0,...,G-1
 $$
 
 $$

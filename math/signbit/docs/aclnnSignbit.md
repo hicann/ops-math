@@ -296,12 +296,12 @@ int main() {
   aclTensor* self = nullptr;
   aclTensor* out = nullptr;
   std::vector<double> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
-  std::vector<double> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
+  std::vector<uint8_t> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
   // 创建self aclTensor
   ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_DOUBLE, &self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
   // 创建out aclTensor
-  ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_DOUBLE, &out);
+  ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_BOOL, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   // 3.调用CANN算子库API

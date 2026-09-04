@@ -650,7 +650,7 @@ int main() {
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnInplaceBitwiseOrTensor第一段接口
-  ret = aclnnInplaceBitwiseOrTensorGetWorkspaceSize(self, other,&workspaceSize, &executor);
+  ret = aclnnInplaceBitwiseOrTensorGetWorkspaceSize(self, other, &workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceBitwiseOrTensorGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
   // 根据第一段接口计算出的workspaceSize申请device内存
   void* workspaceAddr = nullptr;

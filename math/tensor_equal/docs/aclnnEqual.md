@@ -287,8 +287,8 @@ int CreateAclTensor(
 
   // 调用aclCreateTensor接口创建aclTensor
   *tensor = aclCreateTensor(
-      shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
-      *deviceAddr);
+      shape.data(), shape.size(), dataType, strides.data(), shape.size(), aclFormat::ACL_FORMAT_ND, shape.data(),
+      shape.size(), *deviceAddr);
   return 0;
 }
 

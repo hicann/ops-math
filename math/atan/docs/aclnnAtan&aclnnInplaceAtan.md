@@ -40,7 +40,7 @@
   - aclnnInplaceAtan：无需新建输出张量对象，直接在输入张量的内存中存储计算结果。
 - 每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnAtanGetWorkspaceSize”或者“aclnnInplaceAtanGetWorkspaceSize”接口获取入参并根据计算流程计算所需workspace大小，再调用“aclnnAtan”或者“aclnnInplaceAtan”接口执行计算。
 
-```Cpp
+```cpp
 aclnnStatus aclnnAtanGetWorkspaceSize(
   const aclTensor *input,
   aclTensor       *out,
@@ -48,7 +48,7 @@ aclnnStatus aclnnAtanGetWorkspaceSize(
   aclOpExecutor  **executor)
 ```
 
-```Cpp
+```cpp
 aclnnStatus aclnnAtan(
   void             *workspace,
   uint64_t          workspaceSize,
@@ -56,14 +56,14 @@ aclnnStatus aclnnAtan(
   const aclrtStream stream)
 ```
 
-```Cpp
+```cpp
 aclnnStatus aclnnInplaceAtanGetWorkspaceSize(
   aclTensor     *inputRef,
   uint64_t      *workspaceSize,
   aclOpExecutor **executor)
 ```
 
-```Cpp
+```cpp
 aclnnStatus aclnnInplaceAtan(
   void             *workspace,
   uint64_t          workspaceSize,
@@ -378,7 +378,7 @@ aclnnStatus aclnnInplaceAtan(
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
-```Cpp
+```cpp
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"

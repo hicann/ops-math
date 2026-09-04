@@ -628,7 +628,7 @@ int main() {
     LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
   }
 
-  // 6.释放aclTensor，需要根据具体API的接口定义
+  // 6.释放aclTensor，需要根据具体API的接口定义修改
   aclDestroyTensor(selfRef);
 
   // 7.释放device资源，需要根据具体API的接口定义修改

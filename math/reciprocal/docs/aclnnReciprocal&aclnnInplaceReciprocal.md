@@ -35,7 +35,7 @@ $$
 
 - 示例：
 
-  input = tensor([1,2,3,4])，经过reciprocal计算后，out = tensor([1.00, 0.50, 0.33, 0.25])
+  input = tensor([1,2,3,4]), 经过reciprocal计算后, out = tensor([1.00, 0.50, 0.33, 0.25])
 
 ## 函数原型
 
