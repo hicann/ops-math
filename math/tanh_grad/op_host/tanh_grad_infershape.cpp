@@ -15,10 +15,10 @@
 using namespace ge;
 namespace ops {
 
-static ge::graphStatus InferShape4GreaterEqual(gert::InferShapeContext* context)
+static ge::graphStatus InferShape4TanhGrad(gert::InferShapeContext* context)
 {
-    OP_LOGI("Begin InferShape4GreaterEqual");
+    OP_LOGI("Begin InferShape4TanhGrad");
     return Ops::Base::InferShape4Broadcast(context);
 }
-IMPL_OP_INFERSHAPE(TanhGrad).InferShape(InferShape4GreaterEqual);
+IMPL_OP_INFERSHAPE(TanhGrad).InferShape(InferShape4TanhGrad);
 } // namespace ops

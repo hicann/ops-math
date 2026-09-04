@@ -82,7 +82,7 @@ inline static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other
         (self->GetDataType() == op::DataType::DT_BF16 || other->GetDataType() == op::DataType::DT_BF16 ||
          out->GetDataType() == op::DataType::DT_BF16)) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "Input dtype of aclnnLogicalOr is not support bfloat16 in current socversion.");
+                "Input dtype of aclnnLogicalOr is not support bfloat16 in current SoC version.");
         return false;
     }
 
@@ -147,7 +147,7 @@ static aclnnStatus GetWorkspaceSizeCommon(const aclTensor* self, const aclTensor
     }
 
     if (self->GetStorageFormat() != Format::FORMAT_ND) {
-        OP_LOGW("Format only support ND");
+        OP_LOGW("Format only supports ND");
     }
 
     // 将输入self转换成连续的tensor
