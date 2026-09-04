@@ -14,10 +14,8 @@
  */
 #include "register/op_def_registry.h"
 
-namespace ops
-{
-class BitwiseAnd : public OpDef
-{
+namespace ops {
+class BitwiseAnd : public OpDef {
 public:
     explicit BitwiseAnd(const char* name) : OpDef(name)
     {
@@ -45,8 +43,9 @@ public:
             .PrecisionReduceFlag(true)
             .ExtendCfgInfo("opFile.value", "bitwise_and_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend350", aicoreConfig);
     }
 };
 
 OP_ADD(BitwiseAnd);
-}  // namespace ops
+} // namespace ops

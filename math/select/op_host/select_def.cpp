@@ -21,47 +21,36 @@ static const std::vector<ge::DataType> conditionType = {ge::DT_BOOL, ge::DT_BOOL
                                                         ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL};
 
 static const std::vector<ge::DataType> dataType = {ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT32,
-                                                   ge::DT_INT8, ge::DT_UINT8, ge::DT_INT64, ge::DT_BOOL};
+                                                   ge::DT_INT8, ge::DT_UINT8,   ge::DT_INT64, ge::DT_BOOL};
 
 static const std::vector<ge::Format> baseFormat = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
                                                    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
 
 class Select : public OpDef {
-    public:
-        explicit Select(const char* name) : OpDef(name)
-        {
-            this->Input("condition")
-                .ParamType(REQUIRED)
-                .DataType(conditionType)
-                .Format(baseFormat)
-                .UnknownShapeFormat(baseFormat);
-            this->Input("x1")
-                .ParamType(REQUIRED)
-                .DataType(dataType)
-                .Format(baseFormat)
-                .UnknownShapeFormat(baseFormat);
-            this->Input("x2")
-                .ParamType(REQUIRED)
-                .DataType(dataType)
-                .Format(baseFormat)
-                .UnknownShapeFormat(baseFormat);
-            this->Output("y")
-                .ParamType(REQUIRED)
-                .DataType(dataType)
-                .Format(baseFormat)
-                .UnknownShapeFormat(baseFormat);
+public:
+    explicit Select(const char* name) : OpDef(name)
+    {
+        this->Input("condition")
+            .ParamType(REQUIRED)
+            .DataType(conditionType)
+            .Format(baseFormat)
+            .UnknownShapeFormat(baseFormat);
+        this->Input("x1").ParamType(REQUIRED).DataType(dataType).Format(baseFormat).UnknownShapeFormat(baseFormat);
+        this->Input("x2").ParamType(REQUIRED).DataType(dataType).Format(baseFormat).UnknownShapeFormat(baseFormat);
+        this->Output("y").ParamType(REQUIRED).DataType(dataType).Format(baseFormat).UnknownShapeFormat(baseFormat);
 
-            OpAICoreConfig aicoreConfig;
-            aicoreConfig.DynamicCompileStaticFlag(true)
-                .DynamicFormatFlag(false)
-                .DynamicRankSupportFlag(true)
-                .DynamicShapeSupportFlag(true)
-                .NeedCheckSupportFlag(false)
-                .PrecisionReduceFlag(true)
-                .ExtendCfgInfo("opFile.value", "select_apt");
-            this->AICore().AddConfig("ascend950", aicoreConfig);
-        }
+        OpAICoreConfig aicoreConfig;
+        aicoreConfig.DynamicCompileStaticFlag(true)
+            .DynamicFormatFlag(false)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .NeedCheckSupportFlag(false)
+            .PrecisionReduceFlag(true)
+            .ExtendCfgInfo("opFile.value", "select_apt");
+        this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend350", aicoreConfig);
+    }
 };
 
 OP_ADD(Select);
-}  // namespace ops
+} // namespace ops

@@ -15,7 +15,7 @@ add_all_modules_sources(OPTYPE add ACLNNTYPE aclnn_exclude COMPUTE_UNIT ${SUPPOR
 
 add_kernel_sources(
     KERNEL_SRC arch35/add.cpp
-    COMPUTE_UNITS ascend950
+    COMPUTE_UNITS ascend950 ascend350
     AUTO_SYNC false
     OPTIONS "--cce-simd-vf-fusion=true" "-mllvm -cce-aicore-dcci-before-kernel-end=false"
 )

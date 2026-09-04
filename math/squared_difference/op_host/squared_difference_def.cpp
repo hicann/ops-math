@@ -16,14 +16,14 @@
 
 namespace ops {
 
-static const std::vector<ge::DataType> inputDataType = {
-    ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT32, ge::DT_INT64};
+static const std::vector<ge::DataType> inputDataType = {ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT32,
+                                                        ge::DT_INT64};
 
-static const std::vector<ge::DataType> outputDataType = {
-    ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT32, ge::DT_INT64};
+static const std::vector<ge::DataType> outputDataType = {ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT32,
+                                                         ge::DT_INT64};
 
-static const std::vector<ge::Format> format = {
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+static const std::vector<ge::Format> format = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                               ge::FORMAT_ND};
 
 class SquaredDifference : public OpDef {
 public:
@@ -44,6 +44,7 @@ public:
             .PrecisionReduceFlag(true)
             .ExtendCfgInfo("opFile.value", "squared_difference_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend350", aicoreConfig);
     }
 };
 

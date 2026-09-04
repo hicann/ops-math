@@ -11,7 +11,7 @@
 # Global config: variables, paths, utility functions shared across all build scripts.
 
 RELEASE_TARGETS=("ophost" "opapi" "opgraph" "opkernel" "opkernel_aicpu" "onnxplugin" "tfplugin")
-SUPPORT_COMPUTE_UNIT_SHORT=("ascend910b" "ascend910_93" "ascend950" "ascend310p" "ascend910" "ascend310b" "ascend630" "ascend610lite" "ascend031" "ascend035" "kirinx90" "kirin9030" "mc62")
+SUPPORT_COMPUTE_UNIT_SHORT=("ascend910b" "ascend910_93" "ascend350" "ascend950" "ascend310p" "ascend910" "ascend310b" "ascend630" "ascend610lite" "ascend031" "ascend035" "kirinx90" "kirin9030" "mc62")
 SUPPORTED_SHORT_OPTS="hj:vO:uf:-:"
 
 SUPPORTED_LONG_OPTS=(
