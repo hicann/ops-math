@@ -146,6 +146,11 @@ __aicore__ inline void SplitVPureCopyMode<T, S>::Init(GM_ADDR x, GM_ADDR y, GM_A
     event_t eventID1 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_S));
     SetFlag<HardEvent::V_S>(eventID1);
     WaitFlag<HardEvent::V_S>(eventID1);
+    if (tilingData_->negIdx != -1) {
+        uint32_t index = static_cast<uint32_t>(tilingData_->negIdx);
+        int64_t value = tilingData_->negValue * tilingData_->sizeAfterSplitDim;
+        splitOffsetLocal_.SetValue(index, value);
+    }
     prefixBlock_ = tilingData_->nBlockSplitPrefixStart[blockIdx_];
     prefixBlockBefore_ = tilingData_->nBlockSplitOffset[blockIdx_] > 0 ?
                              tilingData_->nBlockSplitPrefixStart[blockIdx_] -
