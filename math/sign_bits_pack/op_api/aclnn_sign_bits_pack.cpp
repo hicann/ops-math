@@ -120,17 +120,9 @@ static bool CheckValue(const aclTensor* self, int64_t size, const aclTensor* out
         return false;
     }
 
-    for (size_t i = 0; i < out->GetViewShape().GetDimNum(); i++) {
-        if (out->GetViewShape().GetDim(i) < 0) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Dim value of out is negative.");
-            return false;
-        }
-    }
-
     int64_t selfDim = self->GetViewShape().GetDim(0);
     if (selfDim < 0) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Dim value of self is negative.");
-        return false;
+        return true;
     }
 
     int64_t ysize = (selfDim + 7) / 8;
@@ -140,9 +132,22 @@ static bool CheckValue(const aclTensor* self, int64_t size, const aclTensor* out
     }
 
     int64_t outDimOneNum = out->GetViewShape().GetDim(0);
+    if (outDimOneNum < 0) {
+        return true;
+    }
     if (size != outDimOneNum) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID,
                 "The value of the first dimension of 'out' is incorrect and should be equal to size.");
+        return false;
+    }
+
+    int64_t outDimTwoNum = out->GetViewShape().GetDim(1);
+    if (outDimTwoNum < 0) {
+        return true;
+    }
+    if (ysize / size != outDimTwoNum) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "The value of the second dimension of 'out' is incorrect and should be equal to ceil(N/8)/size.");
         return false;
     }
     return true;
@@ -159,11 +164,11 @@ static aclnnStatus CheckParams(const aclTensor* self, int64_t size, aclTensor* o
     // 检查数据格式是否支持
     CHECK_RET(CheckFormat(self, out), ACLNN_ERR_PARAM_INVALID);
 
-    // 检查参数值是否合法
-    CHECK_RET(CheckValue(self, size, out), ACLNN_ERR_PARAM_INVALID);
-
     // 检查数据维度是否合法
     CHECK_RET(CheckShape(self, out), ACLNN_ERR_PARAM_INVALID);
+
+    // 检查参数值是否合法
+    CHECK_RET(CheckValue(self, size, out), ACLNN_ERR_PARAM_INVALID);
 
     return ACLNN_SUCCESS;
 }

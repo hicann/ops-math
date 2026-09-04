@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ extern "C" {
  * 算子功能：将float16类型或者float32类型的1位Adam打包为uint8。
  *
  * @param [in] self:
- * device侧的aclTensor，数据类型支持FLOAT、FLOAT16L。数据格式支持ND。
+ * device侧的aclTensor，数据类型支持FLOAT、FLOAT16。数据格式支持ND。
  * 支持非连续的Tensor。
  * @param [in] size: reshape时输出张量的第一个维度， 数据类型支持INT64。
  * @param [in] out: device侧的aclTensor，数据类型UINT8。数据格式支持ND.
@@ -38,7 +38,7 @@ ACLNN_API aclnnStatus aclnnSignBitsPackGetWorkspaceSize(const aclTensor* self, i
 /**
  * @brief aclnnSignBitsPack的第二段接口，用于执行计算。
  * @param [in] workspace: 在npu device侧申请的workspace内存起址。
- * @param [in] workspaceSize: 在npu device侧申请的workspace大小，由第一段接口aclnnAminGetWorkspaceSize获取。
+ * @param [in] workspaceSize: 在npu device侧申请的workspace大小，由第一段接口aclnnSignBitsPackGetWorkspaceSize获取。
  * @param [in] executor: op执行器，包含了算子计算流程。
  * @param [in] stream: acl stream流。
  * @return aclnnStatus: 返回状态码。

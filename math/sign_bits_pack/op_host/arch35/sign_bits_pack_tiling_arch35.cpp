@@ -126,7 +126,7 @@ static ge::graphStatus TilingFuncSignBitsPack(gert::TilingContext* context)
         OP_LOGE(kOpName, "SetTilingKey(1) failed");
         return ge::GRAPH_FAILED;
     }
-    context->SetBlockDim(static_cast<uint32_t>(coreNum));
+    context->SetBlockDim(static_cast<uint32_t>(td->realCoreNum));
 
     OP_LOGI(kOpName, "n=%ld, size=%ld, dtype=%d, coreNum=%lu, packedLen=%ld, realCoreNum=%u", static_cast<long>(n),
             static_cast<long>(sizeAttr), static_cast<int>(dtype), static_cast<unsigned long>(coreNum),

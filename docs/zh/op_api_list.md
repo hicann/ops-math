@@ -278,7 +278,7 @@
 | [aclnnSearchSorteds](../../math/search_sorted/docs/aclnnSearchSorteds.md) | 在一个已排序的一维张量（sortedSequence）中查找给定Scalar值（self）应该插入的位置。 | 默认确定性实现| - |
 | [aclnnSign](../../math/sign/docs/aclnnSign.md)                  | 对输入的tensor逐元素进行Sign符号函数的运算并输出结果tensor。 | 默认确定性实现| 默认确定性实现|
 | [aclnnSignbit](../../math/signbit/docs/aclnnSignbit.md)            | 判断输入中的每个元素符号位是否为1，返回一个tensor。 | 默认确定性实现| 默认确定性实现 |
-| [aclnnSignBitsPack](../../math/sign_bits_pack/docs/aclnnSignBitsPack.md) | 将float16类型或者float32类型的1位Adam打包为uint8。           | 默认确定性实现| - |
+| [aclnnSignBitsPack](../../math/sign_bits_pack/docs/aclnnSignBitsPack.md) | 将float16类型或者float32类型的1位Adam打包为uint8。           | 默认确定性实现| 默认确定性实现 |
 | [aclnnSignBitsUnpack](../../math/sign_bits_unpack/docs/aclnnSignBitsUnpack.md) | 将uint8类型1位Adam拆包为float32或者float16。                 | 默认确定性实现| 默认确定性实现 |
 | [aclnnSilentCheck](../../math/silent_check/docs/aclnnSilentCheck.md) | SilentCheckV2算子功能主要根据输入特征值（val），与绝对阈值、相对阈值比较，来识别是否触发静默检测故障。 | 默认确定性实现| - |
 | [aclnnSilentCheckV2](../../math/silent_check_v2/docs/aclnnSilentCheckV2.md) | 根据stepRef参数与马尔可夫不等式阈值来识别是否触发静默检测故障。 | 默认确定性实现| - |

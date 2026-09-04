@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -23,12 +23,12 @@ const aclTensor* SignBitsPack(const aclTensor* self, int64_t size, aclOpExecutor
     L0_DFX(SignBitsPack, self, size);
 
     int64_t selfDimOne = self->GetViewShape().GetDim(0);
-    int64_t outDimTwo = 0;
 
     auto ysize = (selfDimOne + 7) / 8;
-    if (size != 0) {
-        outDimTwo = ysize / size;
+    if (size <= 0 || ysize % size != 0) {
+        return nullptr;
     }
+    int64_t outDimTwo = ysize / size;
 
     op::Shape outShape;
     outShape.SetDimNum(OUT_DIM);
