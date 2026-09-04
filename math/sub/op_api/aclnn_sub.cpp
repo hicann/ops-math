@@ -171,10 +171,7 @@ static inline float GetCastedFloat(const op::DataType tensorDtype, const aclScal
     return castedRes;
 }
 
-static inline bool IsFloatEqual(float a, float b)
-{
-    return std::abs(a - b) <= std::numeric_limits<float>::epsilon();
-}
+static inline bool IsFloatEqual(float a, float b) { return std::abs(a - b) <= std::numeric_limits<float>::epsilon(); }
 
 static inline bool IsEqualToOne(const op::DataType calcType, const aclScalar* alpha)
 {
@@ -191,23 +188,20 @@ static inline bool IsEqualToOne(const op::DataType calcType, const aclScalar* al
     return !(alpha->ToFloat() > 1 || alpha->ToFloat() < 1);
 }
 
-static bool CheckPromoteType(
-    const op::DataType selfDtype, const op::DataType otherDtype, const aclScalar* alpha, const op::DataType outDtype,
-    op::DataType promoteType)
+static bool CheckPromoteType(const op::DataType selfDtype, const op::DataType otherDtype, const aclScalar* alpha,
+                             const op::DataType outDtype, op::DataType promoteType)
 {
     // 检查self和other能否做数据类型推导
     if (promoteType == DataType::DT_UNDEFINED) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
-            op::ToString(selfDtype).GetString(), op::ToString(otherDtype).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
+                op::ToString(selfDtype).GetString(), op::ToString(otherDtype).GetString());
         return false;
     }
     if (promoteType == op::DataType::DT_BOOL) {
         OP_CHECK(
             IsIntegralType(DataType(alpha->GetDataType()), true),
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "Alpha dtype %s can't be cast to the promote dtype %s.",
-                op::ToString(DataType(alpha->GetDataType())).GetString(), op::ToString(promoteType).GetString()),
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Alpha dtype %s can't be cast to the promote dtype %s.",
+                    op::ToString(DataType(alpha->GetDataType())).GetString(), op::ToString(promoteType).GetString()),
             return false);
     } else {
         OP_CHECK_RESULT_DTYPE_CAST_FAILED(DataType(alpha->GetDataType()), promoteType, return false);
@@ -217,11 +211,10 @@ static bool CheckPromoteType(
         OP_CHECK_RESULT_DTYPE_CAST_FAILED(otherDtype, promoteType, return false);
         const auto& supportList = GetDtypeSupportListBySocVersion();
         if (!CheckType(promoteType, supportList)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID,
-                "Input dtype %s is not implemented, it"
-                "should be in dtype support list %s.",
-                ToString(promoteType).GetString(), op::ToString(supportList).GetString());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                    "Input dtype %s is not implemented, it "
+                    "should be in dtype support list %s.",
+                    ToString(promoteType).GetString(), op::ToString(supportList).GetString());
             return false;
         }
     }
@@ -240,8 +233,8 @@ static bool CheckShape(const aclTensor* self, const aclTensor* other, const aclT
     return true;
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* self, const aclTensor* other, const aclScalar* alpha, const aclTensor* out)
+static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other, const aclScalar* alpha,
+                               const aclTensor* out)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, other, alpha, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -253,9 +246,8 @@ static aclnnStatus CheckParams(
 
     // 3. 检查self和other能否做数据类型推导以及推导的数据类型能否转换为输出数据类型
     op::DataType promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
-    CHECK_RET(
-        CheckPromoteType(self->GetDataType(), other->GetDataType(), alpha, out->GetDataType(), promoteType),
-        ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckPromoteType(self->GetDataType(), other->GetDataType(), alpha, out->GetDataType(), promoteType),
+              ACLNN_ERR_PARAM_INVALID);
 
     // 4. 检查双输入是否能broadcast
     CHECK_RET(CheckShape(self, other, out), ACLNN_ERR_PARAM_INVALID);
@@ -279,24 +271,25 @@ static bool UseAxpyV2(const DataType promoteType, [[maybe_unused]] const aclScal
     return false;
 }
 
-static void CheckFormat(const aclTensor* self, const aclTensor* other){
-  ge::Format selfStorageFormat = self->GetStorageFormat();
-  ge::Format otherStorageFormat = other->GetStorageFormat();
-  if (selfStorageFormat != ge::Format::FORMAT_ND || otherStorageFormat != ge::Format::FORMAT_ND){
-    OP_LOGW("aclnnSub/aclnnInplaceSub only support format ND.");
-  }
+static void CheckFormat(const aclTensor* self, const aclTensor* other)
+{
+    ge::Format selfStorageFormat = self->GetStorageFormat();
+    ge::Format otherStorageFormat = other->GetStorageFormat();
+    if (selfStorageFormat != ge::Format::FORMAT_ND || otherStorageFormat != ge::Format::FORMAT_ND) {
+        OP_LOGW("aclnnSub/aclnnInplaceSub only supports format ND.");
+    }
 }
 
-static void SubsCheckFormat(const aclTensor* self) {
+static void SubsCheckFormat(const aclTensor* self)
+{
     ge::Format selfStorageFormat = self->GetStorageFormat();
     if (selfStorageFormat == ge::Format::FORMAT_FRACTAL_NZ) {
         OP_LOGW("aclnnSubs/aclnnInplaceSubs doesn't support format NZ.");
     }
 }
 
-aclnnStatus aclnnSubGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, const aclScalar* alpha, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnSubGetWorkspaceSize(const aclTensor* self, const aclTensor* other, const aclScalar* alpha,
+                                     aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnSub, DFX_IN(self, other, alpha), DFX_OUT(out));
 
@@ -320,8 +313,7 @@ aclnnStatus aclnnSubGetWorkspaceSize(
     }
     // 混合数据类型场景类型推导，且alpha不为1时需进一步做数据类型提升
     auto promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
-    if (!IsRegBase() && (alpha->ToFloat() > 1 || alpha->ToFloat() < 1) &&
-        IsFloatingType(promoteType)) {
+    if (!IsRegBase() && (alpha->ToFloat() > 1 || alpha->ToFloat() < 1) && IsFloatingType(promoteType)) {
         promoteType = promoteType == DataType::DT_DOUBLE ? DataType::DT_DOUBLE : DataType::DT_FLOAT;
     }
 
@@ -375,8 +367,8 @@ aclnnStatus aclnnSubGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-static bool CheckNotNullScalar(
-    const aclTensor* self, const aclScalar* other, const aclScalar* alpha, const aclTensor* out)
+static bool CheckNotNullScalar(const aclTensor* self, const aclScalar* other, const aclScalar* alpha,
+                               const aclTensor* out)
 {
     OP_CHECK_NULL(self, return false);
     OP_CHECK_NULL(other, return false);
@@ -392,8 +384,8 @@ static bool CheckShapeScalar(const aclTensor* self, const aclTensor* out)
     return true;
 }
 
-static DataType PromoteTypeScalar(
-    const aclTensor* self, const aclScalar* other, const aclScalar* alpha, const aclTensor* out)
+static DataType PromoteTypeScalar(const aclTensor* self, const aclScalar* other, const aclScalar* alpha,
+                                  const aclTensor* out)
 {
     if (IsRegBase()) {
         auto otherDefaultDtype = GetScalarDefaultDtype(other->GetDataType());
@@ -427,8 +419,8 @@ static DataType PromoteTypeScalar(
     return self->GetDataType();
 }
 
-static aclnnStatus CheckParamsScalar(
-    const aclTensor* self, const aclScalar* other, const aclScalar* alpha, const aclTensor* out)
+static aclnnStatus CheckParamsScalar(const aclTensor* self, const aclScalar* other, const aclScalar* alpha,
+                                     const aclTensor* out)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNullScalar(self, other, alpha, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -439,9 +431,8 @@ static aclnnStatus CheckParamsScalar(
 
     // 3. 检查self和other能否做数据类型推导以及推导的数据类型能否转换为输出数据类型
     auto promoteType = PromoteTypeScalar(self, other, alpha, out);
-    CHECK_RET(
-        CheckPromoteType(self->GetDataType(), other->GetDataType(), alpha, out->GetDataType(), promoteType),
-        ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckPromoteType(self->GetDataType(), other->GetDataType(), alpha, out->GetDataType(), promoteType),
+              ACLNN_ERR_PARAM_INVALID);
 
     // 4. 检查shape
     CHECK_RET(CheckShapeScalar(self, out), ACLNN_ERR_PARAM_INVALID);
@@ -449,9 +440,8 @@ static aclnnStatus CheckParamsScalar(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnSubsGetWorkspaceSize(
-    const aclTensor* self, const aclScalar* other, const aclScalar* alpha, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnSubsGetWorkspaceSize(const aclTensor* self, const aclScalar* other, const aclScalar* alpha,
+                                      aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnSubs, DFX_IN(self, other, alpha), DFX_OUT(out));
 
@@ -532,9 +522,8 @@ static inline aclnnStatus CheckInplace(const aclTensor* selfRef, const aclTensor
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceSubGetWorkspaceSize(
-    aclTensor* selfRef, const aclTensor* other, const aclScalar* alpha, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnInplaceSubGetWorkspaceSize(aclTensor* selfRef, const aclTensor* other, const aclScalar* alpha,
+                                            uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     // 固定写法，参数检查
     auto ret = CheckInplace(selfRef, other);
@@ -543,9 +532,8 @@ aclnnStatus aclnnInplaceSubGetWorkspaceSize(
     return aclnnSubGetWorkspaceSize(selfRef, other, alpha, selfRef, workspaceSize, executor);
 }
 
-aclnnStatus aclnnInplaceSubsGetWorkspaceSize(
-    aclTensor* selfRef, const aclScalar* other, const aclScalar* alpha, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnInplaceSubsGetWorkspaceSize(aclTensor* selfRef, const aclScalar* other, const aclScalar* alpha,
+                                             uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     return aclnnSubsGetWorkspaceSize(selfRef, other, alpha, selfRef, workspaceSize, executor);
 }
