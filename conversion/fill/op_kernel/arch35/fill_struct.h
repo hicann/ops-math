@@ -13,10 +13,10 @@
  * \brief
  */
 
-#include "ascendc/host_api/tiling/template_argument.h"
-
 #ifndef CANN_CUSTOM_OPS_FILL_STRUCT_H_
 #define CANN_CUSTOM_OPS_FILL_STRUCT_H_
+
+#include "ascendc/host_api/tiling/template_argument.h"
 
 namespace FillOp {
 #define TPL_FP16 1
