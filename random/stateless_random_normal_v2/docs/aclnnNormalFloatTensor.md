@@ -90,7 +90,7 @@ aclnnStatus aclnnNormalFloatTensor(
       <td>std</td>
       <td>输入</td>
       <td>生成随机数分布标准差的张量，Device侧的aclTensor。</td>
-      <td>不支持空tensor。</td>
+      <td>不支持空tensor，且每个元素的值必须大于等于0。</td>
       <td>BF16、FLOAT16、FLOAT、DOUBLE</td>
       <td>ND</td>
       <td>0-8</td>
@@ -173,8 +173,8 @@ aclnnStatus aclnnNormalFloatTensor(
       <td>传入的std或者out为空指针。</td>
     </tr>
     <tr>
-      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="3">161002</td>
+      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="4">161002</td>
       <td>传入的std或者out的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
@@ -182,6 +182,9 @@ aclnnStatus aclnnNormalFloatTensor(
     </tr>
     <tr>
       <td>传入的std或者out的shape超过8维。</td>
+    </tr>
+    <tr>
+      <td>传入的std存在小于0的元素。</td>
     </tr>
   </tbody>
   </table>

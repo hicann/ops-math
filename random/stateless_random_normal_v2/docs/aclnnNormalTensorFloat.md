@@ -89,7 +89,7 @@ aclnnStatus aclnnNormalTensorFloat(
     <tr>
       <td>std</td>
       <td>输入</td>
-      <td>生成随机数分布的标准差。</td>
+      <td>生成随机数分布的标准差，值必须大于等于0。</td>
       <td>-</td>
       <td>FLOAT</td>
       <td>ND</td>
@@ -173,8 +173,8 @@ aclnnStatus aclnnNormalTensorFloat(
       <td>传入的mean或者out为空指针。</td>
     </tr>
     <tr>
-      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="4">161002</td>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
       <td>传入的mean和out的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
@@ -185,6 +185,9 @@ aclnnStatus aclnnNormalTensorFloat(
     </tr>
     <tr>
       <td>mean和out做broadcast之后的shape不等于out的shape。</td>
+    </tr>
+    <tr>
+      <td>传入的std小于0。</td>
     </tr>
   </tbody>
   </table>

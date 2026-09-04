@@ -409,6 +409,12 @@ aclnnStatus aclnnNormalTensorFloatGetWorkspaceSize(const aclTensor* mean, float 
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
+    // 检查std是否合法（标准差必须非负，对标PyTorch normal）
+    if (std < 0) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Normal expects std >= 0.0, but found std [%f].", std);
+        return ACLNN_ERR_PARAM_INVALID;
+    }
+
     // 固定写法，检查参数mean的shape和dtype
     auto ret = CheckTensorAndFloatParams(mean, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
@@ -486,6 +492,12 @@ aclnnStatus aclnnNormalFloatFloatGetWorkspaceSize(float mean, float std, int64_t
     // 固定写法， 创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
+
+    // 检查std是否合法（标准差必须非负，对标PyTorch normal）
+    if (std < 0) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Normal expects std >= 0.0, but found std [%f].", std);
+        return ACLNN_ERR_PARAM_INVALID;
+    }
 
     // 固定写法，检查参数out
     auto ret = CheckFloatAndFloatParams(out);

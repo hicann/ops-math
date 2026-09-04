@@ -20,14 +20,8 @@ using namespace std;
 
 class l2_normal_tensor_float_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "l2_normal_tensor_float SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "l2_normal_tensor_float TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "l2_normal_tensor_float SetUp" << std::endl; }
+    static void TearDownTestCase() { std::cout << "l2_normal_tensor_float TearDown" << std::endl; }
 };
 
 // 入参shape不一致的场景
@@ -142,4 +136,18 @@ TEST_F(l2_normal_tensor_float_test, case_double_ND_normal)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// 异常场景：std为负数，应校验拦截
+TEST_F(l2_normal_tensor_float_test, case_std_negative)
+{
+    auto meanDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(1, 3);
+    auto outDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    float std = -1.0f;
+    int64_t seed = 1;
+    int64_t offset = 1;
+    auto ut = OP_API_UT(aclnnNormalTensorFloat, INPUT(meanDesc, std, seed, offset), OUTPUT(outDesc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }

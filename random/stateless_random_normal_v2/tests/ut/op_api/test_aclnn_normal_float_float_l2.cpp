@@ -20,14 +20,8 @@ using namespace std;
 
 class l2_normal_float_float_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "l2_normal_float_float SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "l2_normal_float_float TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "l2_normal_float_float SetUp" << std::endl; }
+    static void TearDownTestCase() { std::cout << "l2_normal_float_float TearDown" << std::endl; }
 };
 
 // float_ND 场景
@@ -109,6 +103,20 @@ TEST_F(l2_normal_float_float_test, case_unsupported_dtype)
     auto outDesc = TensorDesc({2, 3}, ACL_INT32, ACL_FORMAT_ND);
     float mean = 1.5f;
     float std = 2.5f;
+    int64_t seed = 1;
+    int64_t offset = 1;
+    auto ut = OP_API_UT(aclnnNormalFloatFloat, INPUT(mean, std, seed, offset), OUTPUT(outDesc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
+
+// 异常场景：std为负数，应校验拦截
+TEST_F(l2_normal_float_float_test, case_std_negative)
+{
+    auto outDesc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    float mean = 1.5f;
+    float std = -1.0f;
     int64_t seed = 1;
     int64_t offset = 1;
     auto ut = OP_API_UT(aclnnNormalFloatFloat, INPUT(mean, std, seed, offset), OUTPUT(outDesc));

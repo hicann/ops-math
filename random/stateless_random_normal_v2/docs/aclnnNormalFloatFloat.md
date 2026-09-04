@@ -89,7 +89,7 @@ aclnnStatus aclnnNormalFloatFloat(
     <tr>
       <td>std</td>
       <td>输入</td>
-      <td>生成随机数分布的标准差。</td>
+      <td>生成随机数分布的标准差，值必须大于等于0。</td>
       <td>-</td>
       <td>FLOAT</td>
       <td>ND</td>
@@ -173,12 +173,15 @@ aclnnStatus aclnnNormalFloatFloat(
       <td>传入的out为空指针。</td>
     </tr>
     <tr>
-      <td rowspan="2">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="2">161002</td>
+      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="3">161002</td>
       <td>传入的out的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
       <td>传入的out的shape超过8维。</td>
+    </tr>
+    <tr>
+      <td>传入的std小于0。</td>
     </tr>
   </tbody>
   </table>

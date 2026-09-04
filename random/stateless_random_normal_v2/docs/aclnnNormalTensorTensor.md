@@ -90,7 +90,7 @@ aclnnStatus aclnnNormalTensorTensor(
       <td>std</td>
       <td>输入</td>
       <td>生成随机数分布标准差的张量，Device侧的aclTensor。</td>
-      <td>数据类型与mean的数据类型一致。shape需要与mean满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
+      <td>数据类型与mean的数据类型一致。shape需要与mean满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>，且每个元素的值必须大于等于0。</td>
       <td>BF16、FLOAT16、FLOAT、DOUBLE</td>
       <td>ND</td>
       <td>0-8</td>
@@ -173,8 +173,8 @@ aclnnStatus aclnnNormalTensorTensor(
       <td>传入的mean、std或者out为空指针。</td>
     </tr>
     <tr>
-      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="6">161002</td>
+      <td rowspan="7">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="7">161002</td>
       <td>传入的mean、std和out的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
@@ -185,6 +185,9 @@ aclnnStatus aclnnNormalTensorTensor(
     </tr>
     <tr>
       <td>mean和std的shape做broadcast之后不等于out的shape。</td>
+    </tr>
+    <tr>
+      <td>传入的std存在小于0的元素。</td>
     </tr>
   </tbody>
   </table>
