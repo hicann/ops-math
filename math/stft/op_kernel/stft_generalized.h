@@ -189,6 +189,18 @@ public:
 
             StftMatmul(splitWindowOffset, planOffset, matmulOutputOffset);
 
+            // 等待Cube matmul的FIX流水线写完matmulOutput workspace后再由Gather(MTE2)读取,
+            // 避免并发场景下读到FIX未写完的旧数据(workspace为脏内存)导致输出异常。
+            // ascend910b为AIC/AIV分离架构, MIX kernel下本段代码也会在AIV核上执行,
+            // 而AIV无FIX流水线(HardEventAiv枚举不含FIX_MTE2), 该同步必须限定在AIC段执行,
+            // 否则AIV上wait_flag(PIPE_FIX, PIPE_MTE2)会永久挂起导致kernel超时。
+            // A5/ascend950(全功能核)上ASCEND_IS_AIC为真, 行为与原始修改保持一致。
+            if ASCEND_IS_AIC {
+                event_t eventIdFixToMTE2 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::FIX_MTE2));
+                SetFlag<HardEvent::FIX_MTE2>(eventIdFixToMTE2);
+                WaitFlag<HardEvent::FIX_MTE2>(eventIdFixToMTE2);
+            }
+
             GatherRealAndImag(matmulOutputOffset, outputOffset, mFactor, nFactor);
         }
     }

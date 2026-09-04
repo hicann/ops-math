@@ -478,11 +478,13 @@ static const aclTensor* GenerateDftMatrix(const aclTensor* self, int64_t rowSize
             (long long)rowSize, (long long)colSize, nfftAlignBytes, deviceId);
     auto dftMatrix = executor->AllocHostTensor({2, rowSize, colSizeAlign}, op::DataType::DT_FLOAT);
     float* addrReal = static_cast<float*>(dftMatrix->GetStorageAddr());
-    float* addrImag = static_cast<float*>(dftMatrix->GetStorageAddr()) + rowSize * colSizeAlign;
+    float* addrImag = static_cast<float*>(dftMatrix->GetStorageAddr()) + colSizeAlign;
     float out[2];
 
-    // 实部及虚部交错
-    addrImag = static_cast<float*>(dftMatrix->GetStorageAddr()) + colSizeAlign;
+    // 实部及虚部按频率行交错排布: [R0, I0, R1, I1, ...]。
+    // generic kernel(tiling key 1)以 planOffset = IMAG_AND_REAL * mOffset * nfftAlign 读取
+    // 第m个频率的real/imag行(位于第2m/2m+1行), 且Gather mask按相邻real/imag行配对抽取,
+    // 两平面布局会导致输出频率行错位(实部读到real平面全部行, 虚部被挤到额外行)。
     for (int i = 0; i < rowSize; i++) {
         if (i > 0) {
             addrReal += colSizeAlign;

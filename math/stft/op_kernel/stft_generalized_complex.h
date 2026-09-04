@@ -34,7 +34,7 @@ public:
     Matmul<aType, bType, cType, biasType, MM_CFG> mm1;
     Matmul<aType, bType, cType, biasType, MM_CFG> mm2;
     Matmul<aType, bType, cType, biasType, MM_CFG> mm3;
-    Matmul<aType, bType, cType, biasType, MM_CFG> mm;
+    Matmul<aType, bType, cType, biasType, MM_CFG>* mm;
 
     static constexpr int32_t COMPLEX_COEFFICIENT = 2;
     static constexpr int64_t DOUBLE_BUFFER = 2;
@@ -51,6 +51,9 @@ public:
     {
         pipe = pipeIn;
         tiling = tilingData;
+        if (tiling->usedCoreNum <= GetBlockIdx()) {
+            return;
+        }
 
         inputGm.SetGlobalBuffer(
             (__gm__ T*)x,
@@ -118,6 +121,9 @@ public:
     __aicore__ inline void Process()
     {
         auto blockIdx = GetBlockIdx();
+        if (tiling->usedCoreNum <= blockIdx) {
+            return;
+        }
         uint32_t nIdx = blockIdx % tiling->matmulNCoreNum;
         uint32_t nFactor = tiling->matmulNCoreFactor;
         uint32_t nOffset = nIdx * nFactor;
@@ -148,9 +154,9 @@ public:
         }
 
         if (!isTailM) {
-            mm = !isTailN ? mm0 : mm1;
+            mm = !isTailN ? &mm0 : &mm1;
         } else {
-            mm = !isTailN ? mm2 : mm3;
+            mm = !isTailN ? &mm2 : &mm3;
         }
 
         for (uint32_t i = 0; i < bFactor; i++) {
@@ -182,6 +188,19 @@ public:
             }
 
             StftMatmul(realSplitWindowOffset, imagSplitWindowOffset, a1Offset, a2Offset, realOffset, imagOffset);
+
+            // 等待Cube matmul的FIX流水线写完matmulOutput workspace后再由Gather(MTE2)读取,
+            // 避免并发场景下读到FIX未写完的旧数据(workspace为脏内存)导致输出异常。
+            // ascend910b为AIC/AIV分离架构, MIX kernel下本段代码也会在AIV核上执行,
+            // 而AIV无FIX流水线(HardEventAiv枚举不含FIX_MTE2), 该同步必须限定在AIC段执行,
+            // 否则AIV上wait_flag(PIPE_FIX, PIPE_MTE2)会永久挂起导致kernel超时。
+            // A5/ascend950(全功能核)上ASCEND_IS_AIC为真, 行为与原始修改保持一致。
+            if ASCEND_IS_AIC {
+                event_t eventIdFixToMTE2 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::FIX_MTE2));
+                SetFlag<HardEvent::FIX_MTE2>(eventIdFixToMTE2);
+                WaitFlag<HardEvent::FIX_MTE2>(eventIdFixToMTE2);
+            }
+
             GatherRealAndImag(realOffset, imagOffset, outputOffset, mFactor, nFactor);
         }
     }
@@ -553,24 +572,25 @@ private:
                                       int64_t a2Offset, int64_t realOffset, int64_t imagOffset)
     {
         // AC
-        mm.SetTensorA(a1Global[a1Offset]);
-        mm.SetTensorB(splitRealWindowGm[realSplitWindowOffset], true);
-        mm.IterateAll(aRealGm[realOffset]);
+        mm->SetTensorA(a1Global[a1Offset]);
+        mm->SetTensorB(splitRealWindowGm[realSplitWindowOffset], true);
+        mm->IterateAll(aRealGm[realOffset]);
 
         // AD
-        mm.SetTensorA(a2Global[a2Offset]);
-        mm.SetTensorB(splitRealWindowGm[realSplitWindowOffset], true);
-        mm.IterateAll(bRealGm[realOffset]);
+        mm->SetTensorA(a2Global[a2Offset]);
+        mm->SetTensorB(splitRealWindowGm[realSplitWindowOffset], true);
+        mm->IterateAll(bRealGm[realOffset]);
 
         // BC
-        mm.SetTensorA(a1Global[a1Offset]);
-        mm.SetTensorB(splitImagWindowGm[imagSplitWindowOffset], true);
-        mm.IterateAll(aImagGm[imagOffset]);
+        mm->SetTensorA(a1Global[a1Offset]);
+        mm->SetTensorB(splitImagWindowGm[imagSplitWindowOffset], true);
+        mm->IterateAll(aImagGm[imagOffset]);
 
         // BD
-        mm.SetTensorA(a2Global[a2Offset]);
-        mm.SetTensorB(splitImagWindowGm[imagSplitWindowOffset], true);
-        mm.IterateAll(bImagGm[imagOffset]);
+        mm->SetTensorA(a2Global[a2Offset]);
+        mm->SetTensorB(splitImagWindowGm[imagSplitWindowOffset], true);
+        mm->IterateAll(bImagGm[imagOffset]);
+        mm->End();
     }
 
     __aicore__ inline void SplitWindows(int64_t inputOffset, int64_t realSplitWindowOffset,

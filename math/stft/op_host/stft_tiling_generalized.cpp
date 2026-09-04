@@ -601,6 +601,9 @@ ge::graphStatus STFTGeneralizedTiling::DoOpTiling()
     tilingData.set_nfftAlign(nfftAlign);
     tilingData.set_hopLength(hop);
     tilingData.set_normalized(normalized);
+    // All kernel variants can be launched on more cores than their split
+    // factors require; the kernel uses this value to skip idle cores.
+    tilingData.set_usedCoreNum((bCoreNum * mCoreNum * nCoreNum + 1) / CORE_COEFF * CORE_COEFF);
     if (normalized) {
         float root = 1 / sqrt(nfft);
         tilingData.set_rootNfft(root);
@@ -621,7 +624,6 @@ ge::graphStatus STFTGeneralizedTiling::DoOpTiling()
     }
 
     SplitWindowTiling();
-    tilingData.set_usedCoreNum((bCoreNum * mCoreNum * nCoreNum + 1) / CORE_COEFF * CORE_COEFF);
 
     return ge::GRAPH_SUCCESS;
 }
