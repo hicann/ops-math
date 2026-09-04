@@ -320,6 +320,51 @@ static inline ge::graphStatus GetInputParamAndAttrValue(const gert::TilingContex
     OP_CHECK_IF(!ops::InferShape(initParam, &shapeY),
                 OP_LOGE(context->GetNodeName(), "do strided slice infershape failed"), return ge::GRAPH_FAILED);
 
+    // dy 形状校验：实际传入的 dy 张量形状必须与由 shape/begin/end/strides 及 masks
+    // 推算出的 grad 形状一致，否则 kernel 按推算形状读取 dy 会越界读设备内存
+    // （失败形态非确定：可能 VEC_ERROR，也可能产出垃圾数据）。任一维为 -1（动态 shape）时无法比对，跳过校验。
+    auto inputDyShapePtr = context->GetInputShape(IN_DY_IDX);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputDyShapePtr);
+    const gert::Shape& actualDyShape = inputDyShapePtr->GetOriginShape();
+    bool dyShapeMismatch = false;
+    if (actualDyShape.GetDimNum() != shapeY.GetDimNum()) {
+        dyShapeMismatch = true;
+    } else {
+        for (size_t i = 0; i < shapeY.GetDimNum(); ++i) {
+            if (shapeY.GetDim(i) < 0 || actualDyShape.GetDim(i) < 0) {
+                dyShapeMismatch = false; // 动态 shape，放行
+                break;
+            }
+            if (actualDyShape.GetDim(i) != shapeY.GetDim(i)) {
+                dyShapeMismatch = true;
+                break;
+            }
+        }
+    }
+    OP_CHECK_IF(dyShapeMismatch,
+                OP_LOGE(context->GetNodeName(),
+                        "The shape of dy [%s] mismatches the grad shape [%s] inferred from shape/begin/end/strides "
+                        "and masks. Check the dy tensor shape.",
+                        Ops::Base::ToString(actualDyShape).c_str(), Ops::Base::ToString(shapeY).c_str()),
+                return ge::GRAPH_FAILED);
+
+    // 0 维标量归一化：shape/begin/end/strides 全为空（rank-0）时，切片语义为恒等
+    // （out = dy）。归一化为 1 维单位切片 input_shape=[1]、begin=[0]、end=[1]、
+    // strides=[1]、dy=[1]，复用既有 1 维全路径。
+    if (initParam.input_shape.GetDimNum() == 0U && initParam.begin.GetDimNum() == 0U &&
+        initParam.end.GetDimNum() == 0U && initParam.strides.GetDimNum() == 0U) {
+        initParam.input_shape.SetDimNum(0);
+        initParam.input_shape.AppendDim(1);
+        initParam.begin.SetDimNum(0);
+        initParam.begin.AppendDim(0);
+        initParam.end.SetDimNum(0);
+        initParam.end.AppendDim(1);
+        initParam.strides.SetDimNum(0);
+        initParam.strides.AppendDim(1);
+        shapeY.SetDimNum(0);
+        shapeY.AppendDim(1);
+    }
+
     // revert sliceParam by infer shape
     optiling::SliceParametersRuntime sliceParam;
     RevertSliceParamByInferShape(initParam, shapeY, sliceParam);
