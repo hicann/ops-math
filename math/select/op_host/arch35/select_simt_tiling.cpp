@@ -46,22 +46,19 @@ static constexpr int64_t INPUT_DTYPE_B16 = 2;
 static constexpr int64_t TILING_KEY = 999;
 static constexpr int64_t USER_DEF = 1;
 
-
 ge::graphStatus SelectSimtTiling::GetShapeAttrsInfo()
 {
     OP_CHECK_IF(SelectCheckInputDtype(context_) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "SelectCheckInputDtype error!"),
-        return ge::GRAPH_FAILED);
+                OP_LOGE(context_->GetNodeName(), "SelectCheckInputDtype error!"), return ge::GRAPH_FAILED);
 
     vector<gert::Shape> inputShapes;
     OP_CHECK_IF(InferSelectShape(context_, inputShapes) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "InferSelectShape error!"),
-        return ge::GRAPH_FAILED);
+                OP_LOGE(context_->GetNodeName(), "InferSelectShape error!"), return ge::GRAPH_FAILED);
 
     conditionShape_ = inputShapes[CONDITION_IDX];
     x1Shape_ = inputShapes[X1_IDX];
     x2Shape_ = inputShapes[X2_IDX];
-    
+
     return ge::GRAPH_SUCCESS;
 }
 
@@ -70,17 +67,17 @@ bool SelectSimtTiling::IsMatchAB()
     int64_t pos = -1;
     int64_t conditionDimNum = conditionShape_.GetDimNum();
     for (int64_t i = 0; i < conditionDimNum; i++) {
-        if (conditionShape_.GetDim(i) == 1){
+        if (conditionShape_.GetDim(i) == 1) {
             pos = i;
             break;
         }
         aSize_ *= conditionShape_.GetDim(i);
     }
-    if (pos < 0 || pos >= conditionDimNum){
+    if (pos < 0 || pos >= conditionDimNum) {
         return false;
     }
     for (int64_t i = pos; i < conditionDimNum; i++) {
-        if (conditionShape_.GetDim(i) != 1){
+        if (conditionShape_.GetDim(i) != 1) {
             return false;
         }
         bSize_ *= x1Shape_.GetDim(i);
@@ -99,20 +96,20 @@ bool SelectSimtTiling::XDtypeImprove()
         return true;
     }
     if ((xDtypeSize < INPUT_DTYPE_B64) && (bSize_ * xDtypeSize % INPUT_DTYPE_B64) == 0) {
-        OP_LOGD(context_->GetNodeName(), "XDtypeImprove lastAxisBytes %ld, improve to INPUT_DTYPE_B64", bSize_);  
+        OP_LOGD(context_->GetNodeName(), "XDtypeImprove lastAxisBytes %ld, improve to INPUT_DTYPE_B64", bSize_);
         bSize_ /= (INPUT_DTYPE_B64 / xDtypeSize);
         return true;
     }
-    
+
     return false;
 }
 
 bool SelectSimtTiling::IsCapable()
 {
-    if (!IsMatchAB()){
+    if (!IsMatchAB()) {
         return false;
     }
-    if (!XDtypeImprove()){
+    if (!XDtypeImprove()) {
         return false;
     }
     return true;
@@ -124,7 +121,8 @@ ge::graphStatus SelectSimtTiling::DoOpTiling()
     SelectSimtTilingData* tilingData = context_->GetTilingData<SelectSimtTilingData>();
     tilingData->aSize = aSize_;
     tilingData->bSize = bSize_;
-    while ((threadNum_ >= NUM_TWO * SMALL_CASE_THREAD_NUM) && (Ops::Base::CeilDiv(ySize_, threadNum_) < (aivNum_ / NUM_TWO))) {
+    while ((threadNum_ >= NUM_TWO * SMALL_CASE_THREAD_NUM) &&
+           (Ops::Base::CeilDiv(ySize_, threadNum_) < (aivNum_ / NUM_TWO))) {
         threadNum_ = threadNum_ / NUM_TWO;
     }
     tilingData->threadNum = threadNum_;
@@ -135,7 +133,7 @@ ge::graphStatus SelectSimtTiling::DoOpTiling()
         tilingData->lastCoreElements = ySize_;
         needCoreNum_ = 1;
     } else {
-        perCoreElements = (perCoreElements + threadNum_ - 1) / threadNum_ * threadNum_;  // 对齐到threadNum_的倍数
+        perCoreElements = (perCoreElements + threadNum_ - 1) / threadNum_ * threadNum_; // 对齐到threadNum_的倍数
         needCoreNum_ = Ops::Base::CeilDiv(ySize_, perCoreElements);
         int64_t lastCoreElements = ySize_ - perCoreElements * (needCoreNum_ - 1);
         tilingData->needCoreNum = needCoreNum_;
@@ -144,20 +142,14 @@ ge::graphStatus SelectSimtTiling::DoOpTiling()
     }
 
     context_->SetBlockDim(needCoreNum_);
-    
+
     tilingKey = GET_TPL_TILING_KEY(TILING_KEY, USER_DEF);
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus SelectSimtTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus SelectSimtTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t SelectSimtTiling::GetTilingKey() const
-{
-    return tilingKey;
-}
+uint64_t SelectSimtTiling::GetTilingKey() const { return tilingKey; }
 
 ge::graphStatus SelectSimtTiling::GetWorkspaceSize()
 {
@@ -178,25 +170,23 @@ ge::graphStatus SelectSimtTiling::GetPlatformInfo()
     auto platformInfo = context_->GetPlatformInfo();
     if (platformInfo == nullptr) {
         auto compileInfoPtr = reinterpret_cast<const SelectCompileInfo*>(context_->GetCompileInfo());
-        OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_, "compile info is null"),
-                        return ge::GRAPH_FAILED);
+        OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_, "compile info is null"), return ge::GRAPH_FAILED);
         aivNum_ = compileInfoPtr->coreNum;
         ubSize_ = compileInfoPtr->ubSize;
-        OP_LOGD(context_->GetNodeName(), "Get ubSize form compileInfo is: %ld", ubSize_);
-        OP_LOGD(context_->GetNodeName(), "Get aivNum form compileInfo is: %ld", aivNum_);
+        OP_LOGD(context_->GetNodeName(), "Get ubSize from compileInfo is: %ld", ubSize_);
+        OP_LOGD(context_->GetNodeName(), "Get aivNum from compileInfo is: %ld", aivNum_);
     } else {
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
         aivNum_ = ascendcPlatform.GetCoreNumAiv();
         uint64_t ubSizePlatform;
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatform);
         ubSize_ = static_cast<int64_t>(ubSizePlatform);
-        OP_LOGD(context_->GetNodeName(), "Get ubSize form ascendcPlatform is: %ld", ubSize_);
-        OP_LOGD(context_->GetNodeName(), "Get aivNum form ascendcPlatform is: %ld", aivNum_);
+        OP_LOGD(context_->GetNodeName(), "Get ubSize from ascendcPlatform is: %ld", ubSize_);
+        OP_LOGD(context_->GetNodeName(), "Get aivNum from ascendcPlatform is: %ld", aivNum_);
     }
     aicoreParams_.numBlocks = aivNum_;
     return ge::GRAPH_SUCCESS;
 }
- 
 
- REGISTER_OPS_TILING_TEMPLATE(Select, SelectSimtTiling, SELECT_COMMON_TILING_PRIORITY);
- }   // namespace optiling 
+REGISTER_OPS_TILING_TEMPLATE(Select, SelectSimtTiling, SELECT_COMMON_TILING_PRIORITY);
+} // namespace optiling
