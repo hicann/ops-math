@@ -16,33 +16,40 @@
 #include "log/log.h"
 #include "infershape_broadcast_util.h"
 #include "register/op_impl_registry.h"
+#include "version/metadef_version.h"
 
 using namespace ge;
 namespace ops {
-static std::string ShapeCannotBroadcastMsg(const gert::Shape& shape1, const gert::Shape& shape2) {
-  std::string res = "shape ";
-  res += Ops::Base::ToString(shape1);
-  res += " and ";
-  res += Ops::Base::ToString(shape2);
-  res += " cannot broadcast!";
-  return res;
+static std::string ShapeCannotBroadcastMsg(const gert::Shape& shape1, const gert::Shape& shape2)
+{
+    std::string res = "shape ";
+    res += Ops::Base::ToString(shape1);
+    res += " and ";
+    res += Ops::Base::ToString(shape2);
+    res += " cannot broadcast!";
+    return res;
 }
 
-static ge::graphStatus InferShape4Broadcast(gert::InferShapeContext* context) {
-  auto in_shape1 = context->GetInputShape(0);
-  OP_CHECK_NULL_WITH_CONTEXT(context, in_shape1);
-  auto in_shape2 = context->GetInputShape(1);
-  OP_CHECK_NULL_WITH_CONTEXT(context, in_shape2);
-  auto out_shape = context->GetOutputShape(0);
-  OP_CHECK_NULL_WITH_CONTEXT(context, out_shape);
+static ge::graphStatus InferShape4Broadcast(gert::InferShapeContext* context)
+{
+    auto in_shape1 = context->GetInputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, in_shape1);
+    auto in_shape2 = context->GetInputShape(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context, in_shape2);
+    auto out_shape = context->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, out_shape);
 
-  OP_CHECK_IF((!Ops::Base::BroadcastShape(in_shape1, in_shape2, out_shape)),
-           OP_LOGE(context->GetNodeName(), "%s", ShapeCannotBroadcastMsg(*in_shape2, *in_shape1).c_str()),
-           return ge::GRAPH_FAILED);
+    OP_CHECK_IF((!Ops::Base::BroadcastShape(in_shape1, in_shape2, out_shape)),
+                OP_LOGE(context->GetNodeName(), "%s", ShapeCannotBroadcastMsg(*in_shape2, *in_shape1).c_str()),
+                return ge::GRAPH_FAILED);
 
-  return ge::GRAPH_SUCCESS;
+    return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_INFERSHAPE(Mul).InferShape(InferShape4Broadcast);
-
-}
+IMPL_OP_INFERSHAPE(Mul)
+    .InferShape(InferShape4Broadcast)
+#if defined(METADEF_VERSION_NUM) && METADEF_VERSION_NUM >= 90200000
+    .SetSupportPcieThrough()
+#endif
+    ;
+} // namespace ops

@@ -21,6 +21,7 @@
 #include "register/op_def_registry.h"
 #include "util/math_util.h"
 #include "op_host/math_tiling_templates_registry.h"
+#include "version/metadef_version.h"
 
 using namespace AscendC;
 using namespace ge;
@@ -104,8 +105,23 @@ bool SelectSimtTiling::XDtypeImprove()
     return false;
 }
 
+bool SelectSimtTiling::IsPcieThrough()
+{
+#if defined(METADEF_VERSION_NUM) && METADEF_VERSION_NUM >= 90200000
+    bool isPcieThrough = context_->GetPcieThroughFlag();
+    OP_LOGD(context_->GetNodeName(), "IsPcieThrough: %s", (isPcieThrough ? "true" : "false"));
+    return isPcieThrough;
+#else
+    OP_LOGD(context_->GetNodeName(), "IsPcieThrough: false");
+    return false;
+#endif
+}
+
 bool SelectSimtTiling::IsCapable()
 {
+    if (IsPcieThrough()) {
+        return false;
+    }
     if (!IsMatchAB()) {
         return false;
     }

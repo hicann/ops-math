@@ -26,40 +26,41 @@
 namespace optiling {
 
 class SelectSimtTiling : public Ops::Base::TilingBaseClass {
-    public:
-        explicit SelectSimtTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
+public:
+    explicit SelectSimtTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
-    protected:
-        bool IsCapable() override;
-        ge::graphStatus GetPlatformInfo() override;
-        ge::graphStatus GetShapeAttrsInfo() override;
-        ge::graphStatus DoOpTiling() override;
-        ge::graphStatus DoLibApiTiling() override;
-        uint64_t GetTilingKey() const override;
-        ge::graphStatus GetWorkspaceSize() override;
-        ge::graphStatus PostTiling() override;
+protected:
+    bool IsCapable() override;
+    ge::graphStatus GetPlatformInfo() override;
+    ge::graphStatus GetShapeAttrsInfo() override;
+    ge::graphStatus DoOpTiling() override;
+    ge::graphStatus DoLibApiTiling() override;
+    uint64_t GetTilingKey() const override;
+    ge::graphStatus GetWorkspaceSize() override;
+    ge::graphStatus PostTiling() override;
 
-    private:
-        bool IsMatchAB();
-        bool XDtypeImprove();
+private:
+    bool IsPcieThrough();
+    bool IsMatchAB();
+    bool XDtypeImprove();
 
-        uint64_t tilingKey = 0;
-        int64_t aivNum_;
-        int64_t ubSize_ = 0;
-        int64_t needCoreNum_ = 0;
-        gert::Shape conditionShape_;
-        gert::Shape x1Shape_;
-        gert::Shape x2Shape_;
-        int64_t aSize_ = 1;
-        int64_t bSize_ = 1;
-        int64_t ySize_ = 1;
+    uint64_t tilingKey = 0;
+    int64_t aivNum_;
+    int64_t ubSize_ = 0;
+    int64_t needCoreNum_ = 0;
+    gert::Shape conditionShape_;
+    gert::Shape x1Shape_;
+    gert::Shape x2Shape_;
+    int64_t aSize_ = 1;
+    int64_t bSize_ = 1;
+    int64_t ySize_ = 1;
 #ifdef DAVID_FPGA
-        int64_t threadNum_ = 128;
+    int64_t threadNum_ = 128;
 #else
-        int64_t threadNum_ = 2048;
+    int64_t threadNum_ = 2048;
 #endif
 };
 
-}   // namespace optiling
+} // namespace optiling
 
 #endif // OPS_BUILD_IN_OP_TILING_RUNTIME_SELECT_SIMT_TILING_H

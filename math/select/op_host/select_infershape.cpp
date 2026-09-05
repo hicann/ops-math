@@ -14,18 +14,25 @@
  */
 #include "log/log.h"
 #include "register/op_impl_registry.h"
+#include "version/metadef_version.h"
 
 using namespace ge;
 namespace ops {
-static graphStatus InferShape4Select(gert::InferShapeContext* context) {
-  const gert::Shape* x1_shape = context->GetInputShape(1);
-  OP_CHECK_NULL_WITH_CONTEXT(context, x1_shape);
+static graphStatus InferShape4Select(gert::InferShapeContext* context)
+{
+    const gert::Shape* x1_shape = context->GetInputShape(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context, x1_shape);
 
-  gert::Shape* y_shape = context->GetOutputShape(0);
-  OP_CHECK_NULL_WITH_CONTEXT(context, y_shape);
-  *y_shape = *x1_shape;
+    gert::Shape* y_shape = context->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, y_shape);
+    *y_shape = *x1_shape;
 
-  return GRAPH_SUCCESS;
+    return GRAPH_SUCCESS;
 }
-IMPL_OP_INFERSHAPE(Select).InferShape(InferShape4Select);
-}
+IMPL_OP_INFERSHAPE(Select)
+    .InferShape(InferShape4Select)
+#if defined(METADEF_VERSION_NUM) && METADEF_VERSION_NUM >= 90200000
+    .SetSupportPcieThrough()
+#endif
+    ;
+} // namespace ops
