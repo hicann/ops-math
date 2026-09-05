@@ -34,7 +34,7 @@ extern "C" {
 __attribute__((weak)) int32_t aclsysGetVersionNum(char* pkgName, int32_t* versionNum);
 }
 
-const std::string FUSION_PASS_NAME = "Globalavgpoolpass";
+const std::string FUSION_PASS_NAME = "GlobalavgpoolPass";
 const int64_t CAPTURE_TENSOR_IDX_INPUT = 0;
 
 // 输入维度常量
@@ -43,7 +43,7 @@ const int64_t INPUT_X_NUM_FOUR = 4;
 const int64_t INPUT_X_NUM_FIVE = 5;
 
 namespace {
-CustomPassStage GetGlobalavgpoolpassStage()
+CustomPassStage GetGlobalavgpoolPassStage()
 {
     int32_t version = 0;
     char pkgName[] = "ge_compiler";
@@ -67,11 +67,11 @@ static void GetInputsInfo(const std::vector<SubgraphInput>& subGraphInputs, std:
         // 我们需要获取GlobalAveragePool的输入描述（索引0）
         auto status = matchNode.node.GetInputDesc(0, tensorDesc);
         if (status != GRAPH_SUCCESS) {
-            OP_LOGE("Globalavgpoolpass", "Failed to get input desc from GlobalAveragePool node, status: %u", status);
+            OP_LOGE("GlobalavgpoolPass", "Failed to get input desc from GlobalAveragePool node, status: %u", status);
             // 如果失败，尝试获取输出描述
             status = matchNode.node.GetOutputDesc(matchNode.index, tensorDesc);
             if (status != GRAPH_SUCCESS) {
-                OP_LOGE("Globalavgpoolpass", "Failed to get output desc from GlobalAveragePool node, status: %u",
+                OP_LOGE("GlobalavgpoolPass", "Failed to get output desc from GlobalAveragePool node, status: %u",
                         status);
                 // 使用默认值
                 tensorDesc.SetDataType(DT_FLOAT);
@@ -96,7 +96,7 @@ static Status InferShape(const GraphUniqPtr& replaceGraph, const std::vector<Sub
         // matchNode.node是GlobalAveragePool节点，matchNode.index是输出索引（0）
         // 我们需要获取GlobalAveragePool的输入描述（索引0）
         if (matchNode.node.GetInputDesc(0, tensorDesc) != GRAPH_SUCCESS) {
-            OP_LOGE_WITHOUT_REPORT("Globalavgpoolpass",
+            OP_LOGE_WITHOUT_REPORT("GlobalavgpoolPass",
                                    "Failed to get input desc from GlobalAveragePool node in InferShape");
             // 如果失败，尝试获取输出描述
             matchNode.node.GetOutputDesc(matchNode.index, tensorDesc);
@@ -119,9 +119,9 @@ static bool IsTargetVersion()
     return false;
 }
 
-std::vector<PatternUniqPtr> Globalavgpoolpass::Patterns()
+std::vector<PatternUniqPtr> GlobalavgpoolPass::Patterns()
 {
-    OP_LOGD(FUSION_PASS_NAME.c_str(), "Enter Patterns for Globalavgpoolpass");
+    OP_LOGD(FUSION_PASS_NAME.c_str(), "Enter Patterns for GlobalavgpoolPass");
     std::vector<PatternUniqPtr> patternGraphs;
     if (!IsTargetVersion()) {
         return patternGraphs;
@@ -171,9 +171,9 @@ std::vector<PatternUniqPtr> Globalavgpoolpass::Patterns()
     return patternGraphs;
 }
 
-bool Globalavgpoolpass::MeetRequirements(const std::unique_ptr<MatchResult>& match_result)
+bool GlobalavgpoolPass::MeetRequirements(const std::unique_ptr<MatchResult>& match_result)
 {
-    OP_LOGD(FUSION_PASS_NAME.c_str(), "=== Enter MeetRequirements for Globalavgpoolpass ===");
+    OP_LOGD(FUSION_PASS_NAME.c_str(), "=== Enter MeetRequirements for GlobalavgpoolPass ===");
 
     // Runtime version check: on GE 8.5.0, return false to no-op.
     int32_t version = 0;
@@ -227,7 +227,7 @@ bool Globalavgpoolpass::MeetRequirements(const std::unique_ptr<MatchResult>& mat
     return true;
 }
 
-GraphUniqPtr Globalavgpoolpass::Replacement(const std::unique_ptr<MatchResult>& match_result)
+GraphUniqPtr GlobalavgpoolPass::Replacement(const std::unique_ptr<MatchResult>& match_result)
 {
     std::vector<SubgraphInput> subGraphInputs;
     match_result->ToSubgraphBoundary()->GetAllInputs(subGraphInputs);
@@ -310,7 +310,7 @@ GraphUniqPtr Globalavgpoolpass::Replacement(const std::unique_ptr<MatchResult>& 
     return replaceGraph;
 }
 
-REG_FUSION_PASS(Globalavgpoolpass).Stage(GetGlobalavgpoolpassStage());
+REG_FUSION_PASS(GlobalavgpoolPass).Stage(GetGlobalavgpoolPassStage());
 
 #endif // GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
 

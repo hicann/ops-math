@@ -25,7 +25,7 @@ using namespace fe;
 using namespace fusion;
 using namespace ops;
 
-class GlobalavgpoolpassTest : public testing::Test {
+class GlobalavgpoolPassTest : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
@@ -50,14 +50,14 @@ protected:
     }
 };
 
-TEST_F(GlobalavgpoolpassTest, pattern_test)
+TEST_F(GlobalavgpoolPassTest, pattern_test)
 {
-    ops::Globalavgpoolpass pass;
+    ops::GlobalavgpoolPass pass;
     std::vector<PatternUniqPtr> patterns = pass.Patterns();
     EXPECT_GT(patterns.size(), 0);
 }
 
-TEST_F(GlobalavgpoolpassTest, fusion_success_3d)
+TEST_F(GlobalavgpoolPassTest, fusion_success_3d)
 {
     std::vector<int64_t> dims_x{2, 3, 4}; // 3D input
     Shape shape_x(dims_x);
@@ -107,7 +107,7 @@ TEST_F(GlobalavgpoolpassTest, fusion_success_3d)
     outputs.push_back(ge::es::EsTensorHolder(y));
     std::shared_ptr<Graph> graph_ptr = graph_builder.BuildAndReset(outputs);
     CustomPassContext pass_context;
-    ops::Globalavgpoolpass pass;
+    ops::GlobalavgpoolPass pass;
     Status status = pass.Run(graph_ptr, pass_context);
     EXPECT_EQ(status, SUCCESS);
 
@@ -131,7 +131,7 @@ TEST_F(GlobalavgpoolpassTest, fusion_success_3d)
     EXPECT_TRUE(findReduceMean);
 }
 
-TEST_F(GlobalavgpoolpassTest, fusion_success_4d)
+TEST_F(GlobalavgpoolPassTest, fusion_success_4d)
 {
     std::vector<int64_t> dims_x{2, 3, 4, 5}; // 4D input
     Shape shape_x(dims_x);
@@ -181,7 +181,7 @@ TEST_F(GlobalavgpoolpassTest, fusion_success_4d)
     outputs.push_back(ge::es::EsTensorHolder(y));
     std::shared_ptr<Graph> graph_ptr = graph_builder.BuildAndReset(outputs);
     CustomPassContext pass_context;
-    ops::Globalavgpoolpass pass;
+    ops::GlobalavgpoolPass pass;
     Status status = pass.Run(graph_ptr, pass_context);
     EXPECT_EQ(status, SUCCESS);
 
@@ -205,7 +205,7 @@ TEST_F(GlobalavgpoolpassTest, fusion_success_4d)
     EXPECT_TRUE(findReduceMean);
 }
 
-TEST_F(GlobalavgpoolpassTest, fusion_success_5d)
+TEST_F(GlobalavgpoolPassTest, fusion_success_5d)
 {
     std::vector<int64_t> dims_x{2, 3, 4, 5, 6}; // 5D input
     Shape shape_x(dims_x);
@@ -255,7 +255,7 @@ TEST_F(GlobalavgpoolpassTest, fusion_success_5d)
     outputs.push_back(ge::es::EsTensorHolder(y));
     std::shared_ptr<Graph> graph_ptr = graph_builder.BuildAndReset(outputs);
     CustomPassContext pass_context;
-    ops::Globalavgpoolpass pass;
+    ops::GlobalavgpoolPass pass;
     Status status = pass.Run(graph_ptr, pass_context);
     EXPECT_EQ(status, SUCCESS);
 
@@ -279,7 +279,7 @@ TEST_F(GlobalavgpoolpassTest, fusion_success_5d)
     EXPECT_TRUE(findReduceMean);
 }
 
-TEST_F(GlobalavgpoolpassTest, unsupported_dims_fail)
+TEST_F(GlobalavgpoolPassTest, unsupported_dims_fail)
 {
     std::vector<int64_t> dims_x{2, 3}; // 2D input, not supported
     Shape shape_x(dims_x);
@@ -329,12 +329,12 @@ TEST_F(GlobalavgpoolpassTest, unsupported_dims_fail)
     outputs.push_back(ge::es::EsTensorHolder(y));
     std::shared_ptr<Graph> graph_ptr = graph_builder.BuildAndReset(outputs);
     CustomPassContext pass_context;
-    ops::Globalavgpoolpass pass;
+    ops::GlobalavgpoolPass pass;
     Status status = pass.Run(graph_ptr, pass_context);
     EXPECT_EQ(status, GRAPH_NOT_CHANGED);
 }
 
-TEST_F(GlobalavgpoolpassTest, fusion_success_950)
+TEST_F(GlobalavgpoolPassTest, fusion_success_950)
 {
     fe::PlatformInfo platformInfo;
     fe::OptionalInfo optiCompilationInfo;
@@ -392,7 +392,7 @@ TEST_F(GlobalavgpoolpassTest, fusion_success_950)
     outputs.push_back(ge::es::EsTensorHolder(y));
     std::shared_ptr<Graph> graph_ptr = graph_builder.BuildAndReset(outputs);
     CustomPassContext pass_context;
-    ops::Globalavgpoolpass pass;
+    ops::GlobalavgpoolPass pass;
     Status status = pass.Run(graph_ptr, pass_context);
     EXPECT_EQ(status, SUCCESS);
 
@@ -419,18 +419,18 @@ TEST_F(GlobalavgpoolpassTest, fusion_success_950)
 // ==================== Compatibility tests ====================
 
 // Verify that the pass compiles and the version guard is active.
-TEST_F(GlobalavgpoolpassTest, compileTimeVersionGuard) { EXPECT_GE(GE_COMPILER_VERSION_NUM, 90000000); }
+TEST_F(GlobalavgpoolPassTest, compileTimeVersionGuard) { EXPECT_GE(GE_COMPILER_VERSION_NUM, 90000000); }
 
 // Verify that the pass can be instantiated and returns patterns.
-TEST_F(GlobalavgpoolpassTest, passInstantiationTest)
+TEST_F(GlobalavgpoolPassTest, passInstantiationTest)
 {
-    ops::Globalavgpoolpass pass;
+    ops::GlobalavgpoolPass pass;
     auto patterns = pass.Patterns();
     EXPECT_GT(patterns.size(), 0);
 }
 
 // Verify the pass works correctly with the kCompatibleInherited stage mechanism.
-TEST_F(GlobalavgpoolpassTest, compatibleInheritedStageTest)
+TEST_F(GlobalavgpoolPassTest, compatibleInheritedStageTest)
 {
     std::vector<int64_t> dimsX{2, 3, 4};
     Shape shapeX(dimsX);
@@ -470,7 +470,7 @@ TEST_F(GlobalavgpoolpassTest, compatibleInheritedStageTest)
     std::shared_ptr<Graph> graphPtr = graphBuilder.BuildAndReset(outputs);
 
     CustomPassContext passContext;
-    ops::Globalavgpoolpass pass;
+    ops::GlobalavgpoolPass pass;
     Status status = pass.Run(graphPtr, passContext);
     EXPECT_EQ(status, SUCCESS);
 
