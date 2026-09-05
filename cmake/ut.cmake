@@ -211,6 +211,13 @@ function(add_framework_ut_modules OP_FRAMEWORK_MODULE_NAME)
                           PRIVATE ascend_protobuf_static_headers)
   endif()
 
+  # pb.h 内联代码引用 absl::lts_ascend_private 符号(log_internal 等),
+  # 需将 protobuf 运行时(ascend_protobuf so)传入最终可执行链接,否则链接报
+  # "DSO missing from command line"(undefined reference to absl/protobuf 符号)
+  if(TARGET ascend_protobuf)
+    target_link_libraries(${OP_FRAMEWORK_MODULE_NAME}_cases_obj PRIVATE ascend_protobuf)
+  endif()
+
   add_library(${OP_FRAMEWORK_MODULE_NAME}_cases STATIC)
   target_link_libraries(
     ${OP_FRAMEWORK_MODULE_NAME}_cases
