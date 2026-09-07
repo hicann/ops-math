@@ -571,9 +571,9 @@ int main() {
   auto ret = Init(deviceId, &stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
-  // 执行GtScalar操作
+  // 执行GtTensor操作
   ret = ExecuteGtTensorOperator(stream);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("ExecuteGtScalarOperator failed. ERROR: %d\n", ret); return ret);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("ExecuteGtTensorOperator failed. ERROR: %d\n", ret); return ret);
 
   // 重置设备和终结ACL
   aclrtDestroyStream(stream);
