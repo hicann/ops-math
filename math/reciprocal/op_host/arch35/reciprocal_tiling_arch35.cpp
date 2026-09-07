@@ -24,7 +24,7 @@
 
 namespace optiling {
 using namespace Ops::Base;
-const int64_t ASCEND_WORKSPACE = 32;
+const int64_t ASCEND_WORKSPACE = 0;
 
 ge::graphStatus ReciprocalTiling::SetTilingData()
 {

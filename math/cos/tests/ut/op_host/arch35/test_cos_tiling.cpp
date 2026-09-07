@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
- /*!
+/*!
  * \file test_cos_tiling.cpp
  * \brief
  */
@@ -21,29 +21,24 @@
 
 using namespace std;
 class CosTilingTest : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "CosTilingTest SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() { std::cout << "CosTilingTest SetUp" << std::endl; }
 
-  static void TearDownTestCase() {
-    std::cout << "CosTilingTest TearDown" << std::endl;
-  }
+    static void TearDownTestCase() { std::cout << "CosTilingTest TearDown" << std::endl; }
 };
 
 TEST_F(CosTilingTest, Cos_test_tiling_001)
 {
     Ops::Base::ElewiseCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "Cos",
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Cos",
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 3;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }

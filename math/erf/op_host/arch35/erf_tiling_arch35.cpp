@@ -29,7 +29,7 @@
 using namespace ErfOp;
 
 namespace optiling {
-const size_t ASCEND_WORKSPACE = 16777216; // 16M
+const size_t ASCEND_WORKSPACE = 0;
 const int64_t ASCEND_API_BUFFER = 122880; // 120K
 
 ge::graphStatus ErfTiling::CalcInputDtype()

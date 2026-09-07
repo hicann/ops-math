@@ -24,7 +24,7 @@
 
 namespace optiling {
 using namespace LogOp;
-const size_t ASCEND_WORKSPACE = 16777216; // 16 * 1024 * 1024
+const size_t ASCEND_WORKSPACE = 0;
 
 ge::graphStatus LogTiling::CalcInputDtype()
 {

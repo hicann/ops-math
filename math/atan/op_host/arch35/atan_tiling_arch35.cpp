@@ -33,7 +33,7 @@ using namespace AtanOp;
 
 namespace optiling {
 constexpr int64_t ASCEND_API_BUFFER = 122880;
-const int64_t ASCEND_WORKSPACE = 16 * 1024 * 1024;
+const int64_t ASCEND_WORKSPACE = 0;
 
 ge::graphStatus AtanTiling::CalcInputDtype()
 {

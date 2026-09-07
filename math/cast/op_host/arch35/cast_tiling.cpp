@@ -36,7 +36,7 @@ constexpr int64_t B32_BITS = 32;
 constexpr int64_t B64_BITS = 64;
 
 constexpr int64_t PER_CORE_MIN_UB_BIT = 4 * 1024 * 8;
-constexpr uint32_t MINIMAL_WORKSPACE = 16 * 1024 * 1024;
+constexpr uint32_t MINIMAL_WORKSPACE = 0;
 constexpr int32_t SIMT_RESERVED_SIZE = 32 * 1024;
 
 constexpr int64_t UB_ALIGN_RESERVE_TYPE1 = 32 * 6;

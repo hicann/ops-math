@@ -23,7 +23,7 @@
 #include "math/is_nan/op_kernel/arch35/is_nan_dag.h"
 
 namespace optiling {
-const int64_t ASCEND_WORKSPACE = 16777216; // 16M
+const int64_t ASCEND_WORKSPACE = 0;
 const uint64_t TILING_KEY_FP16 = 101UL;
 const uint64_t TILING_KEY_BF16 = 102UL;
 const uint64_t TILING_KEY_FP32 = 103UL;

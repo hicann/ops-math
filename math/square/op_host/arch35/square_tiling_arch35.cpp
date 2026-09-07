@@ -27,7 +27,7 @@ const uint64_t TILING_KEY_BF16 = 2;
 const uint64_t TILING_KEY_FP32 = 3;
 const uint64_t TILING_KEY_INT32 = 4;
 const uint64_t TILING_KEY_INT64 = 5;
-const size_t ASCEND_WORKSPACE = 16 * 1024 * 1024;
+const size_t ASCEND_WORKSPACE = 0;
 
 ge::graphStatus SquareTiling::CalcInputDtype()
 {

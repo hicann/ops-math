@@ -25,7 +25,7 @@
 using namespace SqrtOp;
 using namespace Ops::Base;
 namespace optiling {
-constexpr size_t SYS_WORKSPACE = 16777216; // 16M
+constexpr size_t SYS_WORKSPACE = 0;
 
 ge::graphStatus SqrtTiling::CalcInputDtype()
 {

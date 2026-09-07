@@ -24,31 +24,24 @@ using namespace ge;
 
 class FloorTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "FloorTilingTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "FloorTilingTest SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "FloorTilingTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "FloorTilingTest TearDown" << std::endl; }
 };
 
 TEST_F(FloorTilingTest, floor_test_0)
 {
     optiling::FloorCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara tilingContextPara(
-        "Floor",
-        {
-            {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Floor",
+                                              {
+                                                  {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 100000000000100;
     string expectTilingData = "2048 2048 32768 1 1 2048 2048 32768 ";
-    std::vector<size_t> expectWorkspaces = {32};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

@@ -16,70 +16,69 @@
 
 using namespace std;
 class CeilTilingTest : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "CeilTilingTest SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() { std::cout << "CeilTilingTest SetUp" << std::endl; }
 
-  static void TearDownTestCase() {
-    std::cout << "CeilTilingTest TearDown" << std::endl;
-  }
+    static void TearDownTestCase() { std::cout << "CeilTilingTest TearDown" << std::endl; }
 };
 
-TEST_F(CeilTilingTest, test_tiling_fp16_001) {
+TEST_F(CeilTilingTest, test_tiling_fp16_001)
+{
     optiling::CeilCompileInfo compileInfo = {64, 262144};
     gert::TilingContextPara tilingContextPara("Ceil",
                                               {
-                                                {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
                                               },
                                               {
-                                                {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
                                               },
                                               &compileInfo);
     uint64_t expectTilingKey = 3;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
-TEST_F(CeilTilingTest, test_tiling_bf16_002) {
+TEST_F(CeilTilingTest, test_tiling_bf16_002)
+{
     optiling::CeilCompileInfo compileInfo = {64, 262144};
     gert::TilingContextPara tilingContextPara("Ceil",
                                               {
-                                                {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
                                               },
                                               {
-                                                {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
                                               },
                                               &compileInfo);
     uint64_t expectTilingKey = 5;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
-
-TEST_F(CeilTilingTest, test_tiling_fp32_003) {
+TEST_F(CeilTilingTest, test_tiling_fp32_003)
+{
     optiling::CeilCompileInfo compileInfo = {64, 262144};
     gert::TilingContextPara tilingContextPara("Ceil",
                                               {
-                                                {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                               },
                                               {
-                                                {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                               },
                                               &compileInfo);
     uint64_t expectTilingKey = 7;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
-TEST_F(CeilTilingTest, test_tiling_failed_dtype_input_output_diff_005) {
+TEST_F(CeilTilingTest, test_tiling_failed_dtype_input_output_diff_005)
+{
     optiling::CeilCompileInfo compileInfo = {64, 262144};
     gert::TilingContextPara tilingContextPara("Ceil",
                                               {
-                                                {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                               },
                                               {
-                                                {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
                                               },
                                               &compileInfo);
     uint64_t expectTilingKey = 0;
@@ -87,14 +86,15 @@ TEST_F(CeilTilingTest, test_tiling_failed_dtype_input_output_diff_005) {
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
 }
 
-TEST_F(CeilTilingTest, test_tiling_failed_shape_input_output_diff_007) {
+TEST_F(CeilTilingTest, test_tiling_failed_shape_input_output_diff_007)
+{
     optiling::CeilCompileInfo compileInfo = {64, 262144};
     gert::TilingContextPara tilingContextPara("Ceil",
                                               {
-                                                {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                               },
                                               {
-                                                {{{1, 64, 2, 64},  {1, 64, 2, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                               },
                                               &compileInfo);
     uint64_t expectTilingKey = 0;
@@ -102,14 +102,15 @@ TEST_F(CeilTilingTest, test_tiling_failed_shape_input_output_diff_007) {
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
 }
 
-TEST_F(CeilTilingTest, test_tiling_failed_empty_tensor_008) {
+TEST_F(CeilTilingTest, test_tiling_failed_empty_tensor_008)
+{
     optiling::CeilCompileInfo compileInfo = {64, 262144};
     gert::TilingContextPara tilingContextPara("Ceil",
                                               {
-                                                {{{1, 0, 2, 64}, {1, 0, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1, 0, 2, 64}, {1, 0, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                               },
                                               {
-                                                {{{1, 0, 2, 64}, {1, 0, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1, 0, 2, 64}, {1, 0, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                               },
                                               &compileInfo);
     uint64_t expectTilingKey = 0;
@@ -117,14 +118,15 @@ TEST_F(CeilTilingTest, test_tiling_failed_empty_tensor_008) {
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
 }
 
-TEST_F(CeilTilingTest, test_tiling_failed_unsupport_input_009) {
+TEST_F(CeilTilingTest, test_tiling_failed_unsupport_input_009)
+{
     optiling::CeilCompileInfo compileInfo = {64, 262144};
     gert::TilingContextPara tilingContextPara("Ceil",
                                               {
-                                                {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                                  {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_DOUBLE, ge::FORMAT_ND},
                                               },
                                               {
-                                                {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                               },
                                               &compileInfo);
     uint64_t expectTilingKey = 0;
@@ -132,14 +134,15 @@ TEST_F(CeilTilingTest, test_tiling_failed_unsupport_input_009) {
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
 }
 
-TEST_F(CeilTilingTest, test_tiling_failed_unsupport_output_010) {
+TEST_F(CeilTilingTest, test_tiling_failed_unsupport_output_010)
+{
     optiling::CeilCompileInfo compileInfo = {64, 262144};
     gert::TilingContextPara tilingContextPara("Ceil",
                                               {
-                                                {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                               },
                                               {
-                                                {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                                  {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_DOUBLE, ge::FORMAT_ND},
                                               },
                                               &compileInfo);
     uint64_t expectTilingKey = 0;

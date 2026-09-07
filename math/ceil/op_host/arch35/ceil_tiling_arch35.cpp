@@ -25,7 +25,7 @@
 #include <iostream>
 
 namespace optiling {
-const size_t ASCEND_WORKSPACE = 16777216; // 16M
+const size_t ASCEND_WORKSPACE = 0;
 
 ge::graphStatus CeilTiling::SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling)
 {

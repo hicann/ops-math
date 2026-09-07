@@ -35,7 +35,7 @@ const uint64_t SIGN_KEY_UINT16 = 108UL;
 const uint64_t SIGN_KEY_UINT32 = 109UL;
 const uint64_t SIGN_KEY_UINT64 = 110UL;
 const uint64_t SIGN_KEY_INT16 = 111UL;
-const int64_t ASCEND_WORKSPACE = 16 * 1024 * 1024;
+const int64_t ASCEND_WORKSPACE = 0;
 
 ge::graphStatus SignTiling::CalcOutputDtype()
 {

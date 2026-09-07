@@ -29,7 +29,7 @@ namespace optiling {
 constexpr uint64_t ABS_TILING_KEY_ELEMENTWISE_BF16 = 101;
 constexpr uint64_t ABS_TILING_KEY_ELEMENTWISE_OTHER = 102;
 constexpr uint64_t ABS_TILING_KEY_ELEMENTWISE_COMPLEX = 103;
-constexpr uint64_t ABS_WORKSPACE_RESERVE_BYTE = 16777216;
+constexpr uint64_t ABS_WORKSPACE_RESERVE_BYTE = 0;
 
 ge::graphStatus AbsTiling::SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling)
 {

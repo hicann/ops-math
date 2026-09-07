@@ -24,25 +24,19 @@ using namespace std;
 using namespace ge;
 
 class CastTilingTest : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "CastTiling SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() { std::cout << "CastTiling SetUp" << std::endl; }
 
-  static void TearDownTestCase() {
-    std::cout << "CastTiling TearDown" << std::endl;
-  }
+    static void TearDownTestCase() { std::cout << "CastTiling TearDown" << std::endl; }
 };
 
-TEST_F(CastTilingTest, test_tiling_int32_cast_int4_fail) {
+TEST_F(CastTilingTest, test_tiling_int32_cast_int4_fail)
+{
     optiling::CastCompileInfo compileInfo = {64, 262144};
     gert::StorageShape shape = {{1, 64, 2, 63}, {1, 64, 2, 63}};
-    gert::TilingContextPara tilingContextPara(
-        "Cast",
-        {{ shape, ge::DT_INT32, ge::FORMAT_ND }},
-        {{ shape, ge::DT_INT4, ge::FORMAT_ND }},
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Cast", {{shape, ge::DT_INT32, ge::FORMAT_ND}},
+                                              {{shape, ge::DT_INT4, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 0;
-    std::vector<size_t> expectedWorkspaces = { 16777216 };
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }

@@ -27,7 +27,7 @@ using namespace FillOp;
 using namespace Ops::Base;
 
 namespace optiling {
-constexpr uint64_t FILL_WORKSPACE_RESERVE_BYTE = 16777216; // 16 * 1024 * 1024
+constexpr uint64_t FILL_WORKSPACE_RESERVE_BYTE = 0;
 const std::string FILLTILING_OP_NAME = "FillTiling";
 constexpr uint32_t FILL_INPUT_DIMS_INDEX = 0;
 constexpr uint32_t FILL_INPUT_VALUE_INDEX = 1;
