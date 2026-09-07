@@ -129,7 +129,7 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out)
     return ACLNN_SUCCESS;
 }
 
-static bool CheckInplaceDtypeValid(aclTensor* selfRef)
+static bool CheckInplaceDtypeValid(const aclTensor* selfRef)
 {
     auto inplaceSupportList = GetOutDtypeSupportList();
     // 检查selfRef的数据类型是否在inplace tanh算子的支持列表内
