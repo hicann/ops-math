@@ -38,7 +38,7 @@
 | [aclnnAddcdiv&aclnnInplaceAddcdiv](../../math/addcdiv/docs/aclnnAddcdiv&aclnnInplaceAddcdiv.md) | 完成加法计算。                                               | 默认确定性实现| 默认确定性实现 |
 | [aclnnAddcmul&aclnnInplaceAddcmul](../../math/addcmul/docs/aclnnAddcmul&aclnnInplaceAddcmul.md) | 执行tensor1与tensor2的逐元素乘法，将结果乘以标量值value并与输入self/selfRef做逐元素加法。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnAddLora](../../math/add_lora/docs/aclnnAddLora.md)        | 为神经网络添加LoRA（Low-Rank Adaptation）层功能，通过低秩分解减少参数数量。 | 默认确定性实现| - |
-| [aclnnAddN](../../math/add_n/docs/aclnnAddN.md)    |  对输入进行主元素相加求和操作。  | 默认确定性实现 | - |
+| [aclnnAddN](../../math/add_n/docs/aclnnAddN.md)    |  对输入进行主元素相加求和操作。  | 默认确定性实现 | 默认确定性实现 |
 | [aclnnAddr&aclnnInplaceAddr](../../math/addr/docs/aclnnAddr&aclnnInplaceAddr.md) | 求一维向量vec1和vec2的外积得到一个二维矩阵，并将外积结果矩阵乘一个系数后和自身乘系数相加后输出。 | 默认确定性实现| 默认确定性实现|
 | [aclnnAdds](../../math/add/docs/aclnnAdds.md) | 完成加法计算。 | 默认确定性实现|  默认确定性实现 |
 | [aclnnAddV3&aclnnInplaceAddV3](../../math/add/docs/aclnnAddV3&aclnnInplaceAddV3.md) | 完成加法计算。                                               | - |  默认确定性实现 |
@@ -95,7 +95,7 @@
 | [aclnnComplex](../../math/complex/docs/aclnnComplex.md)         | 输入两个Shape满足broadcast关系、Dtype一致的Tensor。               | 默认确定性实现| 默认确定性实现 |
 | [aclnnConfusionTranspose](../../conversion/confusion_transpose_d/docs/aclnnConfusionTranspose.md) | 融合reshape和transpose运算。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnConstantPadNd](../../conversion/pad_v3/docs/aclnnConstantPadNd.md) | 对输入的张量self，以pad参数为基准进行数据填充，填充值为value。 | 默认确定性实现| 默认确定性实现|
-| [aclnnCos&aclnnInplaceCos](../../math/cos/docs/aclnnCos&aclnnInplaceCos.md) | 对输入矩阵的每个元素进行余弦操作后输出。                     | 默认确定性实现| - |
+| [aclnnCos&aclnnInplaceCos](../../math/cos/docs/aclnnCos&aclnnInplaceCos.md) | 对输入矩阵的每个元素进行余弦操作后输出。                     | 默认确定性实现| 默认确定性实现 |
 | [aclnnCosh&aclnnInplaceCosh](../../math/cosh/docs/aclnnCosh&aclnnInplaceCosh.md) | 双曲函数，根据公式返回一个新的tensor。结果的形状与输入tensor相同。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnCummax](../../math/cummax/docs/aclnnCummax.md)            | 计算self中的累积最大值，并返回最大值以及对应的索引。         | 默认确定性实现| - |
 | [aclnnCummin](../../math/cummin/docs/aclnnCummin.md)            | 计算self中的累积最小值，并返回最小值以及对应的索引。         | 默认确定性实现| 默认确定性实现  |

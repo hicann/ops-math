@@ -3,7 +3,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend 950PR/Ascend 950DT</term>：不支持
+- <term>Ascend 950PR/Ascend 950DT</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
@@ -158,7 +158,7 @@ aclnnStatus aclnnAddN(
     <td>tensors中的Tensor shape不一致。</td>
   </tr>
   <tr>
-    <td>当前NPU架构不支持此算子，仅支持ASCEND910B(A2)和ASCEND910_93(A3)系列。</td>
+    <td>算子运行在不支持的产品型号上。</td>
   </tr>
   </tbody></table>
 
@@ -190,8 +190,8 @@ aclnnStatus aclnnAddN(
 
 - 确定性说明：aclnnAddN默认确定性实现。
 
-<!-- npu="A3,910b" id7 -->
-- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
+<!-- npu="950,A3,910b" id7 -->
+- <term>Ascend 950PR/Ascend 950DT</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
   - 数据类型：支持INT32、INT64、FLOAT16、BFLOAT16、FLOAT32。
   - 数据格式：仅支持ND格式。
   - 参数Shape：输入Tensor维度范围为1~8，需要满足shape一致。
