@@ -14,10 +14,21 @@
 
 using namespace AscendC;
 
+// KERNEL_TASK_TYPE token-pastes its key into a compile-feature identifier.
+// Therefore these named keys must remain preprocessor numeric constants instead of constexpr variables.
+#define KTH_VALUE_RADIX_MORE_CORE_INT64_TILING_KEY 2
+#define KTH_VALUE_RADIX_MORE_CORE_UINT32_TILING_KEY 258
+#define KTH_VALUE_MERGE_MORE_CORE_TILING_KEY 259
+#define KTH_VALUE_RADIX_SELECT_TILING_KEY 267
+
 template <uint64_t schId, uint64_t isInt32>
 __global__ __aicore__ void kth_value(GM_ADDR x, GM_ADDR y1, GM_ADDR y2, GM_ADDR workspace, GM_ADDR tiling)
 {
-    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
+    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
+    KERNEL_TASK_TYPE(KTH_VALUE_RADIX_MORE_CORE_INT64_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
+    KERNEL_TASK_TYPE(KTH_VALUE_RADIX_MORE_CORE_UINT32_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
+    KERNEL_TASK_TYPE(KTH_VALUE_MERGE_MORE_CORE_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
+    KERNEL_TASK_TYPE(KTH_VALUE_RADIX_SELECT_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
     REGISTER_TILING_DEFAULT(KthValueTilingData);
     GET_TILING_DATA_WITH_STRUCT(KthValueTilingData, tilingData, tiling);
     TPipe pipe;

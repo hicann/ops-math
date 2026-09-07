@@ -32,6 +32,15 @@
 using namespace AscendC;
 using namespace Sort;
 
+// KERNEL_TASK_TYPE token-pastes its key into a compile-feature identifier.
+// Therefore these named keys must remain preprocessor numeric constants instead of constexpr variables.
+#define SORT_RADIX_MORE_CORE_INT64_ASCENDING_TILING_KEY 2
+#define SORT_RADIX_MORE_CORE_INT64_DESCENDING_TILING_KEY 65538
+#define SORT_RADIX_MORE_CORE_UINT32_ASCENDING_TILING_KEY 258
+#define SORT_RADIX_MORE_CORE_UINT32_DESCENDING_TILING_KEY 65794
+#define SORT_MERGE_MORE_CORE_ASCENDING_TILING_KEY 259
+#define SORT_MERGE_MORE_CORE_DESCENDING_TILING_KEY 65795
+
 template <typename Op>
 __aicore__ inline void LaunchSortKernel(GM_ADDR input, GM_ADDR values, GM_ADDR indices, GM_ADDR userWorkspace,
                                         const SortRegBaseTilingData* sortTiling, TPipe* pipeline)
@@ -78,7 +87,13 @@ __global__ __aicore__ void sort(GM_ADDR input, GM_ADDR sortedValues, GM_ADDR sor
     GET_TILING_DATA_WITH_STRUCT(SortRegBaseTilingData, sortTilingData, tilingAddress);
 
     GM_ADDR sortWorkspace = AscendC::GetUserWorkspace(workBuffer);
-    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
+    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
+    KERNEL_TASK_TYPE(SORT_RADIX_MORE_CORE_INT64_ASCENDING_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
+    KERNEL_TASK_TYPE(SORT_RADIX_MORE_CORE_INT64_DESCENDING_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
+    KERNEL_TASK_TYPE(SORT_RADIX_MORE_CORE_UINT32_ASCENDING_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
+    KERNEL_TASK_TYPE(SORT_RADIX_MORE_CORE_UINT32_DESCENDING_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
+    KERNEL_TASK_TYPE(SORT_MERGE_MORE_CORE_ASCENDING_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
+    KERNEL_TASK_TYPE(SORT_MERGE_MORE_CORE_DESCENDING_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
     TPipe sortPipeline;
     constexpr bool isDescending = (isDescend != 0);
     if constexpr (schId == SORT_SCHID_7) {
