@@ -10,6 +10,7 @@
 
 #include "reshape_aicpu.h"
 
+#include "../../../common/inc/aicpu/math_aicpu_register.h"
 #include "log.h"
 #include "securec.h"
 #include "status.h"
@@ -40,12 +41,12 @@ uint32_t ReshapeCpuKernel::Compute(CpuKernelContext& ctx)
 
     if (output_data != input_data) {
         auto cpret = BiggerMemCpy(output_data, output_size, input_data, input_size);
-        KERNEL_CHECK_FALSE(
-            cpret, KERNEL_STATUS_INNER_ERROR, "[%s] memcpy_s to output failed, destMax [%ld], count [%ld].", kReshape,
-            output_size, input_size);
+        KERNEL_CHECK_FALSE(cpret, KERNEL_STATUS_INNER_ERROR,
+                           "[%s] memcpy_s to output failed, destMax [%ld], count [%ld].", kReshape, output_size,
+                           input_size);
     }
     return KERNEL_STATUS_OK;
 }
 
-REGISTER_CPU_KERNEL(kReshape, ReshapeCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kReshape, ReshapeCpuKernel);
 } // namespace aicpu
