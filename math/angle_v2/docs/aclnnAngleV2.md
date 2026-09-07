@@ -18,7 +18,7 @@
 - <term>Atlas 推理系列产品</term>：不支持
 <!-- end id5 -->
 <!-- npu="910" id6 -->
-- <term>Atlas 训练系列产品</term>：不支持
+- <term>Atlas 训练系列产品</term>：支持
 <!-- end id6 -->
 
 ## 功能说明
@@ -119,6 +119,10 @@ aclnnStatus aclnnAngleV2(
     </tr>
   </tbody>
   </table>
+
+  <!-- npu="910,310p" id7 -->
+  - <term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
+  <!-- end id7 -->
 
 - **返回值：**
 
