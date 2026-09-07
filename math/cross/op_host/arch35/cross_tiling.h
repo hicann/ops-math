@@ -8,10 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-/*!
- * \file cross_tiling.h
- * \brief cross tiling header
- */
 #ifndef OPS_BUILT_IN_OP_TILING_RUNTIME_CROSS_H_
 #define OPS_BUILT_IN_OP_TILING_RUNTIME_CROSS_H_
 
@@ -47,7 +43,7 @@ protected:
     ge::graphStatus CalcStrideAndVectors();
 
 private:
-    const CrossCompileInfo* compileInfo_ = nullptr;
+    const CrossCompileInfo* compileInfo_;
     CrossRegbaseTilingData tilingData_{};
     uint32_t blockDim_{1};
     int64_t totalVectors_{0};
@@ -68,4 +64,4 @@ private:
 };
 
 } // namespace optiling
-#endif // OPS_BUILT_IN_OP_TILING_RUNTIME_CROSS_H_
+#endif

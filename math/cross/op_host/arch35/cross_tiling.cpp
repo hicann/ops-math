@@ -8,11 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-/*!
- * \file cross_tiling.cpp
- * \brief cross tiling
- */
-
 #include "cross_tiling.h"
 
 using namespace ge;
@@ -22,7 +17,6 @@ static constexpr uint64_t INPUT_X1 = 0;
 static constexpr uint64_t INPUT_X2 = 1;
 static constexpr uint64_t DIM = 0;
 static constexpr int64_t INT_MAX = 2147483647;
-static constexpr int64_t CROSS_DIM_SIZE = 3;
 
 ge::graphStatus CrossTiling::GetPlatformInfo()
 {
@@ -32,7 +26,6 @@ ge::graphStatus CrossTiling::GetPlatformInfo()
     return ge::GRAPH_SUCCESS;
 }
 
-// 1. 基础参数校验（输入形状、维度合法性、尺寸检查）
 ge::graphStatus CrossTiling::CheckBaseShapeAndAttrs()
 {
     OP_LOGD(context_, "CrossTiling CheckBaseShapeAndAttrs.");
@@ -64,11 +57,9 @@ ge::graphStatus CrossTiling::CheckBaseShapeAndAttrs()
                 OP_LOGE(context_, "x1 and x2 dim count mismatch: %ld vs %ld.", dimNum1_, dimNum2_),
                 return ge::GRAPH_FAILED);
 
-    // 标准化维度
     int64_t tempDimNum = dimNum1_ == 0 ? 1 : dimNum1_;
     normalizedDim_ = (dim + tempDimNum) % tempDimNum;
 
-    // 校验指定维度必须为3
     int64_t dimSize1 = x1Dims_[normalizedDim_];
     int64_t dimSize2 = x2Dims_[normalizedDim_];
     OP_CHECK_IF((dimSize1 != 3), OP_LOGE(context_, "x1 dim[%ld] must be 3, got %ld.", normalizedDim_, dimSize1),
@@ -76,10 +67,46 @@ ge::graphStatus CrossTiling::CheckBaseShapeAndAttrs()
     OP_CHECK_IF((dimSize2 != 3), OP_LOGE(context_, "x2 dim[%ld] must be 3, got %ld.", normalizedDim_, dimSize2),
                 return ge::GRAPH_FAILED);
 
+    {
+        int64_t origDimNum = dimNum1_;
+        int64_t newDimNum = 0;
+        int64_t curProd = 1;
+        int64_t newNormalizedDim = 0;
+        for (int64_t i = 0; i < origDimNum; i++) {
+            bool needNewAxis = (x1Dims_[i] != x2Dims_[i]) || (i == normalizedDim_);
+            if (needNewAxis) {
+                if (curProd > 1) {
+                    x1Dims_[newDimNum] = curProd;
+                    x2Dims_[newDimNum] = curProd;
+                    newDimNum++;
+                }
+                x1Dims_[newDimNum] = x1Dims_[i];
+                x2Dims_[newDimNum] = x2Dims_[i];
+                if (i == normalizedDim_)
+                    newNormalizedDim = newDimNum;
+                newDimNum++;
+                curProd = 1;
+            } else {
+                curProd *= x1Dims_[i];
+            }
+        }
+        if (curProd > 1) {
+            x1Dims_[newDimNum] = curProd;
+            x2Dims_[newDimNum] = curProd;
+            newDimNum++;
+        }
+        for (int64_t i = newDimNum; i < MAX_DIM; i++) {
+            x1Dims_[i] = 1;
+            x2Dims_[i] = 1;
+        }
+        dimNum1_ = newDimNum;
+        dimNum2_ = newDimNum;
+        normalizedDim_ = newNormalizedDim;
+    }
+
     return ge::GRAPH_SUCCESS;
 }
 
-// 2. 广播兼容性校验 + 计算合并形状
 ge::graphStatus CrossTiling::CheckBroadcastAndMergeShape()
 {
     OP_LOGD(context_, "CrossTiling CheckBroadcastAndMergeShape.");
@@ -93,7 +120,6 @@ ge::graphStatus CrossTiling::CheckBroadcastAndMergeShape()
                     return ge::GRAPH_FAILED);
     }
 
-    // 计算合并形状 & 输出总大小
     dim_ = normalizedDim_;
     dimNum_ = dimNum1_;
     ySize_ = 1;
@@ -106,11 +132,9 @@ ge::graphStatus CrossTiling::CheckBroadcastAndMergeShape()
             ySize_ *= mergedShape_[i];
         }
     }
-    tilingData_.usedInt64 = ySize_ > INT_MAX;
     return ge::GRAPH_SUCCESS;
 }
 
-// 3. 计算步长stride + 最终向量参数
 ge::graphStatus CrossTiling::CalcStrideAndVectors()
 {
     OP_LOGD(context_, "CrossTiling CalcStrideAndVectors.");
@@ -124,21 +148,38 @@ ge::graphStatus CrossTiling::CalcStrideAndVectors()
         stride[0] *= x1Dims_[i];
         stride[1] *= x2Dims_[i];
         stride[2] *= mergedShape_[i];
-        stride[3] *= (i == dim_ ? CROSS_DIM_SIZE : mergedShape_[i]);
+        stride[3] *= (i == dim_ ? 3 : mergedShape_[i]);
     }
 
-    // 计算维度步长
     dimStride_ = 1;
     for (int64_t i = normalizedDim_ + 1; i < dimNum1_; i++) {
         dimStride_ *= mergedShape_[i];
     }
 
-    // 计算总向量数
     totalVectors_ = 1;
     for (int64_t i = 0; i < dimNum1_; i++) {
         if (i != normalizedDim_)
             totalVectors_ *= mergedShape_[i];
     }
+
+    int64_t activeCount = 0;
+    int64_t activeIdx[MAX_DIM];
+    for (int64_t i = 0; i < dimNum_; i++) {
+        if (i == dim_)
+            continue;
+        if (mergedShape_[i] > 1) {
+            activeIdx[activeCount++] = i;
+        }
+    }
+    tilingData_.activeDimCount = activeCount;
+    for (int64_t i = 0; i < activeCount; i++) {
+        tilingData_.activeDimIndices[i] = activeIdx[i];
+    }
+    for (int64_t i = activeCount; i < MAX_DIM; i++) {
+        tilingData_.activeDimIndices[i] = 0;
+    }
+
+    tilingData_.usedInt64 = ySize_ > INT_MAX;
     return ge::GRAPH_SUCCESS;
 }
 
@@ -158,16 +199,33 @@ ge::graphStatus CrossTiling::DoOpTiling()
     OP_LOGD(context_, "CrossTiling DoOpTiling.");
 
     int64_t coreNum = compileInfo_->coreNum;
-    int64_t vectorsPerCore = totalVectors_ / coreNum;
-    int64_t formerCore = totalVectors_ % coreNum;
+
+    // Multi-block-per-core ladder: pick the largest blocksPerCore whose resulting
+    // per-block workload still clears MIN_VECTORS_PER_BLOCK. Formulated in terms
+    // of "average work per core" (totalVectors_ / coreNum) so the threshold reads
+    // the same way the kernel-side comment does ("each block ≥ ~250K vectors").
+    int64_t avgVectorsPerCore = (coreNum > 0) ? totalVectors_ / coreNum : totalVectors_;
+    int64_t blocksPerCore = 1;
+    if (avgVectorsPerCore >= CrossConst::MAX_BLOCKS_PER_CORE * CrossConst::MIN_VECTORS_PER_BLOCK) {
+        blocksPerCore = CrossConst::MAX_BLOCKS_PER_CORE;
+    } else if (avgVectorsPerCore >= CrossConst::MEDIUM_BLOCKS_PER_CORE * CrossConst::MIN_VECTORS_PER_BLOCK) {
+        blocksPerCore = CrossConst::MEDIUM_BLOCKS_PER_CORE;
+    }
+    int64_t totalBlocks = coreNum * blocksPerCore;
+    if (totalBlocks > totalVectors_)
+        totalBlocks = totalVectors_;
+
+    int64_t vectorsPerBlock = totalVectors_ / totalBlocks;
+    int64_t formerBlock = totalVectors_ % totalBlocks;
 
     tilingData_.totalVectors = totalVectors_;
-    tilingData_.vectorsPerCore = vectorsPerCore;
     tilingData_.coreNum = coreNum;
     tilingData_.dim = dim_;
     tilingData_.dimNum = dimNum_;
     tilingData_.dimStride = dimStride_;
-    tilingData_.formerCore = formerCore;
+    tilingData_.blocksPerCore = blocksPerCore;
+    tilingData_.formerBlock = formerBlock;
+    tilingData_.vectorsPerBlock = vectorsPerBlock;
 
     for (int64_t i = 0; i < MAX_DIM; i++) {
         if (i < dimNum_) {
@@ -183,7 +241,7 @@ ge::graphStatus CrossTiling::DoOpTiling()
         }
     }
 
-    blockDim_ = (totalVectors_ < coreNum) ? totalVectors_ : coreNum;
+    blockDim_ = totalBlocks;
 
     return ge::GRAPH_SUCCESS;
 }
