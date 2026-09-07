@@ -476,7 +476,7 @@ int ExecuteGtScalarOperator(aclrtStream stream) {
   aclTensor* out = nullptr;
   std::vector<double> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
   std::vector<char> outHostData(8, 0);
-  float otherValue = 3.5f;
+  double otherValue = 3.5;
   // 创建self aclTensor
   ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_DOUBLE, &self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);

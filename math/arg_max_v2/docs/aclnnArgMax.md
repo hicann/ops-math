@@ -108,7 +108,7 @@ aclnnStatus aclnnArgMax(
       <tr>
         <td>out</td>
         <td>输出</td>
-        <td>输入Tensor。</td>
+        <td>输出Tensor，存储最大值索引。</td>
         <td>-</td>
         <td>INT32、INT64</td>
         <td>ND</td>

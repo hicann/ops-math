@@ -260,7 +260,7 @@ int main() {
   // 创建self aclTensor
   ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  // 创建self aclTensor
+  // 创建other aclTensor
   ret = CreateAclTensor(otherHostData, otherShape, &otherDeviceAddr, aclDataType::ACL_FLOAT, &other);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
   // 创建condition aclTensor

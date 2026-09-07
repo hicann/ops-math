@@ -100,9 +100,9 @@ aclnnStatus aclnnIsInTensorScalar(
       <td>-</td>
     </tr>
     <tr>
-      <td>out（aclScalar*）</td>
+      <td>out（aclTensor*）</td>
       <td>输出</td>
-      <td>输出标量，公式中的out。</td>
+      <td>输出张量，公式中的out，形状与self一致。</td>
       <td>数据类型为BOOL。</td>
       <td>BOOL</td>
       <td>-</td>

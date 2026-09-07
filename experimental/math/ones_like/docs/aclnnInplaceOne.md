@@ -304,7 +304,7 @@ int main()
         CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
     }
 
-    // 5. 调用aclnnOnesLike第二段接口
+    // 5. 调用aclnnInplaceOne第二段接口
     ret = aclnnInplaceOne(workspaceAddr, workspaceSize, executor, stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceOne failed. ERROR: %d\n", ret); return ret);
 

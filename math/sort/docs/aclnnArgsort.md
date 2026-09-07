@@ -323,7 +323,7 @@ int main() {
     // 创建self aclTensor
     ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_INT64, &self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
-    // 创建outValues和outIndices aclTensor
+    // 创建outIndices aclTensor
     ret = CreateAclTensor(outIndicesHostData, outIndicesShape, &outIndicesDeviceAddr, aclDataType::ACL_INT64, &outIndices);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 

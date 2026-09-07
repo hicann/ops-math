@@ -66,7 +66,7 @@ aclnnStatus aclnnSWhere(
     <tr>
       <td>condition</td>
       <td>输入</td>
-      <td>待进行select_v2计算的入参，公式中的self。</td>
+      <td>待进行select_v2计算的入参，公式中的condition。</td>
       <td>无</td>
       <td>BOOL</td>
       <td>ND</td>
