@@ -209,7 +209,7 @@ aclnnStatus aclnnInplaceBernoulliTensor(
     <tr>
       <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="4">161002</td>
-      <td>self、prob或out的数据类型和数据格式不在支持的范围之内。。</td>
+      <td>self、prob或out的数据类型和数据格式不在支持的范围之内。</td>
     </tr>
     <tr>
       <td>self和out的数据类型不一致。</td>
@@ -218,7 +218,7 @@ aclnnStatus aclnnInplaceBernoulliTensor(
       <td>self、prob或out的维度大于8。</td>
     </tr>
     <tr>
-      <td>self和out的shape不一致。。</td>
+      <td>self和out的shape不一致。</td>
     </tr>
   </tbody>
   </table>

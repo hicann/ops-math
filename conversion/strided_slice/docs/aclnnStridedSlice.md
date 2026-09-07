@@ -51,7 +51,7 @@
   out.shape[dim] = ⌊\frac{end - begin + strides - 1}{strides}⌋
   $$
 
-  若存在mask参数，则按照以下规则对outshape进行进一步计算，
+  若存在mask参数，则按照以下规则对out.shape进行进一步计算，
   $beginMask$指定$bit$位为1对应的索引维度的$begin$被忽略，
   $endMask$指定$bit$位为1对应的索引维度的$end$被忽略，
   $ellipsisMask$从$bit$位为1对应的索引维度开始全选后续维度，直到遇到指定$begin$才退出，
@@ -275,7 +275,7 @@ aclnnStatus aclnnStridedSlice(
       <td>strides存在等于0的元素。</td>
     </tr>
     <tr>
-      <td>out的数据维度与infershape的维度不相同。</td>
+      <td>out的数据维度与inferShape的维度不相同。</td>
     </tr>
     <tr>
       <td>产品型号不在支持的范围之内。</td>

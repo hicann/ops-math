@@ -192,7 +192,7 @@ aclnnStatus aclnnAddN(
 
 <!-- npu="A3,910b" id7 -->
 - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
-  - 数据类型：支持INT32，INT64，FLOAT16，BFLOAT16，FLOAT32。
+  - 数据类型：支持INT32、INT64、FLOAT16、BFLOAT16、FLOAT32。
   - 数据格式：仅支持ND格式。
   - 参数Shape：输入Tensor维度范围为1~8，需要满足shape一致。
 <!-- end id7 -->

@@ -36,7 +36,7 @@
   <!-- npu="A3,910b" id8 -->
   - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
     - 完成ND←→[NZ](../../../docs/zh/context/data_format.md)、NCL←→[NZ](../../../docs/zh/context/data_format.md)、NCHW←→[NZ](../../../docs/zh/context/data_format.md)、NCDHW←→[NZ](../../../docs/zh/context/data_format.md)的转换功能。C0是[NZ](../../../docs/zh/context/data_format.md)数据格式最后一维的大小。计算方法C0 = 32B / ge::GetSizeByDataType(static_cast additionalDtype)。
-    - 完成NCDHW←→[NDC1HWC0](../../../docs/zh/context/data_format.md)、NCDHW←→[FRACTAL_Z_3D](../../../docs/zh/context/data_format.md)、NCHW←→[NC1HWC0](../../../docs/zh/context/data_format.md)、NHWC←→[NC1HWC0](../../../docs/zh/context/data_format.md)、NCHW←→[FRACTAL_Z](../../../docs/zh/context/data_format.md)、HWCN←→[FRACTAL_Z](../../../docs/zh/context/data_format.md)、NDHWC←→[NDC1HWC0](../../../docs/zh/context/data_format.md)、DHWCN←→[FRACTAL_Z_3D](../../../docs/zh/context/data_format.md)的转换功能。其中，C0与微架构强相关，该值等于cube单元的size，例如16。C1是将C维度按照C0切分：C1=C/C0，若结果不整除，最后一份数据需要padding到C0。计算方法C0 = 32B / ge::GetSizeByDataType(static_cast additionalDtype)（例如FP16的additionalDtype枚举值为1，对应的数据FP16为2byte）。
+    - 完成NCDHW←→[NDC1HWC0](../../../docs/zh/context/data_format.md)、NCDHW←→[FRACTAL_Z_3D](../../../docs/zh/context/data_format.md)、NCHW←→[NC1HWC0](../../../docs/zh/context/data_format.md)、NHWC←→[NC1HWC0](../../../docs/zh/context/data_format.md)、NCHW←→[FRACTAL_Z](../../../docs/zh/context/data_format.md)、HWCN←→[FRACTAL_Z](../../../docs/zh/context/data_format.md)、NDHWC←→[NDC1HWC0](../../../docs/zh/context/data_format.md)、DHWCN←→[FRACTAL_Z_3D](../../../docs/zh/context/data_format.md)的转换功能。其中，C0与微架构强相关，该值等于cube单元的size，例如16。C1是将C维度按照C0切分：C1=C/C0，若结果不整除，最后一份数据需要padding到C0。计算方法C0 = 32B / ge::GetSizeByDataType(static_cast additionalDtype)（例如FP16的additionalDtype枚举值为1，对应的数据FP16为2 Byte）。
   <!-- end id8 -->
 
 - **计算流程**：
@@ -45,7 +45,7 @@
 
 ## 函数原型
 
-必须先调用`aclnnNpuFormatCastCalculateSizeAndFormat`计算出dstTensor的shape和实际数据格式，再调用[两段式接口](../../../docs/zh/context/two_phase_api.md)。两段式接口先调用`aclnnNpuFormatCastGetWorkSpaceSize`接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用`aclnnNpuFormatCast`接口执行计算。
+必须先调用`aclnnNpuFormatCastCalculateSizeAndFormat`计算出dstTensor的shape和实际数据格式，再调用[两段式接口](../../../docs/zh/context/two_phase_api.md)。两段式接口先调用`aclnnNpuFormatCastGetWorkspaceSize`接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用`aclnnNpuFormatCast`接口执行计算。
 
 ```c++
 aclnnStatus aclnnNpuFormatCastCalculateSizeAndFormat(

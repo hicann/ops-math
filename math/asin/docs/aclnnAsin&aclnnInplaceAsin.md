@@ -111,7 +111,7 @@ aclnnStatus aclnnInplaceAsin(
         <td>out (aclTensor*)</td>
         <td>输出</td>
         <td>-</td>
-        <td>hape需要与self一致，支持空Tensor。</td>
+        <td>shape需要与self一致，支持空Tensor。</td>
         <td>FLOAT、FLOAT16、DOUBLE</td>
         <td>ND</td>
         <td>不超过8维</td>
