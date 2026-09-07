@@ -31,31 +31,24 @@ namespace optiling {
 
 constexpr int64_t BLOCK_SIZE = 32;
 constexpr int64_t FP32_BYTES = 4;
-// select-mask bitmap: one bit per fp32 element
 constexpr int64_t BITS_PER_BYTE = 8;
-// fp32 elements per 256B (Compare requires 256B-aligned count)
 constexpr int64_t COMPARE_ALIGN = 64;
-constexpr int64_t NUM_CHUNK_QUEUES = 3; // x2 / grad / dist
-constexpr int64_t NUM_CHUNK_CPIES = 3;  // private per-chunk TBuf copies (both dtypes)
-constexpr int64_t DOUBLE_BUFFER = 2;    // each chunk queue double buffered
-// m-sized fp32 TBufs: x1Row/accum/diff/sign/powDst/zero/one/negOne (8)
-// + outQueue/wsRead/rowInQueue (3). MUST match kernel InitBuffer exactly — an
-// under-budgeted fixedBytes makes rTile too large and the last TBufs silently
-// overlap the calc buffers (Duplicate(zero_) then corrupts chunk data).
-constexpr int64_t NUM_FIXED_MBUF = 11;
-// High-precision power path (pgeneral) carves 13 fp32-equivalent rows: [0,9e) is the
-// scratch shared in turn by the correctly-rounded divide and by the power (ratio
-// rcp/base + ln/neg/aux + base-2 exp z/m/g + int32 2^m bit row), and [9e,13e) holds
-// the compensated accumulator's residual plus its two-sum temporaries, which must stay
-// live across the whole M-segment. 16 full rows leave margin for any segment width.
-constexpr int64_t NUM_POW_TMP_ROWS = 16;
-// Upper bound on mTile/rTile solve rounds: mTileSize at least halves each round from at
-// most int64 range down to the COMPARE_ALIGN floor, so 64 rounds can never be reached.
+static inline int64_t RowAlign(bool isFp16) { return isFp16 ? BLOCK_SIZE / 2 : BLOCK_SIZE / FP32_BYTES; }
+constexpr int64_t NUM_CHUNK_QUEUES = 3;         // x2 / grad / dist
+constexpr int64_t NUM_CHUNK_QUEUES_BLOCKED = 4; // x1 / x2 / grad / dist
+constexpr int64_t DOUBLE_BUFFER = 2;
+constexpr int64_t NUM_FIXED_ROWS = 5;
+constexpr int64_t NUM_BATCH_ROWS = 7;
+constexpr int64_t NUM_FP16_BATCH_ROWS = 3;
+constexpr int64_t NUM_POW_SCRATCH_ROWS = 9;
+constexpr int64_t NUM_MASKS = 2;
 constexpr int64_t MAX_TILE_SOLVE_ROUNDS = 64;
-// Safety margin: ccec adds hidden UB overhead (buffer alignment, queue management)
-// on top of the explicit InitBuffer sizes. Budgeting to the last byte makes the
-// final buffers silently overlap the calc buffers.
-constexpr int64_t UB_SAFETY_MARGIN = 8192;
+constexpr int64_t Q_SPLIT_MIN_TASK_ELEMS = 16384;
+constexpr int64_t MAX_REPEAT_TIMES = 255;
+constexpr int64_t MAX_REPEAT_STRIDE_BLOCKS = 255;
+constexpr int64_t MAX_MASK_FP32 = 64;
+constexpr int64_t VECTOR_FILL_ELEMS = 2048;
+constexpr int64_t UB_SAFETY_MARGIN = 16384;
 
 // Attr p → P_MODE
 constexpr uint32_t P_MODE_P1 = 0;
@@ -91,6 +84,8 @@ struct CdistGradTileInfo {
     int64_t numMTiles;
     int64_t lastMTileSize;
     int64_t rTile;
+    int64_t cTile; // compute batch width; equals rTile, or pTile*Q on the blocked path
+    int64_t pTile; // output rows per task; 1 = un-blocked (see PBlockRows)
     int64_t numRChunks;
     int64_t lastRChunkSize;
     int64_t tmpBufSize;
@@ -181,57 +176,105 @@ static ge::graphStatus ParseShapeInfo(gert::TilingContext* context, CdistGradSha
     return ge::GRAPH_SUCCESS;
 }
 
-// UB footprint of one M-segment of aligned width mTileAligned.
-static CdistGradSegBytes CalcSegBytes(int64_t mTileAligned, bool isFp16)
+// UB footprint of one M-segment of aligned width mTileAligned, split into the part that does
+// not depend on the batch width and the part that scales with it.
+static CdistGradSegBytes CalcSegBytes(int64_t mTileAligned, bool isFp16, bool isPGeneral)
 {
     int64_t mTileBytes = mTileAligned * FP32_BYTES;
+    int64_t inTypeBytes = isFp16 ? 2 : FP32_BYTES;
     CdistGradSegBytes bytes;
-    // High-precision power temp (used by p-general), sized for the WIDEST segment
-    // (kernel count = mAligned_ <= mTileAligned).
-    bytes.tmpBytes = std::max(NUM_POW_TMP_ROWS * mTileBytes, BLOCK_SIZE);
-    bytes.fixedBytes = NUM_FIXED_MBUF * mTileBytes + AlignUp(mTileAligned / BITS_PER_BYTE, BLOCK_SIZE) +
-                       (isFp16 ? mTileBytes : 0);
-    bytes.perTileBytes = (NUM_CHUNK_QUEUES * DOUBLE_BUFFER + NUM_CHUNK_CPIES) * mTileBytes +
-                         mTileAligned / BITS_PER_BYTE;
+    int64_t slackBytes = COMPARE_ALIGN * (NUM_CHUNK_QUEUES * DOUBLE_BUFFER * inTypeBytes +
+                                          (NUM_BATCH_ROWS + (isFp16 ? NUM_FP16_BATCH_ROWS : 0)) * FP32_BYTES) +
+                         COMPARE_ALIGN * NUM_MASKS / BITS_PER_BYTE +
+                         (isPGeneral ? NUM_POW_SCRATCH_ROWS * (COMPARE_ALIGN - 1) * FP32_BYTES : 0);
+    bytes.fixedBytes = NUM_FIXED_ROWS * mTileBytes + slackBytes;
+    // Per batch row: three double-buffered input queue slots (input dtype), the fp32 batch
+    // rows, p-general's scratch pool, and the two Compare bitmaps.
+    bytes.perTileBytes = NUM_CHUNK_QUEUES * DOUBLE_BUFFER * mTileAligned * inTypeBytes +
+                         (NUM_BATCH_ROWS + (isFp16 ? NUM_FP16_BATCH_ROWS : 0)) * mTileBytes +
+                         (isPGeneral ? NUM_POW_SCRATCH_ROWS * mTileBytes : 0) +
+                         NUM_MASKS * (mTileAligned / BITS_PER_BYTE);
     return bytes;
 }
 
-// ---- Joint mTile/rTile solve (M-tiling) ----
-// Prefer the largest mTile (fewest M segments); halve it until the per-segment
-// footprint fits. mTile floor of 64 floats always fits, so any M is supported.
-// Note: per-segment aligned width mTileAligned replaces mAligned in all buffer
-// sizing; the full-row aligned width (mAligned) is only the workspace stride.
-static void SolveMTileAndRTile(int64_t ubSize, bool isFp16, const CdistGradShapeInfo& shape, CdistGradTileInfo& tile)
+static int64_t PBlockRows(int64_t ubSize, bool isFp16, bool isPGeneral, const CdistGradShapeInfo& shape,
+                          const CdistGradTileInfo& tile, int64_t qSplit)
 {
-    int64_t mTileSize = (shape.mSize > COMPARE_ALIGN) ? ((shape.mSize / COMPARE_ALIGN) * COMPARE_ALIGN) : shape.mSize;
+    const int64_t mAligned = tile.mAligned;
+    const int64_t totalRows = shape.batchSize * shape.pSize;
+    if (tile.numMTiles != 1 || qSplit != 1 || totalRows <= 1) {
+        return 1;
+    }
+    if (mAligned > MAX_MASK_FP32 || mAligned % (BLOCK_SIZE / FP32_BYTES) != 0) {
+        return 1;
+    }
+    if (shape.rSize * mAligned / (BLOCK_SIZE / FP32_BYTES) > MAX_REPEAT_STRIDE_BLOCKS) {
+        return 1;
+    }
+    if (shape.rSize * mAligned >= VECTOR_FILL_ELEMS) {
+        return 1; // one task already fills an instruction; blocking would only add complexity
+    }
+
+    // UB budget for the blocked layout, per (i,j) row of the [pTile*Q, mAligned] slab.
+    const int64_t inTypeBytes = isFp16 ? 2 : FP32_BYTES;
+    const int64_t mTileBytes = mAligned * FP32_BYTES;
+    const int64_t fp16BatchRows = isFp16 ? NUM_FP16_BATCH_ROWS + 1 : 0; // +1: fp32 view of the x1 slab
+    const int64_t perRowBytes = NUM_CHUNK_QUEUES_BLOCKED * DOUBLE_BUFFER * mAligned * inTypeBytes +
+                                (NUM_BATCH_ROWS + fp16BatchRows) * mTileBytes +
+                                (isPGeneral ? NUM_POW_SCRATCH_ROWS * mTileBytes : 0) +
+                                NUM_MASKS * (mAligned / BITS_PER_BYTE);
+    // Same constant slack as CalcSegBytes: every batch buffer, queue slot and mask carries
+    // COMPARE_ALIGN elements past the last row.
+    const int64_t slackBytes = COMPARE_ALIGN * (NUM_CHUNK_QUEUES_BLOCKED * DOUBLE_BUFFER * inTypeBytes +
+                                                (NUM_BATCH_ROWS + fp16BatchRows) * FP32_BYTES) +
+                               COMPARE_ALIGN * NUM_MASKS / BITS_PER_BYTE +
+                               (isPGeneral ? NUM_POW_SCRATCH_ROWS * (COMPARE_ALIGN - 1) * FP32_BYTES : 0);
+    const int64_t fixedBytes = NUM_FIXED_ROWS * mTileBytes + slackBytes;
+    const int64_t avail = ubSize - fixedBytes - UB_SAFETY_MARGIN;
+    if (avail <= 0) {
+        return 1;
+    }
+    const int64_t perPRowBytes = shape.rSize * perRowBytes + 3 * mTileBytes;
+    int64_t pTile = avail / perPRowBytes;
+    if (pTile > MAX_REPEAT_TIMES) {
+        pTile = MAX_REPEAT_TIMES;
+    }
+    if (pTile > totalRows) {
+        pTile = totalRows;
+    }
+    return pTile >= 2 ? pTile : 1;
+}
+
+static void SolveMTileAndRTile(int64_t ubSize, bool isFp16, bool isPGeneral, const CdistGradShapeInfo& shape,
+                               CdistGradTileInfo& tile)
+{
+    const int64_t rowAlign = RowAlign(isFp16);
+    int64_t mTileSize = shape.mSize;
     int64_t rTile = 1;
-    int64_t tmpBytes = BLOCK_SIZE;
     bool solved = false;
-    // mTileSize at least halves every round and is floored at COMPARE_ALIGN, so `solved`
-    // is reached well within MAX_TILE_SOLVE_ROUNDS. The round bound is a hard safety stop
-    // only; hitting it leaves the minimum-footprint fallback (mTile=64, rTile=1) in place.
     for (int64_t round = 0; round < MAX_TILE_SOLVE_ROUNDS && !solved; round++) {
-        CdistGradSegBytes bytes = CalcSegBytes(AlignUp(mTileSize, COMPARE_ALIGN), isFp16);
-        tmpBytes = bytes.tmpBytes;
-        int64_t avail = ubSize - bytes.fixedBytes - bytes.tmpBytes - UB_SAFETY_MARGIN;
+        CdistGradSegBytes bytes = CalcSegBytes(AlignUp(mTileSize, rowAlign), isFp16, isPGeneral);
+        int64_t avail = ubSize - bytes.fixedBytes - UB_SAFETY_MARGIN;
         if (avail >= bytes.perTileBytes) {
             rTile = std::min(avail / bytes.perTileBytes, shape.rSize);
             solved = true;
-        } else if (mTileSize <= COMPARE_ALIGN) {
-            rTile = 1; // minimum footprint; guaranteed to fit for M-segment 64
+        } else if (mTileSize <= rowAlign) {
+            rTile = 1; // minimum footprint; always fits at the row-stride floor
             solved = true;
         } else {
-            // Keep mTileSize a multiple of 64: every non-tail segment then satisfies
-            // mTileReal == mTileAligned and takes the contiguous-chunk fast path.
-            mTileSize = std::max(COMPARE_ALIGN, (mTileSize / 2 / COMPARE_ALIGN) * COMPARE_ALIGN);
+            mTileSize = std::max(rowAlign, (mTileSize / 2 / rowAlign) * rowAlign);
         }
     }
 
-    // mAligned: fp32 element count aligned to 256B (64 fp32) — required by Compare API
-    tile.mAligned = AlignUp(shape.mSize, COMPARE_ALIGN);
+    // mAligned: full-row element stride (workspace slot stride), aligned to the row stride.
+    tile.mAligned = AlignUp(shape.mSize, rowAlign);
     tile.mTileSize = mTileSize;
     tile.rTile = std::max<int64_t>(rTile, 1);
-    tile.tmpBufSize = tmpBytes;
+    tile.cTile = tile.rTile;
+    tile.pTile = 1;
+    tile.tmpBufSize = isPGeneral ? NUM_POW_SCRATCH_ROWS *
+                                       AlignUp(tile.cTile * AlignUp(mTileSize, rowAlign), COMPARE_ALIGN) * FP32_BYTES :
+                                   BLOCK_SIZE;
     tile.numMTiles = CeilDiv(shape.mSize, tile.mTileSize);
     tile.lastMTileSize = shape.mSize - (tile.numMTiles - 1) * tile.mTileSize;
     tile.numRChunks = CeilDiv(shape.rSize, tile.rTile);
@@ -241,13 +284,13 @@ static void SolveMTileAndRTile(int64_t ubSize, bool isFp16, const CdistGradShape
     }
 }
 
-// Multi-core split along B*P tasks; Q-split when B*P < coreNum (load balancing).
-static CdistGradCoreInfo SplitCores(const CdistGradShapeInfo& shape, int64_t coreNum)
+static CdistGradCoreInfo SplitCores(const CdistGradShapeInfo& shape, int64_t coreNum, int64_t rowsPerTask)
 {
     CdistGradCoreInfo core;
-    int64_t totalTasks = shape.batchSize * shape.pSize;
+    int64_t totalTasks = CeilDiv(shape.batchSize * shape.pSize, rowsPerTask);
     core.qSplit = 1;
-    if (totalTasks > 0 && totalTasks < coreNum && shape.rSize > 1) {
+    if (rowsPerTask == 1 && totalTasks > 0 && totalTasks < coreNum && shape.rSize > 1 &&
+        shape.rSize * shape.mSize >= Q_SPLIT_MIN_TASK_ELEMS) {
         core.qSplit = std::min(CeilDiv(coreNum, totalTasks), shape.rSize);
     }
     core.qPartSize = CeilDiv(shape.rSize, core.qSplit);
@@ -264,18 +307,12 @@ static CdistGradCoreInfo SplitCores(const CdistGradShapeInfo& shape, int64_t cor
     return core;
 }
 
-// Workspace layout: [system workspace (GetLibApiWorkSpaceSize) | user workspace].
-// Always request at least the system part: a zero-size workspace yields an invalid
-// kernel workspace pointer on 910B and faults at launch.
 static ge::graphStatus SetWorkspaceSize(gert::TilingContext* context,
                                         platform_ascendc::PlatformAscendC& ascendcPlatform,
                                         const CdistGradTileInfo& tile, const CdistGradCoreInfo& core)
 {
     size_t* workspace = context->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, workspace);
-    // Two-phase partial sums are stored as fp32 for every input dtype (the kernel keeps
-    // the accumulator's precision across the workspace round trip), so the slot stride is
-    // sizeof(float), not inputTypeSize.
     size_t usrSize = (core.qSplit > 1) ? static_cast<size_t>(core.totalSubTasks * tile.mAligned * sizeof(float)) : 0;
     size_t sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
     workspace[0] = usrSize + sysWorkspaceSize;
@@ -299,6 +336,8 @@ static ge::graphStatus FillTilingData(gert::TilingContext* context, const CdistG
     tiling->numMTiles = tile.numMTiles;
     tiling->lastMTileSize = tile.lastMTileSize;
     tiling->rTile = tile.rTile;
+    tiling->cTile = tile.cTile;
+    tiling->pTile = tile.pTile;
     tiling->numRChunks = tile.numRChunks;
     tiling->lastRChunkSize = tile.lastRChunkSize;
     tiling->tasksPerCore = core.tasksPerCore;
@@ -341,14 +380,28 @@ static ge::graphStatus CdistGradTilingFunc(gert::TilingContext* context)
     }
 
     CdistGradTileInfo tile;
-    SolveMTileAndRTile(ubSize, inputDType == ge::DT_FLOAT16, shape, tile);
-    CdistGradCoreInfo core = SplitCores(shape, coreNum);
+    const bool isFp16 = (inputDType == ge::DT_FLOAT16);
+    const bool isPGeneral = (pModeInt == P_MODE_PGENERAL);
+    SolveMTileAndRTile(ubSize, isFp16, isPGeneral, shape, tile);
+    CdistGradCoreInfo core = SplitCores(shape, coreNum, 1);
+
+    tile.pTile = PBlockRows(ubSize, isFp16, isPGeneral, shape, tile, core.qSplit);
+    if (tile.pTile > 1) {
+        tile.rTile = tile.pTile * shape.rSize;
+        tile.numRChunks = 1;
+        tile.lastRChunkSize = tile.rTile;
+        tile.cTile = tile.rTile;
+        tile.tmpBufSize = isPGeneral ?
+                              NUM_POW_SCRATCH_ROWS * AlignUp(tile.cTile * tile.mAligned, COMPARE_ALIGN) * FP32_BYTES :
+                              BLOCK_SIZE;
+        core = SplitCores(shape, coreNum, tile.pTile);
+    }
 
     OP_LOGI(context->GetNodeName(),
-            "UB=%ld M=%ld mAligned=%ld mTile=%ld numMTiles=%ld rTile=%ld numRChunks=%ld usedCoreNum=%ld "
-            "tasksPerCore=%ld qSplit=%ld qPartSize=%ld",
-            ubSize, shape.mSize, tile.mAligned, tile.mTileSize, tile.numMTiles, tile.rTile, tile.numRChunks,
-            core.usedCoreNum, core.tasksPerCore, core.qSplit, core.qPartSize);
+            "UB=%ld M=%ld mAligned=%ld mTile=%ld numMTiles=%ld rTile=%ld cTile=%ld pTile=%ld numRChunks=%ld "
+            "usedCoreNum=%ld tasksPerCore=%ld qSplit=%ld qPartSize=%ld tmpBufSize=%ld",
+            ubSize, shape.mSize, tile.mAligned, tile.mTileSize, tile.numMTiles, tile.rTile, tile.cTile, tile.pTile,
+            tile.numRChunks, core.usedCoreNum, core.tasksPerCore, core.qSplit, core.qPartSize, tile.tmpBufSize);
 
     if (SetWorkspaceSize(context, ascendcPlatform, tile, core) != ge::GRAPH_SUCCESS) {
         return ge::GRAPH_FAILED;

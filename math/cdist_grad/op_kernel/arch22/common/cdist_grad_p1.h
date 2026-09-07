@@ -34,7 +34,7 @@ class CdistGradP1 : public CdistGradBase<T, CdistGradP1<T>> {
 public:
     using Base = CdistGradBase<T, CdistGradP1<T>>;
     __aicore__ inline void PrepareChunk(int64_t currentRTile);
-    __aicore__ inline void ComputeForJ(int64_t j);
+    __aicore__ inline void ComputeBatch(int64_t base, int64_t rows);
 };
 
 template <typename T>
@@ -43,26 +43,25 @@ __aicore__ inline void CdistGradP1<T>::PrepareChunk(int64_t currentRTile)
     (void)currentRTile; // no chunk-level preprocessing needed
 }
 
+// term[j] = grad[j] * sign(x1 - x2[j]) for `rows` consecutive j rows in one pass.
 template <typename T>
-__aicore__ inline void CdistGradP1<T>::ComputeForJ(int64_t j)
+__aicore__ inline void CdistGradP1<T>::ComputeBatch(int64_t base, int64_t rows)
 {
-    uint32_t count = static_cast<uint32_t>(this->mAligned_);
-    int64_t rowOff = j * this->mAligned_;
-    LocalTensor<float> diff = this->diffBuf.template Get<float>();
-    LocalTensor<float> sign = this->signBuf.template Get<float>();
-    LocalTensor<uint8_t> mask = this->maskBuf2.template Get<uint8_t>();
+    const int64_t off = base * this->mAligned_;
+    const uint32_t n = this->CmpCount(rows * this->mAligned_);
+    LocalTensor<float> term = this->term_[off];
+    LocalTensor<float> sign = this->sc1_;
+    LocalTensor<uint8_t> mask = this->maskBuf.template Get<uint8_t>();
 
     // diff = x1 - x2[j]
-    AscendC::Sub(diff, this->x1Row_, this->x2Chunk_[rowOff], count);
+    this->SubX1(term, off, rows, n);
     // sign(diff): x>0 -> 1, x<0 -> -1, x==0 -> 0 (hard decision, matches 950 CdistGradSignOp)
-    AscendC::Compare(mask, diff, this->zero_, AscendC::CMPMODE::GT, count);
-    AscendC::Select(sign, mask, this->one_, this->zero_, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, count);
-    AscendC::Compare(mask, diff, this->zero_, AscendC::CMPMODE::LT, count);
-    AscendC::Select(sign, mask, this->negOne_, sign, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, count);
+    AscendC::Compares(mask, term, 0.0f, AscendC::CMPMODE::GT, n);
+    AscendC::Select(sign, mask, this->one_, this->zero_, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
+    AscendC::Compares(mask, term, 0.0f, AscendC::CMPMODE::LT, n);
+    AscendC::Select(sign, mask, this->negOne_, sign, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
     // result = grad * sign   (950: Mul(CastGrad, OpSign))
-    AscendC::Mul(sign, this->gradChunk_[rowOff], sign, count);
-    // accum += result
-    AscendC::Add(this->accum_, this->accum_, sign, count);
+    AscendC::Mul(term, this->gradChunk_[off], sign, n);
 }
 
 } // namespace NsCdistGrad

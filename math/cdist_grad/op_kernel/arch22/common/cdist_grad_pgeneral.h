@@ -16,13 +16,38 @@
  *   result = sign * |diff|^(p-1) * grad / cdist^(p-1)
  *            then SelectZero(cdist==0), SelectZero(|diff|==0)
  *
- * High-precision reformulation for fp32:
+ * Reformulated for fp32 as:
  *   result = sign * grad * r^q,   q = |p-1|,   r = |diff|/cdist (p>1) or cdist/|diff| (p<1).
- * This collapses the two transcendental `Power` calls into a single power of a bounded ratio,
- * and replaces the low-precision arch22 `Div` (reciprocal-table) with a 2-step Newton-Raphson
- * reciprocal refinement. The remaining power r^q is computed as exp(q * ln(r)) with a
- * Newton-refined ln (2 iterations) and the Taylor-series Exp, driving fp32 relative error
- * from ~1e-4 (bare vln+vexp) down to ~1e-7.
+ * Collapsing the two `Power` calls into a single power of a bounded ratio is the part that
+ * earns its keep: it halves the transcendental work AND removes the cancellation between two
+ * separately-rounded powers.
+ *
+ * Of the hand-rolled high-precision pieces this file used to stack on top of that, only the
+ * ones that were measured to pay for themselves remain. Against a float64 reference on 910B:
+ *
+ *   DivHighPrec (correctly-rounded quotient)  KEPT, unconditionally.
+ *       Its value does not show up in a single term -- per-term error is unchanged by it from
+ *       M = 8 upward -- but it is decisive once the j reduce cancels. The quotient feeds ln(),
+ *       so its relative error becomes an absolute error on ln(r) that q then scales; on a
+ *       long, heavily-cancelling reduce that lands straight in the output. Measured on
+ *       [1,40,300,37] p=1.5: 2.1e-6 with it, 7.6e-6 without.
+ *   PowIntExp (exact integer power)           KEPT. Cheaper AND more accurate than exp(k*ln r)
+ *       for integer k -- 1.5x lower per-term error at p = 3.
+ *   LnHighPrec / ExpHighPrec (Newton ln, Cody-Waite exp)   DROPPED for M > 1.
+ *       Per-term they measured 0.96x, i.e. very slightly WORSE than the platform Log/Exp,
+ *       while costing ~1.25x the kernel time: adv_api's fp32 Log/Exp are accurate enough that
+ *       two Newton iterations only re-round an already correctly-rounded result.
+ *
+ * The reason the elementary functions cannot help for M > 1 is that the term is bounded by the
+ * fp32 rounding of the INPUT cdist, which reaches the output scaled by |p-1| (measured mean
+ * relative error grows linearly in |p-1|: 5.4e-8 at p = 1.5 to 5.2e-7 at p = 7.3, and is the
+ * same for every implementation tested, the legacy TBE one included). Internal precision
+ * cannot go below a bound set by the operand.
+ *
+ * M == 1 is where that bound vanishes -- cdist IS |diff| bit for bit, so the true ratio is 1
+ * for every element -- and there the refined ln/exp ARE measurably better, so they are kept for
+ * that shape alone (dropping them took [1,16,16,1] p=0.5 from 1.75x better than the legacy TBE
+ * implementation to 0.84x, i.e. worse).
  *
  * Select masks are always written at the aligned BASE of a mask buffer (VSEL requires an
  * aligned mask address) — per-row Compare, never offset-indexed chunk masks.
@@ -45,14 +70,41 @@ using namespace AscendC;
 // and rounds it to the operator dtype).
 constexpr float MAX_FINITE_F32 = 3.4028235e38f;
 
-// Number of low significand bits cleared by SplitHead. fp32 carries 24 significand bits, so
-// splitting at half that width leaves two 12-bit heads whose product is still exact in fp32.
-constexpr int32_t SPLIT_HEAD_SHIFT_BITS = 12;
+// fp32 binary layout, used by the bit tricks below.
+constexpr int32_t FP32_MANTISSA_BITS = 23;
+constexpr int32_t FP32_EXP_BIAS = 127;
+// Dekker split point: clearing the low FP32_SPLIT_LOW_BITS of the 24-bit significand leaves a
+// head of <= 12 bits, so head*head and head*tail are representable exactly.
+constexpr int32_t FP32_SPLIT_LOW_BITS = 12;
+// Exponent range 2^m can hold without producing a denormal or an inf.
+constexpr float EXP_SCALE_MIN = -127.0f;
+constexpr float EXP_SCALE_MAX = 128.0f;
+// Above this exponent the repeated-multiplication chain costs more than exp(k*ln r).
+constexpr int64_t POW_INT_EXP_MAX = 16;
+// Floor applied to the power base so ln() never sees a zero.
+constexpr float POW_BASE_FLOOR = 1e-30f;
 
-// Largest integer exponent still served by PowIntExp. Up to this many repeated multiplies stay
-// cheaper than the exp/ln path and, unlike it, are exact; beyond it the multiply chain wins on
-// neither count.
-constexpr int64_t POW_INT_FASTPATH_MAX_EXP = 16;
+// Layout of the p-general scratch pool. `tmp` holds NUM_POW_SCRATCH_ROWS (see the host tiling)
+// rows of `count` fp32 elements each; every helper below addresses row i as tmp[i * count].
+// DivHighPrec and PowGeneral never hold the pool at the same time, so they reuse the same rows.
+constexpr uint32_t DIV_SLOT_RCP = 0;    // 1/den
+constexpr uint32_t DIV_SLOT_Q0 = 1;     // first estimate of num/den
+constexpr uint32_t DIV_SLOT_PH = 2;     // fl(den*q0), the high half of the product
+constexpr uint32_t DIV_SLOT_ACC = 3;    // den*q0 - ph exactly, then the residual
+constexpr uint32_t DIV_SLOT_PROD = 4;   // partial products
+constexpr uint32_t DIV_SLOT_DEN_LO = 5; // den - denHi
+constexpr uint32_t DIV_SLOT_Q0_LO = 6;  // q0 - q0Hi
+constexpr uint32_t DIV_SLOT_DEN_HI = 7; // den with its low significand bits cleared
+constexpr uint32_t DIV_SLOT_Q0_HI = 8;  // q0 with its low significand bits cleared
+
+constexpr uint32_t POW_SLOT_BASE = 0; // base clamped away from zero
+constexpr uint32_t POW_SLOT_LN = 1;   // ln(base), then exp * ln(base)
+constexpr uint32_t POW_SLOT_NEG = 2;  // LnHighPrec: -ln estimate
+constexpr uint32_t POW_SLOT_AUX = 3;  // LnHighPrec: Newton correction
+constexpr uint32_t POW_SLOT_Z = 4;    // ExpHighPrec: x/ln2, then the reduced argument
+constexpr uint32_t POW_SLOT_M = 5;    // ExpHighPrec: floor(x/ln2)
+constexpr uint32_t POW_SLOT_G = 6;    // ExpHighPrec: c in [0, ln2)
+constexpr uint32_t POW_SLOT_I32 = 7;  // ExpHighPrec: 2^m assembled in the exponent field
 
 // dst = src^expInt via repeated multiplication for small integer expInt (exact, no exp/ln).
 __aicore__ inline void PowIntExp(LocalTensor<float>& dst, const LocalTensor<float>& src, int64_t expInt, uint32_t count)
@@ -63,53 +115,28 @@ __aicore__ inline void PowIntExp(LocalTensor<float>& dst, const LocalTensor<floa
     }
 }
 
-// hi = src with the low 12 significand bits cleared, leaving a 12-bit head. The product of
-// two such heads is exact in fp32 (12 + 12 = 24 bits), which is what makes the two-product
-// below exact. src must be non-negative -- every operand here is a magnitude -- so the shift
-// pair acts as a plain mantissa mask. The textbook Dekker split (src * 4097) is deliberately
-// avoided: it overflows to +inf, and then to NaN, for |src| > FLT_MAX/4097 ~ 8.3e34.
-// hiI is an int32 scratch row; the returned head is its float view.
 __aicore__ inline void SplitHead(LocalTensor<int32_t>& hiI, const LocalTensor<float>& src, uint32_t count)
 {
     LocalTensor<float> s = src;
-    AscendC::ShiftRight<int32_t>(hiI, s.template ReinterpretCast<int32_t>(), SPLIT_HEAD_SHIFT_BITS, count);
-    AscendC::ShiftLeft<int32_t>(hiI, hiI, SPLIT_HEAD_SHIFT_BITS, count);
+    AscendC::ShiftRight<int32_t>(hiI, s.template ReinterpretCast<int32_t>(), FP32_SPLIT_LOW_BITS, count);
+    AscendC::ShiftLeft<int32_t>(hiI, hiI, FP32_SPLIT_LOW_BITS, count);
 }
 
-// dst = num / den, correctly rounded to fp32 (<= 0.5 ulp) and EXACT whenever num == den.
-
-// Two Newton-Raphson reciprocal refinements on their own leave up to ~3 ulp and, in
-// particular, return num/num == 1.0f only about 60% of the time. That matters far more than
-// the raw ulp count suggests, because the quotient feeds ln(): its RELATIVE error lands as
-// an ABSOLUTE error on ln(r) and is then multiplied by q in exp(q*ln r), so at q ~ 4.8 a
-// single ulp of division error becomes ~3e-7 of relative error per term -- and the sum over
-// j cancels by up to 1e6:1, which lifts that straight into the output. It is worst exactly
-// where the reference is perfect: whenever the feature dim is 1, cdist is |diff| bit for
-// bit, so the true factor is 1 and the CPU benchmark (exp(q*log(1))) gets every such term
-// exactly right while we contribute a fresh ulp on each one.
-
-// So the quotient is finished with one residual correction, q1 = q0 + (num - den*q0)/den,
-// where den*q0 is formed exactly as a two-product (head/tail split above). num - den*q0 is
-// then exact by Sterbenz, and the correction only needs the low-precision reciprocal we
-// already have.
-
-// tmp supplies 9 fp32 rows of `count` elements; dst may alias num or den (only the final
-// Add writes to it).
 __aicore__ inline void DivHighPrec(LocalTensor<float>& dst, const LocalTensor<float>& num,
                                    const LocalTensor<float>& den, LocalTensor<float>& tmp, uint32_t count)
 {
     uint32_t e = count;
-    LocalTensor<float> rcp = tmp;         // 1/den
-    LocalTensor<float> q0 = tmp[e];       // first estimate of num/den
-    LocalTensor<float> ph = tmp[2 * e];   // fl(den*q0), the high half of the product
-    LocalTensor<float> acc = tmp[3 * e];  // den*q0 - ph exactly, then the residual
-    LocalTensor<float> prod = tmp[4 * e]; // partial products
-    LocalTensor<float> denLo = tmp[5 * e];
-    LocalTensor<float> q0Lo = tmp[6 * e];
-    LocalTensor<int32_t> denHiI = tmp[7 * e].template ReinterpretCast<int32_t>();
-    LocalTensor<int32_t> q0HiI = tmp[8 * e].template ReinterpretCast<int32_t>();
-    LocalTensor<float> denHi = tmp[7 * e];
-    LocalTensor<float> q0Hi = tmp[8 * e];
+    LocalTensor<float> rcp = tmp[DIV_SLOT_RCP * e];
+    LocalTensor<float> q0 = tmp[DIV_SLOT_Q0 * e];
+    LocalTensor<float> ph = tmp[DIV_SLOT_PH * e];
+    LocalTensor<float> acc = tmp[DIV_SLOT_ACC * e];
+    LocalTensor<float> prod = tmp[DIV_SLOT_PROD * e];
+    LocalTensor<float> denLo = tmp[DIV_SLOT_DEN_LO * e];
+    LocalTensor<float> q0Lo = tmp[DIV_SLOT_Q0_LO * e];
+    LocalTensor<float> denHi = tmp[DIV_SLOT_DEN_HI * e];
+    LocalTensor<float> q0Hi = tmp[DIV_SLOT_Q0_HI * e];
+    LocalTensor<int32_t> denHiI = denHi.template ReinterpretCast<int32_t>();
+    LocalTensor<int32_t> q0HiI = q0Hi.template ReinterpretCast<int32_t>();
 
     AscendC::Reciprocal(rcp, den, count); // r0 = 1/den
     AscendC::Mul(ph, den, rcp, count);    // den*r0
@@ -144,19 +171,6 @@ __aicore__ inline void DivHighPrec(LocalTensor<float>& dst, const LocalTensor<fl
     AscendC::Add(dst, q0, prod, count);
 }
 
-// dst = exp(x) to ~1 ulp of fp32, via Cody-Waite range reduction:
-//   m = floor(x*log2e);  c = (x - m*LN2_HI) - m*LN2_LO;  exp(x) = 2^m * e^c, c in [0, ln2).
-//   ln2 is split into a 14-significant-bit head and the remainder so that m*LN2_HI is EXACT
-//   in fp32 (|m| < 512 here), which makes c carry no error from the reduction. The earlier
-//   `c = frac(x*log2e)*ln2` form instead inherited the rounding of x*log2e as an ABSOLUTE
-//   error of |x|*2^-24 on c -- 1.2e-7 already at |x| = 2, and ~5e-6 at |x| = 80. That error
-//   showed up as a relative error on exp, and LnHighPrec's Newton step turns exp's relative
-//   error directly into ln's absolute error, so it was then multiplied by q in exp(q*ln r):
-//   it dominated the fp32 accuracy of the whole r^q chain.
-//   e^c is evaluated as 1 + expm1(c) with expm1 in Horner form from the tail, so the leading
-//   1 absorbs a single rounding instead of the 11 sequential ones of a forward Taylor sum.
-//   Truncating after c^9/9! leaves 7.7e-9 relative, well below one fp32 ulp.
-// z / m / g are distinct fp32 scratch rows; i32 is an int32 row (holds the 2^m bits).
 __aicore__ inline void ExpHighPrec(LocalTensor<float>& dst, const LocalTensor<float>& x, LocalTensor<float>& z,
                                    LocalTensor<float>& m, LocalTensor<float>& g, LocalTensor<int32_t>& i32,
                                    uint32_t count)
@@ -193,23 +207,15 @@ __aicore__ inline void ExpHighPrec(LocalTensor<float>& dst, const LocalTensor<fl
     AscendC::Mul(dst, dst, g, count);     // expm1(c)
     AscendC::Adds(dst, dst, 1.0f, count); // e^c
 
-    // 2^m by exponent-bit construction. Clamp m first so an out-of-range exponent saturates
-    // instead of aliasing into the sign bit: m <= -127 -> bits 0 -> +0 (underflow to zero),
-    // m >= 128 -> 0x7F800000 -> +inf (overflow). Without the clamp, a strongly negative
-    // q*ln(r) produced a garbage float rather than 0.
-    AscendC::Maxs(m, m, -127.0f, count);
-    AscendC::Mins(m, m, 128.0f, count);
+    AscendC::Maxs(m, m, EXP_SCALE_MIN, count);
+    AscendC::Mins(m, m, EXP_SCALE_MAX, count);
     AscendC::Cast<int32_t, float>(i32, m, AscendC::RoundMode::CAST_FLOOR, count);
-    AscendC::Adds<int32_t>(i32, i32, static_cast<int32_t>(127), count);     // m + 127
-    AscendC::ShiftLeft<int32_t>(i32, i32, static_cast<int32_t>(23), count); // (m+127)<<23
-    LocalTensor<float> pw2 = i32.template ReinterpretCast<float>();         // 2^m exact
-    AscendC::Mul(dst, dst, pw2, count);                                     // e^c * 2^m
+    AscendC::Adds<int32_t>(i32, i32, FP32_EXP_BIAS, count);           // biased exponent
+    AscendC::ShiftLeft<int32_t>(i32, i32, FP32_MANTISSA_BITS, count); // into the exponent field
+    LocalTensor<float> pw2 = i32.template ReinterpretCast<float>();   // 2^m exact
+    AscendC::Mul(dst, dst, pw2, count);                               // e^c * 2^m
 }
 
-// res = ln(x) via two Newton refinements using an accurate exp:  ln' = ln + (x*e^{-ln} - 1).
-// The fixed point of that iteration is limited by the RELATIVE error of ExpHighPrec, which it
-// turns into the ABSOLUTE error of res -- hence the care taken over the range reduction there.
-// res / neg / aux are distinct fp32 scratch rows; z/m/g/i32 are the ExpHighPrec scratch.
 __aicore__ inline void LnHighPrec(LocalTensor<float>& res, const LocalTensor<float>& x, LocalTensor<float>& neg,
                                   LocalTensor<float>& aux, LocalTensor<float>& z, LocalTensor<float>& m,
                                   LocalTensor<float>& g, LocalTensor<int32_t>& i32, uint32_t count)
@@ -227,23 +233,33 @@ __aicore__ inline void LnHighPrec(LocalTensor<float>& res, const LocalTensor<flo
     AscendC::Add(res, res, aux, count);         // ln2 (high precision)
 }
 
-// dst = base^exp for exp >= 0. Integer fast-path (exact); otherwise exp(exp * ln(base)).
-// lnBuf / negBuf / auxBuf / baseBuf / zBuf / mBuf / gBuf are distinct fp32 scratch rows;
-// i32Buf is an int32 scratch row.
 __aicore__ inline void PowGeneral(LocalTensor<float>& dst, const LocalTensor<float>& base, float exp,
-                                  LocalTensor<float>& lnBuf, LocalTensor<float>& negBuf, LocalTensor<float>& auxBuf,
-                                  LocalTensor<float>& baseBuf, LocalTensor<float>& zBuf, LocalTensor<float>& mBuf,
-                                  LocalTensor<float>& gBuf, LocalTensor<int32_t>& i32Buf, uint32_t count)
+                                  LocalTensor<float>& tmp, bool exact, uint32_t count)
 {
     int64_t eInt = static_cast<int64_t>(exp);
-    if (exp == static_cast<float>(eInt) && eInt >= 1 && eInt <= POW_INT_FASTPATH_MAX_EXP) {
+    if (exp == static_cast<float>(eInt) && eInt >= 1 && eInt <= POW_INT_EXP_MAX) {
         PowIntExp(dst, base, eInt, count);
         return;
     }
-    AscendC::Adds(baseBuf, base, 1e-30f, count);                                 // clamp to avoid ln(0)
-    LnHighPrec(lnBuf, baseBuf, negBuf, auxBuf, zBuf, mBuf, gBuf, i32Buf, count); // ln(base)
-    AscendC::Muls(lnBuf, lnBuf, exp, count);                                     // exp * ln(base)
-    ExpHighPrec(dst, lnBuf, zBuf, mBuf, gBuf, i32Buf, count);                    // base^exp
+    uint32_t e = count;
+    LocalTensor<float> baseBuf = tmp[POW_SLOT_BASE * e];
+    LocalTensor<float> lnBuf = tmp[POW_SLOT_LN * e];
+    AscendC::Adds(baseBuf, base, POW_BASE_FLOOR, count); // clamp to avoid ln(0)
+    if (!exact) {
+        AscendC::Log(lnBuf, baseBuf, count);     // ln(base)
+        AscendC::Muls(lnBuf, lnBuf, exp, count); // exp * ln(base)
+        AscendC::Exp(dst, lnBuf, count);         // base^exp
+        return;
+    }
+    LocalTensor<float> negBuf = tmp[POW_SLOT_NEG * e];
+    LocalTensor<float> auxBuf = tmp[POW_SLOT_AUX * e];
+    LocalTensor<float> zBuf = tmp[POW_SLOT_Z * e];
+    LocalTensor<float> mBuf = tmp[POW_SLOT_M * e];
+    LocalTensor<float> gBuf = tmp[POW_SLOT_G * e];
+    LocalTensor<int32_t> i32Buf = tmp[POW_SLOT_I32 * e].template ReinterpretCast<int32_t>();
+    LnHighPrec(lnBuf, baseBuf, negBuf, auxBuf, zBuf, mBuf, gBuf, i32Buf, count);
+    AscendC::Muls(lnBuf, lnBuf, exp, count);
+    ExpHighPrec(dst, lnBuf, zBuf, mBuf, gBuf, i32Buf, count);
 }
 
 template <typename T>
@@ -251,55 +267,20 @@ class CdistGradPGeneral : public CdistGradBase<T, CdistGradPGeneral<T>> {
 public:
     using Base = CdistGradBase<T, CdistGradPGeneral<T>>;
     __aicore__ inline void PrepareChunk(int64_t currentRTile);
-    __aicore__ inline void ComputeForJ(int64_t j);
+    __aicore__ inline void ComputeBatch(int64_t base, int64_t rows);
+    __aicore__ inline void AccumulateBatch(int64_t base, int64_t rows);
     __aicore__ inline void ResetAccumCompensation();
     __aicore__ inline void FoldAccumCompensation();
 };
 
-// Compensated accumulation, tmp rows [9e, 13e).
-
-// The reduce over j cancels catastrophically on these shapes -- measured up to 2.6e6:1 -- so
-// once J gets past a few hundred terms it is the fp32 accumulator's OWN rounding, not the term
-// math, that sets the error floor. Summing the exact terms in fp32 sequentially already
-// reproduces essentially all of the CPU benchmark's error on such a case, which is why simply
-// making the terms more accurate cannot get us below it.
-
-// The other paths (p = 0/1/2/inf) compute a term that is bit-identical to the benchmark's, so
-// their plain accumulate reproduces the benchmark error exactly and there is nothing to win.
-// Only here do our terms differ from the reference's (it evaluates pow(|diff|,q)/pow(cdist,q)
-// for 1 < p < 2 while we evaluate exp(q*ln(|diff|/cdist))), so our summation error compounds
-// with a term difference instead of cancelling against it.
-
-// Knuth's two-sum is used rather than Kahan's: it is branch-free, needs no mask register, and
-// its residual is exact even when the running sum is smaller than the addend -- which is
-// exactly what heavy cancellation produces.
-//   s2 = s + x;  bv = s2 - s;  residual = (s - (s2 - bv)) + (x - bv)
-// The residual is carried in a separate row and folded back once per M-segment. Row 9e must
-// therefore stay live across every ComputeForJ of the segment, which is why the compensation
-// sits above the [0, 9e) block that DivHighPrec and PowGeneral recycle.
-
-// ONLY for p > 1. The two regimes are genuinely opposed, and which error dominates flips with
-// the sign of p-1:
-//   p > 1: r = |diff|/cdist <= 1, so every term is bounded by |grad| and the terms sit within
-//          an ulp or two of each other. The fp32 accumulator's rounding is then the dominant
-//          error and compensating it drops us onto the term floor -- measured 3.4e-6 -> 5.8e-7
-//          on a 255-term reduce.
-//   p < 1: r = cdist/|diff| >= 1 and unbounded, so the terms are far larger than their sum
-//          (median sum|term|/|out| ~ 30) and it is the fp32 REPRESENTATION of each term, not
-//          the accumulation, that dominates -- measured term floor 1.0e-2 against a plain-sum
-//          error of 2.5e-3. Plain summation beats its own term floor because adding a term to
-//          a larger running sum re-rounds it and discards part of that term's own rounding
-//          error; the two are anti-correlated. Compensating faithfully preserves the term
-//          error instead, and lands on the 4x worse floor. So p < 1 keeps the plain add.
 template <typename T>
 __aicore__ inline void CdistGradPGeneral<T>::ResetAccumCompensation()
 {
     if (this->pValueF_ < 1.0f) {
         return;
     }
-    uint32_t count = static_cast<uint32_t>(this->mAligned_);
-    LocalTensor<float> tmpF32 = this->tmpBuf.template Get<float>();
-    AscendC::Duplicate(tmpF32[9 * count], 0.0f, count);
+    AscendC::Duplicate(this->wsReadBuf.template Get<float>(), 0.0f,
+                       static_cast<uint32_t>(this->pTile_ * this->mAligned_));
 }
 
 template <typename T>
@@ -308,110 +289,113 @@ __aicore__ inline void CdistGradPGeneral<T>::FoldAccumCompensation()
     if (this->pValueF_ < 1.0f) {
         return;
     }
-    uint32_t count = static_cast<uint32_t>(this->mAligned_);
-    LocalTensor<float> tmpF32 = this->tmpBuf.template Get<float>();
-    AscendC::Add(this->accum_, this->accum_, tmpF32[9 * count], count);
+    AscendC::Add(this->accum_, this->accum_, this->wsReadBuf.template Get<float>(),
+                 static_cast<uint32_t>(this->pTile_ * this->mAligned_));
 }
 
 template <typename T>
 __aicore__ inline void CdistGradPGeneral<T>::PrepareChunk(int64_t currentRTile)
 {
-    (void)currentRTile; // per-row masks computed in ComputeForJ
+    (void)currentRTile; // masks are computed per batch in ComputeBatch
 }
 
 template <typename T>
-__aicore__ inline void CdistGradPGeneral<T>::ComputeForJ(int64_t j)
+__aicore__ inline void CdistGradPGeneral<T>::ComputeBatch(int64_t base, int64_t rows)
 {
-    uint32_t count = static_cast<uint32_t>(this->mAligned_);
-    int64_t rowOff = j * this->mAligned_;
-    LocalTensor<float> diff = this->diffBuf.template Get<float>();
-    LocalTensor<float> sign = this->signBuf.template Get<float>();
-    LocalTensor<float> powDst = this->powDstBuf.template Get<float>();
+    const int64_t off = base * this->mAligned_;
+    const uint32_t count = this->CmpCount(rows * this->mAligned_);
+    LocalTensor<float> term = this->term_[off];
+    LocalTensor<float> diff = this->sc1_;
+    LocalTensor<float> sign = this->sc2_;
+    LocalTensor<float> powDst = this->sc3_;
     LocalTensor<uint8_t> maskDiffZero = this->maskBuf2.template Get<uint8_t>();
     LocalTensor<uint8_t> maskDistZero = this->maskBuf.template Get<uint8_t>();
     float pMinus1 = this->pValueF_ - 1.0f;
     float q = pMinus1 >= 0.0f ? pMinus1 : -pMinus1; // |p-1|
 
     // diff = x1 - x2[j]
-    AscendC::Sub(diff, this->x1Row_, this->x2Chunk_[rowOff], count);
+    this->SubX1(diff, off, rows, count);
     // sign(diff): hard decision
-    AscendC::Compare(maskDiffZero, diff, this->zero_, AscendC::CMPMODE::GT, count);
+    AscendC::Compares(maskDiffZero, diff, 0.0f, AscendC::CMPMODE::GT, count);
     AscendC::Select(sign, maskDiffZero, this->one_, this->zero_, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, count);
-    AscendC::Compare(maskDiffZero, diff, this->zero_, AscendC::CMPMODE::LT, count);
+    AscendC::Compares(maskDiffZero, diff, 0.0f, AscendC::CMPMODE::LT, count);
     AscendC::Select(sign, maskDiffZero, this->negOne_, sign, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, count);
 
     // |diff|, remember |diff|==0
     AscendC::Abs(diff, diff, count);
-    AscendC::Compare(maskDiffZero, diff, this->zero_, AscendC::CMPMODE::EQ, count);
+    AscendC::Compares(maskDiffZero, diff, 0.0f, AscendC::CMPMODE::EQ, count);
 
-    // High-precision scratch carved from tmpBuf (e = mAligned_ fp32 element count).
-    LocalTensor<uint8_t> tmpU8 = this->tmpBuf.template Get<uint8_t>();
     LocalTensor<float> tmpF32 = this->tmpBuf.template Get<float>();
-    // Rows [0, 9e) are used first by DivHighPrec and then, once it has returned, by
-    // PowGeneral -- the two never hold a live value at the same time.
-    uint32_t e = count;
-    LocalTensor<float> baseBuf = tmpF32[e];                                             // [e, 2e)
-    LocalTensor<float> lnBuf = tmpF32[2 * e];                                           // [2e, 3e)
-    LocalTensor<float> negBuf = tmpF32[3 * e];                                          // [3e, 4e)
-    LocalTensor<float> auxBuf = tmpF32[4 * e];                                          // [4e, 5e)
-    LocalTensor<float> zBuf = tmpF32[5 * e];                                            // [5e, 6e)
-    LocalTensor<float> mBuf = tmpF32[6 * e];                                            // [6e, 7e)
-    LocalTensor<float> gBuf = tmpF32[7 * e];                                            // [7e, 8e)
-    LocalTensor<int32_t> i32Buf = tmpU8[8 * e * 4].template ReinterpretCast<int32_t>(); // [8e, 9e)
 
-    // r = |diff|/cdist (p>1, r<=1)  or  cdist/|diff| (p<1, r>=1) — high-precision division.
+    const bool exactPath = (this->mSize_ == 1);
     if (pMinus1 >= 0.0f) {
-        DivHighPrec(diff, diff, this->distChunk_[rowOff], tmpF32, count);
+        DivHighPrec(diff, diff, this->distChunk_[off], tmpF32, count);
     } else {
-        // p < 1 puts cdist in the NUMERATOR, so a +inf cdist makes r = +inf and the power
-        // evaluates to NaN (ln(+inf) drives floor(-inf) - (-inf) through the range reduction).
-        // That is deliberate and must not be "fixed" here: the true gradient does diverge in
-        // this regime, and the CPU reference mirrors it exactly -- see the p < 1.0 branch of
-        // executor.py, which forces ln(inf) to NaN specifically to stay aligned with us.
-        // Saturating r instead would return a huge finite value that the fp16 output cast
-        // then turns into +-inf, which no longer matches the reference.
-        DivHighPrec(diff, this->distChunk_[rowOff], diff, tmpF32, count);
+        DivHighPrec(diff, this->distChunk_[off], diff, tmpF32, count);
     }
     // powDst = r^q
-    PowGeneral(powDst, diff, q, lnBuf, negBuf, auxBuf, baseBuf, zBuf, mBuf, gBuf, i32Buf, count);
+    PowGeneral(powDst, diff, q, tmpF32, exactPath, count);
     // sign * r^q * grad
-    AscendC::Mul(diff, sign, powDst, count);
-    AscendC::Mul(diff, this->gradChunk_[rowOff], diff, count);
+    AscendC::Mul(term, sign, powDst, count);
+    AscendC::Mul(term, this->gradChunk_[off], term, count);
     // SelectZero(cdist==0)
-    AscendC::Compare(maskDistZero, this->distChunk_[rowOff], this->zero_, AscendC::CMPMODE::EQ, count);
-    AscendC::Select(diff, maskDistZero, this->zero_, diff, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, count);
+    AscendC::Compares(maskDistZero, this->distChunk_[off], 0.0f, AscendC::CMPMODE::EQ, count);
+    AscendC::Select(term, maskDistZero, this->zero_, term, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, count);
     if (pMinus1 >= 0.0f) {
-        // SelectZero(cdist==+inf). |diff| is always finite (both operands come from a dtype
-        // no wider than fp32), so for p > 1 the exact term is (|diff|/inf)^(p-1) == 0, which
-        // is what the reference produces. The arithmetic cannot get there on its own:
-        // Reciprocal(+inf) is 0 and DivHighPrec's Newton step then evaluates inf*0 = NaN,
-        // which propagates through ln/exp and poisons every element of the output row.
-        // Note that clamping cdist to MAX_FINITE_F32 instead is NOT equivalent: it leaves
-        // r ~ 1e-34, and for a small exponent (p = 1.09 -> q = 0.09) r^q is still ~1e-3.
-        AscendC::Compares(maskDistZero, this->distChunk_[rowOff], MAX_FINITE_F32, AscendC::CMPMODE::GE, count);
-        AscendC::Select(diff, maskDistZero, this->zero_, diff, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, count);
+        AscendC::Compares(maskDistZero, this->distChunk_[off], MAX_FINITE_F32, AscendC::CMPMODE::GE, count);
+        AscendC::Select(term, maskDistZero, this->zero_, term, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, count);
     }
     // SelectZero(|diff|==0)
-    AscendC::Select(diff, maskDiffZero, this->zero_, diff, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, count);
-    // accum += result. For p < 1 a plain add is deliberately more accurate than compensating
-    // it -- see ResetAccumCompensation.
-    if (pMinus1 < 0.0f) {
-        AscendC::Add(this->accum_, this->accum_, diff, count);
+    AscendC::Select(term, maskDiffZero, this->zero_, term, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, count);
+}
+
+template <typename T>
+__aicore__ inline void CdistGradPGeneral<T>::AccumulateBatch(int64_t base, int64_t rows)
+{
+    const uint32_t count = static_cast<uint32_t>(this->mAligned_);
+    if (this->pValueF_ < 1.0f) {
+        // For p < 1 a plain add is deliberately more accurate than compensating it -- see
+        // ResetAccumCompensation. The base class handles both the blocked and the row form.
+        Base::AccumulateBatch(base, rows);
         return;
     }
-    // Otherwise accumulate carrying the exact rounding residual.
-    LocalTensor<float> comp = tmpF32[9 * e];
-    LocalTensor<float> s2 = tmpF32[10 * e];
-    LocalTensor<float> bv = tmpF32[11 * e];
-    LocalTensor<float> av = tmpF32[12 * e];
-    AscendC::Add(s2, this->accum_, diff, count); // s2 = s + x
-    AscendC::Sub(bv, s2, this->accum_, count);   // bv = s2 - s
-    AscendC::Sub(av, s2, bv, count);             // av = s2 - bv
-    AscendC::Sub(av, this->accum_, av, count);   // s - av   (part of s lost in s2)
-    AscendC::Sub(bv, diff, bv, count);           // x - bv   (part of x lost in s2)
-    AscendC::Add(av, av, bv, count);             // residual
-    AscendC::Add(comp, comp, av, count);
-    AscendC::Adds(this->accum_, s2, 0.0f, count); // s = s2
+    LocalTensor<float> comp = this->wsReadBuf.template Get<float>();
+    LocalTensor<float> s2 = this->sc1_;
+    LocalTensor<float> bv = this->sc2_;
+    LocalTensor<float> av = this->sc3_;
+    if (this->pTile_ > 1) {
+        const int64_t pOut = rows / this->rSize_;
+        const uint32_t n = static_cast<uint32_t>(pOut * this->mAligned_);
+        const uint64_t mask = static_cast<uint64_t>(this->mAligned_);
+        const uint8_t reps = static_cast<uint8_t>(pOut);
+        const uint8_t rowBlocks = static_cast<uint8_t>(this->mAligned_ / (BLOCK_BYTES / sizeof(float)));
+        const uint8_t termRep = static_cast<uint8_t>(this->rSize_ * rowBlocks);
+        const AscendC::BinaryRepeatParams src1Strided(1, 1, 1, rowBlocks, rowBlocks, termRep);
+        const AscendC::BinaryRepeatParams src0Strided(1, 1, 1, rowBlocks, termRep, rowBlocks);
+        for (int64_t j = 0; j < this->rSize_; j++) {
+            LocalTensor<float> x = this->term_[(base + j) * this->mAligned_];
+            AscendC::Add(s2, this->accum_, x, mask, reps, src1Strided); // s2 = s + x
+            AscendC::Sub(bv, s2, this->accum_, n);                      // bv = s2 - s
+            AscendC::Sub(av, s2, bv, n);
+            AscendC::Sub(av, this->accum_, av, n);            // s - (s2 - bv)
+            AscendC::Sub(bv, x, bv, mask, reps, src0Strided); // x - bv
+            AscendC::Add(av, av, bv, n);                      // residual
+            AscendC::Add(comp, comp, av, n);
+            AscendC::Adds(this->accum_, s2, 0.0f, n); // s = s2
+        }
+        return;
+    }
+    for (int64_t k = 0; k < rows; k++) {
+        LocalTensor<float> x = this->term_[(base + k) * this->mAligned_];
+        AscendC::Add(s2, this->accum_, x, count);  // s2 = s + x
+        AscendC::Sub(bv, s2, this->accum_, count); // bv = s2 - s
+        AscendC::Sub(av, s2, bv, count);           // av = s2 - bv
+        AscendC::Sub(av, this->accum_, av, count); // s - av   (part of s lost in s2)
+        AscendC::Sub(bv, x, bv, count);            // x - bv   (part of x lost in s2)
+        AscendC::Add(av, av, bv, count);           // residual
+        AscendC::Add(comp, comp, av, count);
+        AscendC::Adds(this->accum_, s2, 0.0f, count); // s = s2
+    }
 }
 
 } // namespace NsCdistGrad

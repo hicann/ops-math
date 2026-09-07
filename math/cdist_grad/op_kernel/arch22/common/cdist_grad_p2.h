@@ -35,60 +35,50 @@ class CdistGradP2 : public CdistGradBase<T, CdistGradP2<T>> {
 public:
     using Base = CdistGradBase<T, CdistGradP2<T>>;
     __aicore__ inline void PrepareChunk(int64_t currentRTile);
-    __aicore__ inline void ComputeForJ(int64_t j);
+    __aicore__ inline void ComputeBatch(int64_t base, int64_t rows);
 };
 
 template <typename T>
 __aicore__ inline void CdistGradP2<T>::PrepareChunk(int64_t currentRTile)
 {
-    (void)currentRTile; // per-row masks computed in ComputeForJ
+    (void)currentRTile; // masks are computed per batch in ComputeBatch
 }
 
 template <typename T>
-__aicore__ inline void CdistGradP2<T>::ComputeForJ(int64_t j)
+__aicore__ inline void CdistGradP2<T>::ComputeBatch(int64_t base, int64_t rows)
 {
-    uint32_t count = static_cast<uint32_t>(this->mAligned_);
-    int64_t rowOff = j * this->mAligned_;
-    LocalTensor<float> diff = this->diffBuf.template Get<float>();
+    const int64_t off = base * this->mAligned_;
+    // Compare/Select ignore a tail shorter than 256B, so the batch count is rounded up;
+    // the extra lanes land in the buffers' CMP_ALIGN slack and no row ever reads them.
+    const uint32_t n = this->CmpCount(rows * this->mAligned_);
+    LocalTensor<float> term = this->term_[off];
     LocalTensor<uint8_t> maskDistZero = this->maskBuf.template Get<uint8_t>();
 
     // diff = x1 - x2[j]
-    AscendC::Sub(diff, this->x1Row_, this->x2Chunk_[rowOff], count);
+    this->SubX1(term, off, rows, n);
     // mask = (cdist == 0) on the RAW queue value (matches 950 MaskNEZero)
-    AscendC::Compare(maskDistZero, this->distChunk_[rowOff], this->zero_, AscendC::CMPMODE::EQ, count);
-    // safe cdist = cdist + 1e-38 into a SCRATCH buffer (matches 950 Eps). Never write the
-    // queue tensor in place: double-buffer slot reuse races the late V-pipe write with the
-    // next chunk's MTE2 fill (write-write hazard, corrupts cdist of chunk c+2).
-    LocalTensor<float> distSafe = this->powDstBuf.template Get<float>();
-    AscendC::Adds(distSafe, this->distChunk_[rowOff], 1e-38f, count);
+    AscendC::Compares(maskDistZero, this->distChunk_[off], 0.0f, AscendC::CMPMODE::EQ, n);
+    // safe cdist = cdist + 1e-38 into a SCRATCH buffer (matches 950 Eps).
+    LocalTensor<float> distSafe = this->sc1_;
+    AscendC::Adds(distSafe, this->distChunk_[off], 1e-38f, n);
     // numer = grad * diff   (950: Mul(CastGrad, OpDiff))
-    AscendC::Mul(diff, this->gradChunk_[rowOff], diff, count);
-    // / (cdist + 1e-38) — high-precision division.
-    // arch22's plain Vector Div is a fast reciprocal-table approximation that inflates max
-    // relative error for fp32 beyond ATK tolerance. Two Newton-Raphson reciprocal refinements
-    // (r1 = r0*(2 - b*r0), r2 = r1*(2 - b*r1)) drive a/b ~= a*r2 to ~1e-7 instead of ~1e-5.
-    // signBuf holds rcp, tmpBuf holds the intermediate b*rk (both unused in the p=2 path).
-    LocalTensor<float> rcp = this->signBuf.template Get<float>();
-    LocalTensor<float> t = this->tmpBuf.template Get<float>();
-    AscendC::Reciprocal(rcp, distSafe, count); // r0 = 1/b, b = cdist + 1e-38
-    AscendC::Mul(t, distSafe, rcp, count);     // b*r0
-    AscendC::Muls(t, t, -1.0f, count);         // -b*r0
-    AscendC::Adds(t, t, 2.0f, count);          // 2 - b*r0
-    AscendC::Mul(rcp, rcp, t, count);          // r1 = r0*(2 - b*r0)
-    AscendC::Mul(t, distSafe, rcp, count);     // b*r1
-    AscendC::Muls(t, t, -1.0f, count);         // -b*r1
-    AscendC::Adds(t, t, 2.0f, count);          // 2 - b*r1
-    AscendC::Mul(rcp, rcp, t, count);          // r2 = r1*(2 - b*r1)
-    AscendC::Mul(diff, diff, rcp, count);      // q = a*r2
+    AscendC::Mul(term, this->gradChunk_[off], term, n);
+    LocalTensor<float> rcp = this->sc2_;
+    LocalTensor<float> t = this->sc3_;
+    AscendC::Reciprocal(rcp, distSafe, n); // r0 = 1/b, b = cdist + 1e-38
+    AscendC::Mul(t, distSafe, rcp, n);     // b*r0
+    AscendC::Muls(t, t, -1.0f, n);         // -b*r0
+    AscendC::Adds(t, t, 2.0f, n);          // 2 - b*r0
+    AscendC::Mul(rcp, rcp, t, n);          // r1 = r0*(2 - b*r0)
+    AscendC::Mul(t, distSafe, rcp, n);     // b*r1
+    AscendC::Muls(t, t, -1.0f, n);         // -b*r1
+    AscendC::Adds(t, t, 2.0f, n);          // 2 - b*r1
+    AscendC::Mul(rcp, rcp, t, n);          // r2 = r1*(2 - b*r1)
+    AscendC::Mul(term, term, rcp, n);      // q = a*r2
     // *(cdist != 0): where cdist==0 take 0
-    AscendC::Select(diff, maskDistZero, this->zero_, diff, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, count);
-    // A fp16 cdist saturates to +inf once the true distance exceeds 65504, and the exact term
-    // is then grad*diff/inf == 0. The Newton refinement above cannot produce that: Reciprocal
-    // (+inf) is 0, so the b*r0 step evaluates inf*0 = NaN and poisons the whole output row.
-    AscendC::Compares(maskDistZero, this->distChunk_[rowOff], 3.4028235e38f, AscendC::CMPMODE::GE, count);
-    AscendC::Select(diff, maskDistZero, this->zero_, diff, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, count);
-    // accum += diff
-    AscendC::Add(this->accum_, this->accum_, diff, count);
+    AscendC::Select(term, maskDistZero, this->zero_, term, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
+    AscendC::Compares(maskDistZero, this->distChunk_[off], 3.4028235e38f, AscendC::CMPMODE::GE, n);
+    AscendC::Select(term, maskDistZero, this->zero_, term, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
 }
 
 } // namespace NsCdistGrad

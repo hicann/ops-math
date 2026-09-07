@@ -16,11 +16,19 @@
  * Kernel computes gradX1[b,i,:] = sum_j grad[b,i,j] * f(x1[b,i,:], x2[b,j,:], cdist[b,i,j])
  * fully vectorized: grad/cdist are M-wide vectors (scalar repeated along k by broadcast).
  *
- * Derived classes (CdistGradP0/P1/P2/PInf/PGeneral) implement only ComputeForJ(j) and
- * optionally PrepareChunk(currentRTile).
+ * Derived classes (CdistGradP0/P1/P2/PInf/PGeneral) implement ComputeBatch(base, rows),
+ * which evaluates the per-j term for `rows` consecutive j rows at once, and optionally
+ * PrepareChunk(currentRTile) / AccumulateBatch(base, rows).
+ *
+ * Batched evaluation is the whole point of the layout: every operation in the term is
+ * elementwise, so one Sub/Mul/Select over the [rows, mAligned] block replaces `rows`
+ * single-repeat instructions. On a typical shape (M = 64 -> mAligned = 64) the per-row form
+ * issued one 256-byte vector op per instruction and was bound by instruction issue, not by
+ * the vector pipe. Only the j-reduce stays per row, so the accumulation order -- and with it
+ * the rounding of the result -- is exactly what the per-row form produced.
  *
  * Synchronization (AscendC pipeline model):
- *   - Intra-pipe (e.g. Sub -> Mul -> Div -> Add in ComputeForJ): same-pipe FIFO, no sync needed.
+ *   - Intra-pipe (e.g. Sub -> Mul -> Div -> Add in ComputeBatch): same-pipe FIFO, no sync needed.
  *   - Inter-pipe MTE2->V (chunk CopyIn): TQue<VECIN> EnQue/DeQue.
  *   - Inter-pipe V->MTE3 (CopyOut): TQue<VECOUT> EnQue/DeQue.
  *   - Inter-pipe MTE2->V on a TBuf (x1Row load, Phase2 ws read): SetFlag/WaitFlag<MTE2_V>.
@@ -44,6 +52,11 @@ using namespace AscendC;
 
 constexpr int64_t BLOCK_BYTES = 32;
 
+__aicore__ inline uint32_t AlignUpBlock(uint32_t bytes)
+{
+    return ((bytes + BLOCK_BYTES - 1) / BLOCK_BYTES) * BLOCK_BYTES;
+}
+
 template <typename T, typename Derived>
 class CdistGradBase {
 public:
@@ -54,19 +67,29 @@ public:
     __aicore__ inline void Process();
 
 protected:
-    // 256B (64 fp32) alignment required by Compare — segment granularity.
-    static __aicore__ inline int64_t AlignUpSeg(int64_t v) { return ((v + 63) / 64) * 64; }
+    static constexpr int64_t ROW_ALIGN = BLOCK_BYTES / static_cast<int64_t>(sizeof(T));
+    static constexpr int64_t CMP_ALIGN = 64;
+    static __aicore__ inline int64_t AlignUpSeg(int64_t v) { return ((v + ROW_ALIGN - 1) / ROW_ALIGN) * ROW_ALIGN; }
+    static __aicore__ inline uint32_t CmpCount(int64_t n)
+    {
+        return static_cast<uint32_t>(((n + CMP_ALIGN - 1) / CMP_ALIGN) * CMP_ALIGN);
+    }
 
-    // Data views for derived ComputeForJ(j): fp32 rows of the current chunk.
+    // Data views for the derived ComputeBatch(): fp32 rows of the current chunk.
     __aicore__ inline void ComputeChunk(int64_t currentRTile);
+    // Default j-reduce: add each computed term row into the accumulator, in ascending j.
+    __aicore__ inline void AccumulateBatch(int64_t base, int64_t rows);
     __aicore__ inline void ProcessSubTask(int64_t subIdx);
+    // P-blocked task: pTile_ consecutive output rows in one pass. See PBlockRows in the tiling.
+    __aicore__ inline void ProcessBlockedTask(int64_t taskIdx);
+    __aicore__ inline void CopyInBlocked(int64_t rowStart, int64_t slabRows);
+    __aicore__ inline void CopyOutBlocked(int64_t rowStart, int64_t rows);
+    // diff = x1 - x2 for `rows` batch rows. On the blocked path x1 is a full slab and this is
+    // one instruction; otherwise it is the per-row broadcast of the single x1 row.
+    __aicore__ inline void SubX1(const LocalTensor<float>& dst, int64_t off, int64_t rows, uint32_t count);
     __aicore__ inline void CopyInX1Row(int64_t b, int64_t i, int64_t mStart, int64_t mTileReal);
     __aicore__ inline void CopyInChunk(int64_t b, int64_t i, int64_t rStart, int64_t currentRTile, int64_t mStart,
                                        int64_t mTileReal);
-    // Compensated-accumulation hooks, called once per M-segment around the j-reduce. Only the
-    // general-p path overrides them (see cdist_grad_pgeneral.h). Everywhere else the per-j term
-    // is bit-identical to what the CPU benchmark computes, so a plain accumulate reproduces the
-    // benchmark's own summation error exactly -- compensating would only make the two differ.
     __aicore__ inline void ResetAccumCompensation() {}
     __aicore__ inline void FoldAccumCompensation() {}
 
@@ -77,38 +100,33 @@ protected:
                                               int64_t mTileReal);
 
     TPipe pipe;
-    // Chunk queues (MTE2 -> Vector), double buffered.
     TQue<QuePosition::VECIN, 1> x2Queue;
+    TQue<QuePosition::VECIN, 1> x1Queue;
     TQue<QuePosition::VECIN, 1> gradQueue;
     TQue<QuePosition::VECIN, 1> distQueue;
-    // Output queue (Vector -> MTE3) for gradX1 / workspace partial writes.
     TQue<QuePosition::VECOUT, 1> outQueue;
-    // Row input queue (MTE2 -> V) for x1Row load (Phase1) and workspace row read (Phase2).
-    // Replaces manual SetFlag/WaitFlag<MTE2_V>: manual events conflict with active VECIN
-    // queues on the shared event-id pool (see sinkhorn lesson).
     TQue<QuePosition::VECIN, 1> rowInQueue;
 
-    // Fixed compute buffers (fp32).
+    // Fixed row-wide compute buffers (fp32, mAligned_ elements).
     TBuf<QuePosition::VECCALC> x1RowBuf;
     TBuf<QuePosition::VECCALC> accumBuf;
-    TBuf<QuePosition::VECCALC> diffBuf;
-    TBuf<QuePosition::VECCALC> signBuf;
-    TBuf<QuePosition::VECCALC> powDstBuf; // Power destination (in-place Power not allowed)
-    TBuf<QuePosition::VECCALC> maskBuf;   // chunk-level Compare bit map
-    TBuf<QuePosition::VECCALC> maskBuf2;  // per-row Compare bit map
-    TBuf<QuePosition::VECCALC> tmpBuf;    // Power temporary
-    TBuf<QuePosition::VECCALC> castBuf;   // fp16 cast target
-    // Phase2 reads workspace rows through rowInQueue; this buffer is kept reserved so the
-    // kernel's UB footprint still matches the host NUM_FIXED_MBUF budget exactly.
+    TBuf<QuePosition::VECCALC> maskBuf;   // batch-level Compare bit map
+    TBuf<QuePosition::VECCALC> maskBuf2;  // second batch-level Compare bit map
+    TBuf<QuePosition::VECCALC> tmpBuf;    // p-general high-precision scratch (9 batch rows)
     TBuf<QuePosition::VECCALC> wsReadBuf; // reserved fp32 row
 
-    // Private chunk copies: queue slots are freed right after the copy — the MTE2 refill
-    // of a freed slot can never race in-flight Vector reads (which only touch these TBufs).
+    TBuf<QuePosition::VECCALC> termBuf;
+    TBuf<QuePosition::VECCALC> sc1Buf;
+    TBuf<QuePosition::VECCALC> sc2Buf;
+    TBuf<QuePosition::VECCALC> sc3Buf;
+
+    // fp16 cast targets for the chunk inputs. fp32 reads the queue tensors directly.
+    TBuf<QuePosition::VECCALC> x1CalcBuf; // blocked + fp16 only
     TBuf<QuePosition::VECCALC> x2CalcBuf;
     TBuf<QuePosition::VECCALC> gradCalcBuf;
     TBuf<QuePosition::VECCALC> distCalcBuf;
 
-    // Constants.
+    // Constants, batch-wide so Compare/Select can run over a whole [rows, mAligned] block.
     TBuf<QuePosition::VECCALC> zeroBuf;
     TBuf<QuePosition::VECCALC> oneBuf;
     TBuf<QuePosition::VECCALC> negOneBuf;
@@ -118,10 +136,6 @@ protected:
     GlobalTensor<T> x2GM;
     GlobalTensor<T> cdistResultGM;
     GlobalTensor<T> gradX1GM;
-    // Two-phase workspace is ALWAYS fp32, never the operator dtype: the slots hold partial
-    // sums of sum_j grad*f(...), an intermediate. Rounding those to fp16 costs ~1 ULP of the
-    // partial each, which the cross-slot cancellation in Phase2 then amplifies into a
-    // multi-ULP error on the final fp16 result. Host tiling sizes the slots with sizeof(float).
     GlobalTensor<float> wsGM; // two-phase workspace (always fp32)
 
     // Tiling parameters.
@@ -136,6 +150,8 @@ protected:
     int64_t lastMTileSize_ = 0;
     int64_t mStart_ = 0; // current segment start offset within the row
     int64_t rTile_ = 0;
+    int64_t cTile_ = 1;
+    int64_t pTile_ = 1;
     int64_t numRChunks_ = 0;
     int64_t lastRChunkSize_ = 0;
     int64_t tasksPerCore_ = 0;
@@ -158,7 +174,12 @@ protected:
     LocalTensor<float> gradChunk_;
     LocalTensor<float> distChunk_;
     LocalTensor<float> x1Row_;
+    LocalTensor<float> x1Chunk_; // blocked path only: [pTile*Q, mAligned] view of x1
     LocalTensor<float> accum_;
+    LocalTensor<float> term_;
+    LocalTensor<float> sc1_;
+    LocalTensor<float> sc2_;
+    LocalTensor<float> sc3_;
     LocalTensor<float> zero_;
     LocalTensor<float> one_;
     LocalTensor<float> negOne_;
@@ -179,6 +200,8 @@ __aicore__ inline void CdistGradBase<T, Derived>::Init(GM_ADDR gradOutput, GM_AD
     lastMTileSize_ = tilingData->lastMTileSize;
     mAligned_ = AlignUpSeg(mTileSize_); // widest segment (runtime re-set per segment)
     rTile_ = tilingData->rTile;
+    cTile_ = tilingData->cTile > 0 ? tilingData->cTile : tilingData->rTile;
+    pTile_ = tilingData->pTile > 0 ? tilingData->pTile : 1;
     numRChunks_ = tilingData->numRChunks;
     lastRChunkSize_ = tilingData->lastRChunkSize;
     tasksPerCore_ = tilingData->tasksPerCore;
@@ -215,60 +238,71 @@ __aicore__ inline void CdistGradBase<T, Derived>::Init(GM_ADDR gradOutput, GM_AD
         wsGM.SetGlobalBuffer((__gm__ float*)ws, totalSubTasks * mAlignedFull_);
     }
 
-    // Chunk queues (double buffered), sized for the WIDEST M segment.
-    int64_t chunkBytes = rTile_ * mAligned_ * static_cast<int64_t>(sizeof(T));
+    int64_t chunkElems = rTile_ * mAligned_;
+    int64_t chunkBytes = (chunkElems + CMP_ALIGN) * static_cast<int64_t>(sizeof(T));
     pipe.InitBuffer(x2Queue, 2, chunkBytes);
+    if (pTile_ > 1) {
+        pipe.InitBuffer(x1Queue, 2, chunkBytes);
+    }
     pipe.InitBuffer(gradQueue, 2, chunkBytes);
     pipe.InitBuffer(distQueue, 2, chunkBytes);
-    // Output queue (single buffered): one row at a time. Sized fp32-wide — it carries the
-    // fp32 workspace partial in Phase1 as well as the T-typed gradX1 row.
-    pipe.InitBuffer(outQueue, 1, mAligned_ * static_cast<int64_t>(sizeof(float)));
+    // Output queue (single buffered). Sized fp32-wide — it carries the fp32 workspace partial
+    // in Phase1 as well as the T-typed gradX1 row. The blocked path writes pTile rows at once.
+    pipe.InitBuffer(outQueue, 1, pTile_ * mAligned_ * static_cast<int64_t>(sizeof(float)));
 
-    // Fixed compute buffers.
+    // Fixed row-wide buffers.
     int64_t mBytes = mAligned_ * static_cast<int64_t>(sizeof(float));
+    // Batch buffers carry CMP_ALIGN elements of slack: a batch-wide Compare/Select rounds its
+    // count up to a 256B multiple and may touch that many elements past the last row.
+    int64_t batchElems = chunkElems + CMP_ALIGN;
+    int64_t chunkFp32Bytes = batchElems * static_cast<int64_t>(sizeof(float));
     pipe.InitBuffer(x1RowBuf, mBytes);
-    pipe.InitBuffer(accumBuf, mBytes);
-    pipe.InitBuffer(diffBuf, mBytes);
-    pipe.InitBuffer(signBuf, mBytes);
-    pipe.InitBuffer(powDstBuf, mBytes);
-    int64_t maskBytes = mAligned_ / 8;
-    if (maskBytes < 32)
-        maskBytes = 32;
-    int64_t chunkMaskBytes = rTile_ * mAligned_ / 8;
-    if (chunkMaskBytes < maskBytes)
-        chunkMaskBytes = maskBytes;
+    // The blocked path keeps one accumulator per output row in the block.
+    pipe.InitBuffer(accumBuf, pTile_ * mBytes);
+    // Compare writes one bit per element, so a batch-wide compare needs a batch-wide bitmap.
+    int64_t chunkMaskBytes = batchElems / 8;
+    if (chunkMaskBytes < 32)
+        chunkMaskBytes = 32;
     pipe.InitBuffer(maskBuf, chunkMaskBytes);
-    pipe.InitBuffer(maskBuf2, maskBytes);
+    pipe.InitBuffer(maskBuf2, chunkMaskBytes);
     if (tmpBufSize_ > 0) {
         pipe.InitBuffer(tmpBuf, tmpBufSize_);
     } else {
         pipe.InitBuffer(tmpBuf, 32);
     }
-    pipe.InitBuffer(wsReadBuf, mAligned_ * static_cast<int64_t>(sizeof(float)));
-    pipe.InitBuffer(zeroBuf, mBytes);
-    pipe.InitBuffer(oneBuf, mBytes);
-    pipe.InitBuffer(negOneBuf, mBytes);
+    // pgeneral carries its compensated-accumulation residual here, one row per accumulator.
+    pipe.InitBuffer(wsReadBuf, pTile_ * mBytes);
 
-    {
-        int64_t calcBytes = rTile_ * mAligned_ * static_cast<int64_t>(sizeof(float));
-        pipe.InitBuffer(x2CalcBuf, calcBytes);
-        pipe.InitBuffer(gradCalcBuf, calcBytes);
-        pipe.InitBuffer(distCalcBuf, calcBytes);
-    }
+    // Batch-wide scratch and constants.
+    pipe.InitBuffer(termBuf, chunkFp32Bytes);
+    pipe.InitBuffer(sc1Buf, chunkFp32Bytes);
+    pipe.InitBuffer(sc2Buf, chunkFp32Bytes);
+    pipe.InitBuffer(sc3Buf, chunkFp32Bytes);
+    pipe.InitBuffer(zeroBuf, chunkFp32Bytes);
+    pipe.InitBuffer(oneBuf, chunkFp32Bytes);
+    pipe.InitBuffer(negOneBuf, chunkFp32Bytes);
+
     if constexpr (IS_FP16) {
-        int64_t castBytes = mAligned_ * static_cast<int64_t>(sizeof(half));
-        if (castBytes < 32)
-            castBytes = 32;
-        pipe.InitBuffer(castBuf, castBytes);
+        // fp32 compute views of the fp16 chunk inputs. fp32 reads the queue tensors directly.
+        pipe.InitBuffer(x2CalcBuf, chunkFp32Bytes);
+        pipe.InitBuffer(gradCalcBuf, chunkFp32Bytes);
+        pipe.InitBuffer(distCalcBuf, chunkFp32Bytes);
+        if (pTile_ > 1) {
+            pipe.InitBuffer(x1CalcBuf, chunkFp32Bytes);
+        }
     }
 
-    // Constants (fp32).
+    term_ = termBuf.Get<float>();
+    sc1_ = sc1Buf.Get<float>();
+    sc2_ = sc2Buf.Get<float>();
+    sc3_ = sc3Buf.Get<float>();
+    // Constants (fp32), filled once over the widest batch so any prefix is valid.
     zero_ = zeroBuf.Get<float>();
     one_ = oneBuf.Get<float>();
     negOne_ = negOneBuf.Get<float>();
-    Duplicate(zero_, 0.0f, static_cast<uint32_t>(mAligned_));
-    Duplicate(one_, 1.0f, static_cast<uint32_t>(mAligned_));
-    Duplicate(negOne_, -1.0f, static_cast<uint32_t>(mAligned_));
+    Duplicate(zero_, 0.0f, static_cast<uint32_t>(batchElems));
+    Duplicate(one_, 1.0f, static_cast<uint32_t>(batchElems));
+    Duplicate(negOne_, -1.0f, static_cast<uint32_t>(batchElems));
     accum_ = accumBuf.Get<float>();
 
     // MTE2->V event (shared by x1Row load and Phase2 workspace read).
@@ -302,54 +336,28 @@ template <typename T, typename Derived>
 __aicore__ inline void CdistGradBase<T, Derived>::CopyInChunk(int64_t b, int64_t i, int64_t rStart,
                                                               int64_t currentRTile, int64_t mStart, int64_t mTileReal)
 {
-    // NOTE: DataCopyPad srcStride/dstStride are INTER-block gaps (not pitch).
-    // Per-row single-block copies: GM rows are contiguous (gap 0); each UB row lives at
-    // j*mAligned offset. Rows not 32B-multiples are auto-padded right with dummy; padding
-    // lanes never reach the output (CopyOut blockLen = mTileReal).
-    uint16_t rowLen = static_cast<uint16_t>(mTileReal * static_cast<int64_t>(sizeof(T)));
-    // Contiguous-chunk fast path: rows must be back-to-back in BOTH GM and UB.
-    // GM row pitch is the FULL row (mSize_), so contiguity requires a single M segment
-    // covering the whole row (numMTiles_ == 1) whose width also equals the UB pitch
-    // (mTileReal == mAligned_). With M-tiling the GM rows are mSize_ apart while a
-    // segment only spans mTileReal — a flat copy would interleave row k's segment
-    // with row k+1's head.
-    const bool wholeChunk = (numMTiles_ == 1 && mTileReal == mAligned_);
-    const uint16_t chunkLen = static_cast<uint16_t>(currentRTile * static_cast<int64_t>(rowLen));
+    const uint32_t rowLen = static_cast<uint32_t>(mTileReal * static_cast<int64_t>(sizeof(T)));
+    const uint32_t srcGap = static_cast<uint32_t>((mSize_ - mTileReal) * static_cast<int64_t>(sizeof(T)));
+    const uint32_t dstGap = static_cast<uint32_t>((mAligned_ * static_cast<int64_t>(sizeof(T)) - AlignUpBlock(rowLen)) /
+                                                  BLOCK_BYTES);
+    const DataCopyExtParams params{static_cast<uint16_t>(currentRTile), rowLen, srcGap, dstGap, 0};
+    const DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
 
     // x2[b, i=0, rStart:rEnd, :] — x2 repeated along i.
     int64_t x2Base = b * pSize_ * rSize_ * mSize_ + rStart * mSize_ + mStart;
     LocalTensor<T> x2 = x2Queue.AllocTensor<T>();
-    if (wholeChunk) {
-        DataCopyPad(x2, x2GM[x2Base], {1, chunkLen, 0, 0}, {false, 0, 0, 0});
-    } else {
-        for (int64_t j = 0; j < currentRTile; j++) {
-            DataCopyPad(x2[j * mAligned_], x2GM[x2Base + j * mSize_], {1, rowLen, 0, 0}, {false, 0, 0, 0});
-        }
-    }
+    DataCopyPad(x2, x2GM[x2Base], params, padParams);
     x2Queue.EnQue(x2);
 
     // grad[b, i, rStart:rEnd, :] — contiguous, scalar grad[b,i,j] repeated along k.
     int64_t gradBase = ((b * pSize_ + i) * rSize_ + rStart) * mSize_ + mStart;
     LocalTensor<T> grad = gradQueue.AllocTensor<T>();
-    if (wholeChunk) {
-        DataCopyPad(grad, gradOutputGM[gradBase], {1, chunkLen, 0, 0}, {false, 0, 0, 0});
-    } else {
-        for (int64_t j = 0; j < currentRTile; j++) {
-            DataCopyPad(grad[j * mAligned_], gradOutputGM[gradBase + j * mSize_], {1, rowLen, 0, 0}, {false, 0, 0, 0});
-        }
-    }
+    DataCopyPad(grad, gradOutputGM[gradBase], params, padParams);
     gradQueue.EnQue(grad);
 
     // cdist[b, i, rStart:rEnd, :] — contiguous, scalar dist[b,i,j] repeated along k.
-    int64_t distBase = ((b * pSize_ + i) * rSize_ + rStart) * mSize_ + mStart;
     LocalTensor<T> dist = distQueue.AllocTensor<T>();
-    if (wholeChunk) {
-        DataCopyPad(dist, cdistResultGM[distBase], {1, chunkLen, 0, 0}, {false, 0, 0, 0});
-    } else {
-        for (int64_t j = 0; j < currentRTile; j++) {
-            DataCopyPad(dist[j * mAligned_], cdistResultGM[distBase + j * mSize_], {1, rowLen, 0, 0}, {false, 0, 0, 0});
-        }
-    }
+    DataCopyPad(dist, cdistResultGM[gradBase], params, padParams);
     distQueue.EnQue(dist);
 }
 
@@ -359,39 +367,186 @@ __aicore__ inline void CdistGradBase<T, Derived>::ComputeChunk(int64_t currentRT
     LocalTensor<T> x2 = x2Queue.DeQue<T>();
     LocalTensor<T> grad = gradQueue.DeQue<T>();
     LocalTensor<T> dist = distQueue.DeQue<T>();
+    // The blocked path carries x1 as a fourth chunk instead of a single broadcast row.
+    LocalTensor<T> x1;
+    if (pTile_ > 1) {
+        x1 = x1Queue.template DeQue<T>();
+    }
 
-    {
+    if constexpr (IS_FP16) {
         uint32_t chunkCount = static_cast<uint32_t>(currentRTile * mAligned_);
         LocalTensor<float> x2f = x2CalcBuf.Get<float>();
         LocalTensor<float> gradf = gradCalcBuf.Get<float>();
         LocalTensor<float> distf = distCalcBuf.Get<float>();
-        if constexpr (IS_FP16) {
-            Cast(x2f, x2, RoundMode::CAST_NONE, chunkCount);
-            Cast(gradf, grad, RoundMode::CAST_NONE, chunkCount);
-            Cast(distf, dist, RoundMode::CAST_NONE, chunkCount);
-        } else {
-            // Copy out of the queue slots immediately; compute reads only these TBufs.
-            Adds(x2f, x2, 0.0f, chunkCount);
-            Adds(gradf, grad, 0.0f, chunkCount);
-            Adds(distf, dist, 0.0f, chunkCount);
-        }
+        Cast(x2f, x2, RoundMode::CAST_NONE, chunkCount);
+        Cast(gradf, grad, RoundMode::CAST_NONE, chunkCount);
+        Cast(distf, dist, RoundMode::CAST_NONE, chunkCount);
         x2Chunk_ = x2f;
         gradChunk_ = gradf;
         distChunk_ = distf;
-        // Free the queue slots right away. The copies above are the only readers; drain
-        // the Vector pipe first so the copy has RETIRED before the slot can be re-allocated
-        // and refilled by MTE2 (Free is scalar-ordered, the copy executes asynchronously).
-        PipeBarrier<PIPE_ALL>();
+        // The casts are the only readers of the slots, so they can be released immediately.
         x2Queue.FreeTensor(x2);
         gradQueue.FreeTensor(grad);
         distQueue.FreeTensor(dist);
+        if (pTile_ > 1) {
+            LocalTensor<float> x1f = x1CalcBuf.template Get<float>();
+            Cast(x1f, x1, RoundMode::CAST_NONE, chunkCount);
+            x1Chunk_ = x1f;
+            x1Queue.FreeTensor(x1);
+        }
+    } else {
+        x2Chunk_ = x2.template ReinterpretCast<float>();
+        gradChunk_ = grad.template ReinterpretCast<float>();
+        distChunk_ = dist.template ReinterpretCast<float>();
+        if (pTile_ > 1) {
+            x1Chunk_ = x1.template ReinterpretCast<float>();
+        }
     }
 
     static_cast<Derived*>(this)->PrepareChunk(currentRTile);
 
-    for (int64_t j = 0; j < currentRTile; j++) {
-        static_cast<Derived*>(this)->ComputeForJ(j);
+    // Evaluate the term for cTile_ j rows at a time, then fold that batch into the
+    // accumulator one row at a time (ascending j) so the reduce keeps its original order.
+    for (int64_t base = 0; base < currentRTile; base += cTile_) {
+        int64_t rows = currentRTile - base;
+        if (rows > cTile_) {
+            rows = cTile_;
+        }
+        static_cast<Derived*>(this)->ComputeBatch(base, rows);
+        static_cast<Derived*>(this)->AccumulateBatch(base, rows);
     }
+
+    if constexpr (!IS_FP16) {
+        x2Queue.FreeTensor(x2);
+        gradQueue.FreeTensor(grad);
+        distQueue.FreeTensor(dist);
+        if (pTile_ > 1) {
+            x1Queue.FreeTensor(x1);
+        }
+    }
+}
+
+template <typename T, typename Derived>
+__aicore__ inline void CdistGradBase<T, Derived>::AccumulateBatch(int64_t base, int64_t rows)
+{
+    if (pTile_ > 1) {
+        const int64_t pOut = rows / rSize_;
+        const uint8_t rowBlocks = static_cast<uint8_t>(mAligned_ / (BLOCK_BYTES / sizeof(float)));
+        const AscendC::BinaryRepeatParams params(1, 1, 1, rowBlocks, rowBlocks,
+                                                 static_cast<uint8_t>(rSize_ * rowBlocks));
+        for (int64_t j = 0; j < rSize_; j++) {
+            AscendC::Add(accum_, accum_, term_[(base + j) * mAligned_], static_cast<uint64_t>(mAligned_),
+                         static_cast<uint8_t>(pOut), params);
+        }
+        return;
+    }
+    uint32_t count = static_cast<uint32_t>(mAligned_);
+    for (int64_t k = 0; k < rows; k++) {
+        AscendC::Add(accum_, accum_, term_[(base + k) * mAligned_], count);
+    }
+}
+
+template <typename T, typename Derived>
+__aicore__ inline void CdistGradBase<T, Derived>::SubX1(const LocalTensor<float>& dst, int64_t off, int64_t rows,
+                                                        uint32_t count)
+{
+    if (pTile_ > 1) {
+        AscendC::Sub(dst, x1Chunk_[off], x2Chunk_[off], count);
+        return;
+    }
+    for (int64_t k = 0; k < rows; k++) {
+        AscendC::Sub(dst[k * mAligned_], x1Row_, x2Chunk_[off + k * mAligned_], static_cast<uint32_t>(mAligned_));
+    }
+}
+
+template <typename T, typename Derived>
+__aicore__ inline void CdistGradBase<T, Derived>::CopyInBlocked(int64_t rowStart, int64_t slabRows)
+{
+    const int64_t base = rowStart * rSize_ * mSize_;
+    const uint32_t rowLen = static_cast<uint32_t>(mSize_ * static_cast<int64_t>(sizeof(T)));
+    const uint32_t dstGap = static_cast<uint32_t>((mAligned_ * static_cast<int64_t>(sizeof(T)) - AlignUpBlock(rowLen)) /
+                                                  BLOCK_BYTES);
+    const bool packed = (mSize_ == mAligned_);
+    const DataCopyExtParams params = packed ?
+                                         DataCopyExtParams{
+                                             1, static_cast<uint32_t>(slabRows * static_cast<int64_t>(rowLen)), 0, 0,
+                                             0} :
+                                         DataCopyExtParams{static_cast<uint16_t>(slabRows), rowLen, 0, dstGap, 0};
+    const DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
+
+    LocalTensor<T> x1 = x1Queue.template AllocTensor<T>();
+    DataCopyPad(x1, x1GM[base], params, padParams);
+    x1Queue.EnQue(x1);
+    LocalTensor<T> x2 = x2Queue.template AllocTensor<T>();
+    DataCopyPad(x2, x2GM[base], params, padParams);
+    x2Queue.EnQue(x2);
+    LocalTensor<T> grad = gradQueue.template AllocTensor<T>();
+    DataCopyPad(grad, gradOutputGM[base], params, padParams);
+    gradQueue.EnQue(grad);
+    LocalTensor<T> dist = distQueue.template AllocTensor<T>();
+    DataCopyPad(dist, cdistResultGM[base], params, padParams);
+    distQueue.EnQue(dist);
+}
+
+// accum holds [rows, mAligned]; the destination region of gradX1 is [rows, M], contiguous.
+template <typename T, typename Derived>
+__aicore__ inline void CdistGradBase<T, Derived>::CopyOutBlocked(int64_t rowStart, int64_t rows)
+{
+    const int64_t gmOffset = rowStart * mSize_;
+    const uint32_t count = static_cast<uint32_t>(rows * mAligned_);
+    const uint32_t rowLen = static_cast<uint32_t>(mSize_ * static_cast<int64_t>(sizeof(T)));
+    // UB rows are mAligned_ elements apart while the copy reads AlignUpBlock(rowLen) bytes of
+    // each, so the source gap is the remainder; the destination is contiguous.
+    const uint32_t srcGap = static_cast<uint32_t>((mAligned_ * static_cast<int64_t>(sizeof(T)) - AlignUpBlock(rowLen)) /
+                                                  BLOCK_BYTES);
+    // Same single-descriptor collapse as CopyInBlocked when the rows need no padding.
+    const bool packed = (mSize_ == mAligned_);
+    const DataCopyExtParams params = packed ?
+                                         DataCopyExtParams{
+                                             1, static_cast<uint32_t>(rows * static_cast<int64_t>(rowLen)), 0, 0, 0} :
+                                         DataCopyExtParams{static_cast<uint16_t>(rows), rowLen, srcGap, 0, 0};
+    if constexpr (IS_FP16) {
+        LocalTensor<half> outT = outQueue.template AllocTensor<half>();
+        Cast(outT, accum_, RoundMode::CAST_ROUND, count);
+        outQueue.EnQue(outT);
+        LocalTensor<half> outY = outQueue.template DeQue<half>();
+        DataCopyPad(gradX1GM[gmOffset], outY, params);
+        outQueue.FreeTensor(outY);
+    } else {
+        LocalTensor<float> outT = outQueue.template AllocTensor<float>();
+        Adds(outT, accum_, 0.0f, count);
+        outQueue.EnQue(outT);
+        LocalTensor<float> outY = outQueue.template DeQue<float>();
+        DataCopyPad(gradX1GM[gmOffset], outY, params);
+        outQueue.FreeTensor(outY);
+    }
+}
+
+// One task = pTile_ consecutive flattened (b,i) output rows. Reachable only when the host
+// enabled blocking, which requires numMTiles == 1 and qSplit == 1, so there is no M-segment
+// loop and no two-phase reduce here.
+template <typename T, typename Derived>
+__aicore__ inline void CdistGradBase<T, Derived>::ProcessBlockedTask(int64_t taskIdx)
+{
+    const int64_t totalRows = batchSize_ * pSize_;
+    const int64_t rowStart = taskIdx * pTile_;
+    if (rowStart >= totalRows) {
+        return;
+    }
+    int64_t rows = totalRows - rowStart;
+    if (rows > pTile_) {
+        rows = pTile_;
+    }
+    const int64_t slabRows = rows * rSize_;
+    currentRow_ = rowStart;
+    currentRTile_ = slabRows;
+
+    CopyInBlocked(rowStart, slabRows);
+    Duplicate(accum_, 0.0f, static_cast<uint32_t>(rows * mAligned_));
+    static_cast<Derived*>(this)->ResetAccumCompensation();
+    ComputeChunk(slabRows);
+    static_cast<Derived*>(this)->FoldAccumCompensation();
+    CopyOutBlocked(rowStart, rows);
 }
 
 template <typename T, typename Derived>
@@ -500,7 +655,7 @@ __aicore__ inline void CdistGradBase<T, Derived>::MergeToGradX1()
     if (rowStart >= rowEnd)
         return;
 
-    LocalTensor<float> partial = diffBuf.Get<float>();
+    LocalTensor<float> partial = sc1_;
     for (int64_t row = rowStart; row < rowEnd; row++) {
         for (int64_t mSeg = 0; mSeg < numMTiles_; mSeg++) {
             mStart_ = mSeg * mTileSize_;
@@ -539,6 +694,10 @@ __aicore__ inline void CdistGradBase<T, Derived>::Process()
         MergeToGradX1();
         PipeBarrier<PIPE_ALL>(); // drain MTE3 (gradX1 writes) before final barrier
         SyncAll();               // ensure all gradX1 rows written
+    } else if (pTile_ > 1) {
+        for (int64_t t = 0; t < subTaskCount_; t++) {
+            ProcessBlockedTask(startSubTask_ + t);
+        }
     } else {
         for (int64_t t = 0; t < subTaskCount_; t++) {
             ProcessSubTask(startSubTask_ + t); // segment-wise CopyOut inside

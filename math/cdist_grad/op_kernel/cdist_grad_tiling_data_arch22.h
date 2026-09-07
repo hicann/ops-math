@@ -29,8 +29,6 @@ struct CdistGradTilingData {
     int64_t mSize = 0;     // M (valid elements per feature row)
     int64_t mAligned = 0;  // full M aligned to 256B in fp32 element count (ws slot stride)
 
-    // M-tiling: M is split into numMTiles segments of mTileSize (last one may be
-    // shorter). numMTiles == 1 degenerates to the original FullM behaviour.
     int64_t mTileSize = 0;
     int64_t numMTiles = 1;
     int64_t lastMTileSize = 0;
@@ -40,14 +38,15 @@ struct CdistGradTilingData {
     int64_t numRChunks = 0;
     int64_t lastRChunkSize = 0;
 
-    // Multi-core split along B*P tasks
+    int64_t cTile = 1;
+
+    int64_t pTile = 1;
+
+    // Multi-core split along ceil(B*P / pTile) tasks
     int64_t tasksPerCore = 0;
     int64_t tailCoreTasks = 0;
     int64_t usedCoreNum = 0;
 
-    // Q split for load balancing when B*P < coreNum (small-shape path).
-    // Each (b,i) task is split into qSplit sub-tasks along Q.
-    // Sub-task global index = taskIdx * qSplit + qPart.
     int64_t qSplit = 1;
     int64_t qPartSize = 0; // Q range size per part = CeilDiv(Q, qSplit)
 
