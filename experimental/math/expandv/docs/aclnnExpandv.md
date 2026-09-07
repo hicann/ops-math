@@ -236,7 +236,7 @@ aclnnStatus aclnnExpandv(
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
-#include "aclnnop/aclnn_expand.h"
+#include "aclnnop/aclnn_expandv.h"
 
 #define CHECK_RET(cond, return_expr) \
     do {                             \
@@ -331,18 +331,18 @@ int main()
     // 3. 调用CANN算子库API
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
-    // 调用aclnnExpand第一段接口
-    ret = aclnnExpandGetWorkspaceSize(self, aclExpandSections, out, &workspaceSize, &executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnExpandGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+    // 调用aclnnExpandv第一段接口
+    ret = aclnnExpandvGetWorkspaceSize(self, aclExpandSections, out, &workspaceSize, &executor);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnExpandvGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
         ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
-        CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret;);
+        CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
     }
-    // 调用aclnnExpand第二段接口
-    ret = aclnnExpand(workspaceAddr, workspaceSize, executor, stream);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnExpand failed. ERROR: %d\n", ret); return ret);
+    // 调用aclnnExpandv第二段接口
+    ret = aclnnExpandv(workspaceAddr, workspaceSize, executor, stream);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnExpandv failed. ERROR: %d\n", ret); return ret);
     // 4. （固定写法）同步等待任务执行结束
     ret = aclrtSynchronizeStream(stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);

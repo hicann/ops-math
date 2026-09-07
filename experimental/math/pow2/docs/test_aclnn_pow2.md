@@ -141,13 +141,13 @@ aclnnStatus aclnnPow2(
     <tr>
       <td rowspan="8">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="8">161002</td>
-      <td>condition, self, 和other的数据类型和数据格式不在支持的范围之内。</td>
+      <td>x1、x2和out的数据类型和数据格式不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td>condition, self, 和other的数据维度超过了8维。</td>
+      <td>x1、x2和out的数据维度超过了8维。</td>
     </tr>
     <tr>
-      <td>condition, self, other和out的数据形状不一致。</td>
+      <td>x1、x2和out的数据形状不一致。</td>
     </tr>
   </tbody></table>
 
@@ -290,7 +290,7 @@ int testFp32(){
     // 创建self aclTensor
     ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
-    // 创建threshold aclScalar
+    // 创建 exponent aclTensor
     ret = CreateAclTensor(exponentHostData, exponentShape, &exponentDeviceAddr, aclDataType::ACL_FLOAT, &exponent);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建out aclTensor

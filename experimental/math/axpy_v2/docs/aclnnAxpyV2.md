@@ -16,7 +16,7 @@ $$
 dstTensor_i = src1Tensor_i + alphaScalar * src2Tensor_i
 $$
 
-> 对于数据类型为float16和bfloat16，需要类型转换为float32进行计算，另外支持alphaScalar与src1Tensor数据类型不一致。
+> 对于数据类型为FLOAT16和BFLOAT16，需要类型转换为FLOAT32进行计算，另外支持alphaScalar与src1Tensor数据类型不一致。
 
 ## 函数原型
 

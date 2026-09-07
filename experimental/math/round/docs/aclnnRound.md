@@ -63,7 +63,7 @@ aclnnStatus aclnnRound(
   | 参数名        | 输入/输出 | 描述                                                         |
   | ------------- | --------- | ------------------------------------------------------------ |
   | workspace     | 输入      | 在Device侧申请的workspace内存地址。                          |
-  | workspaceSize | 输入      | 在Device侧申请的workspace大小，由第一段接口aclnnSWhereGetWorkspaceSize获取。 |
+  | workspaceSize | 输入      | 在Device侧申请的workspace大小，由第一段接口aclnnRoundGetWorkspaceSize获取。 |
   | executor      | 输入      | op执行器，包含了算子计算流程。                               |
   | stream        | 输入      | 指定执行任务的Stream。                                       |
 
@@ -209,9 +209,9 @@ aclnnStatus aclnnRound(
      uint64_t workspaceSize = 0;
      aclOpExecutor* executor;
 
-     // 4. 调用aclnnAddExample第一段接口
-     ret = aclnnRoundGetWorkspaceSize(selfX,0, out, &workspaceSize, &executor);
-     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAddExampleGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+     // 4. 调用aclnnRound第一段接口
+    ret = aclnnRoundGetWorkspaceSize(selfX, out, &workspaceSize, &executor);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnRoundGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
      // 根据第一段接口计算出的workspaceSize申请device内存
      void* workspaceAddr = nullptr;
@@ -220,9 +220,9 @@ aclnnStatus aclnnRound(
          CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
      }
 
-     // 5. 调用aclnnAddExample第二段接口
+     // 5. 调用aclnnRound第二段接口
      ret = aclnnRound(workspaceAddr, workspaceSize, executor, stream);
-     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAddExample failed. ERROR: %d\n", ret); return ret);
+     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnRound failed. ERROR: %d\n", ret); return ret);
 
      // 6. （固定写法）同步等待任务执行结束
      ret = aclrtSynchronizeStream(stream);

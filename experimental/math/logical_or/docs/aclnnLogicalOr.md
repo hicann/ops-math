@@ -36,7 +36,7 @@
 - 算子执行接口对外屏蔽了算子内部实现逻辑以及不同代际NPU的差异，且开发者无需编译算子，实现了算子的精简调用。
 - 若开发者不使用算子执行接口的调用算子，也可以定义基于Ascend IR的算子描述文件，通过ATC工具编译获得算子om文件，然后加载模型文件执行算子，详细调用方法可参见《应用开发指南》的[单算子调用 > 单算子模型执行](https://hiascend.com/document/redirect/CannCommunityCppOpcall)章节。
 
-### aclnnLessGetWorkspaceSize
+### aclnnLogicalOrGetWorkspaceSize
 
 - **参数说明：**
 
@@ -56,12 +56,12 @@
   - 返回161002（ACLNN_ERR_PARAM_INVALID）：x1、x2、out的数据类型和数据格式不在支持的范围内。
   ```
 
-### aclnnLess
+### aclnnLogicalOr
 
 - **参数说明：**
 
   - workspace（void\*，入参）：在Device侧申请的workspace内存起址。
-  - workspaceSize（uint64\_t，入参）：在Device侧申请的workspace大小，由第一段接口aclnnFFNGetWorkspaceSize获取。
+  - workspaceSize（uint64\_t，入参）：在Device侧申请的workspace大小，由第一段接口aclnnLogicalOrGetWorkspaceSize获取。
   - executor（aclOpExecutor\*，入参）：op执行器，包含了算子计算流程。
   - stream（aclrtStream，入参）：指定执行任务的AscendCL stream流。
 

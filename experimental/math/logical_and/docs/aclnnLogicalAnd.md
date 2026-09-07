@@ -17,7 +17,7 @@ $$
 
 - 实际运算逻辑：
 
-将两个输入，类型转换为fp16，进行Mul运算，得到结果之后转换为int8.
+将两个输入，类型转换为fp16，进行Mul运算，得到结果之后转换为int8，最终以BOOL类型输出.
 
 ## 函数原型
 
@@ -145,13 +145,13 @@ aclnnStatus aclnnLogicalAnd(
     <tr>
       <td rowspan="8">ACLNN_ERR_PARAM_INVALID</td>
       <td rowspan="8">161002</td>
-      <td>condition, self, 和other的数据类型和数据格式不在支持的范围内。</td>
+      <td>self和other的数据类型和数据格式不在支持的范围内。</td>
     </tr>
     <tr>
-      <td>condition, self, 和other的数据维度超过了8维。</td>
+      <td>self和other的数据维度超过了8维。</td>
     </tr>
     <tr>
-      <td>condition, self, other和out的数据形状不一致。</td>
+      <td>self、other和out的数据形状不一致。</td>
     </tr>
   </tbody></table>
 
@@ -179,7 +179,7 @@ aclnnStatus aclnnLogicalAnd(
     <tr>
       <td>workspaceSize</td>
       <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnSWhereGetWorkspaceSize获取。</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnLogicalAndGetWorkspaceSize获取。</td>
     </tr>
     <tr>
       <td>executor</td>

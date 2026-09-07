@@ -206,6 +206,7 @@ aclnnStatus aclnnRealDiv(
 ```Cpp
 #include <iostream>
 #include <vector>
+#include <limits>
 #include "acl/acl.h"
 #include "aclnn_real_div.h"
 
@@ -284,7 +285,7 @@ int main()
     std::vector<float> selfHostData = { 7.0f, -7.0f,  0.0f,  1.0f };
     std::vector<float> otherHostData  = { 2.0f,  2.0f,  3.0f,  0.0f };   // 第4个除零
     std::vector<float> outHostData = { 0.0f,  0.0f,  0.0f,  0.0f };
-    std::vector<float> expectData = { 3.5f, 3.5f, 0.f,  0.0f};
+    std::vector<float> expectData = {3.5f, -3.5f, 0.0f, std::numeric_limits<float>::infinity()};
     // 期望: 3.5, -3.5, 0, +INF
     // 创建self aclTensor
     ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);

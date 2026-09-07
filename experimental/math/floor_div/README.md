@@ -1,4 +1,4 @@
-# aclnnFloorDiv
+# aclnnFloorDivide
 
 ## 产品支持情况
 
@@ -23,10 +23,10 @@ $$
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnFloorDivGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnFloorDiv”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnFloorDivideGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnFloorDivide”接口执行计算。
 
 ```Cpp
-aclnnStatus aclnnFloorDivGetWorkspaceSize(
+aclnnStatus aclnnFloorDivideGetWorkspaceSize(
   const aclTensor *self_x,
   const aclTensor *self_y,
   aclTensor       *out,
@@ -35,14 +35,14 @@ aclnnStatus aclnnFloorDivGetWorkspaceSize(
 ```
 
 ```Cpp
-aclnnStatus aclnnFloorDiv(
+aclnnStatus aclnnFloorDivide(
   void              *workspace,
   uint64_t           workspaceSize,
   aclOpExecutor     *executor,
   const aclrtStream  stream)
 ```
 
-## aclnnFloorDivGetWorkspaceSize
+## aclnnFloorDivideGetWorkspaceSize
 
 - **参数说明：**
 
@@ -155,7 +155,7 @@ aclnnStatus aclnnFloorDiv(
     </tr>
   </tbody></table>
 
-## aclnnFloorDiv
+## aclnnFloorDivide
 
 - **参数说明：**
   <table style="table-layout: fixed; width: 953px"><colgroup>
@@ -178,7 +178,7 @@ aclnnStatus aclnnFloorDiv(
     <tr>
       <td>workspaceSize</td>
       <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnFloorDivGetWorkspaceSize获取。</td>
+      <td>在Device侧申请的workspace大小，由第一段接口aclnnFloorDivideGetWorkspaceSize获取。</td>
     </tr>
     <tr>
       <td>executor</td>
@@ -209,7 +209,7 @@ aclnnStatus aclnnFloorDiv(
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
-#include "aclnn_floor_div.h"
+#include "aclnn_floor_divide.h"
 // 修改测试数据类型
 using DataType = int32_t;
 #define ACL_TYPE aclDataType::ACL_INT32
@@ -243,7 +243,7 @@ void PrintOutResult(std::vector<int64_t>& shape, void** deviceAddr)
         ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return);
     for (int64_t i = 0; i < size; i++) {
-         LOG_PRINT("result[%ld] is: ", i);       // float
+         LOG_PRINT("result[%ld] is: ", i);       // int
          std::cout << (int)resultData[i] << std::endl;
         //LOG_PRINT("result[%ld] is: %d\n", i, resultData[i]);       // int
     }
@@ -298,7 +298,7 @@ int main()
     // 2. 构造输入与输出，需要根据API的接口自定义构造
     aclTensor* selfX = nullptr;
     void* selfXDeviceAddr = nullptr;
-    std::vector<int64_t> selfXShape = {49, 1, 256, 20480};
+    std::vector<int64_t> selfXShape = {2, 1, 16, 32};
     // float16: 19328 => 15
     // bf16: 16752 => 15
     int num__ = 1;
@@ -332,11 +332,11 @@ int main()
     LOG_PRINT("Before GetWorkspaceSize: selfX=%p, selfY=%p, out=%p\n", (void*)selfX, (void*)selfY, (void*)out);
     LOG_PRINT("Before GetWorkspaceSize: selfXDeviceAddr=%p, selfYDeviceAddr=%p, outDeviceAddr=%p\n",
           selfXDeviceAddr, selfYDeviceAddr, outDeviceAddr);
-    // 4. 调用aclnnAddExample第一段接口
-    ret = aclnnFloorDivGetWorkspaceSize(selfX, selfY, out, &workspaceSize, &executor);
-    LOG_PRINT("aclnnFloorDivGetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n",
+    // 4. 调用aclnnFloorDivide第一段接口
+    ret = aclnnFloorDivideGetWorkspaceSize(selfX, selfY, out, &workspaceSize, &executor);
+    LOG_PRINT("aclnnFloorDivideGetWorkspaceSize returned %d, workspaceSize=%llu, executor=%p\n",
           ret, (unsigned long long)workspaceSize, (void*)executor);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnFloorDivExampleGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnFloorDivideGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
@@ -345,16 +345,16 @@ int main()
         CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
     }
 
-    // 5. 调用aclnnAddExample第二段接口
-    ret = aclnnFloorDiv(workspaceAddr, workspaceSize, executor, stream);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnMulExample failed. ERROR: %d\n", ret); return ret);
+    // 5. 调用aclnnFloorDivide第二段接口
+    ret = aclnnFloorDivide(workspaceAddr, workspaceSize, executor, stream);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnFloorDivide failed. ERROR: %d\n", ret); return ret);
 
     // 6. （固定写法）同步等待任务执行结束
     ret = aclrtSynchronizeStream(stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
     // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
-    std::vector<int64_t> outShape1 = {20};
+    std::vector<int64_t> outShape1 = outShape;
     PrintOutResult(outShape1, &outDeviceAddr);
 
     // 7. 释放aclTensor，需要根据具体API的接口定义修改

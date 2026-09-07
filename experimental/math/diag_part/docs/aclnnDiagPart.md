@@ -159,7 +159,7 @@ int main() {
   ret = CreateAclTensor(yHostData, yShape, &yDeviceAddr, aclDataType::ACL_FLOAT, &y);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-  // 3. 调用CANN算子库API，需要修改为具体的API
+  // 3. 调用 CANN 算子库 API，需要修改为具体的 API
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnDiagPart第一段接口
