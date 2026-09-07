@@ -305,7 +305,7 @@ aclnnStatus aclnnInplaceBernoulliTensor(
     <tr>
       <td>prob</td>
       <td>输入</td>
-      <td>公式中的prob，Host侧的aclScalar</td>
+      <td>公式中的prob，Host侧的aclTensor</td>
       <td><ul><li>满足0≤prob≤1</li></ul></td>
       <td>FLOAT16、FLOAT、DOUBLE</td>
       <td>ND</td>
@@ -441,7 +441,7 @@ aclnnStatus aclnnInplaceBernoulliTensor(
 
 - 确定性计算：aclnnBernoulliTensor&aclnnInplaceBernoulliTensor默认确定性实现。
 - 输入prob的元素值域必须为[0, 1]。
-- 当输入prob的shape与输入self/selfRef的shape不一致时，只计算两者可对应元素的数据，其余数据的行为未定义。例如：当prob的shape为[4, 2]，self的shape为[4, 4]时，只计算前8个元素，输出的shape为[4, 4]；当prob的shape为[4, 4, 2], self的shape为[4, 4]时，只计算前16个元素，输出的shape为[4, 4]。
+- 当输入prob的shape与输入self/selfRef的shape不一致时，只计算两者可对应元素的数据，其余数据的行为未定义。例如：当prob的shape为[4, 2]，self的shape为[4, 4]时，只计算前8个元素，输出的shape为[4, 4]；当prob的shape为[4, 4, 2]， self的shape为[4, 4]时，只计算前16个元素，输出的shape为[4, 4]。
 
 ## 调用示例
 

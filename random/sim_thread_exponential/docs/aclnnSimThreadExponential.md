@@ -215,7 +215,7 @@ aclnnStatus aclnnSimThreadExponential(
       <tr>
         <td>workspaceSize</td>
         <td>输入</td>
-        <td>在Device侧申请的workspace大小，由第一段接口aclnnSimThreadExponential获取。</td>
+        <td>在Device侧申请的workspace大小，由第一段接口aclnnSimThreadExponentialGetWorkspaceSize获取。</td>
       </tr>
       <tr>
         <td>executor</td>
@@ -324,14 +324,14 @@ int main() {
     std::vector<int64_t> selfRefShape = {2, 5};
     void* selfRefDeviceAddr = nullptr;
     aclTensor* selfRef = nullptr;
-    std::vector<float> selfRefHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+    std::vector<float> selfRefHostData = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     // 创建selfRef aclTensor
     ret = CreateAclTensor(selfRefHostData, selfRefShape, &selfRefDeviceAddr, aclDataType::ACL_FLOAT, &selfRef);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
-    uint64_t count = 10;
+    int64_t count = 10;
     double lambda = 1.0;
-    uint64_t seed = 5;
-    uint64_t offset = 0;
+    int64_t seed = 5;
+    int64_t offset = 0;
     // 3. 调用CANN算子库API，需要修改为具体的API
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
@@ -342,7 +342,7 @@ int main() {
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
         ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
-        CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret;);
+        CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
     }
     // 调用aclnnSimThreadExponential第二段接口
     ret = aclnnSimThreadExponential(workspaceAddr, workspaceSize, executor, stream);

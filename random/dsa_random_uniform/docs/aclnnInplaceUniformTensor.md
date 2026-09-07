@@ -343,7 +343,6 @@ int main() {
     // 创建selfRef aclTensor
     ret = CreateAclTensor(selfRefHostData, selfRefShape, &selfRefDeviceAddr, aclDataType::ACL_FLOAT, &selfRef);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
-    CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建seed aclTensor
     ret = CreateAclTensor(seedHostData, seedShape, &seedDeviceAddr, aclDataType::ACL_INT64, &seed);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -363,7 +362,7 @@ int main() {
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
         ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
-        CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret;);
+        CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
     }
     // 调用aclnnInplaceUniformTensor第二段接口
     ret = aclnnInplaceUniformTensor(workspaceAddr, workspaceSize, executor, stream);
