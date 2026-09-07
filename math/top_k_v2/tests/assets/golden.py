@@ -14,14 +14,21 @@ PyTorch ``torch.topk`` is the native GPU competitor where its dtype support
 permits.  The CPU golden reproduces CUDA's threshold gather and
 SmallBitonicSort for ``sorted=True`` and ``k<=32``.  For larger ``k``, equal
 value tie indices are checked semantically; for ``sorted=False``, output order
-is handled the same way.  ACLNN/E2E/ONNX are not delivered by this module's
-CMake target.
+is handled the same way.  ACLNN and E2E (torch.topk) pathways are covered by the Aclnn/Torch spec
+    classes below; the repository does not deliver an ONNX pathway.
 """
 
 import torch
 
-__spec__ = {"top_k_v2": "TopKV2KernelSpec"}
-__golden__ = {"kernel": {"top_k_v2": "top_k_v2_golden"}}
+__spec__ = {
+    "top_k_v2": "TopKV2KernelSpec",
+    "aclnnTopkV2": "TopKV2AclnnSpec",
+    "torch.topk": "TopKV2TorchSpec",
+}
+__golden__ = {
+    "kernel": {"top_k_v2": "top_k_v2_golden"},
+    "aclnn": {"aclnnTopkV2": "aclnn_top_k_v2_golden"},
+}
 __input__ = {"kernel": {"top_k_v2": "top_k_v2_input"}}
 
 _KERNEL_TOLERANCE = {
@@ -45,7 +52,15 @@ _KERNEL_TOLERANCE = {
     )
 }
 
-_NATIVE_UNSUPPORTED_DTYPES = (torch.uint16, torch.uint32, torch.uint64)
+_NATIVE_UNSUPPORTED_DTYPES = tuple(
+    dt
+    for dt in (
+        getattr(torch, "uint16", None),
+        getattr(torch, "uint32", None),
+        getattr(torch, "uint64", None),
+    )
+    if dt is not None
+)
 
 
 def _as_tensor(x):
@@ -66,7 +81,12 @@ def _to_array(x):
 
 
 def _k_value(k):
-    return int(_as_tensor(k).reshape(-1)[0].item())
+    """Accept a python scalar, numpy scalar/array or 0-d device tensor."""
+    if isinstance(k, torch.Tensor):
+        return int(k.reshape(-1)[0].item())
+    if hasattr(k, "item"):
+        return int(k.item())
+    return int(k)
 
 
 def _index_dtype(indices_dtype=3, output_dtypes=()):
@@ -282,6 +302,13 @@ def _equal_values(lhs, rhs):
     return equal
 
 
+def _exact_indices(compare_context):
+    """Only the Kernel/GEIR golden reproduces CUDA bitonic index order;
+    ACLNN/E2E goldens use torch.topk semantics, so ties are semantic."""
+    api_name = str(getattr(compare_context, "api_name", "") or "")
+    return not (api_name.startswith("aclnn") or api_name.startswith("torch."))
+
+
 def top_k_v2_compare(
     npu_values,
     npu_indices,
@@ -292,7 +319,11 @@ def top_k_v2_compare(
 ):
     attrs = compare_context.attributes
     x = _as_tensor(compare_context.input_tensors[0])
-    k_value = _k_value(compare_context.input_tensors[1])
+    if isinstance(x, torch.Tensor):
+        x = x.detach().cpu()
+    input_tensors = list(compare_context.input_tensors)
+    k_raw = input_tensors[1] if len(input_tensors) > 1 else attrs.get("k")
+    k_value = _k_value(k_raw)
     values = _as_tensor(npu_values)
     expected = _as_tensor(golden_values)
     axis = _normalize_axis(attrs.get("dim", -1), x.ndim)
@@ -329,7 +360,7 @@ def top_k_v2_compare(
             else 0
         )
 
-    if sorted_output and 0 < k_value <= 32:
+    if sorted_output and 0 < k_value <= 32 and _exact_indices(compare_context):
         expected_indices = _as_tensor(golden_indices).to(torch.int64)
         golden_index_bad = int(torch.count_nonzero(indices != expected_indices).item())
         index_bad = golden_index_bad
@@ -388,3 +419,80 @@ class TopKV2KernelSpec:
     compare = staticmethod(top_k_v2_compare)
     third_party = {"torch": TopKV2ThirdParty}
     tolerance = dict(_KERNEL_TOLERANCE)
+
+
+def _aclnn_index_dtype(outputs, kwargs):
+    """Resolve indices dtype: declared integer output tensor first, then attr (9 = int64)."""
+    for tensor in reversed(outputs):
+        if tensor is not None and hasattr(tensor, "dtype"):
+            text = str(tensor.dtype)
+            if "float" not in text and "bool" not in text and "complex" not in text:
+                return torch.int64 if "int64" in text else torch.int32
+    for name in ("indicesType", "indices_dtype"):
+        value = kwargs.get(name)
+        if value is not None and not hasattr(value, "dtype"):
+            text = str(value)
+            return torch.int64 if ("int64" in text or text == "9") else torch.int32
+    return None
+
+
+def _aclnn_top_k_v2(x, k, dim, largest, sorted_output, index_dtype):
+    """ACLNN/E2E reference: plain torch.topk semantics; keeps torch.topk's
+    native index dtype when the case does not declare one."""
+    axis = -1 if dim is None else int(dim)
+    tensor = _as_tensor(x)
+    largest = True if largest is None else bool(largest)
+    sorted_output = True if sorted_output is None else bool(sorted_output)
+    values, indices = _topk(tensor, _k_value(k), axis, largest, sorted_output)
+    if index_dtype is not None and indices.dtype != index_dtype:
+        indices = indices.to(index_dtype)
+    return values, indices
+
+
+def aclnn_top_k_v2_golden(
+    self, k, dim=-1, largest=1, sorted=1, valuesOut=None, indicesOut=None, **kwargs
+):
+    """ACLNN asset-registry form: positional layout follows the aclnnTopKV2
+    C header (x, k, dim, largest, sorted, valuesOut, indicesOut)."""
+    index_dtype = _aclnn_index_dtype((valuesOut, indicesOut), kwargs)
+    values, indices = _aclnn_top_k_v2(self, k, dim, largest, sorted, index_dtype)
+    return [values, indices]
+
+
+def _aclnn_top_k_v2_golden(
+    x, k, dim=-1, largest=True, sorted=True, *_outputs, **kwargs
+):
+    """TestSpec form: output tensors arrive positionally after the scalars."""
+    index_dtype = _aclnn_index_dtype(_outputs, kwargs)
+    values, indices = _aclnn_top_k_v2(x, k, dim, largest, sorted, index_dtype)
+    return [values, indices]
+
+
+class TopKV2AclnnThirdParty:
+    """Timed torch competitor for the ACLNN/E2E pathways."""
+
+    def __init__(
+        self, k, *, dim=-1, largest=True, sorted=True, indices_dtype=3, **kwargs
+    ):
+        self.k = _k_value(k)
+        self.dim = int(dim)
+        self.largest = bool(largest)
+        self.sorted = bool(sorted)
+
+    def __call__(self, input=None, *args, x=None, **kwargs):
+        """E2E pools name the tensor ``input`` (torch.topk signature);
+        ACLNN pools deliver it as the first positional leftover (header param
+        ``self``) or under the keyword ``x``."""
+        tensor = input if input is not None else x
+        return _topk(tensor, self.k, self.dim, self.largest, self.sorted)
+
+
+class TopKV2AclnnSpec:
+    golden = staticmethod(_aclnn_top_k_v2_golden)
+    compare = staticmethod(top_k_v2_compare)
+    third_party = {"torch": TopKV2AclnnThirdParty}
+    tolerance = dict(_KERNEL_TOLERANCE)
+
+
+class TopKV2TorchSpec(TopKV2AclnnSpec):
+    """torch/torch_npu delivery path; argument semantics match ``torch.topk``."""
