@@ -32,7 +32,7 @@
 |    接口名   |   说明     | 确定性说明（A2/A3） | 确定性说明（Ascend 950） |
 | ----------- | ------------------- | --------- | --------- |
 | [aclnnAbs](../../math/abs/docs/aclnnAbs.md)     | 实现张量的绝对值运算。    | 默认确定性实现| 默认确定性实现|
-| [aclnnAcos&aclnnInplaceAcos](../../math/acos/docs/aclnnAcos&aclnnInplaceAcos.md) | 对输入矩阵的每个元素进行反余弦操作后输出。                   | 默认确定性实现| - |
+| [aclnnAcos&aclnnInplaceAcos](../../math/acos/docs/aclnnAcos&aclnnInplaceAcos.md) | 对输入矩阵的每个元素进行反余弦操作后输出。                   | 默认确定性实现| 默认确定性实现 |
 | [aclnnAcosh&aclnnInplaceAcosh](../../math/acosh/docs/aclnnAcosh&aclnnInplaceAcosh.md) | 对输入Tensor中的每个元素进行反双曲余弦操作后输出。           | 默认确定性实现| 默认确定性实现 |
 | [aclnnAdd&aclnnInplaceAdd](../../math/add/docs/aclnnAdd&aclnnInplaceAdd.md) | 完成加法计算。        | 默认确定性实现| 默认确定性实现 |
 | [aclnnAddcdiv&aclnnInplaceAddcdiv](../../math/addcdiv/docs/aclnnAddcdiv&aclnnInplaceAddcdiv.md) | 完成加法计算。                                               | 默认确定性实现| 默认确定性实现 |
