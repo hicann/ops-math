@@ -43,21 +43,21 @@ $$
       <td>y</td>
       <td>输入</td>
       <td>待进行sqrt_grad计算的入参，公式中的y。</td>
-      <td>DT_FLOAT,DT_FLOAT_16,DT_COMPLEX128,DT_COMPLEX64,DT_DOUBLE</td>
+      <td>BFLOAT16、FLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>dy</td>
       <td>输入</td>
       <td>待进行sqrt_grad计算的入参，公式中的dy。</td>
-      <td>DT_FLOAT,DT_FLOAT_16,DT_COMPLEX128,DT_COMPLEX64,DT_DOUBLE</td>
+      <td>BFLOAT16、FLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>z</td>
       <td>输出</td>
       <td>待进行sqrt_grad计算的出参，公式中的z。</td>
-      <td>DT_FLOAT,DT_FLOAT_16,DT_COMPLEX128,DT_COMPLEX64,DT_DOUBLE</td>
+      <td>BFLOAT16、FLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>
   </tbody></table>
