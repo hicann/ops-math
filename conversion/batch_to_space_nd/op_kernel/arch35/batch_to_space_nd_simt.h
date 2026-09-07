@@ -63,30 +63,30 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(HALF_THREAD_NUM_LAUNCH_BOUND) void SimtCompu
     U m1, U s1, U m2, U s2, __gm__ T* x, __ubuf__ T* y)
 {
     for (uint64_t idx = threadIdx.x; idx < curCoreElement; idx += blockDim.x) {
-        U yIdx = U(startIdx + idx);
+        U yIdx1 = U(startIdx + idx);
         U xIdx = 0;
         U xStride = 1;
 
-        U tmp = Simt::UintDiv(yIdx, m0, s0); //  yIdx / channel_;
-        U cOut = yIdx - tmp * channel;
-        yIdx = tmp;
+        U tmp = Simt::UintDiv(yIdx1, m0, s0); //  yIdx1 / channel_;
+        U cOut = yIdx1 - tmp * channel;
+        yIdx1 = tmp;
         xIdx += cOut;
         xStride *= channel;
         U bIdx = 0;
         U bStride = batchSize;
 
-        tmp = Simt::UintDiv(yIdx, m1, s1);
-        U indexDivH = yIdx - tmp * yShape1;
+        tmp = Simt::UintDiv(yIdx1, m1, s1);
+        U indexDivH = yIdx1 - tmp * yShape1;
         indexDivH += crops0;
 
         U xCol = Simt::UintDiv(indexDivH, m2, s2); // indexDivH / bShape0;
         U indexDivB = indexDivH - xCol * bShape0;
-        yIdx = tmp;
+        yIdx1 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape1;
         bIdx += indexDivB * bStride;
 
-        xIdx += yIdx * xStride + bIdx * xStride;
+        xIdx += yIdx1 * xStride + bIdx * xStride;
         y[idx] = x[xIdx];
     }
 }
@@ -98,39 +98,39 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(HALF_THREAD_NUM_LAUNCH_BOUND) void SimtCompu
     __ubuf__ T* y)
 {
     for (uint64_t idx = threadIdx.x; idx < curCoreElement; idx += blockDim.x) {
-        U yIdx = U(startIdx + idx);
+        U yIdx2 = U(startIdx + idx);
         U xIdx = 0;
         U xStride = 1;
-        U tmp = Simt::UintDiv(yIdx, m0, s0);
-        U cOut = yIdx - tmp * channel;
-        yIdx = tmp;
+        U tmp = Simt::UintDiv(yIdx2, m0, s0);
+        U cOut = yIdx2 - tmp * channel;
+        yIdx2 = tmp;
         xIdx += cOut;
         xStride *= channel;
         U bIdx = 0;
         U bStride = batchSize;
 
-        tmp = Simt::UintDiv(yIdx, m3, s3);
-        U indexDivH = yIdx - tmp * yShape2;
+        tmp = Simt::UintDiv(yIdx2, m3, s3);
+        U indexDivH = yIdx2 - tmp * yShape2;
         indexDivH += crops1;
         U xCol = Simt::UintDiv(indexDivH, m4, s4);
         U indexDivB = indexDivH - xCol * bShape1;
-        yIdx = tmp;
+        yIdx2 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape2;
         bIdx += indexDivB * bStride;
         bStride *= bShape1;
 
-        tmp = Simt::UintDiv(yIdx, m1, s1);
-        indexDivH = yIdx - tmp * yShape1;
+        tmp = Simt::UintDiv(yIdx2, m1, s1);
+        indexDivH = yIdx2 - tmp * yShape1;
         indexDivH += crops0;
         xCol = Simt::UintDiv(indexDivH, m2, s2);
         indexDivB = indexDivH - xCol * bShape0;
-        yIdx = tmp;
+        yIdx2 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape1;
         bIdx += indexDivB * bStride;
 
-        xIdx += yIdx * xStride + bIdx * xStride;
+        xIdx += yIdx2 * xStride + bIdx * xStride;
         y[idx] = x[xIdx];
     }
 }
@@ -142,51 +142,51 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(HALF_THREAD_NUM_LAUNCH_BOUND) void SimtCompu
     U s3, U m4, U s4, U m5, U s5, U m6, U s6, __gm__ T* x, __ubuf__ T* y)
 {
     for (uint64_t idx = threadIdx.x; idx < curCoreElement; idx += blockDim.x) {
-        U yIdx = U(startIdx + idx);
+        U yIdx3 = U(startIdx + idx);
         U xIdx = 0;
         U xStride = 1;
 
-        U tmp = Simt::UintDiv(yIdx, m0, s0);
-        U cOut = yIdx - tmp * channel;
-        yIdx = tmp;
+        U tmp = Simt::UintDiv(yIdx3, m0, s0);
+        U cOut = yIdx3 - tmp * channel;
+        yIdx3 = tmp;
         xIdx += cOut;
         xStride *= channel;
         U bIdx = 0;
         U bStride = batchSize;
 
-        tmp = Simt::UintDiv(yIdx, m5, s5);
-        U indexDivH = yIdx - tmp * yShape3;
+        tmp = Simt::UintDiv(yIdx3, m5, s5);
+        U indexDivH = yIdx3 - tmp * yShape3;
         indexDivH += crops2;
         U xCol = Simt::UintDiv(indexDivH, m6, s6);
         U indexDivB = indexDivH - xCol * bShape2;
-        yIdx = tmp;
+        yIdx3 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape3;
         bIdx += indexDivB * bStride;
         bStride *= bShape2;
 
-        tmp = Simt::UintDiv(yIdx, m3, s3);
-        indexDivH = yIdx - tmp * yShape2;
+        tmp = Simt::UintDiv(yIdx3, m3, s3);
+        indexDivH = yIdx3 - tmp * yShape2;
         indexDivH += crops1;
         xCol = Simt::UintDiv(indexDivH, m4, s4);
         indexDivB = indexDivH - xCol * bShape1;
-        yIdx = tmp;
+        yIdx3 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape2;
         bIdx += indexDivB * bStride;
         bStride *= bShape1;
 
-        tmp = Simt::UintDiv(yIdx, m1, s1);
-        indexDivH = yIdx - tmp * yShape1;
+        tmp = Simt::UintDiv(yIdx3, m1, s1);
+        indexDivH = yIdx3 - tmp * yShape1;
         indexDivH += crops0;
         xCol = Simt::UintDiv(indexDivH, m2, s2);
         indexDivB = indexDivH - xCol * bShape0;
-        yIdx = tmp;
+        yIdx3 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape1;
         bIdx += indexDivB * bStride;
 
-        xIdx += yIdx * xStride + bIdx * xStride;
+        xIdx += yIdx3 * xStride + bIdx * xStride;
         y[idx] = x[xIdx];
     }
 }
@@ -199,62 +199,62 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(HALF_THREAD_NUM_LAUNCH_BOUND) void SimtCompu
     U s8, __gm__ T* x, __ubuf__ T* y)
 {
     for (uint64_t idx = threadIdx.x; idx < curCoreElement; idx += blockDim.x) {
-        U yIdx = U(startIdx + idx);
+        U yIdx4 = U(startIdx + idx);
         U xIdx = 0;
         U xStride = 1;
 
-        U tmp = Simt::UintDiv(yIdx, m0, s0);
-        U cOut = yIdx - tmp * channel;
-        yIdx = tmp;
+        U tmp = Simt::UintDiv(yIdx4, m0, s0);
+        U cOut = yIdx4 - tmp * channel;
+        yIdx4 = tmp;
         xIdx += cOut;
         xStride *= channel;
         U bIdx = 0;
         U bStride = batchSize;
 
-        tmp = Simt::UintDiv(yIdx, m7, s7);
-        U indexDivH = yIdx - tmp * yShape4;
+        tmp = Simt::UintDiv(yIdx4, m7, s7);
+        U indexDivH = yIdx4 - tmp * yShape4;
         indexDivH += crops3;
         U xCol = Simt::UintDiv(indexDivH, m8, s8);
         U indexDivB = indexDivH - xCol * bShape3;
-        yIdx = tmp;
+        yIdx4 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape4;
         bIdx += indexDivB * bStride;
         bStride *= bShape3;
 
-        tmp = Simt::UintDiv(yIdx, m5, s5);
-        indexDivH = yIdx - tmp * yShape3;
+        tmp = Simt::UintDiv(yIdx4, m5, s5);
+        indexDivH = yIdx4 - tmp * yShape3;
         indexDivH += crops2;
         xCol = Simt::UintDiv(indexDivH, m6, s6);
         indexDivB = indexDivH - xCol * bShape2;
-        yIdx = tmp;
+        yIdx4 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape3;
         bIdx += indexDivB * bStride;
         bStride *= bShape2;
 
-        tmp = Simt::UintDiv(yIdx, m3, s3);
-        indexDivH = yIdx - tmp * yShape2;
+        tmp = Simt::UintDiv(yIdx4, m3, s3);
+        indexDivH = yIdx4 - tmp * yShape2;
         indexDivH += crops1;
         xCol = Simt::UintDiv(indexDivH, m4, s4);
         indexDivB = indexDivH - xCol * bShape1;
-        yIdx = tmp;
+        yIdx4 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape2;
         bIdx += indexDivB * bStride;
         bStride *= bShape1;
 
-        tmp = Simt::UintDiv(yIdx, m1, s1);
-        indexDivH = yIdx - tmp * yShape1;
+        tmp = Simt::UintDiv(yIdx4, m1, s1);
+        indexDivH = yIdx4 - tmp * yShape1;
         indexDivH += crops0;
         xCol = Simt::UintDiv(indexDivH, m2, s2);
         indexDivB = indexDivH - xCol * bShape0;
-        yIdx = tmp;
+        yIdx4 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape1;
         bIdx += indexDivB * bStride;
 
-        xIdx += yIdx * xStride + bIdx * xStride;
+        xIdx += yIdx4 * xStride + bIdx * xStride;
         y[idx] = x[xIdx];
     }
 }
@@ -267,73 +267,73 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(HALF_THREAD_NUM_LAUNCH_BOUND) void SimtCompu
     U m5, U s5, U m6, U s6, U m7, U s7, U m8, U s8, U m9, U s9, U m10, U s10, __gm__ T* x, __ubuf__ T* y)
 {
     for (uint64_t idx = threadIdx.x; idx < curCoreElement; idx += blockDim.x) {
-        U yIdx = U(startIdx + idx);
+        U yIdx5 = U(startIdx + idx);
         U xIdx = 0;
         U xStride = 1;
 
-        U tmp = Simt::UintDiv(yIdx, m0, s0);
-        U cOut = yIdx - tmp * channel;
-        yIdx = tmp;
+        U tmp = Simt::UintDiv(yIdx5, m0, s0);
+        U cOut = yIdx5 - tmp * channel;
+        yIdx5 = tmp;
         xIdx += cOut;
         xStride *= channel;
         U bIdx = 0;
         U bStride = batchSize;
 
-        tmp = Simt::UintDiv(yIdx, m9, s9);
-        U indexDivH = yIdx - tmp * yShape5;
+        tmp = Simt::UintDiv(yIdx5, m9, s9);
+        U indexDivH = yIdx5 - tmp * yShape5;
         indexDivH += crops4;
         U xCol = Simt::UintDiv(indexDivH, m10, s10);
         U indexDivB = indexDivH - xCol * bShape4;
-        yIdx = tmp;
+        yIdx5 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape5;
         bIdx += indexDivB * bStride;
         bStride *= bShape4;
 
-        tmp = Simt::UintDiv(yIdx, m7, s7);
-        indexDivH = yIdx - tmp * yShape4;
+        tmp = Simt::UintDiv(yIdx5, m7, s7);
+        indexDivH = yIdx5 - tmp * yShape4;
         indexDivH += crops3;
         xCol = Simt::UintDiv(indexDivH, m8, s8);
         indexDivB = indexDivH - xCol * bShape3;
-        yIdx = tmp;
+        yIdx5 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape4;
         bIdx += indexDivB * bStride;
         bStride *= bShape3;
 
-        tmp = Simt::UintDiv(yIdx, m5, s5);
-        indexDivH = yIdx - tmp * yShape3;
+        tmp = Simt::UintDiv(yIdx5, m5, s5);
+        indexDivH = yIdx5 - tmp * yShape3;
         indexDivH += crops2;
         xCol = Simt::UintDiv(indexDivH, m6, s6);
         indexDivB = indexDivH - xCol * bShape2;
-        yIdx = tmp;
+        yIdx5 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape3;
         bIdx += indexDivB * bStride;
         bStride *= bShape2;
 
-        tmp = Simt::UintDiv(yIdx, m3, s3);
-        indexDivH = yIdx - tmp * yShape2;
+        tmp = Simt::UintDiv(yIdx5, m3, s3);
+        indexDivH = yIdx5 - tmp * yShape2;
         indexDivH += crops1;
         xCol = Simt::UintDiv(indexDivH, m4, s4);
         indexDivB = indexDivH - xCol * bShape1;
-        yIdx = tmp;
+        yIdx5 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape2;
         bIdx += indexDivB * bStride;
         bStride *= bShape1;
 
-        tmp = Simt::UintDiv(yIdx, m1, s1);
-        indexDivH = yIdx - tmp * yShape1;
+        tmp = Simt::UintDiv(yIdx5, m1, s1);
+        indexDivH = yIdx5 - tmp * yShape1;
         indexDivH += crops0;
         xCol = Simt::UintDiv(indexDivH, m2, s2);
         indexDivB = indexDivH - xCol * bShape0;
-        yIdx = tmp;
+        yIdx5 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape1;
         bIdx += indexDivB * bStride;
 
-        xIdx += yIdx * xStride + bIdx * xStride;
+        xIdx += yIdx5 * xStride + bIdx * xStride;
         y[idx] = x[xIdx];
     }
 }
@@ -347,84 +347,84 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(HALF_THREAD_NUM_LAUNCH_BOUND) void SimtCompu
     U m11, U s11, U m12, U s12, __gm__ T* x, __ubuf__ T* y)
 {
     for (uint64_t idx = threadIdx.x; idx < curCoreElement; idx += blockDim.x) {
-        U yIdx = U(startIdx + idx);
+        U yIdx6 = U(startIdx + idx);
         U xIdx = 0;
         U xStride = 1;
 
-        U tmp = Simt::UintDiv(yIdx, m0, s0);
-        U cOut = yIdx - tmp * channel;
-        yIdx = tmp;
+        U tmp = Simt::UintDiv(yIdx6, m0, s0);
+        U cOut = yIdx6 - tmp * channel;
+        yIdx6 = tmp;
         xIdx += cOut;
         xStride *= channel;
         U bIdx = 0;
         U bStride = batchSize;
 
-        tmp = Simt::UintDiv(yIdx, m11, s11);
-        U indexDivH = yIdx - tmp * yShape6;
+        tmp = Simt::UintDiv(yIdx6, m11, s11);
+        U indexDivH = yIdx6 - tmp * yShape6;
         indexDivH += crops5;
         U xCol = Simt::UintDiv(indexDivH, m12, s12);
         U indexDivB = indexDivH - xCol * bShape5;
-        yIdx = tmp;
+        yIdx6 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape6;
         bIdx += indexDivB * bStride;
         bStride *= bShape5;
 
-        tmp = Simt::UintDiv(yIdx, m9, s9);
-        indexDivH = yIdx - tmp * yShape5;
+        tmp = Simt::UintDiv(yIdx6, m9, s9);
+        indexDivH = yIdx6 - tmp * yShape5;
         indexDivH += crops4;
         xCol = Simt::UintDiv(indexDivH, m10, s10);
         indexDivB = indexDivH - xCol * bShape4;
-        yIdx = tmp;
+        yIdx6 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape5;
         bIdx += indexDivB * bStride;
         bStride *= bShape4;
 
-        tmp = Simt::UintDiv(yIdx, m7, s7);
-        indexDivH = yIdx - tmp * yShape4;
+        tmp = Simt::UintDiv(yIdx6, m7, s7);
+        indexDivH = yIdx6 - tmp * yShape4;
         indexDivH += crops3;
         xCol = Simt::UintDiv(indexDivH, m8, s8);
         indexDivB = indexDivH - xCol * bShape3;
-        yIdx = tmp;
+        yIdx6 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape4;
         bIdx += indexDivB * bStride;
         bStride *= bShape3;
 
-        tmp = Simt::UintDiv(yIdx, m5, s5);
-        indexDivH = yIdx - tmp * yShape3;
+        tmp = Simt::UintDiv(yIdx6, m5, s5);
+        indexDivH = yIdx6 - tmp * yShape3;
         indexDivH += crops2;
         xCol = Simt::UintDiv(indexDivH, m6, s6);
         indexDivB = indexDivH - xCol * bShape2;
-        yIdx = tmp;
+        yIdx6 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape3;
         bIdx += indexDivB * bStride;
         bStride *= bShape2;
 
-        tmp = Simt::UintDiv(yIdx, m3, s3);
-        indexDivH = yIdx - tmp * yShape2;
+        tmp = Simt::UintDiv(yIdx6, m3, s3);
+        indexDivH = yIdx6 - tmp * yShape2;
         indexDivH += crops1;
         xCol = Simt::UintDiv(indexDivH, m4, s4);
         indexDivB = indexDivH - xCol * bShape1;
-        yIdx = tmp;
+        yIdx6 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape2;
         bIdx += indexDivB * bStride;
         bStride *= bShape1;
 
-        tmp = Simt::UintDiv(yIdx, m1, s1);
-        indexDivH = yIdx - tmp * yShape1;
+        tmp = Simt::UintDiv(yIdx6, m1, s1);
+        indexDivH = yIdx6 - tmp * yShape1;
         indexDivH += crops0;
         xCol = Simt::UintDiv(indexDivH, m2, s2);
         indexDivB = indexDivH - xCol * bShape0;
-        yIdx = tmp;
+        yIdx6 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape1;
         bIdx += indexDivB * bStride;
 
-        xIdx += yIdx * xStride + bIdx * xStride;
+        xIdx += yIdx6 * xStride + bIdx * xStride;
         y[idx] = x[xIdx];
     }
 }
@@ -439,95 +439,95 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(HALF_THREAD_NUM_LAUNCH_BOUND) void SimtCompu
     __gm__ T* x, __ubuf__ T* y)
 {
     for (uint64_t idx = threadIdx.x; idx < curCoreElement; idx += blockDim.x) {
-        U yIdx = U(startIdx + idx);
+        U yIdx7 = U(startIdx + idx);
         U xIdx = 0;
         U xStride = 1;
 
-        U tmp = Simt::UintDiv(yIdx, m0, s0);
-        U cOut = yIdx - tmp * channel;
-        yIdx = tmp;
+        U tmp = Simt::UintDiv(yIdx7, m0, s0);
+        U cOut = yIdx7 - tmp * channel;
+        yIdx7 = tmp;
         xIdx += cOut;
         xStride *= channel;
         U bIdx = 0;
         U bStride = batchSize;
 
-        tmp = Simt::UintDiv(yIdx, m13, s13);
-        U indexDivH = yIdx - tmp * yShape7;
+        tmp = Simt::UintDiv(yIdx7, m13, s13);
+        U indexDivH = yIdx7 - tmp * yShape7;
         indexDivH += crops6;
         U xCol = Simt::UintDiv(indexDivH, m14, s14);
         U indexDivB = indexDivH - xCol * bShape6;
-        yIdx = tmp;
+        yIdx7 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape7;
         bIdx += indexDivB * bStride;
         bStride *= bShape6;
 
-        tmp = Simt::UintDiv(yIdx, m11, s11);
-        indexDivH = yIdx - tmp * yShape6;
+        tmp = Simt::UintDiv(yIdx7, m11, s11);
+        indexDivH = yIdx7 - tmp * yShape6;
         indexDivH += crops5;
         xCol = Simt::UintDiv(indexDivH, m12, s12);
         indexDivB = indexDivH - xCol * bShape5;
-        yIdx = tmp;
+        yIdx7 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape6;
         bIdx += indexDivB * bStride;
         bStride *= bShape5;
 
-        tmp = Simt::UintDiv(yIdx, m9, s9);
-        indexDivH = yIdx - tmp * yShape5;
+        tmp = Simt::UintDiv(yIdx7, m9, s9);
+        indexDivH = yIdx7 - tmp * yShape5;
         indexDivH += crops4;
         xCol = Simt::UintDiv(indexDivH, m10, s10);
         indexDivB = indexDivH - xCol * bShape4;
-        yIdx = tmp;
+        yIdx7 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape5;
         bIdx += indexDivB * bStride;
         bStride *= bShape4;
 
-        tmp = Simt::UintDiv(yIdx, m7, s7);
-        indexDivH = yIdx - tmp * yShape4;
+        tmp = Simt::UintDiv(yIdx7, m7, s7);
+        indexDivH = yIdx7 - tmp * yShape4;
         indexDivH += crops3;
         xCol = Simt::UintDiv(indexDivH, m8, s8);
         indexDivB = indexDivH - xCol * bShape3;
-        yIdx = tmp;
+        yIdx7 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape4;
         bIdx += indexDivB * bStride;
         bStride *= bShape3;
 
-        tmp = Simt::UintDiv(yIdx, m5, s5);
-        indexDivH = yIdx - tmp * yShape3;
+        tmp = Simt::UintDiv(yIdx7, m5, s5);
+        indexDivH = yIdx7 - tmp * yShape3;
         indexDivH += crops2;
         xCol = Simt::UintDiv(indexDivH, m6, s6);
         indexDivB = indexDivH - xCol * bShape2;
-        yIdx = tmp;
+        yIdx7 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape3;
         bIdx += indexDivB * bStride;
         bStride *= bShape2;
 
-        tmp = Simt::UintDiv(yIdx, m3, s3);
-        indexDivH = yIdx - tmp * yShape2;
+        tmp = Simt::UintDiv(yIdx7, m3, s3);
+        indexDivH = yIdx7 - tmp * yShape2;
         indexDivH += crops1;
         xCol = Simt::UintDiv(indexDivH, m4, s4);
         indexDivB = indexDivH - xCol * bShape1;
-        yIdx = tmp;
+        yIdx7 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape2;
         bIdx += indexDivB * bStride;
         bStride *= bShape1;
 
-        tmp = Simt::UintDiv(yIdx, m1, s1);
-        indexDivH = yIdx - tmp * yShape1;
+        tmp = Simt::UintDiv(yIdx7, m1, s1);
+        indexDivH = yIdx7 - tmp * yShape1;
         indexDivH += crops0;
         xCol = Simt::UintDiv(indexDivH, m2, s2);
         indexDivB = indexDivH - xCol * bShape0;
-        yIdx = tmp;
+        yIdx7 = tmp;
         xIdx += xCol * xStride;
         xStride *= xShape1;
         bIdx += indexDivB * bStride;
 
-        xIdx += yIdx * xStride + bIdx * xStride;
+        xIdx += yIdx7 * xStride + bIdx * xStride;
         y[idx] = x[xIdx];
     }
 }

@@ -161,16 +161,16 @@ static ge::graphStatus CheckBroadcastRule(const gert::TilingContext* context, co
 template <typename T>
 std::string Shape2String(const T& shape)
 {
-    std::ostringstream oss;
-    oss << "[";
+    std::ostringstream ossBrc;
+    ossBrc << "[";
     if (shape.GetDimNum() > 0) {
         for (size_t i = 0; i < shape.GetDimNum() - 1; ++i) {
-            oss << shape.GetDim(i) << ", ";
+            ossBrc << shape.GetDim(i) << ", ";
         }
-        oss << shape.GetDim(shape.GetDimNum() - 1);
+        ossBrc << shape.GetDim(shape.GetDimNum() - 1);
     }
-    oss << "]";
-    return oss.str();
+    ossBrc << "]";
+    return ossBrc.str();
 }
 
 static ge::graphStatus GetInputOutputShapes(const gert::TilingContext* context, gert::Shape& inShape,

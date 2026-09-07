@@ -64,15 +64,16 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_HUGE_HALF_THREAD_DIM) __aicore__
                                       uint32_t blockIdx, uint32_t blockNum, uint64_t inShape0, int64_t left0)
 {
     for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
-        int64_t inIndex0 = idx;
+        int64_t inIndexMirHuge1 = idx;
 
         if constexpr (IS_REFLECT) {
-            inIndex0 = abs(inIndex0 - left0) - abs(inIndex0 - (int64_t(inShape0) + left0 - 1)) - inIndex0 + left0 +
-                       int64_t(inShape0) - 1;
+            inIndexMirHuge1 = abs(inIndexMirHuge1 - left0) - abs(inIndexMirHuge1 - (int64_t(inShape0) + left0 - 1)) -
+                              inIndexMirHuge1 + left0 + int64_t(inShape0) - 1;
         } else {
-            inIndex0 = (abs((inIndex0 - left0) * 2 + 1) - abs((inIndex0 - (int64_t(inShape0) + left0 - 1)) * 2 - 1)) /
-                           2 -
-                       inIndex0 + left0 + int64_t(inShape0) - 1;
+            inIndexMirHuge1 = (abs((inIndexMirHuge1 - left0) * 2 + 1) -
+                               abs((inIndexMirHuge1 - (int64_t(inShape0) + left0 - 1)) * 2 - 1)) /
+                                  2 -
+                              inIndexMirHuge1 + left0 + int64_t(inShape0) - 1;
         }
     }
 }
@@ -85,27 +86,31 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_HUGE_HALF_THREAD_DIM) __aicore__
 {
     for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint64_t dstIdx = idx;
-        int64_t inIndex[DIM] = {0};
+        int64_t inIndexMirHuge2[DIM] = {0};
 
-        inIndex[0] = Simt::UintDiv(dstIdx, m0, s0);
-        inIndex[1] = dstIdx - inIndex[0] * outStride0;
+        inIndexMirHuge2[0] = Simt::UintDiv(dstIdx, m0, s0);
+        inIndexMirHuge2[1] = dstIdx - inIndexMirHuge2[0] * outStride0;
 
-        inIndex[0] -= left0;
-        inIndex[1] -= left1;
+        inIndexMirHuge2[0] -= left0;
+        inIndexMirHuge2[1] -= left1;
 
         if constexpr (IS_REFLECT) {
-            inIndex[0] = abs(inIndex[0]) - abs(inIndex[0] - (int64_t(inShape0) - 1)) - inIndex[0] + int64_t(inShape0) -
-                         1;
-            inIndex[1] = abs(inIndex[1]) - abs(inIndex[1] - (int64_t(inShape1) - 1)) - inIndex[1] + int64_t(inShape1) -
-                         1;
+            inIndexMirHuge2[0] = abs(inIndexMirHuge2[0]) - abs(inIndexMirHuge2[0] - (int64_t(inShape0) - 1)) -
+                                 inIndexMirHuge2[0] + int64_t(inShape0) - 1;
+            inIndexMirHuge2[1] = abs(inIndexMirHuge2[1]) - abs(inIndexMirHuge2[1] - (int64_t(inShape1) - 1)) -
+                                 inIndexMirHuge2[1] + int64_t(inShape1) - 1;
         } else {
-            inIndex[0] = (abs(inIndex[0] * 2 + 1) - abs((inIndex[0] - (int64_t(inShape0) - 1)) * 2 - 1)) / 2 -
-                         inIndex[0] + int64_t(inShape0) - 1;
-            inIndex[1] = (abs(inIndex[1] * 2 + 1) - abs((inIndex[1] - (int64_t(inShape1) - 1)) * 2 - 1)) / 2 -
-                         inIndex[1] + int64_t(inShape1) - 1;
+            inIndexMirHuge2[0] = (abs(inIndexMirHuge2[0] * 2 + 1) -
+                                  abs((inIndexMirHuge2[0] - (int64_t(inShape0) - 1)) * 2 - 1)) /
+                                     2 -
+                                 inIndexMirHuge2[0] + int64_t(inShape0) - 1;
+            inIndexMirHuge2[1] = (abs(inIndexMirHuge2[1] * 2 + 1) -
+                                  abs((inIndexMirHuge2[1] - (int64_t(inShape1) - 1)) * 2 - 1)) /
+                                     2 -
+                                 inIndexMirHuge2[1] + int64_t(inShape1) - 1;
         }
 
-        uint64_t inputOffset = uint64_t(inIndex[0]) * inShape1 + uint64_t(inIndex[1]);
+        uint64_t inputOffset = uint64_t(inIndexMirHuge2[0]) * inShape1 + uint64_t(inIndexMirHuge2[1]);
         outputGM[idx] = inputGM[inputOffset];
     }
 }
@@ -120,38 +125,43 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_HUGE_HALF_THREAD_DIM) __aicore__
 {
     for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint64_t dstIdx = idx;
-        int64_t inIndex[DIM] = {0};
+        int64_t inIndexMirHuge3[DIM] = {0};
 
-        inIndex[0] = Simt::UintDiv(dstIdx, m0, s0);
-        dstIdx -= inIndex[0] * outStride0;
-        inIndex[1] = Simt::UintDiv(dstIdx, m1, s1);
-        dstIdx -= inIndex[1] * outStride1;
-        inIndex[DIM - 1] = dstIdx;
+        inIndexMirHuge3[0] = Simt::UintDiv(dstIdx, m0, s0);
+        dstIdx -= inIndexMirHuge3[0] * outStride0;
+        inIndexMirHuge3[1] = Simt::UintDiv(dstIdx, m1, s1);
+        dstIdx -= inIndexMirHuge3[1] * outStride1;
+        inIndexMirHuge3[DIM - 1] = dstIdx;
 
-        inIndex[0] -= left0;
-        inIndex[1] -= left1;
-        inIndex[DIM - 1] -= left2;
+        inIndexMirHuge3[0] -= left0;
+        inIndexMirHuge3[1] -= left1;
+        inIndexMirHuge3[DIM - 1] -= left2;
 
         if constexpr (IS_REFLECT) {
-            inIndex[0] = abs(inIndex[0]) - abs(inIndex[0] - (int64_t(inShape0) - 1)) - inIndex[0] + int64_t(inShape0) -
-                         1;
-            inIndex[1] = abs(inIndex[1]) - abs(inIndex[1] - (int64_t(inShape1) - 1)) - inIndex[1] + int64_t(inShape1) -
-                         1;
-            inIndex[DIM - 1] = abs(inIndex[DIM - 1]) - abs(inIndex[DIM - 1] - (int64_t(inShape2) - 1)) -
-                               inIndex[DIM - 1] + int64_t(inShape2) - 1;
+            inIndexMirHuge3[0] = abs(inIndexMirHuge3[0]) - abs(inIndexMirHuge3[0] - (int64_t(inShape0) - 1)) -
+                                 inIndexMirHuge3[0] + int64_t(inShape0) - 1;
+            inIndexMirHuge3[1] = abs(inIndexMirHuge3[1]) - abs(inIndexMirHuge3[1] - (int64_t(inShape1) - 1)) -
+                                 inIndexMirHuge3[1] + int64_t(inShape1) - 1;
+            inIndexMirHuge3[DIM - 1] = abs(inIndexMirHuge3[DIM - 1]) -
+                                       abs(inIndexMirHuge3[DIM - 1] - (int64_t(inShape2) - 1)) -
+                                       inIndexMirHuge3[DIM - 1] + int64_t(inShape2) - 1;
         } else {
-            inIndex[0] = (abs(inIndex[0] * 2 + 1) - abs((inIndex[0] - (int64_t(inShape0) - 1)) * 2 - 1)) / 2 -
-                         inIndex[0] + int64_t(inShape0) - 1;
-            inIndex[1] = (abs(inIndex[1] * 2 + 1) - abs((inIndex[1] - (int64_t(inShape1) - 1)) * 2 - 1)) / 2 -
-                         inIndex[1] + int64_t(inShape1) - 1;
-            inIndex[DIM - 1] = (abs(inIndex[DIM - 1] * 2 + 1) -
-                                abs((inIndex[DIM - 1] - (int64_t(inShape2) - 1)) * 2 - 1)) /
-                                   2 -
-                               inIndex[DIM - 1] + int64_t(inShape2) - 1;
+            inIndexMirHuge3[0] = (abs(inIndexMirHuge3[0] * 2 + 1) -
+                                  abs((inIndexMirHuge3[0] - (int64_t(inShape0) - 1)) * 2 - 1)) /
+                                     2 -
+                                 inIndexMirHuge3[0] + int64_t(inShape0) - 1;
+            inIndexMirHuge3[1] = (abs(inIndexMirHuge3[1] * 2 + 1) -
+                                  abs((inIndexMirHuge3[1] - (int64_t(inShape1) - 1)) * 2 - 1)) /
+                                     2 -
+                                 inIndexMirHuge3[1] + int64_t(inShape1) - 1;
+            inIndexMirHuge3[DIM - 1] = (abs(inIndexMirHuge3[DIM - 1] * 2 + 1) -
+                                        abs((inIndexMirHuge3[DIM - 1] - (int64_t(inShape2) - 1)) * 2 - 1)) /
+                                           2 -
+                                       inIndexMirHuge3[DIM - 1] + int64_t(inShape2) - 1;
         }
 
-        uint64_t inputOffset = uint64_t(inIndex[0]) * inShape1 * inShape2 + uint64_t(inIndex[1]) * inShape2 +
-                               uint64_t(inIndex[DIM - 1]);
+        uint64_t inputOffset = uint64_t(inIndexMirHuge3[0]) * inShape1 * inShape2 +
+                               uint64_t(inIndexMirHuge3[1]) * inShape2 + uint64_t(inIndexMirHuge3[DIM - 1]);
         outputGM[idx] = inputGM[inputOffset];
     }
 }
@@ -165,36 +175,37 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_HUGE_QUATER_THREAD_DIM) __aicore__
     GET_TILING_DATA_PTR_WITH_STRUCT(PadACTilingData, tD, tiling);
     for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint64_t dstIdx = idx;
-        int64_t inIndex[DIM] = {0};
+        int64_t inIndexMirHuge4[DIM] = {0};
 
-        inIndex[0] = Simt::UintDiv(dstIdx, m0, s0);
-        dstIdx -= inIndex[0] * static_cast<int64_t>(tD->outStride[0]);
-        inIndex[1] = Simt::UintDiv(dstIdx, m1, s1);
-        dstIdx -= inIndex[1] * static_cast<int64_t>(tD->outStride[1]);
-        inIndex[2] = Simt::UintDiv(dstIdx, m2, s2);
-        dstIdx -= inIndex[2] * static_cast<int64_t>(tD->outStride[2]);
-        inIndex[DIM - 1] = dstIdx;
+        inIndexMirHuge4[0] = Simt::UintDiv(dstIdx, m0, s0);
+        dstIdx -= inIndexMirHuge4[0] * static_cast<int64_t>(tD->outStride[0]);
+        inIndexMirHuge4[1] = Simt::UintDiv(dstIdx, m1, s1);
+        dstIdx -= inIndexMirHuge4[1] * static_cast<int64_t>(tD->outStride[1]);
+        inIndexMirHuge4[2] = Simt::UintDiv(dstIdx, m2, s2);
+        dstIdx -= inIndexMirHuge4[2] * static_cast<int64_t>(tD->outStride[2]);
+        inIndexMirHuge4[DIM - 1] = dstIdx;
 
         if constexpr (IS_REFLECT) {
             for (int32_t i = 0; i < DIM; i++) {
-                inIndex[i] -= static_cast<int64_t>(tD->leftPad[i]);
-                inIndex[i] = abs(inIndex[i]) - abs(inIndex[i] - (static_cast<int64_t>(tD->inShape[i]) - 1)) -
-                             inIndex[i] + static_cast<int64_t>(tD->inShape[i]) - 1;
+                inIndexMirHuge4[i] -= static_cast<int64_t>(tD->leftPad[i]);
+                inIndexMirHuge4[i] = abs(inIndexMirHuge4[i]) -
+                                     abs(inIndexMirHuge4[i] - (static_cast<int64_t>(tD->inShape[i]) - 1)) -
+                                     inIndexMirHuge4[i] + static_cast<int64_t>(tD->inShape[i]) - 1;
             }
         } else {
             for (int32_t i = 0; i < DIM; i++) {
-                inIndex[i] -= static_cast<int64_t>(tD->leftPad[i]);
-                inIndex[i] = (abs(inIndex[i] * 2 + 1) -
-                              abs((inIndex[i] - (static_cast<int64_t>(tD->inShape[i]) - 1)) * 2 - 1)) /
-                                 2 -
-                             inIndex[i] + static_cast<int64_t>(tD->inShape[i]) - 1;
+                inIndexMirHuge4[i] -= static_cast<int64_t>(tD->leftPad[i]);
+                inIndexMirHuge4[i] = (abs(inIndexMirHuge4[i] * 2 + 1) -
+                                      abs((inIndexMirHuge4[i] - (static_cast<int64_t>(tD->inShape[i]) - 1)) * 2 - 1)) /
+                                         2 -
+                                     inIndexMirHuge4[i] + static_cast<int64_t>(tD->inShape[i]) - 1;
             }
         }
 
-        uint64_t inputOffset = static_cast<uint64_t>(inIndex[0]) * static_cast<uint64_t>(tD->inStride[0]) +
-                               static_cast<uint64_t>(inIndex[1]) * static_cast<uint64_t>(tD->inStride[1]) +
-                               static_cast<uint64_t>(inIndex[2]) * static_cast<uint64_t>(tD->inStride[2]) +
-                               static_cast<uint64_t>(inIndex[DIM - 1]);
+        uint64_t inputOffset = static_cast<uint64_t>(inIndexMirHuge4[0]) * static_cast<uint64_t>(tD->inStride[0]) +
+                               static_cast<uint64_t>(inIndexMirHuge4[1]) * static_cast<uint64_t>(tD->inStride[1]) +
+                               static_cast<uint64_t>(inIndexMirHuge4[2]) * static_cast<uint64_t>(tD->inStride[2]) +
+                               static_cast<uint64_t>(inIndexMirHuge4[DIM - 1]);
         outputGM[idx] = inputGM[inputOffset];
     }
 }
@@ -209,39 +220,40 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_HUGE_QUATER_THREAD_DIM) __aicore__
     GET_TILING_DATA_PTR_WITH_STRUCT(PadACTilingData, tD, tiling);
     for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint64_t dstIdx = idx;
-        int64_t inIndex[DIM] = {0};
+        int64_t inIndexMirHuge5[DIM] = {0};
 
-        inIndex[0] = Simt::UintDiv(dstIdx, m0, s0);
-        dstIdx -= inIndex[0] * static_cast<int64_t>(tD->outStride[0]);
-        inIndex[1] = Simt::UintDiv(dstIdx, m1, s1);
-        dstIdx -= inIndex[1] * static_cast<int64_t>(tD->outStride[1]);
-        inIndex[2] = Simt::UintDiv(dstIdx, m2, s2);
-        dstIdx -= inIndex[2] * static_cast<int64_t>(tD->outStride[2]);
-        inIndex[3] = Simt::UintDiv(dstIdx, m3, s3);
-        dstIdx -= inIndex[3] * static_cast<int64_t>(tD->outStride[3]);
-        inIndex[DIM - 1] = dstIdx;
+        inIndexMirHuge5[0] = Simt::UintDiv(dstIdx, m0, s0);
+        dstIdx -= inIndexMirHuge5[0] * static_cast<int64_t>(tD->outStride[0]);
+        inIndexMirHuge5[1] = Simt::UintDiv(dstIdx, m1, s1);
+        dstIdx -= inIndexMirHuge5[1] * static_cast<int64_t>(tD->outStride[1]);
+        inIndexMirHuge5[2] = Simt::UintDiv(dstIdx, m2, s2);
+        dstIdx -= inIndexMirHuge5[2] * static_cast<int64_t>(tD->outStride[2]);
+        inIndexMirHuge5[3] = Simt::UintDiv(dstIdx, m3, s3);
+        dstIdx -= inIndexMirHuge5[3] * static_cast<int64_t>(tD->outStride[3]);
+        inIndexMirHuge5[DIM - 1] = dstIdx;
 
         if constexpr (IS_REFLECT) {
             for (int32_t i = 0; i < DIM; i++) {
-                inIndex[i] -= static_cast<int64_t>(tD->leftPad[i]);
-                inIndex[i] = abs(inIndex[i]) - abs(inIndex[i] - (static_cast<int64_t>(tD->inShape[i]) - 1)) -
-                             inIndex[i] + static_cast<int64_t>(tD->inShape[i]) - 1;
+                inIndexMirHuge5[i] -= static_cast<int64_t>(tD->leftPad[i]);
+                inIndexMirHuge5[i] = abs(inIndexMirHuge5[i]) -
+                                     abs(inIndexMirHuge5[i] - (static_cast<int64_t>(tD->inShape[i]) - 1)) -
+                                     inIndexMirHuge5[i] + static_cast<int64_t>(tD->inShape[i]) - 1;
             }
         } else {
             for (int32_t i = 0; i < DIM; i++) {
-                inIndex[i] -= static_cast<int64_t>(tD->leftPad[i]);
-                inIndex[i] = (abs(inIndex[i] * 2 + 1) -
-                              abs((inIndex[i] - (static_cast<int64_t>(tD->inShape[i]) - 1)) * 2 - 1)) /
-                                 2 -
-                             inIndex[i] + static_cast<int64_t>(tD->inShape[i]) - 1;
+                inIndexMirHuge5[i] -= static_cast<int64_t>(tD->leftPad[i]);
+                inIndexMirHuge5[i] = (abs(inIndexMirHuge5[i] * 2 + 1) -
+                                      abs((inIndexMirHuge5[i] - (static_cast<int64_t>(tD->inShape[i]) - 1)) * 2 - 1)) /
+                                         2 -
+                                     inIndexMirHuge5[i] + static_cast<int64_t>(tD->inShape[i]) - 1;
             }
         }
 
-        uint64_t inputOffset = static_cast<uint64_t>(inIndex[0]) * static_cast<uint64_t>(tD->inStride[0]) +
-                               static_cast<uint64_t>(inIndex[1]) * static_cast<uint64_t>(tD->inStride[1]) +
-                               static_cast<uint64_t>(inIndex[2]) * static_cast<uint64_t>(tD->inStride[2]) +
-                               static_cast<uint64_t>(inIndex[3]) * static_cast<uint64_t>(tD->inStride[3]) +
-                               static_cast<uint64_t>(inIndex[DIM - 1]);
+        uint64_t inputOffset = static_cast<uint64_t>(inIndexMirHuge5[0]) * static_cast<uint64_t>(tD->inStride[0]) +
+                               static_cast<uint64_t>(inIndexMirHuge5[1]) * static_cast<uint64_t>(tD->inStride[1]) +
+                               static_cast<uint64_t>(inIndexMirHuge5[2]) * static_cast<uint64_t>(tD->inStride[2]) +
+                               static_cast<uint64_t>(inIndexMirHuge5[3]) * static_cast<uint64_t>(tD->inStride[3]) +
+                               static_cast<uint64_t>(inIndexMirHuge5[DIM - 1]);
         outputGM[idx] = inputGM[inputOffset];
     }
 }
@@ -256,42 +268,43 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_HUGE_QUATER_THREAD_DIM) __aicore__
     GET_TILING_DATA_PTR_WITH_STRUCT(PadACTilingData, tD, tiling);
     for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint64_t dstIdx = idx;
-        int64_t inIndex[DIM] = {0};
+        int64_t inIndexMirHuge6[DIM] = {0};
 
-        inIndex[0] = Simt::UintDiv(dstIdx, m0, s0);
-        dstIdx -= inIndex[0] * static_cast<int64_t>(tD->outStride[0]);
-        inIndex[1] = Simt::UintDiv(dstIdx, m1, s1);
-        dstIdx -= inIndex[1] * static_cast<int64_t>(tD->outStride[1]);
-        inIndex[2] = Simt::UintDiv(dstIdx, m2, s2);
-        dstIdx -= inIndex[2] * static_cast<int64_t>(tD->outStride[2]);
-        inIndex[3] = Simt::UintDiv(dstIdx, m3, s3);
-        dstIdx -= inIndex[3] * static_cast<int64_t>(tD->outStride[3]);
-        inIndex[4] = Simt::UintDiv(dstIdx, m4, s4);
-        dstIdx -= inIndex[4] * static_cast<int64_t>(tD->outStride[4]);
-        inIndex[DIM - 1] = dstIdx;
+        inIndexMirHuge6[0] = Simt::UintDiv(dstIdx, m0, s0);
+        dstIdx -= inIndexMirHuge6[0] * static_cast<int64_t>(tD->outStride[0]);
+        inIndexMirHuge6[1] = Simt::UintDiv(dstIdx, m1, s1);
+        dstIdx -= inIndexMirHuge6[1] * static_cast<int64_t>(tD->outStride[1]);
+        inIndexMirHuge6[2] = Simt::UintDiv(dstIdx, m2, s2);
+        dstIdx -= inIndexMirHuge6[2] * static_cast<int64_t>(tD->outStride[2]);
+        inIndexMirHuge6[3] = Simt::UintDiv(dstIdx, m3, s3);
+        dstIdx -= inIndexMirHuge6[3] * static_cast<int64_t>(tD->outStride[3]);
+        inIndexMirHuge6[4] = Simt::UintDiv(dstIdx, m4, s4);
+        dstIdx -= inIndexMirHuge6[4] * static_cast<int64_t>(tD->outStride[4]);
+        inIndexMirHuge6[DIM - 1] = dstIdx;
 
         if constexpr (IS_REFLECT) {
             for (int32_t i = 0; i < DIM; i++) {
-                inIndex[i] -= static_cast<int64_t>(tD->leftPad[i]);
-                inIndex[i] = abs(inIndex[i]) - abs(inIndex[i] - (static_cast<int64_t>(tD->inShape[i]) - 1)) -
-                             inIndex[i] + static_cast<int64_t>(tD->inShape[i]) - 1;
+                inIndexMirHuge6[i] -= static_cast<int64_t>(tD->leftPad[i]);
+                inIndexMirHuge6[i] = abs(inIndexMirHuge6[i]) -
+                                     abs(inIndexMirHuge6[i] - (static_cast<int64_t>(tD->inShape[i]) - 1)) -
+                                     inIndexMirHuge6[i] + static_cast<int64_t>(tD->inShape[i]) - 1;
             }
         } else {
             for (int32_t i = 0; i < DIM; i++) {
-                inIndex[i] -= static_cast<int64_t>(tD->leftPad[i]);
-                inIndex[i] = (abs(inIndex[i] * 2 + 1) -
-                              abs((inIndex[i] - (static_cast<int64_t>(tD->inShape[i]) - 1)) * 2 - 1)) /
-                                 2 -
-                             inIndex[i] + static_cast<int64_t>(tD->inShape[i]) - 1;
+                inIndexMirHuge6[i] -= static_cast<int64_t>(tD->leftPad[i]);
+                inIndexMirHuge6[i] = (abs(inIndexMirHuge6[i] * 2 + 1) -
+                                      abs((inIndexMirHuge6[i] - (static_cast<int64_t>(tD->inShape[i]) - 1)) * 2 - 1)) /
+                                         2 -
+                                     inIndexMirHuge6[i] + static_cast<int64_t>(tD->inShape[i]) - 1;
             }
         }
 
-        uint64_t inputOffset = static_cast<uint64_t>(inIndex[0]) * static_cast<uint64_t>(tD->inStride[0]) +
-                               static_cast<uint64_t>(inIndex[1]) * static_cast<uint64_t>(tD->inStride[1]) +
-                               static_cast<uint64_t>(inIndex[2]) * static_cast<uint64_t>(tD->inStride[2]) +
-                               static_cast<uint64_t>(inIndex[3]) * static_cast<uint64_t>(tD->inStride[3]) +
-                               static_cast<uint64_t>(inIndex[4]) * static_cast<uint64_t>(tD->inStride[4]) +
-                               static_cast<uint64_t>(inIndex[DIM - 1]);
+        uint64_t inputOffset = static_cast<uint64_t>(inIndexMirHuge6[0]) * static_cast<uint64_t>(tD->inStride[0]) +
+                               static_cast<uint64_t>(inIndexMirHuge6[1]) * static_cast<uint64_t>(tD->inStride[1]) +
+                               static_cast<uint64_t>(inIndexMirHuge6[2]) * static_cast<uint64_t>(tD->inStride[2]) +
+                               static_cast<uint64_t>(inIndexMirHuge6[3]) * static_cast<uint64_t>(tD->inStride[3]) +
+                               static_cast<uint64_t>(inIndexMirHuge6[4]) * static_cast<uint64_t>(tD->inStride[4]) +
+                               static_cast<uint64_t>(inIndexMirHuge6[DIM - 1]);
         outputGM[idx] = inputGM[inputOffset];
     }
 }
@@ -306,45 +319,46 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_HUGE_QUATER_THREAD_DIM) __aicore__
     GET_TILING_DATA_PTR_WITH_STRUCT(PadACTilingData, tD, tiling);
     for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint64_t dstIdx = idx;
-        int64_t inIndex[DIM] = {0};
+        int64_t inIndexMirHuge7[DIM] = {0};
 
-        inIndex[0] = Simt::UintDiv(dstIdx, m0, s0);
-        dstIdx -= inIndex[0] * static_cast<int64_t>(tD->outStride[0]);
-        inIndex[1] = Simt::UintDiv(dstIdx, m1, s1);
-        dstIdx -= inIndex[1] * static_cast<int64_t>(tD->outStride[1]);
-        inIndex[2] = Simt::UintDiv(dstIdx, m2, s2);
-        dstIdx -= inIndex[2] * static_cast<int64_t>(tD->outStride[2]);
-        inIndex[3] = Simt::UintDiv(dstIdx, m3, s3);
-        dstIdx -= inIndex[3] * static_cast<int64_t>(tD->outStride[3]);
-        inIndex[4] = Simt::UintDiv(dstIdx, m4, s4);
-        dstIdx -= inIndex[4] * static_cast<int64_t>(tD->outStride[4]);
-        inIndex[5] = Simt::UintDiv(dstIdx, m5, s5);
-        dstIdx -= inIndex[5] * static_cast<int64_t>(tD->outStride[5]);
-        inIndex[DIM - 1] = dstIdx;
+        inIndexMirHuge7[0] = Simt::UintDiv(dstIdx, m0, s0);
+        dstIdx -= inIndexMirHuge7[0] * static_cast<int64_t>(tD->outStride[0]);
+        inIndexMirHuge7[1] = Simt::UintDiv(dstIdx, m1, s1);
+        dstIdx -= inIndexMirHuge7[1] * static_cast<int64_t>(tD->outStride[1]);
+        inIndexMirHuge7[2] = Simt::UintDiv(dstIdx, m2, s2);
+        dstIdx -= inIndexMirHuge7[2] * static_cast<int64_t>(tD->outStride[2]);
+        inIndexMirHuge7[3] = Simt::UintDiv(dstIdx, m3, s3);
+        dstIdx -= inIndexMirHuge7[3] * static_cast<int64_t>(tD->outStride[3]);
+        inIndexMirHuge7[4] = Simt::UintDiv(dstIdx, m4, s4);
+        dstIdx -= inIndexMirHuge7[4] * static_cast<int64_t>(tD->outStride[4]);
+        inIndexMirHuge7[5] = Simt::UintDiv(dstIdx, m5, s5);
+        dstIdx -= inIndexMirHuge7[5] * static_cast<int64_t>(tD->outStride[5]);
+        inIndexMirHuge7[DIM - 1] = dstIdx;
 
         if constexpr (IS_REFLECT) {
             for (int32_t i = 0; i < DIM; i++) {
-                inIndex[i] -= static_cast<int64_t>(tD->leftPad[i]);
-                inIndex[i] = abs(inIndex[i]) - abs(inIndex[i] - (static_cast<int64_t>(tD->inShape[i]) - 1)) -
-                             inIndex[i] + static_cast<int64_t>(tD->inShape[i]) - 1;
+                inIndexMirHuge7[i] -= static_cast<int64_t>(tD->leftPad[i]);
+                inIndexMirHuge7[i] = abs(inIndexMirHuge7[i]) -
+                                     abs(inIndexMirHuge7[i] - (static_cast<int64_t>(tD->inShape[i]) - 1)) -
+                                     inIndexMirHuge7[i] + static_cast<int64_t>(tD->inShape[i]) - 1;
             }
         } else {
             for (int32_t i = 0; i < DIM; i++) {
-                inIndex[i] -= static_cast<int64_t>(tD->leftPad[i]);
-                inIndex[i] = (abs(inIndex[i] * 2 + 1) -
-                              abs((inIndex[i] - (static_cast<int64_t>(tD->inShape[i]) - 1)) * 2 - 1)) /
-                                 2 -
-                             inIndex[i] + static_cast<int64_t>(tD->inShape[i]) - 1;
+                inIndexMirHuge7[i] -= static_cast<int64_t>(tD->leftPad[i]);
+                inIndexMirHuge7[i] = (abs(inIndexMirHuge7[i] * 2 + 1) -
+                                      abs((inIndexMirHuge7[i] - (static_cast<int64_t>(tD->inShape[i]) - 1)) * 2 - 1)) /
+                                         2 -
+                                     inIndexMirHuge7[i] + static_cast<int64_t>(tD->inShape[i]) - 1;
             }
         }
 
-        uint64_t inputOffset = static_cast<uint64_t>(inIndex[0]) * static_cast<uint64_t>(tD->inStride[0]) +
-                               static_cast<uint64_t>(inIndex[1]) * static_cast<uint64_t>(tD->inStride[1]) +
-                               static_cast<uint64_t>(inIndex[2]) * static_cast<uint64_t>(tD->inStride[2]) +
-                               static_cast<uint64_t>(inIndex[3]) * static_cast<uint64_t>(tD->inStride[3]) +
-                               static_cast<uint64_t>(inIndex[4]) * static_cast<uint64_t>(tD->inStride[4]) +
-                               static_cast<uint64_t>(inIndex[5]) * static_cast<uint64_t>(tD->inStride[5]) +
-                               static_cast<uint64_t>(inIndex[DIM - 1]);
+        uint64_t inputOffset = static_cast<uint64_t>(inIndexMirHuge7[0]) * static_cast<uint64_t>(tD->inStride[0]) +
+                               static_cast<uint64_t>(inIndexMirHuge7[1]) * static_cast<uint64_t>(tD->inStride[1]) +
+                               static_cast<uint64_t>(inIndexMirHuge7[2]) * static_cast<uint64_t>(tD->inStride[2]) +
+                               static_cast<uint64_t>(inIndexMirHuge7[3]) * static_cast<uint64_t>(tD->inStride[3]) +
+                               static_cast<uint64_t>(inIndexMirHuge7[4]) * static_cast<uint64_t>(tD->inStride[4]) +
+                               static_cast<uint64_t>(inIndexMirHuge7[5]) * static_cast<uint64_t>(tD->inStride[5]) +
+                               static_cast<uint64_t>(inIndexMirHuge7[DIM - 1]);
         outputGM[idx] = inputGM[inputOffset];
     }
 }
@@ -360,48 +374,49 @@ __simt_vf__ LAUNCH_BOUND(REFLECT_HUGE_AN_EIGHTH_THREAD_DIM) __aicore__
     GET_TILING_DATA_PTR_WITH_STRUCT(PadACTilingData, tD, tiling);
     for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         uint64_t dstIdx = idx;
-        int64_t inIndex[DIM] = {0};
+        int64_t inIndexMirHuge8[DIM] = {0};
 
-        inIndex[0] = Simt::UintDiv(dstIdx, m0, s0);
-        dstIdx -= inIndex[0] * static_cast<int64_t>(tD->outStride[0]);
-        inIndex[1] = Simt::UintDiv(dstIdx, m1, s1);
-        dstIdx -= inIndex[1] * static_cast<int64_t>(tD->outStride[1]);
-        inIndex[2] = Simt::UintDiv(dstIdx, m2, s2);
-        dstIdx -= inIndex[2] * static_cast<int64_t>(tD->outStride[2]);
-        inIndex[3] = Simt::UintDiv(dstIdx, m3, s3);
-        dstIdx -= inIndex[3] * static_cast<int64_t>(tD->outStride[3]);
-        inIndex[4] = Simt::UintDiv(dstIdx, m4, s4);
-        dstIdx -= inIndex[4] * static_cast<int64_t>(tD->outStride[4]);
-        inIndex[5] = Simt::UintDiv(dstIdx, m5, s5);
-        dstIdx -= inIndex[5] * static_cast<int64_t>(tD->outStride[5]);
-        inIndex[6] = Simt::UintDiv(dstIdx, m6, s6);
-        dstIdx -= inIndex[6] * static_cast<int64_t>(tD->outStride[6]);
-        inIndex[DIM - 1] = dstIdx;
+        inIndexMirHuge8[0] = Simt::UintDiv(dstIdx, m0, s0);
+        dstIdx -= inIndexMirHuge8[0] * static_cast<int64_t>(tD->outStride[0]);
+        inIndexMirHuge8[1] = Simt::UintDiv(dstIdx, m1, s1);
+        dstIdx -= inIndexMirHuge8[1] * static_cast<int64_t>(tD->outStride[1]);
+        inIndexMirHuge8[2] = Simt::UintDiv(dstIdx, m2, s2);
+        dstIdx -= inIndexMirHuge8[2] * static_cast<int64_t>(tD->outStride[2]);
+        inIndexMirHuge8[3] = Simt::UintDiv(dstIdx, m3, s3);
+        dstIdx -= inIndexMirHuge8[3] * static_cast<int64_t>(tD->outStride[3]);
+        inIndexMirHuge8[4] = Simt::UintDiv(dstIdx, m4, s4);
+        dstIdx -= inIndexMirHuge8[4] * static_cast<int64_t>(tD->outStride[4]);
+        inIndexMirHuge8[5] = Simt::UintDiv(dstIdx, m5, s5);
+        dstIdx -= inIndexMirHuge8[5] * static_cast<int64_t>(tD->outStride[5]);
+        inIndexMirHuge8[6] = Simt::UintDiv(dstIdx, m6, s6);
+        dstIdx -= inIndexMirHuge8[6] * static_cast<int64_t>(tD->outStride[6]);
+        inIndexMirHuge8[DIM - 1] = dstIdx;
 
         if constexpr (IS_REFLECT) {
             for (int32_t i = 0; i < DIM; i++) {
-                inIndex[i] -= static_cast<int64_t>(tD->leftPad[i]);
-                inIndex[i] = abs(inIndex[i]) - abs(inIndex[i] - (static_cast<int64_t>(tD->inShape[i]) - 1)) -
-                             inIndex[i] + static_cast<int64_t>(tD->inShape[i]) - 1;
+                inIndexMirHuge8[i] -= static_cast<int64_t>(tD->leftPad[i]);
+                inIndexMirHuge8[i] = abs(inIndexMirHuge8[i]) -
+                                     abs(inIndexMirHuge8[i] - (static_cast<int64_t>(tD->inShape[i]) - 1)) -
+                                     inIndexMirHuge8[i] + static_cast<int64_t>(tD->inShape[i]) - 1;
             }
         } else {
             for (int32_t i = 0; i < DIM; i++) {
-                inIndex[i] -= static_cast<int64_t>(tD->leftPad[i]);
-                inIndex[i] = (abs(inIndex[i] * 2 + 1) -
-                              abs((inIndex[i] - (static_cast<int64_t>(tD->inShape[i]) - 1)) * 2 - 1)) /
-                                 2 -
-                             inIndex[i] + static_cast<int64_t>(tD->inShape[i]) - 1;
+                inIndexMirHuge8[i] -= static_cast<int64_t>(tD->leftPad[i]);
+                inIndexMirHuge8[i] = (abs(inIndexMirHuge8[i] * 2 + 1) -
+                                      abs((inIndexMirHuge8[i] - (static_cast<int64_t>(tD->inShape[i]) - 1)) * 2 - 1)) /
+                                         2 -
+                                     inIndexMirHuge8[i] + static_cast<int64_t>(tD->inShape[i]) - 1;
             }
         }
 
-        uint64_t inputOffset = static_cast<uint64_t>(inIndex[0]) * static_cast<uint64_t>(tD->inStride[0]) +
-                               static_cast<uint64_t>(inIndex[1]) * static_cast<uint64_t>(tD->inStride[1]) +
-                               static_cast<uint64_t>(inIndex[2]) * static_cast<uint64_t>(tD->inStride[2]) +
-                               static_cast<uint64_t>(inIndex[3]) * static_cast<uint64_t>(tD->inStride[3]) +
-                               static_cast<uint64_t>(inIndex[4]) * static_cast<uint64_t>(tD->inStride[4]) +
-                               static_cast<uint64_t>(inIndex[5]) * static_cast<uint64_t>(tD->inStride[5]) +
-                               static_cast<uint64_t>(inIndex[6]) * static_cast<uint64_t>(tD->inStride[6]) +
-                               static_cast<uint64_t>(inIndex[DIM - 1]);
+        uint64_t inputOffset = static_cast<uint64_t>(inIndexMirHuge8[0]) * static_cast<uint64_t>(tD->inStride[0]) +
+                               static_cast<uint64_t>(inIndexMirHuge8[1]) * static_cast<uint64_t>(tD->inStride[1]) +
+                               static_cast<uint64_t>(inIndexMirHuge8[2]) * static_cast<uint64_t>(tD->inStride[2]) +
+                               static_cast<uint64_t>(inIndexMirHuge8[3]) * static_cast<uint64_t>(tD->inStride[3]) +
+                               static_cast<uint64_t>(inIndexMirHuge8[4]) * static_cast<uint64_t>(tD->inStride[4]) +
+                               static_cast<uint64_t>(inIndexMirHuge8[5]) * static_cast<uint64_t>(tD->inStride[5]) +
+                               static_cast<uint64_t>(inIndexMirHuge8[6]) * static_cast<uint64_t>(tD->inStride[6]) +
+                               static_cast<uint64_t>(inIndexMirHuge8[DIM - 1]);
         outputGM[idx] = inputGM[inputOffset];
     }
 }

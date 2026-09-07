@@ -312,15 +312,15 @@ static ge::graphStatus TilingPrepare4Expand(gert::TilingParseContext* context)
 {
     OP_LOGD(context->GetNodeName(), "Enter TilingPrepare4Expand.");
 
-    auto compileInfo = context->GetCompiledInfo<ExpandCompileInfo>();
-    OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
+    auto compileInfoExpand = context->GetCompiledInfo<ExpandCompileInfo>();
+    OP_CHECK_NULL_WITH_CONTEXT(context, compileInfoExpand);
     auto platformInfo = context->GetPlatformInfo();
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
 
-    compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
-    if (compileInfo->coreNum <= 0) {
-        std::string valueMsg = std::to_string(compileInfo->coreNum);
+    compileInfoExpand->coreNum = ascendcPlatform.GetCoreNumAiv();
+    if (compileInfoExpand->coreNum <= 0) {
+        std::string valueMsg = std::to_string(compileInfoExpand->coreNum);
         std::string reasonMsg = "The core num must be positive.";
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "coreNum", valueMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
@@ -328,33 +328,33 @@ static ge::graphStatus TilingPrepare4Expand(gert::TilingParseContext* context)
 
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
-    compileInfo->ubSize = static_cast<int64_t>(ubSize);
-    if (compileInfo->ubSize <= 0) {
-        std::string valueMsg = std::to_string(compileInfo->ubSize);
+    compileInfoExpand->ubSize = static_cast<int64_t>(ubSize);
+    if (compileInfoExpand->ubSize <= 0) {
+        std::string valueMsg = std::to_string(compileInfoExpand->ubSize);
         std::string reasonMsg = "Failed to get ub size, ub size must be positive.";
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ubSize", valueMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
-    compileInfo->clSize = Ops::Base::GetCacheLineSize(context);
-    if (compileInfo->clSize <= 0) {
-        std::string valueMsg = std::to_string(compileInfo->clSize);
+    compileInfoExpand->clSize = Ops::Base::GetCacheLineSize(context);
+    if (compileInfoExpand->clSize <= 0) {
+        std::string valueMsg = std::to_string(compileInfoExpand->clSize);
         std::string reasonMsg = "Failed to get cache line size, cache line size must be positive.";
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "clSize", valueMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
-    compileInfo->blockSize = Ops::Base::GetUbBlockSize(context);
-    if (compileInfo->blockSize <= 0) {
-        std::string valueMsg = std::to_string(compileInfo->blockSize);
+    compileInfoExpand->blockSize = Ops::Base::GetUbBlockSize(context);
+    if (compileInfoExpand->blockSize <= 0) {
+        std::string valueMsg = std::to_string(compileInfoExpand->blockSize);
         std::string reasonMsg = "Failed to get block size, block size must be positive.";
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "blockSize", valueMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
-    compileInfo->vRegSize = Ops::Base::GetVRegSize(context);
-    if (compileInfo->vRegSize <= 0) {
-        std::string valueMsg = std::to_string(compileInfo->vRegSize);
+    compileInfoExpand->vRegSize = Ops::Base::GetVRegSize(context);
+    if (compileInfoExpand->vRegSize <= 0) {
+        std::string valueMsg = std::to_string(compileInfoExpand->vRegSize);
         std::string reasonMsg = "Failed to get vReg size, vReg size must be positive.";
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "vRegSize", valueMsg.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;

@@ -42,7 +42,7 @@ private:
 
 private:
     TPipe* pipe_ = nullptr;
-    const PadACTilingData* tdPtr_ = nullptr;
+    const PadACTilingData* tdPtrCirc_ = nullptr;
     GlobalTensor<T> inputGm_;
     GlobalTensor<T> outputGm_;
 
@@ -68,19 +68,19 @@ public:
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR paddings, GM_ADDR y, const PadACTilingData* tilingData)
     {
         blockIdx_ = GetBlockIdx();
-        tdPtr_ = tilingData;
-        dimNum_ = tdPtr_->dimNum;
-        ubAxis_ = tdPtr_->ubAxis;
-        ubFactor_ = tdPtr_->ubFactor;
+        tdPtrCirc_ = tilingData;
+        dimNum_ = tdPtrCirc_->dimNum;
+        ubAxis_ = tdPtrCirc_->ubAxis;
+        ubFactor_ = tdPtrCirc_->ubFactor;
 
         // 一次VL需要处理后面3根轴，当前支持切-3轴、-4轴
-        if (UB_AXES >= CONST3 && tdPtr_->outStride[dimNum_ - CONST3] <= VL_CNT / CONST2) {
+        if (UB_AXES >= CONST3 && tdPtrCirc_->outStride[dimNum_ - CONST3] <= VL_CNT / CONST2) {
             lastThirdDimInVL_ = true;
-            vlSplitIn_ = Std::min(uint64_t(VL_CNT / tdPtr_->outStride[dimNum_ - CONST3]),
-                                  uint64_t(tdPtr_->outShape[dimNum_ - CONST3]));
+            vlSplitIn_ = Std::min(uint64_t(VL_CNT / tdPtrCirc_->outStride[dimNum_ - CONST3]),
+                                  uint64_t(tdPtrCirc_->outShape[dimNum_ - CONST3]));
         } else {
-            vlSplitIn_ = Std::min(uint64_t(VL_CNT / tdPtr_->outStride[dimNum_ - CONST2]),
-                                  uint64_t(tdPtr_->outShape[dimNum_ - CONST2]));
+            vlSplitIn_ = Std::min(uint64_t(VL_CNT / tdPtrCirc_->outStride[dimNum_ - CONST2]),
+                                  uint64_t(tdPtrCirc_->outShape[dimNum_ - CONST2]));
         }
         if constexpr (sizeof(T) == 1) {
             vlSplitIn_ /= sizeof(int16_t);
@@ -92,21 +92,21 @@ public:
         inputGm_.SetGlobalBuffer((__gm__ T*)x);
         outputGm_.SetGlobalBuffer((__gm__ T*)y);
 
-        pipe_->InitBuffer(inQue_, BUF_NUM, tdPtr_->outTileSize);
+        pipe_->InitBuffer(inQue_, BUF_NUM, tdPtrCirc_->outTileSize);
         // 正向一份outTileSize; 上pad一个blocksize的临时空间
-        pipe_->InitBuffer(outQueFw_, BUF_NUM, tdPtr_->outTileSize + UB_BLOCK);
+        pipe_->InitBuffer(outQueFw_, BUF_NUM, tdPtrCirc_->outTileSize + UB_BLOCK);
         pipe_->InitBuffer(idxBuf_, VL_SIZE);
     }
 
     __aicore__ inline void Process()
     {
-        uint32_t startIdx = blockIdx_ * tdPtr_->ubPerCount;
-        if (startIdx >= tdPtr_->ubTotalCount) {
+        uint32_t startIdx = blockIdx_ * tdPtrCirc_->ubPerCount;
+        if (startIdx >= tdPtrCirc_->ubTotalCount) {
             return;
         }
 
-        uint32_t endIdx = (blockIdx_ + 1L) * tdPtr_->ubPerCount;
-        endIdx = endIdx < tdPtr_->ubTotalCount ? endIdx : tdPtr_->ubTotalCount;
+        uint32_t endIdx = (blockIdx_ + 1L) * tdPtrCirc_->ubPerCount;
+        endIdx = endIdx < tdPtrCirc_->ubTotalCount ? endIdx : tdPtrCirc_->ubTotalCount;
 
         LocalTensor<RangeType> idxTensor = idxBuf_.Get<RangeType>();
         if (lastThirdDimInVL_) {
@@ -115,14 +115,14 @@ public:
             GenGatherIndex(idxTensor);
         }
 
-        uint64_t ubTailFactor = tdPtr_->inShape[ubAxis_] % ubFactor_;
+        uint64_t ubTailFactor = tdPtrCirc_->inShape[ubAxis_] % ubFactor_;
         ubTailFactor = (ubTailFactor == 0) ? ubFactor_ : ubTailFactor;
         for (uint32_t idx = startIdx; idx < endIdx; idx++) {
             uint64_t inIndex[MAX_DIM] = {0, 0, 0, 0, 0, 0, 0, 0};
             uint16_t ubAxisInCopyNum = 0;
 
             CalcDimIdx(idx, inIndex);
-            ubAxisInCopyNum = (inIndex[ubAxis_] + ubFactor_ > tdPtr_->inShape[ubAxis_]) ? ubTailFactor : ubFactor_;
+            ubAxisInCopyNum = (inIndex[ubAxis_] + ubFactor_ > tdPtrCirc_->inShape[ubAxis_]) ? ubTailFactor : ubFactor_;
 
             ProcessOneStep(inIndex, ubAxisInCopyNum, idxTensor);
         }
@@ -132,7 +132,7 @@ private:
     __aicore__ inline void CalcDimIdx(uint32_t curIdx, uint64_t* inIndex)
     {
         for (int32_t i = ubAxis_; i >= 0; i--) {
-            uint64_t factor = tdPtr_->inShape[i];
+            uint64_t factor = tdPtrCirc_->inShape[i];
             if (i == ubAxis_) {
                 factor = CeilDiv(factor, static_cast<uint64_t>(ubFactor_));
             }
@@ -150,10 +150,10 @@ private:
 
     __aicore__ inline void CopyIn(const uint64_t* inIndex, uint16_t ubAxisInCopyNum)
     {
-        uint32_t copyInNum = ubAxisInCopyNum * tdPtr_->inStride[ubAxis_];
+        uint32_t copyInNum = ubAxisInCopyNum * tdPtrCirc_->inStride[ubAxis_];
         uint64_t inAddr = 0;
         for (uint32_t i = 0; i < dimNum_; i++) {
-            inAddr += inIndex[i] * tdPtr_->inStride[i];
+            inAddr += inIndex[i] * tdPtrCirc_->inStride[i];
         }
 
         LocalTensor<T> inLocal = inQue_.AllocTensor<T>();
@@ -190,13 +190,14 @@ private:
 
     __aicore__ inline bool IsInLeftPad(int64_t inIdx, int32_t inAxis)
     {
-        return (inIdx < (int64_t)tdPtr_->inShape[inAxis] &&
-                inIdx > (int64_t)tdPtr_->inShape[inAxis] - (int64_t)tdPtr_->leftPad[inAxis] - 1);
+        return (inIdx < (int64_t)tdPtrCirc_->inShape[inAxis] &&
+                inIdx > (int64_t)tdPtrCirc_->inShape[inAxis] - (int64_t)tdPtrCirc_->leftPad[inAxis] - 1);
     }
 
     __aicore__ inline bool IsInRightPad(int64_t inIdx, int32_t inAxis)
     {
-        return inIdx < (int64_t)(tdPtr_->outShape[inAxis] - tdPtr_->inShape[inAxis] - tdPtr_->leftPad[inAxis]);
+        return inIdx <
+               (int64_t)(tdPtrCirc_->outShape[inAxis] - tdPtrCirc_->inShape[inAxis] - tdPtrCirc_->leftPad[inAxis]);
     }
 
     __aicore__ inline void CalOutIndexValue(const uint64_t* inIndex, OutIndicesSet* totalOutIdx, int32_t setMax)
@@ -206,16 +207,19 @@ private:
             uint64_t iDimInIdx = inIndex[i];
             // 左pad
             if (IsInLeftPad(iDimInIdx, i)) {
-                uint64_t inLeftPadStart = Std::max(iDimInIdx, (uint64_t)(tdPtr_->inShape[i] - tdPtr_->leftPad[i]));
-                totalOutIdx[i].outIdx[totalOutIdx[i].count] = tdPtr_->leftPad[i] + inLeftPadStart - tdPtr_->inShape[i];
+                uint64_t inLeftPadStart = Std::max(iDimInIdx,
+                                                   (uint64_t)(tdPtrCirc_->inShape[i] - tdPtrCirc_->leftPad[i]));
+                totalOutIdx[i].outIdx[totalOutIdx[i].count] = tdPtrCirc_->leftPad[i] + inLeftPadStart -
+                                                              tdPtrCirc_->inShape[i];
                 totalOutIdx[i].count++;
             }
             // 原始
-            totalOutIdx[i].outIdx[totalOutIdx[i].count] = tdPtr_->leftPad[i] + iDimInIdx;
+            totalOutIdx[i].outIdx[totalOutIdx[i].count] = tdPtrCirc_->leftPad[i] + iDimInIdx;
             totalOutIdx[i].count++;
             // 右pad
             if (IsInRightPad(iDimInIdx, i)) {
-                totalOutIdx[i].outIdx[totalOutIdx[i].count] = tdPtr_->leftPad[i] + tdPtr_->inShape[i] + iDimInIdx;
+                totalOutIdx[i].outIdx[totalOutIdx[i].count] = tdPtrCirc_->leftPad[i] + tdPtrCirc_->inShape[i] +
+                                                              iDimInIdx;
                 totalOutIdx[i].count++;
             }
         }
@@ -232,21 +236,21 @@ private:
     __aicore__ inline void CopyOut(uint16_t ubAxisInCopyNum, const uint64_t* inIndex, OutIndicesSet* totalOutIdx,
                                    LocalTensor<T>& outLocal)
     {
-        uint32_t copyOutNum = ubAxisInCopyNum * tdPtr_->outStride[ubAxis_];
+        uint32_t copyOutNum = ubAxisInCopyNum * tdPtrCirc_->outStride[ubAxis_];
         DataCopyExtParams copyOutParams = {1u, static_cast<uint32_t>(copyOutNum * sizeof(T)), 0, 0, 0};
 
         // ub切分轴，正向
-        totalOutIdx[ubAxis_].outIdx[0] = tdPtr_->leftPad[ubAxis_] + inIndex[ubAxis_];
+        totalOutIdx[ubAxis_].outIdx[0] = tdPtrCirc_->leftPad[ubAxis_] + inIndex[ubAxis_];
         totalOutIdx[ubAxis_].count = 1;
 
         for (int32_t o0 = 0; o0 < totalOutIdx[0].count; o0++) {
-            uint64_t o0Offset = totalOutIdx[0].outIdx[o0] * tdPtr_->outStride[0];
+            uint64_t o0Offset = totalOutIdx[0].outIdx[o0] * tdPtrCirc_->outStride[0];
             for (int32_t o1 = 0; o1 < totalOutIdx[1].count; o1++) {
-                uint64_t o1Offset = totalOutIdx[1].outIdx[o1] * tdPtr_->outStride[1];
+                uint64_t o1Offset = totalOutIdx[1].outIdx[o1] * tdPtrCirc_->outStride[1];
                 for (int32_t o2 = 0; o2 < totalOutIdx[CONST2].count; o2++) {
-                    uint64_t o2Offset = totalOutIdx[CONST2].outIdx[o2] * tdPtr_->outStride[CONST2];
+                    uint64_t o2Offset = totalOutIdx[CONST2].outIdx[o2] * tdPtrCirc_->outStride[CONST2];
                     for (int32_t o3 = 0; o3 < totalOutIdx[CONST3].count; o3++) {
-                        uint64_t o3Offset = totalOutIdx[CONST3].outIdx[o3] * tdPtr_->outStride[CONST3];
+                        uint64_t o3Offset = totalOutIdx[CONST3].outIdx[o3] * tdPtrCirc_->outStride[CONST3];
                         uint64_t outAddr = o0Offset + o1Offset + o2Offset + o3Offset;
                         DataCopyPad(outputGm_[outAddr], outLocal[BLOCK_NUM], copyOutParams);
                     }
@@ -262,12 +266,12 @@ private:
         uint64_t leftIdx = inIndex[ubAxis_] + ubAxisInCopyNum - 1;
         if (IsInLeftPad(leftIdx, ubAxis_)) {
             inLeftPadStart = Std::max((uint64_t)inIndex[ubAxis_],
-                                      (uint64_t)(tdPtr_->inShape[ubAxis_] - tdPtr_->leftPad[ubAxis_]));
+                                      (uint64_t)(tdPtrCirc_->inShape[ubAxis_] - tdPtrCirc_->leftPad[ubAxis_]));
             inLeftPadNum = inIndex[ubAxis_] + ubAxisInCopyNum - inLeftPadStart;
             inLeftPadStart = inLeftPadStart - inIndex[ubAxis_];
         }
 
-        int64_t rightPad = tdPtr_->outShape[ubAxis_] - tdPtr_->inShape[ubAxis_] - tdPtr_->leftPad[ubAxis_];
+        int64_t rightPad = tdPtrCirc_->outShape[ubAxis_] - tdPtrCirc_->inShape[ubAxis_] - tdPtrCirc_->leftPad[ubAxis_];
         if (IsInRightPad(inIndex[ubAxis_], ubAxis_)) {
             inRightPadStart = 0;
             inRightPadNum = Std::min((uint64_t)ubAxisInCopyNum, (uint64_t)rightPad - inIndex[ubAxis_]);
@@ -277,15 +281,15 @@ private:
     __aicore__ inline void CopyOutLeftPad(uint16_t ubAxisInCopyNum, const uint64_t* inIndex, LocalTensor<T>& outLocal,
                                           uint32_t inLeftPadNum, uint32_t inLeftPadStart, OutIndicesSet* totalOutIdx)
     {
-        totalOutIdx[ubAxis_].outIdx[0] = tdPtr_->leftPad[ubAxis_] + inLeftPadStart - tdPtr_->inShape[ubAxis_] +
+        totalOutIdx[ubAxis_].outIdx[0] = tdPtrCirc_->leftPad[ubAxis_] + inLeftPadStart - tdPtrCirc_->inShape[ubAxis_] +
                                          inIndex[ubAxis_];
         totalOutIdx[ubAxis_].count = 1;
 
         LocalTensor<T> outLocalReal = outLocal[BLOCK_NUM];
         LocalTensor<T> outLocalTmp = outLocal[0];
 
-        uint32_t copyOutNum = inLeftPadNum * tdPtr_->outStride[ubAxis_];
-        uint32_t copyStartOffset = inLeftPadStart * tdPtr_->outStride[ubAxis_];
+        uint32_t copyOutNum = inLeftPadNum * tdPtrCirc_->outStride[ubAxis_];
+        uint32_t copyStartOffset = inLeftPadStart * tdPtrCirc_->outStride[ubAxis_];
         uint32_t alignRed = copyStartOffset % BLOCK_NUM;
         uint32_t alignOffset = 0;
         if (alignRed != 0) {
@@ -310,13 +314,13 @@ private:
         DataCopyExtParams outParamAlign = {1u, static_cast<uint32_t>(alignOffset * sizeof(T)), 0, 0, 0};
 
         for (int32_t o0 = 0; o0 < totalOutIdx[0].count; o0++) {
-            uint64_t o0Offset = totalOutIdx[0].outIdx[o0] * tdPtr_->outStride[0];
+            uint64_t o0Offset = totalOutIdx[0].outIdx[o0] * tdPtrCirc_->outStride[0];
             for (int32_t o1 = 0; o1 < totalOutIdx[1].count; o1++) {
-                uint64_t o1Offset = totalOutIdx[1].outIdx[o1] * tdPtr_->outStride[1];
+                uint64_t o1Offset = totalOutIdx[1].outIdx[o1] * tdPtrCirc_->outStride[1];
                 for (int32_t o2 = 0; o2 < totalOutIdx[CONST2].count; o2++) {
-                    uint64_t o2Offset = totalOutIdx[CONST2].outIdx[o2] * tdPtr_->outStride[CONST2];
+                    uint64_t o2Offset = totalOutIdx[CONST2].outIdx[o2] * tdPtrCirc_->outStride[CONST2];
                     for (int32_t o3 = 0; o3 < totalOutIdx[CONST3].count; o3++) {
-                        uint64_t o3Offset = totalOutIdx[CONST3].outIdx[o3] * tdPtr_->outStride[CONST3];
+                        uint64_t o3Offset = totalOutIdx[CONST3].outIdx[o3] * tdPtrCirc_->outStride[CONST3];
                         uint64_t outAddr = o0Offset + o1Offset + o2Offset + o3Offset;
                         if (copyOutNum > 0) {
                             DataCopyPad(outputGm_[outAddr + alignOffset], outLocalReal[copyStartOffset], copyOutParams);
@@ -333,21 +337,21 @@ private:
     __aicore__ inline void CopyOutRightPad(uint16_t ubAxisInCopyNum, const uint64_t* inIndex, LocalTensor<T>& outLocal,
                                            uint32_t inRightPadNum, uint32_t inRightPadStart, OutIndicesSet* totalOutIdx)
     {
-        totalOutIdx[ubAxis_].outIdx[0] = tdPtr_->leftPad[ubAxis_] + tdPtr_->inShape[ubAxis_] + inIndex[ubAxis_];
+        totalOutIdx[ubAxis_].outIdx[0] = tdPtrCirc_->leftPad[ubAxis_] + tdPtrCirc_->inShape[ubAxis_] + inIndex[ubAxis_];
         totalOutIdx[ubAxis_].count = 1;
 
-        uint32_t copyOutNum = inRightPadNum * tdPtr_->outStride[ubAxis_];
+        uint32_t copyOutNum = inRightPadNum * tdPtrCirc_->outStride[ubAxis_];
         DataCopyExtParams copyOutParams = {1u, static_cast<uint32_t>(copyOutNum * sizeof(T)), 0, 0, 0};
-        uint32_t copyStartOffset = inRightPadStart * tdPtr_->outStride[ubAxis_];
+        uint32_t copyStartOffset = inRightPadStart * tdPtrCirc_->outStride[ubAxis_];
 
         for (int32_t o0 = 0; o0 < totalOutIdx[0].count; o0++) {
-            uint64_t o0Offset = totalOutIdx[0].outIdx[o0] * tdPtr_->outStride[0];
+            uint64_t o0Offset = totalOutIdx[0].outIdx[o0] * tdPtrCirc_->outStride[0];
             for (int32_t o1 = 0; o1 < totalOutIdx[1].count; o1++) {
-                uint64_t o1Offset = totalOutIdx[1].outIdx[o1] * tdPtr_->outStride[1];
+                uint64_t o1Offset = totalOutIdx[1].outIdx[o1] * tdPtrCirc_->outStride[1];
                 for (int32_t o2 = 0; o2 < totalOutIdx[CONST2].count; o2++) {
-                    uint64_t o2Offset = totalOutIdx[CONST2].outIdx[o2] * tdPtr_->outStride[CONST2];
+                    uint64_t o2Offset = totalOutIdx[CONST2].outIdx[o2] * tdPtrCirc_->outStride[CONST2];
                     for (int32_t o3 = 0; o3 < totalOutIdx[CONST3].count; o3++) {
-                        uint64_t o3Offset = totalOutIdx[CONST3].outIdx[o3] * tdPtr_->outStride[CONST3];
+                        uint64_t o3Offset = totalOutIdx[CONST3].outIdx[o3] * tdPtrCirc_->outStride[CONST3];
                         uint64_t outAddr = o0Offset + o1Offset + o2Offset + o3Offset;
                         DataCopyPad(outputGm_[outAddr], outLocal[BLOCK_NUM], copyOutParams);
                     }
@@ -397,9 +401,9 @@ private:
     __aicore__ inline void GenGatherIndex(LocalTensor<RangeType>& idxTensor)
     {
         // 2*VL长度的索引，纯PAD索引占前VL，正常值索引占后VL
-        uint32_t lastInDimSize = tdPtr_->inShape[dimNum_ - 1];
-        int32_t lastLeftPadNum = tdPtr_->leftPad[dimNum_ - 1];
-        uint32_t lastOutDimSize = tdPtr_->outShape[dimNum_ - 1];
+        uint32_t lastInDimSize = tdPtrCirc_->inShape[dimNum_ - 1];
+        int32_t lastLeftPadNum = tdPtrCirc_->leftPad[dimNum_ - 1];
+        uint32_t lastOutDimSize = tdPtrCirc_->outShape[dimNum_ - 1];
         uint16_t lastDimsLeft = vlSplitIn_;
         __ubuf__ RangeType* idxAddr = (__ubuf__ RangeType*)idxTensor.GetPhyAddr();
 
@@ -440,16 +444,16 @@ private:
     __aicore__ inline void GenGatherIndexThreeDim(LocalTensor<RangeType>& idxTensor)
     {
         // 2*VL长度的索引，纯PAD索引占前VL，正常值索引占后VL
-        uint32_t lastInDimSize = tdPtr_->inShape[dimNum_ - 1];
-        uint16_t lastSecInDimSize = tdPtr_->inShape[dimNum_ - CONST2];
-        int32_t outStride1 = tdPtr_->outStride[dimNum_ - CONST3];
-        int32_t outStride2 = tdPtr_->outStride[dimNum_ - CONST2];
-        int32_t inStride1 = tdPtr_->inStride[dimNum_ - CONST3];
+        uint32_t lastInDimSize = tdPtrCirc_->inShape[dimNum_ - 1];
+        uint16_t lastSecInDimSize = tdPtrCirc_->inShape[dimNum_ - CONST2];
+        int32_t outStride1 = tdPtrCirc_->outStride[dimNum_ - CONST3];
+        int32_t outStride2 = tdPtrCirc_->outStride[dimNum_ - CONST2];
+        int32_t inStride1 = tdPtrCirc_->inStride[dimNum_ - CONST3];
         uint16_t lastTwoDimLoops = vlSplitIn_;
         // 切在-3轴上，-2轴上的数据都是从gather中获取到的，包含pad
-        int32_t lastLeftPadNum = tdPtr_->leftPad[dimNum_ - 1];
-        uint16_t last2LeftPadNum = tdPtr_->leftPad[dimNum_ - CONST2];
-        uint16_t last2RightPadNum = tdPtr_->outShape[dimNum_ - CONST2] - lastSecInDimSize - last2LeftPadNum;
+        int32_t lastLeftPadNum = tdPtrCirc_->leftPad[dimNum_ - 1];
+        uint16_t last2LeftPadNum = tdPtrCirc_->leftPad[dimNum_ - CONST2];
+        uint16_t last2RightPadNum = tdPtrCirc_->outShape[dimNum_ - CONST2] - lastSecInDimSize - last2LeftPadNum;
         __ubuf__ RangeType* idxAddr = (__ubuf__ RangeType*)idxTensor.GetPhyAddr();
 
         __VEC_SCOPE__
@@ -557,13 +561,13 @@ private:
         __ubuf__ T* outAddr = (__ubuf__ T*)outTensor.GetPhyAddr() + BLOCK_NUM;
 
         uint16_t vlSplitLoopIn = vlSplitIn_;
-        RangeType idxOffset = tdPtr_->inStride[dimNum_ - CONST2] * vlSplitLoopIn;
-        uint32_t maskValue = tdPtr_->outStride[dimNum_ - CONST2] * vlSplitLoopIn;
+        RangeType idxOffset = tdPtrCirc_->inStride[dimNum_ - CONST2] * vlSplitLoopIn;
+        uint32_t maskValue = tdPtrCirc_->outStride[dimNum_ - CONST2] * vlSplitLoopIn;
 
         uint16_t copyInPadLoops = static_cast<uint16_t>(ubAxisInCopyNum / vlSplitLoopIn);
         uint16_t lastCopyInPadNum = static_cast<uint16_t>(ubAxisInCopyNum - copyInPadLoops * vlSplitLoopIn);
         uint16_t lastCopyInPadLoops = lastCopyInPadNum == 0 ? 0 : 1;
-        uint32_t lastCopyInMaskValue = lastCopyInPadNum * tdPtr_->outStride[dimNum_ - CONST2];
+        uint32_t lastCopyInMaskValue = lastCopyInPadNum * tdPtrCirc_->outStride[dimNum_ - CONST2];
 
         __VEC_SCOPE__
         {
@@ -582,25 +586,25 @@ private:
         __ubuf__ T* outAddr = (__ubuf__ T*)outTensor.GetPhyAddr() + BLOCK_NUM;
 
         uint16_t vlSplitLoopIn = vlSplitIn_;
-        uint32_t strideInVl = tdPtr_->inStride[dimNum_ - CONST2];
-        uint32_t strideInVlO1 = tdPtr_->inStride[dimNum_ - CONST3];
-        uint32_t strideOutVl = tdPtr_->outStride[dimNum_ - CONST2];
-        uint32_t strideOutVlO1 = tdPtr_->outStride[dimNum_ - CONST3];
+        uint32_t strideInVl = tdPtrCirc_->inStride[dimNum_ - CONST2];
+        uint32_t strideInVlO1 = tdPtrCirc_->inStride[dimNum_ - CONST3];
+        uint32_t strideOutVl = tdPtrCirc_->outStride[dimNum_ - CONST2];
+        uint32_t strideOutVlO1 = tdPtrCirc_->outStride[dimNum_ - CONST3];
 
         // 该次Ub内C轴左pad, VL切3维时退化为1
         uint16_t ubAxisInCopyLoops = ubAxisInCopyNum;
 
         // ub切-3，这个值不会很大，uint32_t足够
-        uint32_t vlLeftPadNum = tdPtr_->leftPad[dimNum_ - CONST2];
-        uint32_t vlInNum = tdPtr_->inShape[dimNum_ - CONST2];
-        uint32_t vlRightPadNum = tdPtr_->outShape[dimNum_ - CONST2] - tdPtr_->leftPad[dimNum_ - CONST2] -
-                                 tdPtr_->inShape[dimNum_ - CONST2];
+        uint32_t vlLeftPadNum = tdPtrCirc_->leftPad[dimNum_ - CONST2];
+        uint32_t vlInNum = tdPtrCirc_->inShape[dimNum_ - CONST2];
+        uint32_t vlRightPadNum = tdPtrCirc_->outShape[dimNum_ - CONST2] - tdPtrCirc_->leftPad[dimNum_ - CONST2] -
+                                 tdPtrCirc_->inShape[dimNum_ - CONST2];
         uint32_t leftPadInVlOffset = vlInNum == 0 ? 0 : (vlInNum - vlLeftPadNum) * strideInVl;
 
         if (lastThirdDimInVL_) {
-            strideInVl = tdPtr_->inStride[dimNum_ - CONST3];
+            strideInVl = tdPtrCirc_->inStride[dimNum_ - CONST3];
             strideInVlO1 = 1;
-            strideOutVl = tdPtr_->outStride[dimNum_ - CONST3];
+            strideOutVl = tdPtrCirc_->outStride[dimNum_ - CONST3];
             strideOutVlO1 = 1;
             ubAxisInCopyLoops = 1;
             vlLeftPadNum = 0;
@@ -664,34 +668,34 @@ private:
         uint16_t ubAxisInCopyLoops = ubAxisInCopyNum; // ubAxisInCopyNum;
         uint16_t ubAxisRightPadLoops = 0;             // ubAxisRightPadNum; 当前不支持N轴的pad, 只会为0
 
-        uint32_t strideInVl = tdPtr_->inStride[dimNum_ - CONST2];
-        uint32_t strideInVlO1 = tdPtr_->inStride[dimNum_ - CONST3];
-        uint32_t strideOutVl = tdPtr_->outStride[dimNum_ - CONST2];
-        uint32_t strideOutVlO1 = tdPtr_->outStride[dimNum_ - CONST3];
+        uint32_t strideInVl = tdPtrCirc_->inStride[dimNum_ - CONST2];
+        uint32_t strideInVlO1 = tdPtrCirc_->inStride[dimNum_ - CONST3];
+        uint32_t strideOutVl = tdPtrCirc_->outStride[dimNum_ - CONST2];
+        uint32_t strideOutVlO1 = tdPtrCirc_->outStride[dimNum_ - CONST3];
 
         // ub切-4，这个值不会很大，uint32_t足够
-        uint16_t vlO1LeftPadNum = tdPtr_->leftPad[dimNum_ - CONST3];
-        uint16_t vlO1InNum = tdPtr_->inShape[dimNum_ - CONST3];
-        uint16_t vlO1RightPadNum = tdPtr_->outShape[dimNum_ - CONST3] - tdPtr_->leftPad[dimNum_ - CONST3] -
-                                   tdPtr_->inShape[dimNum_ - CONST3];
+        uint16_t vlO1LeftPadNum = tdPtrCirc_->leftPad[dimNum_ - CONST3];
+        uint16_t vlO1InNum = tdPtrCirc_->inShape[dimNum_ - CONST3];
+        uint16_t vlO1RightPadNum = tdPtrCirc_->outShape[dimNum_ - CONST3] - tdPtrCirc_->leftPad[dimNum_ - CONST3] -
+                                   tdPtrCirc_->inShape[dimNum_ - CONST3];
 
-        uint32_t vlLeftPadNum = tdPtr_->leftPad[dimNum_ - CONST2];
-        uint32_t vlInNum = tdPtr_->inShape[dimNum_ - CONST2];
-        uint32_t vlRightPadNum = tdPtr_->outShape[dimNum_ - CONST2] - tdPtr_->leftPad[dimNum_ - CONST2] -
-                                 tdPtr_->inShape[dimNum_ - CONST2];
+        uint32_t vlLeftPadNum = tdPtrCirc_->leftPad[dimNum_ - CONST2];
+        uint32_t vlInNum = tdPtrCirc_->inShape[dimNum_ - CONST2];
+        uint32_t vlRightPadNum = tdPtrCirc_->outShape[dimNum_ - CONST2] - tdPtrCirc_->leftPad[dimNum_ - CONST2] -
+                                 tdPtrCirc_->inShape[dimNum_ - CONST2];
         uint32_t leftPadInVlOffset = (vlInNum - vlLeftPadNum) * strideInVl;
         uint32_t leftPadInVlO1Offset = (vlO1InNum - vlO1LeftPadNum) * strideInVlO1;
 
         if (lastThirdDimInVL_) {
-            strideInVl = tdPtr_->inStride[dimNum_ - CONST3];
-            strideInVlO1 = tdPtr_->inStride[dimNum_ - CONST4];
-            strideOutVl = tdPtr_->outStride[dimNum_ - CONST3];
-            strideOutVlO1 = tdPtr_->outStride[dimNum_ - CONST4];
+            strideInVl = tdPtrCirc_->inStride[dimNum_ - CONST3];
+            strideInVlO1 = tdPtrCirc_->inStride[dimNum_ - CONST4];
+            strideOutVl = tdPtrCirc_->outStride[dimNum_ - CONST3];
+            strideOutVlO1 = tdPtrCirc_->outStride[dimNum_ - CONST4];
 
-            vlLeftPadNum = tdPtr_->leftPad[dimNum_ - CONST3];
-            vlInNum = tdPtr_->inShape[dimNum_ - CONST3];
-            vlRightPadNum = tdPtr_->outShape[dimNum_ - CONST3] - tdPtr_->leftPad[dimNum_ - CONST3] -
-                            tdPtr_->inShape[dimNum_ - CONST3];
+            vlLeftPadNum = tdPtrCirc_->leftPad[dimNum_ - CONST3];
+            vlInNum = tdPtrCirc_->inShape[dimNum_ - CONST3];
+            vlRightPadNum = tdPtrCirc_->outShape[dimNum_ - CONST3] - tdPtrCirc_->leftPad[dimNum_ - CONST3] -
+                            tdPtrCirc_->inShape[dimNum_ - CONST3];
 
             vlO1LeftPadNum = 0;
             vlO1InNum = 1;
@@ -704,8 +708,8 @@ private:
         RangeType idxOffset = strideInVl * vlSplitLoopIn;
         uint32_t maskValue = strideOutVl * vlSplitLoopIn;
 
-        uint32_t strideInN = tdPtr_->inStride[dimNum_ - CONST4];
-        uint32_t strideOutN = tdPtr_->outStride[dimNum_ - CONST4];
+        uint32_t strideInN = tdPtrCirc_->inStride[dimNum_ - CONST4];
+        uint32_t strideOutN = tdPtrCirc_->outStride[dimNum_ - CONST4];
 
         uint16_t leftPadLoops = static_cast<uint16_t>(vlLeftPadNum / vlSplitLoopIn);
         uint16_t lastLeftPadNum = static_cast<uint16_t>(vlLeftPadNum - leftPadLoops * vlSplitLoopIn);
