@@ -21,9 +21,10 @@ except ImportError:
 
 
 __golden__ = {
-    "kernel": {
-        "drop_out_v3": "drop_out_v3_golden"
-    }
+    "aclnn": {
+        "aclnnDropoutV3": "aclnn_dropout_v3_golden",
+    },
+    "kernel": {"drop_out_v3": "drop_out_v3_golden"},
 }
 
 
@@ -33,7 +34,7 @@ VAL_1 = 0
 VAL_2 = 1
 VAL_3 = 2
 VAL_4 = 3
-MASK_32 = 0xffffffff
+MASK_32 = 0xFFFFFFFF
 
 
 class PhiloxRandom(object):
@@ -55,7 +56,18 @@ class PhiloxRandom(object):
         key[VAL_1] = (key[VAL_1] + philox_w[VAL_1]) & mask_w
         key[VAL_2] = (key[VAL_2] + philox_w[VAL_2]) & mask_w
 
-    def philox(self, counter, key, philox_round, philox_m, philox_bumpkey, philox_w, len_w, mask_w, rounds):
+    def philox(
+        self,
+        counter,
+        key,
+        philox_round,
+        philox_m,
+        philox_bumpkey,
+        philox_w,
+        len_w,
+        mask_w,
+        rounds,
+    ):
         for i in range(rounds - 1):
             philox_round(counter, key, philox_m, len_w, mask_w)
             philox_bumpkey(key, philox_w, mask_w)
@@ -63,8 +75,17 @@ class PhiloxRandom(object):
         return counter
 
     def philox4_32(self, counter, key, rounds):
-        return self.philox(counter, key, self.philox4_round, PHILOX_M4_32, self.philox4_bumpkey, PHILOX_W_32, 32,
-                           MASK_32, rounds)
+        return self.philox(
+            counter,
+            key,
+            self.philox4_round,
+            PHILOX_M4_32,
+            self.philox4_bumpkey,
+            PHILOX_W_32,
+            32,
+            MASK_32,
+            rounds,
+        )
 
     def inc_counter(self, counter):
         for i in range(4):
@@ -109,7 +130,7 @@ def update_prob_type(prob, dtype):
 def compare_scalar(rst_lst: List, prob):
     rst_np = np.array(rst_lst)
     prob_np = np.array(prob)
-    mask = (rst_np <= prob_np)
+    mask = rst_np <= prob_np
     rst_np[mask] = 1
     rst_np[~mask] = 0
     return rst_np
@@ -119,8 +140,10 @@ def binary_array_to_uint8(binary_array):
     binary_array = np.array(binary_array, dtype=np.uint8)
     padding = 8 - (len(binary_array) % 8)
     if padding != 8:
-        binary_array = np.pad(binary_array, (0, padding), mode='constant', constant_values=0)
-    uint8_values = np.packbits(binary_array, bitorder='little')
+        binary_array = np.pad(
+            binary_array, (0, padding), mode="constant", constant_values=0
+        )
+    uint8_values = np.packbits(binary_array, bitorder="little")
     return uint8_values
 
 
@@ -142,7 +165,7 @@ def GetVectorSize(eleCount, T_size):
     optimalVecSize = 16 // T_size
     vecSize = min(vecSize, optimalVecSize)
     while vecSize > 1:
-        canVectorize = ((eleCount % vecSize) == 0)
+        canVectorize = (eleCount % vecSize) == 0
         if not canVectorize:
             vecSize = vecSize // 2
         else:
@@ -175,7 +198,9 @@ def drop_out_v3_compute(x_in, prob, seed, offset, rounds=10):
         for idx in range(0, count, vecSize):
             threadIdx = idx % totalThreads
             repeatCount = idx // totalThreads
-            (key, counter) = gen_key_and_counter(threadIdx, seed, offset // 4 + repeatCount // 4)
+            (key, counter) = gen_key_and_counter(
+                threadIdx, seed, offset // 4 + repeatCount // 4
+            )
             philox_random = philox(rounds, counter, key, 4)
             (uniform_out, prob) = uniform_pt(philox_random, prob, "float")
             mask = compare_scalar(uniform_out, prob)
@@ -188,11 +213,13 @@ def drop_out_v3_compute(x_in, prob, seed, offset, rounds=10):
             vecIndx = idx // vecSize
             threadIdx = vecIndx % totalThreads
             repeatCount = vecIndx // totalThreads
-            (key, counter) = gen_key_and_counter(threadIdx, seed, offset // 4 + repeatCount * fixOffset // 4)
+            (key, counter) = gen_key_and_counter(
+                threadIdx, seed, offset // 4 + repeatCount * fixOffset // 4
+            )
             philox_random = philox(rounds, counter, key, vecSize)
             (uniform_out, prob) = uniform_pt(philox_random, prob, "float")
             mask = compare_scalar(uniform_out, prob)
-            mask_out[idx:idx + vecSize] = mask
+            mask_out[idx : idx + vecSize] = mask
 
     mask_bool = mask_out[:count]
     y_out[mask_bool] = y_out[mask_bool] * (1 / prob)
@@ -202,14 +229,14 @@ def drop_out_v3_compute(x_in, prob, seed, offset, rounds=10):
 
 
 def drop_out_v3_golden(x, noise_shape=None, p=None, seed=None, offset=None, **kwargs):
-    '''
+    """
     Kernel golden for drop_out_v3.
     All the parameters follow @drop_out_v3_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
         input_formats, output_formats, input_ori_formats, output_ori_formats,
         input_dtypes, output_dtypes.
-    '''
+    """
     x_type = x.dtype
     p_val = float(np.array(p).flatten()[0])
     seed_val = int(np.array(seed).flatten()[0])
@@ -217,3 +244,48 @@ def drop_out_v3_golden(x, noise_shape=None, p=None, seed=None, offset=None, **kw
     offset_val = int(np.uint64(offset_val))
     dst, mask = drop_out_v3_compute(x, p_val, seed_val, offset_val)
     return [dst.astype(x_type, copy=False), mask.astype(np.uint8)]
+
+
+def aclnn_dropout_v3_golden(
+    input, optionalNoiseShape, p=0, seed=0, offset=0, out=None, maskOut=None, **kwargs
+):
+    """
+    Aclnn golden for aclnnDropoutV3.
+    Parameters follow @aclnnDropoutV3GetWorkspaceSize without workspaceSize & executor.
+    All the input Tensors are torch.Tensor.
+    """
+    import torch
+    from functools import reduce
+
+    x_tensor = input
+    x_shape = input.shape
+    if not x_tensor.dim():
+        x_tensor = torch.tensor([x_tensor])
+    tol = reduce(lambda x, y: x * y, x_shape)
+    if tol == 0:
+        return [torch.empty(x_shape), torch.empty(x_shape)]
+
+    if hasattr(p, "item"):
+        p = p.item()
+    if hasattr(seed, "item"):
+        seed = seed.item()
+    if hasattr(offset, "item"):
+        offset = offset.item()
+    x_np = x_tensor.numpy() if hasattr(x_tensor, "numpy") else x_tensor
+    dst, mask = drop_out_v3_compute(x_np, p, seed, offset)
+
+    import torch
+
+    x_dtype = x_tensor.dtype
+    dst_torch = torch.from_numpy(dst.astype(np.float32)).to(x_dtype).reshape(x_shape)
+    mask_torch = torch.from_numpy(mask)
+    if maskOut is not None and maskOut.numel() != mask_torch.numel():
+        mask_torch = torch.from_numpy(
+            np.pad(
+                mask_torch.numpy().flatten(),
+                (0, maskOut.numel() - mask_torch.numel()),
+                constant_values=1,
+            )
+        ).reshape(maskOut.shape)
+
+    return [dst_torch, mask_torch]

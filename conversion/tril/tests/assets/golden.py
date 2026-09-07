@@ -11,25 +11,27 @@
 # ----------------------------------------------------------------------------
 
 import numpy as np
+import torch
 
 
 __golden__ = {
-    "kernel": {
-        "tril": "tril_golden"
-    }
+    "aclnn": {
+        "aclnnTril": "aclnn_tril_golden",
+    },
+    "kernel": {"tril": "tril_golden"},
 }
 
 
 def tril_golden(x, diagonal: int = 0, **kwargs):
-    '''
+    """
     Kernel golden for tril.
     All the parameters follow @tril_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
         input_formats, output_formats, input_ori_formats, output_ori_formats,
         input_dtypes, output_dtypes.
-    '''
-    if kwargs.get('input_dtypes') and kwargs['input_dtypes'][0] == "complex32":
+    """
+    if kwargs.get("input_dtypes") and kwargs["input_dtypes"][0] == "complex32":
         real, imag = np.split(x, 2, axis=-1)
         real = np.squeeze(real, axis=-1)
         imag = np.squeeze(imag, axis=-1)
@@ -39,3 +41,14 @@ def tril_golden(x, diagonal: int = 0, **kwargs):
     else:
         golden = np.tril(x, diagonal)
     return golden
+
+
+def aclnn_tril_golden(self, diagonal=0, out=None, **kwargs):
+    """
+    Aclnn golden for aclnnTril.
+    Parameters follow @aclnnTrilGetWorkspaceSize without workspaceSize & executor.
+    All the input Tensors are torch.Tensor.
+    """
+    if hasattr(diagonal, "item"):
+        diagonal = diagonal.item()
+    return [torch.tril(self, diagonal)]

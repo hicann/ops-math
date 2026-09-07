@@ -1,3 +1,4 @@
+import torch
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 # ----------------------------------------------------------------------------
@@ -11,7 +12,12 @@
 # ----------------------------------------------------------------------------
 
 
-__golden__ = {"kernel": {"reduce_log_sum_exp": "reduce_log_sum_exp_golden"}}
+__golden__ = {
+    "aclnn": {
+        "aclnnLogSumExp": "aclnn_log_sum_exp_golden",
+    },
+    "kernel": {"reduce_log_sum_exp": "reduce_log_sum_exp_golden"},
+}
 
 
 def reduce_log_sum_exp_golden(x, axes=None, keep_dims: bool = False, **kwargs):
@@ -44,3 +50,16 @@ def reduce_log_sum_exp_golden(x, axes=None, keep_dims: bool = False, **kwargs):
     res = res_torch.numpy()
 
     return res.astype(input_dtype, copy=False)
+
+
+def aclnn_log_sum_exp_golden(self, dim=0, keepDim=0, out=None, **kwargs):
+    """
+    Aclnn golden for aclnnLogSumExp.
+    Parameters follow @aclnnLogSumExpGetWorkspaceSize without workspaceSize & executor.
+    All the input Tensors are torch.Tensor.
+    """
+    if hasattr(dim, "item"):
+        dim = dim.item()
+    if hasattr(keepDim, "item"):
+        keepDim = bool(keepDim.item())
+    return [torch.logsumexp(self, dim=dim, keepdim=keepDim)]

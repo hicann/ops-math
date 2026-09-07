@@ -1,0 +1,4 @@
+testcase_name,api_name,tensor_view_shapes,tensor_formats,tensor_dtypes,attributes,output_tensor_indexes,precision_tolerances,absolute_precision,is_enabled
+aclnn_drop_out_v3_test_0000,aclnnDropoutV3,"((37,86,16),(None),(37,86,16),(6368,))","(('ND', 'ND', 'ND', 'ND'))","('float16', 'int64', 'float16', 'uint8')","{'p': 0.1, 'seed': 1, 'offset': 8}","(-2, -1)","((0.001, 0.001),(0.0001, 0.0001))",0,TRUE
+aclnn_drop_out_v3_test_0002,aclnnDropoutV3,"((1,2,3,4,5,6),(None),(1,2,3,4,5,6),(96,))","(('ND', 'ND', 'ND', 'ND'))","('float16', 'int64', 'float16', 'uint8')","{'p': 0.91, 'seed': 10, 'offset':4}","(-2, -1)","((0.001, 0.001),(0.0001, 0.0001))",0,TRUE
+aclnn_drop_out_v3_test_0003,aclnnDropoutV3,"((1,2,1,4,1,4096),(None),(1,2,1,4,1,4096),(4096,))","(('ND', 'ND', 'ND', 'ND'))","('float32', 'int64', 'float32', 'uint8')","{'p': 0.91, 'seed': 2, 'offset':12}","(-2, -1)","((0.001, 0.001),(0.0001, 0.0001))",0,TRUE

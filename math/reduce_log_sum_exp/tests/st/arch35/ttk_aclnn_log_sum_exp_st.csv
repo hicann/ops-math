@@ -1,0 +1,3 @@
+testcase_name,api_name,tensor_dtypes,attributes,tensor_view_shapes,output_tensor_indexes,input_data_ranges,precision_tolerances,absolute_precision
+aclnnLogSumExp_00,aclnnLogSumExp,"('float16', 'float16')","{'dim': [0, 2], 'keepDim': False}","((0,0,0),(0,))","(1,)","[[-2,-1]]","((0.001, 0.001),)",0.05
+aclnnLogSumExp_01,aclnnLogSumExp,"('float16', 'float16')","{'dim': [0, 2], 'keepDim': False}","((2,2,2),(2,))","(1,)","[[-2,-1]]","((0.001, 0.001),)",0.05

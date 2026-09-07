@@ -75,9 +75,15 @@ def aclnn_max_v2_golden(
     import torch
 
     ipt = self
-    dim = kwargs.get("attributes", {})["dims"]
-    keepdim = kwargs.get("attributes", {})["keepDims"]
-    noop_with_empty_dims = kwargs.get("attributes", {})["noopWithEmptyDims"]
+    attrs = kwargs.get("attributes", {})
+    dim = attrs.get("dims", dims) if attrs else dims
+    keepdim = attrs.get("keepDims", keepDims) if attrs else keepDims
+    noop_with_empty_dims = (
+        attrs.get("noopWithEmptyDims", noopWithEmptyDims)
+        if attrs
+        else noopWithEmptyDims
+    )
+
     if dim is None or (isinstance(dim, (tuple, list)) and len(dim) == 0):
         if noop_with_empty_dims:
             result = ipt

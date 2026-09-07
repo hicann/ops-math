@@ -1,0 +1,6 @@
+testcase_name,api_name,tensor_view_shapes,tensor_dtypes,attributes,output_tensor_indexes,input_data_ranges,precision_tolerances,absolute_precision
+aclnnEye_001,aclnnEye,"((3,3),)",('float32'),"{'n': 3, 'm': 3}","(0,)",,,
+aclnnEye_002,aclnnEye,"((4,5),)",('float16'),"{'n': 4, 'm': 5}","(0,)",,,
+aclnnEye_003,aclnnEye,"((13,20),)",('int8'),"{'n': 13, 'm': 20}","(0,)",,,
+aclnnEye_004,aclnnEye,"((30,30),)",('uint8'),"{'n': 30, 'm': 30}","(0,)",,,
+aclnnEye_005,aclnnEye,"((13,13),)",('int16'),"{'n': 13, 'm': 13}","(0,)",,,
