@@ -335,29 +335,29 @@ int main() {
 
   // 2.构造输入与输出，需要根据API的接口自定义构造
   std::vector<int64_t> selfShape = {3, 1};
-  std::vector<int64_t> otherShape = {3, 3};
+  std::vector<int64_t> aShape = {3, 3};
   std::vector<int64_t> xOutShape = {3, 1};
   std::vector<int64_t> mOutShape = {3, 3};
   void* selfDeviceAddr = nullptr;
-  void* otherDeviceAddr = nullptr;
+  void* aDeviceAddr = nullptr;
   void* xOutDeviceAddr = nullptr;
   void* mOutDeviceAddr = nullptr;
   aclTensor* self = nullptr;
-  aclTensor* other = nullptr;
+  aclTensor* A = nullptr;
   aclTensor* xOut = nullptr;
   aclTensor* mOut = nullptr;
   bool upper = true;
   bool transpose = false;
   bool unitriangular = false;
   std::vector<float> selfHostData = {1, 2, 3};
-  std::vector<float> otherHostData = {1, 2, 3, 0, 4, 5, 0, 0, 6};
+  std::vector<float> aHostData = {1, 2, 3, 0, 4, 5, 0, 0, 6};
   std::vector<float> xOutHostData = {-0.2500, -0.1250, 0.5000};
   std::vector<float> mOutHostData = {1, 2, 3, 0, 4, 5, 0, 0, 6};
   // 创建self aclTensor
   ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  // 创建other aclTensor
-  ret = CreateAclTensor(otherHostData, otherShape, &otherDeviceAddr, aclDataType::ACL_FLOAT, &other);
+  // 创建A aclTensor
+  ret = CreateAclTensor(aHostData, aShape, &aDeviceAddr, aclDataType::ACL_FLOAT, &A);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
   // 创建xOut aclTensor
   ret = CreateAclTensor(xOutHostData, xOutShape, &xOutDeviceAddr, aclDataType::ACL_FLOAT, &xOut);
@@ -369,7 +369,7 @@ int main() {
   uint64_t workspaceSize = 0;
   aclOpExecutor* executor;
   // 调用aclnnTriangularSolve第一段接口
-  ret = aclnnTriangularSolveGetWorkspaceSize(self, other, upper, transpose, unitriangular, xOut, mOut, &workspaceSize, &executor);
+  ret = aclnnTriangularSolveGetWorkspaceSize(self, A, upper, transpose, unitriangular, xOut, mOut, &workspaceSize, &executor);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnTriangularSolveGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
   // 根据第一段接口计算出的workspaceSize申请device内存
   void* workspaceAddr = nullptr;
@@ -406,13 +406,13 @@ int main() {
 
   // 6.释放aclTensor和aclScalar，需要根据具体API的接口定义修改
   aclDestroyTensor(self);
-  aclDestroyTensor(other);
+  aclDestroyTensor(A);
   aclDestroyTensor(xOut);
   aclDestroyTensor(mOut);
 
   // 7.释放device资源，需要根据具体API的接口定义修改
   aclrtFree(selfDeviceAddr);
-  aclrtFree(otherDeviceAddr);
+  aclrtFree(aDeviceAddr);
   aclrtFree(xOutDeviceAddr);
   aclrtFree(mOutDeviceAddr);
   if (workspaceSize > 0) {

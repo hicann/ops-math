@@ -353,7 +353,7 @@ int main() {
   aclTensor* out = nullptr;
   std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
   std::vector<float> otherHostData = {1, 1, 1, 2, 1, 2, 3, 3};
-  std::vector<float> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
+  std::vector<uint8_t> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
   double rtol = 1.0;
   double atol = 1.0;
   bool equal_nan = false;

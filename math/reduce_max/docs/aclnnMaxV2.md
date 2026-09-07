@@ -248,7 +248,7 @@ aclnnStatus aclnnMaxV2(
 - 确定性计算：
   - aclnnMaxV2默认确定性实现。
 
-- 输入self为Tensor类型时，不支持reduce轴为0的场景。
+- 输入self为Tensor类型时，不支持reduce轴大小为0的场景（dims中的取值0表示第0轴，不受此限制）。
 
 ## 调用示例
 

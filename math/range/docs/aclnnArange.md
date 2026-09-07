@@ -326,13 +326,13 @@ int main()
 
     // 创建start aclScalar
     start = aclCreateScalar(&startValue, aclDataType::ACL_FLOAT);
-    CHECK_RET(start != nullptr, return ret);
+    CHECK_RET(start != nullptr, LOG_PRINT("aclCreateScalar start failed.\n"); return ACL_ERROR_INTERNAL_ERROR);
     // 创建end aclScalar
     end = aclCreateScalar(&endValue, aclDataType::ACL_FLOAT);
-    CHECK_RET(end != nullptr, return ret);
+    CHECK_RET(end != nullptr, LOG_PRINT("aclCreateScalar end failed.\n"); return ACL_ERROR_INTERNAL_ERROR);
     // 创建step aclScalar
     step = aclCreateScalar(&stepValue, aclDataType::ACL_FLOAT);
-    CHECK_RET(step != nullptr, return ret);
+    CHECK_RET(step != nullptr, LOG_PRINT("aclCreateScalar step failed.\n"); return ACL_ERROR_INTERNAL_ERROR);
     // 创建out aclTensor
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);

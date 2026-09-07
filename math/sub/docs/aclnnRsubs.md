@@ -332,10 +332,10 @@ int main() {
   CHECK_RET(ret == ACL_SUCCESS, return ret);
   // 创建other aclScalar
   other = aclCreateScalar(&otherValue, aclDataType::ACL_FLOAT);
-  CHECK_RET(other != nullptr, return ret);
+  CHECK_RET(other != nullptr, LOG_PRINT("aclCreateScalar other failed.\n"); return ACL_ERROR_INTERNAL_ERROR);
   // 创建alpha aclScalar
   alpha = aclCreateScalar(&alphaValue, aclDataType::ACL_FLOAT);
-  CHECK_RET(alpha != nullptr, return ret);
+  CHECK_RET(alpha != nullptr, LOG_PRINT("aclCreateScalar alpha failed.\n"); return ACL_ERROR_INTERNAL_ERROR);
   // 创建out aclTensor
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);

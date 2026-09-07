@@ -800,7 +800,7 @@ int main() {
   }
 
   // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
-  aclDestroyTensor(self);
+  aclDestroyTensor(selfRef);
   aclDestroyTensor(tensor1);
   aclDestroyTensor(tensor2);
   aclDestroyScalar(value);

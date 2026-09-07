@@ -559,10 +559,10 @@ int main() {
   aclScalar* alpha = nullptr;
   aclTensor* out = nullptr;
 
-  std::vector<float> inputHostData = {6, 0};
+  std::vector<float> inputHostData = {1, 2, 3, 4, 5, 6};
   std::vector<float> vec1HostData = {1, 2, 3};
   std::vector<float> vec2HostData = {4, 5};
-  std::vector<float> outHostData = {6, 0};
+  std::vector<float> outHostData = {0, 0, 0, 0, 0, 0};
   float betaValue = 1.5f;
   float alphaValue = 1.5f;
 

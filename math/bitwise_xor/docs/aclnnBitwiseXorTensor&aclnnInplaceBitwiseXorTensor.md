@@ -127,7 +127,7 @@ aclnnStatus aclnnInplaceBitwiseXorTensor(
       <td>输出</td>
       <td>输出tensor，存储计算结果。</td>
       <td>shape是self与other broadcast之后的shape。</td>
-      <td>BOOL、INT8、INT16、INT32、INT64、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16、UINT16、UINT32、UINT64、COMPLEX64、COMPLEX128</td>
+      <td>BOOL、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64</td>
       <td>ND</td>
       <td>不大于8</td>
       <td>√</td>

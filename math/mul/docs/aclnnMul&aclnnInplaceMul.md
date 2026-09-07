@@ -483,24 +483,17 @@ int main() {
   // 2.构造输入与输出，需要根据API的接口自定义构造
   std::vector<int64_t> selfShape = {4, 2};
   std::vector<int64_t> otherShape = {4, 2};
-  std::vector<int64_t> outShape = {4, 2};
   void* selfDeviceAddr = nullptr;
   void* otherDeviceAddr = nullptr;
-  void* outDeviceAddr = nullptr;
   aclTensor* self = nullptr;
   aclTensor* other = nullptr;
-  aclTensor* out = nullptr;
   std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
   std::vector<float> otherHostData = {1, 1, 1, 2, 2, 2, 3, 3};
-  std::vector<float> outHostData(8, 0);
   // 创建self aclTensor
   ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
   // 创建other aclTensor
   ret = CreateAclTensor(otherHostData, otherShape, &otherDeviceAddr, aclDataType::ACL_FLOAT, &other);
-  CHECK_RET(ret == ACL_SUCCESS, return ret);
-  // 创建out aclTensor
-  ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   // 3.调用CANN算子库API，需要修改为具体的API名称
@@ -536,12 +529,10 @@ int main() {
   // 6.释放aclTensor，需要根据具体API的接口定义修改
   aclDestroyTensor(self);
   aclDestroyTensor(other);
-  aclDestroyTensor(out);
 
   // 7.释放device资源，需要根据具体API的接口定义修改
   aclrtFree(selfDeviceAddr);
   aclrtFree(otherDeviceAddr);
-  aclrtFree(outDeviceAddr);
   if (workspaceSize > 0) {
     aclrtFree(workspaceAddr);
   }
@@ -628,24 +619,17 @@ int main() {
   // 2.构造输入与输出，需要根据API的接口自定义构造
   std::vector<int64_t> selfShape = {4, 2};
   std::vector<int64_t> otherShape = {4, 2};
-  std::vector<int64_t> outShape = {4, 2};
   void* selfDeviceAddr = nullptr;
   void* otherDeviceAddr = nullptr;
-  void* outDeviceAddr = nullptr;
   aclTensor* self = nullptr;
   aclTensor* other = nullptr;
-  aclTensor* out = nullptr;
   std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
   std::vector<float> otherHostData = {1, 1, 1, 2, 2, 2, 3, 3};
-  std::vector<float> outHostData(8, 0);
   // 创建self aclTensor
   ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
   // 创建other aclTensor
   ret = CreateAclTensor(otherHostData, otherShape, &otherDeviceAddr, aclDataType::ACL_FLOAT, &other);
-  CHECK_RET(ret == ACL_SUCCESS, return ret);
-  // 创建out aclTensor
-  ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   // 3.调用CANN算子库API，需要修改为具体的API名称
@@ -678,16 +662,13 @@ int main() {
     LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
   }
 
-
   // 6.释放aclTensor，需要根据具体API的接口定义修改
   aclDestroyTensor(self);
   aclDestroyTensor(other);
-  aclDestroyTensor(out);
 
   // 7.释放device资源，需要根据具体API的接口定义修改
   aclrtFree(selfDeviceAddr);
   aclrtFree(otherDeviceAddr);
-  aclrtFree(outDeviceAddr);
   if (workspaceSize > 0) {
     aclrtFree(workspaceAddr);
   }
@@ -695,4 +676,5 @@ int main() {
   aclrtResetDevice(deviceId);
   aclFinalize();
   return 0;
-}```
+}
+```

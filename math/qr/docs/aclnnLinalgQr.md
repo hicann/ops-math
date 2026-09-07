@@ -364,7 +364,7 @@ aclError ExecOpAPI(
 
   // 拷贝qOut
   auto size1 = GetShapeSize(qOutShape);
-  std::vector<double> resultData1(size1, 0);
+  std::vector<float> resultData1(size1, 0);
   ret = aclrtMemcpy(
       resultData1.data(), resultData1.size() * sizeof(resultData1[0]), qOutDeviceAddr, size1 * sizeof(resultData1[0]),
       ACL_MEMCPY_DEVICE_TO_HOST);
