@@ -48,8 +48,8 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* out)
 
 static bool CheckDtypeValid(const aclTensor* self)
 {
-    bool isAfterV200 = (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-                        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase());
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    bool isAfterV200 = curArch == NpuArch::DAV_2201 || IsRegBase(curArch);
     bool isSupport = isAfterV200 ? CheckType(self->GetDataType(), dtype_support_list_afterV200) :
                                    CheckType(self->GetDataType(), dtype_support_list);
     if (!isSupport) {

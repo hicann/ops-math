@@ -15,10 +15,12 @@
 #include "opdev/make_op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/op_dfx.h"
+#include "opdev/platform.h"
 #include "conversion/broadcast_to/op_api/broadcast_to.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "aclnn_isclose.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -46,8 +48,8 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* other, const ac
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other)
 {
-    bool isBf16Support = (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-                          GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E);
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    bool isBf16Support = (curArch == NpuArch::DAV_2201 || IsRegBase(curArch));
     const std::initializer_list<op::DataType> dtypeSupportList = isBf16Support ? DTYPE_SUPPORT_LIST_910B :
                                                                                  DTYPE_SUPPORT_LIST_910;
 

@@ -26,6 +26,7 @@
 #include "opdev/op_log.h"
 #include "opdev/platform.h"
 #include "conversion/fill/op_api/fill.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -45,10 +46,10 @@ static const std::initializer_list<op::DataType> ASCEND310P_DTYPE_SUPPORT_LIST =
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
-    auto curSocVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (curSocVersion >= SocVersion::ASCEND910B && curSocVersion <= SocVersion::ASCEND910E) {
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (curArch == NpuArch::DAV_2201 || IsRegBase(curArch)) {
         OP_CHECK_DTYPE_NOT_SUPPORT(self, ASCEND910B_DTYPE_SUPPORT_LIST, return false);
-    } else if (curSocVersion == SocVersion::ASCEND310P) {
+    } else if (curArch == NpuArch::DAV_2002) {
         OP_CHECK_DTYPE_NOT_SUPPORT(self, ASCEND310P_DTYPE_SUPPORT_LIST, return false);
     } else {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "aclnnIsNegInf is not supported on this device.");
@@ -104,8 +105,8 @@ static const aclTensor* FillTensor(aclTensor* out, bool val, aclOpExecutor* exec
     return l0op::Fill(dims, valTensor, shapeArray, executor);
 }
 
-aclnnStatus aclnnIsNegInfGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnIsNegInfGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                          aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnIsNegInf, DFX_IN(self), DFX_OUT(out));
     // 固定写法，创建OpExecutor

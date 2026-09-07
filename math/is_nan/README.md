@@ -21,8 +21,8 @@
   $$
 
 - 示例：
-  - 若x=[9, 6, 3]，isnan(x)的结果是[False, False, False]。
-  - 若x=[[-3.14, inf], [2.7183, nan]]，isinf(x)的结果是[[False, False], [False, True]]。
+  - 若x=[9, 6, 3]，计算结果为[False, False, False]。
+  - 若x=[[-3.14, inf], [2.7183, nan]]，计算结果为[[False, False], [False, True]]。
 
 ## 参数说明
 

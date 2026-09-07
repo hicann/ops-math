@@ -18,49 +18,50 @@ namespace ops {
 
 class MaskedScale : public OpDef {
 public:
-  const std::vector<ge::DataType> xDataType = {ge::DT_FLOAT16, ge::DT_BF16, ge::DT_FLOAT, ge::DT_FLOAT16,
-    ge::DT_BF16, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16,
-    ge::DT_FLOAT};
-  const std::vector<ge::Format> xFormat = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND};
-  const std::vector<ge::DataType> maskDataType = {ge::DT_INT8, ge::DT_INT8, ge::DT_INT8, ge::DT_UINT8, ge::DT_UINT8,
-    ge::DT_UINT8, ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_FLOAT};
+    const std::vector<ge::DataType> xDataType = {ge::DT_FLOAT16, ge::DT_BF16,    ge::DT_FLOAT,   ge::DT_FLOAT16,
+                                                 ge::DT_BF16,    ge::DT_FLOAT,   ge::DT_FLOAT16, ge::DT_BF16,
+                                                 ge::DT_FLOAT,   ge::DT_FLOAT16, ge::DT_BF16,    ge::DT_FLOAT};
+    const std::vector<ge::Format> xFormat = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                             ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                             ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+    const std::vector<ge::DataType> maskDataType = {ge::DT_INT8,    ge::DT_INT8,  ge::DT_INT8,    ge::DT_UINT8,
+                                                    ge::DT_UINT8,   ge::DT_UINT8, ge::DT_FLOAT16, ge::DT_FLOAT16,
+                                                    ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_FLOAT,   ge::DT_FLOAT};
 
-  explicit MaskedScale(const char* name) : OpDef(name) {
-  this->Input("x")
-    .ParamType(REQUIRED)
-    .DataType(xDataType)
-    .Format(xFormat)
-    .UnknownShapeFormat(xFormat)
-    .AutoContiguous();
-  this->Input("mask")
-    .ParamType(REQUIRED)
-    .DataType(maskDataType)
-    .Format(xFormat)
-    .UnknownShapeFormat(xFormat)
-    .AutoContiguous();
-  this->Output("y")
-    .ParamType(REQUIRED)
-    .Format(xFormat)
-    .UnknownShapeFormat(xFormat)
-    .DataType(xDataType)
-    .AutoContiguous();
-  this->Attr("value")
-    .AttrType(REQUIRED)
-    .Float();
+    explicit MaskedScale(const char* name) : OpDef(name)
+    {
+        this->Input("x")
+            .ParamType(REQUIRED)
+            .DataType(xDataType)
+            .Format(xFormat)
+            .UnknownShapeFormat(xFormat)
+            .AutoContiguous();
+        this->Input("mask")
+            .ParamType(REQUIRED)
+            .DataType(maskDataType)
+            .Format(xFormat)
+            .UnknownShapeFormat(xFormat)
+            .AutoContiguous();
+        this->Output("y")
+            .ParamType(REQUIRED)
+            .Format(xFormat)
+            .UnknownShapeFormat(xFormat)
+            .DataType(xDataType)
+            .AutoContiguous();
+        this->Attr("value").AttrType(REQUIRED).Float();
 
-  OpAICoreConfig aicore_config;
-  aicore_config.DynamicCompileStaticFlag(true)
-    .DynamicFormatFlag(false)
-    .DynamicRankSupportFlag(true)
-    .DynamicShapeSupportFlag(true)
-    .NeedCheckSupportFlag(false)
-    .ExtendCfgInfo("opFile.value", "masked_scale_apt");
+        OpAICoreConfig aicore_config;
+        aicore_config.DynamicCompileStaticFlag(true)
+            .DynamicFormatFlag(false)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .NeedCheckSupportFlag(false)
+            .ExtendCfgInfo("opFile.value", "masked_scale_apt");
 
-  this->AICore().AddConfig("ascend950", aicore_config);
-  }
+        this->AICore().AddConfig("ascend950", aicore_config);
+        this->AICore().AddConfig("ascend350", aicore_config);
+    }
 };
 
 OP_ADD(MaskedScale);
-}  // namespace ops
+} // namespace ops

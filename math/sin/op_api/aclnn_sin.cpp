@@ -13,6 +13,7 @@
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/op_dfx.h"
 #include "opdev/platform.h"
 #include "op_api/level2_base.h"
@@ -38,8 +39,8 @@ static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SELFREF_LIST = 
 
 static inline bool CheckSocVersionIsSupportBf16(void)
 {
-    return GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-           GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E;
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    return curArch == NpuArch::DAV_2201 || IsRegBase(curArch);
 }
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
@@ -51,9 +52,8 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
     bool bf16flag = CheckSocVersionIsSupportBf16();
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     if (!bf16flag && self->GetDataType() == op::DataType::DT_BF16) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s is unsupported by the current SOC version [%s].",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(socVersion).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s is unsupported by the current SOC version [%s].",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(socVersion).GetString());
         return false;
     }
     return true;
@@ -79,7 +79,7 @@ static aclnnStatus CheckParamsSin(const aclTensor* self, const aclTensor* out)
     // 3. ND 算子不检查格式
     // 4. 检查self和out的shape是否一致
     CHECK_RET(CheckSameShape1In1Out(self, out), ACLNN_ERR_PARAM_INVALID);
-    
+
     if (self->GetStorageFormat() != Format::FORMAT_ND) {
         OP_LOGW("Only support ND format for sin/inplaceSin operator.");
     }
@@ -95,8 +95,8 @@ static aclnnStatus CheckInplaceParamsSin(aclTensor* selfRef)
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus ExecSinGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus ExecSinGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                           aclOpExecutor** executor)
 {
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -144,8 +144,8 @@ static aclnnStatus ExecSinGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnSinGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnSinGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                     aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnSin, DFX_IN(self), DFX_OUT(out));
     return ExecSinGetWorkspaceSize(self, out, workspaceSize, executor);

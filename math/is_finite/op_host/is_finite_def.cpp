@@ -42,6 +42,7 @@ public:
             .PrecisionReduceFlag(true)
             .ExtendCfgInfo("opFile.value", "is_finite_apt");
         this->AICore().AddConfig("ascend950", config910d);
+        this->AICore().AddConfig("ascend350", config910d);
 
         OpAICoreConfig config310p;
         config310p.DynamicCompileStaticFlag(true)
