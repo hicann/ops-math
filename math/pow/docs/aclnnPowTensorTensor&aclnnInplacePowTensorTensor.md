@@ -289,7 +289,7 @@ aclnnStatus aclnnInplacePowTensorTensor(
       <td>exponent（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的exponent，pow运算的指数。</td>
-      <td>数据类型是self与exponent推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>），shape需要与exponent满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
+      <td>数据类型是self与exponent推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>），shape需要与self满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、INT16、BFLOAT16</td>
       <td>ND</td>
       <td>-</td>
@@ -306,7 +306,7 @@ aclnnStatus aclnnInplacePowTensorTensor(
       <td>-</td>
     </tr>
     <tr>
-      <td>executor（uint64_t*）</td>
+      <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
       <td>返回op执行器，包含了算子计算流程。</td>
       <td>-</td>

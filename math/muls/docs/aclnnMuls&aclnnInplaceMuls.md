@@ -54,9 +54,9 @@ aclnnStatus aclnnMuls(
   uint64_t        workspaceSize,
   aclOpExecutor  *executor,
   aclrtStream     stream)
+```
 
-
-Cpp
+```Cpp
 aclnnStatus aclnnInplaceMulsGetWorkspaceSize(
   aclTensor       *selfRef,
   const aclScalar *other,

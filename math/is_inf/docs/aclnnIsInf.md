@@ -33,8 +33,8 @@
   $$
 
 - 示例：
-  - 若x=[9, 6, 3]，计算结果为[False, False, False]。
-  - 若x=[[-3.14, inf], [2.7183, nan]]，计算结果为[[False, True], [False, False]]。
+  - 若 x = [9, 6, 3]，isinf(x) 的结果是 [False, False, False]。
+  - 若 x = [[-3.14, inf], [2.7183, nan]]，isinf(x) 的结果是 [[False, True], [False, False]]。
   注意整型、布尔都是有界的。
 
 ## 函数原型
@@ -329,12 +329,12 @@ int main() {
 
   // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
   auto size = GetShapeSize(outShape);
-  std::vector<float> resultData(size, 0);
-  ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr,
-                    size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
+  std::vector<char> resultData(size, 0);
+  ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(char), outDeviceAddr,
+                    size * sizeof(char), ACL_MEMCPY_DEVICE_TO_HOST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
   for (int64_t i = 0; i < size; i++) {
-    LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
+    LOG_PRINT("result[%ld] is: %d\n", i, static_cast<bool>(resultData[i]));
   }
 
   // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改

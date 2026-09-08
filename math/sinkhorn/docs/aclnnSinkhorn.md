@@ -249,7 +249,7 @@ int main() {
   aclTensor* cost = nullptr;
   aclScalar* tol = nullptr;
   aclTensor* p = nullptr;
-  std::vector<float> costHostData = {45, 48, 65, 68, 68, 10};
+  std::vector<float> costHostData = {0.45f, 0.48f, 0.65f, 0.68f, 0.68f, 0.10f};
   std::vector<float> pHostData(6, 0);
 
   float tolValue = 0.0001;

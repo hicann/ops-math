@@ -357,6 +357,7 @@ int main() {
   CHECK_RET(dim != nullptr, return ret);
   // 创建out aclTensor
   ret = CreateAclTensor(varHostData, outShape, &varDeviceAddr, aclDataType::ACL_FLOAT, &var);
+  CHECK_RET(ret == ACL_SUCCESS, return ret);
   ret = CreateAclTensor(meanHostData, outShape, &meanDeviceAddr, aclDataType::ACL_FLOAT, &mean);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 

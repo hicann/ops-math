@@ -129,7 +129,7 @@ int SetupAndExecuteSVD(StreamPtr& stream, SVDTensors& tensors, SVDWorkspace& wor
     ret = CreateAclTensor(vHostData, tensors.vShape, aclDataType::ACL_FLOAT, tensors.vDeviceAddr, tensors.v);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
-    // 调用CANN算子库API，需要修改为具体的Api名称
+    // 调用 aclnnSvd 算子 API
     aclOpExecutor* executor;
     // 调用aclnnSvdGetWorkspaceSize第一段接口
     ret = aclnnSvdGetWorkspaceSize(tensors.input.get(), computeUV, fullMatrices, tensors.sigma.get(), tensors.u.get(),
@@ -229,9 +229,9 @@ int main()
     auto ret = Init(deviceId, stream, initialized, deviceSet);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
 
-    // 执行GtScalar操作
+    // 执行 SVD 操作
     ret = ExecuteSVDOperator(stream);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("ExecuteGtScalarOperator failed. ERROR: %d\n", ret); return ret);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("ExecuteSVDOperator failed. ERROR: %d\n", ret); return ret);
 
     return 0;
 }

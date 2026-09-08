@@ -313,22 +313,6 @@ int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& 
   return 0;
 }
 
-template <typename T>
-int CreateAclIntArray(const std::vector<T>& hostData, void** deviceAddr, aclIntArray** intArray) {
-  auto size = GetShapeSize(hostData) * sizeof(T);
-  // 调用aclrtMalloc申请device侧内存
-  auto ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMalloc failed. ERROR: %d\n", ret); return ret);
-
-  // 调用aclrtMemcpy将host侧数据拷贝到device侧内存上
-  ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
-
-  // 调用aclCreateIntArray接口创建aclIntArray
-  *intArray = aclCreateIntArray(hostData.data(), hostData.size());
-  return 0;
-}
-
 int main() {
   // 1.（固定写法）device/stream初始化，参考acl API手册
   // 根据自己的实际device填写deviceId
@@ -355,7 +339,7 @@ int main() {
   CHECK_RET(ret == ACL_SUCCESS, return ret);
   // 创建dim aclIntArray
   dim = aclCreateIntArray(dimData.data(), dimData.size());
-  CHECK_RET(dim != nullptr, return ret);
+  CHECK_RET(dim != nullptr, return ACL_ERROR_INVALID_PARAM);
   // 创建out aclTensor
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);

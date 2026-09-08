@@ -479,7 +479,7 @@ void PrintOutResult(std::vector<int64_t> &shape, void **deviceAddr)
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return);
     for (int64_t i = 0; i < size; i++)
     {
-        LOG_PRINT("result[%ld] is: %d\n", i, resultData[i]);
+        LOG_PRINT("result[%ld] is: %ld\n", i, resultData[i]);
     }
 }
 
@@ -607,7 +607,7 @@ int main()
     if (workspaceSize > 0)
     {
         ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
-        CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnCumprod allocate workspace failed. ERROR: %d\n", ret); return ret);
+        CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceCumprod allocate workspace failed. ERROR: %d\n", ret); return ret);
     }
     // 调用aclnnInplaceCumprod第二段接口
     ret = aclnnInplaceCumprod(workspaceAddr, workspaceSize, executor, stream);

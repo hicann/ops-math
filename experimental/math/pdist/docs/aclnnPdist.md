@@ -101,7 +101,7 @@ aclnnStatus aclnnPdist(
 - self 必须为二维 tensor，且 dim(0) ≥ 2。
 - out 的数据类型必须与 self 一致。
 - p 的取值范围为 [0, +inf]。
-- aclnnPdist默认确定性实现。
+- aclnnPdist 默认确定性实现。
 
 ## 调用示例
 

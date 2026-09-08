@@ -136,7 +136,7 @@ int main()
 
     // aclnnInplaceSub接口调用示例
     // 3. 调用CANN算子库API
-    LOG_PRINT("\ntest aclnnInplaceAcos\n");
+    LOG_PRINT("\ntest aclnnInplaceSub\n");
     // 调用aclnnInplaceSub第一段接口
     ret = aclnnInplaceSubGetWorkspaceSize(self, other, alpha, &workspaceSize, &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceSubGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);

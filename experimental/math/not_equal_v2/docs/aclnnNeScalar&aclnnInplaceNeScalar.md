@@ -263,7 +263,7 @@ int main()
         ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
         CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
     }
-    // 调用aclnnNeScalar第二段接口
+    // 调用aclnnInplaceNeScalar第二段接口
     ret = aclnnInplaceNeScalar(workspaceAddr, workspaceSize, executor, stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceNeScalar failed. ERROR: %d\n", ret); return ret);
     // 4. （固定写法）同步等待任务执行结束

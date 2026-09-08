@@ -104,15 +104,15 @@ int main()
 
     // 2. 构造输入与输出
     std::vector<int64_t> selfShape = {4, 2};
-    // 如果keepDim的值为true，则outShape的shape为{1, 2}
-    std::vector<int64_t> outShape = {1, 2};
+    // 如果keepDim的值为true，则outShape的shape为{4, 1}
+    std::vector<int64_t> outShape = {4, 1};
     DeviceMemPtr selfDeviceAddr(nullptr, &aclrtFree);
     DeviceMemPtr outDeviceAddr(nullptr, &aclrtFree);
     TensorPtr self(nullptr, &aclDestroyTensor);
     TensorPtr out(nullptr, &aclDestroyTensor);
     std::vector<int32_t> selfHostData = {3, 3, 2, 3, 4, 2, 6, 7};
-    std::vector<int32_t> outHostData(2, 0);
-    int64_t realDim = 0;
+    std::vector<int32_t> outHostData(4, 0);
+    int64_t realDim = 1;
     bool realKeepDim = true;
     // 创建self aclTensor
     ret = CreateAclTensor(selfHostData, selfShape, aclDataType::ACL_INT32, selfDeviceAddr, self);
