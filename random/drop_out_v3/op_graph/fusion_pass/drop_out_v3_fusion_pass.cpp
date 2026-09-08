@@ -243,7 +243,7 @@ bool DropOutV3FusionPass::MeetRequirements(const std::unique_ptr<MatchResult>& m
         aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
     }
     if (version < GE_COMPILER_VERSION_900) {
-        OP_LOGD(kPassName.c_str(), "GE runtime version %d < 90000000, skip pass.", version);
+        OP_LOGD(kPassName.c_str(), "GE runtime version %d < 9.0.0, skip pass.", version);
         return false;
     }
 
@@ -275,35 +275,35 @@ bool DropOutV3FusionPass::CheckGenMaskNode(const std::unique_ptr<MatchResult>& m
     }
 
     if (genMaskIo.node.GetInputsSize() != kGenMaskInputCount) {
-        OP_LOGE(kPassName.c_str(), "GenMask input size != 5");
+        OP_LOGE(kPassName.c_str(), "GenMask input size is %zu, expected 5", genMaskIo.node.GetInputsSize());
         return false;
     }
 
     TensorDesc probDesc;
     genMaskIo.node.GetInputDesc(kGenMaskIdxProb, probDesc);
     if (!CheckDtype(probDesc.GetDataType(), {DT_FLOAT, DT_FLOAT16, DT_BF16})) {
-        OP_LOGE(kPassName.c_str(), "GenMask prob dtype not supported");
+        OP_LOGE(kPassName.c_str(), "GenMask prob dtype %d not supported", static_cast<int>(probDesc.GetDataType()));
         return false;
     }
 
     TensorDesc seedDesc;
     genMaskIo.node.GetInputDesc(kGenMaskIdxSeed, seedDesc);
     if (!CheckDtype(seedDesc.GetDataType(), {DT_INT32, DT_INT64})) {
-        OP_LOGE(kPassName.c_str(), "GenMask seed dtype not supported");
+        OP_LOGE(kPassName.c_str(), "GenMask seed dtype %d not supported", static_cast<int>(seedDesc.GetDataType()));
         return false;
     }
 
     TensorDesc offsetDesc;
     genMaskIo.node.GetInputDesc(kGenMaskIdxOffset, offsetDesc);
     if (offsetDesc.GetDataType() != DT_INT64) {
-        OP_LOGE(kPassName.c_str(), "GenMask offset dtype != DT_INT64");
+        OP_LOGE(kPassName.c_str(), "GenMask offset dtype %d != DT_INT64", static_cast<int>(offsetDesc.GetDataType()));
         return false;
     }
 
     TensorDesc outputDesc;
     genMaskIo.node.GetOutputDesc(0, outputDesc);
     if (outputDesc.GetDataType() != DT_UINT8) {
-        OP_LOGE(kPassName.c_str(), "GenMask output dtype != DT_UINT8");
+        OP_LOGE(kPassName.c_str(), "GenMask output dtype %d != DT_UINT8", static_cast<int>(outputDesc.GetDataType()));
         return false;
     }
     return true;
@@ -325,21 +325,21 @@ bool DropOutV3FusionPass::CheckDoMaskNode(const std::unique_ptr<MatchResult>& ma
     }
 
     if (doMaskIo.node.GetInputsSize() != kDoMaskInputCount) {
-        OP_LOGE(kPassName.c_str(), "DoMask input size != 3");
+        OP_LOGE(kPassName.c_str(), "DoMask input size is %zu, expected 3", doMaskIo.node.GetInputsSize());
         return false;
     }
 
     TensorDesc inputDesc;
     doMaskIo.node.GetInputDesc(0, inputDesc);
     if (!CheckDtype(inputDesc.GetDataType(), {DT_FLOAT, DT_FLOAT16, DT_BF16})) {
-        OP_LOGE(kPassName.c_str(), "DoMask x dtype not supported");
+        OP_LOGE(kPassName.c_str(), "DoMask x dtype %d not supported", static_cast<int>(inputDesc.GetDataType()));
         return false;
     }
 
     TensorDesc outputDesc;
     doMaskIo.node.GetOutputDesc(0, outputDesc);
     if (!CheckDtype(outputDesc.GetDataType(), {DT_FLOAT, DT_FLOAT16, DT_BF16})) {
-        OP_LOGE(kPassName.c_str(), "DoMask y dtype not supported");
+        OP_LOGE(kPassName.c_str(), "DoMask y dtype %d not supported", static_cast<int>(outputDesc.GetDataType()));
         return false;
     }
     return true;
@@ -363,7 +363,7 @@ GraphUniqPtr DropOutV3FusionPass::Replacement(const std::unique_ptr<MatchResult>
 
     GraphUniqPtr replaceGraph = builder.BuildAndReset({output.y});
     if (InferShape(replaceGraph, subgraphInputs) != SUCCESS) {
-        OP_LOGE(kPassName.c_str(), "Infershape failed.");
+        OP_LOGE(kPassName.c_str(), "InferShape failed.");
         return nullptr;
     }
     return replaceGraph;

@@ -63,7 +63,8 @@ ge::graphStatus StatelessRandpermTiling::GetPlatformInfo()
 
     totalCoreNum_ = static_cast<int64_t>(compileInfo->totalCoreNum);
     ubSize_ = compileInfo->ubSize;
-    OP_CHECK_IF(ubSize_ <= 0, OP_LOGE(opName_, "UB size is invalid."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ubSize_ <= 0, OP_LOGE(opName_, "UB size %ld is invalid, must be greater than 0.", ubSize_),
+                return ge::GRAPH_FAILED);
     OP_CHECK_IF(ubSize_ <= SIMT_DCACHE_SIZE,
                 OP_LOGE(opName_, "UB size %ld bytes must be greater than simt dcache size %ld bytes, please check.",
                         ubSize_, SIMT_DCACHE_SIZE),
@@ -93,7 +94,8 @@ ge::graphStatus StatelessRandpermTiling::GetAttrs()
     }
     if (OUTPUT_DTYPE.find(attrOutDtype_) == OUTPUT_DTYPE.end()) {
         std::string valueStr = ToString(attrOutDtype_);
-        std::string reasonMsg = "[attr]dtype only support int64, int32, int16, int8, float32, float16, bfloat16";
+        std::string
+            reasonMsg = "[attr]dtype only supports int64, int32, int16, uint8, int8, float32, float16, bfloat16";
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName_, "attr dtype", valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
@@ -236,7 +238,8 @@ ge::graphStatus StatelessRandpermTiling::GetOutputY()
     auto outDtype = outDesc->GetDataType();
     if (OUTPUT_DTYPE.count(outDtype) == 0) {
         std::string valueStr = ToString(outDtype);
-        std::string reasonMsg = "output y dtype should be in int64, int32, int16, int8, float32, float16, bfloat16";
+        std::string
+            reasonMsg = "output y dtype should be in int64, int32, int16, uint8, int8, float32, float16, bfloat16";
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName_, "output tensor y", valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }

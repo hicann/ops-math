@@ -224,7 +224,7 @@ ge::graphStatus CalcExecutionPoliciesForBlocks(RandomUnifiedSimtTilingDataStruct
 
 ge::graphStatus RandomTilingParseArch35(gert::TilingParseContext* context, const std::string& operatorName)
 {
-    OP_LOGD(context, "Entering RandomTilingArch35  operator name : %s", operatorName.c_str());
+    OP_LOGD(context, "Entering RandomTilingArch35 operator name: %s", operatorName.c_str());
     auto compileInfo = context->GetCompiledInfo<RandomOperatorCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     auto platformInfo = context->GetPlatformInfo();
@@ -237,7 +237,7 @@ ge::graphStatus RandomTilingParseArch35(gert::TilingParseContext* context, const
                 OP_LOGE(context, "GetHardwareInfo Failed, vectorCoreNum:%ld, ubSize:%ld.", compileInfo->totalCoreNum,
                         compileInfo->ubSize),
                 return ge::GRAPH_FAILED);
-    OP_LOGD(context, "Get totalCoreNum:%d, ubSize:%ld", compileInfo->totalCoreNum, compileInfo->ubSize);
+    OP_LOGD(context, "Get totalCoreNum:%ld, ubSize:%ld", compileInfo->totalCoreNum, compileInfo->ubSize);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -273,7 +273,7 @@ ge::graphStatus ExtractTensorValue(const gert::TilingContext* context, const int
             ret = GetIntValue<int64_t>(context, constTensor, constShape);
             break;
         default:
-            OP_LOGD(context->GetNodeName(), "ExtractTensorValue only support [int32, int64]. but is %s",
+            OP_LOGD(context->GetNodeName(), "ExtractTensorValue only supports [int32, int64], but got %s",
                     Ops::Base::ToString(constDtype).c_str());
             return ge::GRAPH_FAILED;
     }
@@ -308,7 +308,7 @@ ge::graphStatus RandomTilingArch35::DoTiling()
     // 步骤3：前置处理（可选）
     ret = BeforeProcess();
     if (ret != ge::GRAPH_SUCCESS) {
-        OP_LOGE(opName_, "Before process  failed");
+        OP_LOGE(opName_, "Before process failed");
         return ret;
     }
 
@@ -329,7 +329,7 @@ ge::graphStatus RandomTilingArch35::DoTiling()
     // 步骤6：后置处理（可选）
     ret = UniqueProcess();
     if (ret != ge::GRAPH_SUCCESS) {
-        OP_LOGE(opName_, "Unique process  failed");
+        OP_LOGE(opName_, "Unique process failed");
         return ret;
     }
 
@@ -416,7 +416,7 @@ ge::graphStatus RandomTilingArch35::GetPlatformInfo()
     } else {
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
         auto aivNum = ascendcPlatform.GetCoreNumAiv();
-        OP_CHECK_IF((aivNum <= 0), OP_LOGE(opName_, "RandomTilingArch35 fail to get coreNum."),
+        OP_CHECK_IF((aivNum <= 0), OP_LOGE(opName_, "RandomTilingArch35 fails to get coreNum."),
                     return ge::GRAPH_FAILED);
         totalCoreNum_ = aivNum;
         uint64_t ubSizePlatForm = 0;
@@ -425,9 +425,10 @@ ge::graphStatus RandomTilingArch35::GetPlatformInfo()
     }
     ubSize_ -= config_.DcacheSize;
 
-    OP_CHECK_IF((ubSize_ <= 0), OP_LOGE(opName_, "ub size less than Dcache Size. please check."),
+    OP_CHECK_IF((ubSize_ <= 0),
+                OP_LOGE(opName_, "ubSize %ld is less than Dcache size %ld, please check.", ubSize_, config_.DcacheSize),
                 return ge::GRAPH_FAILED);
-    OP_LOGI(opName_, "RandomTilingArch35::GetPlatformInfo ubSize_=%d, totalCoreNum_=%d", ubSize_, totalCoreNum_);
+    OP_LOGI(opName_, "RandomTilingArch35::GetPlatformInfo ubSize_=%ld, totalCoreNum_=%ld", ubSize_, totalCoreNum_);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -435,7 +436,7 @@ ge::graphStatus RandomTilingArch35::DoSimtBlockTiling()
 {
     OP_CHECK_IF((totalCoreNum_ <= 0), OP_LOGE(opName_, "totalCoreNum is less than or equal to 0. please check."),
                 return ge::GRAPH_FAILED);
-    OP_CHECK_IF((config_.coreAlignSize == 0), OP_LOGE(opName_, "coreAlignSize is  equal to 0. please check."),
+    OP_CHECK_IF((config_.coreAlignSize == 0), OP_LOGE(opName_, "coreAlignSize is equal to 0. please check."),
                 return ge::GRAPH_FAILED);
 
     int64_t avgPerCore = Ops::Base::CeilDiv(simtTilingData_.outputSize, totalCoreNum_);
@@ -452,7 +453,8 @@ ge::graphStatus RandomTilingArch35::FillUnifiedSimtTilingData()
         return ret;
     }
 
-    OP_CHECK_IF((simtTilingData_.outputSize < 0), OP_LOGE(opName_, "outputSize is less than 0. please check."),
+    OP_CHECK_IF((simtTilingData_.outputSize < 0),
+                OP_LOGE(opName_, "outputSize is %ld, must not be less than 0.", simtTilingData_.outputSize),
                 return ge::GRAPH_FAILED);
     ret = config_.getSeedAndOffset(context_, simtTilingData_.seed, simtTilingData_.offset);
     if (ret != ge::GRAPH_SUCCESS) {
@@ -497,7 +499,8 @@ ge::graphStatus RandomTilingArch35::FillUnifiedTilingData()
         return ret;
     }
 
-    OP_CHECK_IF((tilingData_.outputSize <= 0), OP_LOGE(opName_, "outputSize is less than or equal to 0. please check."),
+    OP_CHECK_IF((tilingData_.outputSize <= 0),
+                OP_LOGE(opName_, "outputSize is %ld, must be greater than 0.", tilingData_.outputSize),
                 return ge::GRAPH_FAILED);
     ret = config_.getKeyAndCounter(context_, tilingData_.key, tilingData_.counter);
     if (ret != ge::GRAPH_SUCCESS) {
@@ -532,7 +535,7 @@ ge::graphStatus RandomTilingArch35::DoBlockTiling()
     OP_CHECK_IF((totalCoreNum_ <= 0), OP_LOGE(opName_, "totalCoreNum is less than or equal to 0. please check."),
                 return ge::GRAPH_FAILED);
     tilingData_.normalCoreProNum = Ops::Base::CeilDiv(tilingData_.outputSize, totalCoreNum_);
-    OP_CHECK_IF((config_.coreAlignSize == 0), OP_LOGE(opName_, "coreAlignSize is  equal to 0. please check."),
+    OP_CHECK_IF((config_.coreAlignSize == 0), OP_LOGE(opName_, "coreAlignSize is equal to 0. please check."),
                 return ge::GRAPH_FAILED);
     tilingData_.normalCoreProNum = (tilingData_.normalCoreProNum + config_.coreAlignSize - 1) / config_.coreAlignSize *
                                    config_.coreAlignSize;
@@ -612,7 +615,11 @@ ge::graphStatus RandomTilingArch35::CheckTensor(const gert::CompileTimeTensorDes
     // 校验dtype
     if (!rule.dtypeSet.empty() && rule.dtypeSet.count(tensorDesc->GetDataType()) == 0) {
         std::string valueStr = Ops::Base::ToString(tensorDesc->GetDataType());
-        std::string reasonMsg = "dtype not in allowed set";
+        std::string reasonMsg = "dtype not in allowed set [";
+        for (auto t : rule.dtypeSet) {
+            reasonMsg += Ops::Base::ToString(t) + ", ";
+        }
+        reasonMsg += "]";
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), tensorName.c_str(), valueStr.c_str(),
                                               reasonMsg.c_str());
         return ge::GRAPH_FAILED;
@@ -632,7 +639,11 @@ ge::graphStatus RandomTilingArch35::CheckTensor(const gert::CompileTimeTensorDes
     auto dimNum = tensorShape.GetDimNum();
     if (!rule.dimNumSet.empty() && rule.dimNumSet.count(dimNum) == 0) {
         std::string valueStr = std::to_string(dimNum);
-        std::string reasonMsg = "dim num not in allowed set";
+        std::string reasonMsg = "dim num not in allowed set [";
+        for (auto d : rule.dimNumSet) {
+            reasonMsg += std::to_string(d) + ", ";
+        }
+        reasonMsg += "]";
         OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), tensorName.c_str(), valueStr.c_str(),
                                                  reasonMsg.c_str());
         return ge::GRAPH_FAILED;
@@ -640,7 +651,7 @@ ge::graphStatus RandomTilingArch35::CheckTensor(const gert::CompileTimeTensorDes
 
     // 自定义校验
     if (rule.customCheck && !rule.customCheck(context_)) {
-        std::string reasonMsg = "custom check failed";
+        std::string reasonMsg = "custom check failed, please check the custom check function";
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), tensorName.c_str(), "failed", reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }

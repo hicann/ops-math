@@ -11,8 +11,6 @@
 # ----------------------------------------------------------------------------
 
 import torch
-import torch_npu
-import numpy as np
 import tensorflow as tf
 
 from atk.configs.dataset_config import InputDataset
@@ -22,16 +20,15 @@ from atk.tasks.api_execute.base_api import BaseApi
 from atk.tasks.api_execute.aclnn_base_api import AclnnBaseApi
 from atk.tasks.dataset.base_dataset import OpsDataset
 
+
 def uniform_golden(torch_tensor, params):
     seed = []
     offset = [0]
-    start = params["from"]
-    end = params["to"]
     seed.append(params["seed"])
     offset.append(params["offset"])
     is_contiguous = params["is_contiguous"] if "is_contiguous" in params else True
     if not is_contiguous:
-        print("------------非连续操作-------------")
+        print("---- Non-contiguous case ----")
         torch_tensor = torch.transpose(torch_tensor, 0, 1)
     matrix = torch_tensor
     if params["dtype_input"][0] == torch.bfloat16:
@@ -41,16 +38,19 @@ def uniform_golden(torch_tensor, params):
     matrix_shape = list(matrix.shape)
     # print("***********************params[\"dtype_input\"][0]=%s****************************" % params["dtype_input"][0])
 
-    uniform_data = tf.raw_ops.StatelessRandomUniformV2(shape=matrix_shape, key=seed, counter=offset, alg=1)
-    
+    uniform_data = tf.raw_ops.StatelessRandomUniformV2(
+        shape=matrix_shape, key=seed, counter=offset, alg=1
+    )
+
     output_data = tf.cast(uniform_data, dtype)
     if output_data.shape == []:
         output_data = torch.tensor(output_data.numpy())
     else:
         output_data = torch.from_numpy(output_data.numpy())
-    
+
     output_data = output_data.type(params["dtype_input"][0])
     return output_data
+
 
 @register("ascend_aclnn_dropout")
 class MethodAclnnDropoutApi(BaseApi):
@@ -60,9 +60,9 @@ class MethodAclnnDropoutApi(BaseApi):
         self.change_flag = None
 
     def __call__(self, input_data: InputDataset, with_output: bool = False):
-        self.input = input_data.kwargs['input']
-        self.p = input_data.kwargs['p']
-        self.train = input_data.kwargs['train']
+        self.input = input_data.kwargs["input"]
+        self.p = input_data.kwargs["p"]
+        self.train = input_data.kwargs["train"]
         self.seed = input_data.kwargs["seed"]
         self.offset = input_data.kwargs["offset"]
         self.shape = self.input.shape
@@ -70,25 +70,35 @@ class MethodAclnnDropoutApi(BaseApi):
         self.count = 1
         for item in self.shape:
             self.count *= item
-        self.tensor = torch.ones([self.count], dtype = torch.float32)
+        self.tensor = torch.ones([self.count], dtype=torch.float32)
         shape_x = self.input.shape
 
         inputx = self.input.cpu()
-        params = {"from": 0.0, "to": 1.0, "seed": self.seed, "offset": self.offset, "is_contiguous": True,
-                  "dtype_input": [torch.float32]}
+        params = {
+            "from": 0.0,
+            "to": 1.0,
+            "seed": self.seed,
+            "offset": self.offset,
+            "is_contiguous": True,
+            "dtype_input": [torch.float32],
+        }
 
         x = uniform_golden(self.tensor, params)
         output1 = x.to(torch.float32) >= torch.tensor([self.p], dtype=torch.float32)
         output1 = torch.tensor(output1, dtype=torch.float32).to(torch.uint8)
-        output1[self.count:] = 0
+        output1[self.count :] = 0
 
-        mask = torch.zeros([int(int((self.count + 127) / 128) * 128 / 8)], dtype=torch.uint8)
+        mask = torch.zeros(
+            [int(int((self.count + 127) / 128) * 128 / 8)], dtype=torch.uint8
+        )
 
-        mask_tensor = output1[:self.count].reshape(shape_x)
+        mask_tensor = output1[: self.count].reshape(shape_x)
 
         if self.input.dtype == torch.bfloat16:
             keep_prob = torch.tensor(1.0 - self.p, dtype=torch.float32)
-            keep_prob_scalar_input_dtype = keep_prob.to(dtype=self.input.dtype).to(dtype=torch.float32)
+            keep_prob_scalar_input_dtype = keep_prob.to(dtype=self.input.dtype).to(
+                dtype=torch.float32
+            )
             scale = 1.0 / keep_prob_scalar_input_dtype.to(dtype=torch.float32)
 
             x_scaled = inputx.to(dtype=torch.float32) * scale
@@ -105,6 +115,7 @@ class MethodAclnnDropoutApi(BaseApi):
         output_data[output_data == 0.0] = 0.0
 
         return output_data.to(dtype=self.input.dtype).to(torch.float32), mask
+
 
 @register("aclnn_dropout")
 class DropoutAclnnApi(AclnnBaseApi):

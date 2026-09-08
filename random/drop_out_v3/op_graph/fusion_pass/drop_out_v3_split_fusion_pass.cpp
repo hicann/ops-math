@@ -112,7 +112,7 @@ bool DropOutV3SplitFusionPass::CheckDtypes(const GNode& node) const
     node.GetInputDesc(kIdxX, xDesc);
     DataType xDtype = xDesc.GetDataType();
     if (!CheckDtype(xDtype, {DT_FLOAT, DT_FLOAT16, DT_BF16})) {
-        OP_LOGE(kPassName.c_str(), "x dtype only support float/float16/bf16, actual: %d", static_cast<int>(xDtype));
+        OP_LOGE(kPassName.c_str(), "x dtype only supports float/float16/bf16, actual: %d", static_cast<int>(xDtype));
         return false;
     }
 
@@ -120,7 +120,7 @@ bool DropOutV3SplitFusionPass::CheckDtypes(const GNode& node) const
     node.GetInputDesc(kIdxP, pDesc);
     DataType pDtype = pDesc.GetDataType();
     if (!CheckDtype(pDtype, {DT_FLOAT, DT_FLOAT16, DT_BF16})) {
-        OP_LOGE(kPassName.c_str(), "p dtype only support float/float16/bf16, actual: %d", static_cast<int>(pDtype));
+        OP_LOGE(kPassName.c_str(), "p dtype only supports float/float16/bf16, actual: %d", static_cast<int>(pDtype));
         return false;
     }
 
@@ -128,7 +128,7 @@ bool DropOutV3SplitFusionPass::CheckDtypes(const GNode& node) const
     node.GetInputDesc(kIdxSeed, seedDesc);
     DataType seedDtype = seedDesc.GetDataType();
     if (!CheckDtype(seedDtype, {DT_INT32, DT_INT64})) {
-        OP_LOGE(kPassName.c_str(), "seed dtype only support int32/int64, actual: %d", static_cast<int>(seedDtype));
+        OP_LOGE(kPassName.c_str(), "seed dtype only supports int32/int64, actual: %d", static_cast<int>(seedDtype));
         return false;
     }
 
@@ -136,12 +136,12 @@ bool DropOutV3SplitFusionPass::CheckDtypes(const GNode& node) const
     node.GetOutputDesc(0, yDesc);
     DataType yDtype = yDesc.GetDataType();
     if (!CheckDtype(yDtype, {DT_FLOAT, DT_FLOAT16, DT_BF16})) {
-        OP_LOGE(kPassName.c_str(), "y dtype only support float/float16/bf16, actual: %d", static_cast<int>(yDtype));
+        OP_LOGE(kPassName.c_str(), "y dtype only supports float/float16/bf16, actual: %d", static_cast<int>(yDtype));
         return false;
     }
 
     if (xDtype != yDtype) {
-        OP_LOGE(kPassName.c_str(), "x dtype should same with y dtype, x: %d, y: %d", static_cast<int>(xDtype),
+        OP_LOGE(kPassName.c_str(), "x dtype should be the same as y dtype, x: %d, y: %d", static_cast<int>(xDtype),
                 static_cast<int>(yDtype));
         return false;
     }
@@ -316,7 +316,7 @@ Status DropOutV3SplitFusionPass::Run(GraphPtr& graph, [[maybe_unused]] CustomPas
         aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
     }
     if (version < GE_COMPILER_VERSION_900) {
-        OP_LOGD(kPassName.c_str(), "GE runtime version %d < 90000000, skip pass.", version);
+        OP_LOGD(kPassName.c_str(), "GE runtime version %d < 9.0.0, skip pass.", version);
         return GRAPH_NOT_CHANGED;
     }
 

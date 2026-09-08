@@ -80,7 +80,7 @@ ge::graphStatus DropOutV3GradTiling::GetShapeAttrsInfo()
     dType_ = gradYPtr->GetDataType();
     if (DROP_SUPPORTED_DTYPE.find(dType_) == DROP_SUPPORTED_DTYPE.end()) {
         std::string valueStr = ToString(dType_);
-        std::string reasonMsg = "grad_y dtype only support float32, float16, bfloat16";
+        std::string reasonMsg = "grad_y dtype only supports float32, float16, bfloat16";
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "input tensor grad_y", valueStr.c_str(),
                                               reasonMsg.c_str());
         return ge::GRAPH_FAILED;
@@ -92,7 +92,7 @@ ge::graphStatus DropOutV3GradTiling::GetShapeAttrsInfo()
     bool dtypeInValid = (maskDtype != ge::DT_UINT8 && maskDtype != ge::DT_UINT1);
     if (dtypeInValid) {
         std::string valueStr = ToString(maskDtype);
-        std::string reasonMsg = "mask dtype only support uint8, uint1 currently";
+        std::string reasonMsg = "mask dtype only supports uint8, uint1 currently";
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "input tensor mask", valueStr.c_str(),
                                               reasonMsg.c_str());
         return ge::GRAPH_FAILED;
@@ -117,7 +117,8 @@ ge::graphStatus DropOutV3GradTiling::GetShapeAttrsInfo()
 ge::graphStatus DropOutV3GradTiling::DoOpTiling()
 {
     typeSize_ = ge::GetSizeByDataType(dType_);
-    OP_CHECK_IF(typeSize_ <= 0, OP_LOGE(context_->GetNodeName(), "get dataType size fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(typeSize_ <= 0, OP_LOGE(context_->GetNodeName(), "Failed to get dataType size."),
+                return ge::GRAPH_FAILED);
     // total: ub/db
     // used: grad_y*typesize (grad_y), grad_y/8 (mask), grad_y*typesize(grad_x)
     int64_t ubBlock = GetUbBlockSize(context_);

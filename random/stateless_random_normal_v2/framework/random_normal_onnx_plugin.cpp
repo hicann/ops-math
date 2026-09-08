@@ -49,7 +49,7 @@ static Status ParseParamsRandomNormal(const Message* op_src, ge::Operator& op_de
         };
     }
     if (shape_list.empty()) {
-        OP_LOGE(GetOpName(op_dest).c_str(), "Attr of shape must be not null.");
+        OP_LOGE(GetOpName(op_dest).c_str(), "Attr of shape must not be null.");
         return FAILED;
     }
 
@@ -83,14 +83,14 @@ static Status ParseOpToGraphRandomNormal(const ge::Operator& op, ge::Graph& grap
     op.GetAttr("shape", shape);
 
     if (shape.empty()) {
-        OP_LOGE(GetOpName(op).c_str(), "Attr of shape must be not null.");
+        OP_LOGE(GetOpName(op).c_str(), "Attr of shape must not be null.");
         return FAILED;
     }
 
     // cast from onnx dtype to tbe dtype
     std::map<int, ge::DataType> kvlist = {{1, ge::DT_FLOAT}, {10, ge::DT_FLOAT16}, {11, ge::DT_DOUBLE}};
     if (kvlist.find(dtype) == kvlist.end()) {
-        OP_LOGE(GetOpName(op).c_str(), "only support float32/half/double, but got %d", dtype);
+        OP_LOGE(GetOpName(op).c_str(), "only float32/half/double are supported, but got %d", dtype);
         return FAILED;
     }
 

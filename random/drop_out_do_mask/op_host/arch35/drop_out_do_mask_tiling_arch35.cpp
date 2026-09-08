@@ -41,10 +41,7 @@ constexpr int64_t UB_MIN_FACTOR = 2048;
 
 static const std::set<ge::DataType> DROP_SUPPORTED_DTYPE = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
 
-bool DropOutDoMaskTiling::IsCapable()
-{
-    return true;
-}
+bool DropOutDoMaskTiling::IsCapable() { return true; }
 
 ge::graphStatus DropOutDoMaskTiling::GetPlatformInfo()
 {
@@ -69,7 +66,8 @@ ge::graphStatus DropOutDoMaskTiling::CheckInputShape()
     if (keepProbAxis != 1) {
         std::string valueStr = std::to_string(keepProbAxis);
         std::string reasonMsg = "size of keep_prob has to be 1";
-        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context_->GetNodeName(), "input keep_prob", valueStr.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context_->GetNodeName(), "input keep_prob", valueStr.c_str(),
+                                                  reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -82,9 +80,9 @@ ge::graphStatus DropOutDoMaskTiling::GetShapeAttrsInfo()
     dType_ = xPtr->GetDataType();
     if (DROP_SUPPORTED_DTYPE.find(dType_) == DROP_SUPPORTED_DTYPE.end()) {
         std::string valueStr = ToString(dType_);
-        std::string reasonMsg = "x dtype only support float32, float16, bfloat16";
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-            context_->GetNodeName(), "input tensor x", valueStr.c_str(), reasonMsg.c_str());
+        std::string reasonMsg = "x dtype only supports float32, float16, bfloat16";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "input tensor x", valueStr.c_str(),
+                                              reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
@@ -94,9 +92,9 @@ ge::graphStatus DropOutDoMaskTiling::GetShapeAttrsInfo()
     bool dtypeInValid = (maskDtype != ge::DT_UINT8 && maskDtype != ge::DT_UINT1);
     if (dtypeInValid) {
         std::string valueStr = ToString(maskDtype);
-        std::string reasonMsg = "mask dtype only support uint8, uint1 currently";
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-            context_->GetNodeName(), "input tensor mask", valueStr.c_str(), reasonMsg.c_str());
+        std::string reasonMsg = "mask dtype only supports uint8, uint1 currently";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "input tensor mask", valueStr.c_str(),
+                                              reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
@@ -106,21 +104,21 @@ ge::graphStatus DropOutDoMaskTiling::GetShapeAttrsInfo()
     if (probPtrDtype != dType_) {
         std::string valueStr = ToString(dType_) + " and " + ToString(probPtrDtype);
         std::string reasonMsg = "keep_prob dtype must be equal to x dtype";
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            context_->GetNodeName(), "input keep_prob and input tensor x", valueStr.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "input keep_prob and input tensor x",
+                                               valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
-    OP_CHECK_IF(
-        CheckInputShape() != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "input shape check failed."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckInputShape() != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "input shape check failed."),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus DropOutDoMaskTiling::DoOpTiling()
 {
     typeSize_ = ge::GetSizeByDataType(dType_);
-    OP_CHECK_IF(typeSize_ <= 0, OP_LOGE(context_->GetNodeName(), "get dataType size fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(typeSize_ <= 0, OP_LOGE(context_->GetNodeName(), "Failed to get dataType size."),
+                return ge::GRAPH_FAILED);
     // total: ub/db
     // used: x*typesize (x), x/8 (mask), x*typesize(out)
     int64_t ubBlock = GetUbBlockSize(context_);
@@ -149,10 +147,7 @@ ge::graphStatus DropOutDoMaskTiling::DoOpTiling()
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus DropOutDoMaskTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus DropOutDoMaskTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
 uint64_t DropOutDoMaskTiling::GetTilingKey() const
 {
@@ -160,10 +155,7 @@ uint64_t DropOutDoMaskTiling::GetTilingKey() const
     return tilingKey;
 }
 
-ge::graphStatus DropOutDoMaskTiling::GetWorkspaceSize()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus DropOutDoMaskTiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus DropOutDoMaskTiling::PostTiling()
 {

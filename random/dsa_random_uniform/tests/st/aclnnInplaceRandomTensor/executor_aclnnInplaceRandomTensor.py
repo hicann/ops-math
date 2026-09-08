@@ -30,11 +30,12 @@ type2digits[torch.bfloat16] = BF16_DIGITS
 type2digits[torch.float32] = FLOAT32_DIGITS
 type2digits[torch.float64] = DOUBLE_DIGITS
 
+
 def update_from(from_value, scalar_type=torch.float32):
     # 判断是否为浮点数数据类型
     if not scalar_type.is_floating_point:
         return from_value
-    
+
     tmp_value = torch.tensor(from_value + 1, dtype=torch.int64)
     from_plus_1 = tmp_value.to(scalar_type).to(torch.int64)
     if from_plus_1 < from_value:
@@ -44,17 +45,18 @@ def update_from(from_value, scalar_type=torch.float32):
         while from_:
             n += 1
             from_ >>= 1
-        digits = type2digits[scalar_type] # 获取浮点类型的尾数位数
+        digits = type2digits[scalar_type]  # 获取浮点类型的尾数位数
         adjustment = 1 << (n - digits + 1)
         from_value = int(from_plus_1 + adjustment)
-        
+
     return from_value
+
 
 def update_to(to_value, scalar_type=torch.float32):
     # 判断是否为浮点数数据类型
     if not scalar_type.is_floating_point:
         return to_value
-    
+
     tmp_value = torch.tensor(to_value - 1, dtype=torch.int64)
     to_minus_1 = tmp_value.to(scalar_type).to(torch.int64)
     if to_minus_1 >= to_value:
@@ -64,11 +66,12 @@ def update_to(to_value, scalar_type=torch.float32):
         while to_:
             n += 1
             to_ >>= 1
-        digits = type2digits[scalar_type] # 获取浮点类型的尾数位数
+        digits = type2digits[scalar_type]  # 获取浮点类型的尾数位数
         adjustment = 1 << (n - digits + 1)
         to_value = int(to_minus_1 - adjustment)
-        
+
     return to_value
+
 
 def random_golden(torch_tensor, params):
     seed = []
@@ -78,18 +81,20 @@ def random_golden(torch_tensor, params):
     seed.append(params["seed"])
     offset.append(params["offset"])
     is_contiguous = params["is_contiguous"] if "is_contiguous" in params else True
-    
+
     start = update_from(start, params["dtype_input"][0])
     end = update_to(end, params["dtype_input"][0])
     if not is_contiguous:
-        print("------------非连续操作-------------")
+        print("---- Non-contiguous case ----")
         torch_tensor = torch.transpose(torch_tensor, 0, 1)
     matrix = torch_tensor
     if params["dtype_input"][0] == torch.bfloat16:
         matrix = matrix.float()
     matrix = tf.constant(matrix)
     matrix_shape = list(matrix.shape)
-    uniform_data = tf.raw_ops.StatelessRandomUniformV2(shape=matrix_shape, key=seed, counter=offset, alg=1)
+    uniform_data = tf.raw_ops.StatelessRandomUniformV2(
+        shape=matrix_shape, key=seed, counter=offset, alg=1
+    )
     mul_data = tf.multiply(uniform_data, (end - start))
     add_data = tf.add(mul_data, start)
     if params["dtype_input"][0] == torch.bool:
@@ -99,7 +104,8 @@ def random_golden(torch_tensor, params):
     output_data = torch.from_numpy(output_data)
     output_data = output_data.to(dtype=params["dtype_input"][0])
     return output_data
-    
+
+
 @register("ascend_aclnn_inplace_random_tensor")
 class MethodAclnnInplaceRandomTensorApi(BaseApi):
     def __init__(self, task_result: TaskResult):
@@ -109,36 +115,42 @@ class MethodAclnnInplaceRandomTensorApi(BaseApi):
 
     def __call__(self, input_data: InputDataset, with_output: bool = False):
         # 获取yaml中所需参数
-        self.Tensor = input_data.kwargs['selfRef']
-        self.Tensor_dtype = input_data.kwargs['selfRef'].dtype
-        self.from_ = input_data.kwargs['from']
-        self.to_ = input_data.kwargs['to']
-        self.seed = input_data.kwargs['seedTensor'].cpu().numpy()
-        self.offset = input_data.kwargs['offsetTensor'].cpu().numpy()
-        self.offset2 = input_data.kwargs['offset']
+        self.Tensor = input_data.kwargs["selfRef"]
+        self.Tensor_dtype = input_data.kwargs["selfRef"].dtype
+        self.from_ = input_data.kwargs["from"]
+        self.to_ = input_data.kwargs["to"]
+        self.seed = input_data.kwargs["seedTensor"].cpu().numpy()
+        self.offset = input_data.kwargs["offsetTensor"].cpu().numpy()
+        self.offset2 = input_data.kwargs["offset"]
 
-        params = {"from": self.from_, "to": self.to_, "seed": self.seed[0], "offset": self.offset[0] + self.offset2, "is_contiguous": True,
-                  "dtype_input": [self.Tensor_dtype]}
-        
+        params = {
+            "from": self.from_,
+            "to": self.to_,
+            "seed": self.seed[0],
+            "offset": self.offset[0] + self.offset2,
+            "is_contiguous": True,
+            "dtype_input": [self.Tensor_dtype],
+        }
+
         x = random_golden(self.Tensor, params)
-        
+
         return x
-        
+
+
 @register("aclnn_inplace_random_tensor")
 class InplaceRandomTensorAclnnApi(AclnnBaseApi):
     def __call__(self):
         super().__call__()
-        
+
     def init_by_input_data(self, input_data: InputDataset):
         input_args, output_packages = super().init_by_input_data(input_data)
         input_args.pop()
         output_packages[:] = [input_args[0]]
-    
+
         return input_args, output_packages
-    
+
     def after_call(self, output_packages):
         output = []
         for output_pack in output_packages:
             output.append(self.acl_tensor_to_torch(output_pack))
         return output
-

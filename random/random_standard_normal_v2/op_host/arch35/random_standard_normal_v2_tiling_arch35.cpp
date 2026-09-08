@@ -34,15 +34,16 @@ OpTilingConfig RandomStandardNormalV2Tiling::BuildOpConfig()
     config.inputCheckRules = {
         // 输入索引:  dtype列表，shapeSize，dim_num
         {0, {{ge::DT_INT32, ge::DT_INT64}, -1, {1}, nullptr}}, // shape
-        {1, {{ge::DT_INT64}, 1, {}, nullptr}},               // offset
+        {1, {{ge::DT_INT64}, 1, {}, nullptr}},                 // offset
     };
     config.DcacheSize = DCACHE_SIZE;
-    config.outputCheckRules = {// 输出索引:  dtype列表，shapeSize，dim_num
-                               {0, {{ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16}, -1, {1,2,3,4,5,6,7,8}, nullptr}}}; // y
+    config.outputCheckRules = {
+        // 输出索引:  dtype列表，shapeSize，dim_num
+        {0, {{ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16}, -1, {1, 2, 3, 4, 5, 6, 7, 8}, nullptr}}}; // y
 
     // 获取output_size：输入0(shape)的shapeSize
     config.getOutputSize = [](gert::TilingContext* ctx, int64_t& shapeSize) -> ge::graphStatus {
-        return RandomUtils::GetAndCheckOutputSize<0,0>(ctx, shapeSize);
+        return RandomUtils::GetAndCheckOutputSize<0, 0>(ctx, shapeSize);
     };
 
     // 获取key[2]：从attr1(seed) counter[4] attr(seed2)
@@ -78,13 +79,11 @@ static ge::graphStatus TilingPrepare4RandomStandardNormalV2Tiling(gert::TilingPa
     uint64_t ubSizePlatForm;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
     compileInfo->ubSize = static_cast<int64_t>(ubSizePlatForm);
-    OP_CHECK_IF(
-        (compileInfo->totalCoreNum <= 0 || compileInfo->ubSize <= 0),
-        OP_LOGE(
-            context, "RandomStandardNormalV2 GetHardwareInfo Failed, vectorCoreNum:%ld, ubSize:%ld.",
-            compileInfo->totalCoreNum, compileInfo->ubSize),
-        return ge::GRAPH_FAILED);
-    OP_LOGD(context, "Get totalCoreNum:%d, ubSize:%ld", compileInfo->totalCoreNum, compileInfo->ubSize);
+    OP_CHECK_IF((compileInfo->totalCoreNum <= 0 || compileInfo->ubSize <= 0),
+                OP_LOGE(context, "RandomStandardNormalV2 GetHardwareInfo Failed, vectorCoreNum:%ld, ubSize:%ld.",
+                        compileInfo->totalCoreNum, compileInfo->ubSize),
+                return ge::GRAPH_FAILED);
+    OP_LOGD(context, "Get totalCoreNum:%ld, ubSize:%ld", compileInfo->totalCoreNum, compileInfo->ubSize);
     return ge::GRAPH_SUCCESS;
 }
 

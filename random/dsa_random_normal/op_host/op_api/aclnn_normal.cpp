@@ -53,7 +53,7 @@ static const std::initializer_list<DataType>& GetDtypeSupportList()
 static inline bool CheckDtypeValid(const aclTensor* self)
 {
     if (!CheckSocVersionIsSupportBf16() && (self->GetDataType() == op::DataType::DT_BF16)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype DT_BF16 not support in current soc version.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype DT_BF16 is not supported in current soc version.");
         return false;
     }
     const auto& supportList = GetDtypeSupportList();

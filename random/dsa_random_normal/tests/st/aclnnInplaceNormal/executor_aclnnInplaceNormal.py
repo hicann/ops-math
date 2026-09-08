@@ -19,8 +19,9 @@ from atk.tasks.api_execute.base_api import BaseApi
 from atk.tasks.api_execute.aclnn_base_api import AclnnBaseApi
 from atk.tasks.dataset.base_dataset import OpsDataset
 
+
 def normal_golden(torch_tensor, params):
-    if tf.__version__ >= '2':
+    if tf.__version__ >= "2":
         tf.compat.v1.enable_eager_execution()
     seed = []
     offset = [0]
@@ -30,7 +31,7 @@ def normal_golden(torch_tensor, params):
     offset.append(params["offset"])
     is_contiguous = params["is_contiguous"] if "is_contiguous" in params else True
     if not is_contiguous:
-        print("------------非连续操作-------------")
+        print("---- Non-contiguous case ----")
         torch_tensor = torch.transpose(torch_tensor, 0, 1)
     matrix = torch_tensor
     if params["dtype_input"][0] == torch.bfloat16:
@@ -40,10 +41,12 @@ def normal_golden(torch_tensor, params):
     else:
         dtype = tf.dtypes.float32
     matrix_shape = list(matrix.shape)
-    normal_data = tf.raw_ops.StatelessRandomNormalV2(shape=matrix_shape, key=seed, counter=offset, alg=1)
+    normal_data = tf.raw_ops.StatelessRandomNormalV2(
+        shape=matrix_shape, key=seed, counter=offset, alg=1
+    )
     mul_data = tf.multiply(normal_data, std)
     add_data = tf.add(mul_data, mean)
-    if tf.__version__ >= '2':
+    if tf.__version__ >= "2":
         output_data = tf.cast(add_data, dtype).numpy()
         output_data = torch.from_numpy(output_data)
     else:
@@ -52,7 +55,8 @@ def normal_golden(torch_tensor, params):
         output_data = torch.from_numpy(output_data_tf)
     output_data = output_data.to(params["dtype_input"][0])
     return output_data
-    
+
+
 @register("ascend_aclnn_inplace_normal")
 class MethodAclnnInplaceNormalApi(BaseApi):
     def __init__(self, task_result: TaskResult):
@@ -62,30 +66,37 @@ class MethodAclnnInplaceNormalApi(BaseApi):
 
     def __call__(self, input_data: InputDataset, with_output: bool = False):
         # 获取yaml中所需参数
-        self.tensor_ = input_data.kwargs['selfRef']
-        self.tensor_dtype_ = input_data.kwargs['selfRef'].dtype
-        self.mean_ = input_data.kwargs['mean']
-        self.std_ = input_data.kwargs['std']
-        self.seed_ = input_data.kwargs['seed']
-        self.offset_ = input_data.kwargs['offset']
+        self.tensor_ = input_data.kwargs["selfRef"]
+        self.tensor_dtype_ = input_data.kwargs["selfRef"].dtype
+        self.mean_ = input_data.kwargs["mean"]
+        self.std_ = input_data.kwargs["std"]
+        self.seed_ = input_data.kwargs["seed"]
+        self.offset_ = input_data.kwargs["offset"]
 
-        params = {"mean": self.mean_, "std": self.std_, "seed": self.seed_, "offset": self.offset_, "is_contiguous": True,
-                  "dtype_input": [self.tensor_dtype_]}
-        
+        params = {
+            "mean": self.mean_,
+            "std": self.std_,
+            "seed": self.seed_,
+            "offset": self.offset_,
+            "is_contiguous": True,
+            "dtype_input": [self.tensor_dtype_],
+        }
+
         x = normal_golden(self.tensor_, params)
-        
+
         return x
-        
+
+
 @register("aclnn_inplace_normal")
 class InplaceNormalAclnnApi(AclnnBaseApi):
     def __call__(self):
         super().__call__()
-        
+
     def init_by_input_data(self, input_data: InputDataset):
         input_args, output_packages = super().init_by_input_data(input_data)
         input_args.pop()
         output_packages[:] = [input_args[0]]
-    
+
         return input_args, output_packages
 
     def after_call(self, output_packages):
@@ -94,4 +105,3 @@ class InplaceNormalAclnnApi(AclnnBaseApi):
             output.append(self.acl_tensor_to_torch(output_pack))
 
         return output
-

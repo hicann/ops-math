@@ -43,13 +43,14 @@ ge::graphStatus StatelessRandomNormalV2Tiling::GetPlatformInfo()
     } else {
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
         auto aivNum = ascendcPlatform.GetCoreNumAiv();
-        OP_CHECK_IF((aivNum <= 0), OP_LOGE(opName, "StatelessRandomNormalV2Tiling fail to get coreNum."),
+        OP_CHECK_IF((aivNum <= 0), OP_LOGE(opName, "StatelessRandomNormalV2Tiling fails to get coreNum."),
                     return ge::GRAPH_FAILED);
         coreNum_ = aivNum;
         uint64_t ubSizePlatForm;
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
         OP_CHECK_IF((ubSizePlatForm <= REGBASE_CCEC_CACHE_SIZE),
-                    OP_LOGE(opName, "ub size less than REGBASE_CCEC_CACHE_SIZE Size. please check"),
+                    OP_LOGE(opName, "ubSize %lu is less than REGBASE_CCEC_CACHE_SIZE %u, please check", ubSizePlatForm,
+                            REGBASE_CCEC_CACHE_SIZE),
                     return ge::GRAPH_FAILED);
         ubSize_ = ubSizePlatForm - REGBASE_CCEC_CACHE_SIZE;
     }
@@ -95,7 +96,7 @@ ge::graphStatus StatelessRandomNormalV2Tiling::GetInputInfo()
     }
     if (alg_ != Algorithm::RNG_ALG_PHILOX) {
         std::string valueStr = std::to_string(static_cast<int32_t>(alg_));
-        std::string reasonMsg = "alg only support RNG_ALG_PHILOX";
+        std::string reasonMsg = "alg only supports RNG_ALG_PHILOX";
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName, "input alg", valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
@@ -140,8 +141,8 @@ void StatelessRandomNormalV2Tiling::BlockTiling()
     blockNum_ = CeilDiv(outputSize_, blockTilingSize_);
     tailBlockTilingSize_ = outputSize_ - blockTilingSize_ * (blockNum_ - 1);
     OP_LOGD(opName,
-            "outputSize = %lld, blockFactor = %lld, blockAlignFactor = %lld,"
-            "blockTilingSize = %d, tailBlockTilingSize = %d",
+            "outputSize = %llu, blockFactor = %llu, blockAlignFactor = %llu, "
+            "blockTilingSize = %u, tailBlockTilingSize = %u",
             outputSize_, blockFactor, blockAlignFactor, blockTilingSize_, tailBlockTilingSize_);
     return;
 }

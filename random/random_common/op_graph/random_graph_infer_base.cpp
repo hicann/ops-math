@@ -15,8 +15,8 @@
 #include "random_graph_infer_base.h"
 namespace ops {
 namespace GraphCommon {
-ge::graphStatus InferDataTypeByAttr(
-    gert::InferDataTypeContext* context, const int32_t dtypeIndex, ge::DataType& OutDtype)
+ge::graphStatus InferDataTypeByAttr(gert::InferDataTypeContext* context, const int32_t dtypeIndex,
+                                    ge::DataType& OutDtype)
 {
     auto* attrs = context->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
@@ -27,9 +27,9 @@ ge::graphStatus InferDataTypeByAttr(
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus CommonInferType(
-    gert::InferDataTypeContext* context, int32_t mode, int32_t dtypeIndex,
-    const std::vector<OutputSpec>& extraOutputMap, const std::set<ge::DataType>& supportDtype, bool isCheck)
+ge::graphStatus CommonInferType(gert::InferDataTypeContext* context, int32_t mode, int32_t dtypeIndex,
+                                const std::vector<OutputSpec>& extraOutputMap,
+                                const std::set<ge::DataType>& supportDtype, bool isCheck)
 {
     if (context == nullptr) {
         OP_LOGE(context, "Null context pointer");
@@ -60,10 +60,9 @@ ge::graphStatus CommonInferType(
             return ge::GRAPH_FAILED;
     }
 
-    OP_CHECK_IF(
-        isCheck && supportDtype.count(outDtype) == 0,
-        OP_LOGE(context->GetNodeName(), "Unsupported dtype: %s", Ops::Base::ToString(outDtype).c_str()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(isCheck && supportDtype.count(outDtype) == 0,
+                OP_LOGE(context->GetNodeName(), "Unsupported dtype: %s", Ops::Base::ToString(outDtype).c_str()),
+                return ge::GRAPH_FAILED);
 
     context->SetOutputDataType(0, outDtype);
 
@@ -73,7 +72,7 @@ ge::graphStatus CommonInferType(
         context->SetOutputDataType(extraOutputIndex, extraOutputType);
     }
 
-    OP_LOGD(context->GetNodeName(), "END to do infer data type.");
+    OP_LOGD(context->GetNodeName(), "End inferring data type.");
     return ge::GRAPH_SUCCESS;
 }
 } // namespace GraphCommon

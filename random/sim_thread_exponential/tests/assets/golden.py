@@ -10,14 +10,8 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-import numpy as np
 
-
-__golden__ = {
-    "kernel": {
-        "sim_thread_exponential": "sim_thread_exponential_golden"
-    }
-}
+__golden__ = {"kernel": {"sim_thread_exponential": "sim_thread_exponential_golden"}}
 
 
 class MaxPool3DGradGoldenGpuClient:
@@ -35,10 +29,11 @@ class MaxPool3DGradGoldenGpuClient:
             import struct
             import torch
             import numpy as np
+
             self._deps_loaded = True
 
     def _recv_all(self, sock, n):
-        data = b''
+        data = b""
         while len(data) < n:
             packet = sock.recv(n - len(data))
             if not packet:
@@ -48,19 +43,24 @@ class MaxPool3DGradGoldenGpuClient:
 
     def _send_msg(self, sock, msg):
         msg = pickle.dumps(msg)
-        msg = struct.pack('>I', len(msg)) + msg
+        msg = struct.pack(">I", len(msg)) + msg
         sock.sendall(msg)
 
     def _recv_msg(self, sock):
         raw_msglen = self._recv_all(sock, 4)
         if not raw_msglen:
             return None
-        msglen = struct.unpack('>I', raw_msglen)[0]
+        msglen = struct.unpack(">I", raw_msglen)[0]
         return pickle.loads(self._recv_all(sock, msglen))
 
     def compute_on_gpu(self, attr_count, attr_seed, attr_offset, attr_lambd, dtype):
-        request = {"attr_count": attr_count, "attr_seed": attr_seed, "attr_offset": attr_offset,
-                   "attr_lambd": attr_lambd, "dtype": dtype}
+        request = {
+            "attr_count": attr_count,
+            "attr_seed": attr_seed,
+            "attr_offset": attr_offset,
+            "attr_lambd": attr_lambd,
+            "dtype": dtype,
+        }
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(3000)
@@ -69,18 +69,18 @@ class MaxPool3DGradGoldenGpuClient:
                 result = self._recv_msg(s)
                 return result
         except Exception as e:
-            print(f"连接错误: {e}")
+            print(f"Connection error: {e}")
 
 
 def sim_thread_exponential_golden(self, count, lambd=1.0, seed=0, offset=0, **kwargs):
-    '''
+    """
     Kernel golden for sim_thread_exponential.
     All the parameters follow @sim_thread_exponential_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
         input_formats, output_formats, input_ori_formats, output_ori_formats,
         input_dtypes, output_dtypes.
-    '''
+    """
     input_dtypes = kwargs.get("input_dtypes", [])
     dtype = input_dtypes[0] if input_dtypes else "float32"
 

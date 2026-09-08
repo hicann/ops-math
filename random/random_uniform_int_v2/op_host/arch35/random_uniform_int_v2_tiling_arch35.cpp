@@ -19,17 +19,17 @@
 #include "platform/platform_ascendc.h"
 #include "op_common/op_host/util/platform_util.h"
 #include "random_uniform_int_v2_tiling_arch35.h"
-#include  "random/random_common/op_host/arch35/random_tiling_base.h"
+#include "random/random_common/op_host/arch35/random_tiling_base.h"
 #include "op_host/math_tiling_templates_registry.h"
 #include "register/op_def_registry.h"
 
 namespace optiling {
 
 template <typename T>
-ge::graphStatus RandomUniformIntV2Tiling::GetIntValue(const gert::Tensor *constTensor, gert::Shape &constShape)
+ge::graphStatus RandomUniformIntV2Tiling::GetIntValue(const gert::Tensor* constTensor, gert::Shape& constShape)
 {
     OP_LOGI(opName_, "RandomUniformIntV2Tiling::GetIntValue begin.");
-    const T *constValue = constTensor->GetData<T>();
+    const T* constValue = constTensor->GetData<T>();
     OP_CHECK_NULL_WITH_CONTEXT(context_, constValue);
     const size_t constNum = constTensor->GetShapeSize();
     constShape.SetDimNum(0);
@@ -40,7 +40,7 @@ ge::graphStatus RandomUniformIntV2Tiling::GetIntValue(const gert::Tensor *constT
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus RandomUniformIntV2Tiling::GetIntValueByDtype(const gert::Tensor *constTensor, gert::Shape &constShape,
+ge::graphStatus RandomUniformIntV2Tiling::GetIntValueByDtype(const gert::Tensor* constTensor, gert::Shape& constShape,
                                                              ge::DataType dType)
 {
     ge::graphStatus ret = ge::GRAPH_SUCCESS;
@@ -59,8 +59,8 @@ ge::graphStatus RandomUniformIntV2Tiling::GetMinAndMaxValue()
     OP_CHECK_NULL_WITH_CONTEXT(context_, minDesc);
     minDtype_ = minDesc->GetDataType();
     if ((minDtype_ != ge::DataType::DT_INT32) && (minDtype_ != ge::DataType::DT_INT64)) {
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName_, "min",
-            Ops::Base::ToString(minDtype_).c_str(), "dtype must be in [DT_INT32, DT_INT64]");
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName_, "min", Ops::Base::ToString(minDtype_).c_str(),
+                                              "dtype must be in [DT_INT32, DT_INT64]");
         return ge::GRAPH_FAILED;
     }
 
@@ -68,23 +68,22 @@ ge::graphStatus RandomUniformIntV2Tiling::GetMinAndMaxValue()
     OP_CHECK_NULL_WITH_CONTEXT(context_, minTensor);
     auto minTensorSize = static_cast<int64_t>(minTensor->GetShapeSize());
     if (minTensorSize != 1) {
-        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(opName_, "min data shape_size",
-            std::to_string(minTensorSize).c_str(), "shape_size must be 1");
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(opName_, "min data shape_size", std::to_string(minTensorSize).c_str(),
+                                                  "shape_size must be 1");
         return ge::GRAPH_FAILED;
     }
     gert::Shape minShape;
     auto ret = GetIntValueByDtype(minTensor, minShape, minDtype_);
-    OP_CHECK_IF(ret != ge::GRAPH_SUCCESS,
-        OP_LOGE(opName_, "min GetIntValueByDtype failed."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(opName_, "min GetIntValueByDtype failed."), return ge::GRAPH_FAILED);
     lo_ = static_cast<int64_t>(minShape.GetDim((0)));
 
     auto maxDesc = context_->GetRequiredInputDesc(IN_MAX_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, maxDesc);
     auto maxDtype = maxDesc->GetDataType();
     if (maxDtype != minDtype_) {
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(opName_, "max, min",
-            (Ops::Base::ToString(maxDtype) + ", " + Ops::Base::ToString(minDtype_)).c_str(),
-            "max dtype must be same as min dtype");
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            opName_, "max, min", (Ops::Base::ToString(maxDtype) + ", " + Ops::Base::ToString(minDtype_)).c_str(),
+            "max dtype must be the same as min dtype");
         return ge::GRAPH_FAILED;
     }
 
@@ -92,19 +91,18 @@ ge::graphStatus RandomUniformIntV2Tiling::GetMinAndMaxValue()
     OP_CHECK_NULL_WITH_CONTEXT(context_, maxTensor);
     auto maxTensorSize = static_cast<int64_t>(maxTensor->GetShapeSize());
     if (maxTensorSize != 1) {
-        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(opName_, "max data shape_size",
-            std::to_string(maxTensorSize).c_str(), "shape_size must be 1");
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(opName_, "max data shape_size", std::to_string(maxTensorSize).c_str(),
+                                                  "shape_size must be 1");
         return ge::GRAPH_FAILED;
     }
     gert::Shape maxShape;
     ret = GetIntValueByDtype(maxTensor, maxShape, maxDtype);
-    OP_CHECK_IF(ret != ge::GRAPH_SUCCESS,
-        OP_LOGE(opName_, "max GetIntValueByDtype failed."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(opName_, "max GetIntValueByDtype failed."), return ge::GRAPH_FAILED);
     const int64_t maxTensorValue = static_cast<int64_t>(maxShape.GetDim((0)));
     if (maxTensorValue <= lo_) {
         OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(opName_, "max, min",
-            (std::to_string(maxTensorValue) + ", " + std::to_string(lo_)).c_str(),
-            "max value must be greater than min value");
+                                               (std::to_string(maxTensorValue) + ", " + std::to_string(lo_)).c_str(),
+                                               "max value must be greater than min value");
         return ge::GRAPH_FAILED;
     }
     range_ = static_cast<uint64_t>(maxTensorValue) - static_cast<uint64_t>(lo_);
@@ -122,8 +120,10 @@ ge::graphStatus RandomUniformIntV2Tiling::GetPlatformInfo()
 
     totalCoreNum_ = static_cast<int64_t>(compileInfo->totalCoreNum);
     ubSize_ = compileInfo->ubSize;
-    OP_CHECK_IF((ubSize_ <= 0), OP_LOGE(opName_, "ub size is invalid."), return ge::GRAPH_FAILED);
-    OP_LOGI(opName_, "RandomUniformIntV2Tiling::GetPlatformInfo ubSize_=%d, totalCoreNum_=%d", ubSize_, totalCoreNum_);
+    OP_CHECK_IF((ubSize_ <= 0), OP_LOGE(opName_, "ub size %ld is invalid, must be greater than 0.", ubSize_),
+                return ge::GRAPH_FAILED);
+    OP_LOGI(opName_, "RandomUniformIntV2Tiling::GetPlatformInfo ubSize_=%ld, totalCoreNum_=%ld", ubSize_,
+            totalCoreNum_);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -131,21 +131,18 @@ ge::graphStatus RandomUniformIntV2Tiling::GetPlatformInfo()
 ge::graphStatus RandomUniformIntV2Tiling::GetShapeAttrsInfo()
 {
     OP_LOGI(opName_, "RandomUniformIntV2Tiling::GetShapeAttrsInfo begin.");
-    OP_CHECK_IF(GetInputInfo(), 
-        OP_LOGE(opName_, "GetInputInfo failed!"), return ge::GRAPH_FAILED);
-    
-    OP_CHECK_IF(GetOutputInfo(), 
-        OP_LOGE(opName_, "GetOutputInfo failed!"), return ge::GRAPH_FAILED);
-    
+    OP_CHECK_IF(GetInputInfo(), OP_LOGE(opName_, "GetInputInfo failed!"), return ge::GRAPH_FAILED);
+
+    OP_CHECK_IF(GetOutputInfo(), OP_LOGE(opName_, "GetOutputInfo failed!"), return ge::GRAPH_FAILED);
+
     if (shapeSize_ != outputSize_) {
-        OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(opName_, "input shape, output",
-            (std::to_string(shapeSize_) + ", " + std::to_string(outputSize_)).c_str(),
+        OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(
+            opName_, "input shape, output", (std::to_string(shapeSize_) + ", " + std::to_string(outputSize_)).c_str(),
             "input shape size must be equal to output size");
         return ge::GRAPH_FAILED;
     }
 
-    OP_CHECK_IF(GetAttrInfo(), 
-        OP_LOGE(opName_, "GetAttrInfo failed!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetAttrInfo(), OP_LOGE(opName_, "GetAttrInfo failed!"), return ge::GRAPH_FAILED);
     OP_LOGI(opName_, "RandomUniformIntV2Tiling::GetShapeAttrsInfo end.");
     return ge::GRAPH_SUCCESS;
 }
@@ -157,8 +154,8 @@ ge::graphStatus RandomUniformIntV2Tiling::GetInputInfo()
     OP_CHECK_NULL_WITH_CONTEXT(context_, shapeDesc);
     auto shapeDtype = shapeDesc->GetDataType();
     if ((shapeDtype != ge::DataType::DT_INT32) && (shapeDtype != ge::DataType::DT_INT64)) {
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName_, "input shape",
-            Ops::Base::ToString(shapeDtype).c_str(), "dtype must be in [DT_INT32, DT_INT64]");
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName_, "input shape", Ops::Base::ToString(shapeDtype).c_str(),
+                                              "dtype must be in [DT_INT32, DT_INT64]");
         return ge::GRAPH_FAILED;
     }
 
@@ -166,8 +163,8 @@ ge::graphStatus RandomUniformIntV2Tiling::GetInputInfo()
     OP_CHECK_NULL_WITH_CONTEXT(context_, input1Shape);
     uint32_t shapeDimNum = input1Shape->GetStorageShape().GetDimNum();
     if (shapeDimNum != 1) {
-        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(opName_, "input shape",
-            std::to_string(shapeDimNum).c_str(), "must be 1D tensor");
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(opName_, "input shape", std::to_string(shapeDimNum).c_str(),
+                                                 "must be 1D tensor");
         return ge::GRAPH_FAILED;
     }
 
@@ -175,8 +172,8 @@ ge::graphStatus RandomUniformIntV2Tiling::GetInputInfo()
     OP_CHECK_NULL_WITH_CONTEXT(context_, shapeTensor);
     gert::Shape constShape;
     auto ret = GetIntValueByDtype(shapeTensor, constShape, shapeDtype);
-    OP_CHECK_IF(ret != ge::GRAPH_SUCCESS,
-        OP_LOGE(opName_, "input shape GetIntValueByDtype failed."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ret != ge::GRAPH_SUCCESS, OP_LOGE(opName_, "input shape GetIntValueByDtype failed."),
+                return ge::GRAPH_FAILED);
     OP_LOGD(opName_, "RandomUniformIntV2Tiling::GetInputInfo get shapeTensor end.");
 
     uint32_t shapeRank = constShape.GetDimNum();
@@ -184,8 +181,8 @@ ge::graphStatus RandomUniformIntV2Tiling::GetInputInfo()
         shapeSize_ *= static_cast<int64_t>(constShape.GetDim(idx));
     }
     if (shapeSize_ == 0) {
-        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(opName_, "input shape",
-            std::to_string(shapeSize_).c_str(), "shape_size must not be 0");
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(opName_, "input shape", std::to_string(shapeSize_).c_str(),
+                                                  "shape_size must not be 0");
         return ge::GRAPH_FAILED;
     }
 
@@ -193,17 +190,17 @@ ge::graphStatus RandomUniformIntV2Tiling::GetInputInfo()
     OP_CHECK_NULL_WITH_CONTEXT(context_, offsetDesc);
     auto offsetDtype = offsetDesc->GetDataType();
     if (offsetDtype != ge::DataType::DT_INT64) {
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName_, "input offset",
-            Ops::Base::ToString(offsetDtype).c_str(), "dtype must be DT_INT64");
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName_, "input offset", Ops::Base::ToString(offsetDtype).c_str(),
+                                              "dtype must be DT_INT64");
         return ge::GRAPH_FAILED;
     }
-        
+
     auto offsetTensor = context_->GetInputTensor(IN_OFFSET_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, offsetTensor);
-    auto offsetTensorSize = static_cast<int64_t>(offsetTensor->GetShapeSize());   // 验证
+    auto offsetTensorSize = static_cast<int64_t>(offsetTensor->GetShapeSize()); // 验证
     if (offsetTensorSize != 1) {
         OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(opName_, "input offset shape_size",
-            std::to_string(offsetTensorSize).c_str(), "shape_size must be 1");
+                                                  std::to_string(offsetTensorSize).c_str(), "shape_size must be 1");
         return ge::GRAPH_FAILED;
     }
 
@@ -221,9 +218,9 @@ ge::graphStatus RandomUniformIntV2Tiling::GetOutputInfo()
     OP_CHECK_NULL_WITH_CONTEXT(context_, outDesc);
     outDtype_ = outDesc->GetDataType();
     if (outDtype_ != minDtype_) {
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(opName_, "out, min",
-            (Ops::Base::ToString(outDtype_) + ", " + Ops::Base::ToString(minDtype_)).c_str(),
-            "out dtype must be same as min dtype");
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+            opName_, "out, min", (Ops::Base::ToString(outDtype_) + ", " + Ops::Base::ToString(minDtype_)).c_str(),
+            "out dtype must be the same as min dtype");
         return ge::GRAPH_FAILED;
     }
 
@@ -232,8 +229,8 @@ ge::graphStatus RandomUniformIntV2Tiling::GetOutputInfo()
     auto outTensor = outputShape->GetStorageShape();
     outputSize_ = outTensor.GetShapeSize();
     if (outputSize_ == 0) {
-        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(opName_, "output shape_size",
-            std::to_string(outputSize_).c_str(), "shape_size must not be 0");
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(opName_, "output shape_size", std::to_string(outputSize_).c_str(),
+                                                  "shape_size must not be 0");
         return ge::GRAPH_FAILED;
     }
     OP_LOGI(opName_, "RandomUniformIntV2Tiling::GetOutputInfo end.");
@@ -249,7 +246,7 @@ ge::graphStatus RandomUniformIntV2Tiling::GetAttrInfo()
     OP_CHECK_NULL_WITH_CONTEXT(context_, seedAttr);
     const auto* seed2Attr = attrs->GetAttrPointer<int64_t>(ATTR_SEED2_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, seed2Attr);
-    
+
     seed_ = *seedAttr;
     seed2_ = *seed2Attr;
     if (seed_ == 0 && seed2_ == 0) {
@@ -260,10 +257,7 @@ ge::graphStatus RandomUniformIntV2Tiling::GetAttrInfo()
     return ge::GRAPH_SUCCESS;
 }
 
-bool RandomUniformIntV2Tiling::IsCapable()
-{
-    return true;
-}
+bool RandomUniformIntV2Tiling::IsCapable() { return true; }
 
 void RandomUniformIntV2Tiling::SetTilingData()
 {
@@ -279,7 +273,7 @@ void RandomUniformIntV2Tiling::SetTilingData()
     tilingData->lo = lo_;
 }
 
-void RandomUniformIntV2Tiling::DoBlockTiling() 
+void RandomUniformIntV2Tiling::DoBlockTiling()
 {
     outputDtypeSize_ = ge::GetSizeByDataType(outDtype_);
     if (outputDtypeSize_ == 0) {
@@ -296,14 +290,14 @@ void RandomUniformIntV2Tiling::DoBlockTiling()
     return;
 }
 
-void RandomUniformIntV2Tiling::UbTiling() 
+void RandomUniformIntV2Tiling::UbTiling()
 {
-  // quarterUbSize: 2 for double buffer; coefVal for temp RNG, philox temp buff need uint32 to int32/int64
-  int64_t coefVal = DOUBLE_BUFFER;
-  auto quarterUbSize = (ubSize_ - DCACHE_SIZE) / (DOUBLE_BUFFER + coefVal);
-  auto ubBlockSize = static_cast<int32_t>(Ops::Base::GetUbBlockSize(context_));
-  auto alignFactor = ubBlockSize / outputDtypeSize_;
-  singleUbSize_ = (quarterUbSize / outputDtypeSize_ / alignFactor) * alignFactor;
+    // quarterUbSize: 2 for double buffer; coefVal for temp RNG, philox temp buff need uint32 to int32/int64
+    int64_t coefVal = DOUBLE_BUFFER;
+    auto quarterUbSize = (ubSize_ - DCACHE_SIZE) / (DOUBLE_BUFFER + coefVal);
+    auto ubBlockSize = static_cast<int32_t>(Ops::Base::GetUbBlockSize(context_));
+    auto alignFactor = ubBlockSize / outputDtypeSize_;
+    singleUbSize_ = (quarterUbSize / outputDtypeSize_ / alignFactor) * alignFactor;
 }
 
 // 3、计算数据切分TilingData
@@ -317,10 +311,7 @@ ge::graphStatus RandomUniformIntV2Tiling::DoOpTiling()
 }
 
 // 4、计算高阶API的TilingData
-ge::graphStatus RandomUniformIntV2Tiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus RandomUniformIntV2Tiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
 // 5、计算TilingKey
 uint64_t RandomUniformIntV2Tiling::GetTilingKey() const
@@ -377,13 +368,13 @@ static ge::graphStatus TilingPrepare4RandomUniformIntV2Tiling(gert::TilingParseC
     uint64_t ubSizePlatForm;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
     compileInfo->ubSize = static_cast<int64_t>(ubSizePlatForm);
-    OP_CHECK_IF(
-        (compileInfo->totalCoreNum <= 0 || compileInfo->ubSize <= 0),
-        OP_LOGE(
-            context, "RandomUniformIntV2 GetHardwareInfo Failed, vectorCoreNum:%ld, ubSize:%ld.", compileInfo->totalCoreNum,
-            compileInfo->ubSize),
-        return ge::GRAPH_FAILED);
-    OP_LOGD(context, "Get totalCoreNum:%d, ubSize:%ld", compileInfo->totalCoreNum, compileInfo->ubSize);
+    OP_CHECK_IF((compileInfo->totalCoreNum <= 0 || compileInfo->ubSize <= 0),
+                OP_LOGE(context,
+                        "RandomUniformIntV2 GetHardwareInfo failed, vectorCoreNum and ubSize should be greater than 0, "
+                        "vectorCoreNum:%ld, ubSize:%ld.",
+                        compileInfo->totalCoreNum, compileInfo->ubSize),
+                return ge::GRAPH_FAILED);
+    OP_LOGD(context, "Get totalCoreNum:%ld, ubSize:%ld", compileInfo->totalCoreNum, compileInfo->ubSize);
     return ge::GRAPH_SUCCESS;
 }
 

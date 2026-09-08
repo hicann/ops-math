@@ -61,7 +61,8 @@ static inline bool CheckNotNull(const aclTensor* input, const aclTensor* out, co
 static inline bool CheckIsNullptr(const aclTensor* optionalNoiseShape)
 {
     if (optionalNoiseShape != nullptr) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "currently, the input of noise_shape must be nullptr, please check.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "currently, the input of noise_shape must be nullptr, but got a non-null tensor, please check.");
         return false;
     }
     return true;

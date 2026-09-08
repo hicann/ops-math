@@ -97,7 +97,7 @@ static const std::initializer_list<DataType>& GetOutDtypeSupportList()
     } else if (IsRegBase()) {
         return ARCH3510_DTYPE_SUPPORT_LIST;
     } else {
-        OP_LOGW("Unknown SocVersion.");
+        OP_LOGW("Unknown SocVersion %d.", static_cast<int>(socVersion));
         return EMPTY_LIST;
     }
 }
@@ -112,15 +112,12 @@ static const std::initializer_list<DataType>& GetProbDtypeSupportList()
     } else if (IsRegBase()) {
         return ARCH3510_PROB_DTYPE_SUPPORT_LIST;
     } else {
-        OP_LOGW("Unknown SocVersion.");
+        OP_LOGW("Unknown SocVersion %d.", static_cast<int>(socVersion));
         return EMPTY_LIST;
     }
 }
 
-static bool IsDoubleEqual(double f1, double f2)
-{
-    return std::abs(f1 - f2) <= std::numeric_limits<double>::epsilon();
-}
+static bool IsDoubleEqual(double f1, double f2) { return std::abs(f1 - f2) <= std::numeric_limits<double>::epsilon(); }
 
 static bool CheckDtypeValidTensor(const aclTensor* self, const aclTensor* prob, const aclTensor* out)
 {
@@ -167,7 +164,7 @@ static bool CheckProb(const aclScalar* prob)
 {
     // 检查y的数据类型是否在支持列表内
     if (prob->ToDouble() > 1 || prob->ToDouble() < 0) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "prob should be in range 0<=prob<=1 .");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "prob should be in range [0, 1], but got %f.", prob->ToDouble());
         return false;
     }
 
@@ -178,9 +175,8 @@ static bool CheckFormat(const aclTensor* self)
 {
     // 如果输入格式是私有格式，记录日志，直接报错
     if (op::IsPrivateFormat(self->GetStorageFormat())) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW, self [%s]",
-            ToString(self->GetStorageFormat()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only supports ND, NCHW, NHWC, HWCN, NDHWC, NCDHW, self [%s]",
+                ToString(self->GetStorageFormat()).GetString());
         return false;
     }
     return true;
@@ -190,9 +186,9 @@ static bool CheckFormatTensor(const aclTensor* self, const aclTensor* prob)
 {
     // 如果输入格式是私有格式，记录日志，直接报错
     if (op::IsPrivateFormat(self->GetStorageFormat()) || op::IsPrivateFormat(prob->GetStorageFormat())) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Format only support ND、NCHW、NHWC、HWCN、NDHWC、NCDHW, self [%s], prob [%s]",
-            ToString(self->GetStorageFormat()).GetString(), ToString(prob->GetStorageFormat()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "Format only supports ND, NCHW, NHWC, HWCN, NDHWC, NCDHW, self [%s], prob [%s]",
+                ToString(self->GetStorageFormat()).GetString(), ToString(prob->GetStorageFormat()).GetString());
         return false;
     }
     return true;
@@ -275,9 +271,8 @@ static inline int64_t InferDSAOutShapeV2(const aclIntArray* shape)
     return (size + VEC_BIT_NUMBER - 1) / VEC_BIT_NUMBER * VEC_BIT_NUMBER / UINT8_BIT_NUMBER;
 }
 
-aclnnStatus GetBernoulliByDSA(
-    const aclTensor* inputContiguous, const aclScalar* prob, int64_t seed, int64_t offset, const aclTensor*& doMaskOut,
-    aclOpExecutor* executor)
+aclnnStatus GetBernoulliByDSA(const aclTensor* inputContiguous, const aclScalar* prob, int64_t seed, int64_t offset,
+                              const aclTensor*& doMaskOut, aclOpExecutor* executor)
 {
     auto inputShape = op::ToShapeVector(inputContiguous->GetViewShape());
     auto dims = executor->ConvertToTensor(inputShape.data(), inputShape.size(), DataType::DT_INT64);
@@ -300,9 +295,9 @@ aclnnStatus GetBernoulliByDSA(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnBernoulliTensorGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* prob, int64_t seed, int64_t offset, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnBernoulliTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* prob, int64_t seed,
+                                                 int64_t offset, aclTensor* out, uint64_t* workspaceSize,
+                                                 aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
@@ -351,9 +346,8 @@ aclnnStatus aclnnBernoulliTensorGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnBernoulliGetWorkspaceSize(
-    const aclTensor* self, const aclScalar* prob, int64_t seed, int64_t offset, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnBernoulliGetWorkspaceSize(const aclTensor* self, const aclScalar* prob, int64_t seed, int64_t offset,
+                                           aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
@@ -387,8 +381,8 @@ aclnnStatus aclnnBernoulliGetWorkspaceSize(
         } else if (IsDoubleEqual(prob->ToDouble(), 1)) {
             doMaskOut = l0op::OnesLike(inputContiguous, uniqueExecutor.get());
         } else {
-            auto executeResult =
-                GetBernoulliByDSA(inputContiguous, prob, seed, offset, doMaskOut, uniqueExecutor.get());
+            auto executeResult = GetBernoulliByDSA(inputContiguous, prob, seed, offset, doMaskOut,
+                                                   uniqueExecutor.get());
             CHECK_RET(executeResult == ACLNN_SUCCESS, executeResult);
         }
         CHECK_RET(doMaskOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -417,17 +411,16 @@ aclnnStatus aclnnBernoulliGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceBernoulliGetWorkspaceSize(
-    const aclTensor* selfRef, const aclScalar* prob, int64_t seed, int64_t offset, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnInplaceBernoulliGetWorkspaceSize(const aclTensor* selfRef, const aclScalar* prob, int64_t seed,
+                                                  int64_t offset, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     auto out = const_cast<aclTensor*>(selfRef);
     return aclnnBernoulliGetWorkspaceSize(selfRef, prob, seed, offset, out, workspaceSize, executor);
 }
 
-aclnnStatus aclnnInplaceBernoulliTensorGetWorkspaceSize(
-    const aclTensor* selfRef, const aclTensor* prob, int64_t seed, int64_t offset, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnInplaceBernoulliTensorGetWorkspaceSize(const aclTensor* selfRef, const aclTensor* prob, int64_t seed,
+                                                        int64_t offset, uint64_t* workspaceSize,
+                                                        aclOpExecutor** executor)
 {
     auto out = const_cast<aclTensor*>(selfRef);
     return aclnnBernoulliTensorGetWorkspaceSize(selfRef, prob, seed, offset, out, workspaceSize, executor);
@@ -447,8 +440,8 @@ aclnnStatus aclnnBernoulli(void* workspace, uint64_t workspaceSize, aclOpExecuto
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnInplaceBernoulliTensor(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+aclnnStatus aclnnInplaceBernoulliTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                        aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnInplaceBernoulliTensor);
     // 固定写法，调用框架能力，完成计算

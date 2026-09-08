@@ -56,7 +56,8 @@ static aclnnStatus updateFrom(int64_t& from, op::DataType dtype)
             digits = DOUBLE_DIGITS;
             break;
         default:
-            OP_LOGI("dtype must be bfloat16, float16, float32 or double.");
+            OP_LOGI("dtype must be bfloat16, float16, float32 or double, actual dtype: %d.",
+                    static_cast<int32_t>(dtype));
             return ACLNN_SUCCESS;
     }
     if (fromPlusOne < from) {
@@ -103,7 +104,8 @@ static aclnnStatus updateTo(int64_t& to, op::DataType dtype)
             digits = DOUBLE_DIGITS;
             break;
         default:
-            OP_LOGI("dtype must be bfloat16, float16, float32 or double.");
+            OP_LOGI("dtype must be bfloat16, float16, float32 or double, actual dtype: %d.",
+                    static_cast<int32_t>(dtype));
             return ACLNN_SUCCESS;
     }
     if (toMinusOne >= to) {

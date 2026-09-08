@@ -48,7 +48,8 @@ static const std::initializer_list<op::DataType> MASK_DTYPE_SUPPORT_LIST = {op::
 static inline bool CheckSocVersion()
 {
     if (op::GetCurrentPlatformInfo().GetCurNpuArch() != NpuArch::DAV_3510) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "aclnnDropoutV3Grad is not supported in current socversion.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "aclnnDropoutV3Grad is not supported in current socversion %d.",
+                static_cast<int>(op::GetCurrentPlatformInfo().GetCurNpuArch()));
         return false;
     }
     return true;

@@ -18,14 +18,10 @@ using namespace std;
 using namespace ge;
 
 class TruncatedNormalV2Tiling : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "TruncatedNormalV2 SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() { std::cout << "TruncatedNormalV2 SetUp" << std::endl; }
 
-  static void TearDownTestCase() {
-    std::cout << "TruncatedNormalV2 TearDown" << std::endl;
-  }
+    static void TearDownTestCase() { std::cout << "TruncatedNormalV2 TearDown" << std::endl; }
 };
 
 TEST_F(TruncatedNormalV2Tiling, truncated_normal_v2_tiling_910D_float_001)
@@ -42,15 +38,16 @@ TEST_F(TruncatedNormalV2Tiling, truncated_normal_v2_tiling_910D_float_001)
     vector<int64_t> offset_value = {0};
 
     gert::TilingContextPara tilingContextPara(
-        "TruncatedNormalV2", {{shape_shape, ge::DT_INT32, ge::FORMAT_ND, true, shape_value.data()}, {offset_shape, ge::DT_INT64, ge::FORMAT_ND, true, offset_value.data()}},
+        "TruncatedNormalV2",
+        {{shape_shape, ge::DT_INT32, ge::FORMAT_ND, true, shape_value.data()},
+         {offset_shape, ge::DT_INT64, ge::FORMAT_ND, true, offset_value.data()}},
         {{out_shape, ge::DT_FLOAT, ge::FORMAT_ND}, {offset_shape, ge::DT_INT64, ge::FORMAT_ND}},
-        {gert::TilingContextPara::OpAttr("seed", seed),
-         gert::TilingContextPara::OpAttr("seed2", seed2),
+        {gert::TilingContextPara::OpAttr("seed", seed), gert::TilingContextPara::OpAttr("seed2", seed2),
          gert::TilingContextPara::OpAttr("dtype", dtype)},
         &compileInfo);
     uint64_t expectTilingKey = 100;
-    string expectTilingData =
-        "64 16384 10 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ";
+    string expectTilingData = "64 16384 10 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+                              "0 0 0 0 0 0 0 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

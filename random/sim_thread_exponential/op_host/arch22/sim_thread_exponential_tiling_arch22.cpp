@@ -66,7 +66,7 @@ void SimThreadExponentialTiling::PrintInfo()
     OP_LOGD(nodeName, "range = %f.", tiling.get_range());
     OP_LOGD(nodeName, "handleNumLoop = %u.", tiling.get_handleNumLoop());
     OP_LOGD(nodeName, "handleNumTail = %u.", tiling.get_handleNumTail());
-    OP_LOGD(nodeName, "state = %u.", tiling.get_state());
+    OP_LOGD(nodeName, "state = %lu.", tiling.get_state());
     OP_LOGD(nodeName, "start = %f.", tiling.get_start());
     OP_LOGD(nodeName, "end = %f.", tiling.get_end());
     OP_LOGD(nodeName, "lambda = %f.", tiling.get_lambda());
@@ -162,7 +162,8 @@ ge::graphStatus SimThreadExponentialTiling::GetInputTensorInfo()
     selfDType = selfDesc->GetDataType();
     GetDataTypeKey(selfDType);
     OP_CHECK_IF(GetDataTypeKey(selfDType) == false,
-                OP_LOGE(nodeName, "The dtype of input self must be in [float32, float16, bfloat16]."),
+                OP_LOGE(nodeName, "The dtype %d of input self must be in [float32, float16, bfloat16].",
+                        static_cast<int>(selfDType)),
                 return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
@@ -195,7 +196,7 @@ ge::graphStatus SimThreadExponentialTiling::Tiling4Block()
     // 分核计算
     useCoreNum = static_cast<int64_t>(
         Ops::Base::CeilDiv(batchNumTotal, Ops::Base::CeilDiv(batchNumTotal, totalCoreNum)));
-    OP_CHECK_IF(useCoreNum == 0, OP_LOGE(nodeName, "useCoreNum %u must be not equal to 0.", useCoreNum),
+    OP_CHECK_IF(useCoreNum == 0, OP_LOGE(nodeName, "useCoreNum %u must not be equal to 0.", useCoreNum),
                 return ge::GRAPH_FAILED);
     // useCoreNum = static_cast<int64_t>(CeilDiv(batchNumTotal, CeilDiv(batchNumTotal, totalCoreNum)));
     batchNumPerCore = (batchNumTotal + useCoreNum - 1) / useCoreNum;
@@ -223,7 +224,7 @@ ge::graphStatus SimThreadExponentialTiling::SetAttrParams()
     OP_CHECK_NULL_WITH_CONTEXT(context, lambdaPtr);
     lambda = static_cast<float>(*lambdaPtr);
     OP_CHECK_IF(lambda == 0,
-                OP_LOGE(context->GetNodeName(), "lambda is the denominator and cannot be zero, but get %f.", lambda),
+                OP_LOGE(context->GetNodeName(), "lambda is the denominator and cannot be zero, but got %f.", lambda),
                 return ge::GRAPH_FAILED);
     const int64_t* seedPtr = attrs->GetAttrPointer<int64_t>(ATTR_2);
     OP_CHECK_NULL_WITH_CONTEXT(context, seedPtr);
@@ -278,7 +279,7 @@ ge::graphStatus SimThreadExponentialTiling::DoTiling()
 static ge::graphStatus Tiling4SimThreadExponential(gert::TilingContext* context)
 {
     auto nodeName = context->GetNodeName();
-    OP_LOGD(nodeName, "Tiling4SimThreadExponential running begin.");
+    OP_LOGD(nodeName, "Tiling4SimThreadExponential started.");
 
     SimThreadExponentialTiling tilingObj(context);
     return tilingObj.DoTiling();
@@ -287,7 +288,7 @@ static ge::graphStatus Tiling4SimThreadExponential(gert::TilingContext* context)
 ge::graphStatus TilingPrepare4SimThreadExponential(gert::TilingParseContext* context)
 {
     auto nodeName = context->GetNodeName();
-    OP_LOGD(nodeName, "TilingPrepare4SimThreadExponential running end.");
+    OP_LOGD(nodeName, "TilingPrepare4SimThreadExponential finished.");
 
     return ge::GRAPH_SUCCESS;
 }

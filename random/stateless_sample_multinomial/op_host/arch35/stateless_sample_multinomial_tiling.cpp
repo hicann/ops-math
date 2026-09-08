@@ -80,9 +80,12 @@ ge::graphStatus StatelessSampleMultinomialTiling::CheckXRankAndNormProbsShape()
     auto normProbsShapePtr = context_->GetOptionalInputShape(INPUT_IDX_NORM_PROBS);
     if (normProbsShapePtr != nullptr) {
         const auto& normProbsShape = normProbsShapePtr->GetStorageShape();
-        OP_CHECK_IF(normProbsShape != xShape,
-                    OP_LOGE(context_->GetNodeName(), "the shapes of x and norm_probs must be the same"),
-                    return ge::GRAPH_FAILED);
+        OP_CHECK_IF(
+            normProbsShape != xShape,
+            OP_LOGE(context_->GetNodeName(),
+                    "the shapes of x and norm_probs must be the same, x shape size: %ld, norm_probs shape size: %ld.",
+                    xShape.GetShapeSize(), normProbsShape.GetShapeSize()),
+            return ge::GRAPH_FAILED);
     }
     return ge::GRAPH_SUCCESS;
 }
