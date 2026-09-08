@@ -8,29 +8,54 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include "graph/operator.h"
+#include "graph/graph.h"
+#include "stub_ops.h"
+#include "math_onnx_plugin_util.h"
+#include "log/log.h"
+#include "register/register.h"
 #include "nlohmann/json.hpp"
-#include "onnx_common.h"
 #include "op_math_proto_extend.h"
 
 namespace domi {
-static Status ParseOnnxParamsCorr(const Message* op_src, ge::Operator& op_dest)
+using json = nlohmann::json;
+
+static Status ParseParamsCorr(const ge::Operator& op_src, ge::Operator& op_dest)
 {
-    OP_LOGD(GetOpName(op_dest).c_str(), "start ParseOnnxParamsCorr");
-    const ge::onnx::NodeProto* node = dynamic_cast<const ge::onnx::NodeProto*>(op_src);
-    if (node == nullptr) {
-        OP_LOGE(GetOpName(op_dest).c_str(), "Dynamic cast op_src to NodeProto failed.");
-        return FAILED;
-    }
+    OP_LOGD(GetOpName(op_dest).c_str(), "start ParseParamsCorr");
 
     int64_t groups = 1;
-    std::vector<int> axes = {};
-    for (const auto& attr : node->attribute()) {
-        if (attr.name() == "groups" && attr.type() == ge::onnx::AttributeProto::INT) {
-            groups = attr.i();
+    ge::AscendString attrs_string;
+    if (op_src.GetAttr("attribute", attrs_string) == ge::GRAPH_SUCCESS) {
+        try {
+            const json attrs = json::parse(attrs_string.GetString());
+            if (attrs.contains("attribute") && attrs["attribute"].is_array()) {
+                for (const json& attr : attrs["attribute"]) {
+                    if (attr.value("name", "") == "groups" && attr.contains("i")) {
+                        groups = attr["i"].get<int64_t>();
+                    }
+                }
+            }
+        } catch (const nlohmann::json::exception& e) {
+            OP_LOGE(GetOpName(op_dest).c_str(), "JSON parse error: %s", e.what());
+            return FAILED;
+        } catch (...) {
+            OP_LOGE(GetOpName(op_dest).c_str(), "get unknown exception, please check compile info json.");
+            return FAILED;
         }
     }
 
-    op_dest.SetAttr("name", node->name());
+    // The ONNX node name is no longer reachable through the protobuf node type; the parser now
+    // exposes it as the source operator's own name. Fall back to the dest op name when the source
+    // name is unavailable.
+    const std::string op_name = GetOpName(op_dest);
+    ge::AscendString source_name_string;
+    const std::string source_name = op_src.GetName(source_name_string) == ge::GRAPH_SUCCESS ?
+                                        source_name_string.GetString() :
+                                        std::string();
+    const std::string node_name = source_name.empty() ? op_name : source_name;
+
+    op_dest.SetAttr("name", node_name);
     op_dest.SetAttr("groups", groups);
     const int input_number = 2;
     op_dest.DynamicInputRegister("x", input_number);
@@ -94,13 +119,12 @@ static Status ParseOpToGraphCorr(const ge::Operator& op, ge::Graph& graph)
 // tbe Correlation -> onnx Corr
 REGISTER_CUSTOM_OP("PartitionedCall")
     .FrameworkType(ONNX)
-    .OriginOpType(
-        {ge::AscendString("ai.onnx::8::Corr"), ge::AscendString("ai.onnx::9::Corr"),
-         ge::AscendString("ai.onnx::10::Corr"), ge::AscendString("ai.onnx::11::Corr"),
-         ge::AscendString("ai.onnx::12::Corr"), ge::AscendString("ai.onnx::13::Corr"),
-         ge::AscendString("ai.onnx::14::Corr"), ge::AscendString("ai.onnx::15::Corr"),
-         ge::AscendString("ai.onnx::16::Corr")})
-    .ParseParamsFn(ParseOnnxParamsCorr)
+    .OriginOpType({ge::AscendString("ai.onnx::8::Corr"), ge::AscendString("ai.onnx::9::Corr"),
+                   ge::AscendString("ai.onnx::10::Corr"), ge::AscendString("ai.onnx::11::Corr"),
+                   ge::AscendString("ai.onnx::12::Corr"), ge::AscendString("ai.onnx::13::Corr"),
+                   ge::AscendString("ai.onnx::14::Corr"), ge::AscendString("ai.onnx::15::Corr"),
+                   ge::AscendString("ai.onnx::16::Corr")})
+    .ParseParamsByOperatorFn(ParseParamsCorr)
     .ParseOpToGraphFn(ParseOpToGraphCorr)
     .ImplyType(ImplyType::TVM);
 } // namespace domi

@@ -13,22 +13,20 @@
  * \brief onnx plugin for custom operator npu_indexing
  */
 
-#include "onnx_common.h"
+#include "graph/operator.h"
+#include "graph/graph.h"
 #include "stub_ops.h"
 #include "conversion/strided_slice/op_graph/strided_slice_proto.h"
-
-using namespace ge;
+#include "math_onnx_plugin_util.h"
+#include "register/register.h"
+#include "nlohmann/json.hpp"
+#include "log/log.h"
 
 namespace domi {
-using NodeProto = ge::onnx::NodeProto;
+using json = nlohmann::json;
 
-static Status ParseParamIndexing(const Message* op_src, ge::Operator& op_dest)
+static Status ParseParamIndexing(const ge::Operator& op_src, ge::Operator& op_dest)
 {
-    const NodeProto* node = dynamic_cast<const NodeProto*>(op_src);
-    if (node == nullptr) {
-        OP_LOGE(GetOpName(op_dest).c_str(), "Dynamic cast op_src to NodeProto failed.");
-        return FAILED;
-    }
     std::vector<int64_t> ends = {};
     std::vector<int64_t> begins = {};
     std::vector<int64_t> strides = {};
@@ -38,44 +36,61 @@ static Status ParseParamIndexing(const Message* op_src, ge::Operator& op_dest)
     int new_axis_mask = 0;
     int shrink_axis_mask = 0;
 
-    for (auto attr : node->attribute()) {
-        if (attr.name() == "ends" && attr.type() == ge::onnx::AttributeProto::INTS) {
-            int num = attr.ints_size();
-            for (int i = 0; i < num; ++i) {
-                ends.push_back(attr.ints(i));
+    ge::AscendString attrs_string;
+    if (op_src.GetAttr("attribute", attrs_string) == ge::GRAPH_SUCCESS) {
+        try {
+            const json attrs = json::parse(attrs_string.GetString());
+            if (attrs.contains("attribute") && attrs["attribute"].is_array()) {
+                for (const json& attr : attrs["attribute"]) {
+                    const std::string name = attr.value("name", "");
+                    if (name == "ends" && attr.contains("ints")) {
+                        ends = attr["ints"].get<std::vector<int64_t>>();
+                    } else if (name == "begins" && attr.contains("ints")) {
+                        begins = attr["ints"].get<std::vector<int64_t>>();
+                    } else if (name == "strides" && attr.contains("ints")) {
+                        strides = attr["ints"].get<std::vector<int64_t>>();
+                    } else if (name == "begin_mask" && attr.contains("i")) {
+                        begin_mask = attr["i"].get<int>();
+                    } else if (name == "end_mask" && attr.contains("i")) {
+                        end_mask = attr["i"].get<int>();
+                    } else if (name == "ellipsis_mask" && attr.contains("i")) {
+                        ellipsis_mask = attr["i"].get<int>();
+                    } else if (name == "new_axis_mask" && attr.contains("i")) {
+                        new_axis_mask = attr["i"].get<int>();
+                    } else if (name == "shrink_axis_mask" && attr.contains("i")) {
+                        shrink_axis_mask = attr["i"].get<int>();
+                    }
+                }
             }
-        } else if (attr.name() == "begins" && attr.type() == ge::onnx::AttributeProto::INTS) {
-            int num = attr.ints_size();
-            for (int i = 0; i < num; ++i) {
-                begins.push_back(attr.ints(i));
-            }
-        } else if (attr.name() == "strides" && attr.type() == ge::onnx::AttributeProto::INTS) {
-            int num = attr.ints_size();
-            for (int i = 0; i < num; ++i) {
-                strides.push_back(attr.ints(i));
-            }
-        } else if (attr.name() == "begin_mask" && attr.type() == ge::onnx::AttributeProto::INT) {
-            begin_mask = attr.i();
-            op_dest.SetAttr("begin_mask", begin_mask);
-        } else if (attr.name() == "end_mask" && attr.type() == ge::onnx::AttributeProto::INT) {
-            end_mask = attr.i();
-            op_dest.SetAttr("end_mask", end_mask);
-        } else if (attr.name() == "ellipsis_mask" && attr.type() == ge::onnx::AttributeProto::INT) {
-            ellipsis_mask = attr.i();
-            op_dest.SetAttr("ellipsis_mask", ellipsis_mask);
-        } else if (attr.name() == "new_axis_mask" && attr.type() == ge::onnx::AttributeProto::INT) {
-            new_axis_mask = attr.i();
-            op_dest.SetAttr("new_axis_mask", new_axis_mask);
-        } else if (attr.name() == "shrink_axis_mask" && attr.type() == ge::onnx::AttributeProto::INT) {
-            shrink_axis_mask = attr.i();
-            op_dest.SetAttr("shrink_axis_mask", shrink_axis_mask);
+        } catch (const nlohmann::json::exception& e) {
+            OP_LOGE(GetOpName(op_dest).c_str(), "JSON parse error: %s", e.what());
+            return FAILED;
+        } catch (...) {
+            OP_LOGE(GetOpName(op_dest).c_str(), "get unknown exception, please check compile info json.");
+            return FAILED;
         }
     }
 
-    op_dest.SetAttr("name", node->name());
+    // The ONNX node name is no longer reachable through the protobuf node type; the parser now
+    // exposes it as the source operator's own name. Fall back to the dest op
+    // name when the source name is unavailable (matches the migrated
+    // PartitionedCall plugins such as Shape).
+    const std::string op_name = GetOpName(op_dest);
+    ge::AscendString source_name_string;
+    const std::string source_name = op_src.GetName(source_name_string) == ge::GRAPH_SUCCESS ?
+                                        source_name_string.GetString() :
+                                        std::string();
+    const std::string node_name = source_name.empty() ? op_name : source_name;
+
+    op_dest.SetAttr("name", node_name);
     op_dest.SetAttr("end", ends);
     op_dest.SetAttr("begin", begins);
     op_dest.SetAttr("strides", strides);
+    op_dest.SetAttr("begin_mask", begin_mask);
+    op_dest.SetAttr("end_mask", end_mask);
+    op_dest.SetAttr("ellipsis_mask", ellipsis_mask);
+    op_dest.SetAttr("new_axis_mask", new_axis_mask);
+    op_dest.SetAttr("shrink_axis_mask", shrink_axis_mask);
 
     op_dest.SetAttr("original_type", "npu::1::NPUIndexing");
     op_dest.DynamicInputRegister("x", 1);
@@ -141,7 +156,7 @@ REGISTER_CUSTOM_OP("PartitionedCall")
                    ge::AscendString("ai.onnx::14::NPUIndexing"), ge::AscendString("ai.onnx::15::NPUIndexing"),
                    ge::AscendString("ai.onnx::16::NPUIndexing"), ge::AscendString("ai.onnx::17::NPUIndexing"),
                    ge::AscendString("ai.onnx::18::NPUIndexing")})
-    .ParseParamsFn(ParseParamIndexing)
+    .ParseParamsByOperatorFn(ParseParamIndexing)
     .ParseOpToGraphFn(ParseOpToGraphIndexing)
     .ImplyType(ImplyType::TVM);
 } // namespace domi

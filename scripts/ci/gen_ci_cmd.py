@@ -259,7 +259,14 @@ def get_op_ut_types(op_name, files, is_experimental):
 
         if matched:
             # 检测 UT 类型
-            if "/op_host/" in f or "/tests/ut/op_host/" in f:
+            # framework/onnx 插件相关变更(源码 <op>/framework/*_onnx_plugin.cpp 或用例
+            # <op>/tests/ut/framework/test_*_onnx_plugin.cpp)随 ophost UT(math_op_host_ut)跑
+            if (
+                "/op_host/" in f
+                or "/tests/ut/op_host/" in f
+                or "/framework/" in f
+                or "/tests/ut/framework/" in f
+            ):
                 uts.add("ophost")
             if "/op_api/" in f or "/tests/ut/op_api/" in f:
                 uts.add("opapi")

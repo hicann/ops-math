@@ -8,13 +8,20 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "onnx_common.h"
+#include "graph/operator.h"
+#include "graph/graph.h"
+#include "stub_ops.h"
+#include "math_onnx_plugin_util.h"
+#include "log/log.h"
+#include "register/register.h"
+#include "nlohmann/json.hpp"
 #include "op_math_proto_extend.h"
 #include "math/cast/op_graph/cast_proto.h"
 
 namespace domi {
-using NodeProto = ge::onnx::NodeProto;
-static Status ParseParamsNpuOneHot(const Message* op_src, ge::Operator& op_dest)
+using json = nlohmann::json;
+
+static Status ParseParamsNpuOneHot(const ge::Operator& op_src, ge::Operator& op_dest)
 {
     // 1.add dynamic input and out
     op_dest.DynamicInputRegister("x", 1);
@@ -24,39 +31,59 @@ static Status ParseParamsNpuOneHot(const Message* op_src, ge::Operator& op_dest)
     op_dest.SetAttr("original_type", "npu::1::NPUOneHot");
 
     // 3.set attr if needed
-    const NodeProto* node = dynamic_cast<const NodeProto*>(op_src);
-    if (node == nullptr) {
-        OP_LOGE(GetOpName(op_dest).c_str(), "Dynamic cast op_src to NodeProto failed.");
-        return FAILED;
-    }
-
-    bool required_attr = false;
+    bool has_depth = false;
     int depth = 1;
     int num_classes = -1;
     int on_value = 1;
     int off_value = 0;
-    for (const auto& attr : node->attribute()) {
-        if (attr.name() == "num_classes" && attr.type() == ge::onnx::AttributeProto::INT) {
-            num_classes = attr.i();
-        }
-        if (attr.name() == "depth" && attr.type() == ge::onnx::AttributeProto::INT) {
-            depth = attr.i();
-            required_attr = true;
-        }
-        if (attr.name() == "on_value" && attr.type() == ge::onnx::AttributeProto::INT) {
-            on_value = attr.i();
-        }
-        if (attr.name() == "off_value" && attr.type() == ge::onnx::AttributeProto::INT) {
-            off_value = attr.i();
+    ge::AscendString attrs_string;
+    if (op_src.GetAttr("attribute", attrs_string) == ge::GRAPH_SUCCESS) {
+        try {
+            const json attrs = json::parse(attrs_string.GetString());
+            if (attrs.contains("attribute") && attrs["attribute"].is_array()) {
+                for (const json& attr : attrs["attribute"]) {
+                    if (!attr.contains("i")) {
+                        continue;
+                    }
+                    const std::string name = attr.value("name", "");
+                    if (name == "num_classes") {
+                        num_classes = attr["i"].get<int>();
+                    } else if (name == "depth") {
+                        depth = attr["i"].get<int>();
+                        has_depth = true;
+                    } else if (name == "on_value") {
+                        on_value = attr["i"].get<int>();
+                    } else if (name == "off_value") {
+                        off_value = attr["i"].get<int>();
+                    }
+                }
+            }
+        } catch (const nlohmann::json::exception& e) {
+            OP_LOGE(GetOpName(op_dest).c_str(), "JSON parse error: %s", e.what());
+            return FAILED;
+        } catch (...) {
+            OP_LOGE(GetOpName(op_dest).c_str(), "get unknown exception, please check compile info json.");
+            return FAILED;
         }
     }
-    if (!required_attr) {
+    if (!has_depth) {
         OP_LOGE(GetOpName(op_dest).c_str(), "Node must have attr depth");
         return FAILED;
     }
+
+    // The ONNX node name is no longer reachable through the protobuf node type; the parser
+    // now exposes it as the source operator's own name. Fall back to the dest op name when
+    // the source name is unavailable.
+    const std::string op_name = GetOpName(op_dest);
+    ge::AscendString source_name_string;
+    const std::string source_name = op_src.GetName(source_name_string) == ge::GRAPH_SUCCESS ?
+                                        source_name_string.GetString() :
+                                        std::string();
+    const std::string node_name = source_name.empty() ? op_name : source_name;
+
     ge::Tensor scalar_on_value = CreateScalar(on_value, ge::DT_INT32);
     ge::Tensor scalar_off_value = CreateScalar(off_value, ge::DT_INT32);
-    op_dest.SetAttr("name", node->name());
+    op_dest.SetAttr("name", node_name);
     op_dest.SetAttr("num_classes", num_classes);
     op_dest.SetAttr("depth", depth);
     op_dest.SetAttr("on_value", scalar_on_value);
@@ -114,7 +141,7 @@ REGISTER_CUSTOM_OP("PartitionedCall")
                    ge::AscendString("ai.onnx::15::NPUOneHot"), ge::AscendString("ai.onnx::16::NPUOneHot"),
                    ge::AscendString("ai.onnx::17::NPUOneHot"), ge::AscendString("ai.onnx::18::NPUOneHot"),
                    ge::AscendString("npu::1::NPUOneHot")})
-    .ParseParamsFn(ParseParamsNpuOneHot)
+    .ParseParamsByOperatorFn(ParseParamsNpuOneHot)
     .ParseOpToGraphFn(ParseOpToGraphOneHot)
     .ImplyType(ImplyType::TVM);
 } // namespace domi
