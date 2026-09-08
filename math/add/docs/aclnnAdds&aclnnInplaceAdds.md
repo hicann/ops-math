@@ -306,7 +306,7 @@ aclnnStatus aclnnInplaceAdds(
       <td>other</td>
       <td>输入</td>
       <td>公式中的other。</td>
-      <td>取值范围需大于0。</td>
+      <td>-</td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16</td>
       <td>-</td>
       <td>-</td>

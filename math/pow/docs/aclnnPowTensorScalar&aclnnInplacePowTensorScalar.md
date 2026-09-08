@@ -505,7 +505,7 @@ int main() {
   // 创建self aclTensor
   ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
-  // 创建threshold aclScalar
+  // 创建exponent aclScalar
   exponent = aclCreateScalar(&exponentVal, aclDataType::ACL_FLOAT);
   CHECK_RET(exponent != nullptr, return ret);
   // 创建out aclTensor

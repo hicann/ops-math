@@ -198,7 +198,7 @@ int main() {
   void* workspaceAddr = nullptr;
   if (workspaceSize > 0) {
     ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret;);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
   }
   std::cout << "aclnnErf 1ok" << std::endl;
   // 调用aclnnErf第二段接口
@@ -227,7 +227,7 @@ int main() {
   void* inplaceWorkspaceAddr = nullptr;
   if (inplaceWorkspaceSize > 0) {
     ret = aclrtMalloc(&inplaceWorkspaceAddr, inplaceWorkspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret;);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
   }
   // 调用aclnnInplaceErf第二段接口
   ret = aclnnInplaceErf(inplaceWorkspaceAddr, inplaceWorkspaceSize, inplaceExecutor, stream);

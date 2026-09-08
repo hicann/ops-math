@@ -545,10 +545,16 @@ int main()
     //aclnnInplaceNeTensor接口调用示例
     // 3.调用CANN算子库API
     LOG_PRINT("\ntest aclnnInplaceNeTensor\n");
+    // inplace接口的selfRef为输入输出张量（原地更新self），传参使用selfRef
+    aclTensor *selfRef = self;
     // 调用aclnnInplaceNeTensor第一段接口
-    ret = aclnnInplaceNeTensorGetWorkspaceSize(self, other, &workspaceSize, &executor);
+    ret = aclnnInplaceNeTensorGetWorkspaceSize(selfRef, other, &workspaceSize, &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceNeTensorGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
-    // 根据第一段接口计算出的workspaceSize申请device内存
+    // 根据第一段接口计算出的workspaceSize申请device内存，先释放第一段接口申请的workspace，避免内存泄漏
+    if (workspaceAddr != nullptr) {
+        aclrtFree(workspaceAddr);
+        workspaceAddr = nullptr;
+    }
     if (workspaceSize > 0) {
         ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
         CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
