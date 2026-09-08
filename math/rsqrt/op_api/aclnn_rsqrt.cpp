@@ -40,7 +40,7 @@ static const std::initializer_list<op::DataType> DTYPE_OUT_LIST = {
 static const std::initializer_list<DataType> ASCEND910_OUTPUT_DTYPE_SUPPORT_LIST = {
     DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_COMPLEX64, DataType::DT_COMPLEX128};
 
-static bool CheckInplaceDtypeValid(aclTensor* selfRef)
+static bool CheckInplaceDtypeValid(const aclTensor* selfRef)
 {
     auto inplaceSupportList = GetDtypeSupportListV2(DTYPE_OUT_LIST, ASCEND910_OUTPUT_DTYPE_SUPPORT_LIST);
     // 检查selfRef的数据类型是否在inplace rsqrt算子的支持列表内
