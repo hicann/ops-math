@@ -174,3 +174,10 @@ TEST_F(AccumulateNV2Tiling, input_number_limit)
     auto context = MakeTilingContext(inputShapes, {1}, ge::DT_FLOAT);
     ExecuteTestCase(context, ge::GRAPH_FAILED);
 }
+
+TEST_F(AccumulateNV2Tiling, input_number_40_supported)
+{
+    std::vector<std::vector<int64_t>> inputShapes(ACCUMULATE_NV2_MAX_INPUT_NUM, {1});
+    auto context = MakeTilingContext(inputShapes, {1}, ge::DT_FLOAT);
+    ExecuteTestCase(context, ge::GRAPH_SUCCESS, KEY_SINGLE, std::vector<size_t>{0});
+}

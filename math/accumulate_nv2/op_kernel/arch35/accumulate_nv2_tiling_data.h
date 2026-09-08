@@ -16,7 +16,7 @@
 #include <cstdint>
 
 constexpr int32_t ACCUMULATE_NV2_MAX_RANK = 8;
-constexpr int32_t ACCUMULATE_NV2_MAX_INPUT_NUM = 32;
+constexpr int32_t ACCUMULATE_NV2_MAX_INPUT_NUM = 40;
 
 struct AccumulateNV2TilingData {
     int64_t totalNum = 0;

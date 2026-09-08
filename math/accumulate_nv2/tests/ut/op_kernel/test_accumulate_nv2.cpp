@@ -132,6 +132,50 @@ TEST_F(AccumulateNV2KernelTest, test_float32_3inputs_single_buffer)
     AscendC::GmFree(tiling);
 }
 
+TEST_F(AccumulateNV2KernelTest, test_float32_40inputs_single_buffer)
+{
+    constexpr int32_t INPUT_NUM = 40;
+    constexpr int64_t TOTAL_NUM = 32;
+    constexpr size_t ELEM_SIZE = sizeof(float);
+    constexpr float EXPECTED_VALUE = 820.0f;
+
+    TensorListBuilder builder;
+    for (int32_t i = 0; i < INPUT_NUM; i++) {
+        float* tensor = (float*)AscendC::GmAlloc(TOTAL_NUM * ELEM_SIZE);
+        for (int64_t j = 0; j < TOTAL_NUM; j++) {
+            tensor[j] = static_cast<float>(i + 1);
+        }
+        builder.tensors.push_back((uint8_t*)tensor);
+    }
+    uint8_t* x = builder.Build(INPUT_NUM);
+
+    float* y = (float*)AscendC::GmAlloc(TOTAL_NUM * ELEM_SIZE);
+    for (int64_t j = 0; j < TOTAL_NUM; j++) {
+        y[j] = 0.0f;
+    }
+    uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(1024);
+
+    uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(sizeof(AccumulateNV2TilingData));
+    AccumulateNV2TilingData* td = reinterpret_cast<AccumulateNV2TilingData*>(tiling);
+    td->totalNum = TOTAL_NUM;
+    td->blockFactor = TOTAL_NUM;
+    td->ubFactor = TOTAL_NUM;
+    td->inputNum = INPUT_NUM;
+
+    ICPU_SET_TILING_KEY(0UL);
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
+    ICPU_RUN_KF(kernel_accumulate_nv2_float_single, 1, x, (uint8_t*)y, workspace, tiling);
+
+    for (int64_t j = 0; j < TOTAL_NUM; j++) {
+        EXPECT_FLOAT_EQ(y[j], EXPECTED_VALUE);
+    }
+
+    builder.Free();
+    AscendC::GmFree(y);
+    AscendC::GmFree(workspace);
+    AscendC::GmFree(tiling);
+}
+
 // float32, 1 input of 32 elements, single buffer (passthrough path)
 TEST_F(AccumulateNV2KernelTest, test_float32_1input)
 {
