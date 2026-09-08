@@ -37,9 +37,8 @@ static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_A2 = {
 
 static inline const std::initializer_list<op::DataType>& GetDtypeSupportList()
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND310B ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND310P ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910) {
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (curArch == NpuArch::DAV_3002 || curArch == NpuArch::DAV_2002 || curArch == NpuArch::DAV_1001) {
         return DTYPE_SUPPORT_LIST;
     } else {
         return DTYPE_SUPPORT_LIST_A2;
@@ -83,9 +82,8 @@ static bool CheckShape(const aclTensor* out, const int64_t n, const int64_t m)
     }
 
     if (outShape.GetDim(0) != n || outShape.GetDim(1) != m) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Expected out shape to be (%ld, %ld), but got %s.", n, m,
-            op::ToString(outShape).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expected out shape to be (%ld, %ld), but got %s.", n, m,
+                op::ToString(outShape).GetString());
         return false;
     }
 
@@ -106,8 +104,8 @@ static aclnnStatus CheckParams(const aclTensor* out, const int64_t n, const int6
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnEyeGetWorkspaceSize(
-    int64_t n, int64_t m, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnEyeGetWorkspaceSize(int64_t n, int64_t m, aclTensor* out, uint64_t* workspaceSize,
+                                     aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 

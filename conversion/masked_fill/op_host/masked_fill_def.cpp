@@ -17,42 +17,35 @@
 namespace ops {
 class MaskedFill : public OpDef {
 public:
-  const std::vector<ge::DataType> baseDataType = {ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT64,
-                                                  ge::DT_INT32, ge::DT_INT8, ge::DT_BOOL};
-  const std::vector<ge::Format> baseFormat = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                              ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
-  explicit MaskedFill(const char *name) : OpDef(name) {
-    this->Input("x")
-        .ParamType(REQUIRED)
-        .DataType(baseDataType)
-        .Format(baseFormat)
-        .UnknownShapeFormat(baseFormat);
-    this->Input("mask")
-        .ParamType(REQUIRED)
-        .DataType({ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL,
-                   ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL})
-        .Format(baseFormat)
-        .UnknownShapeFormat(baseFormat);
-    this->Input("value")
-        .ParamType(REQUIRED)
-        .DataType(baseDataType)
-        .Format(baseFormat)
-        .UnknownShapeFormat(baseFormat);
-    this->Output("y")
-        .ParamType(REQUIRED)
-        .DataType(baseDataType)
-        .Format(baseFormat)
-        .UnknownShapeFormat(baseFormat);
-    OpAICoreConfig aicoreConfig;
-    aicoreConfig.DynamicCompileStaticFlag(true)
-        .DynamicFormatFlag(false)
-        .DynamicRankSupportFlag(true)
-        .DynamicShapeSupportFlag(true)
-        .NeedCheckSupportFlag(false)
-        .PrecisionReduceFlag(true)
-        .ExtendCfgInfo("opFile.value", "masked_fill_apt");
-    this->AICore().AddConfig("ascend950", aicoreConfig);
-  }
+    const std::vector<ge::DataType> baseDataType = {ge::DT_BF16,  ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT64,
+                                                    ge::DT_INT32, ge::DT_INT8,    ge::DT_BOOL};
+    const std::vector<ge::Format> baseFormat = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+                                                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+    explicit MaskedFill(const char* name) : OpDef(name)
+    {
+        this->Input("x").ParamType(REQUIRED).DataType(baseDataType).Format(baseFormat).UnknownShapeFormat(baseFormat);
+        this->Input("mask")
+            .ParamType(REQUIRED)
+            .DataType({ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL})
+            .Format(baseFormat)
+            .UnknownShapeFormat(baseFormat);
+        this->Input("value")
+            .ParamType(REQUIRED)
+            .DataType(baseDataType)
+            .Format(baseFormat)
+            .UnknownShapeFormat(baseFormat);
+        this->Output("y").ParamType(REQUIRED).DataType(baseDataType).Format(baseFormat).UnknownShapeFormat(baseFormat);
+        OpAICoreConfig aicoreConfig;
+        aicoreConfig.DynamicCompileStaticFlag(true)
+            .DynamicFormatFlag(false)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .NeedCheckSupportFlag(false)
+            .PrecisionReduceFlag(true)
+            .ExtendCfgInfo("opFile.value", "masked_fill_apt");
+        this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend350", aicoreConfig);
+    }
 };
 
 OP_ADD(MaskedFill);

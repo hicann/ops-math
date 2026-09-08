@@ -15,6 +15,7 @@
 #include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
 #include "conversion/squeeze/op_host/op_api/squeeze.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "op_api/aclnn_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"
@@ -64,8 +65,8 @@ static bool CheckNotNull(const aclTensor* selfRef, const aclTensor* mask, const 
 
 static inline bool CheckSocVersionIsSupportBf16(void)
 {
-    return GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-           GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E;
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    return curArch == NpuArch::DAV_2201 || IsRegBase(curArch);
 }
 
 static bool CheckDtypeValid(const aclTensor* selfRef, const aclTensor* mask, const aclTensor* value)

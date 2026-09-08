@@ -50,10 +50,10 @@ static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_REGBASE = {
 
 static inline const std::initializer_list<DataType>& GetDtypeSupportList()
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (curArch == NpuArch::DAV_2201) {
         return DTYPE_SUPPORT_LIST_910B;
-    } else if (IsRegBase()) {
+    } else if (IsRegBase(curArch)) {
         return DTYPE_SUPPORT_LIST_REGBASE;
     }
     return DTYPE_SUPPORT_LIST_910;

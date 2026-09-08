@@ -31,18 +31,18 @@ OP_TYPE_REGISTER(ConcatD);
 OP_TYPE_REGISTER(ConcatDV2);
 
 std::map<op::DataType, int64_t> type_size = {
-    {DataType::DT_FLOAT, 4},      {DataType::DT_INT32, 4},  {DataType::DT_INT64, 8},  {DataType::DT_FLOAT16, 2},
-    {DataType::DT_INT16, 2},      {DataType::DT_INT8, 1},   {DataType::DT_UINT8, 1},  {DataType::DT_DOUBLE, 8},
-    {DataType::DT_COMPLEX64, 8},  {DataType::DT_BF16 ,2},   {DataType::DT_BOOL, 1}};
+    {DataType::DT_FLOAT, 4},     {DataType::DT_INT32, 4}, {DataType::DT_INT64, 8}, {DataType::DT_FLOAT16, 2},
+    {DataType::DT_INT16, 2},     {DataType::DT_INT8, 1},  {DataType::DT_UINT8, 1}, {DataType::DT_DOUBLE, 8},
+    {DataType::DT_COMPLEX64, 8}, {DataType::DT_BF16, 2},  {DataType::DT_BOOL, 1}};
 
 bool IsSupportConcatDV2(const aclTensorList* inputs, int64_t dim)
 {
     CHECK_RET(inputs != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    auto socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion != op::SocVersion::ASCEND910_93 && socVersion != op::SocVersion::ASCEND910B) {
+    auto curArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (curArch != NpuArch::DAV_2201) {
         return false;
     }
-    if (dim != 0){
+    if (dim != 0) {
         return false;
     }
     if (inputs->Size() > NUM_2048 || inputs->Size() <= NUM_32) {
@@ -80,8 +80,8 @@ aclTensor* ConcatD(const aclTensorList* inputs, int64_t dim, op::DataType outDty
     auto out = executor->AllocTensor(concatShape, outDtype, (*inputs)[0]->GetViewFormat());
 
     auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(ConcatD, OP_INPUT(inputs), OP_OUTPUT(out), OP_ATTR(dim));
-    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
-        retAicore != ACLNN_SUCCESS, return nullptr, "ConcatD ADD_TO_LAUNCHER_LIST_AICORE failed.");
+    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(retAicore != ACLNN_SUCCESS, return nullptr,
+                                         "ConcatD ADD_TO_LAUNCHER_LIST_AICORE failed.");
     return out;
 }
 
@@ -96,21 +96,20 @@ aclTensor* ConcatD(const aclTensorList* inputs, int64_t dim, aclOpExecutor* exec
     }
 
     if (inputs->Size() == 0 || inputs->Size() > catMaxInputSize) {
-        OP_LOGE(
-            ACLNN_ERR_INNER, "Inputs tensor list's size should be (0, %zu]) but current size is %zu.", catMaxInputSize,
-            inputs->Size());
+        OP_LOGE(ACLNN_ERR_INNER, "Inputs tensor list's size should be (0, %zu]) but current size is %zu.",
+                catMaxInputSize, inputs->Size());
         return nullptr;
     }
     op::Shape concatShape = ConcatDInferShape(inputs, dim);
     auto out = executor->AllocTensor(concatShape, (*inputs)[0]->GetDataType(), (*inputs)[0]->GetViewFormat());
     if (IsSupportConcatDV2(inputs, dim)) {
         auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(ConcatDV2, OP_INPUT(inputs), OP_OUTPUT(out), OP_ATTR(dim));
-        OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
-            retAicore != ACLNN_SUCCESS, return nullptr, "ConcatDV2 ADD_TO_LAUNCHER_LIST_AICORE failed.");
+        OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(retAicore != ACLNN_SUCCESS, return nullptr,
+                                             "ConcatDV2 ADD_TO_LAUNCHER_LIST_AICORE failed.");
     } else {
         auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(ConcatD, OP_INPUT(inputs), OP_OUTPUT(out), OP_ATTR(dim));
-        OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
-            retAicore != ACLNN_SUCCESS, return nullptr, "ConcatD ADD_TO_LAUNCHER_LIST_AICORE failed.");
+        OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(retAicore != ACLNN_SUCCESS, return nullptr,
+                                             "ConcatD ADD_TO_LAUNCHER_LIST_AICORE failed.");
     }
     return out;
 }

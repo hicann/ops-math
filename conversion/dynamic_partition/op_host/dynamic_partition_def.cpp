@@ -15,8 +15,7 @@
 
 #include "register/op_def_registry.h"
 
-namespace ops
-{
+namespace ops {
 static const std::vector<ge::DataType> xDType = {
     ge::DT_INT8,   ge::DT_UINT8,     ge::DT_INT16,    ge::DT_UINT16,      ge::DT_INT32,        ge::DT_UINT32,
     ge::DT_INT64,  ge::DT_UINT64,    ge::DT_BOOL,     ge::DT_FLOAT16,     ge::DT_BF16,         ge::DT_FLOAT,
@@ -30,8 +29,7 @@ static const std::vector<ge::DataType> partDType = {
     ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
     ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32};
 
-class DynamicPartition : public OpDef
-{
+class DynamicPartition : public OpDef {
 public:
     explicit DynamicPartition(const char* name) : OpDef(name)
     {
@@ -53,8 +51,9 @@ public:
             .NeedCheckSupportFlag(false)
             .ExtendCfgInfo("opFile.value", "dynamic_partition_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend350", aicoreConfig);
     }
 };
 
 OP_ADD(DynamicPartition);
-}  // namespace ops
+} // namespace ops

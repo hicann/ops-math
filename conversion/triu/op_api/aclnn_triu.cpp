@@ -65,10 +65,10 @@ static inline bool HasEmptyTensor(const aclTensor* self)
 
 static inline const std::initializer_list<DataType>& GetDtypeSupportList()
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (curArch == NpuArch::DAV_2201) {
         return DTYPE_SUPPORT_LIST_910B;
-    } else if (IsRegBase()) {
+    } else if (IsRegBase(curArch)) {
         return DTYPE_SUPPORT_LIST_REGBASE;
     }
     return DTYPE_SUPPORT_LIST_910;
@@ -105,17 +105,15 @@ static inline bool CheckShape(const aclTensor* self, const aclTensor* out)
 static inline bool CheckFormat(const aclTensor* self, const aclTensor* out)
 {
     if (op::IsPrivateFormat(self->GetStorageFormat())) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Format only support ND, NCHW, NHWC, HWCN, NDHWC, NCDHW, self [%s]",
-            ToString(self->GetStorageFormat()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format only support ND, NCHW, NHWC, HWCN, NDHWC, NCDHW, self [%s]",
+                ToString(self->GetStorageFormat()).GetString());
         return false;
     }
 
     // self和out的format必须一致
     if (self->GetStorageFormat() != out->GetStorageFormat()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "self format is different with out format, self [%s], out [%s].",
-            op::ToString(self->GetStorageFormat()).GetString(), op::ToString(out->GetStorageFormat()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self format is different with out format, self [%s], out [%s].",
+                op::ToString(self->GetStorageFormat()).GetString(), op::ToString(out->GetStorageFormat()).GetString());
         return false;
     }
     return true;
@@ -137,8 +135,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out)
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus doTriuGetWorkspaceSize(
-    const aclTensor* self, int64_t diagonal, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus doTriuGetWorkspaceSize(const aclTensor* self, int64_t diagonal, aclTensor* out, uint64_t* workspaceSize,
+                                   aclOpExecutor** executor)
 {
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -173,8 +171,8 @@ aclnnStatus doTriuGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnTriuGetWorkspaceSize(
-    const aclTensor* self, int64_t diagonal, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnTriuGetWorkspaceSize(const aclTensor* self, int64_t diagonal, aclTensor* out, uint64_t* workspaceSize,
+                                      aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
@@ -182,8 +180,8 @@ aclnnStatus aclnnTriuGetWorkspaceSize(
     return doTriuGetWorkspaceSize(self, diagonal, out, workspaceSize, executor);
 }
 
-aclnnStatus aclnnInplaceTriuGetWorkspaceSize(
-    aclTensor* selfRef, int64_t diagonal, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceTriuGetWorkspaceSize(aclTensor* selfRef, int64_t diagonal, uint64_t* workspaceSize,
+                                             aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
