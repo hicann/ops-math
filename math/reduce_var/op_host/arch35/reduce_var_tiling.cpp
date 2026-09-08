@@ -156,7 +156,8 @@ void ReduceVarTiling::ReduceVarCalcInput(const Ops::Base::ReduceOpInputParam& in
     if (correction_ >= totalReduceSize_) {
         correctionInvalid_ = 1;
     } else {
-        varFactor_ = static_cast<double>(1.0) / static_cast<double>(totalReduceSize_ - correction_);
+        varFactor_ = static_cast<double>(1.0) /
+                     (static_cast<double>(totalReduceSize_) - static_cast<double>(correction_));
     }
 
     OP_LOGI(context_->GetNodeName(),
