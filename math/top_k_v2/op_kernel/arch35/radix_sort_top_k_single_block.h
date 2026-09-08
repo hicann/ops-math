@@ -34,6 +34,9 @@ struct RadixSortTopKSingleBlock : public RadixSortTopKBase<T, T_INDEX, T_INDEX_T
 
 private:
     __aicore__ inline void ProcessSingleTime(int32_t loopTime);
+    __aicore__ inline void GetTileOffset(int32_t loopTime, uint32_t& parallelBatchNum, uint64_t& tileOffset,
+                                         uint64_t& outTileOffset);
+    __aicore__ inline void ComputeTopK(LocalTensor<T> xLocal, uint32_t parallelBatchNum);
     __aicore__ inline void CopyIn(uint64_t offset, uint32_t coun, uint32_t parallelBatchNum);
     __aicore__ inline void CopyOut(uint64_t offset, uint32_t topKValue);
 
@@ -123,11 +126,29 @@ __aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS
         return;
     }
 
-    uint32_t parallelBatchNum = batchNumInUb_;
+    uint32_t parallelBatchNum = 0;
+    uint64_t tileOffset = 0;
+    uint64_t outTileOffset = 0;
+    GetTileOffset(loopTime, parallelBatchNum, tileOffset, outTileOffset);
     uint64_t loopOffset = loopTime * unsortedDimParallel_ * batchNumInUb_ * this->lastAxisNum_;
 
-    uint64_t tileOffset = this->blockIndex_ * parallelBatchNum * this->numTileData_;
-    uint64_t outTileOffset = this->blockIndex_ * parallelBatchNum * this->k_;
+    CopyIn(loopOffset + tileOffset, this->numTileData_, parallelBatchNum);
+    AscendC::LocalTensor<T> xLocal = this->inputXQue_.template DeQue<T>();
+    ComputeTopK(xLocal, parallelBatchNum);
+    uint64_t gmOffset = loopTime * unsortedDimParallel_ * batchNumInUb_ * this->k_;
+    CopyOut(gmOffset + outTileOffset, parallelBatchNum);
+    this->inputXQue_.template FreeTensor(xLocal);
+}
+
+template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO,
+          bool IS_BITONIC_SORT>
+__aicore__ inline void
+RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO, IS_BITONIC_SORT>::GetTileOffset(
+    int32_t loopTime, uint32_t& parallelBatchNum, uint64_t& tileOffset, uint64_t& outTileOffset)
+{
+    parallelBatchNum = batchNumInUb_;
+    tileOffset = this->blockIndex_ * parallelBatchNum * this->numTileData_;
+    outTileOffset = this->blockIndex_ * parallelBatchNum * this->k_;
 
     // 如果是最后一次循环且是带尾行的情况，循环的Batch轴个数需单独处理
     if (loopTime == this->sortLoopTimes_ - 1 && (tailLoopBatchNum_ != 0 || tailBatchNum_ != 0)) {
@@ -140,9 +161,14 @@ __aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS
                             this->blockIndex_ * parallelBatchNum * this->k_ :
                             (this->blockIndex_ * parallelBatchNum + tailBatchNum_) * this->k_;
     }
+}
 
-    CopyIn(loopOffset + tileOffset, this->numTileData_, parallelBatchNum);
-    AscendC::LocalTensor<T> xLocal = this->inputXQue_.template DeQue<T>();
+template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO,
+          bool IS_BITONIC_SORT>
+__aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO,
+                                                IS_BITONIC_SORT>::ComputeTopK(LocalTensor<T> xLocal,
+                                                                              uint32_t parallelBatchNum)
+{
     LocalTensor<bool> emptyFinishLocal;
     TopkTiling emptyTopkTiling;
     uint32_t aglinNum = ROUND_UP_AGLIN(this->numTileData_);
@@ -179,9 +205,6 @@ __aicore__ inline void RadixSortTopKSingleBlock<T, UNSIGNED_TYPE, IS_LARGEST, IS
     }
     this->valuesQue_.template EnQue<T>(valuesLocal);
     this->indicesQue_.template EnQue<T_INDEX_TO>(indicesLocal);
-    uint64_t gmOffset = loopTime * unsortedDimParallel_ * batchNumInUb_ * this->k_;
-    CopyOut(gmOffset + outTileOffset, parallelBatchNum);
-    this->inputXQue_.template FreeTensor(xLocal);
 }
 
 template <typename T, typename UNSIGNED_TYPE, bool IS_LARGEST, bool IS_SORT, typename T_INDEX, typename T_INDEX_TO,

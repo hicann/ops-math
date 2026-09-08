@@ -88,7 +88,7 @@ uint32_t ComputeMergeSortTileData(TopKV2TilingDataSimd& topkTilingData,
     uint32_t mergeSortAcApiNeedBuffer = topkTilingData.get_mergSortAcApiNeedBufferSize();
     uint32_t initUb = ubSizePlatForm - mergeSortAcApiNeedBuffer;
     OP_LOGD("TopKV2TilingForAscendC",
-            "merge sort mergeSortAcApiNeedBuffer=%u, ubSizePlatForm=%u, "
+            "merge sort mergeSortAcApiNeedBuffer=%u, ubSizePlatForm=%lu, "
             "convertTypeSize=%u",
             mergeSortAcApiNeedBuffer, ubSizePlatForm, convertTypeSize);
 
@@ -117,7 +117,7 @@ uint32_t ComputeMergeSortTileData(TopKV2TilingDataSimd& topkTilingData,
 
     uint32_t tileMaxData = oneCoreRowNumMax * aglinNum * bufferNum;
     OP_LOGD("TopKV2TilingForAscendC",
-            "tileMaxData=%u, maxCoreNum=%u, oneCoreRowNumMax=%d, "
+            "tileMaxData=%u, maxCoreNum=%u, oneCoreRowNumMax=%u, "
             "oneCoreRowNumSize=%u",
             tileMaxData, maxCoreNum, oneCoreRowNumMax, oneCoreRowNumSize);
 
@@ -199,16 +199,15 @@ uint32_t ComputeSingleBlockTileData(gert::TilingContext* context, TopKV2TilingDa
     return tileData;
 }
 
-bool IsMultiCoreOptimMode(gert::TilingContext* context, uint32_t& inputNowTileSize,
-                          TopKV2TilingDataSimd& topkTilingData,
-                          topkV2DataInfo::TopkComputeNowTileSizeInfo& computeNowTileSizeInfo)
+uint32_t ComputeMultiCoreOptimTileData(gert::TilingContext* context, TopKV2TilingDataSimd& topkTilingData,
+                                       topkV2DataInfo::TopkComputeNowTileSizeInfo& computeNowTileSizeInfo)
 {
     uint32_t xDtypeSize = GetDataTypeSize(computeNowTileSizeInfo.dataType);
     uint32_t indexToDtypeSize = GetDataTypeSize(computeNowTileSizeInfo.indicesDType);
     uint32_t tileData = GetDefaultTileDataSize(computeNowTileSizeInfo.dataType);
     if (tileData < computeNowTileSizeInfo.kValue) {
         OP_LOGD("TopKV2TilingForAscendC", "K value exceeds initial tileData");
-        return false;
+        return 0;
     }
     GetTopkApiTmpBufferSize(context, topkTilingData, tileData, computeNowTileSizeInfo.kValue,
                             computeNowTileSizeInfo.isLargest, computeNowTileSizeInfo.dataType,
@@ -225,7 +224,7 @@ bool IsMultiCoreOptimMode(gert::TilingContext* context, uint32_t& inputNowTileSi
         tileData -= topkV2DataInfo::TILE_SIZE_DECREASING_FACTOR;
         if (tileData < computeNowTileSizeInfo.kValue) {
             OP_LOGD("TopKV2TilingForAscendC", "K value exceeds adjusted tileData");
-            return false;
+            return 0;
         }
         GetTopkApiTmpBufferSize(context, topkTilingData, tileData, computeNowTileSizeInfo.kValue,
                                 computeNowTileSizeInfo.isLargest, computeNowTileSizeInfo.dataType,
@@ -238,6 +237,22 @@ bool IsMultiCoreOptimMode(gert::TilingContext* context, uint32_t& inputNowTileSi
                 "multi core optim model now tileData=%u, now tempBuffer=%lu, now apiTempBuffer=%u.", tileData,
                 needSpace, topkAcApiNeedBuffer);
     }
+    OP_CHECK_IF(
+        tileData == 0,
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "tileData", std::to_string(tileData).c_str(),
+                                              "The value of tileData must be greater than 0."),
+        return 0);
+    return tileData;
+}
+
+bool IsMultiCoreOptimMode(gert::TilingContext* context, uint32_t& inputNowTileSize,
+                          TopKV2TilingDataSimd& topkTilingData,
+                          topkV2DataInfo::TopkComputeNowTileSizeInfo& computeNowTileSizeInfo)
+{
+    uint32_t tileData = ComputeMultiCoreOptimTileData(context, topkTilingData, computeNowTileSizeInfo);
+    if (tileData == 0) {
+        return false;
+    }
 
     // 在确定正确的tileData之后，必须确保尾轴是多核模式，否则会出现多核的tiling模式，走的是singleBlock的模板
     if (tileData >= computeNowTileSizeInfo.lastAxisNum) {
@@ -246,24 +261,16 @@ bool IsMultiCoreOptimMode(gert::TilingContext* context, uint32_t& inputNowTileSi
     }
 
     // Verify K * tileNum fits within tileData
-    OP_CHECK_IF(
-        tileData == 0,
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "tileData", std::to_string(tileData).c_str(),
-                                              "The value of tileData must be greater than 0."),
-        return false);
-
     uint32_t lastDimTileNum = Ops::Base::CeilDiv(static_cast<uint64_t>(computeNowTileSizeInfo.lastAxisNum),
                                                  static_cast<uint64_t>(tileData));
     uint32_t inputTopkSize = computeNowTileSizeInfo.kValue * lastDimTileNum;
-
-    if (inputTopkSize <= static_cast<uint32_t>(tileData)) {
-        inputNowTileSize = tileData;
-        OP_LOGI("TopKV2TilingForAscendC", "Multi-core optim valid: tileData=%u, topkSize=%u", inputNowTileSize,
-                inputTopkSize);
-        return true;
+    if (inputTopkSize > tileData) {
+        return false;
     }
-
-    return false;
+    inputNowTileSize = tileData;
+    OP_LOGI("TopKV2TilingForAscendC", "Multi-core optim valid: tileData=%u, topkSize=%u", inputNowTileSize,
+            inputTopkSize);
+    return true;
 }
 
 uint32_t ComputeSingleCoreTileData(gert::TilingContext* context, TopKV2TilingDataSimd& topkTilingData,
@@ -366,7 +373,7 @@ void TileModeSingleCore(uint64_t unsortedDimNum, uint32_t maxCoreNum, int64_t la
     topkTileInfo.lastDimTileNum = lastDimTileNum;
     topkTileInfo.unsortedDimParallel = maxCoreNum;
 
-    OP_LOGI("TopKV2TilingForAscendC", "Single core mode coreNumNeed=%u sortLoopTimes=%lu lastAxisNum=%u",
+    OP_LOGI("TopKV2TilingForAscendC", "Single core mode coreNumNeed=%u sortLoopTimes=%lu lastAxisNum=%ld",
             topkTileInfo.coreNumNeed, sortLoopTimes, lastAxisNum);
 }
 
@@ -747,7 +754,7 @@ void SetSortTmpSize(ge::DataType dataType, uint32_t tileData, bool isDescend,
     config.hasDstIndex = true;
     uint32_t maxValue = 0, minValue = 0;
     AscendC::GetSortMaxMinTmpSize(srcShape, dataType, ge::DT_UINT32, false, config, maxValue, minValue);
-    OP_LOGI("RadixSortTiling", "api of sort shape is %ld, maxUb is %u", realLen, maxValue);
+    OP_LOGD("RadixSortTiling", "api of sort shape is %ld, maxUb is %u", realLen, maxValue);
     sortTileInfo.tmpUbSize = maxValue;
     return;
 }
@@ -943,7 +950,8 @@ void ComputeWorkSpace(gert::TilingContext* context, topkV2DataInfo::SortTileInfo
     return;
 }
 
-ge::graphStatus GetRadixSortMoreCore(gert::TilingContext* context, topkV2DataInfo::SortTileInfo& sortTileInfo)
+// 计算多核切分参数与直方图workspace相关的keyParams
+void CalcSortParallelAndHistParams(topkV2DataInfo::SortTileInfo& sortTileInfo)
 {
     sortTileInfo.ubSize = sortTileInfo.ubSize - topkV2DataInfo::SIMT_UB;
     uint32_t tileData = ComputeTileData(sortTileInfo);
@@ -989,8 +997,11 @@ ge::graphStatus GetRadixSortMoreCore(gert::TilingContext* context, topkV2DataInf
 
     sortTileInfo.keyParams1 = Ops::Base::CeilDiv(static_cast<uint64_t>(allNumExcusiveBin),
                                                  static_cast<uint64_t>(sortTileInfo.keyParams4));
+}
 
-    // 取前k个结果相关流程的tile计算
+// 取前k个结果相关流程的tile计算
+ge::graphStatus CalcSortTopkTileParams(gert::TilingContext* context, topkV2DataInfo::SortTileInfo& sortTileInfo)
+{
     uint32_t avilableUbSize = (sortTileInfo.ubSize - 1) / topkV2DataInfo::AGLIN_FACTOR * topkV2DataInfo::AGLIN_FACTOR;
     OP_CHECK_IF(avilableUbSize == 0,
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "avilableUbSize",
@@ -1019,7 +1030,15 @@ ge::graphStatus GetRadixSortMoreCore(gert::TilingContext* context, topkV2DataInf
             (std::to_string(sortTileInfo.blockTileNum) + ", " + std::to_string(sortTileInfo.tailTileNum)).c_str(),
             "The values of blockTileNum and tailTileNum cannot both be 0."),
         return ge::GRAPH_FAILED);
+    return ge::GRAPH_SUCCESS;
+}
 
+ge::graphStatus GetRadixSortMoreCore(gert::TilingContext* context, topkV2DataInfo::SortTileInfo& sortTileInfo)
+{
+    CalcSortParallelAndHistParams(sortTileInfo);
+    OP_CHECK_IF(CalcSortTopkTileParams(context, sortTileInfo) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "calculate radix sort more core tile params failed."),
+                return ge::GRAPH_FAILED);
     ComputeWorkSpace(context, sortTileInfo);
     context->SetScheduleMode(1);
     return ge::GRAPH_SUCCESS;
@@ -1037,7 +1056,7 @@ ge::graphStatus CheckInputAndOutput(gert::TilingContext* context, topkV2DataInfo
                                                       "The value of ubSize must be greater than SIMT_UB."),
                 return ge::GRAPH_FAILED);
     sortTileInfo.blockUbSize = Ops::Base::GetUbBlockSize(context);
-    OP_LOGI(context->GetNodeName(), "ubSize is %ld, blockUbSize %u", ubSize, sortTileInfo.blockUbSize);
+    OP_LOGI(context->GetNodeName(), "ubSize is %lu, blockUbSize %u", ubSize, sortTileInfo.blockUbSize);
     sortTileInfo.ubSize = ubSize;
     auto inputShapePtr = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputShapePtr);
@@ -1212,7 +1231,7 @@ bool IsTopkMergeSortMoreCoreFp32Mode(topkV2DataInfo::TopkComputeNowTileSizeInfo&
         return false;
     }
     if (static_cast<uint64_t>(computNowTileInfo.unsortedDimNum) * splitCoreNum <= computNowTileInfo.maxCoreNum) {
-        OP_LOGD("TopKV2Tiling", "float32 more core model onceMaxElements = %d.", onceMaxElements);
+        OP_LOGD("TopKV2Tiling", "float32 more core model onceMaxElements = %u.", onceMaxElements);
         return true;
     }
     return false;
@@ -1248,8 +1267,8 @@ bool IsTopkMergeSortIntraCoreFp32Mode(topkV2DataInfo::TopkComputeNowTileSizeInfo
     if (blockSortSize == 0 || extractChunkSize == 0) {
         return false;
     }
-    OP_LOGI("IsTopkMergeIntraCoreFp32", "blockSortSize = %d, extractChunkSize=%d, dataType=%d, kValue=%d.",
-            blockSortSize, extractChunkSize, computTileInfo.kValue);
+    OP_LOGI("IsTopkMergeIntraCoreFp32", "blockSortSize = %u, extractChunkSize=%u, dataType=%d, kValue=%ld.",
+            blockSortSize, extractChunkSize, computTileInfo.dataType, computTileInfo.kValue);
     uint64_t blocksPerRow = Ops::Base::CeilDiv(static_cast<uint64_t>(computTileInfo.lastAxisNum),
                                                static_cast<uint64_t>(blockSortSize));
     return blocksPerRow > 1 && blocksPerRow <= topkV2DataInfo::MERGE_INTRA_CORE_MAX_BLOCKS;
@@ -1401,23 +1420,23 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
     // check property
     auto const attrs = context->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
-    const bool* isSorted = attrs->GetAttrPointer<bool>(0);
+    const bool* isSorted = attrs->GetAttrPointer<bool>(topkV2DataInfo::SORTED_ATTR_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context, isSorted);
-    OP_LOGD(context->GetNodeName(), "isSorted=%u", *isSorted);
-    const int* dimValuePtr = attrs->GetAttrPointer<int>(1);
+    OP_LOGD(context->GetNodeName(), "isSorted=%d", *isSorted);
+    const int* dimValuePtr = attrs->GetAttrPointer<int>(topkV2DataInfo::DIM_ATTR_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context, dimValuePtr);
     OP_LOGD(context->GetNodeName(), "dimValuePtr=%d", *dimValuePtr);
-    const bool* isLargest = attrs->GetAttrPointer<bool>(2);
+    const bool* isLargest = attrs->GetAttrPointer<bool>(topkV2DataInfo::LARGEST_ATTR_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context, isLargest);
     OP_LOGD(context->GetNodeName(), "isLargest=%d", *isLargest);
 
     // check the indices_dtype attr and actual value of indices output
-    const int* indicesDTypeValuePtr = attrs->GetAttrPointer<int>(3);
+    const int* indicesDTypeValuePtr = attrs->GetAttrPointer<int>(topkV2DataInfo::INDICES_DTYPE_ATTR_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context, indicesDTypeValuePtr);
     OP_LOGD(context->GetNodeName(), "indicesDTypeValuePtr=%d, outPutIndexType=%ld.", *indicesDTypeValuePtr,
             static_cast<int64_t>(indicesDType));
 
-    const int* sortPolicy = attrs->GetAttrPointer<int>(4);
+    const int* sortPolicy = attrs->GetAttrPointer<int>(topkV2DataInfo::SORT_POLICY_ATTR_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context, sortPolicy);
     OP_LOGD(context->GetNodeName(), "topk sortPolicy=%d.", *sortPolicy);
     OP_CHECK_IF(*sortPolicy != 0 && *sortPolicy != 1,
@@ -1467,7 +1486,7 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
 
     uint64_t ubBlock = static_cast<uint64_t>(Ops::Base::GetUbBlockSize(context));
     originUbSizePlatForm = ubSizePlatForm;
-    OP_LOGI("[TopKV2Tiling]", "ubBlock size = : %u, originUbSizePlatForm=%d", ubBlock, originUbSizePlatForm);
+    OP_LOGI("[TopKV2Tiling]", "ubBlock size = : %lu, originUbSizePlatForm=%lu", ubBlock, originUbSizePlatForm);
 
     // 预留空间给SIMT
     ubSizePlatForm -= topkV2DataInfo::CONST_SIMT_SPACE;
@@ -1485,8 +1504,8 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
     computeNowTileSizeInfo.ubBlockAlignSize = ubBlock;
     computeNowTileSizeInfo.unsortedDimNum = unsortedDimNum;
     OP_LOGI("[TopKV2Tiling]",
-            "computeNowTileSizeInfo isLargest: %u, isSort: %u, isInInt32Range: %u, lastAxisNum: %u, kValue: %u, "
-            "maxCoreNum: %u, ubSizePlatForm: %u",
+            "computeNowTileSizeInfo isLargest: %u, isSort: %u, isInInt32Range: %u, lastAxisNum: %ld, kValue: %ld, "
+            "maxCoreNum: %u, ubSizePlatForm: %lu",
             computeNowTileSizeInfo.isLargest, computeNowTileSizeInfo.isSort, computeNowTileSizeInfo.isInInt32Range,
             computeNowTileSizeInfo.lastAxisNum, computeNowTileSizeInfo.kValue, computeNowTileSizeInfo.maxCoreNum,
             computeNowTileSizeInfo.ubSizePlatForm);
@@ -1571,7 +1590,7 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
         "TopK V2 tilingData tilingKey is %u, isLargest is %u, modelType is %u,"
         "isSorted is %u, lastAxisNum is %ld, unsortedDimNum is %lu, lastDimTileNumTimesValue is %ld, outLastAxisNum is "
         "%ld,"
-        "oneCoreRowNum is %u, sortLoopTimes is %lu, lastDimTileNum is %ld, unsortedDimParallel is %u, modeType is %u,"
+        "oneCoreRowNum is %lu, sortLoopTimes is %lu, lastDimTileNum is %ld, unsortedDimParallel is %u, modeType is %u,"
         "lastDimNeedCore is %u, numTileDataSize is %u, batchNumInUb is %u, tailLoopBatchNum is %u, tailBatchNum is %u,"
         "tailTileNum is %u, coreNumNeed is %u",
         dataTypeKey, topkTilingData.get_isLargest(), topkTilingData.get_modeType(), topkTilingData.get_isSort(),

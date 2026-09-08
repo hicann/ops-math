@@ -118,8 +118,8 @@ void SetSortTmpSizeOfIdx(ge::DataType dataType, int64_t lastAxisNum, uint32_t ti
     uint32_t maxValue = 0;
     uint32_t minValue = 0;
     AscendC::GetSortMaxMinTmpSize(srcShape, dataType, ge::DT_UINT32, false, config, maxValue, minValue);
-    OP_LOGW("[SortWithIndexTilingForAscendC]", "Allocal buffer element len = %lu ac sort api", reanLen);
-    OP_LOGW("[SortWithIndexTilingForAscendC]", "Need tmp buffer %u byte for ac sort api", maxValue);
+    OP_LOGD("[SortWithIndexTilingForAscendC]", "Allocal buffer element len = %ld ac sort api", reanLen);
+    OP_LOGD("[SortWithIndexTilingForAscendC]", "Need tmp buffer %u byte for ac sort api", maxValue);
     sortTilingData.set_sortAcApiNeedBufferSize(maxValue);
     sortTileInfo.tmpUbSize = maxValue;
 }
@@ -140,8 +140,8 @@ void SetMergeSortTmpSizeOfIdx(gert::TilingContext* context, ge::DataType dataTyp
     }
     auto plat = platform_ascendc::PlatformAscendC(platform_info);
     uint32_t dataSizeNeed = AscendC::GetConcatTmpSize(plat, aglinDataSize, dataTypeSize);
-    OP_LOGW("[SortWithIndexTilingForAscendC]", "Allocal buffer mergesort element len = %u ac sort api", reanLen);
-    OP_LOGW("[SortWithIndexTilingForAscendC]", "Merge sort need tmp buffer %u byte for ac api", dataSizeNeed);
+    OP_LOGD("[SortWithIndexTilingForAscendC]", "Allocal buffer mergesort element len = %u ac sort api", reanLen);
+    OP_LOGD("[SortWithIndexTilingForAscendC]", "Merge sort need tmp buffer %u byte for ac api", dataSizeNeed);
     sortTilingData.set_mergSortAcApiNeedBufferSize(dataSizeNeed);
     size_t* userWorkSpaceSize = context->GetWorkspaceSizes(1);
     userWorkSpaceSize[0] = WORK_SPACE_SIZE;
@@ -269,7 +269,7 @@ void SetSortTmpSize1(ge::DataType dataType, uint32_t tileData, bool isDescend, S
     config.hasDstIndex = true;
     uint32_t maxValue = 0, minValue = 0;
     AscendC::GetSortMaxMinTmpSize(srcShape, dataType, ge::DT_UINT32, false, config, maxValue, minValue);
-    OP_LOGI("[SortWithIndexTilingForAscendC]", "api of sort shape is %ld, maxUb is %u", realLen, maxValue);
+    OP_LOGD("[SortWithIndexTilingForAscendC]", "api of sort shape is %ld, maxUb is %u", realLen, maxValue);
     sortTileInfo.tmpUbSize = maxValue;
     return;
 }
@@ -514,19 +514,22 @@ ge::graphStatus RadixSortTilingOfIdx(gert::TilingContext* context, int32_t maxCo
                                                       "The value of ubSize must be greater than SIMT_UB."),
                 return ge::GRAPH_FAILED);
 
-    OP_LOGW(context->GetNodeName(), "Get op_type[%s]", opType.c_str());
+    OP_LOGD(context->GetNodeName(), "Get op_type[%s]", opType.c_str());
 
     auto const attrs = context->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
     uint32_t xDimNum = inputShape.GetDimNum();
     const bool* isDescending = attrs->GetAttrPointer<bool>(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, isDescending);
-    OP_LOGI(context->GetNodeName(), "isDescending=%u", *isDescending);
     int64_t sortAxisNum = inputShape.GetDim(xDimNum - 1);
     uint64_t unSortDimNum = 1;
     for (uint32_t i = 0u; i < static_cast<uint32_t>(xDimNum - 1); i++) {
         unSortDimNum *= inputShape.GetDim(i);
     }
+    OP_LOGI(context->GetNodeName(),
+            "RadixSortTilingOfIdx: isDescending=%d, dataType=%d, tilingKey=%u, xDimNum=%u, sortAxisNum=%ld, "
+            "unSortDimNum=%lu.",
+            *isDescending, dataType, tilingKey, xDimNum, sortAxisNum, unSortDimNum);
 
     uint32_t isInInt32Range = static_cast<uint32_t>(sortAxisNum <= INT32_MAX_RANGE_VALUE);
     sortTilingData.set_isInInt32Range(isInInt32Range);

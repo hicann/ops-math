@@ -51,12 +51,12 @@ constexpr uint32_t BITONIC_SMALL_TOPK_MAX_ROWS = 32U;
 constexpr uint32_t BITONIC_SMALL_TOPK_THREADS = BITONIC_SMALL_TOPK_SIZE * BITONIC_SMALL_TOPK_MAX_ROWS;
 
 template <typename T>
-using BitonicSmallGatherIndexType = std::conditional_t<sizeof(T) == 1, uint8_t,
-                                                       std::conditional_t<sizeof(T) == 2, uint16_t, uint32_t>>;
+using BitonicSmallGatherIndexType = std::conditional_t<
+    sizeof(T) == sizeof(uint8_t), uint8_t, std::conditional_t<sizeof(T) == sizeof(uint16_t), uint16_t, uint32_t>>;
 
 template <typename T>
-using BitonicSmallGatherSignedIndexType = std::conditional_t<sizeof(T) == 1, int8_t,
-                                                             std::conditional_t<sizeof(T) == 2, int16_t, int32_t>>;
+using BitonicSmallGatherSignedIndexType = std::conditional_t<
+    sizeof(T) == sizeof(uint8_t), int8_t, std::conditional_t<sizeof(T) == sizeof(uint16_t), int16_t, int32_t>>;
 
 template <typename T>
 using BitonicSmallRegType = std::conditional_t<

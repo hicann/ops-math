@@ -36,6 +36,17 @@ struct RadixSortTopKMultiCoreOptimization {
 
 private:
     __aicore__ inline void ProcessSingleLoop(GlobalTensor<T> inputX, int32_t sortLoopRound);
+    __aicore__ inline void ProcessTileTopK(GlobalTensor<T> inputX, uint32_t unsortedAxisId);
+    __aicore__ inline void ProcessOneTile(GlobalTensor<T> inputX, uint32_t unsortedAxisId, uint32_t tileId,
+                                          int32_t remainTileDataNum);
+    __aicore__ inline void ComputeTileTopK(LocalTensor<T> topkOutValue, LocalTensor<int32_t> topkOutIndexValue,
+                                           LocalTensor<T> xLocal, LocalTensor<uint8_t> shareTmpBuffer,
+                                           int32_t currTileNum);
+    __aicore__ inline void ProcessFinalTopK(int32_t sortLoopRound);
+    __aicore__ inline void ComputeFinalTopK(LocalTensor<T> topkOutValue, LocalTensor<int32_t> topkOutIndexValue,
+                                            LocalTensor<T> xLocal, LocalTensor<int32_t> xIndexLocal,
+                                            LocalTensor<uint8_t> shareTmpBuffer);
+    __aicore__ inline LocalTensor<T_INDEX_TO> ConvertIndexType(LocalTensor<int32_t> topkOutIndexValue);
     __aicore__ inline void CopyDataIn(GlobalTensor<T> inputX, uint64_t tileOffset, uint32_t currTileSize);
     __aicore__ inline void CopyIndexIn(GlobalTensor<int32_t> inputX, uint64_t tileOffset, uint32_t currTileSize);
     __aicore__ inline void CopyFinalResultToGm(GlobalTensor<T> dataTensor, uint64_t dataOffset,
@@ -135,7 +146,6 @@ __aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT
                                                           IS_BITONIC_SORT>::ProcessSingleLoop(GlobalTensor<T> inputX,
                                                                                               int32_t sortLoopRound)
 {
-    int tileCount = (totalDataNum_ + numTileData_ - 1) / numTileData_;
     uint32_t unsortedAxisId = GetBlockIdx() / lastDimRealCore_;
     uint32_t unsortedDimIndex = unsortedAxisId + sortLoopRound * unsortedDimParallel_;
     // inUnsortedDimRange决定是否执行本次计算流程，超出Batch轴数量范围不执行
@@ -144,125 +154,162 @@ __aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT
     if (GetBlockIdx() >= lastDimTileNum_ * unsortedDimParallel_) {
         inUnsortedDimRange = false;
     }
-    uint32_t startTileId = GetBlockIdx() % lastDimRealCore_;
-    uint32_t inputXUnsortedAxisOffset = unsortedAxisId * totalDataNum_;
-    LocalTensor<bool> emptyFinishLocal;
-    TopkTiling emptyTopkTiling;
     tailDataSize_ = totalDataNum_ % numTileData_;
 
     if (inUnsortedDimRange) {
-        for (uint32_t tileId = startTileId; tileId < tileCount; tileId += lastDimRealCore_) {
-            uint64_t tileOffset = tileId * numTileData_;
-            int32_t tileDataStart = tileId * numTileData_;
-            int32_t remainTileDataNum = totalDataNum_ - tileDataStart;
-            if (remainTileDataNum < 0) {
-                break;
-            }
-
-            int32_t currTileNum = TopkGetMin<int32_t>(remainTileDataNum, static_cast<int32_t>(numTileData_));
-            CopyDataIn(inputX[inputXUnsortedAxisOffset], tileOffset, currTileNum);
-            LocalTensor<T> xLocal = inQueueX_.DeQue<T>();
-            LocalTensor<T> topkOutValue = topkOutValueQueue_.AllocTensor<T>();
-            LocalTensor<int32_t> topkOutIndexValue = topkOutIndexQueue_.AllocTensor<int32_t>();
-            LocalTensor<uint8_t> shareTmpBuffer = topKApiTmpTBuf_.Get<uint8_t>();
-
-            // topk
-            static constexpr TopKConfig topkConfig{TopKAlgo::RADIX_SELECT, TopKOrder::UNSET, IS_SORT};
-            uint32_t aglinNum = ROUND_UP_AGLIN(currTileNum);
-            TopKInfo topKInfo;
-            topKInfo.outter = 1;
-            topKInfo.inner = aglinNum;
-            topKInfo.n = currTileNum;
-
-            if (currTileNum >= this->topkValueInput_) {
-                AscendC::TopK<T, false, false, false, TopKMode::TOPK_NORMAL, topkConfig>(
-                    topkOutValue, topkOutIndexValue, xLocal, srcIndexLocal, emptyFinishLocal, shareTmpBuffer,
-                    static_cast<int32_t>(this->topkValueInput_), emptyTopkTiling, topKInfo, IS_LARGEST);
-            } else {
-                // topk高阶api调用需要满足topKInfo.n(实际数据长度) >= k >= 1, 要比较尾块和topk的大小，取较小者
-                int32_t aglinMinTopkValue = TopkGetMin<int32_t>(currTileNum,
-                                                                static_cast<int32_t>(this->topkValueInput_));
-                AscendC::TopK<T, false, false, false, TopKMode::TOPK_NORMAL, topkConfig>(
-                    topkOutValue, topkOutIndexValue, xLocal, srcIndexLocal, emptyFinishLocal, shareTmpBuffer,
-                    aglinMinTopkValue, emptyTopkTiling, topKInfo, IS_LARGEST);
-            }
-
-            int32_t offsetValue = static_cast<int32_t>(tileOffset);
-            AscendC::Adds(topkOutIndexValue, topkOutIndexValue, offsetValue, this->topkValueInput_);
-
-            topkOutValueQueue_.EnQue<T>(topkOutValue);
-            topkOutIndexQueue_.EnQue<int32_t>(topkOutIndexValue);
-
-            uint64_t outPutInlineOffset = tileId * this->topkValueInput_;
-            uint64_t outPutInterLineOffset = unsortedAxisId * topkValueInput_ * lastDimTileNum_;
-            uint64_t outOffset = outPutInterLineOffset + outPutInlineOffset;
-            CopyIndexOutWithOffset(tempSortResultDataGm_, outOffset, tempSortIndexDataGm_, outOffset);
-            inQueueX_.FreeTensor(xLocal);
-            topkOutValueQueue_.FreeTensor(topkOutValue);
-            topkOutIndexQueue_.FreeTensor(topkOutIndexValue);
-        }
+        ProcessTileTopK(inputX, unsortedAxisId);
     }
     PipeBarrier<PIPE_ALL>();
     SyncAll();
     if (inUnsortedDimRange) {
-        // copy data from gm to ub
-        uint32_t realLastAxisDim = unsortedDimParallel_;
-        uint32_t tailLastDimNum = this->unsortedDimNum_ % unsortedDimParallel_;
-        if (tailLastDimNum != 0 && sortLoopRound == this->sortLoopTimes_ - 1) {
-            realLastAxisDim = tailLastDimNum;
-        }
-        if (GetBlockIdx() < realLastAxisDim) {
-            uint64_t offset = GetBlockIdx() * topkValueInput_ * lastDimTileNum_;
-            CopyDataIn(tempSortResultDataGm_, offset, topkValueInput_ * lastDimTileNum_);
-            CopyIndexIn(tempSortIndexDataGm_, offset, topkValueInput_ * lastDimTileNum_);
-            LocalTensor<T> xLocal = inQueueX_.DeQue<T>();
-            LocalTensor<int32_t> xIndexLocal = inQueueIndexX_.DeQue<int32_t>();
-            LocalTensor<T> topkOutValue = topkOutValueQueue_.AllocTensor<T>();
-            LocalTensor<int32_t> topkOutIndexValue = topkOutIndexQueue_.AllocTensor<int32_t>();
-            LocalTensor<uint8_t> shareTmpBuffer = topKApiTmpTBuf_.Get<uint8_t>();
-            // Unified processing of temporary results
-            static constexpr TopKConfig topkConfig{TopKAlgo::RADIX_SELECT, TopKOrder::UNSET, IS_SORT};
-            uint32_t aglinNum = ROUND_UP_AGLIN(topkValueInput_ * lastDimTileNum_);
-            TopKInfo topKInfo;
-            topKInfo.outter = 1;
-            topKInfo.inner = aglinNum;
-            topKInfo.n = topkValueInput_ * (lastDimTileNum_ - 1) +
-                         (tailDataSize_ != 0 && tailDataSize_ < topkValueInput_ ? tailDataSize_ : topkValueInput_);
-
-            AscendC::TopK<T, true, false, false, TopKMode::TOPK_NORMAL, topkConfig>(
-                topkOutValue, topkOutIndexValue, xLocal, xIndexLocal, emptyFinishLocal, shareTmpBuffer,
-                static_cast<int32_t>(this->topkValueInput_), emptyTopkTiling, topKInfo, IS_LARGEST);
-            if constexpr (IS_BITONIC_SORT) {
-                RunBitonicSmallTopKFinalize<T, int32_t, IS_LARGEST>(topkOutValue, topkOutIndexValue, topkValueInput_,
-                                                                    1U, topkValueInput_, topkValueInput_);
-            }
-
-            // convert index from int32_t to int64_t if needed
-            AscendC::LocalTensor<T_INDEX_TO> tempConversionLocal;
-            bool isLongIndex = IsSameType<T_INDEX_TO, int64_t>::value;
-            if (isLongIndex) {
-                // convert index from int32 to int64
-                tempConversionLocal = tempIndexConversionQueue_.AllocTensor<T_INDEX_TO>();
-                AscendC::Cast(tempConversionLocal, topkOutIndexValue, RoundMode::CAST_NONE,
-                              static_cast<int32_t>(topkValueInput_));
-            } else {
-                // reconvert index from int32 to int32
-                tempConversionLocal = topkOutIndexValue.ReinterpretCast<T_INDEX_TO>();
-            }
-            topkOutValueQueue_.EnQue<T>(topkOutValue);
-            tempIndexConversionQueue_.EnQue<T_INDEX_TO>(tempConversionLocal);
-
-            // copy final result to gm
-            uint64_t timesLoopOffset = sortLoopRound * unsortedDimParallel_ * topkValueInput_;
-            uint64_t outValueOffset = GetBlockIdx() * topkValueInput_ + timesLoopOffset;
-            CopyFinalResultToGm(topkValueGm_, outValueOffset, topkValueIndexGm_, outValueOffset);
-
-            inQueueX_.FreeTensor(xLocal);
-            inQueueIndexX_.FreeTensor(xIndexLocal);
-            topkOutValueQueue_.FreeTensor(topkOutValue);
-            topkOutIndexQueue_.FreeTensor(topkOutIndexValue);
-        }
+        ProcessFinalTopK(sortLoopRound);
     }
+}
+
+template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO, bool IS_BITONIC_SORT>
+__aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO,
+                                                          IS_BITONIC_SORT>::ProcessTileTopK(GlobalTensor<T> inputX,
+                                                                                            uint32_t unsortedAxisId)
+{
+    int tileCount = (totalDataNum_ + numTileData_ - 1) / numTileData_;
+    uint32_t startTileId = GetBlockIdx() % lastDimRealCore_;
+    for (uint32_t tileId = startTileId; tileId < tileCount; tileId += lastDimRealCore_) {
+        int32_t remainTileDataNum = totalDataNum_ - static_cast<int32_t>(tileId * numTileData_);
+        if (remainTileDataNum < 0) {
+            break;
+        }
+        ProcessOneTile(inputX, unsortedAxisId, tileId, remainTileDataNum);
+    }
+}
+
+template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO, bool IS_BITONIC_SORT>
+__aicore__ inline void
+RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO, IS_BITONIC_SORT>::ProcessOneTile(
+    GlobalTensor<T> inputX, uint32_t unsortedAxisId, uint32_t tileId, int32_t remainTileDataNum)
+{
+    uint64_t tileOffset = tileId * numTileData_;
+    int32_t currTileNum = TopkGetMin<int32_t>(remainTileDataNum, static_cast<int32_t>(numTileData_));
+    uint32_t inputXUnsortedAxisOffset = unsortedAxisId * totalDataNum_;
+    CopyDataIn(inputX[inputXUnsortedAxisOffset], tileOffset, currTileNum);
+    LocalTensor<T> xLocal = inQueueX_.DeQue<T>();
+    LocalTensor<T> topkOutValue = topkOutValueQueue_.AllocTensor<T>();
+    LocalTensor<int32_t> topkOutIndexValue = topkOutIndexQueue_.AllocTensor<int32_t>();
+    LocalTensor<uint8_t> shareTmpBuffer = topKApiTmpTBuf_.Get<uint8_t>();
+    ComputeTileTopK(topkOutValue, topkOutIndexValue, xLocal, shareTmpBuffer, currTileNum);
+
+    int32_t offsetValue = static_cast<int32_t>(tileOffset);
+    AscendC::Adds(topkOutIndexValue, topkOutIndexValue, offsetValue, this->topkValueInput_);
+
+    topkOutValueQueue_.EnQue<T>(topkOutValue);
+    topkOutIndexQueue_.EnQue<int32_t>(topkOutIndexValue);
+
+    uint64_t outPutInlineOffset = tileId * this->topkValueInput_;
+    uint64_t outPutInterLineOffset = unsortedAxisId * topkValueInput_ * lastDimTileNum_;
+    uint64_t outOffset = outPutInterLineOffset + outPutInlineOffset;
+    CopyIndexOutWithOffset(tempSortResultDataGm_, outOffset, tempSortIndexDataGm_, outOffset);
+    inQueueX_.FreeTensor(xLocal);
+    topkOutValueQueue_.FreeTensor(topkOutValue);
+    topkOutIndexQueue_.FreeTensor(topkOutIndexValue);
+}
+
+template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO, bool IS_BITONIC_SORT>
+__aicore__ inline void
+RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO, IS_BITONIC_SORT>::ComputeTileTopK(
+    LocalTensor<T> topkOutValue, LocalTensor<int32_t> topkOutIndexValue, LocalTensor<T> xLocal,
+    LocalTensor<uint8_t> shareTmpBuffer, int32_t currTileNum)
+{
+    // topk
+    static constexpr TopKConfig topkConfig{TopKAlgo::RADIX_SELECT, TopKOrder::UNSET, IS_SORT};
+    TopKInfo topKInfo;
+    topKInfo.outter = 1;
+    topKInfo.inner = ROUND_UP_AGLIN(currTileNum);
+    topKInfo.n = currTileNum;
+    LocalTensor<bool> emptyFinishLocal;
+    TopkTiling emptyTopkTiling;
+    // topk高阶api调用需要满足topKInfo.n(实际数据长度) >= k >= 1, 要比较尾块和topk的大小，取较小者
+    int32_t aglinMinTopkValue = TopkGetMin<int32_t>(currTileNum, static_cast<int32_t>(this->topkValueInput_));
+    AscendC::TopK<T, false, false, false, TopKMode::TOPK_NORMAL, topkConfig>(
+        topkOutValue, topkOutIndexValue, xLocal, srcIndexLocal, emptyFinishLocal, shareTmpBuffer, aglinMinTopkValue,
+        emptyTopkTiling, topKInfo, IS_LARGEST);
+}
+
+template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO, bool IS_BITONIC_SORT>
+__aicore__ inline void RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO,
+                                                          IS_BITONIC_SORT>::ProcessFinalTopK(int32_t sortLoopRound)
+{
+    // copy data from gm to ub
+    uint32_t realLastAxisDim = unsortedDimParallel_;
+    uint32_t tailLastDimNum = this->unsortedDimNum_ % unsortedDimParallel_;
+    if (tailLastDimNum != 0 && sortLoopRound == this->sortLoopTimes_ - 1) {
+        realLastAxisDim = tailLastDimNum;
+    }
+    if (GetBlockIdx() < realLastAxisDim) {
+        uint64_t offset = GetBlockIdx() * topkValueInput_ * lastDimTileNum_;
+        CopyDataIn(tempSortResultDataGm_, offset, topkValueInput_ * lastDimTileNum_);
+        CopyIndexIn(tempSortIndexDataGm_, offset, topkValueInput_ * lastDimTileNum_);
+        LocalTensor<T> xLocal = inQueueX_.DeQue<T>();
+        LocalTensor<int32_t> xIndexLocal = inQueueIndexX_.DeQue<int32_t>();
+        LocalTensor<T> topkOutValue = topkOutValueQueue_.AllocTensor<T>();
+        LocalTensor<int32_t> topkOutIndexValue = topkOutIndexQueue_.AllocTensor<int32_t>();
+        LocalTensor<uint8_t> shareTmpBuffer = topKApiTmpTBuf_.Get<uint8_t>();
+        ComputeFinalTopK(topkOutValue, topkOutIndexValue, xLocal, xIndexLocal, shareTmpBuffer);
+
+        // convert index from int32_t to int64_t if needed
+        LocalTensor<T_INDEX_TO> tempConversionLocal = ConvertIndexType(topkOutIndexValue);
+        topkOutValueQueue_.EnQue<T>(topkOutValue);
+        tempIndexConversionQueue_.EnQue<T_INDEX_TO>(tempConversionLocal);
+
+        // copy final result to gm
+        uint64_t timesLoopOffset = sortLoopRound * unsortedDimParallel_ * topkValueInput_;
+        uint64_t outValueOffset = GetBlockIdx() * topkValueInput_ + timesLoopOffset;
+        CopyFinalResultToGm(topkValueGm_, outValueOffset, topkValueIndexGm_, outValueOffset);
+
+        inQueueX_.FreeTensor(xLocal);
+        inQueueIndexX_.FreeTensor(xIndexLocal);
+        topkOutValueQueue_.FreeTensor(topkOutValue);
+        topkOutIndexQueue_.FreeTensor(topkOutIndexValue);
+    }
+}
+
+template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO, bool IS_BITONIC_SORT>
+__aicore__ inline void
+RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO, IS_BITONIC_SORT>::ComputeFinalTopK(
+    LocalTensor<T> topkOutValue, LocalTensor<int32_t> topkOutIndexValue, LocalTensor<T> xLocal,
+    LocalTensor<int32_t> xIndexLocal, LocalTensor<uint8_t> shareTmpBuffer)
+{
+    // Unified processing of temporary results
+    static constexpr TopKConfig topkConfig{TopKAlgo::RADIX_SELECT, TopKOrder::UNSET, IS_SORT};
+    TopKInfo topKInfo;
+    topKInfo.outter = 1;
+    topKInfo.inner = ROUND_UP_AGLIN(topkValueInput_ * lastDimTileNum_);
+    topKInfo.n = topkValueInput_ * (lastDimTileNum_ - 1) +
+                 (tailDataSize_ != 0 && tailDataSize_ < topkValueInput_ ? tailDataSize_ : topkValueInput_);
+    LocalTensor<bool> emptyFinishLocal;
+    TopkTiling emptyTopkTiling;
+    AscendC::TopK<T, true, false, false, TopKMode::TOPK_NORMAL, topkConfig>(
+        topkOutValue, topkOutIndexValue, xLocal, xIndexLocal, emptyFinishLocal, shareTmpBuffer,
+        static_cast<int32_t>(this->topkValueInput_), emptyTopkTiling, topKInfo, IS_LARGEST);
+    if constexpr (IS_BITONIC_SORT) {
+        RunBitonicSmallTopKFinalize<T, int32_t, IS_LARGEST>(topkOutValue, topkOutIndexValue, topkValueInput_, 1U,
+                                                            topkValueInput_, topkValueInput_);
+    }
+}
+
+template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO, bool IS_BITONIC_SORT>
+__aicore__ inline LocalTensor<T_INDEX_TO>
+RadixSortTopKMultiCoreOptimization<T, IS_LARGEST, IS_SORT, T_INDEX_TO, IS_BITONIC_SORT>::ConvertIndexType(
+    LocalTensor<int32_t> topkOutIndexValue)
+{
+    bool isLongIndex = IsSameType<T_INDEX_TO, int64_t>::value;
+    if (isLongIndex) {
+        // convert index from int32 to int64
+        LocalTensor<T_INDEX_TO> tempConversionLocal = tempIndexConversionQueue_.AllocTensor<T_INDEX_TO>();
+        AscendC::Cast(tempConversionLocal, topkOutIndexValue, RoundMode::CAST_NONE,
+                      static_cast<int32_t>(topkValueInput_));
+        return tempConversionLocal;
+    }
+    // reconvert index from int32 to int32
+    return topkOutIndexValue.ReinterpretCast<T_INDEX_TO>();
 }
 
 template <typename T, bool IS_LARGEST, bool IS_SORT, typename T_INDEX_TO, bool IS_BITONIC_SORT>

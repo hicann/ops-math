@@ -14,6 +14,7 @@
  */
 
 #include "top_k_v2_tiling_arch35.h"
+#include "top_k_v2_tiling_base.h"
 #include "log/log.h"
 #include "tiling/tiling_api.h"
 #include "op_host/tiling_base_util.h"
@@ -121,8 +122,8 @@ inline void SetSortTmpSizeOfIdx(ge::DataType dataType, int64_t lastAxisNum, uint
     uint32_t maxValue = 0;
     uint32_t minValue = 0;
     AscendC::GetSortMaxMinTmpSize(srcShape, dataType, ge::DT_UINT32, false, config, maxValue, minValue);
-    OP_LOGW("[SortWithIndexTilingForAscendC]", "Allocal buffer element len = %lu ac sort api", reanLen);
-    OP_LOGW("[SortWithIndexTilingForAscendC]", "Need tmp buffer %u byte for ac sort api", maxValue);
+    OP_LOGD("[SortWithIndexTilingForAscendC]", "Allocal buffer element len = %ld ac sort api", reanLen);
+    OP_LOGD("[SortWithIndexTilingForAscendC]", "Need tmp buffer %u byte for ac sort api", maxValue);
     topkTilingData.set_sortAcApiNeedBufferSizeForSort(maxValue);
     sortTileInfo.tmpUbSize = maxValue;
 }
@@ -145,8 +146,8 @@ inline void SetMergeSortTmpSizeOfIdx(gert::TilingContext* context, ge::DataType 
     }
     auto plat = platform_ascendc::PlatformAscendC(platform_info);
     uint32_t dataSizeNeed = AscendC::GetConcatTmpSize(plat, aglinDataSize, dataTypeSize);
-    OP_LOGW("[SortWithIndexTilingForAscendC]", "Allocal buffer mergesort element len = %u ac sort api", reanLen);
-    OP_LOGW("[SortWithIndexTilingForAscendC]", "Merge sort need tmp buffer %u byte for ac api", dataSizeNeed);
+    OP_LOGD("[SortWithIndexTilingForAscendC]", "Allocal buffer mergesort element len = %u ac sort api", reanLen);
+    OP_LOGD("[SortWithIndexTilingForAscendC]", "Merge sort need tmp buffer %u byte for ac api", dataSizeNeed);
     topkTilingData.set_mergSortAcApiNeedBufferSizeForSort(dataSizeNeed);
 }
 
@@ -182,7 +183,7 @@ inline void TileModeSmallSizeOptimOfIdx(uint64_t unsortedDimNum, uint32_t maxCor
     sortTileInfo.numTileDataSize = static_cast<uint32_t>(lastAxisNum);
     OP_LOGI("[SortWithIndexTilingForAscendC]",
             "Small size opt mode coreNumNeed=%u, sortLoopTimes=%u, lastAxisNum=%ld, "
-            "oneCoreRowNum=%ld, ubsize=%lu.",
+            "oneCoreRowNum=%u, ubsize=%u.",
             coreNumNeed, sortLoopTimes, lastAxisNum, oneCoreRowNum, sortTileInfo.ubSize);
 }
 
@@ -221,12 +222,12 @@ inline void PrintTilingDataOfIdx(sortWithIndex::SortTileInfo& sortTileInfo, TopK
 {
     OP_LOGI("[Print SortWithIndexTilingForAscendC TilingData]",
             "coreNum is %u, lastAxisNum is %ld, isInInt32Range is %u, "
-            "sortLoopTimes is %u, unsortedDimParallel is %u, unsortedDimNum is %u, "
+            "sortLoopTimes is %u, unsortedDimParallel is %u, unsortedDimNum is %lu, "
             "lastDimTileNum is %u, lastDimNeedCore is %u, numTileDataSize is %u, "
             "sortAcApiNeedBufferSize is %u, mergSortAcApiNeedBufferSize is %u, "
             "oneCoreRowNum is %u, outputLastDimValue is %u, tmp ub size is %u, "
-            "keyParams0 is %u, keyParams1 is %u, keyParams2 is %u, keyParams3 is %u, keyParams4 is %u, "
-            "keyParams5 is %u, ub avalibal size=%lu, modeType=%u.",
+            "keyParams0 is %lu, keyParams1 is %u, keyParams2 is %u, keyParams3 is %u, keyParams4 is %u, "
+            "keyParams5 is %u, ub avalibal size=%u, modeType=%u.",
             sortTileInfo.coreNumNeed, topkTilingData.get_lastAxisNumForSort(),
             topkTilingData.get_isInInt32RangeForSort(), topkTilingData.get_sortLoopTimesForSort(),
             topkTilingData.get_unsortedDimParallelForSort(), topkTilingData.get_unsortedDimNumForSort(),
@@ -271,7 +272,7 @@ inline void SetSortTmpSize1(ge::DataType dataType, uint32_t tileData, bool isDes
     config.hasDstIndex = true;
     uint32_t maxValue = 0, minValue = 0;
     AscendC::GetSortMaxMinTmpSize(srcShape, dataType, ge::DT_UINT32, false, config, maxValue, minValue);
-    OP_LOGI("[SortWithIndexTilingForAscendC]", "api of sort shape is %ld, maxUb is %u", realLen, maxValue);
+    OP_LOGD("[SortWithIndexTilingForAscendC]", "api of sort shape is %ld, maxUb is %u", realLen, maxValue);
     sortTileInfo.tmpUbSize = maxValue;
     return;
 }
@@ -280,8 +281,8 @@ inline uint32_t ComputeRemainUb1(SortTileInfo& sortTileInfo, uint32_t tileData, 
 {
     uint32_t tmpUb = sortTileInfo.ubSize - (ubExtra + tileFactor * tileData);
     OP_LOGD("[SortWithIndexTilingForAscendC]",
-            "ComputeRemainUb1 ubSize=%u, ubExtra=%lu, tileFactor=%lu, "
-            "tileData=%lu, tmpUb=%lu.",
+            "ComputeRemainUb1 ubSize=%u, ubExtra=%u, tileFactor=%u, "
+            "tileData=%u, tmpUb=%u.",
             sortTileInfo.ubSize, ubExtra, tileFactor, tileData, tmpUb);
     return tmpUb;
 }
@@ -292,8 +293,8 @@ inline void AdjTmpUb1(SortTileInfo& sortTileInfo, uint32_t tileData, uint32_t ub
     remainUbNew = remainUbNew > sortTileInfo.blockUbSize ? (remainUbNew - sortTileInfo.blockUbSize) : uint32_t(0);
     uint32_t alignUbSize = (remainUbNew / sortTileInfo.blockUbSize) * sortTileInfo.blockUbSize;
     OP_LOGD("[SortWithIndexTilingForAscendC]",
-            "alignUbSize %u, sortTileInfo.tmpUbSize=%lu, "
-            "sortTileInfo.blockUbSize=%lu.",
+            "alignUbSize %u, sortTileInfo.tmpUbSize=%u, "
+            "sortTileInfo.blockUbSize=%u.",
             alignUbSize, sortTileInfo.tmpUbSize, sortTileInfo.blockUbSize);
     sortTileInfo.tmpUbSize = sortTileInfo.tmpUbSize + alignUbSize; // 剩余的ub都给tmpUbsize
 }
@@ -378,8 +379,8 @@ inline uint32_t ComputeTileData1(SortTileInfo& sortTileInfo)
     uint32_t tileData = (sortTileInfo.ubSize - ubExtra) / tileFactor;
     tileData = (tileData / BIN_NUM) * BIN_NUM;
     OP_LOGI("[SortWithIndexTilingForAscendC]",
-            "ubExtra=%u, tileFactor=%u, dtypeSize=%u, y2DtypeSize=%lu, "
-            "tileData=%lu.",
+            "ubExtra=%u, tileFactor=%u, dtypeSize=%u, y2DtypeSize=%u, "
+            "tileData=%u.",
             ubExtra, tileFactor, sortTileInfo.dtypeSize, sortTileInfo.y2DtypeSize, tileData);
     uint32_t remainUb = ComputeRemainUb1(sortTileInfo, tileData, ubExtra, tileFactor);
     SetSortTmpSize1(ge::DT_UINT8, tileData, false, sortTileInfo);
@@ -489,16 +490,38 @@ inline void TileMoreCoreModeOfIdx(sortWithIndex::SortTileInfo& sortTileInfo, siz
     return;
 }
 
-inline ge::graphStatus RadixSortTilingOfIdx(gert::TilingContext* context, TopKV2TilingDataSimd& topkTilingData,
-                                            int32_t maxCoreNum, size_t* usrSize)
+inline ge::graphStatus GetSortInputInfoOfIdx(gert::TilingContext* context, uint32_t& tilingKey,
+                                             sortWithIndex::SortTileInfo& sortTileInfo)
 {
-    OP_LOGI(context->GetNodeName(), "SortWithIndexTIling for topk start");
-    auto dataType = context->GetInputDesc(0)->GetDataType();
+    sortTileInfo.dataType = context->GetInputDesc(0)->GetDataType();
     const gert::Shape outShape = context->GetOutputShape(0)->GetStorageShape();
     auto y2DType = context->GetOutputDesc(1)->GetDataType();
-    auto tilingKey = sortWithIndex::tilingDataTypeKeyMap.find(dataType)->second;
-    std::string opType(context->GetNodeType());
+    tilingKey = sortWithIndex::tilingDataTypeKeyMap.find(sortTileInfo.dataType)->second;
+    sortTileInfo.dtypeSize = sortWithIndex::tilingDataTypeBitMap.find(sortTileInfo.dataType)->second;
+    sortTileInfo.y2DtypeSize = sortWithIndex::tilingDataTypeBitMap.find(y2DType)->second;
 
+    auto const attrs = context->GetAttrs();
+    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
+    const bool* isDescending = attrs->GetAttrPointer<bool>(topkV2::topkV2DataInfo::LARGEST_ATTR_INDEX);
+    OP_CHECK_NULL_WITH_CONTEXT(context, isDescending);
+    sortTileInfo.isDescend = *isDescending;
+    sortTileInfo.xDimNum = outShape.GetDimNum();
+    sortTileInfo.sortAxisNum = outShape.GetDim(sortTileInfo.xDimNum - 1);
+    sortTileInfo.unSortDimNum = 1;
+    for (uint32_t i = 0u; i < static_cast<uint32_t>(sortTileInfo.xDimNum - 1); i++) {
+        sortTileInfo.unSortDimNum *= static_cast<uint64_t>(outShape.GetDim(i));
+    }
+    OP_LOGI(context->GetNodeName(),
+            "GetSortInputInfoOfIdx: isDescending=%d, dataType=%d, tilingKey=%u, dtypeSize=%u, y2DtypeSize=%u, "
+            "xDimNum=%u, sortAxisNum=%ld, unSortDimNum=%lu.",
+            *isDescending, sortTileInfo.dataType, tilingKey, sortTileInfo.dtypeSize, sortTileInfo.y2DtypeSize,
+            sortTileInfo.xDimNum, sortTileInfo.sortAxisNum, sortTileInfo.unSortDimNum);
+    return ge::GRAPH_SUCCESS;
+}
+
+inline ge::graphStatus InitSortTileInfoOfIdx(gert::TilingContext* context, TopKV2TilingDataSimd& topkTilingData,
+                                             int32_t maxCoreNum, sortWithIndex::SortTileInfo& sortTileInfo)
+{
     auto platformInfo = context->GetPlatformInfo();
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     uint64_t ubSize = 0;
@@ -507,85 +530,92 @@ inline ge::graphStatus RadixSortTilingOfIdx(gert::TilingContext* context, TopKV2
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ubSize", std::to_string(ubSize).c_str(),
                                                       "The value of ubSize must be greater than SIMT_UB."),
                 return ge::GRAPH_FAILED);
-    OP_LOGW(context->GetNodeName(), "Get op_type[%s]", opType.c_str());
+    std::string opType(context->GetNodeType());
+    OP_LOGD(context->GetNodeName(), "Get op_type[%s]", opType.c_str());
 
-    auto const attrs = context->GetAttrs();
-    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
-    uint32_t xDimNum = outShape.GetDimNum();
-    const bool* isDescending = attrs->GetAttrPointer<bool>(2);
-    OP_CHECK_NULL_WITH_CONTEXT(context, isDescending);
-    OP_LOGI(context->GetNodeName(), "isDescending=%u", *isDescending);
-    int64_t sortAxisNum = outShape.GetDim(xDimNum - 1);
-    uint64_t unSortDimNum = 1;
-    for (uint32_t i = 0u; i < static_cast<uint32_t>(xDimNum - 1); i++) {
-        unSortDimNum *= static_cast<uint64_t>(outShape.GetDim(i));
-    }
-
-    uint32_t isInInt32Range = static_cast<uint32_t>(sortAxisNum <= sortWithIndex::INT32_MAX_RANGE_VALUE);
-    topkTilingData.set_isInInt32RangeForSort(isInInt32Range);
-
-    uint32_t tileData = sortWithIndex::TILE_DATA_NUM;
-    if (dataType == ge::DT_UINT64 || dataType == ge::DT_INT64) {
-        tileData = sortWithIndex::TILE_DATA_NUM_B64;
-    } else {
-        tileData = sortWithIndex::TILE_DATA_NUM;
-    }
-
-    sortWithIndex::SortTileInfo sortTileInfo;
     // 预留给SIMT使用
     sortTileInfo.ubSize = ubSize - sortWithIndex::SIMT_UB;
-    uint32_t blockUbAglinSize = Ops::Base::GetUbBlockSize(context);
-    sortTileInfo.blockUbSize = blockUbAglinSize;
-    sortTileInfo.dtypeSize = sortWithIndex::tilingDataTypeBitMap.find(dataType)->second;
-    sortTileInfo.y2DtypeSize = sortWithIndex::tilingDataTypeBitMap.find(y2DType)->second;
+    sortTileInfo.blockUbSize = Ops::Base::GetUbBlockSize(context);
     sortTileInfo.maxCoreNum = static_cast<uint32_t>(maxCoreNum);
-    sortTileInfo.dataType = dataType;
-    sortTileInfo.xDimNum = xDimNum;
-    sortTileInfo.sortAxisNum = sortAxisNum;
-    sortTileInfo.unSortDimNum = unSortDimNum;
-    sortTileInfo.isInt32 = isInInt32Range;
-    sortTileInfo.numTileDataSize = tileData;
+    sortTileInfo.isInt32 = static_cast<uint32_t>(sortTileInfo.sortAxisNum <= sortWithIndex::INT32_MAX_RANGE_VALUE);
+    topkTilingData.set_isInInt32RangeForSort(sortTileInfo.isInt32);
 
+    uint32_t tileData = sortWithIndex::TILE_DATA_NUM;
+    if (sortTileInfo.dataType == ge::DT_UINT64 || sortTileInfo.dataType == ge::DT_INT64) {
+        tileData = sortWithIndex::TILE_DATA_NUM_B64;
+    }
+    sortTileInfo.numTileDataSize = tileData;
     // 设置高级api tmpUbSize需要的空间
-    SetSortTmpSizeOfIdx(dataType, sortAxisNum, tileData, *isDescending, true, topkTilingData, sortTileInfo);
-    if (sortAxisNum <= sortWithIndex::SMALL_SORT_MAX_DATA_SIZE &&
-        sortWithIndex::optDataTypeBitMap.count(dataType) != 0) {
+    SetSortTmpSizeOfIdx(sortTileInfo.dataType, sortTileInfo.sortAxisNum, tileData, sortTileInfo.isDescend, true,
+                        topkTilingData, sortTileInfo);
+    return ge::GRAPH_SUCCESS;
+}
+
+inline void SelectSortModeOfIdx(gert::TilingContext* context, TopKV2TilingDataSimd& topkTilingData, uint32_t& tilingKey,
+                                size_t* usrSize, sortWithIndex::SortTileInfo& sortTileInfo)
+{
+    if (sortTileInfo.sortAxisNum <= sortWithIndex::SMALL_SORT_MAX_DATA_SIZE &&
+        sortWithIndex::optDataTypeBitMap.count(sortTileInfo.dataType) != 0) {
         topkTilingData.set_modeTypeForSort(sortWithIndex::SMALL_SIZE_OPTIM_MODE);
-        uint32_t tileDataS = sortWithIndex::TILE_DATA_NUM;
-        TileModeSmallSizeOptimOfIdx(unSortDimNum, maxCoreNum, sortAxisNum, tileDataS, sortTileInfo);
-        SetMergeSortTmpSizeOfIdx(context, dataType, sortAxisNum, topkTilingData);
+        TileModeSmallSizeOptimOfIdx(sortTileInfo.unSortDimNum, sortTileInfo.maxCoreNum, sortTileInfo.sortAxisNum,
+                                    sortWithIndex::TILE_DATA_NUM, sortTileInfo);
+        SetMergeSortTmpSizeOfIdx(context, sortTileInfo.dataType, sortTileInfo.sortAxisNum, topkTilingData);
         tilingKey += sortWithIndex::MERGE_SORT_TILING_OFFSET;
-    } else if (sortAxisNum <= static_cast<int64_t>(tileData)) {
+    } else if (sortTileInfo.sortAxisNum <= static_cast<int64_t>(sortTileInfo.numTileDataSize)) {
         topkTilingData.set_modeTypeForSort(sortWithIndex::SMALL_SIZE_MODE);
-        TileModeSmallSizeOfIdx(unSortDimNum, maxCoreNum, sortAxisNum, sortTileInfo);
+        TileModeSmallSizeOfIdx(sortTileInfo.unSortDimNum, sortTileInfo.maxCoreNum, sortTileInfo.sortAxisNum,
+                               sortTileInfo);
     } else {
         // more core radix sort case
         topkTilingData.set_modeTypeForSort(sortWithIndex::MULT_CORE_MODE);
         TileMoreCoreModeOfIdx(sortTileInfo, usrSize);
     }
-    OP_LOGI(context->GetNodeName(),
-            "ubSize: %ld, ubAglinSize: %ld, dtypeSize: %u, y2DtypeSize=%u,"
-            " sortTileInfo.ubSize=%u, maxCoreNum=%lu, usrSize=%d, modeType=%u.",
-            ubSize, blockUbAglinSize, sortTileInfo.dtypeSize, sortTileInfo.y2DtypeSize, sortTileInfo.ubSize, maxCoreNum,
-            *usrSize, topkTilingData.get_modeTypeForSort());
+}
 
+inline void SetSortFinalTilingOfIdx(gert::TilingContext* context, TopKV2TilingDataSimd& topkTilingData,
+                                    uint32_t tilingKey, size_t* usrSize, sortWithIndex::SortTileInfo& sortTileInfo)
+{
     topkTilingData.set_tilingKeyForSort(tilingKey);
-    topkTilingData.set_lastAxisNumForSort(sortAxisNum);
-    topkTilingData.set_unsortedDimNumForSort(unSortDimNum);
+    topkTilingData.set_lastAxisNumForSort(sortTileInfo.sortAxisNum);
+    topkTilingData.set_unsortedDimNumForSort(sortTileInfo.unSortDimNum);
     topkTilingData.set_oneCoreRowNumForSort(sortTileInfo.oneCoreRowNum);
-    topkTilingData.set_outputLastDimValueForSort(sortAxisNum);
+    topkTilingData.set_outputLastDimValueForSort(sortTileInfo.sortAxisNum);
     FillRadixSortTilingDataSort(sortTileInfo, topkTilingData);
     PrintTilingDataOfIdx(sortTileInfo, topkTilingData);
 
     // add sortwithindex workspace
     int64_t topkValuesGmSize = CeilDivMul1<int64_t>(
-        int64_t(sortAxisNum * static_cast<int64_t>(unSortDimNum) * sortTileInfo.dtypeSize), int64_t(AGLIN_VALUE));
+        int64_t(sortTileInfo.sortAxisNum * static_cast<int64_t>(sortTileInfo.unSortDimNum) * sortTileInfo.dtypeSize),
+        int64_t(AGLIN_VALUE));
     int64_t topkIndicesGmSize = CeilDivMul1<int64_t>(
-        int64_t(sortAxisNum * static_cast<int64_t>(unSortDimNum) * sortTileInfo.y2DtypeSize), int64_t(AGLIN_VALUE));
+        int64_t(sortTileInfo.sortAxisNum * static_cast<int64_t>(sortTileInfo.unSortDimNum) * sortTileInfo.y2DtypeSize),
+        int64_t(AGLIN_VALUE));
     *usrSize = *usrSize + topkValuesGmSize + topkIndicesGmSize;
     OP_LOGI(context->GetNodeName(),
-            "RadixSortTilingOfIdx final usrSize=%ld, topkValuesGmSize: %ld, topkIndicesGmSize: %ld.", *usrSize,
+            "RadixSortTilingOfIdx final usrSize=%lu, topkValuesGmSize: %ld, topkIndicesGmSize: %ld.", *usrSize,
             topkValuesGmSize, topkIndicesGmSize);
+}
+
+inline ge::graphStatus RadixSortTilingOfIdx(gert::TilingContext* context, TopKV2TilingDataSimd& topkTilingData,
+                                            int32_t maxCoreNum, size_t* usrSize)
+{
+    OP_LOGI(context->GetNodeName(), "SortWithIndexTIling for topk start");
+    sortWithIndex::SortTileInfo sortTileInfo;
+    uint32_t tilingKey = 0;
+    if (GetSortInputInfoOfIdx(context, tilingKey, sortTileInfo) != ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
+    if (InitSortTileInfoOfIdx(context, topkTilingData, maxCoreNum, sortTileInfo) != ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
+    SelectSortModeOfIdx(context, topkTilingData, tilingKey, usrSize, sortTileInfo);
+    OP_LOGI(context->GetNodeName(),
+            "ubSize: %lu, ubAglinSize: %u, dtypeSize: %u, y2DtypeSize=%u,"
+            " sortTileInfo.ubSize=%u, maxCoreNum=%d, usrSize=%lu, modeType=%u.",
+            static_cast<uint64_t>(sortTileInfo.ubSize) + sortWithIndex::SIMT_UB, sortTileInfo.blockUbSize,
+            sortTileInfo.dtypeSize, sortTileInfo.y2DtypeSize, sortTileInfo.ubSize, maxCoreNum, *usrSize,
+            topkTilingData.get_modeTypeForSort());
+    SetSortFinalTilingOfIdx(context, topkTilingData, tilingKey, usrSize, sortTileInfo);
     return ge::GRAPH_SUCCESS;
 }
 } // namespace sortWithIndex

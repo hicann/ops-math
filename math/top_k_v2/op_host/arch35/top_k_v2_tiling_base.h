@@ -30,6 +30,12 @@ namespace topkV2DataInfo {
 const uint32_t CONST_ZERO = 0;
 const uint32_t CONST_TWO = 2;
 const uint32_t CONST_THREE = 3;
+// TopKV2属性在IR中的索引，顺序与config json中attrs定义一致: sorted/dim/largest/indices_dtype/sort_policy
+const uint32_t SORTED_ATTR_INDEX = 0;
+const uint32_t DIM_ATTR_INDEX = 1;
+const uint32_t LARGEST_ATTR_INDEX = 2;
+const uint32_t INDICES_DTYPE_ATTR_INDEX = 3;
+const uint32_t SORT_POLICY_ATTR_INDEX = 4;
 const uint32_t MAX_K_FOR_INT64 = 2000;
 const uint32_t BIN_NUM = 256;
 const uint32_t TILE_SIZE_DECREASING_FACTOR = 32;
