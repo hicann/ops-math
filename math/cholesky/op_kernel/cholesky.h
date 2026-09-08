@@ -12,12 +12,57 @@
 #define CHOLESKY_H
 
 #include "kernel_operator.h"
+#if __NPU_ARCH__ == 3510
+#include "simt_api/common_functions.h"
+#endif
 
 using namespace AscendC;
 
 namespace Cholesky {
 constexpr uint32_t BUFFER_NUM = 2;
 constexpr uint32_t BASIC_BLOCK = 32;
+#if __NPU_ARCH__ == 3510
+constexpr uint32_t FP32_VECTOR_LENGTH = 64;
+constexpr uint32_t DIAGONAL_SCAN_THREADS = 512;
+
+__simt_vf__ __aicore__ __launch_bounds__(DIAGONAL_SCAN_THREADS) inline void CholeskyDiagonalVf(uint64_t elementCount,
+                                                                                               uint32_t matrixSize,
+                                                                                               __gm__ float* input,
+                                                                                               __gm__ float* output)
+{
+    for (uint64_t index = blockIdx.x * blockDim.x + threadIdx.x; index < elementCount;
+         index += static_cast<uint64_t>(blockDim.x) * gridDim.x) {
+        output[index] = index / matrixSize == index % matrixSize ? sqrt(input[index]) : 0.0f;
+    }
+}
+
+__simd_vf__ inline void ScaleCholeskyVf(__ubuf__ float* dst, float scale, uint32_t count)
+{
+    uint16_t repeat = static_cast<uint16_t>((count + FP32_VECTOR_LENGTH - 1) / FP32_VECTOR_LENGTH);
+    for (uint16_t i = 0; i < repeat; ++i) {
+        uint32_t remain = count - static_cast<uint32_t>(i) * FP32_VECTOR_LENGTH;
+        auto mask = Reg::UpdateMask<float>(remain);
+        auto address = Reg::CreateAddrReg<float>(i, FP32_VECTOR_LENGTH);
+        Reg::RegTensor<float> value;
+        Reg::LoadAlign(value, dst, address);
+        Reg::Muls(value, value, scale, mask);
+        Reg::StoreAlign(dst, value, address, mask);
+    }
+}
+#endif
+
+__aicore__ inline void ScaleCholesky(LocalTensor<float>& dst, float scale, uint32_t count)
+{
+#if __NPU_ARCH__ == 3510
+    if (count == 1) {
+        asc_vf_call<ScaleCholeskyVf>(reinterpret_cast<__ubuf__ float*>(dst.GetPhyAddr()), scale, count);
+    } else {
+        Muls(dst, dst, scale, count);
+    }
+#else
+    Muls(dst, dst, scale, count);
+#endif
+}
 
 template <typename T>
 class Cholesky {
@@ -65,6 +110,7 @@ private:
 
     GlobalTensor<T> matAGM;
     GlobalTensor<T> outGM;
+    GlobalTensor<uint32_t> workspaceFlagGM;
 
     // 辅助函数声明
     __aicore__ inline void ProcessColumnDotProduct(LocalTensor<T>& matLLocal, LocalTensor<T>& matLeftLocal,
@@ -77,6 +123,8 @@ private:
                                                 uint32_t index, uint64_t offset, uint32_t blockStart, uint32_t count);
 
     __aicore__ inline T ComputeScaleFactor(LocalTensor<T>& matLLocal, uint64_t offsetPrefix, uint32_t index);
+    __aicore__ inline void SyncSingleMatrix();
+    __aicore__ inline bool ProcessDiagonalMatrix();
 };
 
 template <typename T>
@@ -121,6 +169,55 @@ __aicore__ inline void Cholesky<T>::GetTilingData(const CholeskyTilingData* tili
 }
 
 template <typename T>
+__aicore__ inline void Cholesky<T>::SyncSingleMatrix()
+{
+    if (matrixNumCount_ == 1) {
+        AscendC::SyncAll();
+    }
+}
+
+template <typename T>
+__aicore__ inline bool Cholesky<T>::ProcessDiagonalMatrix()
+{
+#if __NPU_ARCH__ == 3510
+    if (matrixNumCount_ != 1) {
+        return false;
+    }
+    bool localDiagonal = true;
+    LocalTensor<T> scanLocal = matAQueue.AllocTensor<T>();
+    for (uint32_t row = blockIdx_; row < matSizeN_ && localDiagonal; row += blockDim_) {
+        for (uint32_t column = 0; column < matSizeN_ && localDiagonal; column += blockSize_) {
+            uint32_t count = matSizeN_ - column > blockSize_ ? blockSize_ : matSizeN_ - column;
+            DataCopyExtParams copyParams{1, static_cast<uint32_t>(count * sizeof(T)), 0, 0, 0};
+            DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
+            DataCopyPad(scanLocal, matAGM[static_cast<uint64_t>(row) * matSizeN_ + column], copyParams, padParams);
+            PIPE_MTE2_V();
+            for (uint32_t offset = 0; offset < count; ++offset) {
+                if (column + offset != row && scanLocal.GetValue(offset) != 0.0f) {
+                    localDiagonal = false;
+                    break;
+                }
+            }
+        }
+    }
+    matAQueue.FreeTensor(scanLocal);
+    workspaceFlagGM.SetValue(blockIdx_, localDiagonal ? 0U : 1U);
+    SyncSingleMatrix();
+    for (uint32_t core = 0; core < blockDim_; ++core) {
+        if (workspaceFlagGM.GetValue(core) != 0U) {
+            return false;
+        }
+    }
+    const uint64_t elementCount = static_cast<uint64_t>(matSizeN_) * matSizeN_;
+    asc_vf_call<CholeskyDiagonalVf>(dim3(DIAGONAL_SCAN_THREADS), elementCount, matSizeN_,
+                                    (__gm__ float*)matAGM.GetPhyAddr(), (__gm__ float*)outGM.GetPhyAddr());
+    return true;
+#else
+    return false;
+#endif
+}
+
+template <typename T>
 __aicore__ inline void Cholesky<T>::InitTril(GM_ADDR self, GM_ADDR out, GM_ADDR workspace,
                                              const CholeskyTilingData* tilingData, TPipe* pipe)
 {
@@ -130,6 +227,7 @@ __aicore__ inline void Cholesky<T>::InitTril(GM_ADDR self, GM_ADDR out, GM_ADDR 
 
     matAGM.SetGlobalBuffer((__gm__ T*)self, matSizeN_ * matSizeN_);
     outGM.SetGlobalBuffer((__gm__ T*)out, matSizeN_ * matSizeN_);
+    workspaceFlagGM.SetGlobalBuffer((__gm__ uint32_t*)workspace, blockDim_);
 
     // 使用分块大小计算buffer，减少UB内存使用
     uint64_t columnBufferSize = blockSize_ * BASIC_BLOCK;
@@ -145,15 +243,20 @@ __aicore__ inline void Cholesky<T>::InitTril(GM_ADDR self, GM_ADDR out, GM_ADDR 
 template <typename T>
 __aicore__ inline void Cholesky<T>::ProcessTril()
 {
+    if (ProcessDiagonalMatrix()) {
+        return;
+    }
     if (blockIdx_ < blockDim_) {
-        auto loopTimes = matrixNumCount_ / blockDim_;
+        auto loopTimes = matrixNumCount_ == 1 ? 0 : matrixNumCount_ / blockDim_;
         for (uint64_t loopIndex = 0; loopIndex <= loopTimes; loopIndex++) {
-            uint64_t offsetPrefix = blockIdx_ + blockDim_ * loopIndex;
+            uint64_t offsetPrefix = matrixNumCount_ == 1 ? 0 : blockIdx_ + blockDim_ * loopIndex;
             if (offsetPrefix < matrixNumCount_) {
                 uint64_t offset = offsetPrefix * matSizeN_ * matSizeN_;
                 FirstColumn(offsetPrefix, offset);
+                SyncSingleMatrix();
                 for (uint32_t index = 1; index < matSizeN_; index++) {
                     SecondToNColumn(index, offsetPrefix, offset);
+                    SyncSingleMatrix();
                 }
             }
         }
@@ -164,9 +267,15 @@ template <typename T>
 __aicore__ inline void Cholesky<T>::FirstColumn(uint64_t offsetPrefix, uint64_t offset)
 {
     LocalTensor<T> matALocal = matAQueue.AllocTensor<T>();
+    if (matrixNumCount_ == 1) {
+        inv_sqrt_A11_ = T(1 / sqrt(matAGM.GetValue(offset)));
+    }
 
     // 核内分块处理，每次处理blockSize大小的数据
     for (uint32_t blockStart = 0; blockStart < matSizeN_; blockStart += blockSize_) {
+        if (matrixNumCount_ == 1 && (blockStart / blockSize_) % blockDim_ != blockIdx_) {
+            continue;
+        }
         uint32_t count = (matSizeN_ - blockStart) > blockSize_ ? blockSize_ : (matSizeN_ - blockStart);
 
         DataCopyExtParams copyParamsMatALocal{static_cast<uint16_t>(count), sizeof(T),
@@ -176,7 +285,7 @@ __aicore__ inline void Cholesky<T>::FirstColumn(uint64_t offsetPrefix, uint64_t 
         PIPE_MTE2_V();
 
         // 只在处理第一个元素时计算平方根并存储缩放因子
-        if (blockStart == 0) {
+        if (blockStart == 0 && matrixNumCount_ > 1) {
             T A11 = matALocal.GetValue(0);
             if (matrixNumCount_ > 1) {
                 ascendc_assert(A11 > 0.0f,
@@ -189,10 +298,10 @@ __aicore__ inline void Cholesky<T>::FirstColumn(uint64_t offsetPrefix, uint64_t 
                                "(the leading minor of order 1 is not positive-definite).\n");
             }
             inv_sqrt_A11_ = T(1 / sqrt(A11));
-            Muls(matALocal, matALocal, inv_sqrt_A11_, count * BASIC_BLOCK / sizeof(T));
+            ScaleCholesky(matALocal, static_cast<float>(inv_sqrt_A11_), count * BASIC_BLOCK / sizeof(T));
         } else {
             // 直接使用之前计算好的缩放因子，避免访问GM内存
-            Muls(matALocal, matALocal, inv_sqrt_A11_, count * BASIC_BLOCK / sizeof(T));
+            ScaleCholesky(matALocal, static_cast<float>(inv_sqrt_A11_), count * BASIC_BLOCK / sizeof(T));
         }
 
         PIPE_V_MTE3();
@@ -235,11 +344,8 @@ __aicore__ inline void Cholesky<T>::ProcessColumnDotProduct(LocalTensor<T>& matL
                         copyParamsLeftLocal, padParamsLeftLocal);
             PIPE_MTE2_V();
 
-            // 计算当前块的点积并累加结果
             Mul(matResultLocal, matLeftLocal, matRightLocal, leftBlockSize);
-            ReduceSum<T>(matResultLocal, matResultLocal, matResultLocal, leftBlockSize);
-
-            // 将当前块的结果累加到matLLocal中
+            ReduceSum<T>(matResultLocal, matResultLocal, matRightLocal, leftBlockSize);
             T currentSum = matResultLocal.GetValue(0);
             T existingSum = matLLocal.GetValue(row_in_block * BASIC_BLOCK / sizeof(T));
             matLLocal.SetValue(row_in_block * BASIC_BLOCK / sizeof(T), existingSum + currentSum);
@@ -296,16 +402,14 @@ __aicore__ inline void Cholesky<T>::ProcessRowDotProduct(LocalTensor<T>& matLLoc
         for (uint32_t col_in_block = 0; col_in_block < count; col_in_block++) {
             uint32_t column_right_pivot = blockStart + col_in_block;
 
+            PipeBarrier<PIPE_ALL>();
             // 搬运当前块的matRightLocal数据
             DataCopyPad(matRightLocal, outGM[offset + (index + column_right_pivot) + leftBlockStart * matSizeN_],
                         copyParamsLeftLocal, padParamsLeftLocal);
             PIPE_MTE2_V();
 
-            // 计算当前块的点积并累加结果
             Mul(matResultLocal, matLeftLocal, matRightLocal, leftBlockSize * BASIC_BLOCK / sizeof(T));
-            ReduceSum<T>(matResultLocal, matResultLocal, matResultLocal, leftBlockSize * BASIC_BLOCK / sizeof(T));
-
-            // 将当前块的结果累加到matLLocal中
+            ReduceSum<T>(matResultLocal, matResultLocal, matRightLocal, leftBlockSize * BASIC_BLOCK / sizeof(T));
             T currentSum = matResultLocal.GetValue(0);
             T existingSum = matLLocal.GetValue(col_in_block);
             matLLocal.SetValue(col_in_block, existingSum + currentSum);
@@ -325,10 +429,23 @@ __aicore__ inline void Cholesky<T>::SecondToNColumn(uint32_t index, uint64_t off
 
     // 存储当前列的缩放因子，所有分块共享同一个缩放因子
     T column_scale_factor = 0.0f;
-    bool scale_factor_computed = false;
+    if (matrixNumCount_ == 1) {
+        DataCopyExtParams pivotCopyParams{1, sizeof(T), 0, 0, 0};
+        DataCopyPadExtParams<T> pivotPadParams{false, 0, 0, 0};
+        DataCopyPad(matALocal, matAGM[offset + index * matSizeN_ + index], pivotCopyParams, pivotPadParams);
+        PIPE_MTE2_V();
+        Duplicate(matLLocal, ZERO, BASIC_BLOCK / sizeof(T));
+        ProcessColumnDotProduct(matLLocal, matLeftLocal, matRightLocal, matResultLocal, index, offset, 0, 1);
+        PipeBarrier<PIPE_ALL>();
+        Sub(matLLocal, matALocal, matLLocal, BASIC_BLOCK / sizeof(T));
+        column_scale_factor = ComputeScaleFactor(matLLocal, offsetPrefix, index);
+    }
 
     // 对当前列的所有元素进行分块处理
     for (uint32_t blockStart = 0; blockStart < (matSizeN_ - index); blockStart += blockSize_) {
+        if (matrixNumCount_ == 1 && (blockStart / blockSize_) % blockDim_ != blockIdx_) {
+            continue;
+        }
         // 计算当前块的大小
         uint32_t count = (matSizeN_ - index - blockStart) > blockSize_ ? blockSize_ : (matSizeN_ - index - blockStart);
 
@@ -352,13 +469,12 @@ __aicore__ inline void Cholesky<T>::SecondToNColumn(uint32_t index, uint64_t off
         Sub(matLLocal, matALocal, matLLocal, count * BASIC_BLOCK / sizeof(T));
 
         // 只在第一次分块时计算缩放因子和进行正定性检查
-        if (blockStart == 0) {
+        if (blockStart == 0 && matrixNumCount_ > 1) {
             column_scale_factor = ComputeScaleFactor(matLLocal, offsetPrefix, index);
-            scale_factor_computed = true;
         }
 
         // 对当前块的所有元素应用同一个缩放因子
-        Muls(matLLocal, matLLocal, column_scale_factor, count * BASIC_BLOCK / sizeof(T));
+        ScaleCholesky(matLLocal, static_cast<float>(column_scale_factor), count * BASIC_BLOCK / sizeof(T));
 
         // 5. 最后得到count个L元素并搬出
         PIPE_V_MTE3();
@@ -386,6 +502,7 @@ __aicore__ inline void Cholesky<T>::InitTriu(GM_ADDR self, GM_ADDR out, GM_ADDR 
 
     matAGM.SetGlobalBuffer((__gm__ T*)self, matSizeN_ * matSizeN_);
     outGM.SetGlobalBuffer((__gm__ T*)out, matSizeN_ * matSizeN_);
+    workspaceFlagGM.SetGlobalBuffer((__gm__ uint32_t*)workspace, blockDim_);
 
     // 使用分块大小计算buffer，减少UB内存使用
     uint32_t columnBufferSize = blockSize_ * BASIC_BLOCK;
@@ -401,15 +518,20 @@ __aicore__ inline void Cholesky<T>::InitTriu(GM_ADDR self, GM_ADDR out, GM_ADDR 
 template <typename T>
 __aicore__ inline void Cholesky<T>::ProcessTriu()
 {
+    if (ProcessDiagonalMatrix()) {
+        return;
+    }
     if (blockIdx_ < blockDim_) {
-        auto loopTimes = matrixNumCount_ / blockDim_;
+        auto loopTimes = matrixNumCount_ == 1 ? 0 : matrixNumCount_ / blockDim_;
         for (uint64_t loopIndex = 0; loopIndex <= loopTimes; loopIndex++) {
-            uint64_t offsetPrefix = blockIdx_ + blockDim_ * loopIndex;
+            uint64_t offsetPrefix = matrixNumCount_ == 1 ? 0 : blockIdx_ + blockDim_ * loopIndex;
             if (offsetPrefix < matrixNumCount_) {
                 uint64_t offset = offsetPrefix * matSizeN_ * matSizeN_;
                 FirstRow(offsetPrefix, offset);
+                SyncSingleMatrix();
                 for (uint32_t index = 1; index < matSizeN_; index++) {
                     SecondToNRow(index, offsetPrefix, offset);
+                    SyncSingleMatrix();
                 }
             }
         }
@@ -420,9 +542,15 @@ template <typename T>
 __aicore__ inline void Cholesky<T>::FirstRow(uint64_t offsetPrefix, uint64_t offset)
 {
     LocalTensor<T> matALocal = matAQueue.AllocTensor<T>();
+    if (matrixNumCount_ == 1) {
+        inv_sqrt_A11_ = T(1 / sqrt(matAGM.GetValue(offset)));
+    }
 
     // 核内分块处理，每次处理blockSize大小的数据
     for (uint32_t blockStart = 0; blockStart < matSizeN_; blockStart += blockSize_) {
+        if (matrixNumCount_ == 1 && (blockStart / blockSize_) % blockDim_ != blockIdx_) {
+            continue;
+        }
         uint32_t count = (matSizeN_ - blockStart) > blockSize_ ? blockSize_ : (matSizeN_ - blockStart);
 
         DataCopyExtParams copyParamsMatALocal{1, static_cast<uint32_t>(sizeof(T) * count), 0, 0, 0};
@@ -431,7 +559,7 @@ __aicore__ inline void Cholesky<T>::FirstRow(uint64_t offsetPrefix, uint64_t off
         PIPE_MTE2_V();
 
         // 只在处理第一个元素时计算平方根并存储缩放因子
-        if (blockStart == 0) {
+        if (blockStart == 0 && matrixNumCount_ > 1) {
             T A11_sqrt = matALocal.GetValue(0);
             if (matrixNumCount_ > 1) {
                 ascendc_assert(A11_sqrt > 0.0f,
@@ -444,10 +572,10 @@ __aicore__ inline void Cholesky<T>::FirstRow(uint64_t offsetPrefix, uint64_t off
                                "(the leading minor of order 1 is not positive-definite).\n");
             }
             inv_sqrt_A11_ = T(1 / sqrt(A11_sqrt));
-            Muls(matALocal, matALocal, inv_sqrt_A11_, count);
+            ScaleCholesky(matALocal, static_cast<float>(inv_sqrt_A11_), count);
         } else {
             // 使用之前存储的缩放因子，避免重复计算和直接访问GM内存
-            Muls(matALocal, matALocal, inv_sqrt_A11_, count);
+            ScaleCholesky(matALocal, static_cast<float>(inv_sqrt_A11_), count);
         }
 
         // 搬出当前块的结果
@@ -471,10 +599,23 @@ __aicore__ inline void Cholesky<T>::SecondToNRow(uint32_t index, uint64_t offset
 
     // 存储当前行的缩放因子，所有分块共享同一个缩放因子
     T row_scale_factor = 0.0f;
-    bool scale_factor_computed = false;
+    if (matrixNumCount_ == 1) {
+        DataCopyExtParams pivotCopyParams{1, sizeof(T), 0, 0, 0};
+        DataCopyPadExtParams<T> pivotPadParams{false, 0, 0, 0};
+        DataCopyPad(matALocal, matAGM[offset + index * matSizeN_ + index], pivotCopyParams, pivotPadParams);
+        PIPE_MTE2_V();
+        Duplicate(matLLocal, ZERO, BASIC_BLOCK / sizeof(T));
+        ProcessRowDotProduct(matLLocal, matLeftLocal, matRightLocal, matResultLocal, index, offset, 0, 1);
+        PipeBarrier<PIPE_ALL>();
+        Sub(matLLocal, matALocal, matLLocal, 1);
+        row_scale_factor = ComputeScaleFactor(matLLocal, offsetPrefix, index);
+    }
 
     // 对当前行的所有元素进行分块处理
     for (uint32_t blockStart = 0; blockStart < (matSizeN_ - index); blockStart += blockSize_) {
+        if (matrixNumCount_ == 1 && (blockStart / blockSize_) % blockDim_ != blockIdx_) {
+            continue;
+        }
         // 计算当前块的大小
         uint32_t count = (matSizeN_ - index - blockStart) > blockSize_ ? blockSize_ : (matSizeN_ - index - blockStart);
 
@@ -496,13 +637,12 @@ __aicore__ inline void Cholesky<T>::SecondToNRow(uint32_t index, uint64_t offset
         Sub(matLLocal, matALocal, matLLocal, count);
 
         // 只在第一次分块时计算缩放因子和进行正定性检查
-        if (blockStart == 0) {
+        if (blockStart == 0 && matrixNumCount_ > 1) {
             row_scale_factor = ComputeScaleFactor(matLLocal, offsetPrefix, index);
-            scale_factor_computed = true;
         }
 
         // 对当前块的所有元素应用同一个缩放因子
-        Muls(matLLocal, matLLocal, row_scale_factor, count);
+        ScaleCholesky(matLLocal, static_cast<float>(row_scale_factor), count);
 
         // 5. 最后得到count个L元素并搬出
         PIPE_V_MTE3();
