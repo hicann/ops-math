@@ -48,6 +48,7 @@ aclnnStatus aclnnClampMaxTensorGetWorkspaceSize(
     aclTensor*       out,
     uint64_t*        workspaceSize,
     aclOpExecutor**  executor)
+```
 
 ```cpp
 aclnnStatus aclnnClampMaxTensor(

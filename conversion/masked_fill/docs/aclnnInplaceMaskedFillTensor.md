@@ -43,7 +43,7 @@ aclnnStatus aclnnInplaceMaskedFillTensorGetWorkspaceSize(
 ```cpp
 aclnnStatus aclnnInplaceMaskedFillTensor(
     void*          workspace,
-    uint64_t       workspace_size,
+    uint64_t       workspaceSize,
     aclOpExecutor* executor,
     aclrtStream    stream)
 ```
@@ -188,7 +188,7 @@ aclnnStatus aclnnInplaceMaskedFillTensor(
       <td>在Device侧申请的workspace内存地址。</td>
     </tr>
     <tr>
-      <td>workspace_size</td>
+      <td>workspaceSize</td>
       <td>输入</td>
       <td>在Device侧申请的workspace大小，由第一段接口aclnnInplaceMaskedFillTensorGetWorkspaceSize获取。</td>
     </tr>

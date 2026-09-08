@@ -51,7 +51,7 @@ aclnnStatus aclnnInplaceMaskedFillScalarGetWorkspaceSize(
 ```cpp
 aclnnStatus aclnnInplaceMaskedFillScalar(
     void*          workspace,
-    uint64_t       workspace_size,
+    uint64_t       workspaceSize,
     aclOpExecutor* executor,
     aclrtStream    stream)
   ```
