@@ -25,7 +25,7 @@
 
 ## 功能说明
 
-- 接口功能：计算给定输入Tensor的逐元素逻辑非。如果未指定输出类型，输出Tensor是bool类型。如果输入Tensor不是bool类型，则将零视为False，非零视为True。
+- 接口功能：计算给定输入 Tensor 的逐元素逻辑非。如果未指定输出类型，输出 Tensor 是 bool 类型。如果输入 Tensor 不是 bool 类型，则将零视为 False，非零视为 True。
 
 - 计算公式：
 

@@ -332,8 +332,8 @@ int PrepareInputAndOutput(
     auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_INT64, self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建dim aclIntArray
-    *dim = aclCreateIntArray(dimData.data(), 1);
-    CHECK_RET(ret == ACL_SUCCESS, return false);
+    *dim = aclCreateIntArray(dimData.data(), dimData.size());
+    CHECK_RET(*dim != nullptr, return ACL_ERROR_INTERNAL_ERROR);
     // 创建out aclTensor
     ret = CreateAclTensor(outHostData, outShape, outDeviceAddr, aclDataType::ACL_INT64, out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);

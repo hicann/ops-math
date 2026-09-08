@@ -480,7 +480,7 @@ int main() {
   ret = aclnnAtan(workspaceAddr, workspaceSize, executor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAtan failed. ERROR: %d\n", ret); return ret);
 
-  // 3. aclnnInplaceAtan接口调用示例
+  // 4. aclnnInplaceAtan接口调用示例
   uint64_t inplaceWorkspaceSize = 0;
   aclOpExecutor* inplaceExecutor;
   // 调用aclnnInplaceAtan第一段接口
@@ -496,7 +496,7 @@ int main() {
   ret = aclnnInplaceAtan(inplaceWorkspaceAddr, inplaceWorkspaceSize, inplaceExecutor, stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceAtan failed. ERROR: %d\n", ret); return ret);
 
-  // 4.（固定写法）同步等待任务执行结束
+  // 5.（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
@@ -510,11 +510,11 @@ int main() {
     LOG_PRINT("result[%ld] is: %lf\n", i, resultData[i]);
   }
 
-  // 6. 释放aclTensor，需要根据具体API的接口定义修改
+  // 7. 释放aclTensor，需要根据具体API的接口定义修改
   aclDestroyTensor(self);
   aclDestroyTensor(out);
 
-  // 7. 释放device资源，需要根据具体API的接口定义修改
+  // 8. 释放device资源，需要根据具体API的接口定义修改
   aclrtFree(selfDeviceAddr);
   aclrtFree(outDeviceAddr);
   if (workspaceSize > 0) {

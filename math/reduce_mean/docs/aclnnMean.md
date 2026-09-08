@@ -342,7 +342,7 @@ int PrepareInputAndOutput(
     void** outDeviceAddr, aclTensor** out)
 {
     std::vector<int64_t> selfHostData = {2, 3, 5, 8, 4, 12, 6, 7};
-    std::vector<int64_t> outHostData = {2, 3, 5, 8};
+    std::vector<int64_t> outHostData = {2, 3};
     std::vector<int64_t> dimData = {1, 2};
 
     // 创建self aclTensor

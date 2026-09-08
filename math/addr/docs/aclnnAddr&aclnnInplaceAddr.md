@@ -616,9 +616,9 @@ int main() {
   }
 
   // aclnnInplaceAddr接口调用示例
-  // 调用aclnnInplaceAddr第一段接口
-  ret = aclnnInplaceAddrGetWorkspaceSize(input, vec1, vec2, beta, alpha, &workspaceSize, &executor);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAddrGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+  // 调用aclnnInplaceAddr第一段接口，selfRef为输入输出张量，此处传入out
+  ret = aclnnInplaceAddrGetWorkspaceSize(out, vec1, vec2, beta, alpha, &workspaceSize, &executor);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceAddrGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
 
   // 根据第一段接口计算出的workspaceSize申请device内存
   if (workspaceSize > 0) {
@@ -628,14 +628,14 @@ int main() {
 
   // 调用aclnnInplaceAddr第二段接口
   ret = aclnnInplaceAddr(workspaceAddr, workspaceSize, executor, stream);
-  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnAddr failed. ERROR: %d\n", ret); return ret);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceAddr failed. ERROR: %d\n", ret); return ret);
 
   //（固定写法）同步等待任务执行结束
   ret = aclrtSynchronizeStream(stream);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
 
   // 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
-  ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), inputDeviceAddr,
+  ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr,
                     size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
   for (int64_t i = 0; i < size; i++) {
