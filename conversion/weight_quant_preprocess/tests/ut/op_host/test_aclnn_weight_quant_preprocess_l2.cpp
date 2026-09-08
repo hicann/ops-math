@@ -129,6 +129,10 @@ static void TestOneParamCase(const WeightQuantPreprocessTestParam& param)
         if (!param.outWeightStorageShape.empty()) {
             // 显式指定 outWeight storageShape（用于构造 NZ 分形形状错误的负例）
             outWeightStorageShape = param.outWeightStorageShape;
+        } else if (param.weightViewShape.size() < 2) {
+            // 维度不足 2 的负例（如 weight_dim_1d）无法做分形推导，直接透传 viewShape；
+            // 该类用例预期在 judge 阶段即被拒绝，storageShape 不参与预期结果
+            outWeightStorageShape = param.weightViewShape;
         } else if (effOutFormat == ACL_FORMAT_ND) {
             // ND 直拷：outWeight storageShape 与 viewShape 一致
             outWeightStorageShape = param.weightViewShape;

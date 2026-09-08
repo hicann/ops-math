@@ -30,8 +30,7 @@ static aclnnStatus ExecuteDataFlow(QuantContext& ctx, const std::vector<DataFlow
         }
     }
 
-    OP_CHECK(matched != nullptr,
-             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "[NpuArch=%u] dataflow is UNKNOWN.", static_cast<uint32_t>(ctx.npuArch)),
+    OP_CHECK(matched != nullptr, OP_LOGE(ACLNN_ERR_PARAM_INVALID, "dataflow is UNSUPPORTED."),
              return ACLNN_ERR_PARAM_INVALID);
 
     for (const auto& check : matched->checks) {
