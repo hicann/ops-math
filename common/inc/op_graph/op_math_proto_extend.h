@@ -578,37 +578,6 @@ REG_OP(ExpandDims)
     .OP_END_FACTORY_REG(DSARandomUniform)
 
     /**
-    * @brief Counts the number of occurrences of each value in an integer array.
-
-    * @par Inputs:
-    * @li input: A Tensor of type int32, int64. 1D or 2D int Tensor.
-    * @li size: A Tensor. Must have the same type as input. non-negative int scalar Tensor.
-    * @li weights: A Tensor. Must be one of the following types: int32, int64, float32, float64.
-                   with the same shape as input,
-                   or a length-0 Tensor, in which case it acts as all weights equal to 1. \n
-
-    * @par Outputs:
-    * @li output: A Tensor with length "size" for each stride and has the same dtype as weights. \n
-
-    * @par Attributes:
-    * binary_output: An optional bool. Defaults to False. bool;
-                     Whether the kernel should count the appearance or number of occurrences. \n
-
-    * @attention Constraints:
-    * The operator will use the interface set_atomic_add(), therefore weights and output should be float32 only. \n
-
-    * @par Third-party framework compatibility
-    * Compatible with tensorflow DenseBincount operator.
-    */
-    REG_OP(DenseBincount)
-    .INPUT(input, TensorType({DT_INT32, DT_INT64}))
-    .INPUT(size, TensorType({DT_INT32, DT_INT64}))
-    .INPUT(weights, TensorType(DT_INT32, DT_INT64, DT_FLOAT, DT_DOUBLE))
-    .OUTPUT(output, TensorType(DT_INT32, DT_INT64, DT_FLOAT, DT_DOUBLE))
-    .ATTR(binary_output, Bool, false)
-    .OP_END_FACTORY_REG(DenseBincount)
-
-    /**
     * @brief Flattens the inputs tensor into a 2D matrix. If input tensor has shape (d_0, d_1,..., d_n),
     *        then the output will have shape (d_0 X d_1 ... d_(axis-1), d_axis X d_(axis + 1)...X d_n)\n
 

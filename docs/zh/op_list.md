@@ -428,6 +428,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/dense_bincount/README.md">dense_bincount</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>统计一维或二维整数输入中各个 bin 的出现次数或权重和。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/bitwise_and/README.md">bitwise_and</a></td>
     <td>√</td>
     <td>√</td>
