@@ -1034,16 +1034,9 @@ void TransposeNddmaTiling::CalcBlockSplitInfoForSmallShape()
     // simt every core elemets align to 128Byte
     int64_t blkFactor = totalElements / coreNum_;
     int64_t ceilAlignFactor = Ops::Base::CeilAlign(blkFactor, alignElements);
-    int64_t floorAlignFactor = Ops::Base::FloorAlign(blkFactor, alignElements);
-    if (totalElements - floorAlignFactor * (coreNum_ - 1) <= floorAlignFactor) {
-        realCoreNum_ = coreNum_;
-        blkFactor_ = floorAlignFactor;
-        blkTailFactor_ = totalElements % floorAlignFactor;
-    } else {
-        realCoreNum_ = Ops::Base::CeilDiv(totalElements, ceilAlignFactor);
-        blkFactor_ = ceilAlignFactor;
-        blkTailFactor_ = totalElements % ceilAlignFactor;
-    }
+    realCoreNum_ = Ops::Base::CeilDiv(totalElements, ceilAlignFactor);
+    blkFactor_ = ceilAlignFactor;
+    blkTailFactor_ = ceilAlignFactor == 0 ? 0 : totalElements % ceilAlignFactor;
 }
 
 /**
