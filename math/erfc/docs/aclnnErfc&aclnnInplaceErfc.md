@@ -381,10 +381,10 @@ aclnnStatus aclnnInplaceErfc(
 #include "acl/acl.h"
 #include "aclnnop/aclnn_erfc.h"
 
-#define CHECK_RET(cond, return_erfr) \
+#define CHECK_RET(cond, return_expr) \
   do {                               \
     if (!(cond)) {                   \
-      return_erfr;                   \
+      return_expr;                   \
     }                                \
   } while (0)
 
