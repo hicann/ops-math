@@ -17,6 +17,7 @@ static constexpr uint64_t INPUT_X1 = 0;
 static constexpr uint64_t INPUT_X2 = 1;
 static constexpr uint64_t DIM = 0;
 static constexpr int64_t INT_MAX = 2147483647;
+static constexpr int64_t CROSS_DIM_SIZE = 3;
 
 ge::graphStatus CrossTiling::GetPlatformInfo()
 {
@@ -62,9 +63,11 @@ ge::graphStatus CrossTiling::CheckBaseShapeAndAttrs()
 
     int64_t dimSize1 = x1Dims_[normalizedDim_];
     int64_t dimSize2 = x2Dims_[normalizedDim_];
-    OP_CHECK_IF((dimSize1 != 3), OP_LOGE(context_, "x1 dim[%ld] must be 3, got %ld.", normalizedDim_, dimSize1),
+    OP_CHECK_IF((dimSize1 != CROSS_DIM_SIZE),
+                OP_LOGE(context_, "x1 dim[%ld] must be 3, got %ld.", normalizedDim_, dimSize1),
                 return ge::GRAPH_FAILED);
-    OP_CHECK_IF((dimSize2 != 3), OP_LOGE(context_, "x2 dim[%ld] must be 3, got %ld.", normalizedDim_, dimSize2),
+    OP_CHECK_IF((dimSize2 != CROSS_DIM_SIZE),
+                OP_LOGE(context_, "x2 dim[%ld] must be 3, got %ld.", normalizedDim_, dimSize2),
                 return ge::GRAPH_FAILED);
 
     {
@@ -148,7 +151,7 @@ ge::graphStatus CrossTiling::CalcStrideAndVectors()
         stride[0] *= x1Dims_[i];
         stride[1] *= x2Dims_[i];
         stride[2] *= mergedShape_[i];
-        stride[3] *= (i == dim_ ? 3 : mergedShape_[i]);
+        stride[3] *= (i == dim_ ? CROSS_DIM_SIZE : mergedShape_[i]);
     }
 
     dimStride_ = 1;

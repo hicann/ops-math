@@ -43,7 +43,7 @@ protected:
     ge::graphStatus CalcStrideAndVectors();
 
 private:
-    const CrossCompileInfo* compileInfo_;
+    const CrossCompileInfo* compileInfo_ = nullptr;
     CrossRegbaseTilingData tilingData_{};
     uint32_t blockDim_{1};
     int64_t totalVectors_{0};
