@@ -1489,13 +1489,13 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(const aclTensor* srcTensor, aclTe
     }
     CHECK_RET(outTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
     outTensor->SetViewFormat(dstTensor->GetViewFormat());
-    outTensor->SetViewShape(dstTensor->GetViewShape());
     outTensor->SetOriginalFormat(dstTensor->GetOriginalFormat());
-    outTensor->SetOriginalShape(dstTensor->GetOriginalShape());
     outTensor->SetStorageFormat(dstTensor->GetStorageFormat());
-    outTensor->SetStorageShape(dstTensor->GetStorageShape());
     aclTensor* dstCopyTensor = dstTensor;
     if (isFloat8E8m0Nn) {
+        outTensor->SetViewShape(dstTensor->GetViewShape());
+        outTensor->SetOriginalShape(dstTensor->GetOriginalShape());
+        outTensor->SetStorageShape(dstTensor->GetStorageShape());
         dstCopyTensor = uniqueExecutor.get()->CreateView(dstTensor, dstTensor->GetViewShape(),
                                                          dstTensor->GetViewOffset());
         CHECK_RET(dstCopyTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
