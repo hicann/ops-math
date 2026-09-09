@@ -225,7 +225,7 @@ void PrintTilingDataOfIdx(SortTileInfo& sortTileInfo, SortWithIndexTilingDataSim
             "sortAcApiNeedBufferSize is %u, mergSortAcApiNeedBufferSize is %u, "
             "oneCoreRowNum is %u, outputLastDimValue is %u, tmp ub size is %u, "
             "keyParams0 is %u, keyParams1 is %u, keyParams2 is %u, keyParams3 is %u, keyParams4 is %u, "
-            "keyParams5 is %u, ub avalibal size=%lu, modeType=%u.",
+            "keyParams5 is %u, ub available size=%lu, modeType=%u.",
             sortTileInfo.coreNumNeed, sortTilingData.get_lastAxisNum(), sortTilingData.get_isInInt32Range(),
             sortTilingData.get_sortLoopTimes(), sortTilingData.get_unsortedDimParallel(),
             sortTilingData.get_unsortedDimNum(), sortTilingData.get_lastDimTileNum(),
