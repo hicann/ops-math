@@ -89,7 +89,7 @@ aclnnStatus aclnnMaxN(
           <li>tensors里面的tensor的dtype需要保持一致。</li>
         </ul>
       </td>
-      <td class="tg-0pky">FLOAT16、FLOAT、INT8、INT32、INT64、BFLOAT16</td>
+      <td class="tg-0pky">FLOAT16、FLOAT、INT8、UINT8、INT32、INT64、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">0-8</td>
       <td class="tg-0pky">√</td>
@@ -104,7 +104,7 @@ aclnnStatus aclnnMaxN(
           <li>shape需要是输入tensorlist中所有tensor broadcast之后的shape。</li>
         </ul>
       </td>
-      <td class="tg-0pky">FLOAT16、FLOAT、INT8、INT32、INT64、BFLOAT16</td>
+      <td class="tg-0pky">FLOAT16、FLOAT、INT8、UINT8、INT32、INT64、BFLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">0-8</td>
       <td class="tg-0pky">√</td>
@@ -134,6 +134,9 @@ aclnnStatus aclnnMaxN(
   <!-- npu="910,310p" id7 -->
   - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
   <!-- end id7 -->
+  <!-- npu="A3,910b,910,310p" id8 -->
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持UINT8数据类型。
+  <!-- end id8 -->
 
 - **返回值：**
 
