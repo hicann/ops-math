@@ -192,8 +192,8 @@ aclnnStatus aclnnNpuFormatCast(
         <td>传入的srcTensor是空指针。</td>
       </tr>
       <tr>
-        <td rowspan="5"> ACLNN_ERR_PARAM_INVALID </td>
-        <td rowspan="5"> 161002 </td>
+        <td rowspan="4"> ACLNN_ERR_PARAM_INVALID </td>
+        <td rowspan="4"> 161002 </td>
         <td>srcTensor的数据格式不在具体范围内。</td>
       </tr>
       <tr>
@@ -204,9 +204,6 @@ aclnnStatus aclnnNpuFormatCast(
       </tr>
       <tr>
         <td>srcTensor的view shape维度不在[2, 6]的范围</td>
-      </tr>
-      <tr>
-        <td>srcTensor传入空Tensor</td>
       </tr>
       <tr>
         <td rowspan="2"> ACLNN_ERR_RUNTIME_ERROR </td>
