@@ -95,7 +95,7 @@ aclnnStatus aclnnPowScalarTensor(
         <td>输入</td>
         <td>pow运算中的底数，公式中的x</td>
         <td>数据类型与exponent满足<a href ="../../../docs/zh/context/deduction_relationship.md">TensorScalar互推导关系</a>。</td>
-        <td>FLOAT、FLOAT16、DOUBLE、INT16、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT16、INT32、INT64、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16</td>
         <td>-</td>
         <td>-</td>
         <td>-</td>
@@ -105,7 +105,7 @@ aclnnStatus aclnnPowScalarTensor(
         <td>输入</td>
         <td>pow运算中的指数，公式中的exponent</td>
         <td>数据类型与self满足<a href ="../../../docs/zh/context/deduction_relationship.md">TensorScalar互推导关系</a>。</td>
-        <td>FLOAT、FLOAT16、DOUBLE、INT16、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16</td>
+        <td>FLOAT、FLOAT16、DOUBLE、INT16、INT32、INT64、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16</td>
         <td>ND</td>
         <td>不高于8维</td>
         <td>√</td>
@@ -232,6 +232,7 @@ aclnnStatus aclnnPowScalarTensor(
 ## 约束说明
 
 - 确定性计算：aclnnPowScalarTensor默认确定性实现。
+- self与exponent的数据类型不允许同时为BOOL。
 
 <!-- npu="910,310p" id8 -->
 - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：该场景下，如果计算结果取值超过了设定的数据类型取值范围，则会以该数据类型的边界值作为结果返回。

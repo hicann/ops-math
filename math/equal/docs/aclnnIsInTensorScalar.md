@@ -81,7 +81,7 @@ aclnnStatus aclnnIsInTensorScalar(
       <td>输入</td>
       <td>输入张量，公式中的element。</td>
       <td>-</td>
-      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、UINT16、BOOL、COMPLEX64、COMPLEX128</td>
+      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -91,7 +91,7 @@ aclnnStatus aclnnIsInTensorScalar(
       <td>输入</td>
       <td>输入标量，公式中的testElement。</td>
       <td>数据类型需要与element的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、UINT16、BOOL、COMPLEX64、COMPLEX128</td>
+      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -149,7 +149,7 @@ aclnnStatus aclnnIsInTensorScalar(
   </tbody></table>
 
   <!-- npu="910,310p" id7 -->
-  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16、COMPLEX64、COMPLEX128。
+  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16。
   <!-- end id7 -->
 
 - **返回值：**
