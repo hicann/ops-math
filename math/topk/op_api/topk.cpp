@@ -227,14 +227,16 @@ std::tuple<aclTensor*, aclTensor*> TopkCommon(const aclTensor* self, int64_t k, 
 
     const aclTensor* kTensor = executor->ConvertToTensor(kScalar, op::ToOpDataType(ACL_INT32));
     auto valuesOut = executor->AllocTensor(outShape, self->GetDataType(), self->GetStorageFormat());
-    aclTensor* indicesOut = nullptr;
-    if (IsRegBase() && !IsSortWithIndex(self, k, sorted)) {
-        indicesOut = executor->AllocTensor(outShape, indicesDType, self->GetStorageFormat());
-    } else {
-        indicesOut = executor->AllocTensor(outShape, op::DataType::DT_INT32, self->GetStorageFormat());
-    }
 
+    // AICore执行路径
     if (IsAiCoreSupport(self, k)) {
+        aclTensor* indicesOut = nullptr;
+        if (IsRegBase() && !IsSortWithIndex(self, k, sorted)) {
+            indicesOut = executor->AllocTensor(outShape, indicesDType, self->GetStorageFormat());
+        } else {
+            indicesOut = executor->AllocTensor(outShape, op::DataType::DT_INT32, self->GetStorageFormat());
+        }
+
         if (IsAscendCSupport(self, k)) {
             return TopkV3(self, kTensor, dim, largest, sorted, valuesOut, indicesOut, executor);
         } else {
