@@ -11,13 +11,13 @@
 add_all_modules_sources(
     OPTYPE matrix_set_diag_v2
     ACLNNTYPE aclnn_exclude
-    COMPUTE_UNIT ascend950
-    TILING_DIR arch35
+    COMPUTE_UNIT ascend950 ascend350
+    TILING_DIR arch35 arch35
 )
 
 add_kernel_sources(
     KERNEL_SRC arch35/matrix_set_diag_v2.cpp
-    COMPUTE_UNITS ascend950
+    COMPUTE_UNITS ascend950 ascend350
     AUTO_SYNC false
     OPTIONS "--cce-no-dcache-flush"
 )

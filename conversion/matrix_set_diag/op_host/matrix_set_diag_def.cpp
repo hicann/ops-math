@@ -40,6 +40,7 @@ public:
             .ExtendCfgInfo("opFile.value", "matrix_set_diag_apt");
 
         this->AICore().AddConfig("ascend950", aicore_config);
+        this->AICore().AddConfig("ascend350", aicore_config);
     }
 };
 
