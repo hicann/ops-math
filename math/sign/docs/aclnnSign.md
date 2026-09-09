@@ -89,6 +89,9 @@
     <!-- npu="A3,910b" id7 -->
     - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持DOUBLE、FLOAT、FLOAT16、INT32、INT64、COMPLEX64、COMPLEX128、BOOL、BFLOAT16。
     <!-- end id7 -->
+    <!-- npu="950" id10 -->
+    - <term>Ascend 950PR/Ascend 950DT</term>：数据类型支持DOUBLE、FLOAT、FLOAT16、INT32、INT64、COMPLEX64、COMPLEX128、BOOL、BFLOAT16。
+    <!-- end id10 -->
 
   - result(aclTensor，计算输出)：Device侧的tensor，支持1维~8维。支持非连续Tensor，[数据格式](../../../docs/zh/context/data_format.md)支持ND，且类型与shape需要与self一致，dtype要与self一致。
 
