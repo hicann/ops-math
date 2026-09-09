@@ -174,7 +174,7 @@ static void ComputeTilingParams(int64_t totalIdx, int64_t availableCoreNum, uint
 
 static ge::graphStatus DawsnTilingFunc(gert::TilingContext* context)
 {
-    OP_LOGI(context->GetNodeName(), "Enter DawsnTilingFunc");
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     // 1. Get platform info
     uint64_t ubSize;
     int64_t availableCoreNum;
@@ -206,6 +206,8 @@ static ge::graphStatus DawsnTilingFunc(gert::TilingContext* context)
 
     // 5-8. Compute tiling parameters
     ComputeTilingParams(totalIdx, availableCoreNum, ubSize, dataType, tiling);
+    OP_LOGI(context, "[TilingData] dim0: %ld, coreNum: %ld, blockFormer: %ld, blockNum: %ld, ubFormer: %ld",
+            tiling->dim0, tiling->coreNum, tiling->blockFormer, tiling->blockNum, tiling->ubFormer);
 
     context->SetBlockDim(tiling->blockNum);
 

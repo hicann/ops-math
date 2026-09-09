@@ -1004,8 +1004,7 @@ static ge::graphStatus HandleEmptyTensor(gert::TilingContext* context, ReduceStd
 // ─────────────────────────────────────────────────────────────────────────────
 static ge::graphStatus ReduceStdV2UpdateTilingFunc(gert::TilingContext* context)
 {
-    OP_LOGI(context->GetNodeName(), "Enter ReduceStdV2UpdateTilingFunc");
-    OP_LOGD(context, "Begin ReduceStdV2UpdateTilingFunc");
+    OP_LOGD(context, "Begin the tiling process for Arch35 architecture");
     ReduceStdV2UpdateCtx ctx;
 
     OP_CHECK_IF(GetPlatformInfo(context, ctx) != ge::GRAPH_SUCCESS, , return ge::GRAPH_FAILED);

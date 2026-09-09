@@ -99,7 +99,7 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 
 static ge::graphStatus ExpintTilingFunc(gert::TilingContext* context)
 {
-    OP_LOGI(context->GetNodeName(), "Enter ExpintTilingFunc");
+    OP_LOGD(context, "Begin the tiling process for Arch35 architecture");
 
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
@@ -137,6 +137,8 @@ static ge::graphStatus ExpintTilingFunc(gert::TilingContext* context)
                 return ge::GRAPH_FAILED);
     int64_t bufferNum = (dataType == ge::DT_FLOAT) ? BUFFER_NUM_FP32 : BUFFER_NUM_FP16;
     tiling->ubFactor = FloorAlign(FloorDiv(availableUbBytes / TYPE_SIZE_FP32, bufferNum), ubBlockSize);
+    OP_LOGI(context, "[TilingData] totalNum: %ld, blockFactor: %ld, ubFactor: %ld", tiling->totalNum,
+            tiling->blockFactor, tiling->ubFactor);
 
     context->SetBlockDim(usedCoreNum);
 

@@ -14,6 +14,7 @@
  * \file sign_bits_unpack_infershape.cpp
  * \brief
  */
+#include "util/shape_util.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 
@@ -52,6 +53,7 @@ static ge::graphStatus InferShape4SignBitsUnpack(gert::InferShapeContext* contex
     outShape->SetDimNum(0);
     outShape->AppendDim(*dim);
     outShape->AppendDim(yShape);
+    OP_LOGI(context->GetNodeName(), "[InferShape] output shape=%s", Ops::Base::ToString(*outShape).c_str());
     return ge::GRAPH_SUCCESS;
 }
 

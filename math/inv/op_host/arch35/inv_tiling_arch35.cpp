@@ -131,7 +131,7 @@ static ge::graphStatus CalcTilingParams(gert::TilingContext* context, InvTilingD
 
 static ge::graphStatus InvTilingFunc(gert::TilingContext* context)
 {
-    OP_LOGD(context->GetNodeName(), "Enter InvTilingFunc");
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
     OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
@@ -154,6 +154,8 @@ static ge::graphStatus InvTilingFunc(gert::TilingContext* context)
     }
     uint32_t mode = 0;
     ASCENDC_TPL_SEL_PARAM(context, mode);
+    OP_LOGI(context->GetNodeName(), "[TilingData] totalElements=%ld, blockFactor=%ld, ubFactor=%ld",
+            tiling->totalElements, tiling->blockFactor, tiling->ubFactor);
     return ge::GRAPH_SUCCESS;
 }
 

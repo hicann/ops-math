@@ -27,6 +27,7 @@
 
 #include <set>
 #include <vector>
+#include "util/shape_util.h"
 
 using namespace ge;
 
@@ -112,6 +113,7 @@ static ge::graphStatus InferShape4ReduceStdV2Update(gert::InferShapeContext* con
 
     // dtype 透传：output.dtype = x.dtype（由 OpDef .DataType(...) 声明自动处理，InferShape 无需显式设置）
 
+    OP_LOGI(context, "[InferShape] output shape=%s", Ops::Base::ToString(*outShape).c_str());
     return ge::GRAPH_SUCCESS;
 }
 

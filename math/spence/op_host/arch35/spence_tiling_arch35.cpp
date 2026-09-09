@@ -105,7 +105,7 @@ static void ComputeBlockDetails(int64_t dim0, int64_t blockFormer, int64_t block
 
 static ge::graphStatus SpenceTilingFunc(gert::TilingContext* context)
 {
-    OP_LOGI(context->GetNodeName(), "Enter SpenceTilingFunc");
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     // 1. Get platform info
     uint64_t ubSize;
     int64_t coreNum;

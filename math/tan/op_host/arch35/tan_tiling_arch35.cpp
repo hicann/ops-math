@@ -25,7 +25,6 @@
 
 namespace optiling {
 
-
 constexpr uint32_t WS_SYS_SIZE = 0U;
 constexpr int32_t THREAD_NUM = 512;
 constexpr int32_t MIN_ELEMENTS_PER_THREAD = 4;
@@ -44,10 +43,11 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, int64_t& co
 
 static ge::graphStatus TanTilingFunc(gert::TilingContext* context)
 {
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     // 1. 动态获取平台核数
     int64_t coreNum = 0;
-    OP_CHECK_IF(GetPlatformInfo(context, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
+                return ge::GRAPH_FAILED);
 
     // 2. 获取输入 shape 和 dtype
     auto inputShape = context->GetInputShape(0);
@@ -94,7 +94,7 @@ static ge::graphStatus TanTilingFunc(gert::TilingContext* context)
 
     // 6. 设置 blockDim 和 tiling key
     context->SetBlockDim(needCoreNum);
-    context->SetLocalMemorySize(128 * 1024);  // 128KB
+    context->SetLocalMemorySize(128 * 1024); // 128KB
 
     uint64_t tilingKey = 0;
     if (dataTypeId == 0) {

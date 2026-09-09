@@ -60,6 +60,7 @@ inline ge::graphStatus SetTilingKey4FillDiagonalV2(gert::TilingContext* context,
 
 static ge::graphStatus Tiling4FillDiagonalV2(gert::TilingContext* context)
 {
+    OP_LOGD(context, "Begin the tiling process for Arch35 architecture");
     auto compileInfo = reinterpret_cast<const FillDiagonalV2CompileInfo*>(context->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     auto tilingCoreNum = compileInfo->totalCoreNum;

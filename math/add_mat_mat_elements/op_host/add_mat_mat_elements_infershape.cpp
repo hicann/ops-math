@@ -19,6 +19,7 @@
  *   BroadcastInferShape，二者结果须保持一致以避免 cOut shape 校验失败。
  */
 
+#include "util/shape_util.h"
 #include "register/op_impl_registry.h"
 #include "exe_graph/runtime/infer_shape_context.h"
 #include "infershape_broadcast_util.h"
@@ -52,6 +53,7 @@ static ge::graphStatus InferShape4AddMatMatElements(gert::InferShapeContext* con
                 return ge::GRAPH_FAILED);
 
     OP_LOGD(context->GetNodeName(), "End to do InferShape4AddMatMatElements");
+    OP_LOGI(context->GetNodeName(), "[InferShape] output0 shape=%s", Ops::Base::ToString(*outShape).c_str());
     return ge::GRAPH_SUCCESS;
 }
 

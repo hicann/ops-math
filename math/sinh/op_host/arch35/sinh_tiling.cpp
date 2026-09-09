@@ -28,6 +28,7 @@ const size_t ASCEND_WORKSPACE = 16777216; // 16 * 1024 * 1024
 
 static ge::graphStatus SinhTilingFunc(gert::TilingContext* context)
 {
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     auto tilingData = context->GetTilingData<SinhTilingData>();
 
     auto inputDesc = context->GetInputDesc(0);
@@ -42,15 +43,12 @@ static ge::graphStatus SinhTilingFunc(gert::TilingContext* context)
 
     // Select DAG variant based on dtype
     if (dtype == ge::DT_FLOAT16) {
-        ret = elewiseBaseTiling.DoTiling<NsSinh::SinhWithCast<half>::OpDag>(
-            tilingData->baseTiling);
+        ret = elewiseBaseTiling.DoTiling<NsSinh::SinhWithCast<half>::OpDag>(tilingData->baseTiling);
     } else if (dtype == ge::DT_BF16) {
-        ret = elewiseBaseTiling.DoTiling<NsSinh::SinhWithCast<bfloat16_t>::OpDag>(
-            tilingData->baseTiling);
+        ret = elewiseBaseTiling.DoTiling<NsSinh::SinhWithCast<bfloat16_t>::OpDag>(tilingData->baseTiling);
     } else {
         // float32
-        ret = elewiseBaseTiling.DoTiling<NsSinh::SinhWithoutCast<float>::OpDag>(
-            tilingData->baseTiling);
+        ret = elewiseBaseTiling.DoTiling<NsSinh::SinhWithoutCast<float>::OpDag>(tilingData->baseTiling);
     }
 
     if (ret != ge::GRAPH_SUCCESS) {
@@ -67,27 +65,21 @@ static ge::graphStatus SinhTilingFunc(gert::TilingContext* context)
     // Set block dimension from tiling data's blockNum
     context->SetBlockDim(tilingData->baseTiling.blockNum);
 
-    uint32_t tilingKey = GET_TPL_TILING_KEY(
-        (uint64_t)tilingData->baseTiling.scheMode);
+    uint32_t tilingKey = GET_TPL_TILING_KEY((uint64_t)tilingData->baseTiling.scheMode);
     context->SetTilingKey(tilingKey);
 
-    OP_LOGI(context, "Sinh: Tiling success, blockDim=%ld, blockNum=%ld, coreNum=%d",
-            elewiseBaseTiling.GetBlockDim(),
-            tilingData->baseTiling.blockNum,
-            tilingData->baseTiling.coreNum);
+    OP_LOGI(context, "Sinh: Tiling success, blockDim=%ld, blockNum=%ld, coreNum=%d", elewiseBaseTiling.GetBlockDim(),
+            tilingData->baseTiling.blockNum, tilingData->baseTiling.coreNum);
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus TilingParseForSinh(
-    [[maybe_unused]] gert::TilingParseContext* context)
+static ge::graphStatus TilingParseForSinh([[maybe_unused]] gert::TilingParseContext* context)
 {
     return ge::GRAPH_SUCCESS;
 }
 
 struct SinhCompileInfo {};
 
-IMPL_OP_OPTILING(Sinh)
-    .Tiling(SinhTilingFunc)
-    .TilingParse<SinhCompileInfo>(TilingParseForSinh);
+IMPL_OP_OPTILING(Sinh).Tiling(SinhTilingFunc).TilingParse<SinhCompileInfo>(TilingParseForSinh);
 
 } // namespace optiling

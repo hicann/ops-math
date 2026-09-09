@@ -82,6 +82,7 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 static ge::graphStatus SignBitsUnpackTilingFunc(gert::TilingContext* context)
 {
     OP_LOGI(context->GetNodeName(), "Enter SignBitsUnpackTilingFunc");
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     uint64_t ubSize;
     int64_t coreNum;
     OP_CHECK_IF(GetPlatformInfo(context, &ubSize, &coreNum) != ge::GRAPH_SUCCESS,
@@ -122,6 +123,10 @@ static ge::graphStatus SignBitsUnpackTilingFunc(gert::TilingContext* context)
 
     context->SetBlockDim(static_cast<uint32_t>(std::max(usedCoreNum, MIN_BLOCK_DIM)));
 
+    OP_LOGI(context->GetNodeName(),
+            "[TilingData] totalNum=%lu, blockFactor=%lu, ubFactor=%lu, size=%lu, enableDump=%u, dumpFlag=%u",
+            tiling->totalNum, tiling->blockFactor, tiling->ubFactor, tiling->size, tiling->enableDump,
+            tiling->dumpFlag);
     return ge::GRAPH_SUCCESS;
 }
 

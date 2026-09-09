@@ -14,6 +14,8 @@
 #include <vector>
 
 #include "graph/operator_reg.h"
+#include "register/op_impl_registry.h"
+#include "exe_graph/runtime/infer_datatype_context.h"
 #include "accumulate_nv2_graph_infer.h"
 
 namespace ge {
@@ -117,3 +119,15 @@ IMPLEMT_COMMON_INFERFUNC(AccumulateNV2LegacyV1InferShape)
 COMMON_INFER_FUNC_REG(AccumulateNV2, AccumulateNV2LegacyV1InferShape);
 
 } // namespace ge
+
+namespace ops {
+
+static ge::graphStatus InferDataType4AccumulateNV2(gert::InferDataTypeContext* context)
+{
+    context->SetOutputDataType(0, context->GetInputDataType(0));
+    return ge::GRAPH_SUCCESS;
+}
+
+IMPL_OP(AccumulateNV2).InferDataType(InferDataType4AccumulateNV2);
+
+} // namespace ops

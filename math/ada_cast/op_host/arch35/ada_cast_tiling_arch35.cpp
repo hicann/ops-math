@@ -117,7 +117,7 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 // tiling 分发入口
 static ge::graphStatus AdaCastTilingFunc(gert::TilingContext* context)
 {
-    OP_LOGI(context->GetNodeName(), "Enter AdaCastTilingFunc");
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     // 1、获取平台运行信息
     uint64_t ubSize = 0;
     int64_t availableCoreNum = 0;

@@ -96,6 +96,7 @@ static ge::graphStatus HandleEmptyTensor(gert::TilingContext* context)
     context->SetBlockDim(1);
     uint64_t useDoubleBuffer = 0U;
     ASCENDC_TPL_SEL_PARAM(context, useDoubleBuffer);
+    OP_LOGI(context, "[TilingData] totalNum=0, blockFactor=0, ubFactor=0");
     return ge::GRAPH_SUCCESS;
 }
 
@@ -124,11 +125,14 @@ static ge::graphStatus ComputeTilingParams(gert::TilingContext* context, int64_t
     context->SetBlockDim(std::max<int64_t>(usedCoreNum, 1));
 
     ASCENDC_TPL_SEL_PARAM(context, useDoubleBuffer);
+    OP_LOGI(context, "[TilingData] totalNum=%ld, blockFactor=%ld, ubFactor=%ld", tiling->totalNum, tiling->blockFactor,
+            tiling->ubFactor);
     return ge::GRAPH_SUCCESS;
 }
 
 static ge::graphStatus PopulationCountTilingFunc(gert::TilingContext* context)
 {
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
     OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,

@@ -17,6 +17,7 @@
  * z.shape = y.shape（element-wise，无广播）
  */
 
+#include "util/shape_util.h"
 #include "register/op_impl_registry.h"
 #include "exe_graph/runtime/infer_shape_context.h"
 #include "op_common/log/log.h"
@@ -35,6 +36,8 @@ static ge::graphStatus InferShape4AcoshGrad(gert::InferShapeContext* context)
 
     // z.shape = y.shape
     *output_shape = *input_shape;
+
+    OP_LOGI(context->GetNodeName(), "[InferShape] output0 shape=%s", Ops::Base::ToString(*output_shape).c_str());
 
     return ge::GRAPH_SUCCESS;
 }

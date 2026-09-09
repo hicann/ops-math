@@ -96,7 +96,7 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 
 static ge::graphStatus BesselI1eTilingFunc(gert::TilingContext* context)
 {
-    OP_LOGI(context->GetNodeName(), "Enter BesselI1eTilingFunc");
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     uint64_t ubSize;
     int64_t coreNum;
     OP_CHECK_IF(GetPlatformInfo(context, &ubSize, &coreNum) != ge::GRAPH_SUCCESS,
@@ -137,6 +137,8 @@ static ge::graphStatus BesselI1eTilingFunc(gert::TilingContext* context)
 
     uint32_t dTypeX = static_cast<uint32_t>(dataType);
     ASCENDC_TPL_SEL_PARAM(context, dTypeX);
+    OP_LOGI(context->GetNodeName(), "[TilingData] totalNum=%ld, blockFactor=%ld, ubFactor=%ld", tiling->totalNum,
+            tiling->blockFactor, tiling->ubFactor);
     return ge::GRAPH_SUCCESS;
 }
 

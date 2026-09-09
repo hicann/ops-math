@@ -138,7 +138,7 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 
 static ge::graphStatus CoshTilingFunc(gert::TilingContext* context)
 {
-    OP_LOGD(context->GetNodeName(), "Enter CoshTilingFunc");
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     // 1、平台信息
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
@@ -204,6 +204,9 @@ static ge::graphStatus CoshTilingFunc(gert::TilingContext* context)
                 OP_LOGE(context, "Cosh: ubFactor=%ld exceeds UB capacity ubSize=%lu", tiling->ubFactor,
                         static_cast<unsigned long>(ubSize)),
                 return ge::GRAPH_FAILED);
+
+    OP_LOGI(context, "[TilingData] totalNum: %ld, blockFactor: %ld, ubFactor: %ld", tiling->totalNum,
+            tiling->blockFactor, tiling->ubFactor);
 
     context->SetBlockDim(usedCoreNum);
 

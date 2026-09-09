@@ -60,19 +60,20 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
 
 static ge::graphStatus AtanhTilingFunc(gert::TilingContext* context)
 {
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     int64_t coreNum = 0;
-    OP_CHECK_IF(GetPlatformInfo(context, coreNum) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(GetPlatformInfo(context, coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetPlatformInfo error"),
+                return ge::GRAPH_FAILED);
 
     int64_t totalNum = 0;
     ge::DataType dataType = ge::DT_FLOAT;
     OP_CHECK_IF(GetShapeAttrsInfo(context, totalNum, dataType) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
+                OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     AtanhTilingData* tiling = context->GetTilingData<AtanhTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
     OP_CHECK_IF(memset_s(tiling, sizeof(AtanhTilingData), 0, sizeof(AtanhTilingData)) != EOK,
-        OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
+                OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     tiling->totalNum = totalNum;
     // blockDim 必须封顶在物理 AIV 核数；SIMT 核内用 grid-stride 覆盖全部元素。
@@ -104,6 +105,7 @@ static ge::graphStatus AtanhTilingFunc(gert::TilingContext* context)
         return ge::GRAPH_FAILED;
     }
     context->SetTilingKey(tilingKey);
+    OP_LOGI(context->GetNodeName(), "[TilingData] totalNum=%ld", tiling->totalNum);
     return ge::GRAPH_SUCCESS;
 }
 

@@ -131,6 +131,7 @@ static int64_t CalcUbFactor(ge::DataType dataType, uint64_t ubSize, int64_t ubBl
 
 static ge::graphStatus AsinGradTilingFunc(gert::TilingContext* context)
 {
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     // 1. Get platform info
     uint64_t ubSize;
     int64_t coreNum;

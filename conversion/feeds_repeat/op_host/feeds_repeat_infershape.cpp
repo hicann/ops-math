@@ -12,6 +12,7 @@
  * \file feeds_repeat_infershape.cpp
  * \brief
  */
+#include "util/shape_util.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 
@@ -64,6 +65,7 @@ static ge::graphStatus InferShape4FeedsRepeat(gert::InferShapeContext* context)
         y_shape->SetDim(0, *output_feeds_size);
     }
     OP_LOGD(context, "End to do InferShape4FeedsRepeat");
+    OP_LOGI(context->GetNodeName(), "[InferShape] output shape=%s", Ops::Base::ToString(*y_shape).c_str());
     return GRAPH_SUCCESS;
 }
 

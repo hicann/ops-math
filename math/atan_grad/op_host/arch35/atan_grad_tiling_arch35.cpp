@@ -85,6 +85,7 @@ static ge::graphStatus SetWorkspace(gert::TilingContext* context)
 
 static ge::graphStatus AtanGradTilingFunc(gert::TilingContext* context)
 {
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     // 1. 获取平台信息
     uint64_t ubSize;
     int64_t coreNum;
@@ -144,6 +145,8 @@ static ge::graphStatus AtanGradTilingFunc(gert::TilingContext* context)
     // 7. 选择模板（BUFFER_MODE only; dtype is driven by def file）
     ASCENDC_TPL_SEL_PARAM(context, useDoubleBuffer);
 
+    OP_LOGI(context->GetNodeName(), "[TilingData] totalNum=%ld, blockFactor=%ld, ubFactor=%ld", tiling->totalNum,
+            tiling->blockFactor, tiling->ubFactor);
     return ge::GRAPH_SUCCESS;
 }
 

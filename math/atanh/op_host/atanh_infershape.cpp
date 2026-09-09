@@ -14,6 +14,7 @@
  * \file atanh_infershape.cpp
  * \brief Atanh operator shape inference
  */
+#include "util/shape_util.h"
 #include "register/op_impl_registry.h"
 #include "log/log.h"
 
@@ -40,6 +41,7 @@ static ge::graphStatus InferShapeAtanh(gert::InferShapeContext* context)
     }
 
     OP_LOGD(context->GetNodeName(), "End to do InferShapeAtanh");
+    OP_LOGI(context->GetNodeName(), "[InferShape] output0 shape=%s", Ops::Base::ToString(*yShape).c_str());
     return GRAPH_SUCCESS;
 }
 

@@ -524,6 +524,7 @@ private:
 
 static ge::graphStatus TilingFuncScale(gert::TilingContext* context)
 {
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     ScaleTiling scaleTiling(context);
     auto ret = scaleTiling.RunTiling();
     if (ret != ge::GRAPH_SUCCESS)

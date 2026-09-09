@@ -17,6 +17,10 @@
  * Elementwise 算子，输出形状 = 输入形状
  */
 
+#include <string>
+
+#include "util/shape_util.h"
+#include "infershape_elewise_util.h"
 #include "register/op_impl_registry.h"
 #include "exe_graph/runtime/infer_shape_context.h"
 #include "op_common/log/log.h"
@@ -27,15 +31,14 @@ namespace ops {
 
 static ge::graphStatus InferShape4BesselI0e(gert::InferShapeContext* context)
 {
-    const gert::Shape* input_shape = context->GetInputShape(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, input_shape);
-
-    gert::Shape* output_shape = context->GetOutputShape(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, output_shape);
-
-    // Elementwise 算子：输出形状 = 输入形状
-    *output_shape = *input_shape;
-
+    const ge::graphStatus status = Ops::Base::InferShape4Elewise(context);
+    if (status != ge::GRAPH_SUCCESS) {
+        return status;
+    }
+    const gert::Shape* yShape = context->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, yShape);
+    const std::string yShapeText = Ops::Base::ToString(*yShape);
+    OP_LOGI(context->GetNodeName(), "[InferShape] BesselI0e output0 shape=%s", yShapeText.c_str());
     return ge::GRAPH_SUCCESS;
 }
 

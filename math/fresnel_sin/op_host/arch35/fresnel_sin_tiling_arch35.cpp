@@ -105,7 +105,7 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 
 static ge::graphStatus FresnelSinTilingFunc(gert::TilingContext* context)
 {
-    OP_LOGI(context->GetNodeName(), "Enter FresnelSinTilingFunc");
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     uint64_t ubSize;
     int64_t coreNum;
     OP_CHECK_IF(GetPlatformInfo(context, &ubSize, &coreNum) != ge::GRAPH_SUCCESS,
@@ -142,6 +142,8 @@ static ge::graphStatus FresnelSinTilingFunc(gert::TilingContext* context)
                            MASK_BUFFER_COUNT * MASK_BYTES_PER_ELEM;
     int64_t cmpAlign = (dataType == ge::DT_FLOAT) ? CMP_ALIGN_FP32 : CMP_ALIGN_FP16;
     tiling->ubFactor = FloorAlign(FloorDiv(static_cast<int64_t>(ubSize), bytesPerElem), cmpAlign);
+    OP_LOGI(context, "[TilingData] totalNum: %ld, blockFactor: %ld, ubFactor: %ld", tiling->totalNum,
+            tiling->blockFactor, tiling->ubFactor);
 
     context->SetBlockDim(usedCoreNum);
     return ge::GRAPH_SUCCESS;

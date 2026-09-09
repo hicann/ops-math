@@ -130,7 +130,7 @@ static ge::graphStatus ComputeUbFactor(gert::TilingContext* context, uint64_t ub
 
 static ge::graphStatus AcoshTilingFunc(gert::TilingContext* context)
 {
-    OP_LOGD(context->GetNodeName(), "Enter AcoshTilingFunc");
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     // 1. 平台信息
     uint64_t ubSize = 0;
     int64_t coreNum = 0;

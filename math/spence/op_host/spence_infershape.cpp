@@ -15,6 +15,10 @@
  * \brief Spence 算子形状推导实现（y.shape = x.shape）
  */
 
+#include <string>
+
+#include "util/shape_util.h"
+#include "infershape_elewise_util.h"
 #include "register/op_impl_registry.h"
 #include "exe_graph/runtime/infer_shape_context.h"
 #include "op_common/log/log.h"
@@ -25,14 +29,14 @@ namespace ops {
 
 static ge::graphStatus InferShape4Spence(gert::InferShapeContext* context)
 {
-    const gert::Shape* input_shape = context->GetInputShape(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, input_shape);
-
-    gert::Shape* output_shape = context->GetOutputShape(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, output_shape);
-
-    *output_shape = *input_shape;
-
+    const ge::graphStatus inferStatus = Ops::Base::InferShape4Elewise(context);
+    if (inferStatus != ge::GRAPH_SUCCESS) {
+        return inferStatus;
+    }
+    const gert::Shape* output = context->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, output);
+    const std::string outputShape = Ops::Base::ToString(*output);
+    OP_LOGI(context->GetNodeName(), "[InferShape] Spence output shape=%s", outputShape.c_str());
     return ge::GRAPH_SUCCESS;
 }
 

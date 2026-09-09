@@ -15,8 +15,13 @@
  * \brief AtanGrad shape inference: output shape = input y shape
  */
 
+#include <string>
+
+#include "util/shape_util.h"
+#include "infershape_elewise_util.h"
 #include "register/op_impl_registry.h"
 #include "exe_graph/runtime/infer_shape_context.h"
+#include "op_common/log/log.h"
 
 using namespace ge;
 
@@ -24,17 +29,14 @@ namespace ops {
 
 static ge::graphStatus InferShape4AtanGrad(gert::InferShapeContext* context)
 {
-    const gert::Shape* inputShape = context->GetInputShape(0);
-    if (inputShape == nullptr) {
-        return ge::GRAPH_FAILED;
+    const ge::graphStatus status = Ops::Base::InferShape4Elewise(context);
+    if (status != ge::GRAPH_SUCCESS) {
+        return status;
     }
-
-    gert::Shape* outputShape = context->GetOutputShape(0);
-    if (outputShape == nullptr) {
-        return ge::GRAPH_FAILED;
-    }
-
-    *outputShape = *inputShape;
+    const gert::Shape* zShape = context->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, zShape);
+    const std::string zShapeText = Ops::Base::ToString(*zShape);
+    OP_LOGI(context->GetNodeName(), "[InferShape] AtanGrad output0 shape=%s", zShapeText.c_str());
     return ge::GRAPH_SUCCESS;
 }
 

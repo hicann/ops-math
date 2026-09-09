@@ -15,13 +15,13 @@
 
 /**
  * \file population_count_infershape.cpp
- * \brief PopulationCount InferShape / InferDataType
+ * \brief PopulationCount InferShape
  *
  * Semantics:
  *   - y.shape = x.shape (element-wise, no broadcast)
- *   - y.dtype = UINT8 (fixed, independent of x.dtype)
  */
 
+#include "util/shape_util.h"
 #include "register/op_impl_registry.h"
 #include "exe_graph/runtime/infer_shape_context.h"
 #include "op_common/log/log.h"
@@ -41,18 +41,10 @@ static ge::graphStatus InferShape4PopulationCount(gert::InferShapeContext* conte
     // Shape passthrough: y.shape = x.shape
     *output_shape = *input_shape;
 
+    OP_LOGI(context->GetNodeName(), "[InferShape] output shape=%s", Ops::Base::ToString(*output_shape).c_str());
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus InferDataType4PopulationCount(gert::InferDataTypeContext* context)
-{
-    // y.dtype fixed to UINT8, independent of x.dtype
-    context->SetOutputDataType(0, ge::DT_UINT8);
-    return ge::GRAPH_SUCCESS;
-}
-
-IMPL_OP_INFERSHAPE(PopulationCount)
-    .InferShape(InferShape4PopulationCount)
-    .InferDataType(InferDataType4PopulationCount);
+IMPL_OP_INFERSHAPE(PopulationCount).InferShape(InferShape4PopulationCount);
 
 } // namespace ops

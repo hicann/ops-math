@@ -63,9 +63,9 @@ static ge::graphStatus SetTilingBatch(const gert::TilingContext* context, FeedsR
     int64_t group = 0;
     int64_t core_per_group = 0;
     int64_t core_moreover = 0;
-    OP_CHECK_IF(
-        batch_num == 0, OP_LOGE(context->GetNodeName(), "[FeedsRepeat] The batch_num of feeds_shape should not be 0"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(batch_num == 0,
+                OP_LOGE(context->GetNodeName(), "[FeedsRepeat] The batch_num of feeds_shape should not be 0"),
+                return ge::GRAPH_FAILED);
     if (batch_num < max_core_num) {
         group = batch_num;
         core_per_group = max_core_num / batch_num;
@@ -83,17 +83,15 @@ static ge::graphStatus SetTilingBatch(const gert::TilingContext* context, FeedsR
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus SetTilingLength(
-    const gert::TilingContext* context, FeedsRepeatTilingData& tiling, uint32_t& tiling_key, uint32_t& length_space)
+static ge::graphStatus SetTilingLength(const gert::TilingContext* context, FeedsRepeatTilingData& tiling,
+                                       uint32_t& tiling_key, uint32_t& length_space)
 {
     uint32_t length = context->GetInputShape(0)->GetStorageShape().GetDim(0);
     uint32_t length_aligned = 0;
-    OP_CHECK_IF(
-        length != context->GetInputShape(1)->GetStorageShape().GetDim(0),
-        OP_LOGE(
-            context->GetNodeName(),
-            "[FeedsRepeat] The length of feeds_repeat_times should be same as feeds' dim0 size"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(length != context->GetInputShape(1)->GetStorageShape().GetDim(0),
+                OP_LOGE(context->GetNodeName(),
+                        "[FeedsRepeat] The length of feeds_repeat_times should be same as feeds' dim0 size"),
+                return ge::GRAPH_FAILED);
     auto dtype_length = context->GetInputDesc(1)->GetDataType();
     if (dtype_length == ge::DT_INT32) {
         length_space = ((length + ALIGN_INT32 - 1) / ALIGN_INT32) * ALIGN_NUM;
@@ -111,8 +109,8 @@ static ge::graphStatus SetTilingLength(
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus SetTilingElemRow(
-    const gert::TilingContext* context, FeedsRepeatTilingData& tiling, uint32_t& tiling_key, uint32_t& length_space)
+static ge::graphStatus SetTilingElemRow(const gert::TilingContext* context, FeedsRepeatTilingData& tiling,
+                                        uint32_t& tiling_key, uint32_t& length_space)
 {
     const gert::Shape feeds_shape = context->GetInputShape(0)->GetStorageShape();
     int64_t elem_row = 1;
@@ -144,10 +142,10 @@ static ge::graphStatus SetTilingElemRow(
         return ge::GRAPH_FAILED;
     }
     elem_row_aligned = (elem_row + align_data - 1) / align_data * align_data;
-    OP_CHECK_IF(
-        SPACE_USED_RATIO * length_space >=
-            max_ub_size - UB_BUFFER_USED, // sum(), cast() and other buffers needs ub space
-        OP_LOGE(context->GetNodeName(), "[FeedsRepeat] feeds_repeat_times is too large"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(SPACE_USED_RATIO * length_space >=
+                    max_ub_size - UB_BUFFER_USED, // sum(), cast() and other buffers needs ub space
+                OP_LOGE(context->GetNodeName(), "[FeedsRepeat] feeds_repeat_times is too large"),
+                return ge::GRAPH_FAILED);
     elem_per_loop = elem_per_loop / align_data * align_data;
     elem_per_loop = elem_row_aligned > elem_per_loop ? elem_per_loop : elem_row_aligned;
     if (elem_per_loop == 0) {
@@ -161,6 +159,7 @@ static ge::graphStatus SetTilingElemRow(
 
 ge::graphStatus Tiling4FeedsRepeat(gert::TilingContext* context)
 {
+    OP_LOGD(context, "Begin the tiling process for Arch35 architecture");
     OP_LOGD("FeedsRepeat tiling start");
     FeedsRepeatTilingData tiling;
     const auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
@@ -194,16 +193,14 @@ ge::graphStatus TilingPrepare4FeedsRepeat(gert::TilingParseContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->total_core_num = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        (compileInfo->total_core_num <= 0), // 0 negative number
-        OP_LOGE(context->GetNodeName(), "Failed to get core num."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->total_core_num <= 0), // 0 negative number
+                OP_LOGE(context->GetNodeName(), "Failed to get core num."), return ge::GRAPH_FAILED);
 
     uint64_t ub_size_platform = 0U; // 0, init
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ub_size_platform);
     compileInfo->ub_size_platform = static_cast<int64_t>(ub_size_platform);
-    OP_CHECK_IF(
-        (compileInfo->ub_size_platform <= 0), // 0
-        OP_LOGE(context->GetNodeName(), "Failed to get ub size"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->ub_size_platform <= 0), // 0
+                OP_LOGE(context->GetNodeName(), "Failed to get ub size"), return ge::GRAPH_FAILED);
     OP_LOGD("FeedsRepeat:", "TilingPrepareForFeedsRepeat end.");
     return ge::GRAPH_SUCCESS;
 }

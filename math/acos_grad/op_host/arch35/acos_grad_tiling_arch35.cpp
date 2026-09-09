@@ -177,6 +177,7 @@ static void CalcTilingParams(uint64_t totalLength, uint32_t availCoreNum, ge::Da
 static ge::graphStatus AcosGradTilingFunc(gert::TilingContext* context)
 {
     OP_LOGI(context->GetNodeName(), "Enter AcosGradTilingFunc");
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     uint64_t ubSize = 0UL;
     uint32_t coreNum = 0U;
     OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
@@ -219,6 +220,9 @@ static ge::graphStatus AcosGradTilingFunc(gert::TilingContext* context)
             "ubLoopFormer=%u, ubTailFormer=%u, ubLoopTail=%u, ubTailTail=%u",
             tiling->totalLength, tiling->blockFormer, tiling->blockNum, tiling->ubFormer, tiling->ubLoopOfFormerBlock,
             tiling->ubTailOfFormerBlock, tiling->ubLoopOfTailBlock, tiling->ubTailOfTailBlock);
+
+    OP_LOGI(context->GetNodeName(), "[TilingData] totalLength=%lu, blockFormer=%u, blockNum=%u, ubFormer=%u",
+            tiling->totalLength, tiling->blockFormer, tiling->blockNum, tiling->ubFormer);
 
     return ge::GRAPH_SUCCESS;
 }

@@ -136,7 +136,7 @@ static void DispatchTilingKey(gert::TilingContext* context, [[maybe_unused]] ge:
 // Tiling 入口
 static ge::graphStatus NdtriTilingFunc(gert::TilingContext* context)
 {
-    OP_LOGD(context->GetNodeName(), "Enter NdtriTilingFunc");
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     uint64_t ubSize = 0;
     int64_t coreNum = 0;
     uint32_t sysWorkspaceSize = 0;
@@ -175,6 +175,8 @@ static ge::graphStatus NdtriTilingFunc(gert::TilingContext* context)
 
     context->SetBlockDim(usedCoreNum);
     DispatchTilingKey(context, dtype, totalNum, alignElem);
+    OP_LOGI(context, "[TilingData] totalNum=%ld, blockFactor=%ld, ubFactor=%ld", tiling->totalNum, tiling->blockFactor,
+            tiling->ubFactor);
     return ge::GRAPH_SUCCESS;
 }
 

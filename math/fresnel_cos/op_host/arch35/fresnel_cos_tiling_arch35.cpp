@@ -179,6 +179,7 @@ static void ComputeLoopTail(int64_t total, FresnelCosTilingData* td)
 
 static ge::graphStatus FresnelCosTilingFunc(gert::TilingContext* ctx)
 {
+    OP_LOGD(ctx, "Begin the tiling process for Arch35 architecture");
     // 1. platform info
     uint64_t ubSize;
     int64_t coreNum;
@@ -220,6 +221,8 @@ static ge::graphStatus FresnelCosTilingFunc(gert::TilingContext* ctx)
 
     // 7. loop / tail
     ComputeLoopTail(total, td);
+    OP_LOGI(ctx, "[TilingData] dim0: %ld, coreNum: %d, blockFormer: %ld, blockNum: %ld, ubFormer: %ld", td->dim0,
+            td->coreNum, td->blockFormer, td->blockNum, td->ubFormer);
 
     // 8. set block dim
     ctx->SetBlockDim(td->blockNum);

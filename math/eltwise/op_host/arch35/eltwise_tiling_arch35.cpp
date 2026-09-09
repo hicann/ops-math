@@ -265,6 +265,9 @@ static ge::graphStatus FillTilingAndKey(gert::TilingContext* context, EltwiseTil
         FillCoeff(context, tiling, params.inputNum);
     }
 
+    OP_LOGI(context, "[TilingData] totalNum: %ld, blockFactor: %ld, ubFactor: %ld, inputNum: %u", tiling->totalNum,
+            tiling->blockFactor, tiling->ubFactor, tiling->inputNum);
+
     context->SetBlockDim(usedCoreNum);
     // def 驱动 dtype：tiling_key 只编码 MODE，dtype 由 DTYPE_X 宏驱动
     uint32_t modeVal = static_cast<uint32_t>(params.mode);
@@ -274,6 +277,7 @@ static ge::graphStatus FillTilingAndKey(gert::TilingContext* context, EltwiseTil
 
 static ge::graphStatus EltwiseTilingFunc(gert::TilingContext* context)
 {
+    OP_LOGD(context, "Begin the tiling process for Arch35 architecture");
     TilingParams params;
     OP_CHECK_IF(GetPlatformInfo(context, params.ubSize, params.coreNum) != ge::GRAPH_SUCCESS,
                 OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);

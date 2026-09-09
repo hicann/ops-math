@@ -103,7 +103,7 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 // Tiling 分发入口
 static ge::graphStatus BesselI0eTilingFunc(gert::TilingContext* context)
 {
-    OP_LOGI(context->GetNodeName(), "Enter BesselI0eTilingFunc");
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     // 1. 获取平台运行信息
     uint64_t ubSize;
     int64_t coreNum;
@@ -152,6 +152,8 @@ static ge::graphStatus BesselI0eTilingFunc(gert::TilingContext* context)
     // TilingKey 0: float16, TilingKey 1: float32, TilingKey 2: bfloat16
     uint32_t dTypeX = static_cast<uint32_t>(dataType);
     ASCENDC_TPL_SEL_PARAM(context, dTypeX);
+    OP_LOGI(context->GetNodeName(), "[TilingData] totalNum=%ld, blockFactor=%ld, ubFactor=%ld", tiling->totalNum,
+            tiling->blockFactor, tiling->ubFactor);
     return ge::GRAPH_SUCCESS;
 }
 

@@ -127,7 +127,7 @@ static int64_t ComputeUbFactor(uint64_t isComplex, int64_t typeSize, int64_t ubS
 
 static ge::graphStatus RealTilingFunc(gert::TilingContext* context)
 {
-    OP_LOGD(context->GetNodeName(), "Enter RealTilingFunc");
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     // 1. Get platform info
     uint64_t ubSize;
     int64_t coreNum;

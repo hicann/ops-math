@@ -18,6 +18,7 @@
  * 输出 dtype 固定 float16（由 OpDef 声明，infershape 不改 dtype）。
  */
 
+#include "util/shape_util.h"
 #include "register/op_impl_registry.h"
 #include "exe_graph/runtime/infer_shape_context.h"
 #include "op_common/log/log.h"
@@ -37,6 +38,8 @@ static ge::graphStatus InferShape4AdaCast(gert::InferShapeContext* context)
 
     // 设置输出形状 = 输入形状（spec y.shape = x.shape，broadcast.kind: none）
     *output_shape = *input_shape;
+
+    OP_LOGI(context->GetNodeName(), "[InferShape] output shape=%s", Ops::Base::ToString(*output_shape).c_str());
 
     return ge::GRAPH_SUCCESS;
 }

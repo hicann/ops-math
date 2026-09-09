@@ -15,6 +15,7 @@
  * \brief Dawsn 算子形状推导（输出 shape = 输入 shape）
  */
 
+#include "util/shape_util.h"
 #include "register/op_impl_registry.h"
 #include "exe_graph/runtime/infer_shape_context.h"
 #include "op_common/log/log.h"
@@ -32,6 +33,7 @@ static ge::graphStatus InferShape4Dawsn(gert::InferShapeContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, output_shape);
 
     *output_shape = *input_shape;
+    OP_LOGI(context, "[InferShape] output shape=%s", Ops::Base::ToString(*output_shape).c_str());
 
     return ge::GRAPH_SUCCESS;
 }

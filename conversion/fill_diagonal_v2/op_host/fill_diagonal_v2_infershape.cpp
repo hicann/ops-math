@@ -12,6 +12,7 @@
  * \file fill_diagonal_v2_infershape.cpp
  * \brief
  */
+#include "util/shape_util.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 
@@ -27,22 +28,9 @@ ge::graphStatus FillDiagonalV2InferShapeFunc(gert::InferShapeContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, y_shape);
     *y_shape = *x_shape;
     OP_LOGD(context, "x dtype: %s", Ops::Base::ToString(*y_shape).c_str());
+    OP_LOGI(context->GetNodeName(), "[InferShape] output shape=%s", Ops::Base::ToString(*y_shape).c_str());
     return ge::GRAPH_SUCCESS;
 }
 
-graphStatus FillDiagonalV2InferDataTypeFunc(gert::InferDataTypeContext* context)
-{
-    OP_LOGD(context, "Begin to do FillDiagonalV2InferDataTypeFunc");
-    auto inputDtype = context->GetInputDataType(0);
-    OP_LOGD(context, "x dtype: %s", Ops::Base::ToString(inputDtype).c_str());
-    OP_LOGD(context, "before set y dtype: %s", Ops::Base::ToString(context->GetOutputDataType(0)).c_str());
-    context->SetOutputDataType(0, inputDtype);
-    OP_LOGD(context, "after set y dtype: %s", Ops::Base::ToString(context->GetOutputDataType(0)).c_str());
-    OP_LOGD(context, "End to do FillDiagonalV2InferDataTypeFunc end");
-    return ge::GRAPH_SUCCESS;
-}
-
-IMPL_OP_INFERSHAPE(FillDiagonalV2)
-    .InferShape(FillDiagonalV2InferShapeFunc)
-    .InferDataType(FillDiagonalV2InferDataTypeFunc);
+IMPL_OP_INFERSHAPE(FillDiagonalV2).InferShape(FillDiagonalV2InferShapeFunc);
 } // namespace ops

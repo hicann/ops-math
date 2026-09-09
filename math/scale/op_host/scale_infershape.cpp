@@ -13,6 +13,10 @@
  * Scale 算子形状推导实现
  * y.shape = x.shape（输出形状与输入 x 一致）
  */
+#include <string>
+
+#include "util/shape_util.h"
+#include "infershape_elewise_util.h"
 #include "register/op_impl_registry.h"
 #include "exe_graph/runtime/infer_shape_context.h"
 #include "op_common/log/log.h"
@@ -23,15 +27,14 @@ namespace ops {
 
 static ge::graphStatus InferShape4Scale(gert::InferShapeContext* context)
 {
-    const gert::Shape* input_shape = context->GetInputShape(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, input_shape);
-
-    gert::Shape* output_shape = context->GetOutputShape(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, output_shape);
-
-    // y.shape = x.shape
-    *output_shape = *input_shape;
-
+    const ge::graphStatus inferRet = Ops::Base::InferShape4Elewise(context);
+    if (inferRet != ge::GRAPH_SUCCESS) {
+        return inferRet;
+    }
+    const gert::Shape* yShape = context->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, yShape);
+    const std::string yShapeText = Ops::Base::ToString(*yShape);
+    OP_LOGI(context->GetNodeName(), "[InferShape] Scale output shape=%s", yShapeText.c_str());
     return ge::GRAPH_SUCCESS;
 }
 

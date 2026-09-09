@@ -322,6 +322,7 @@ static int64_t CalcTotalTiles(const AddMatMatElementsSplitResult& split, const i
 
 ge::graphStatus AddMatMatElementsTilingFunc(gert::TilingContext* context)
 {
+    OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
     OP_CHECK_IF(ValidateInputs(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "AddMatMatElements: validation failed"),
                 return ge::GRAPH_FAILED);
 
