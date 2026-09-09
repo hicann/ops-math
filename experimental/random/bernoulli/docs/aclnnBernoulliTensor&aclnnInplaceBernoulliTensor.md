@@ -118,7 +118,7 @@ aclnnStatus aclnnInplaceBernoulliTensor(
       <td>输入</td>
       <td>公式中的prob，Device侧的aclTensor</td>
       <td>满足0≤prob≤1。<a href="../../../../docs/zh/context/data_format.md" target="_blank">数据格式</a>需要与self一致。</td>
-      <td>FLOAT16、FLOAT、DOUBLE</td>
+      <td>FLOAT16、FLOAT、DOUBLE、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -307,7 +307,7 @@ aclnnStatus aclnnInplaceBernoulliTensor(
       <td>输入</td>
       <td>公式中的prob，Host侧的aclScalar</td>
       <td><ul><li>满足0≤prob≤1</li></ul></td>
-      <td>FLOAT16、FLOAT、DOUBLE</td>
+      <td>FLOAT16、FLOAT、DOUBLE、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
