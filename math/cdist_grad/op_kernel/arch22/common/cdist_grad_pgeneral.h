@@ -33,6 +33,14 @@
  *       [1,40,300,37] p=1.5: 2.1e-6 with it, 7.6e-6 without.
  *   PowIntExp (exact integer power)           KEPT. Cheaper AND more accurate than exp(k*ln r)
  *       for integer k -- 1.5x lower per-term error at p = 3.
+ *   MulsExact (exact q*ln r, residual folded into exp)   KEPT for every non-power-of-two q.
+ *       The product q*ln(r) is a single fp32 multiply, and |ln r| reaches ~7 on a long feature
+ *       dim, where one ulp is 4.8e-7. That rounding alone was the largest per-term error left
+ *       -- bigger than the ln and the exp put together -- and like the exact divide it is
+ *       invisible per term but decisive under cancellation. ATK case 1510 (p = 1.70, Q = 511,
+ *       M = 131073, reduce cancels 7e4:1) went from 21 to 12 small-value-domain mismatches
+ *       against a threshold of 18, with mean relative error dropping below the fp32 CPU
+ *       benchmark's. Skipped when q is a power of two, where the product is already exact.
  *   LnHighPrec / ExpHighPrec (Newton ln, Cody-Waite exp)   DROPPED for M > 1.
  *       Per-term they measured 0.96x, i.e. very slightly WORSE than the platform Log/Exp,
  *       while costing ~1.25x the kernel time: adv_api's fp32 Log/Exp are accurate enough that
@@ -43,6 +51,12 @@
  * relative error grows linearly in |p-1|: 5.4e-8 at p = 1.5 to 5.2e-7 at p = 7.3, and is the
  * same for every implementation tested, the legacy TBE one included). Internal precision
  * cannot go below a bound set by the operand.
+ *
+ * That bound does NOT apply when the reference consumes the same fp32 cdist we do, which is
+ * exactly the ATK dual-benchmark setup: golden (fp64), benchmark (fp32 CPU) and the kernel are
+ * all handed the identical fp32 cdist tensor, so the operand rounding cancels out of the
+ * comparison and what remains is the internal chain. Do not use the paragraph above to argue
+ * that a term-accuracy change cannot matter there -- MulsExact was found precisely that way.
  *
  * M == 1 is where that bound vanishes -- cdist IS |diff| bit for bit, so the true ratio is 1
  * for every element -- and there the refined ln/exp ARE measurably better, so they are kept for
@@ -73,9 +87,11 @@ constexpr float MAX_FINITE_F32 = 3.4028235e38f;
 // fp32 binary layout, used by the bit tricks below.
 constexpr int32_t FP32_MANTISSA_BITS = 23;
 constexpr int32_t FP32_EXP_BIAS = 127;
+constexpr int32_t FP32_MANTISSA_MASK = 0x007FFFFF;
 // Dekker split point: clearing the low FP32_SPLIT_LOW_BITS of the 24-bit significand leaves a
 // head of <= 12 bits, so head*head and head*tail are representable exactly.
 constexpr int32_t FP32_SPLIT_LOW_BITS = 12;
+constexpr int32_t FP32_SPLIT_LOW_MASK = (1 << FP32_SPLIT_LOW_BITS) - 1;
 // Exponent range 2^m can hold without producing a denormal or an inf.
 constexpr float EXP_SCALE_MIN = -127.0f;
 constexpr float EXP_SCALE_MAX = 128.0f;
@@ -105,6 +121,13 @@ constexpr uint32_t POW_SLOT_Z = 4;    // ExpHighPrec: x/ln2, then the reduced ar
 constexpr uint32_t POW_SLOT_M = 5;    // ExpHighPrec: floor(x/ln2)
 constexpr uint32_t POW_SLOT_G = 6;    // ExpHighPrec: c in [0, ln2)
 constexpr uint32_t POW_SLOT_I32 = 7;  // ExpHighPrec: 2^m assembled in the exponent field
+// MulsExact on the fast path: rows 2..4 are free there (LnHighPrec is not run).
+constexpr uint32_t POW_SLOT_MUL_LO = 2; // residual of exp*ln(base)
+constexpr uint32_t POW_SLOT_MUL_A = 3;  // head of the multiplicand
+constexpr uint32_t POW_SLOT_MUL_B = 4;  // tail of the multiplicand
+// MulsExact on the refined path: NEG/AUX are dead once LnHighPrec returns and serve as a/b,
+// while the residual needs a row that survives ExpHighPrec -- the otherwise unused ninth one.
+constexpr uint32_t POW_SLOT_EXACT_LO = 8;
 
 // dst = src^expInt via repeated multiplication for small integer expInt (exact, no exp/ln).
 __aicore__ inline void PowIntExp(LocalTensor<float>& dst, const LocalTensor<float>& src, int64_t expInt, uint32_t count)
@@ -233,6 +256,42 @@ __aicore__ inline void LnHighPrec(LocalTensor<float>& res, const LocalTensor<flo
     AscendC::Add(res, res, aux, count);         // ln2 (high precision)
 }
 
+union FloatBits {
+    float f;
+    int32_t i;
+};
+
+__aicore__ inline bool IsPowerOfTwo(float s)
+{
+    FloatBits b;
+    b.f = s;
+    return (b.i & FP32_MANTISSA_MASK) == 0;
+}
+
+// v = fl(s*v), lo = the exact residual s*v - fl(s*v), via a Dekker split of both operands.
+__aicore__ inline void MulsExact(LocalTensor<float>& v, float s, LocalTensor<float>& lo, LocalTensor<float>& a,
+                                 LocalTensor<int32_t>& aI, LocalTensor<float>& b, uint32_t count)
+{
+    FloatBits u;
+    u.f = s;
+    u.i &= ~FP32_SPLIT_LOW_MASK; // clear the low 12 significand bits
+    const float sHi = u.f;
+    const float sLo = s - sHi;
+
+    SplitHead(aI, v, count);       // a = head(v)
+    AscendC::Sub(b, v, a, count);  // b = tail(v), exact
+    AscendC::Muls(v, v, s, count); // v = hi = fl(s*v)
+
+    AscendC::Muls(lo, a, sHi, count); // sHi*vHi, exact
+    AscendC::Sub(lo, lo, v, count);   // sHi*vHi - hi, exact by Sterbenz
+    AscendC::Muls(a, a, sLo, count);  // sLo*vHi, exact
+    AscendC::Add(lo, lo, a, count);
+    AscendC::Muls(a, b, sHi, count); // sHi*vLo, exact
+    AscendC::Add(lo, lo, a, count);
+    AscendC::Muls(a, b, sLo, count); // sLo*vLo
+    AscendC::Add(lo, lo, a, count);  // lo = s*v - hi
+}
+
 __aicore__ inline void PowGeneral(LocalTensor<float>& dst, const LocalTensor<float>& base, float exp,
                                   LocalTensor<float>& tmp, bool exact, uint32_t count)
 {
@@ -246,9 +305,23 @@ __aicore__ inline void PowGeneral(LocalTensor<float>& dst, const LocalTensor<flo
     LocalTensor<float> lnBuf = tmp[POW_SLOT_LN * e];
     AscendC::Adds(baseBuf, base, POW_BASE_FLOOR, count); // clamp to avoid ln(0)
     if (!exact) {
-        AscendC::Log(lnBuf, baseBuf, count);     // ln(base)
-        AscendC::Muls(lnBuf, lnBuf, exp, count); // exp * ln(base)
-        AscendC::Exp(dst, lnBuf, count);         // base^exp
+        LocalTensor<float> loBuf = tmp[POW_SLOT_MUL_LO * e];
+        LocalTensor<float> aBuf = tmp[POW_SLOT_MUL_A * e];
+        LocalTensor<int32_t> aI = tmp[POW_SLOT_MUL_A * e].template ReinterpretCast<int32_t>();
+        LocalTensor<float> bBuf = tmp[POW_SLOT_MUL_B * e];
+        AscendC::Log(lnBuf, baseBuf, count); // ln(base)
+        if (IsPowerOfTwo(exp)) {
+            AscendC::Muls(lnBuf, lnBuf, exp, count); // exact, nothing to correct
+            AscendC::Exp(dst, lnBuf, count);
+            return;
+        }
+        // hi = fl(exp*ln(base)), lo = the exact residual of that rounding.
+        MulsExact(lnBuf, exp, loBuf, aBuf, aI, bBuf, count);
+        AscendC::Exp(dst, lnBuf, count); // e^hi
+        // base^exp = e^(hi+lo) = e^hi * e^lo, and |lo| <= ulp(hi)/2 <= 4e-6 here, so the
+        // first-order factor is accurate to ~1e-11 relative -- far inside one fp32 ulp.
+        AscendC::Adds(loBuf, loBuf, 1.0f, count);
+        AscendC::Mul(dst, dst, loBuf, count);
         return;
     }
     LocalTensor<float> negBuf = tmp[POW_SLOT_NEG * e];
@@ -258,8 +331,19 @@ __aicore__ inline void PowGeneral(LocalTensor<float>& dst, const LocalTensor<flo
     LocalTensor<float> gBuf = tmp[POW_SLOT_G * e];
     LocalTensor<int32_t> i32Buf = tmp[POW_SLOT_I32 * e].template ReinterpretCast<int32_t>();
     LnHighPrec(lnBuf, baseBuf, negBuf, auxBuf, zBuf, mBuf, gBuf, i32Buf, count);
-    AscendC::Muls(lnBuf, lnBuf, exp, count);
+    if (IsPowerOfTwo(exp)) {
+        AscendC::Muls(lnBuf, lnBuf, exp, count); // exact, nothing to correct
+        ExpHighPrec(dst, lnBuf, zBuf, mBuf, gBuf, i32Buf, count);
+        return;
+    }
+    // negBuf/auxBuf are dead once LnHighPrec returns; the ninth row carries the residual
+    // across ExpHighPrec, which only touches z/m/g/i32 and dst.
+    LocalTensor<float> loBuf = tmp[POW_SLOT_EXACT_LO * e];
+    LocalTensor<int32_t> negI = tmp[POW_SLOT_NEG * e].template ReinterpretCast<int32_t>();
+    MulsExact(lnBuf, exp, loBuf, negBuf, negI, auxBuf, count);
     ExpHighPrec(dst, lnBuf, zBuf, mBuf, gBuf, i32Buf, count);
+    AscendC::Adds(loBuf, loBuf, 1.0f, count);
+    AscendC::Mul(dst, dst, loBuf, count);
 }
 
 template <typename T>
