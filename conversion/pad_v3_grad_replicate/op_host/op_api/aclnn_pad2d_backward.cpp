@@ -36,27 +36,27 @@ static const std::initializer_list<op::DataType> dtypeSupportList = {
 inline static bool CheckNotNull(const aclTensor* gradOutput, const aclTensor* self, const aclIntArray* padding,
                                 const aclTensor* gradInput)
 {
-    OP_CHECK_NULL(gradOutput, return false);
     OP_CHECK_NULL(self, return false);
-    OP_CHECK_NULL(padding, return false);
+    OP_CHECK_NULL(gradOutput, return false);
     OP_CHECK_NULL(gradInput, return false);
+    OP_CHECK_NULL(padding, return false);
     return true;
 }
 
 inline static bool CheckDtypeValid(const aclTensor* gradOutput, const aclTensor* self, const aclTensor* gradInput)
 {
+    // 检查gradInput的数据类型是否在支持列表内
+    OP_CHECK_DTYPE_NOT_SUPPORT(gradInput, dtypeSupportList, return false);
+
     // 检查gradOutput的数据类型是否在支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(gradOutput, dtypeSupportList, return false);
 
     // 检查self的数据类型是否在支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(self, dtypeSupportList, return false);
 
-    // 检查gradInput的数据类型是否在支持列表内
-    OP_CHECK_DTYPE_NOT_SUPPORT(gradInput, dtypeSupportList, return false);
-
     // gradOutput, self和gradInput数据类型必须一样
-    OP_CHECK_DTYPE_NOT_MATCH(gradOutput, self->GetDataType(), return false);
     OP_CHECK_DTYPE_NOT_MATCH(gradInput, self->GetDataType(), return false);
+    OP_CHECK_DTYPE_NOT_MATCH(gradOutput, self->GetDataType(), return false);
     return true;
 }
 

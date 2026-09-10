@@ -16,14 +16,14 @@
 #include "random/stateless_drop_out_gen_mask/op_api/stateless_dropout_gen_mask.h"
 #include "math/zero_op/op_api/zero_op.h"
 #include "aclnn_kernels/common/op_error_check.h"
-#include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
-#include "opdev/format_utils.h"
-#include "opdev/op_dfx.h"
 #include "opdev/op_executor.h"
-#include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
+#include "opdev/op_dfx.h"
+#include "opdev/common_types.h"
+#include "opdev/format_utils.h"
+#include "opdev/op_log.h"
 #include "opdev/platform.h"
 #include "random/dsa_gen_bit_mask/op_host/op_api/dropout_common.h"
 
@@ -33,8 +33,8 @@ extern "C" {
 #endif
 
 static constexpr size_t MAX_DIM_LEN = 8;
-static const int64_t BIT_NUMBER = 128;
 static const int64_t UINT8_BIT_NUMBER = 8;
+static const int64_t BIT_NUMBER = 128;
 static const int64_t FLOAT_BYTE = 4;
 static const int64_t FLOAT_BIT = 32;
 
