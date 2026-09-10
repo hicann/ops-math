@@ -285,7 +285,6 @@ int main() {
   // 创建Transweight acltensor
   void* transWeightDeviceAddr = nullptr;
   uint64_t size = transWeightSize * sizeof(float) / 2;
-  // size = 8192 * sizeof(float_t);
   ret = aclrtMalloc(&transWeightDeviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMalloc failed. ERROR: %d\n", ret);return ret);
 
@@ -384,6 +383,7 @@ int main() {
   aclrtFree(inputDeviceAddr);
   aclrtFree(weightDeviceAddr);
   aclrtFree(transWeightDeviceAddr);
+  aclrtFree(biasDeviceAddr);
   aclrtFree(outDeviceAddr);
 
   if (workspaceSize > 0) {

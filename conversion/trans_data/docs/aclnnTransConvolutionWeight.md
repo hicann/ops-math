@@ -210,6 +210,7 @@ aclnnStatus aclnnTransConvolutionWeight(
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
+示例在完成权重转换后调用`aclnnConvolutionGetWorkspaceSize`和`aclnnConvolution`验证转换结果；这两个接口的参数约束和使用方式请参考CANN算子库的`aclnnConvolution`接口文档。
 
 ```Cpp
 #include <iostream>

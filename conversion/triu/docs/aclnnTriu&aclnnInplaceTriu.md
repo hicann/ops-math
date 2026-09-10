@@ -190,8 +190,8 @@ aclnnStatus aclnnInplaceTriu(
       <td>参数self、out是空指针。</td>
     </tr>
     <tr>
-      <td rowspan="7">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="7">161002</td>
+      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="6">161002</td>
       <td>参数self、out的数据类型不在支持范围内。</td>
     </tr>
     <tr>
@@ -353,8 +353,8 @@ aclnnStatus aclnnInplaceTriu(
       <td>参数selfRef是空指针。</td>
     </tr>
     <tr>
-      <td rowspan="7">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="7">161002</td>
+      <td rowspan="3">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="3">161002</td>
       <td>参数selfRef数据类型不在支持范围内。</td>
     </tr>
     <tr>
@@ -530,7 +530,7 @@ int main() {
   void* inplaceWorkspaceAddr = nullptr;
   if (inplaceWorkspaceSize > 0) {
     ret = aclrtMalloc(&inplaceWorkspaceAddr, inplaceWorkspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret;);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
   }
   // 调用aclnnInplaceTriu第二段接口
   ret = aclnnInplaceTriu(inplaceWorkspaceAddr, inplaceWorkspaceSize, inplaceExecutor, stream);
