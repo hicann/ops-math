@@ -126,7 +126,7 @@ int main()
     // 创建out aclTensorList
     std::vector<aclTensor*> tmp = {shape1Addr, shape2Addr};
     aclTensorList* out = aclCreateTensorList(tmp.data(), tmp.size());
-    CHECK_RET(out != nullptr, return ret);
+    CHECK_RET(out != nullptr, LOG_PRINT("aclCreateTensorList failed.\n"); return ACL_ERROR_INTERNAL_ERROR);
 
     // 调用CANN算子库API，需要修改为具体的Api名称
     uint64_t workspaceSize = 0;

@@ -393,7 +393,7 @@ aclnnStatus aclnnInplaceHardtanh(
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/compile_and_run_sample.md)。
 
-```Cpp
+```cpp
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
@@ -470,8 +470,8 @@ int main() {
   aclTensor* out = nullptr;
   aclScalar* clipValueMin = nullptr;
   aclScalar* clipValueMax = nullptr;
-  std::vector<float> selfHostData = {0, 1, 2, 3};
-  std::vector<float> outHostData = {0, 0, 0, 0};
+  std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+  std::vector<float> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
   float clipValueMinValue = 1.2f;
   float clipValueMaxValue = 2.4f;
   // 创建self aclTensor
