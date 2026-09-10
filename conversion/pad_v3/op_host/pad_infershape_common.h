@@ -36,6 +36,8 @@ bool PadInfershape(const gert::InferShapeContext* context, const gert::Shape* x_
     OP_LOGD(context->GetNodeName(), "input x = %s", Ops::Base::ToString(*x_shape).c_str());
     size_t input_dim_size = x_shape->GetDimNum();
     OP_CHECK_IF(input_dim_size == 0, OP_LOGE(context->GetNodeName(), "input shape cannot empty"), return false);
+    OP_CHECK_IF(paddings_value == nullptr, OP_LOGE(context->GetNodeName(), "paddings tensor GetData is nullptr"),
+                return false);
     if (input_dim_size * PADDINGS_PER_DIM != paddings_size) {
         OP_LOGE(context->GetNodeName(),
                 "the paddings num must be twice of the input x rank."
@@ -71,7 +73,7 @@ ge::graphStatus PadInfershapeWithTensor(const gert::InferShapeContext* context, 
                                         const gert::Tensor* paddings_tensor, gert::Shape* y_shape)
 {
     const T* paddings_value = paddings_tensor->GetData<T>();
-    const size_t paddings_num = paddings_tensor->GetShapeSize();
+    const size_t paddings_num = static_cast<size_t>(paddings_tensor->GetShapeSize());
     OP_CHECK_IF(!PadInfershape<T>(context, x_shape, paddings_value, paddings_num, y_shape),
                 OP_LOGE(context->GetNodeName(), "do PadInfershape failed"), return ge::GRAPH_FAILED);
 

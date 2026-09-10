@@ -243,7 +243,7 @@ static ge::graphStatus TilingPrepare4Expand(gert::TilingParseContext* context)
 
     auto compileInfo = context->GetCompiledInfo<ExpandCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
-    auto ret = FillSocCompileInfo(context, reinterpret_cast<BroadcastToCompileInfo*>(compileInfo));
+    auto ret = FillSocCompileInfo(context, compileInfo);
     if (ret != ge::GRAPH_SUCCESS) {
         return ret;
     }
