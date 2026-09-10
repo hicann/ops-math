@@ -136,23 +136,23 @@ int main()
     // 调用CANN算子库API，需要修改为具体的Api名称
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
-    // 调用aclnnSplitWithSize第一段接口
+    // 3. 调用aclnnSplitWithSize第一段接口
     ret = aclnnSplitWithSizeGetWorkspaceSize(self, splitSize, dim, out, &workspaceSize, &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnSplitWithSizeGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
-    // 根据第一段接口计算出的workspaceSize申请device内存
+    // 4. 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
         auto ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
         CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
     }
-    // 调用aclnnSplitWithSize第二段接口
+    // 5. 调用aclnnSplitWithSize第二段接口
     ret = aclnnSplitWithSize(workspaceAddr, workspaceSize, executor, stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnSplitWithSize failed. ERROR: %d\n", ret); return ret);
 
     ret = aclrtSynchronizeStream(stream);
     CheckResult({shape1, shape2}, {shape1DeviceAddr, shape2DeviceAddr});
 
-    // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
+    // 6. 释放aclTensor、aclIntArray和aclTensorList，需要根据具体API的接口定义修改
     aclDestroyTensor(self);
     aclDestroyIntArray(splitSize);
     aclDestroyTensorList(out);

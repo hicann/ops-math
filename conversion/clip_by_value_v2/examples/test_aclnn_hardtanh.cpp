@@ -76,8 +76,8 @@ int PrepareInputAndOutput(std::vector<int64_t>& selfShape, std::vector<int64_t>&
                           aclTensor** self, aclScalar** clipValueMin, aclScalar** clipValueMax, void** outDeviceAddr,
                           aclTensor** out)
 {
-    std::vector<float> selfHostData = {0, 1, 2, 3};
-    std::vector<float> outHostData = {0, 0, 0, 0};
+    std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+    std::vector<float> outHostData = {0, 0, 0, 0, 0, 0, 0, 0};
     float clipValueMinValue = 1.2;
     float clipValueMaxValue = 2.4;
     // 创建self aclTensor

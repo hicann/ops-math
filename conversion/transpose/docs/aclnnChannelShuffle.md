@@ -89,7 +89,7 @@ aclnnStatus aclnnChannelShuffle(
       <td class="tg-0lax">输入</td>
       <td class="tg-0lax">表示将输入self的channels分成多少组。</td>
       <td class="tg-0lax">值需要大于0且要能被self的channels整除。</td>
-      <td class="tg-0lax">FLOAT16、BFLOAT16、INT8</td>
+      <td class="tg-0lax">INT64</td>
       <td class="tg-0lax">-</td>
       <td class="tg-0lax">-</td>
       <td class="tg-0lax">-</td>

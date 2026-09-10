@@ -35,8 +35,8 @@
   <!-- end id7 -->
   <!-- npu="A3,910b" id8 -->
   - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
-    - 完成ND←→[NZ](../../../docs/zh/context/data_format.md)、NCL←→[NZ](../../../docs/zh/context/data_format.md)、NCHW←→[NZ](../../../docs/zh/context/data_format.md)、NCDHW←→[NZ](../../../docs/zh/context/data_format.md)的转换功能。C0是[NZ](../../../docs/zh/context/data_format.md)数据格式最后一维的大小。计算方法C0 = 32B / ge::GetSizeByDataType(static_cast additionalDtype)。
-    - 完成NCDHW←→[NDC1HWC0](../../../docs/zh/context/data_format.md)、NCDHW←→[FRACTAL_Z_3D](../../../docs/zh/context/data_format.md)、NCHW←→[NC1HWC0](../../../docs/zh/context/data_format.md)、NHWC←→[NC1HWC0](../../../docs/zh/context/data_format.md)、NCHW←→[FRACTAL_Z](../../../docs/zh/context/data_format.md)、HWCN←→[FRACTAL_Z](../../../docs/zh/context/data_format.md)、NDHWC←→[NDC1HWC0](../../../docs/zh/context/data_format.md)、DHWCN←→[FRACTAL_Z_3D](../../../docs/zh/context/data_format.md)的转换功能。其中，C0与微架构强相关，该值等于cube单元的size，例如16。C1是将C维度按照C0切分：C1=C/C0，若结果不整除，最后一份数据需要padding到C0。计算方法C0 = 32B / ge::GetSizeByDataType(static_cast additionalDtype)（例如FP16的additionalDtype枚举值为1，对应的数据FP16为2 Byte）。
+    - 完成ND←→[NZ](../../../docs/zh/context/data_format.md)、NCL←→[NZ](../../../docs/zh/context/data_format.md)、NCHW←→[NZ](../../../docs/zh/context/data_format.md)、NCDHW←→[NZ](../../../docs/zh/context/data_format.md)的转换功能。C0是[NZ](../../../docs/zh/context/data_format.md)数据格式最后一维的大小。计算方法C0 = 32B / `ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype))`。
+    - 完成NCDHW←→[NDC1HWC0](../../../docs/zh/context/data_format.md)、NCDHW←→[FRACTAL_Z_3D](../../../docs/zh/context/data_format.md)、NCHW←→[NC1HWC0](../../../docs/zh/context/data_format.md)、NHWC←→[NC1HWC0](../../../docs/zh/context/data_format.md)、NCHW←→[FRACTAL_Z](../../../docs/zh/context/data_format.md)、HWCN←→[FRACTAL_Z](../../../docs/zh/context/data_format.md)、NDHWC←→[NDC1HWC0](../../../docs/zh/context/data_format.md)、DHWCN←→[FRACTAL_Z_3D](../../../docs/zh/context/data_format.md)的转换功能。其中，C0与微架构强相关，该值等于cube单元的size，例如16。C1是将C维度按照C0切分：C1=C/C0，若结果不整除，最后一份数据需要padding到C0。计算方法C0 = 32B / `ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype))`（例如FP16的additionalDtype枚举值为1，对应的数据FP16为2 Byte）。
   <!-- end id8 -->
 
 - **计算流程**：
@@ -512,7 +512,7 @@ aclnnStatus aclnnNpuFormatCast(
       | 数据类型：INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32，数据格式：ACL_FORMAT_NDC1HWC0(32)    | ACL_FORMAT_NCDHW(30) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32           | ACL_FORMAT_NCDHW(30)     |
       | 数据类型：INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32，数据格式：ACL_FORMAT_NCDHW(30)    |ACL_FORMAT_FRACTAL_Z_3D(33) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FORMAT_FRACTAL_Z_3D(33)  |
       | 数据类型：INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32，数据格式：ACL_FORMAT_FRACTAL_Z_3D(33)    |ACL_FORMAT_NCDHW(30) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FORMAT_NCDHW(30)  |
-      | 数据类型：INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32，数据格式：ACL_FORMAT_DHWCN(30)    | ACL_FORMAT_FRACTAL_Z_3D(33) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FORMAT_FRACTAL_Z_3D(33) |
+      | 数据类型：INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32，数据格式：ACL_FORMAT_DHWCN(31)    | ACL_FORMAT_FRACTAL_Z_3D(33) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FORMAT_FRACTAL_Z_3D(33) |
       | 数据类型：INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32，数据格式：ACL_FORMAT_NCHW(0)   | ACL_FORMAT_NC1HWC0(3) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FORMAT_NC1HWC0(3) |
       | 数据类型：INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32，数据格式：ACL_FORMAT_NC1HWC0(3)   | ACL_FORMAT_NCHW(0) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FORMAT_NCHW(0) |
       | 数据类型：INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32，数据格式：ACL_FORMAT_NHWC(1)   | ACL_FORMAT_NC1HWC0(3) | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32    | ACL_FORMAT_NC1HWC0(3) |
@@ -541,7 +541,7 @@ aclnnStatus aclnnNpuFormatCast(
       | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32          | ACL_FORMAT_HWCN(16)       |
       | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32  | INT8, UINT8, FLOAT, FLOAT16, BF16, INT32, UINT32          | ACL_FORMAT_NDHWC(27)       |
 
-  - C0计算方法：$C0=\frac{32B}{ge::GetSizeByDataType(static_cast additionalDtype)}$
+  - C0计算方法：`C0 = 32B / ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype))`
 
       | srcTensor的基础类型 | C0 |
       | --------------- | -- |
