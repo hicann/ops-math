@@ -26,7 +26,7 @@
 ## 功能说明
 
 - 接口功能：以fillValue填充tensor对角线。
-- 计算公式：以二维为例，`wrap`为False时，填充位置为`[r, r]`，其中`0 <= r < m`，`m = min(col, row)`，`col`为列的长度，`row`为行的长度。`wrap`为True时，填充位置为`[r + (m + 1) * i, r]`，其中`0 <= r < m`，`m = min(col, row)`，`col`为列的长度，`row`为行的长度，`0 <= i < col // r`。
+- 计算公式：以二维为例，`wrap`为False时，填充位置为`[r, r]`，其中`0 <= r < m`，`m = min(col, row)`，`col`为列的长度，`row`为行的长度。`wrap`为True时，按展开后的一维索引填充：对于满足`(col + 1) * i < row * col`的非负整数`i`，填充位置为`[floor((col + 1) * i / col), ((col + 1) * i) % col]`。
 
 ## 函数原型
 
@@ -89,8 +89,8 @@ aclnnStatus aclnnInplaceFillDiagonal(
       <td class="tg-0pky">fillValue（aclScalar*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">表示填充值。</td>
-      <td class="tg-0pky">数据类型需要是可转换为FLOAT的数据类型。</td>
-      <td class="tg-0pky">INT64</td>
+      <td class="tg-0pky">数据类型需要是可转换为FLOAT且转换为selfRef数据类型时不溢出的数据类型。</td>
+      <td class="tg-0pky">FLOAT、FLOAT16、DOUBLE、UINT8、INT8、INT16、INT32、INT64、BOOL</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">√</td>
@@ -315,7 +315,7 @@ int main() {
   void* workspaceAddr = nullptr;
   if (workspaceSize > 0) {
     ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret;);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
   }
   // 调用aclnnInplaceFillDiagonal第二段接口
   ret = aclnnInplaceFillDiagonal(workspaceAddr, workspaceSize, executor, stream);
