@@ -28,52 +28,37 @@ using namespace AscendC;
 // ============================================================================
 
 // Segment 1: F(x) = x * polevl(x^2, AN, 9) / polevl(x^2, AD, 10) for |x| < 3.25
-static constexpr float S1_AN[] = {
-    1.13681498971755967716E-11f, 8.49262267667473820670E-10f,
-    1.94434204175553062245E-08f, 9.53151741254484376186E-07f,
-    3.07828309874913215953E-06f, 3.52513368520288765742E-04f,
-    -8.50149846724410876604E-04f, 4.22618223005546619908E-02f,
-    -9.17480371773452402229E-02f, 1.00000000000000000000E+00f
-};
-static constexpr float S1_AD[] = {
-    2.40372073066762607321E-11f, 1.48864681368493399468E-09f,
-    5.21265281010541632356E-08f, 1.27258478273186967251E-06f,
-    2.32490249820789501151E-05f, 3.25524741826057934131E-04f,
-    3.48805814657162597398E-03f, 2.79448531198828974131E-02f,
-    1.58874241960120565764E-01f, 5.74918629489320376358E-01f,
-    1.00000000000000000000E+00f
-};
+static constexpr float S1_AN[] = {1.13681498971755967716E-11f,  8.49262267667473820670E-10f,
+                                  1.94434204175553062245E-08f,  9.53151741254484376186E-07f,
+                                  3.07828309874913215953E-06f,  3.52513368520288765742E-04f,
+                                  -8.50149846724410876604E-04f, 4.22618223005546619908E-02f,
+                                  -9.17480371773452402229E-02f, 1.00000000000000000000E+00f};
+static constexpr float S1_AD[] = {2.40372073066762607321E-11f, 1.48864681368493399468E-09f, 5.21265281010541632356E-08f,
+                                  1.27258478273186967251E-06f, 2.32490249820789501151E-05f, 3.25524741826057934131E-04f,
+                                  3.48805814657162597398E-03f, 2.79448531198828974131E-02f, 1.58874241960120565764E-01f,
+                                  5.74918629489320376358E-01f, 1.00000000000000000000E+00f};
 
 // Segment 2: 0.5*(1/x + (1/x^2)*polevl(1/x^2,BN,10)/(p1evl(1/x^2,BD,10)*x))
 //   for 3.25 <= |x| < 6.25
 static constexpr float S2_BN[] = {
-    5.08955156417900900223E-01f, -2.44754418142697854899E-01f,
-    9.41512335303534425579E-02f, -2.18711255142039033561E-02f,
-    3.66207612329569201851E-03f, -4.23209114460388778275E-04f,
-    3.59641304793896659001E-05f, -2.14640351719968955485E-06f,
-    9.10010780076391391280E-08f, -2.40274520828250976051E-09f,
-    3.59233385440928385474E-11f
-};
-static constexpr float S2_BD[] = {
-    -6.31839869873368153996E-01f, 2.36706788228248699024E-01f,
-    -5.31806367003223243173E-02f, 8.48041718586295401039E-03f,
-    -9.47996768486665357389E-04f, 7.81025592944552368886E-05f,
-    -4.55875153252442628812E-06f, 1.89100358111421858017E-07f,
-    -4.91324691331920598557E-09f, 7.18466403235734505828E-11f
-};
+    5.08955156417900900223E-01f,  -2.44754418142697854899E-01f, 9.41512335303534425579E-02f,
+    -2.18711255142039033561E-02f, 3.66207612329569201851E-03f,  -4.23209114460388778275E-04f,
+    3.59641304793896659001E-05f,  -2.14640351719968955485E-06f, 9.10010780076391391280E-08f,
+    -2.40274520828250976051E-09f, 3.59233385440928385474E-11f};
+static constexpr float S2_BD[] = {-6.31839869873368153996E-01f, 2.36706788228248699024E-01f,
+                                  -5.31806367003223243173E-02f, 8.48041718586295401039E-03f,
+                                  -9.47996768486665357389E-04f, 7.81025592944552368886E-05f,
+                                  -4.55875153252442628812E-06f, 1.89100358111421858017E-07f,
+                                  -4.91324691331920598557E-09f, 7.18466403235734505828E-11f};
 
 // Segment 3: 0.5*(1/x + (1/x^2)*polevl(1/x^2,CN,4)/(p1evl(1/x^2,CD,5)*x))
 //   for 6.25 <= |x| <= 1e9
-static constexpr float S3_CN[] = {
-    -5.90592860534773222980E-01f, 6.29235242724368815104E-01f,
-    -1.72858975380388135701E-01f, 1.64837047825189646211E-02f,
-    -4.86827613020462685988E-04f
-};
-static constexpr float S3_CD[] = {
-    -2.69820057197544915795E+00f, 1.73270799045947843098E+00f,
-    -3.93708582281939500902E-01f, 3.44278924041233405640E-02f,
-    -9.73655226040941201328E-04f
-};
+static constexpr float S3_CN[] = {-5.90592860534773222980E-01f, 6.29235242724368815104E-01f,
+                                  -1.72858975380388135701E-01f, 1.64837047825189646211E-02f,
+                                  -4.86827613020462685988E-04f};
+static constexpr float S3_CD[] = {-2.69820057197544915795E+00f, 1.73270799045947843098E+00f,
+                                  -3.93708582281939500902E-01f, 3.44278924041233405640E-02f,
+                                  -9.73655226040941201328E-04f};
 
 // NaN/Inf handling constants
 // F32_NAN: IEEE 754 quiet NaN bit pattern for float (used with int32 Duplicate + MERGING)
@@ -82,10 +67,10 @@ static constexpr int32_t F32_NAN = 0x7fc00000;
 static constexpr float FLT_MAX_VAL = 3.4028235e+38f;
 
 // Segment boundary constants (from Cephes dawsn.c)
-static constexpr float SEG1_UPPER_BOUND = 3.25f;    // |x| < 3.25 → Seg1
-static constexpr float SEG2_UPPER_BOUND = 6.25f;    // 3.25 <= |x| < 6.25 → Seg2
-static constexpr float SEG3_UPPER_BOUND = 1.0e9f;   // 6.25 <= |x| <= 1e9 → Seg3, |x| > 1e9 → Seg4
-static constexpr float DAWSON_HALF = 0.5f;           // coefficient in Seg2/Seg3/Seg4 formula
+static constexpr float SEG1_UPPER_BOUND = 3.25f;  // |x| < 3.25 → Seg1
+static constexpr float SEG2_UPPER_BOUND = 6.25f;  // 3.25 <= |x| < 6.25 → Seg2
+static constexpr float SEG3_UPPER_BOUND = 1.0e9f; // 6.25 <= |x| <= 1e9 → Seg3, |x| > 1e9 → Seg4
+static constexpr float DAWSON_HALF = 0.5f;        // coefficient in Seg2/Seg3/Seg4 formula
 
 // VF register size in bytes
 static constexpr uint32_t VF_REG_SIZE_BYTES = 256;
@@ -93,26 +78,25 @@ static constexpr uint32_t VF_REG_SIZE_BYTES = 256;
 // CastTrait constants (per cast-api.md §4.2 type conversion matrix)
 // half/bf16 -> float (widening): RegLayout=ZERO, RoundMode=UNKNOWN
 static constexpr AscendC::Reg::CastTrait WIDEN_F16_TO_F32 = {
-    AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::UNKNOWN,
-    AscendC::Reg::MaskMergeMode::ZEROING, AscendC::RoundMode::UNKNOWN};
+    AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::UNKNOWN, AscendC::Reg::MaskMergeMode::ZEROING,
+    AscendC::RoundMode::UNKNOWN};
 static constexpr AscendC::Reg::CastTrait WIDEN_BF16_TO_F32 = {
-    AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::UNKNOWN,
-    AscendC::Reg::MaskMergeMode::ZEROING, AscendC::RoundMode::UNKNOWN};
+    AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::UNKNOWN, AscendC::Reg::MaskMergeMode::ZEROING,
+    AscendC::RoundMode::UNKNOWN};
 // float -> half/bf16 (narrowing): RegLayout=ZERO, SatMode=NO_SAT, RoundMode=CAST_ROUND
 static constexpr AscendC::Reg::CastTrait NARROW_F32_TO_F16 = {
-    AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::NO_SAT,
-    AscendC::Reg::MaskMergeMode::ZEROING, AscendC::RoundMode::CAST_ROUND};
+    AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::NO_SAT, AscendC::Reg::MaskMergeMode::ZEROING,
+    AscendC::RoundMode::CAST_ROUND};
 static constexpr AscendC::Reg::CastTrait NARROW_F32_TO_BF16 = {
-    AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::NO_SAT,
-    AscendC::Reg::MaskMergeMode::ZEROING, AscendC::RoundMode::CAST_ROUND};
+    AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::NO_SAT, AscendC::Reg::MaskMergeMode::ZEROING,
+    AscendC::RoundMode::CAST_ROUND};
 
 // ============================================================================
 // VF function declaration
 // ============================================================================
 template <typename T>
-__simd_vf__ inline void DawsnVF(
-    __ubuf__ T* dstAddr, __ubuf__ T* srcAddr,
-    uint32_t count, uint32_t oneRepeatSize, uint16_t repeatTimes);
+__simd_vf__ inline void DawsnVF(__ubuf__ T* dstAddr, __ubuf__ T* srcAddr, uint32_t count, uint32_t oneRepeatSize,
+                                uint16_t repeatTimes);
 
 // ============================================================================
 // Kernel class
@@ -123,6 +107,7 @@ public:
     __aicore__ inline DawsnKernel() {}
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const DawsnTilingData* tilingData);
     __aicore__ inline void Process();
+
 private:
     __aicore__ inline void CopyIn(int64_t progress, int64_t currentNum);
     __aicore__ inline void Compute(int64_t currentNum);
@@ -183,10 +168,8 @@ __aicore__ inline void DawsnKernel<T>::Compute(int64_t currentNum)
     AscendC::LocalTensor<T> yLocal = outputQueueY.template AllocTensor<T>();
     constexpr uint32_t oneRepeatSize = AscendC::GetVecLen() / sizeof(T);
     uint16_t repeatTimes = AscendC::CeilDivision(static_cast<uint32_t>(currentNum), oneRepeatSize);
-    asc_vf_call<DawsnVF<T>>(
-        (__ubuf__ T*)yLocal.GetPhyAddr(),
-        (__ubuf__ T*)xLocal.GetPhyAddr(),
-        static_cast<uint32_t>(currentNum), oneRepeatSize, repeatTimes);
+    asc_vf_call<DawsnVF<T>>((__ubuf__ T*)yLocal.GetPhyAddr(), (__ubuf__ T*)xLocal.GetPhyAddr(),
+                            static_cast<uint32_t>(currentNum), oneRepeatSize, repeatTimes);
     outputQueueY.template EnQue<T>(yLocal);
     inputQueueX.FreeTensor(xLocal);
 }
@@ -194,6 +177,13 @@ __aicore__ inline void DawsnKernel<T>::Compute(int64_t currentNum)
 template <typename T>
 __aicore__ inline void DawsnKernel<T>::Process()
 {
+    // Empty / non-positive block guard: dim0 == 0 (empty tensor) or a trailing
+    // block with remainder <= 0 must not reach CopyIn/Compute/CopyOut — with
+    // blockLength_ == 0 the loop body would read OOB and CopyOut would write at
+    // a NEGATIVE GM offset (progress - 1 = -1), faulting/hanging the device.
+    if (blockLength_ <= 0) {
+        return;
+    }
     int64_t loopCount = (blockLength_ + ubLength_ - 1) / ubLength_;
     if (loopCount == 1) {
         CopyIn(0, blockLength_);
@@ -217,84 +207,178 @@ __aicore__ inline void DawsnKernel<T>::Process()
 // ============================================================================
 // Helper: Horner evaluation of S1_AN (degree 9, 10 coeffs) with variable u
 // ============================================================================
-#define DAWSN_HORNER_AN(u, pReg, tmpReg, mask) \
-    AscendC::Reg::Duplicate(pReg, S1_AN[0], mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S1_AN[1], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S1_AN[2], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S1_AN[3], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S1_AN[4], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S1_AN[5], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S1_AN[6], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S1_AN[7], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S1_AN[8], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S1_AN[9], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask);
+#define DAWSN_HORNER_AN(u, pReg, tmpReg, mask)       \
+    AscendC::Reg::Duplicate(pReg, S1_AN[0], mask);   \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S1_AN[1], mask); \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S1_AN[2], mask); \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S1_AN[3], mask); \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S1_AN[4], mask); \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S1_AN[5], mask); \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S1_AN[6], mask); \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S1_AN[7], mask); \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S1_AN[8], mask); \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S1_AN[9], mask); \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);
 
 // Helper: Horner evaluation of S1_AD (degree 10, 11 coeffs) with variable u
-#define DAWSN_HORNER_AD(u, qReg, tmpReg, mask) \
-    AscendC::Reg::Duplicate(qReg, S1_AD[0], mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S1_AD[1], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S1_AD[2], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S1_AD[3], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S1_AD[4], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S1_AD[5], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S1_AD[6], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S1_AD[7], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S1_AD[8], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S1_AD[9], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S1_AD[10], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask);
+#define DAWSN_HORNER_AD(u, qReg, tmpReg, mask)        \
+    AscendC::Reg::Duplicate(qReg, S1_AD[0], mask);    \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);           \
+    AscendC::Reg::Duplicate(tmpReg, S1_AD[1], mask);  \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);      \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);           \
+    AscendC::Reg::Duplicate(tmpReg, S1_AD[2], mask);  \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);      \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);           \
+    AscendC::Reg::Duplicate(tmpReg, S1_AD[3], mask);  \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);      \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);           \
+    AscendC::Reg::Duplicate(tmpReg, S1_AD[4], mask);  \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);      \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);           \
+    AscendC::Reg::Duplicate(tmpReg, S1_AD[5], mask);  \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);      \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);           \
+    AscendC::Reg::Duplicate(tmpReg, S1_AD[6], mask);  \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);      \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);           \
+    AscendC::Reg::Duplicate(tmpReg, S1_AD[7], mask);  \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);      \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);           \
+    AscendC::Reg::Duplicate(tmpReg, S1_AD[8], mask);  \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);      \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);           \
+    AscendC::Reg::Duplicate(tmpReg, S1_AD[9], mask);  \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);      \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);           \
+    AscendC::Reg::Duplicate(tmpReg, S1_AD[10], mask); \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);
 
 // Helper: polevl(1/x^2, BN, 10) - degree 10, 11 coeffs
-#define DAWSN_HORNER_BN(u, pReg, tmpReg, mask) \
-    AscendC::Reg::Duplicate(pReg, S2_BN[0], mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S2_BN[1], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S2_BN[2], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S2_BN[3], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S2_BN[4], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S2_BN[5], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S2_BN[6], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S2_BN[7], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S2_BN[8], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S2_BN[9], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S2_BN[10], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask);
+#define DAWSN_HORNER_BN(u, pReg, tmpReg, mask)        \
+    AscendC::Reg::Duplicate(pReg, S2_BN[0], mask);    \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);           \
+    AscendC::Reg::Duplicate(tmpReg, S2_BN[1], mask);  \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);      \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);           \
+    AscendC::Reg::Duplicate(tmpReg, S2_BN[2], mask);  \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);      \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);           \
+    AscendC::Reg::Duplicate(tmpReg, S2_BN[3], mask);  \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);      \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);           \
+    AscendC::Reg::Duplicate(tmpReg, S2_BN[4], mask);  \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);      \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);           \
+    AscendC::Reg::Duplicate(tmpReg, S2_BN[5], mask);  \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);      \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);           \
+    AscendC::Reg::Duplicate(tmpReg, S2_BN[6], mask);  \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);      \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);           \
+    AscendC::Reg::Duplicate(tmpReg, S2_BN[7], mask);  \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);      \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);           \
+    AscendC::Reg::Duplicate(tmpReg, S2_BN[8], mask);  \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);      \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);           \
+    AscendC::Reg::Duplicate(tmpReg, S2_BN[9], mask);  \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);      \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);           \
+    AscendC::Reg::Duplicate(tmpReg, S2_BN[10], mask); \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);
 
 // Helper: p1evl(1/x^2, BD, 10) - degree 10, leading 1 implicit, 10 stored coeffs
-#define DAWSN_HORNER_BD(u, qReg, tmpReg, mask) \
-    AscendC::Reg::Duplicate(qReg, S2_BD[0], mask); AscendC::Reg::Add(qReg, qReg, u, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S2_BD[1], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S2_BD[2], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S2_BD[3], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S2_BD[4], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S2_BD[5], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S2_BD[6], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S2_BD[7], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S2_BD[8], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S2_BD[9], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask);
+#define DAWSN_HORNER_BD(u, qReg, tmpReg, mask)       \
+    AscendC::Reg::Duplicate(qReg, S2_BD[0], mask);   \
+    AscendC::Reg::Add(qReg, qReg, u, mask);          \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S2_BD[1], mask); \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S2_BD[2], mask); \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S2_BD[3], mask); \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S2_BD[4], mask); \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S2_BD[5], mask); \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S2_BD[6], mask); \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S2_BD[7], mask); \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S2_BD[8], mask); \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S2_BD[9], mask); \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);
 
 // Helper: polevl(1/x^2, CN, 4) - degree 4, 5 coeffs
-#define DAWSN_HORNER_CN(u, pReg, tmpReg, mask) \
-    AscendC::Reg::Duplicate(pReg, S3_CN[0], mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S3_CN[1], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S3_CN[2], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S3_CN[3], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(pReg, pReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S3_CN[4], mask); AscendC::Reg::Add(pReg, pReg, tmpReg, mask);
+#define DAWSN_HORNER_CN(u, pReg, tmpReg, mask)       \
+    AscendC::Reg::Duplicate(pReg, S3_CN[0], mask);   \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S3_CN[1], mask); \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S3_CN[2], mask); \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S3_CN[3], mask); \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(pReg, pReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S3_CN[4], mask); \
+    AscendC::Reg::Add(pReg, pReg, tmpReg, mask);
 
 // Helper: p1evl(1/x^2, CD, 5) - degree 5, leading 1 implicit, 5 stored coeffs
-#define DAWSN_HORNER_CD(u, qReg, tmpReg, mask) \
-    AscendC::Reg::Duplicate(qReg, S3_CD[0], mask); AscendC::Reg::Add(qReg, qReg, u, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S3_CD[1], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S3_CD[2], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S3_CD[3], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask); \
-    AscendC::Reg::Mul(qReg, qReg, u, mask); AscendC::Reg::Duplicate(tmpReg, S3_CD[4], mask); AscendC::Reg::Add(qReg, qReg, tmpReg, mask);
+#define DAWSN_HORNER_CD(u, qReg, tmpReg, mask)       \
+    AscendC::Reg::Duplicate(qReg, S3_CD[0], mask);   \
+    AscendC::Reg::Add(qReg, qReg, u, mask);          \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S3_CD[1], mask); \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S3_CD[2], mask); \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S3_CD[3], mask); \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);     \
+    AscendC::Reg::Mul(qReg, qReg, u, mask);          \
+    AscendC::Reg::Duplicate(tmpReg, S3_CD[4], mask); \
+    AscendC::Reg::Add(qReg, qReg, tmpReg, mask);
 
 // Helper: Segment 2/3 formula: 0.5*(1/|x| + inv_x2 * P / (Q * |x|))
 // Inputs: invXReg=1/|x|, invX2Reg=1/x^2, pReg=P(inv_x2), qReg=Q(inv_x2), absReg=|x|
 // Output: segResult
 #define DAWSN_SEG23_FORMULA(invXReg, invX2Reg, pReg, qReg, absReg, segResult, tmpReg, tmp2Reg, mask) \
-    AscendC::Reg::Mul(tmpReg, qReg, absReg, mask); \
-    AscendC::Reg::Div(tmpReg, pReg, tmpReg, mask); \
-    AscendC::Reg::Mul(segResult, invX2Reg, tmpReg, mask); \
-    AscendC::Reg::Add(segResult, invXReg, segResult, mask); \
-    AscendC::Reg::Duplicate(tmpReg, DAWSON_HALF, mask); \
+    AscendC::Reg::Mul(tmpReg, qReg, absReg, mask);                                                   \
+    AscendC::Reg::Div(tmpReg, pReg, tmpReg, mask);                                                   \
+    AscendC::Reg::Mul(segResult, invX2Reg, tmpReg, mask);                                            \
+    AscendC::Reg::Add(segResult, invXReg, segResult, mask);                                          \
+    AscendC::Reg::Duplicate(tmpReg, DAWSON_HALF, mask);                                              \
     AscendC::Reg::Mul(segResult, segResult, tmpReg, mask);
 
 // ============================================================================
@@ -303,73 +387,77 @@ __aicore__ inline void DawsnKernel<T>::Process()
 //             invXReg, segResult, invX2Reg, mask, maskSeg1-4, maskZero,
 //             maskNeg, maskNan, maskInf, maskSpecial
 // ============================================================================
-#define DAWSN_COMPUTE(xReg, absReg, xSqReg, pReg, qReg, tmpReg, resultReg, \
-                      invXReg, segResult, invX2Reg, mask, \
-                      maskSeg1, maskSeg2, maskSeg3, maskSeg4, \
-                      maskZero, maskNeg, maskNan, maskInf, maskSpecial) \
-    AscendC::Reg::Abs(absReg, xReg, mask); \
-    AscendC::Reg::Compare<float, AscendC::CMPMODE::NE>(maskNan, absReg, absReg, mask); \
-    AscendC::Reg::Duplicate(tmpReg, FLT_MAX_VAL, mask); \
-    AscendC::Reg::Compare<float, AscendC::CMPMODE::GT>(maskInf, absReg, tmpReg, mask); \
-    AscendC::Reg::MaskOr(maskSpecial, maskNan, maskInf, mask); \
-    AscendC::Reg::Duplicate(tmpReg, 0.0f, mask); \
-    AscendC::Reg::Compare<float, AscendC::CMPMODE::EQ>(maskZero, absReg, tmpReg, mask); \
-    AscendC::Reg::Duplicate(tmpReg, 1.0f, mask); \
-    AscendC::Reg::Select<float>(absReg, tmpReg, absReg, maskZero); \
-    AscendC::Reg::Select<float>(absReg, tmpReg, absReg, maskSpecial); \
-    AscendC::Reg::Mul(xSqReg, absReg, absReg, mask); \
-    AscendC::Reg::Duplicate(tmpReg, SEG1_UPPER_BOUND, mask); \
-    AscendC::Reg::Compare<float, AscendC::CMPMODE::LT>(maskSeg1, absReg, tmpReg, mask); \
-    AscendC::Reg::Duplicate(tmpReg, SEG2_UPPER_BOUND, mask); \
-    AscendC::Reg::Compare<float, AscendC::CMPMODE::LT>(maskSeg2, absReg, tmpReg, mask); \
-    AscendC::Reg::Duplicate(tmpReg, SEG3_UPPER_BOUND, mask); \
-    AscendC::Reg::Compare<float, AscendC::CMPMODE::LE>(maskSeg3, absReg, tmpReg, mask); \
-    AscendC::Reg::Compare<float, AscendC::CMPMODE::GT>(maskSeg4, absReg, tmpReg, mask); \
-    AscendC::Reg::Duplicate(tmpReg, 1.0f, mask); \
-    AscendC::Reg::Div(invXReg, tmpReg, absReg, mask); \
-    AscendC::Reg::Mul(invX2Reg, invXReg, invXReg, mask); \
-    AscendC::Reg::Duplicate(tmpReg, 0.0f, mask); \
-    AscendC::Reg::Select<float>(invX2Reg, tmpReg, invX2Reg, maskSeg1); \
-    DAWSN_HORNER_AN(xSqReg, pReg, tmpReg, mask) \
-    DAWSN_HORNER_AD(xSqReg, qReg, tmpReg, mask) \
-    AscendC::Reg::Mul(segResult, absReg, pReg, mask); \
-    AscendC::Reg::Div(segResult, segResult, qReg, mask); \
-    AscendC::Reg::Duplicate(resultReg, 0.0f, mask); \
-    AscendC::Reg::Select<float>(resultReg, segResult, resultReg, maskSeg1); \
-    DAWSN_HORNER_BN(invX2Reg, pReg, tmpReg, mask) \
-    DAWSN_HORNER_BD(invX2Reg, qReg, tmpReg, mask) \
-    DAWSN_SEG23_FORMULA(invXReg, invX2Reg, pReg, qReg, absReg, segResult, tmpReg, resultReg, mask) \
-    AscendC::Reg::Select<float>(resultReg, segResult, resultReg, maskSeg2); \
-    DAWSN_HORNER_CN(invX2Reg, pReg, tmpReg, mask) \
-    DAWSN_HORNER_CD(invX2Reg, qReg, tmpReg, mask) \
-    DAWSN_SEG23_FORMULA(invXReg, invX2Reg, pReg, qReg, absReg, segResult, tmpReg, resultReg, mask) \
-    AscendC::Reg::Select<float>(resultReg, segResult, resultReg, maskSeg3); \
-    AscendC::Reg::Duplicate(tmpReg, DAWSON_HALF, mask); \
-    AscendC::Reg::Div(segResult, tmpReg, absReg, mask); \
-    AscendC::Reg::Select<float>(resultReg, segResult, resultReg, maskSeg4); \
-    DAWSN_HORNER_AN(xSqReg, pReg, tmpReg, mask) \
-    DAWSN_HORNER_AD(xSqReg, qReg, tmpReg, mask) \
-    AscendC::Reg::Mul(segResult, absReg, pReg, mask); \
-    AscendC::Reg::Div(segResult, segResult, qReg, mask); \
-    AscendC::Reg::Select<float>(resultReg, segResult, resultReg, maskSeg1); \
-    AscendC::Reg::Duplicate(tmpReg, 0.0f, mask); \
-    AscendC::Reg::Select<float>(resultReg, tmpReg, resultReg, maskZero); \
-    AscendC::Reg::Duplicate(tmpReg, 0.0f, mask); \
-    AscendC::Reg::Compare<float, AscendC::CMPMODE::LT>(maskNeg, xReg, tmpReg, mask); \
-    AscendC::Reg::Neg(segResult, resultReg, mask); \
-    AscendC::Reg::Select<float>(resultReg, segResult, resultReg, maskNeg); \
-    AscendC::Reg::Duplicate(tmpReg, 0.0f, mask); \
-    AscendC::Reg::Select<float>(resultReg, tmpReg, resultReg, maskInf); \
-    AscendC::Reg::Duplicate<int32_t, AscendC::Reg::MaskMergeMode::MERGING>( \
+#define DAWSN_COMPUTE(xReg, absReg, xSqReg, pReg, qReg, tmpReg, resultReg, invXReg, segResult, invX2Reg, mask,  \
+                      maskSeg1, maskSeg2, maskSeg3, maskSeg4, maskZero, maskNeg, maskNan, maskInf, maskSpecial) \
+    AscendC::Reg::Abs(absReg, xReg, mask);                                                                      \
+    AscendC::Reg::Compare<float, AscendC::CMPMODE::NE>(maskNan, absReg, absReg, mask);                          \
+    AscendC::Reg::Duplicate(tmpReg, FLT_MAX_VAL, mask);                                                         \
+    AscendC::Reg::Compare<float, AscendC::CMPMODE::GT>(maskInf, absReg, tmpReg, mask);                          \
+    AscendC::Reg::MaskOr(maskSpecial, maskNan, maskInf, mask);                                                  \
+    AscendC::Reg::Duplicate(tmpReg, 0.0f, mask);                                                                \
+    AscendC::Reg::Compare<float, AscendC::CMPMODE::EQ>(maskZero, absReg, tmpReg, mask);                         \
+    AscendC::Reg::Duplicate(tmpReg, 1.0f, mask);                                                                \
+    AscendC::Reg::Select<float>(absReg, tmpReg, absReg, maskZero);                                              \
+    AscendC::Reg::Select<float>(absReg, tmpReg, absReg, maskSpecial);                                           \
+    AscendC::Reg::Mul(xSqReg, absReg, absReg, mask);                                                            \
+    AscendC::Reg::Duplicate(tmpReg, SEG1_UPPER_BOUND, mask);                                                    \
+    AscendC::Reg::Compare<float, AscendC::CMPMODE::LT>(maskSeg1, absReg, tmpReg, mask);                         \
+    AscendC::Reg::Duplicate(tmpReg, SEG2_UPPER_BOUND, mask);                                                    \
+    AscendC::Reg::Compare<float, AscendC::CMPMODE::LT>(maskSeg2, absReg, tmpReg, mask);                         \
+    AscendC::Reg::Duplicate(tmpReg, SEG3_UPPER_BOUND, mask);                                                    \
+    AscendC::Reg::Compare<float, AscendC::CMPMODE::LE>(maskSeg3, absReg, tmpReg, mask);                         \
+    AscendC::Reg::Compare<float, AscendC::CMPMODE::GT>(maskSeg4, absReg, tmpReg, mask);                         \
+    AscendC::Reg::Duplicate(tmpReg, 1.0f, mask);                                                                \
+    AscendC::Reg::Div(invXReg, tmpReg, absReg, mask);                                                           \
+    AscendC::Reg::Mul(invX2Reg, invXReg, invXReg, mask);                                                        \
+    AscendC::Reg::Duplicate(tmpReg, 0.0f, mask);                                                                \
+    AscendC::Reg::Select<float>(invX2Reg, tmpReg, invX2Reg, maskSeg1);                                          \
+    DAWSN_HORNER_AN(xSqReg, pReg, tmpReg, mask)                                                                 \
+    DAWSN_HORNER_AD(xSqReg, qReg, tmpReg, mask)                                                                 \
+    AscendC::Reg::Mul(segResult, absReg, pReg, mask);                                                           \
+    AscendC::Reg::Div(segResult, segResult, qReg, mask);                                                        \
+    AscendC::Reg::Duplicate(resultReg, 0.0f, mask);                                                             \
+    AscendC::Reg::Select<float>(resultReg, segResult, resultReg, maskSeg1);                                     \
+    DAWSN_HORNER_BN(invX2Reg, pReg, tmpReg, mask)                                                               \
+    DAWSN_HORNER_BD(invX2Reg, qReg, tmpReg, mask)                                                               \
+    DAWSN_SEG23_FORMULA(invXReg, invX2Reg, pReg, qReg, absReg, segResult, tmpReg, resultReg, mask)              \
+    AscendC::Reg::Select<float>(resultReg, segResult, resultReg, maskSeg2);                                     \
+    DAWSN_HORNER_CN(invX2Reg, pReg, tmpReg, mask)                                                               \
+    DAWSN_HORNER_CD(invX2Reg, qReg, tmpReg, mask)                                                               \
+    DAWSN_SEG23_FORMULA(invXReg, invX2Reg, pReg, qReg, absReg, segResult, tmpReg, resultReg, mask)              \
+    AscendC::Reg::Select<float>(resultReg, segResult, resultReg, maskSeg3);                                     \
+    /* Seg2 re-select: maskSeg2/maskSeg3 are non-exclusive, so the Seg3 Select */                               \
+    /* above clobbers 3.25<=|x|<6.25 lanes. Recompute the Seg2 (BN/BD) formula */                               \
+    /* and re-select, symmetric to the Seg1 re-select below (fix 2026-09-08). */                                \
+    DAWSN_HORNER_BN(invX2Reg, pReg, tmpReg, mask)                                                               \
+    DAWSN_HORNER_BD(invX2Reg, qReg, tmpReg, mask)                                                               \
+    DAWSN_SEG23_FORMULA(invXReg, invX2Reg, pReg, qReg, absReg, segResult, tmpReg, resultReg, mask)              \
+    AscendC::Reg::Select<float>(resultReg, segResult, resultReg, maskSeg2);                                     \
+    AscendC::Reg::Duplicate(tmpReg, DAWSON_HALF, mask);                                                         \
+    AscendC::Reg::Div(segResult, tmpReg, absReg, mask);                                                         \
+    AscendC::Reg::Select<float>(resultReg, segResult, resultReg, maskSeg4);                                     \
+    DAWSN_HORNER_AN(xSqReg, pReg, tmpReg, mask)                                                                 \
+    DAWSN_HORNER_AD(xSqReg, qReg, tmpReg, mask)                                                                 \
+    AscendC::Reg::Mul(segResult, absReg, pReg, mask);                                                           \
+    AscendC::Reg::Div(segResult, segResult, qReg, mask);                                                        \
+    AscendC::Reg::Select<float>(resultReg, segResult, resultReg, maskSeg1);                                     \
+    AscendC::Reg::Duplicate(tmpReg, 0.0f, mask);                                                                \
+    AscendC::Reg::Select<float>(resultReg, tmpReg, resultReg, maskZero);                                        \
+    AscendC::Reg::Duplicate(tmpReg, 0.0f, mask);                                                                \
+    AscendC::Reg::Compare<float, AscendC::CMPMODE::LT>(maskNeg, xReg, tmpReg, mask);                            \
+    AscendC::Reg::Neg(segResult, resultReg, mask);                                                              \
+    AscendC::Reg::Select<float>(resultReg, segResult, resultReg, maskNeg);                                      \
+    AscendC::Reg::Duplicate(tmpReg, 0.0f, mask);                                                                \
+    AscendC::Reg::Select<float>(resultReg, tmpReg, resultReg, maskInf);                                         \
+    AscendC::Reg::Duplicate<int32_t, AscendC::Reg::MaskMergeMode::MERGING>(                                     \
         (AscendC::Reg::RegTensor<int32_t>&)resultReg, F32_NAN, maskNan);
 
 // ============================================================================
 // VF function: float - 4-segment Dawson integral
 // ============================================================================
 template <>
-__simd_vf__ inline void DawsnVF<float>(
-    __ubuf__ float* dstAddr, __ubuf__ float* srcAddr,
-    uint32_t count, uint32_t oneRepeatSize, uint16_t repeatTimes)
+__simd_vf__ inline void DawsnVF<float>(__ubuf__ float* dstAddr, __ubuf__ float* srcAddr, uint32_t count,
+                                       uint32_t oneRepeatSize, uint16_t repeatTimes)
 {
     AscendC::Reg::RegTensor<float> xReg, absReg, xSqReg, pReg, qReg, tmpReg;
     AscendC::Reg::RegTensor<float> resultReg, invXReg, segResult, invX2Reg;
@@ -379,10 +467,8 @@ __simd_vf__ inline void DawsnVF<float>(
     for (uint16_t i = 0; i < repeatTimes; ++i) {
         mask = AscendC::Reg::UpdateMask<float>(count);
         AscendC::Reg::LoadAlign(xReg, srcAddr + i * oneRepeatSize);
-        DAWSN_COMPUTE(xReg, absReg, xSqReg, pReg, qReg, tmpReg, resultReg,
-                      invXReg, segResult, invX2Reg, mask,
-                      maskSeg1, maskSeg2, maskSeg3, maskSeg4,
-                      maskZero, maskNeg, maskNan, maskInf, maskSpecial)
+        DAWSN_COMPUTE(xReg, absReg, xSqReg, pReg, qReg, tmpReg, resultReg, invXReg, segResult, invX2Reg, mask, maskSeg1,
+                      maskSeg2, maskSeg3, maskSeg4, maskZero, maskNeg, maskNan, maskInf, maskSpecial)
         AscendC::Reg::StoreAlign(dstAddr + i * oneRepeatSize, resultReg, mask);
     }
 }
@@ -398,9 +484,8 @@ __simd_vf__ inline void DawsnVF<float>(
 //   - oneRepeatSize must be based on float (64 elements, not 128)
 // ============================================================================
 template <>
-__simd_vf__ inline void DawsnVF<half>(
-    __ubuf__ half* dstAddr, __ubuf__ half* srcAddr,
-    uint32_t count, uint32_t oneRepeatSize, uint16_t repeatTimes)
+__simd_vf__ inline void DawsnVF<half>(__ubuf__ half* dstAddr, __ubuf__ half* srcAddr, uint32_t count,
+                                      uint32_t oneRepeatSize, uint16_t repeatTimes)
 {
     AscendC::Reg::RegTensor<half> xHalfReg, yHalfReg;
     AscendC::Reg::RegTensor<float> xFloatReg;
@@ -419,24 +504,21 @@ __simd_vf__ inline void DawsnVF<half>(
         mask = AscendC::Reg::UpdateMask<float>(count);
 
         // Load half with UNPACK_B16: each 16-bit half → 32-bit slot
-        AscendC::Reg::LoadAlign<half, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(
-            xHalfReg, srcAddr + i * fOneRepeatSize);
+        AscendC::Reg::LoadAlign<half, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(xHalfReg, srcAddr + i * fOneRepeatSize);
 
         // Widen: half (in 32-bit slots) → float
         AscendC::Reg::Cast<float, half, WIDEN_F16_TO_F32>(xFloatReg, xHalfReg, mask);
 
         // Compute in FP32
-        DAWSN_COMPUTE(xFloatReg, absReg, xSqReg, pReg, qReg, tmpReg, resultReg,
-                      invXReg, segResult, invX2Reg, mask,
-                      maskSeg1, maskSeg2, maskSeg3, maskSeg4,
-                      maskZero, maskNeg, maskNan, maskInf, maskSpecial)
+        DAWSN_COMPUTE(xFloatReg, absReg, xSqReg, pReg, qReg, tmpReg, resultReg, invXReg, segResult, invX2Reg, mask,
+                      maskSeg1, maskSeg2, maskSeg3, maskSeg4, maskZero, maskNeg, maskNan, maskInf, maskSpecial)
 
         // Narrow: float → half (in 32-bit slots)
         AscendC::Reg::Cast<half, float, NARROW_F32_TO_F16>(yHalfReg, resultReg, mask);
 
         // Store half with PACK_B32: each 32-bit slot → 16-bit half
-        AscendC::Reg::StoreAlign<half, AscendC::Reg::StoreDist::DIST_PACK_B32>(
-            dstAddr + i * fOneRepeatSize, yHalfReg, mask);
+        AscendC::Reg::StoreAlign<half, AscendC::Reg::StoreDist::DIST_PACK_B32>(dstAddr + i * fOneRepeatSize, yHalfReg,
+                                                                               mask);
     }
 }
 
@@ -451,9 +533,8 @@ __simd_vf__ inline void DawsnVF<half>(
 //   - oneRepeatSize must be based on float (64 elements, not 128)
 // ============================================================================
 template <>
-__simd_vf__ inline void DawsnVF<bfloat16_t>(
-    __ubuf__ bfloat16_t* dstAddr, __ubuf__ bfloat16_t* srcAddr,
-    uint32_t count, uint32_t oneRepeatSize, uint16_t repeatTimes)
+__simd_vf__ inline void DawsnVF<bfloat16_t>(__ubuf__ bfloat16_t* dstAddr, __ubuf__ bfloat16_t* srcAddr, uint32_t count,
+                                            uint32_t oneRepeatSize, uint16_t repeatTimes)
 {
     AscendC::Reg::RegTensor<bfloat16_t> xBfReg, yBfReg;
     AscendC::Reg::RegTensor<float> xFloatReg;
@@ -472,24 +553,22 @@ __simd_vf__ inline void DawsnVF<bfloat16_t>(
         mask = AscendC::Reg::UpdateMask<float>(count);
 
         // Load bf16 with UNPACK_B16: each 16-bit bf16 → 32-bit slot
-        AscendC::Reg::LoadAlign<bfloat16_t, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(
-            xBfReg, srcAddr + i * fOneRepeatSize);
+        AscendC::Reg::LoadAlign<bfloat16_t, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(xBfReg,
+                                                                                     srcAddr + i * fOneRepeatSize);
 
         // Widen: bf16 (in 32-bit slots) → float
         AscendC::Reg::Cast<float, bfloat16_t, WIDEN_BF16_TO_F32>(xFloatReg, xBfReg, mask);
 
         // Compute in FP32
-        DAWSN_COMPUTE(xFloatReg, absReg, xSqReg, pReg, qReg, tmpReg, resultReg,
-                      invXReg, segResult, invX2Reg, mask,
-                      maskSeg1, maskSeg2, maskSeg3, maskSeg4,
-                      maskZero, maskNeg, maskNan, maskInf, maskSpecial)
+        DAWSN_COMPUTE(xFloatReg, absReg, xSqReg, pReg, qReg, tmpReg, resultReg, invXReg, segResult, invX2Reg, mask,
+                      maskSeg1, maskSeg2, maskSeg3, maskSeg4, maskZero, maskNeg, maskNan, maskInf, maskSpecial)
 
         // Narrow: float → bf16 (in 32-bit slots)
         AscendC::Reg::Cast<bfloat16_t, float, NARROW_F32_TO_BF16>(yBfReg, resultReg, mask);
 
         // Store bf16 with PACK_B32: each 32-bit slot → 16-bit bf16
-        AscendC::Reg::StoreAlign<bfloat16_t, AscendC::Reg::StoreDist::DIST_PACK_B32>(
-            dstAddr + i * fOneRepeatSize, yBfReg, mask);
+        AscendC::Reg::StoreAlign<bfloat16_t, AscendC::Reg::StoreDist::DIST_PACK_B32>(dstAddr + i * fOneRepeatSize,
+                                                                                     yBfReg, mask);
     }
 }
 
