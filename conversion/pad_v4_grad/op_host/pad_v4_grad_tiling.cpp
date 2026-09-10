@@ -18,16 +18,16 @@
 namespace optiling {
 
 // ======================== File-Specific Constants ========================
+static std::map<ge::DataType, int32_t> DATATYPE_LEN_MAP = {{ge::DT_FLOAT16, 2}, {ge::DT_BF16, 2}, {ge::DT_FLOAT, 4}};
 constexpr uint32_t FLOAT_EDGE_TILING_KEY = 12;
 constexpr uint32_t FLOAT16_EDGE_TILING_KEY = 22;
-constexpr uint32_t RESERVED_UB = 11 * 1024;
 constexpr int32_t MINI_SHAPE_MAX_HEIGHT = 128;
-constexpr int32_t FLOAT16_MINI_SHAPE_MAX_WIDTH = 224;
-constexpr int32_t FLOAT_MINI_SHAPE_MAX_WIDTH = 112;
-constexpr int32_t BFLOAT16_MINI_SHAPE_MAX_WIDTH = 112;
-constexpr int32_t SMALL_W_LIMIT = 128;
 constexpr int32_t W_PAD_LOWER_LIMIT = 16;
-static std::map<ge::DataType, int32_t> DATATYPE_LEN_MAP = {{ge::DT_FLOAT16, 2}, {ge::DT_BF16, 2}, {ge::DT_FLOAT, 4}};
+constexpr uint32_t RESERVED_UB = 11 * 1024;
+constexpr int32_t FLOAT_MINI_SHAPE_MAX_WIDTH = 112;
+constexpr int32_t FLOAT16_MINI_SHAPE_MAX_WIDTH = 224;
+constexpr int32_t SMALL_W_LIMIT = 128;
+constexpr int32_t BFLOAT16_MINI_SHAPE_MAX_WIDTH = 112;
 
 template <typename TilingData, int32_t dataTypeLen>
 class PadV3GradV2Tiling

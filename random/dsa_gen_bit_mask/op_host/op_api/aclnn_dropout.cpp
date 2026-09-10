@@ -17,14 +17,14 @@
 #include "math/zero_op/op_api/zero_op.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
-#include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"
+#include "opdev/data_type_utils.h"
 #include "opdev/op_dfx.h"
-#include "opdev/op_executor.h"
-#include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
-#include "opdev/tensor_view_utils.h"
+#include "opdev/op_executor.h"
 #include "opdev/platform.h"
+#include "opdev/op_log.h"
+#include "opdev/tensor_view_utils.h"
 #include "dropout_common.h"
 
 using namespace op;
