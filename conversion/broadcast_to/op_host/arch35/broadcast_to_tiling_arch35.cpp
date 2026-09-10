@@ -31,7 +31,7 @@ constexpr size_t INPUT_INDEX_SHAPE = 1;
 constexpr int64_t TILING_MODE_SINGLE_AXIS = 11006;
 constexpr int64_t TILING_MODE_SINGLE_AXIS_BRC = 11007;
 constexpr uint32_t UB_BLOCK_BYTES = 128;
-constexpr uint32_t MIN_UB_BUFFER_BYTES = 8 * 1024;
+constexpr uint32_t MIN_UB_BUFFER_BYTES = 16 * 1024;
 constexpr uint32_t BUFFER_NUM_A = 2; // A轴: double buffer (ubPing + ubPong)
 constexpr uint32_t BUFFER_NUM_B = 1; // B轴: 单buffer常驻UB, 无需double buffer
 
@@ -68,7 +68,7 @@ static ge::graphStatus Tiling4SingleAxis(gert::TilingContext* context, const ger
     uint64_t usedCoreNum = std::min(static_cast<uint64_t>(coreNum), totalOutElems);
     uint64_t mainCoreNum = totalOutElems - (blockFactor - 1) * usedCoreNum;
 
-    // 2. 再切UB: 按可用UB最大值切分, 128B对齐, tileSize至少8KB
+    // 2. 再切UB: 按可用UB最大值切分, 128B对齐, tileSize至少16KB
     //    BRC单buffer常驻, 可用全部UB; A轴double buffer对半分
     uint32_t bufferNum = isBrc ? BUFFER_NUM_B : BUFFER_NUM_A;
     uint32_t bufferSize = static_cast<uint32_t>(ubSizeU / bufferNum);
