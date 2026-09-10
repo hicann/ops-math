@@ -16,7 +16,7 @@
 #include "platform/platform_infos_def.h"
 #include "platform/platform_ascendc.h"
 #include "op_common/op_host/util/platform_util.h"
-#include  "../../../random_common/op_host/arch35/random_tiling_base.h"
+#include "../../../random_common/op_host/arch35/random_tiling_base.h"
 #include "exe_graph/runtime/shape.h"
 #include "op_host/tiling_base_class.h"
 #include "random_uniform_v2_tiling_arch35.h"
@@ -31,18 +31,17 @@ OpTilingConfig RandomUniformV2Tiling::BuildOpConfig()
     OpTilingConfig config;
     config.inputCheckRules = {
         // 输入索引:  dtype列表，shapeSize，dim_num
-        {0, {{ge::DT_INT32, ge::DT_INT64}, -1, {0,1}, nullptr}},  // shape
-        {1, {{ge::DT_INT64}, 1, {}, nullptr}},                // offset
+        {0, {{ge::DT_INT32, ge::DT_INT64}, -1, {0, 1}, nullptr}}, // shape
+        {1, {{ge::DT_INT64}, 1, {}, nullptr}},                    // offset
     };
 
     config.outputCheckRules = {
         // 输出索引:  dtype列表，shapeSize，dim_num
-        {0, {{ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16}, -1, {0,1,2,3,4,5,6,7,8}, nullptr}}
-    };  // y
+        {0, {{ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16}, -1, {0, 1, 2, 3, 4, 5, 6, 7, 8}, nullptr}}}; // y
 
     // 获取output_size：输入0(shape)的shapeSize
     config.getOutputSize = [](gert::TilingContext* ctx, int64_t& shapeSize) -> ge::graphStatus {
-        return RandomUtils::GetAndCheckOutputSize<0,0,false>(ctx, shapeSize);
+        return RandomUtils::GetAndCheckOutputSize<0, 0, false>(ctx, shapeSize);
     };
 
     // 获取key[2]：从attr1(seed) counter[4] attr(seed2)
@@ -66,7 +65,9 @@ OpTilingConfig RandomUniformV2Tiling::BuildOpConfig()
     return config;
 }
 
-RandomUniformV2Tiling::RandomUniformV2Tiling(gert::TilingContext* ctx) : RandomTilingArch35(ctx, BuildOpConfig()){}
+RandomUniformV2Tiling::RandomUniformV2Tiling(gert::TilingContext* context)
+    : RandomTilingArch35(context, BuildOpConfig())
+{}
 
 static ge::graphStatus TilingPrepare4RandomUniformV2Tiling(gert::TilingParseContext* context)
 {

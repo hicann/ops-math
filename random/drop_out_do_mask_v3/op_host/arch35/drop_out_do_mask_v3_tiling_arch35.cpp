@@ -82,7 +82,8 @@ OpTilingConfig DropOutDoMaskV3Tiling::BuildOpConfig()
     return config;
 }
 
-DropOutDoMaskV3Tiling::DropOutDoMaskV3Tiling(gert::TilingContext* ctx) : RandomTilingArch35(ctx, BuildOpConfig())
+DropOutDoMaskV3Tiling::DropOutDoMaskV3Tiling(gert::TilingContext* context)
+    : RandomTilingArch35(context, BuildOpConfig())
 {}
 
 ge::graphStatus DropOutDoMaskV3Tiling::UniqueProcess()
@@ -116,14 +117,16 @@ ge::graphStatus DropOutDoMaskV3Tiling::UniqueProcess()
         default: {
             std::string valueStr = Ops::Base::ToString(keepDtype);
             std::string reasonMsg = "Unsupported keep_prob data type";
-            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "input keep_prob", valueStr.c_str(), reasonMsg.c_str());
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "input keep_prob", valueStr.c_str(),
+                                                  reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
     }
     if (keepProbNum < 0 || keepProbNum > 1) {
         std::string valueStr = std::to_string(keepProbNum);
         std::string reasonMsg = "keepProbNum must be in range [0, 1]";
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "input keep_prob", valueStr.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "input keep_prob", valueStr.c_str(),
+                                              reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;

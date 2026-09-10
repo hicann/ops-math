@@ -88,7 +88,8 @@ ge::graphStatus DropOutDoMaskV3DTiling::UniqueProcess()
     return ge::GRAPH_SUCCESS;
 }
 
-DropOutDoMaskV3DTiling::DropOutDoMaskV3DTiling(gert::TilingContext* ctx) : RandomTilingArch35(ctx, BuildOpConfig())
+DropOutDoMaskV3DTiling::DropOutDoMaskV3DTiling(gert::TilingContext* context)
+    : RandomTilingArch35(context, BuildOpConfig())
 {}
 
 static ge::graphStatus TilingPrepare4DropOutDoMaskV3DTiling(gert::TilingParseContext* context)

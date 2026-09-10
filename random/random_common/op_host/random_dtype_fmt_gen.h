@@ -44,24 +44,33 @@
 
 namespace randomdef {
 namespace detail {
-#define GE_CASE(VAL) \
-    case ge::VAL:    \
-        return #VAL
 inline std::string TypeToStr(ge::DataType type)
 {
     switch (type) {
-        GE_CASE(DT_FLOAT);
-        GE_CASE(DT_FLOAT16);
-        GE_CASE(DT_BF16);
-        GE_CASE(DT_INT8);
-        GE_CASE(DT_INT16);
-        GE_CASE(DT_INT32);
-        GE_CASE(DT_INT64);
-        GE_CASE(DT_UINT8);
-        GE_CASE(DT_UINT16);
-        GE_CASE(DT_UINT32);
-        GE_CASE(DT_UINT64);
-        GE_CASE(DT_BOOL);
+        case ge::DT_FLOAT:
+            return "DT_FLOAT";
+        case ge::DT_FLOAT16:
+            return "DT_FLOAT16";
+        case ge::DT_BF16:
+            return "DT_BF16";
+        case ge::DT_INT8:
+            return "DT_INT8";
+        case ge::DT_INT16:
+            return "DT_INT16";
+        case ge::DT_INT32:
+            return "DT_INT32";
+        case ge::DT_INT64:
+            return "DT_INT64";
+        case ge::DT_UINT8:
+            return "DT_UINT8";
+        case ge::DT_UINT16:
+            return "DT_UINT16";
+        case ge::DT_UINT32:
+            return "DT_UINT32";
+        case ge::DT_UINT64:
+            return "DT_UINT64";
+        case ge::DT_BOOL:
+            return "DT_BOOL";
         default:
             return "DT_" + std::to_string(type);
     }
@@ -70,14 +79,16 @@ inline std::string TypeToStr(ge::DataType type)
 inline std::string TypeToStr(ge::Format fmt)
 {
     switch (fmt) {
-        GE_CASE(FORMAT_NCHW);
-        GE_CASE(FORMAT_NHWC);
-        GE_CASE(FORMAT_ND);
+        case ge::FORMAT_NCHW:
+            return "FORMAT_NCHW";
+        case ge::FORMAT_NHWC:
+            return "FORMAT_NHWC";
+        case ge::FORMAT_ND:
+            return "FORMAT_ND";
         default:
             return "FMT_" + std::to_string(fmt);
     }
 }
-#undef GE_CASE
 
 } // namespace detail
 

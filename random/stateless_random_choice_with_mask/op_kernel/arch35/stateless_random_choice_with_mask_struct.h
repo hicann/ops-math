@@ -13,9 +13,10 @@
  * \brief
  */
 
-#include "ascendc/host_api/tiling/template_argument.h"
 #ifndef CANN_CUSTOM_OPS_STATELESS_RANDOM_CHOICE_WITH_MASK_STRUCT_H_
 #define CANN_CUSTOM_OPS_STATELESS_RANDOM_CHOICE_WITH_MASK_STRUCT_H_
+
+#include "ascendc/host_api/tiling/template_argument.h"
 
 #define TPL_SCH_MODE_0 0
 #define TILING_ARRAY_LEN_EIGHT 8
@@ -38,11 +39,8 @@ public:
     uint32_t inputShape[TILING_ARRAY_LEN_EIGHT] = {0};
 };
 
-ASCENDC_TPL_ARGS_DECL(
-    StatelessRandomChoiceWithMask, ASCENDC_TPL_UINT_DECL(schMode, 1, ASCENDC_TPL_UI_LIST, TPL_SCH_MODE_0)
-);
+ASCENDC_TPL_ARGS_DECL(StatelessRandomChoiceWithMask,
+                      ASCENDC_TPL_UINT_DECL(schMode, 1, ASCENDC_TPL_UI_LIST, TPL_SCH_MODE_0));
 
-ASCENDC_TPL_SEL(
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_UINT_SEL(schMode, ASCENDC_TPL_UI_LIST, TPL_SCH_MODE_0)));
+ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_UINT_SEL(schMode, ASCENDC_TPL_UI_LIST, TPL_SCH_MODE_0)));
 #endif // CANN_CUSTOM_OPS_STATELESS_RANDOM_CHOICE_WITH_MASK_STRUCT_H_
