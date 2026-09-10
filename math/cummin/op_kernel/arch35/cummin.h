@@ -421,10 +421,10 @@ __aicore__ inline void Cummin<X, ARGMIN>::DoCompare(int64_t computeTimes, int64_
 {
     __VEC_SCOPE__
     {
-        __local_mem__ X* selectXAddr = (__local_mem__ X*)tmpXTensor.GetPhyAddr();
-        __local_mem__ int32_t* selectargminAddr = (__local_mem__ int32_t*)tmpArgminTensor.GetPhyAddr();
-        __local_mem__ X* yAddr = (__local_mem__ X*)yTensor.GetPhyAddr() + offset;
-        __local_mem__ int32_t* argminAddr = (__local_mem__ int32_t*)argminTensor.GetPhyAddr() + offset + castOffset;
+        __ubuf__ X* selectXAddr = (__ubuf__ X*)tmpXTensor.GetPhyAddr();
+        __ubuf__ int32_t* selectargminAddr = (__ubuf__ int32_t*)tmpArgminTensor.GetPhyAddr();
+        __ubuf__ X* yAddr = (__ubuf__ X*)yTensor.GetPhyAddr() + offset;
+        __ubuf__ int32_t* argminAddr = (__ubuf__ int32_t*)argminTensor.GetPhyAddr() + offset + castOffset;
 
         if constexpr (sizeof(X) == 4) {
             Reg::RegTensor<X> xReg;
@@ -439,20 +439,20 @@ __aicore__ inline void Cummin<X, ARGMIN>::DoCompare(int64_t computeTimes, int64_
                     yMaskReg = Reg::UpdateMask<X>(reservedRegComputeTimes);
                 }
                 int64_t tmpOffset = i * VREGTENSOR_SIZE / dSize;
-                AscendC::Reg::DataCopy(xReg, selectXAddr + tmpOffset);
-                AscendC::Reg::DataCopy(argminReg, selectargminAddr + tmpOffset);
+                AscendC::Reg::LoadAlign<X>(xReg, selectXAddr + tmpOffset);
+                AscendC::Reg::LoadAlign<int32_t>(argminReg, selectargminAddr + tmpOffset);
                 for (int j = 0; j < computeTimes; j++) {
                     auto yOffset = tmpOffset + j * allocLength;
-                    AscendC::Reg::DataCopy(yReg, yAddr + yOffset);
+                    AscendC::Reg::LoadAlign<X>(yReg, yAddr + yOffset);
                     AscendC::Reg::Duplicate(dupReg, j + duplicate);
                     AscendC::Reg::Compare<X, CMPMODE::LT>(cmpReg, xReg, yReg, yMaskReg);
                     AscendC::Reg::Select(xReg, xReg, yReg, cmpReg);
                     AscendC::Reg::Select(argminReg, argminReg, dupReg, cmpReg);
-                    AscendC::Reg::DataCopy(yAddr + yOffset, xReg, yMaskReg);
-                    AscendC::Reg::DataCopy(argminAddr + yOffset, argminReg, yMaskReg);
+                    AscendC::Reg::StoreAlign<X>(yAddr + yOffset, xReg, yMaskReg);
+                    AscendC::Reg::StoreAlign<int32_t>(argminAddr + yOffset, argminReg, yMaskReg);
                 }
-                AscendC::Reg::DataCopy(selectXAddr + tmpOffset, xReg, yMaskReg);
-                AscendC::Reg::DataCopy(selectargminAddr + tmpOffset, argminReg, yMaskReg);
+                AscendC::Reg::StoreAlign<X>(selectXAddr + tmpOffset, xReg, yMaskReg);
+                AscendC::Reg::StoreAlign<int32_t>(selectargminAddr + tmpOffset, argminReg, yMaskReg);
             }
         } else {
             Reg::RegTensor<X> xReg;
@@ -477,12 +477,12 @@ __aicore__ inline void Cummin<X, ARGMIN>::DoCompare(int64_t computeTimes, int64_
                     AscendC::Reg::UnPack<AscendC::Reg::HighLowPart::HIGHEST>(argminMaskReg2, yMaskReg);
                 }
                 int64_t tmpOffset = i * VREGTENSOR_SIZE / dSize;
-                AscendC::Reg::DataCopy(xReg, selectXAddr + tmpOffset);
-                AscendC::Reg::DataCopy(argminReg1, selectargminAddr + tmpOffset);
-                AscendC::Reg::DataCopy(argminReg2, selectargminAddr + tmpOffset + 64);
+                AscendC::Reg::LoadAlign<X>(xReg, selectXAddr + tmpOffset);
+                AscendC::Reg::LoadAlign<int32_t>(argminReg1, selectargminAddr + tmpOffset);
+                AscendC::Reg::LoadAlign<int32_t>(argminReg2, selectargminAddr + tmpOffset + 64);
                 for (int j = 0; j < computeTimes; j++) {
                     auto yOffset = tmpOffset + j * allocLength;
-                    AscendC::Reg::DataCopy(yReg, yAddr + yOffset);
+                    AscendC::Reg::LoadAlign<X>(yReg, yAddr + yOffset);
                     AscendC::Reg::Duplicate(dupReg, j + duplicate);
 
                     AscendC::Reg::Compare<X, CMPMODE::LT>(cmpReg, xReg, yReg, yMaskReg);
@@ -493,13 +493,13 @@ __aicore__ inline void Cummin<X, ARGMIN>::DoCompare(int64_t computeTimes, int64_
                     AscendC::Reg::Select(argminReg1, argminReg1, dupReg, cmpReg1);
                     AscendC::Reg::Select(argminReg2, argminReg2, dupReg, cmpReg2);
 
-                    AscendC::Reg::DataCopy(yAddr + yOffset, xReg, yMaskReg);
-                    AscendC::Reg::DataCopy(argminAddr + yOffset, argminReg1, argminMaskReg1);
-                    AscendC::Reg::DataCopy(argminAddr + yOffset + 64, argminReg2, argminMaskReg2);
+                    AscendC::Reg::StoreAlign<X>(yAddr + yOffset, xReg, yMaskReg);
+                    AscendC::Reg::StoreAlign<int32_t>(argminAddr + yOffset, argminReg1, argminMaskReg1);
+                    AscendC::Reg::StoreAlign<int32_t>(argminAddr + yOffset + 64, argminReg2, argminMaskReg2);
                 }
-                AscendC::Reg::DataCopy(selectXAddr + tmpOffset, xReg, yMaskReg);
-                AscendC::Reg::DataCopy(selectargminAddr + tmpOffset, argminReg1, argminMaskReg1);
-                AscendC::Reg::DataCopy(selectargminAddr + tmpOffset + 64, argminReg2, argminMaskReg2);
+                AscendC::Reg::StoreAlign<X>(selectXAddr + tmpOffset, xReg, yMaskReg);
+                AscendC::Reg::StoreAlign<int32_t>(selectargminAddr + tmpOffset, argminReg1, argminMaskReg1);
+                AscendC::Reg::StoreAlign<int32_t>(selectargminAddr + tmpOffset + 64, argminReg2, argminMaskReg2);
             }
         }
     }
