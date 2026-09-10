@@ -10,33 +10,15 @@
 
 /*!
  * \file circular_pad_graph_infer.cpp
- * \brief circular_pad operator graph infer resource
+ * \brief circular_pad operator graph infer resource (InferDataType only)
+ *        InferShape 已拆分至 op_host/circular_pad_infershape.cpp
  */
 
 #include "log/log.h"
 #include "register/op_impl_registry.h"
-#include "util/shape_util.h"
-
-static constexpr int INPUT_NODE_NUM = 2;
-static constexpr int OUTPUT_NODE_NUM = 1;
 
 using namespace ge;
 namespace ops {
-
-static ge::graphStatus InferShape4CircularPad(gert::InferShapeContext *context)
-{
-    if (context == nullptr) {
-        OP_LOGE("InferShape4CircularPad", "Context is nullptr, check failed.");
-        return GRAPH_FAILED;
-    }
-    if (context->GetComputeNodeInputNum() != INPUT_NODE_NUM ||
-        context->GetComputeNodeOutputNum() != OUTPUT_NODE_NUM) {
-        OP_LOGE("InferShape4CircularPad", "input or output num check failed.");
-        return GRAPH_FAILED;
-    }
-
-    return ge::GRAPH_SUCCESS;
-}
 
 static ge::graphStatus InferDataType4CircularPad(gert::InferDataTypeContext* context)
 {
@@ -45,8 +27,6 @@ static ge::graphStatus InferDataType4CircularPad(gert::InferDataTypeContext* con
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_INFERSHAPE(CircularPad)
-    .InferShape(InferShape4CircularPad)
-    .InferDataType(InferDataType4CircularPad);
+IMPL_OP(CircularPad).InferDataType(InferDataType4CircularPad);
 
 } // namespace ops

@@ -13,7 +13,7 @@
  */
 #ifndef CIRCULAR_PAD_GRAD_TILING_H
 #define CIRCULAR_PAD_GRAD_TILING_H
-#include "conversion/circular_pad/op_host/circular_pad_common_tiling.h"
+#include "conversion/circular_pad/op_host/arch22/circular_pad_common_tiling.h"
 
 namespace optiling {
 

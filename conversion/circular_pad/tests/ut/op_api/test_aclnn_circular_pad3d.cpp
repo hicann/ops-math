@@ -8,7 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "gtest/gtest.h"
-#include "conversion/circular_pad/op_host/op_api/aclnn_circular_pad3d.h"
+#include "../../../op_api/aclnn_circular_pad3d.h"
 #include "op_api_ut_common/tensor_desc.h"
 #include "op_api_ut_common/array_desc.h"
 #include "op_api_ut_common/op_api_ut.h"
@@ -17,15 +17,9 @@ using namespace std;
 
 class circular_pad3d_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "circular_pad3d_test SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "circular_pad3d_test SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "circular_pad3d_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "circular_pad3d_test TearDown" << std::endl; }
 };
 
 TEST_F(circular_pad3d_test, case_1)

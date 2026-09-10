@@ -15,7 +15,7 @@
 
 #include <iostream>
 #include <gtest/gtest.h>
-#include "../../../op_host/circular_pad_tiling.h"
+#include "../../../../op_host/arch22/circular_pad_tiling.h"
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
 
