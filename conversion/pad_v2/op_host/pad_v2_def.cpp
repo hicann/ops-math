@@ -13,41 +13,42 @@
  * \brief PadV2 ophost definition
  */
 #include "register/op_def_registry.h"
-#include "common/inc/op_host/math_def_util.h"
-#include <array>
 
 namespace ops {
-// x/y 支持的数据类型
-static constexpr std::array VALUE_DATA_TYPE_ALL{
-    ge::DT_INT8,        ge::DT_UINT8,         ge::DT_INT16,       ge::DT_UINT16,     ge::DT_INT32,
-    ge::DT_UINT32,      ge::DT_INT64,         ge::DT_UINT64,      ge::DT_BF16,       ge::DT_FLOAT16,
-    ge::DT_FLOAT,       ge::DT_DOUBLE,        ge::DT_BOOL,        ge::DT_HIFLOAT8,   ge::DT_FLOAT8_E5M2,
-    ge::DT_FLOAT8_E8M0, ge::DT_FLOAT8_E4M3FN, ge::DT_FLOAT4_E2M1, ge::DT_FLOAT4_E1M2};
-// paddings 支持的数据类型（paddings 输入按 INT32 + INT64 顺序与 x 两两组合）
-static constexpr std::array PADDING_DATA_TYPE_ALL{ge::DT_INT32, ge::DT_INT64};
-static constexpr auto DATA_TYPE_LIST = Ops::Math::CombineDataTypes(VALUE_DATA_TYPE_ALL, PADDING_DATA_TYPE_ALL);
-static constexpr auto& VALUE_DATA_TYPE = std::get<0>(DATA_TYPE_LIST);
-static constexpr auto& PAD_DATA_TYPE = std::get<1>(DATA_TYPE_LIST);
-static const auto FORMAT_LIST = std::vector<ge::Format>(VALUE_DATA_TYPE.size(), ge::FORMAT_ND);
-static const auto VALUE_DATA_TYPE_VEC = std::vector<ge::DataType>(VALUE_DATA_TYPE.begin(), VALUE_DATA_TYPE.end());
-static const auto PAD_DATA_TYPE_VEC = std::vector<ge::DataType>(PAD_DATA_TYPE.begin(), PAD_DATA_TYPE.end());
+
+static const std::vector<ge::Format> format = {
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+
+static const std::vector<ge::DataType> valueDataType = {
+    ge::DT_INT8,          ge::DT_UINT8,         ge::DT_INT16,       ge::DT_UINT16,      ge::DT_INT32,
+    ge::DT_UINT32,        ge::DT_INT64,         ge::DT_UINT64,      ge::DT_BF16,        ge::DT_FLOAT16,
+    ge::DT_FLOAT,         ge::DT_DOUBLE,        ge::DT_BOOL,        ge::DT_HIFLOAT8,    ge::DT_FLOAT8_E5M2,
+    ge::DT_FLOAT8_E8M0,   ge::DT_FLOAT8_E4M3FN, ge::DT_FLOAT4_E2M1, ge::DT_FLOAT4_E1M2, ge::DT_INT8,
+    ge::DT_UINT8,         ge::DT_INT16,         ge::DT_UINT16,      ge::DT_INT32,       ge::DT_UINT32,
+    ge::DT_INT64,         ge::DT_UINT64,        ge::DT_BF16,        ge::DT_FLOAT16,     ge::DT_FLOAT,
+    ge::DT_DOUBLE,        ge::DT_BOOL,          ge::DT_HIFLOAT8,    ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E8M0,
+    ge::DT_FLOAT8_E4M3FN, ge::DT_FLOAT4_E2M1,   ge::DT_FLOAT4_E1M2};
+
+static const std::vector<ge::DataType> padDataType = {
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
 
 class PadV2 : public OpDef {
 public:
     explicit PadV2(const char* name) : OpDef(name)
     {
-        this->Input("x").ParamType(REQUIRED).DataType(VALUE_DATA_TYPE_VEC).Format(FORMAT_LIST);
-        this->Input("paddings")
-            .ParamType(REQUIRED)
-            .ValueDepend(OPTIONAL)
-            .DataType(PAD_DATA_TYPE_VEC)
-            .Format(FORMAT_LIST);
-        this->Input("constant_values")
-            .ParamType(REQUIRED)
-            .ValueDepend(OPTIONAL)
-            .DataType(VALUE_DATA_TYPE_VEC)
-            .Format(FORMAT_LIST);
-        this->Output("y").ParamType(REQUIRED).DataType(VALUE_DATA_TYPE_VEC).Format(FORMAT_LIST);
+        this->Input("x").ParamType(REQUIRED).DataType(valueDataType).Format(format);
+        this->Input("paddings").ParamType(REQUIRED).ValueDepend(OPTIONAL).DataType(padDataType).Format(format);
+        this->Input("constant_values").ParamType(REQUIRED).ValueDepend(OPTIONAL).DataType(valueDataType).Format(format);
+        this->Output("y").ParamType(REQUIRED).DataType(valueDataType).Format(format);
 
         OpAICoreConfig aicore_config;
         aicore_config.DynamicCompileStaticFlag(true)
