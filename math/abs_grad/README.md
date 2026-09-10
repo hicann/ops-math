@@ -66,7 +66,6 @@ $$out_i=dy_i \times sign(y_i)$$
 
 - dy与y的数据类型相同。
 - z的数据类型与y、dy相同。
-- y和dy支持广播（broadcast）操作，z的shape为y和dy广播后的结果。
 - 所有输入和输出的shape不能包含0（不支持空tensor）。
 
 ## 第三方框架兼容性

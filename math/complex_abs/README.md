@@ -45,14 +45,14 @@ $$
       <td>x</td>
       <td>输入</td>
       <td>待进行复数绝对值计算的入参，公式中的输入张量x。</td>
-      <td>COMPLEX32、COMPLEX64</td>
+      <td>COMPLEX32、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
-      <td>复数绝对值计算的出参，公式中的输出张量y。输出数据类型由输入数据类型决定：输入为COMPLEX64时输出FLOAT，输入为COMPLEX32时输出FLOAT16。</td>
-      <td>FLOAT、FLOAT16</td>
+      <td>复数绝对值计算的出参，公式中的输出张量y。输出数据类型由输入数据类型决定：输入为COMPLEX64时输出FLOAT，输入为COMPLEX32时输出FLOAT16，输入为COMPLEX128时输出DOUBLE。</td>
+      <td>FLOAT、FLOAT16、DOUBLE</td>
       <td>ND</td>
     </tr>
     <tr>
@@ -66,9 +66,10 @@ $$
 
 ## 约束说明
 
-- 输入只支持COMPLEX32、COMPLEX64类型，不支持其他数据类型。
-- 输出数据类型由输入数据类型决定，不支持显式指定：COMPLEX64对应输出FLOAT，COMPLEX32对应输出FLOAT16。
+- 输入只支持COMPLEX32、COMPLEX64、COMPLEX128类型，不支持其他数据类型。
+- 输出数据类型由输入数据类型决定，不支持显式指定：COMPLEX64对应输出FLOAT，COMPLEX32对应输出FLOAT16，COMPLEX128对应输出DOUBLE。
 - 输入与输出的shape一致，支持动态Shape（DynamicShape）与动态维度（DynamicRank）。
+- 不支持空Tensor（shape中包含0）。
 - 数据格式支持ND，支持非连续的Tensor，维度不大于8。
 
 ## 调用说明
