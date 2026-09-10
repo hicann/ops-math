@@ -232,6 +232,7 @@ static bool CheckPromoteTypeTensorScalar(const op::DataType selfDtype, const op:
 }
 
 // 1. self和other没有complex  2. other能cast成outDtype  3. outDtype为算子支持的数据类型
+// 4. RegBase场景计算类型为castDtype，castDtype为算子支持的数据类型
 static bool CheckPromoteTypeScalarTensor(const op::DataType selfDtype, const op::DataType otherDtype,
                                          const op::DataType outDtype)
 {
@@ -254,6 +255,17 @@ static bool CheckPromoteTypeScalarTensor(const op::DataType selfDtype, const op:
     if (!CheckType(outDtype, DTYPE_SUPPORT_LIST)) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "out dtype %s should be in dtype support list %s.",
                 op::ToString(outDtype).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
+        return false;
+    }
+
+    // RegBase场景以castDtype作为计算类型，计算后再转换为outDtype
+    // 其他平台先将两个输入都转换为outDtype再计算
+    if (IsRegBase(npuArch) && !CheckType(castDtype, DTYPE_SUPPORT_LIST)) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "self dtype %s and other dtype %s promote to unsupported computation dtype %s, "
+                "should be in dtype support list %s.",
+                op::ToString(selfDtype).GetString(), op::ToString(otherDtype).GetString(),
+                op::ToString(castDtype).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
         return false;
     }
 
