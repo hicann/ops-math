@@ -27,15 +27,9 @@ namespace optiling {
 
 static constexpr uint64_t BITWISE_AND_COMMON_TILING_PRIORITY = 0;
 
-ge::graphStatus BitwiseAndTiling::GetShapeAttrsInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus BitwiseAndTiling::GetShapeAttrsInfo() { return ge::GRAPH_SUCCESS; }
 
-bool BitwiseAndTiling::IsCapable()
-{
-    return true;
-}
+bool BitwiseAndTiling::IsCapable() { return true; }
 
 ge::graphStatus BitwiseAndTiling::DoOpTiling()
 {
@@ -54,14 +48,22 @@ ge::graphStatus BitwiseAndTiling::DoOpTiling()
         std::string reasonMsg = "The dtype of x1 must be the same as the dtypes " +
                                 ge::TypeUtils::DataTypeToSerialString(input1DType) + " and " +
                                 ge::TypeUtils::DataTypeToSerialString(outputDtype) + " of x2 and y";
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-            context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0DType).c_str(),
-            reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x1",
+                                              ge::TypeUtils::DataTypeToSerialString(input0DType).c_str(),
+                                              reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     ge::graphStatus ret = ge::GRAPH_SUCCESS;
-    if (input0DType == ge::DT_INT16) {
+    if (input0DType == ge::DT_INT8) {
+        BroadcastBaseTiling<BitwiseAndOp::BitwiseAndCompute<int8_t>::OpDag> brcBaseTiling(context_);
+        ret = brcBaseTiling.DoTiling();
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+    } else if (input0DType == ge::DT_INT16) {
         BroadcastBaseTiling<BitwiseAndOp::BitwiseAndCompute<int16_t>::OpDag> brcBaseTiling(context_);
+        ret = brcBaseTiling.DoTiling();
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+    } else if (input0DType == ge::DT_UINT8) {
+        BroadcastBaseTiling<BitwiseAndOp::BitwiseAndCompute<uint8_t>::OpDag> brcBaseTiling(context_);
         ret = brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else if (input0DType == ge::DT_UINT16) {
@@ -72,43 +74,36 @@ ge::graphStatus BitwiseAndTiling::DoOpTiling()
         BroadcastBaseTiling<BitwiseAndOp::BitwiseAndCompute<int32_t>::OpDag> brcBaseTiling(context_);
         ret = brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+    } else if (input0DType == ge::DT_UINT32) {
+        BroadcastBaseTiling<BitwiseAndOp::BitwiseAndCompute<uint32_t>::OpDag> brcBaseTiling(context_);
+        ret = brcBaseTiling.DoTiling();
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else if (input0DType == ge::DT_INT64) {
         BroadcastBaseTiling<BitwiseAndOp::BitwiseAndCompute<int64_t>::OpDag> brcBaseTiling(context_);
         ret = brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
+    } else if (input0DType == ge::DT_UINT64) {
+        BroadcastBaseTiling<BitwiseAndOp::BitwiseAndCompute<uint64_t>::OpDag> brcBaseTiling(context_);
+        ret = brcBaseTiling.DoTiling();
+        tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(
-            context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0DType).c_str(),
-            "int16, uint16, int32 or int64");
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1",
+                                  ge::TypeUtils::DataTypeToSerialString(input0DType).c_str(),
+                                  "int8, uint8, int16, uint16, int32, uint32, int64 or uint64");
         return ge::GRAPH_FAILED;
     }
     return ret;
 }
 
-ge::graphStatus BitwiseAndTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus BitwiseAndTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t BitwiseAndTiling::GetTilingKey() const
-{
-    return tilingKey;
-}
+uint64_t BitwiseAndTiling::GetTilingKey() const { return tilingKey; }
 
-ge::graphStatus BitwiseAndTiling::GetWorkspaceSize()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus BitwiseAndTiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus BitwiseAndTiling::PostTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus BitwiseAndTiling::PostTiling() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus BitwiseAndTiling::GetPlatformInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus BitwiseAndTiling::GetPlatformInfo() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus TilingForBitwiseAnd(gert::TilingContext* context)
 {
@@ -134,9 +129,7 @@ ge::graphStatus TilingPrepareForBitwiseAnd(gert::TilingParseContext* context)
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_OPTILING(BitwiseAnd)
-    .Tiling(TilingForBitwiseAnd)
-    .TilingParse<BitWiseAndCompileInfo>(TilingPrepareForBitwiseAnd);
+IMPL_OP_OPTILING(BitwiseAnd).Tiling(TilingForBitwiseAnd).TilingParse<BitWiseAndCompileInfo>(TilingPrepareForBitwiseAnd);
 
 REGISTER_OPS_TILING_TEMPLATE(BitwiseAnd, BitwiseAndTiling, BITWISE_AND_COMMON_TILING_PRIORITY);
 } // namespace optiling

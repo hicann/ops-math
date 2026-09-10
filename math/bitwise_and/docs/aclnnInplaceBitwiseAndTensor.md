@@ -83,7 +83,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensor(
       <td>输入/输出</td>
       <td>输入和输出tensor，公式中的selfRef。</td>
       <td>数据类型需要与other的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。shape需要与other满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
-      <td>INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL</td>
+      <td>INT16、UINT16、INT32、INT64、INT8、UINT8、UINT32、UINT64、BOOL</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -93,7 +93,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensor(
       <td>输入</td>
       <td>输入tensor，公式中的other。</td>
       <td>数据类型需要与selfRef构成满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。shape需要与selfRef满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
-      <td>INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL</td>
+      <td>INT16、UINT16、INT32、INT64、INT8、UINT8、UINT32、UINT64、BOOL</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
