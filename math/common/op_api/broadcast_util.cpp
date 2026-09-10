@@ -324,6 +324,7 @@ struct InputClassifyResult {
     bool isLastTranspose;
     bool isNLast;
     bool needsNonContiguousBase;
+    bool isBroadcastInput;     // expand/广播形态输入（dim != 1 且 stride == 0）
     bool isLastAxisContiguous; // 末轴 stride 是否连续（用于 post-loop 兜底）
     bool inputInvalid;         // 异常输入，整体回退
 };
@@ -333,7 +334,7 @@ struct InputClassifyResult {
 //   sizeLimit = single_core_limit * coreNum 为循环不变量，由调用方计算传入）
 InputClassifyResult ClassifySingleInput(const CollapsedTensor& ct, int64_t sizeLimit)
 {
-    InputClassifyResult result = {false, false, false, true, false};
+    InputClassifyResult result = {false, false, false, false, true, false};
 
     // 异常输入：维度/步长为空或不匹配，直接回退
     if (ct.dims.empty() || ct.strides.empty() || ct.dims.size() != ct.strides.size()) {
@@ -344,9 +345,9 @@ InputClassifyResult ClassifySingleInput(const CollapsedTensor& ct, int64_t sizeL
     size_t shapeDim = ct.dims.size();
     size_t strideDim = ct.strides.size();
 
-    // expand 形态输入（dim != 1 且 stride == 0，合轴后存在广播拷贝轴）
+    // expand 形态输入（dim != 1 且 stride == 0）
     if (IsBroadcastTo(ct.dims, ct.strides)) {
-        result.needsNonContiguousBase = true;
+        result.isBroadcastInput = true;
         return result;
     }
 
@@ -408,6 +409,7 @@ bool CheckNonContiguousSupport(const std::vector<CollapsedTensor>& collapsed,
     // opbase 门限元素：sizeLimit = single_core_limit * coreNum（循环不变量，一次计算）
     int64_t sizeLimit = SINGLE_CORE_SIZE_LIMIT * coreNum;
 
+    bool hasBroadcastInput = false;
     // 逐输入判定 schMode 类别
     for (const auto& ct : collapsed) {
         // 连续输入跳过，不影响任何标志
@@ -418,10 +420,12 @@ bool CheckNonContiguousSupport(const std::vector<CollapsedTensor>& collapsed,
         if (r.inputInvalid) {
             return false;
         }
+        if (r.isBroadcastInput) {
+            hasBroadcastInput = true;
+            continue;
+        }
         if (r.needsNonContiguousBase) {
-            // early break: 对齐 opbase early return，不再处理后续输入
             needsNonContiguousBase = true;
-            break;
         }
         isLastTranspose = isLastTranspose || r.isLastTranspose;
         isNLast = isNLast || r.isNLast;
@@ -445,6 +449,11 @@ bool CheckNonContiguousSupport(const std::vector<CollapsedTensor>& collapsed,
         return true;
     }
     int64_t lastDim = collapsedOutputDims.back();
+
+    // 跳读形态且存在广播输入、无转置时直通：内核广播拷贝优于转连续
+    if (needsNonContiguousBase && hasBroadcastInput && !isLastTranspose) {
+        return true;
+    }
 
     // 末轴 > NON_CONTIGUOUS_LAST_DIM_LIMIT 时回退 Contiguous 转换路径
     if ((isLastTranspose || needsNonContiguousBase) && lastDim > NON_CONTIGUOUS_LAST_DIM_LIMIT) {
