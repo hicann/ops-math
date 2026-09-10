@@ -99,6 +99,11 @@ __aicore__ inline void AsinGrad<StorageT, ComputeT, BUFFER_MODE>::Init(GM_ADDR y
     blockLength_ = (remainderLength > tilingData->blockFactor) ? tilingData->blockFactor : remainderLength;
     ubLength_ = tilingData->ubFactor;
 
+    // Empty tensors have no GM range or UB work to initialize.
+    if (blockLength_ <= 0) {
+        return;
+    }
+
     yGM.SetGlobalBuffer((__gm__ StorageT*)y + tilingData->blockFactor * AscendC::GetBlockIdx(), blockLength_);
     dyGM.SetGlobalBuffer((__gm__ StorageT*)dy + tilingData->blockFactor * AscendC::GetBlockIdx(), blockLength_);
     zGM.SetGlobalBuffer((__gm__ StorageT*)z + tilingData->blockFactor * AscendC::GetBlockIdx(), blockLength_);
