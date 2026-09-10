@@ -330,7 +330,7 @@ int main() {
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建padding aclIntArray
     padding = aclCreateIntArray(paddingData.data(), 2);
-    CHECK_RET(padding != nullptr, return ret);
+    CHECK_RET(padding != nullptr, LOG_PRINT("aclCreateIntArray failed.\n"); return ACL_ERROR_INTERNAL_ERROR;);
     // 创建out aclTensor
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
