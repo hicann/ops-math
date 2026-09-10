@@ -40,6 +40,10 @@ struct RadixSortTopK {
                                 const TopKV2TilingDataSimd* tilingData);
     __aicore__ inline void InitPara(GM_ADDR inputValue, GM_ADDR k, GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace,
                                     const TopKV2TilingDataSimd* tilingData);
+    __aicore__ inline void InitWorkspaceGmBuffer(uint32_t& workSpaceOffset);
+    __aicore__ inline void InitSortWithIndexPara(GM_ADDR value, GM_ADDR indices, const TopKV2TilingDataSimd* tilingData,
+                                                 uint32_t& workSpaceOffset);
+    __aicore__ inline void InitUbBuffer();
     __aicore__ inline void ProcessTopK();
     __aicore__ inline void ProcessMultiBlockTopK(GlobalTensor<T> inputX);
 
@@ -149,8 +153,25 @@ __aicore__ inline void RadixSortTopK<T, UNSIGNED_TYPE, NUM_PASS, IS_LARGEST, IS_
 {
     // init para
     InitPara(inputValue, k, value, indices, workSpace, tilingData);
-    // cumsum gm
+    // init gm buffer in workspace
     uint32_t workSpaceOffset = 0;
+    InitWorkspaceGmBuffer(workSpaceOffset);
+    if (IS_SORT) {
+        needSortWithIndex_ = topkValueInput_ > SUPPORT_SORT_MAX_SIZE;
+    }
+    if (needSortWithIndex_) {
+        InitSortWithIndexPara(value, indices, tilingData, workSpaceOffset);
+    }
+    // init ub buffer and queue
+    InitUbBuffer();
+}
+
+template <typename T, typename UNSIGNED_TYPE, int32_t NUM_PASS, bool IS_LARGEST, bool IS_SORT, typename T_INDEX,
+          typename T_INDEX_TO, bool IS_BITONIC_SORT>
+__aicore__ inline void RadixSortTopK<T, UNSIGNED_TYPE, NUM_PASS, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO,
+                                     IS_BITONIC_SORT>::InitWorkspaceGmBuffer(uint32_t& workSpaceOffset)
+{
+    // cumsum gm
     cumSumBinsGm_.SetGlobalBuffer((__gm__ T_INDEX*)(workspace_ + workSpaceOffset),
                                   topkV2::RADIX_SORT_BIN_NUM * unsortedDimParallel_);
     workSpaceOffset += topkV2::RADIX_SORT_BIN_NUM * unsortedDimParallel_ * sizeof(T_INDEX);
@@ -172,40 +193,45 @@ __aicore__ inline void RadixSortTopK<T, UNSIGNED_TYPE, NUM_PASS, IS_LARGEST, IS_
     tileTopkRemainValueGm_.SetGlobalBuffer((__gm__ uint32_t*)(workspace_ + workSpaceOffset),
                                            tileTopkRemainValueGmOffset);
     workSpaceOffset += tileTopkRemainValueGmOffset * sizeof(uint32_t);
+}
 
-    if (IS_SORT) {
-        if (topkValueInput_ <= SUPPORT_SORT_MAX_SIZE) {
-            needSortWithIndex_ = false;
-        } else {
-            needSortWithIndex_ = true;
-        }
-    }
-    if (needSortWithIndex_) {
-        // sortWithIndex 尾轴的大小
-        uint32_t lastAxisNumForSort = tilingData->lastAxisNumForSort;
-        // sortWithIndex 外轴的大小
-        uint32_t unsortedDimNumForSort = tilingData->unsortedDimNumForSort;
-        uint64_t topkIndicesGmOffset = lastAxisNumForSort * unsortedDimNumForSort;
-        topkIndicesGmOffset = CeilAlignDivMul<uint64_t>(int64_t(topkIndicesGmOffset * sizeof(T_INDEX_TO)),
-                                                        int64_t(oneBlock_)) /
-                              sizeof(T_INDEX_TO);
-        topkIndicesGm_.SetGlobalBuffer((__gm__ T_INDEX_TO*)(workspace_ + workSpaceOffset), topkIndicesGmOffset);
-        topkIndicesGmAddr_ = workspace_ + workSpaceOffset;
-        workSpaceOffset += topkIndicesGmOffset * sizeof(T_INDEX_TO);
+template <typename T, typename UNSIGNED_TYPE, int32_t NUM_PASS, bool IS_LARGEST, bool IS_SORT, typename T_INDEX,
+          typename T_INDEX_TO, bool IS_BITONIC_SORT>
+__aicore__ inline void RadixSortTopK<T, UNSIGNED_TYPE, NUM_PASS, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO,
+                                     IS_BITONIC_SORT>::InitSortWithIndexPara(GM_ADDR value, GM_ADDR indices,
+                                                                             const TopKV2TilingDataSimd* tilingData,
+                                                                             uint32_t& workSpaceOffset)
+{
+    // sortWithIndex 尾轴的大小
+    uint32_t lastAxisNumForSort = tilingData->lastAxisNumForSort;
+    // sortWithIndex 外轴的大小
+    uint32_t unsortedDimNumForSort = tilingData->unsortedDimNumForSort;
+    uint64_t topkIndicesGmOffset = lastAxisNumForSort * unsortedDimNumForSort;
+    topkIndicesGmOffset = CeilAlignDivMul<uint64_t>(int64_t(topkIndicesGmOffset * sizeof(T_INDEX_TO)),
+                                                    int64_t(oneBlock_)) /
+                          sizeof(T_INDEX_TO);
+    topkIndicesGm_.SetGlobalBuffer((__gm__ T_INDEX_TO*)(workspace_ + workSpaceOffset), topkIndicesGmOffset);
+    topkIndicesGmAddr_ = workspace_ + workSpaceOffset;
+    workSpaceOffset += topkIndicesGmOffset * sizeof(T_INDEX_TO);
 
-        uint64_t topkValuesGmOffset = lastAxisNumForSort * unsortedDimNumForSort;
-        topkValuesGmOffset = CeilAlignDivMul<uint64_t>(int64_t(topkValuesGmOffset * sizeof(T)), int64_t(oneBlock_)) /
-                             sizeof(T);
-        topkValuesGm_.SetGlobalBuffer((__gm__ T*)(workspace_ + workSpaceOffset), topkValuesGmOffset);
-        topkValuesGmAddr_ = workspace_ + workSpaceOffset;
-        workSpaceOffset += topkValuesGmOffset * sizeof(T);
+    uint64_t topkValuesGmOffset = lastAxisNumForSort * unsortedDimNumForSort;
+    topkValuesGmOffset = CeilAlignDivMul<uint64_t>(int64_t(topkValuesGmOffset * sizeof(T)), int64_t(oneBlock_)) /
+                         sizeof(T);
+    topkValuesGm_.SetGlobalBuffer((__gm__ T*)(workspace_ + workSpaceOffset), topkValuesGmOffset);
+    topkValuesGmAddr_ = workspace_ + workSpaceOffset;
+    workSpaceOffset += topkValuesGmOffset * sizeof(T);
 
-        sortWithIndexWorkspace_ = workspace_ + workSpaceOffset;
-        valueAddr_ = value;
-        indicesAddr_ = indices;
-        tilingDataPtr_ = tilingData;
-    }
+    sortWithIndexWorkspace_ = workspace_ + workSpaceOffset;
+    valueAddr_ = value;
+    indicesAddr_ = indices;
+    tilingDataPtr_ = tilingData;
+}
 
+template <typename T, typename UNSIGNED_TYPE, int32_t NUM_PASS, bool IS_LARGEST, bool IS_SORT, typename T_INDEX,
+          typename T_INDEX_TO, bool IS_BITONIC_SORT>
+__aicore__ inline void
+RadixSortTopK<T, UNSIGNED_TYPE, NUM_PASS, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO, IS_BITONIC_SORT>::InitUbBuffer()
+{
     // vec calc buffer
     pipe.InitBuffer(blockCumSumTbuf_,
                     ROUND_UP_AGLIN(topkV2::RADIX_SORT_BIN_NUM * sizeof(T_INDEX) * lastDimTileNumTimes_));

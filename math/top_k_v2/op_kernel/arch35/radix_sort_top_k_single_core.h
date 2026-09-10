@@ -41,6 +41,10 @@ struct RadixSortTopKSingleCore : public RadixSortTopKBase<T, T_INDEX, T_INDEX_TO
     __aicore__ inline void Process();
 
 private:
+    __aicore__ inline void InitQueuesAndTmpBuf(uint32_t tileNum, bool useVectorRadixGather, bool useSimtRadixGather);
+    __aicore__ inline void InitSortWorkspace(GM_ADDR workSpace, GM_ADDR value, GM_ADDR indices,
+                                             const TopKV2TilingDataSimd* tilingData);
+    __aicore__ inline void InitCalcTBufs(uint32_t tileNum, bool useVectorRadixGather);
     __aicore__ inline void ProcessSingleTopK(int32_t loopTime);
     __aicore__ inline void CalTileK(int32_t& boundaryBin, LocalTensor<T_INDEX> tileCusumLocal);
     __aicore__ inline void GatherTileTopK2CopyOut(int32_t loopTime, UNSIGNED_TYPE threshold);
@@ -142,8 +146,20 @@ __aicore__ inline void RadixSortTopKSingleCore<T, UNSIGNED_TYPE, NUM_PASS, IS_LA
     bool useVectorRadixGather = isB32Integer && useRadixGather_;
     bool useSimtRadixGather = isB64Integer && useRadixGather_;
 
-    // 输入输出队列初始化
     uint32_t tileNum = tailTileNum_ == 0 ? this->numTileData_ : this->numTileData_ + 1;
+    InitQueuesAndTmpBuf(tileNum, useVectorRadixGather, useSimtRadixGather);
+    InitSortWorkspace(workSpace, value, indices, tilingData);
+    InitCalcTBufs(tileNum, useVectorRadixGather);
+}
+
+template <typename T, typename UNSIGNED_TYPE, int32_t NUM_PASS, bool IS_LARGEST, bool IS_SORT, typename T_INDEX,
+          typename T_INDEX_TO, bool IS_BITONIC_SORT>
+__aicore__ inline void RadixSortTopKSingleCore<T, UNSIGNED_TYPE, NUM_PASS, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO,
+                                               IS_BITONIC_SORT>::InitQueuesAndTmpBuf(uint32_t tileNum,
+                                                                                     bool useVectorRadixGather,
+                                                                                     bool useSimtRadixGather)
+{
+    // 输入输出队列初始化
     uint32_t inputBytes = ROUND_UP_AGLIN(tileNum) * sizeof(T);
     if (useVectorRadixGather) {
         inputBytes = (inputBytes + topkV2::GATHER_AGLIN_VALUE - 1U) / topkV2::GATHER_AGLIN_VALUE *
@@ -155,11 +171,6 @@ __aicore__ inline void RadixSortTopKSingleCore<T, UNSIGNED_TYPE, NUM_PASS, IS_LA
     this->tPipe_->InitBuffer(this->indicesQue_, 1, ROUND_UP_AGLIN(outQueueNum * sizeof(T_INDEX_TO)));
     this->tPipe_->InitBuffer(this->indicesOutTbuf_, ROUND_UP_AGLIN(outQueueNum * sizeof(int32_t)));
 
-    // 存放所有块统计直方图的结果
-    uint64_t workSpaceOffset = unsortedDimParallel_ * topkV2::RADIX_SORT_BIN_NUM * tileCount_;
-    tilesCusumGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T_INDEX*>(workSpace), int64_t(workSpaceOffset));
-    workSpaceOffset = workSpaceOffset * sizeof(T_INDEX);
-
     if (useVectorRadixGather) {
         uint32_t compareAlign = topkV2::GATHER_AGLIN_VALUE / sizeof(UNSIGNED_TYPE);
         uint32_t compareCount = (tileNum + compareAlign - 1U) / compareAlign * compareAlign;
@@ -170,6 +181,20 @@ __aicore__ inline void RadixSortTopKSingleCore<T, UNSIGNED_TYPE, NUM_PASS, IS_LA
     } else if (!useSimtRadixGather) {
         this->tPipe_->InitBuffer(this->topKApiTmpTBuf_, ROUND_UP_AGLIN(this->topKApiTmpSize_));
     }
+}
+
+template <typename T, typename UNSIGNED_TYPE, int32_t NUM_PASS, bool IS_LARGEST, bool IS_SORT, typename T_INDEX,
+          typename T_INDEX_TO, bool IS_BITONIC_SORT>
+__aicore__ inline void
+RadixSortTopKSingleCore<T, UNSIGNED_TYPE, NUM_PASS, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO,
+                        IS_BITONIC_SORT>::InitSortWorkspace(GM_ADDR workSpace, GM_ADDR value, GM_ADDR indices,
+                                                            const TopKV2TilingDataSimd* tilingData)
+{
+    // 存放所有块统计直方图的结果
+    uint64_t workSpaceOffset = unsortedDimParallel_ * topkV2::RADIX_SORT_BIN_NUM * tileCount_;
+    tilesCusumGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T_INDEX*>(workSpace), int64_t(workSpaceOffset));
+    workSpaceOffset = workSpaceOffset * sizeof(T_INDEX);
+
     if (needSortWithIndex_) {
         // sort 尾轴的大小
         uint32_t lastAxisNumForSort = tilingData->lastAxisNumForSort;
@@ -196,7 +221,14 @@ __aicore__ inline void RadixSortTopKSingleCore<T, UNSIGNED_TYPE, NUM_PASS, IS_LA
         indicesAddr_ = indices;
         tilingDataPtr_ = tilingData;
     }
+}
 
+template <typename T, typename UNSIGNED_TYPE, int32_t NUM_PASS, bool IS_LARGEST, bool IS_SORT, typename T_INDEX,
+          typename T_INDEX_TO, bool IS_BITONIC_SORT>
+__aicore__ inline void RadixSortTopKSingleCore<T, UNSIGNED_TYPE, NUM_PASS, IS_LARGEST, IS_SORT, T_INDEX, T_INDEX_TO,
+                                               IS_BITONIC_SORT>::InitCalcTBufs(uint32_t tileNum,
+                                                                               bool useVectorRadixGather)
+{
     // 存放块统计直方图累加和的结果，累加之前先搬运到tileCusumGm_上，然后累加到cusumTBuf
     this->tPipe_->InitBuffer(tileCusumTBuf_, topkV2::RADIX_SORT_BIN_NUM * sizeof(int32_t));
     this->tPipe_->InitBuffer(cusumTBuf_, topkV2::RADIX_SORT_BIN_NUM * sizeof(T_INDEX));
