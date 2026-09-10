@@ -46,7 +46,7 @@ static const std::initializer_list<op::DataType> REGBASE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128, op::DataType::DT_BF16,
     op::DataType::DT_UINT64};
 
-//其他output支持的类型
+// 其他output支持的类型
 static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_910_LIST = {
     op::DataType::DT_FLOAT,     op::DataType::DT_INT32, op::DataType::DT_INT64,  op::DataType::DT_FLOAT16,
     op::DataType::DT_INT16,     op::DataType::DT_INT8,  op::DataType::DT_UINT8,  op::DataType::DT_UINT64,
@@ -236,9 +236,7 @@ static bool CheckDtypeValid(const aclTensor* self, const aclScalar* other, const
     OP_CHECK_DTYPE_NOT_SUPPORT(other, dtypeSupportList, return false);
 
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
-    auto outSuportList = IsRegBase(npuArch) ?
-                         GetOutputDtypeSupportList() :
-                         dtypeSupportList;
+    auto outSuportList = IsRegBase(npuArch) ? GetOutputDtypeSupportList() : dtypeSupportList;
     // 检查out的数据类型
     OP_CHECK_DTYPE_NOT_SUPPORT(out, outSuportList, return false);
 
@@ -255,18 +253,16 @@ static bool CheckPromoteType(const aclTensor* self, const aclScalar* other, cons
         auto inputSupportList = GetInputDtypeSupportList();
         // 检查self的数据类型是否在Equal算子的支持列表内
         if (!CheckType(promoteType, inputSupportList)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "promote dtype %s should be in dtype support list [%s].",
-                op::ToString(promoteType).GetString(), op::ToString(inputSupportList).GetString());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "promote dtype %s should be in dtype support list %s.",
+                    op::ToString(promoteType).GetString(), op::ToString(inputSupportList).GetString());
             return false;
         }
     } else {
         promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
     }
     if (promoteType == DataType::DT_UNDEFINED) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
         return false;
     }
 
@@ -308,8 +304,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclScalar* other, co
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnEqScalarGetWorkspaceSize(
-    const aclTensor* self, const aclScalar* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnEqScalarGetWorkspaceSize(const aclTensor* self, const aclScalar* other, aclTensor* out,
+                                          uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnEqScalar, DFX_IN(self, other), DFX_OUT(out));
     // 固定写法，创建OpExecutor
@@ -357,8 +353,8 @@ aclnnStatus aclnnEqScalarGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceEqScalarGetWorkspaceSize(
-    const aclTensor* selfRef, const aclScalar* other, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceEqScalarGetWorkspaceSize(const aclTensor* selfRef, const aclScalar* other,
+                                                 uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     auto out = const_cast<aclTensor*>(selfRef);
     return aclnnEqScalarGetWorkspaceSize(selfRef, other, out, workspaceSize, executor);

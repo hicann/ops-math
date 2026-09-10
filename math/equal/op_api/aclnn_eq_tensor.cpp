@@ -161,20 +161,18 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const
         promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
     }
     if (promoteType == DataType::DT_UNDEFINED) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
         return false;
     }
 
     // 检查promoteType的数据类型是否在equal算子的支持列表内
     if (!CheckType(promoteType, inputSupportList)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "Self dtype %s and other dtype %s get promoteType dtype %s should be in "
-            "dtype support list [%s].",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString(),
-            op::ToString(promoteType).GetString(), op::ToString(inputSupportList).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "Self dtype %s and other dtype %s get promoteType dtype %s should be in "
+                "dtype support list %s.",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString(),
+                op::ToString(promoteType).GetString(), op::ToString(inputSupportList).GetString());
         return false;
     }
 
@@ -194,16 +192,15 @@ static bool CheckShape(const aclTensor* self, const aclTensor* other, const aclT
     OP_CHECK_BROADCAST_AND_INFER_SHAPE(self, other, outShape, return false);
 
     if (outShape != out->GetViewShape()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "BroadcastShape %s is not equal out's shape %s.",
-            op::ToString(outShape).GetString(), op::ToString(out->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "BroadcastShape %s is not equal out's shape %s.",
+                op::ToString(outShape).GetString(), op::ToString(out->GetViewShape()).GetString());
         return false;
     }
     return true;
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* self, const aclTensor* other, const aclTensor* out, DataType& promoteType)
+static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other, const aclTensor* out,
+                               DataType& promoteType)
 {
     // 1. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
     CHECK_RET(CheckDtypeValid(self, other, out, promoteType), ACLNN_ERR_PARAM_INVALID);
@@ -214,8 +211,8 @@ static aclnnStatus CheckParams(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnEqTensorGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnEqTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                          uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnEqTensor, DFX_IN(self, other), DFX_OUT(out));
 
@@ -280,21 +277,18 @@ static inline aclnnStatus CheckInplace(const aclTensor* selfRef, const aclTensor
     op::Shape broadcastShape;
     OP_CHECK(
         BroadcastInferShape(selfRef->GetViewShape(), other->GetViewShape(), broadcastShape),
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Shape of selfRef and other can't broadcast, got %s, %s.",
-            op::ToString(selfRef->GetViewShape()).GetString(), op::ToString(other->GetViewShape()).GetString()),
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of selfRef and other can't broadcast, got %s, %s.",
+                op::ToString(selfRef->GetViewShape()).GetString(), op::ToString(other->GetViewShape()).GetString()),
         return ACLNN_ERR_PARAM_INVALID);
-    OP_CHECK(
-        selfRef->GetViewShape() == broadcastShape,
-        OP_LOGE(
-            ACLNN_ERR_PARAM_NULLPTR, "Expected shape of selfRef should be %s, but got %s.",
-            op::ToString(broadcastShape).GetString(), op::ToString(selfRef->GetViewShape()).GetString()),
-        return ACLNN_ERR_PARAM_INVALID);
+    OP_CHECK(selfRef->GetViewShape() == broadcastShape,
+             OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "Expected shape of selfRef should be %s, but got %s.",
+                     op::ToString(broadcastShape).GetString(), op::ToString(selfRef->GetViewShape()).GetString()),
+             return ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceEqTensorGetWorkspaceSize(
-    const aclTensor* selfRef, const aclTensor* other, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceEqTensorGetWorkspaceSize(const aclTensor* selfRef, const aclTensor* other,
+                                                 uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     auto ret = CheckInplace(selfRef, other);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
