@@ -65,7 +65,7 @@ static const std::initializer_list<DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST
 class Rfft1DSingleton {
 private:
     std::mutex cacheNumMutex;
-    std::mutex planCacheMutex;
+    std::mutex planCacheMutex; // 同时保护 planCache 与 tensorLenCache（二者需同一锁保证 happens-before）
 
     std::map<int32_t, int> deviceCacheNum;
     std::map<int64_t, void*> planCache;
@@ -93,18 +93,30 @@ public:
     void AddPlanCache(int64_t len, int32_t deviceId, void* planDevice, int64_t norm)
     {
         int64_t key = len + HASH_KEY_DEVICE_CONSTANT * deviceId + HASH_KEY_NORM_CONSTANT * norm;
+        std::lock_guard<std::mutex> lock(planCacheMutex);
         planCache[key] = planDevice;
     }
 
     void* FindPlanCache(int64_t len, int32_t deviceId, int64_t norm)
     {
         int64_t key = len + HASH_KEY_DEVICE_CONSTANT * deviceId + HASH_KEY_NORM_CONSTANT * norm;
-        return planCache[key];
+        std::lock_guard<std::mutex> lock(planCacheMutex);
+        auto it = planCache.find(key);
+        return it == planCache.end() ? nullptr : it->second;
     }
 
-    void AddTensorLen(int64_t len, int64_t tensorLen) { tensorLenCache[len] = tensorLen; }
+    void AddTensorLen(int64_t len, int64_t tensorLen)
+    {
+        std::lock_guard<std::mutex> lock(planCacheMutex);
+        tensorLenCache[len] = tensorLen;
+    }
 
-    int64_t FindTensorLen(int64_t len) { return tensorLenCache[len]; }
+    int64_t FindTensorLen(int64_t len)
+    {
+        std::lock_guard<std::mutex> lock(planCacheMutex);
+        auto it = tensorLenCache.find(len);
+        return it == tensorLenCache.end() ? 0 : it->second;
+    }
 
     bool operator<(const Rfft1DSingleton& other) const { return deviceCacheNum < other.deviceCacheNum; }
 };
