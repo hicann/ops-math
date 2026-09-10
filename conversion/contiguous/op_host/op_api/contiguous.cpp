@@ -71,13 +71,12 @@ inline bool IsContiguous(StrideIndexPairs& strideIndexPairs)
 inline bool SupportMoveAlign()
 {
     auto socVersion = op::GetCurrentPlatformInfo().GetSocVersion();
-    return !(
-        socVersion == op::SocVersion::ASCEND910 || socVersion == op::SocVersion::ASCEND310 ||
-        socVersion == op::SocVersion::ASCEND310P);
+    return !(socVersion == op::SocVersion::ASCEND910 || socVersion == op::SocVersion::ASCEND310 ||
+             socVersion == op::SocVersion::ASCEND310P);
 }
 
-inline StrideIndexPairs BuildValidStrideIndexPairs(
-    const op::Shape& viewShape, const op::Strides& strides, ContiguousParam& param)
+inline StrideIndexPairs BuildValidStrideIndexPairs(const op::Shape& viewShape, const op::Strides& strides,
+                                                   ContiguousParam& param)
 {
     StrideIndexPairs strideIndexPairs;
     strideIndexPairs.reserve(strides.size());
@@ -111,8 +110,8 @@ inline void SetTransposeShapeWithSrcShape(const op::Shape& srcShape, ContiguousP
     }
 }
 
-inline bool OptimizeSlice(
-    const op::Shape& simpleShape, const op::Strides& simpleStrides, ContiguousParam& param, int64_t& gcdValue)
+inline bool OptimizeSlice(const op::Shape& simpleShape, const op::Strides& simpleStrides, ContiguousParam& param,
+                          int64_t& gcdValue)
 {
     auto lastStride = simpleStrides[0];
     param.maySlice = simpleStrides[simpleStrides.size() - 1] == 1;
@@ -134,14 +133,13 @@ inline bool OptimizeSlice(
         return true;
     }
 
-    param.mayStridedslice =
-        gcdValue > 1 && gcdValue >= simpleStrides[simpleStrides.size() - 1] * simpleShape[simpleStrides.size() - 1];
+    param.mayStridedslice = gcdValue > 1 &&
+                            gcdValue >= simpleStrides[simpleStrides.size() - 1] * simpleShape[simpleStrides.size() - 1];
     return param.mayStridedslice;
 }
 
-inline bool ValidateSliceParam(
-    const ShapeVector& shape, op::FVector<int64_t, op::MAX_DIM_NUM>& offset,
-    const op::FVector<int64_t, op::MAX_DIM_NUM>& size)
+inline bool ValidateSliceParam(const ShapeVector& shape, op::FVector<int64_t, op::MAX_DIM_NUM>& offset,
+                               const op::FVector<int64_t, op::MAX_DIM_NUM>& size)
 {
     for (size_t i = 0; i < shape.size(); i++) {
         if (shape[i] < offset[i] + size[i]) {
@@ -151,9 +149,8 @@ inline bool ValidateSliceParam(
     return true;
 }
 
-inline bool BuildSliceParams(
-    const op::Shape& simpleShape, const op::Strides& simpleStrides, int64_t offset, int64_t storageSize,
-    ContiguousParam& param)
+inline bool BuildSliceParams(const op::Shape& simpleShape, const op::Strides& simpleStrides, int64_t offset,
+                             int64_t storageSize, ContiguousParam& param)
 {
     param.sliceDstShape = simpleShape;
     // Infer origin shape
@@ -179,8 +176,8 @@ inline bool BuildSliceParams(
     return ValidateSliceParam(srcShape, param.offset, param.size);
 }
 
-static inline bool ValidateStridedSliceParam(
-    const ShapeVector& shape, const op::Shape& targetShape, const ContiguousParam& param)
+static inline bool ValidateStridedSliceParam(const ShapeVector& shape, const op::Shape& targetShape,
+                                             const ContiguousParam& param)
 {
     for (size_t i = 0; i < shape.size(); i++) {
         if (shape[i] < param.begin[i] || (targetShape[i] - 1) * param.strides[i] + param.begin[i] >= shape[i] ||
@@ -191,9 +188,8 @@ static inline bool ValidateStridedSliceParam(
     return true;
 }
 
-inline bool BuildStridedSliceParams(
-    const op::Shape& simpleShape, const op::Strides& simpleStrides, int64_t storageSize, int64_t gcdValue,
-    ContiguousParam& param)
+inline bool BuildStridedSliceParams(const op::Shape& simpleShape, const op::Strides& simpleStrides, int64_t storageSize,
+                                    int64_t gcdValue, ContiguousParam& param)
 {
     int64_t offset = param.viewOffset;
     param.stridedsliceDstShape = simpleShape;
@@ -304,8 +300,8 @@ inline bool CanReplaceSliceTransposeWithAsStrided(const op::Shape& viewShape, co
  * @param param
  * @return
  */
-bool CanOptimizeContiguous(
-    const op::Shape& viewShape, const op::Strides& strides, int64_t offset, int64_t storageSize, ContiguousParam& param)
+bool CanOptimizeContiguous(const op::Shape& viewShape, const op::Strides& strides, int64_t offset, int64_t storageSize,
+                           ContiguousParam& param)
 {
     param.mayBroadcast = false;
     param.mayTranspose = false;
@@ -431,8 +427,8 @@ const aclTensor* OptimizeContiguous(const aclTensor* tensor, ContiguousParam& pa
 
     if (param.mayTranspose) {
         currentTensor = UnSafeReshape(currentTensor, param.transposeSrcShape, executor); // transpose不改变view_offset
-        auto transposeDstTensor =
-            executor->AllocTensor(param.transposeDstShape, dataType, currentTensor->GetStorageFormat());
+        auto transposeDstTensor = executor->AllocTensor(param.transposeDstShape, dataType,
+                                                        currentTensor->GetStorageFormat());
         auto perm = executor->ConvertToTensor(param.perm.data(), param.perm.size(), TYPE_INT64);
         currentTensor = Transpose(currentTensor, transposeDstTensor, perm, executor);
         CHECK_RET(currentTensor != nullptr, nullptr);
@@ -474,7 +470,7 @@ const aclTensor* AsStridedToContiguous(const aclTensor* x, aclOpExecutor* execut
     op::Shape newStorageShape{1};
     int64_t actualShapeSize = 1;
     auto tempStorageShape = x->GetStorageShape();
-    for (uint64_t i= 0; i < tempStorageShape.GetDimNum(); i++) {
+    for (uint64_t i = 0; i < tempStorageShape.GetDimNum(); i++) {
         actualShapeSize *= tempStorageShape.GetDim(i);
     }
     actualShapeSize -= x->GetViewOffset();
@@ -502,9 +498,8 @@ const aclTensor* ViewCopyToView(const aclTensor* x, const aclTensor* y, aclOpExe
     yView->SetStorageShape(y->GetStorageShape());
     yView->SetViewStrides(y->GetViewStrides());
     yView->SetOriginalShape(y->GetOriginalShape());
-    auto result = ViewCopy(
-        yView, y->GetViewShape(), y->GetViewStrides(), y->GetViewOffset(), xView, xView->GetViewShape(),
-        xView->GetViewStrides(), xView->GetViewOffset(), executor);
+    auto result = ViewCopy(yView, y->GetViewShape(), y->GetViewStrides(), y->GetViewOffset(), xView,
+                           xView->GetViewShape(), xView->GetViewStrides(), xView->GetViewOffset(), executor);
     CHECK_RET(result != nullptr, nullptr);
     return y;
 }
@@ -639,17 +634,15 @@ inline bool CheckViewCopyParams(const aclTensor* x, const aclTensor* y)
     }
     // Check data type
     if (x->GetDataType() != y->GetDataType()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Input tensor's dtype[%s] should be same with output's dtype[%s].",
-            op::ToString(x->GetDataType()).GetString(), op::ToString(y->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input tensor's dtype[%s] should be same with output's dtype[%s].",
+                op::ToString(x->GetDataType()).GetString(), op::ToString(y->GetDataType()).GetString());
         return false;
     }
     // Check format
     if (x->GetStorageFormat() != y->GetStorageFormat() &&
         x->GetStorageFormat() != static_cast<op::Format>(ACL_FORMAT_ND)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Input tensor's format[%s] should be same with output's format[%s].",
-            op::ToString(x->GetStorageFormat()).GetString(), op::ToString(y->GetStorageFormat()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input tensor's format[%s] should be same with output's format[%s].",
+                op::ToString(x->GetStorageFormat()).GetString(), op::ToString(y->GetStorageFormat()).GetString());
         return false;
     }
     // Check shape
@@ -657,9 +650,8 @@ inline bool CheckViewCopyParams(const aclTensor* x, const aclTensor* y)
     auto const& yShape = y->GetViewShape();
     if (xShape != yShape) {
         if (!(xShape.GetShapeSize() == 1 && yShape.GetShapeSize() == 1)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "Input tensor's shape[%s] should be same with output's shape[%s].",
-                op::ToString(x->GetViewShape()).GetString(), op::ToString(y->GetViewShape()).GetString());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input tensor's shape %s should be same with output's shape %s.",
+                    op::ToString(x->GetViewShape()).GetString(), op::ToString(y->GetViewShape()).GetString());
             return false;
         }
     }
@@ -685,8 +677,8 @@ const aclTensor* ViewCopy(const aclTensor* x, const aclTensor* y, aclOpExecutor*
                 OP_LOGD("The input and output point to the same address.");
                 return y;
             }
-            auto yView =
-                (x->GetStorageShape() == y->GetStorageShape()) ? y : UnSafeReshape(y, y->GetViewShape(), executor);
+            auto yView = (x->GetStorageShape() == y->GetStorageShape()) ? y :
+                                                                          UnSafeReshape(y, y->GetViewShape(), executor);
             OP_LOGD("The input and output are created by the user.");
             return TensorMove(x, yView, executor);
         }
