@@ -235,7 +235,7 @@ aclnnStatus aclnnReflectionPad3dBackward(
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
-```Cpp
+```cpp
 #include "acl/acl.h"
 #include "aclnnop/aclnn_reflection_pad3d_backward.h"
 #include <iostream>
@@ -331,7 +331,7 @@ int main() {
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建padding aclIntArray
     padding = aclCreateIntArray(paddingData.data(), 6);
-    CHECK_RET(padding != nullptr, return ret);
+    CHECK_RET(padding != nullptr, LOG_PRINT("aclCreateIntArray failed.\n"); return ACL_ERROR_INTERNAL_ERROR;);
     // 创建gradInput aclTensor
     ret = CreateAclTensor(gradInputHostData, gradInputShape, &gradInputDeviceAddr, aclDataType::ACL_FLOAT, &gradInput);
     CHECK_RET(ret == ACL_SUCCESS, return ret);

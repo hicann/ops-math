@@ -247,7 +247,7 @@ int32/float32：(0, 24544)
 ```Cpp
 #include "acl/acl.h"
 #include "aclnnop/aclnn_circular_pad2d.h"
-#include <iostream>
+#include <cstdio>
 #include <vector>
 
 #define CHECK_RET(cond, return_expr) \
