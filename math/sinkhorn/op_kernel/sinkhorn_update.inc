@@ -156,16 +156,12 @@ namespace AscendC {
             SetFlag<HardEvent::V_S>(eventId_V_S);
             WaitFlag<HardEvent::V_S>(eventId_V_S);
             if (totalCol < CPU_SUM_GROUP_SIZE) {
-                if constexpr (!std::is_same<T, IT>::value && !std::is_same<IT, bfloat16_t>::value) {
-                    event_t eventId_MTE2_S =
-                        static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_S));
-                    SetFlag<HardEvent::MTE2_S>(eventId_MTE2_S);
-                    WaitFlag<HardEvent::MTE2_S>(eventId_MTE2_S);
+                if constexpr (!std::is_same<T, IT>::value) {
                     for (int r = 0; r < row; r++) {
                         uint32_t rowIdx = r * rowLengthAligned;
                         T sum = static_cast<T>(0);
                         for (int c = 0; c < totalCol; c++) {
-                            sum += costSrcLocal.GetValue(rowIdx + c) * d1InLocal.GetValue(c);
+                            sum += costDstLocal.GetValue(rowIdx + c);
                         }
                         d0OutLocal.SetValue(r, sum);
                     }

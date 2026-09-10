@@ -27,6 +27,8 @@ constexpr static uint32_t ROW_BLOCK_SIZE = 32;
 constexpr static uint32_t MAX_TILE_ROW = 127 * 32; // 数据复制时，blockCount最大为4095，向下对齐到 127 * 32
 constexpr static uint32_t WORKSPACE_HEADER_SIZE = 64; // 64B对齐
 constexpr static uint32_t CPU_SUM_GROUP_SIZE = 16;
+constexpr static uint32_t NARROW_COL_THRESHOLD = 16;
+constexpr static uint32_t NARROW_COL_ROWS_PER_CORE = 512;
 } // namespace
 
 namespace optiling {
@@ -144,6 +146,10 @@ ge::graphStatus SinkhornTiling::Init()
 
     // 运行核数
     numBlocks = (ubNum > aivNum) ? aivNum : ubNum;
+    if (totalCol < NARROW_COL_THRESHOLD) {
+        uint64_t narrowBlocks = (totalRow + NARROW_COL_ROWS_PER_CORE - 1) / NARROW_COL_ROWS_PER_CORE;
+        numBlocks = (narrowBlocks > aivNum) ? aivNum : narrowBlocks;
+    }
 
     tilingKey = dataType;
 
