@@ -19,53 +19,53 @@ namespace ops {
 class ArgMaxV2 : public OpDef {
 public:
     const std::vector<ge::DataType> argMaxXDataType = {
-        ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_INT64, ge::DT_INT64, ge::DT_BF16,
-        ge::DT_BF16, ge::DT_INT32, ge::DT_INT32, ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_FLOAT,
-        ge::DT_INT64, ge::DT_INT64, ge::DT_BF16,  ge::DT_BF16, ge::DT_INT32, ge::DT_INT32};
+        ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_FLOAT,   ge::DT_INT64,   ge::DT_INT64, ge::DT_BF16,
+        ge::DT_BF16,    ge::DT_INT32,   ge::DT_INT32, ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_FLOAT,
+        ge::DT_INT64,   ge::DT_INT64,   ge::DT_BF16,  ge::DT_BF16,    ge::DT_INT32,   ge::DT_INT32};
     const std::vector<ge::Format> argMaxFormat = {
         ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
         ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
         ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
     const std::vector<ge::DataType> dimensionDataType = {
         ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32,
-        ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
-        ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32,
-        ge::DT_INT64, ge::DT_INT32, ge::DT_INT64};
+        ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
+        ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64};
     const std::vector<ge::DataType> argMaxYDataType = {
         ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
- explicit ArgMaxV2(const char* name) : OpDef(name) {
-   this->Input("x")
-       .ParamType(REQUIRED)
-       .DataType(argMaxXDataType)
-       .Format(argMaxFormat)
-       .UnknownShapeFormat(argMaxFormat);
-   this->Input("dimension")
-       .ParamType(REQUIRED)
-       .ValueDepend(OPTIONAL)
-       .DataType(dimensionDataType)
-       .Format(argMaxFormat)
-       .UnknownShapeFormat(argMaxFormat);
-   this->Output("y")
-       .ParamType(REQUIRED)
-       .DataType(argMaxYDataType)
-       .Format(argMaxFormat)
-       .UnknownShapeFormat(argMaxFormat);
-    this->Attr("dtype").AttrType(OPTIONAL).Int(3);
+        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
+    explicit ArgMaxV2(const char* name) : OpDef(name)
+    {
+        this->Input("x")
+            .ParamType(REQUIRED)
+            .DataType(argMaxXDataType)
+            .Format(argMaxFormat)
+            .UnknownShapeFormat(argMaxFormat);
+        this->Input("dimension")
+            .ParamType(REQUIRED)
+            .ValueDepend(OPTIONAL)
+            .DataType(dimensionDataType)
+            .Format(argMaxFormat)
+            .UnknownShapeFormat(argMaxFormat);
+        this->Output("y")
+            .ParamType(REQUIRED)
+            .DataType(argMaxYDataType)
+            .Format(argMaxFormat)
+            .UnknownShapeFormat(argMaxFormat);
+        this->Attr("dtype").AttrType(OPTIONAL).Int(3);
 
-   OpAICoreConfig aicore_config;
-   aicore_config.DynamicCompileStaticFlag(true)
-       .DynamicFormatFlag(false)
-       .DynamicRankSupportFlag(true)
-       .DynamicShapeSupportFlag(true)
-       .NeedCheckSupportFlag(false)
-       .ExtendCfgInfo("opFile.value", "arg_max_v2_apt");
+        OpAICoreConfig aicore_config;
+        aicore_config.DynamicCompileStaticFlag(true)
+            .DynamicFormatFlag(false)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .NeedCheckSupportFlag(false)
+            .ExtendCfgInfo("opFile.value", "arg_max_v2_apt");
 
-   this->AICore().AddConfig("ascend950", aicore_config);
+        this->AICore().AddConfig("ascend950", aicore_config);
+        this->AICore().AddConfig("ascend350", aicore_config);
     }
 };
 
 OP_ADD(ArgMaxV2);
-}  // namespace ops
+} // namespace ops
