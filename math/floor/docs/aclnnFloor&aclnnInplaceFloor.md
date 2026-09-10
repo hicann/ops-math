@@ -375,7 +375,6 @@ aclnnStatus aclnnInplaceFloor(
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
 ```Cpp
-#include <iostream>
 #include <vector>
 #include "acl/acl.h"
 #include "aclnnop/aclnn_floor.h"
@@ -508,7 +507,6 @@ int main() {
 **aclnnInplaceFloor示例代码：**
 
 ```Cpp
-#include <iostream>
 #include <vector>
 #include "acl/acl.h"
 #include "aclnnop/aclnn_floor.h"
