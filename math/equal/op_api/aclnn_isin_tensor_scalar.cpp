@@ -148,20 +148,18 @@ static bool CheckDtypeValid(const aclTensor* element, const aclScalar* testEleme
     // 检查element和testElement能否做数据类型推导
     op::DataType promoteType = PromoteTypeScalar(element, testElement);
     if (promoteType == DataType::DT_UNDEFINED) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "element dtype %s and testElement dtype %s can not promote dtype.",
-            op::ToString(element->GetDataType()).GetString(), op::ToString(testElement->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "element dtype %s and testElement dtype %s can not promote dtype.",
+                op::ToString(element->GetDataType()).GetString(), op::ToString(testElement->GetDataType()).GetString());
         return false;
     }
 
     // 检查promoteType的数据类型是否在equal算子的支持列表内
     if (!CheckType(promoteType, supportList)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "element dtype %s and testElement dtype %s get promoteType dtype %s should be in "
-            "dtype support list [%s].",
-            op::ToString(element->GetDataType()).GetString(), op::ToString(testElement->GetDataType()).GetString(),
-            op::ToString(promoteType).GetString(), op::ToString(supportList).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "element dtype %s and testElement dtype %s get promoteType dtype %s should be in "
+                "dtype support list %s.",
+                op::ToString(element->GetDataType()).GetString(), op::ToString(testElement->GetDataType()).GetString(),
+                op::ToString(promoteType).GetString(), op::ToString(supportList).GetString());
         return false;
     }
 
@@ -190,9 +188,9 @@ static aclnnStatus CheckParams(const aclTensor* element, const aclScalar* testEl
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnIsInTensorScalarGetWorkspaceSize(
-    const aclTensor* element, const aclScalar* testElement, [[maybe_unused]] bool assumeUnique, bool invert,
-    aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnIsInTensorScalarGetWorkspaceSize(const aclTensor* element, const aclScalar* testElement,
+                                                  [[maybe_unused]] bool assumeUnique, bool invert, aclTensor* out,
+                                                  uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnIsInTensorScalar, DFX_IN(element, testElement), DFX_OUT(out));
 

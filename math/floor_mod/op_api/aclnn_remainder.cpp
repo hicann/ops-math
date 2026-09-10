@@ -190,7 +190,7 @@ static bool CheckPromoteType(const op::DataType selfDtype, const op::DataType ot
         return false;
     }
     if (!CheckType(promoteType, DTYPE_SUPPORT_LIST)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Promote type %s should be in dtype support list [%s].",
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Promote type %s should be in dtype support list %s.",
                 op::ToString(promoteType).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
         return false;
     }
@@ -220,7 +220,7 @@ static bool CheckPromoteTypeTensorScalar(const op::DataType selfDtype, const op:
         return false;
     }
     if (!CheckType(castDtype, DTYPE_SUPPORT_LIST)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "expected dtype %s should be in dtype support list [%s].",
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "expected dtype %s should be in dtype support list %s.",
                 op::ToString(castDtype).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
         return false;
     }
@@ -252,7 +252,7 @@ static bool CheckPromoteTypeScalarTensor(const op::DataType selfDtype, const op:
         return false;
     }
     if (!CheckType(outDtype, DTYPE_SUPPORT_LIST)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "out dtype %s should be in dtype support list [%s].",
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "out dtype %s should be in dtype support list %s.",
                 op::ToString(outDtype).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
         return false;
     }
