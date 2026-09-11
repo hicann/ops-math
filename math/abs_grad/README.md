@@ -17,7 +17,7 @@
 
 - 计算公式：
 
-$$out_i=dy_i \times sign(y_i)$$
+$$z_i=dy_i \times sign(y_i)$$
 
 ## 参数说明
 
@@ -40,21 +40,21 @@ $$out_i=dy_i \times sign(y_i)$$
     <tr>
       <td>y</td>
       <td>输入</td>
-      <td>原始Abs算子的输入，公式中的y_i。</td>
+      <td>原始Abs算子的输入，公式中的y<sub>i</sub>。</td>
       <td>BFLOAT16、FLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>dy</td>
       <td>输入</td>
-      <td>Abs算子输出的上游梯度，公式中的dy_i。</td>
+      <td>Abs算子输出的上游梯度，公式中的dy<sub>i</sub>。</td>
       <td>BFLOAT16、FLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>z</td>
       <td>输出</td>
-      <td>Abs算子输入的下游梯度，公式中的out_i。</td>
+      <td>Abs算子输入的下游梯度，公式中的z<sub>i</sub>。</td>
       <td>BFLOAT16、FLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>
@@ -64,8 +64,7 @@ $$out_i=dy_i \times sign(y_i)$$
 
 ## 约束说明
 
-- dy与y的数据类型相同。
-- z的数据类型与y、dy相同。
+- y、dy和z的数据类型需相同。
 - 所有输入和输出的shape不能包含0（不支持空tensor）。
 
 ## 第三方框架兼容性

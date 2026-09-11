@@ -25,7 +25,15 @@
 
 ## 功能说明
 
-返回输入tensors列表中每个输入tensor依次做add求和。
+- 接口功能：对输入tensors列表中的各个tensor进行逐元素求和，结果写入out。各输入tensor按broadcast关系扩展至输出shape后参与计算。
+
+- 计算公式：
+
+$$
+out = \sum_{i=0}^{N-1} \operatorname{broadcast}(tensors_i)
+$$
+
+其中，$N$为tensors列表的长度，$tensors_i$为列表中的第$i$个输入tensor，$\operatorname{broadcast}$表示将输入tensor广播至out的shape。
 
 ## 函数原型
 
@@ -76,7 +84,7 @@ aclnnStatus aclnnSum(
     <tr>
       <td>tensors（aclTensorList*）</td>
       <td>输入</td>
-      <td>需要计算的输入tensors列表。</td>
+      <td>需要求和的输入tensor列表，公式中的tensors<sub>i</sub>表示列表中的第i个tensor。</td>
       <td>需要与out数据类型相同。tensors中各tensor的shape需要与out满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
       <td>FLOAT16、FLOAT、INT8、INT32、UINT8</td>
       <td>ND</td>
@@ -86,7 +94,7 @@ aclnnStatus aclnnSum(
     <tr>
       <td>out（aclTensor*）</td>
       <td>输出</td>
-      <td>输出tensor。</td>
+      <td>求和结果tensor，公式中的out。</td>
       <td>需要与tensors数据类型相同。shape需要与tensors中各tensor的shape满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
       <td>FLOAT、FLOAT16、INT8、INT32、UINT8</td>
       <td>ND</td>
