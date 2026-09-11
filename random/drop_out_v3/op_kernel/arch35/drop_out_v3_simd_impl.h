@@ -27,6 +27,7 @@ constexpr static uint32_t NUM_16 = 16;
 constexpr static int64_t ALIGNMENT_32 = 32;
 constexpr static uint16_t CORE_THREAD_NUMBER = 512;
 constexpr static float HIFLOAT_MULS = 65536.0f;
+constexpr static int64_t UINT32_MAX_VALUE = 4294967295;
 
 // ==================== SIMT Kernels ====================
 
@@ -271,12 +272,14 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::Init(GM_ADDR x, GM_ADDR y, GM_AD
     GetUintDivMagicAndShift<uint64_t>(magic64_, shift64_, static_cast<uint64_t>(totalThreads_));
     blockIdx_ = GetBlockIdx();
 
+    uint32_t randBufNum = (vec_ == NUM_2) ? NUM_2 : 1;
     int64_t sizeofT = static_cast<int64_t>(sizeof(T));
     int64_t ubFactor = tilingData->ubFactorElements;
     int64_t inputBufSize = Ops::Base::CeilAlign(ubFactor * sizeofT, ALIGNMENT_32);
     int64_t outputBufSize = Ops::Base::CeilAlign(ubFactor * sizeofT, ALIGNMENT_32);
     int64_t maskBitBufSize = Ops::Base::CeilAlign(ubFactor / NUM_8, ALIGNMENT_32);
-    int64_t randomFloatBufSize = Ops::Base::CeilAlign(ubFactor * static_cast<int64_t>(sizeof(float)), ALIGNMENT_32);
+    int64_t randomFloatBufSize = Ops::Base::CeilAlign(ubFactor * static_cast<int64_t>(sizeof(float)) * randBufNum,
+                                                      ALIGNMENT_32);
     pipe_->InitBuffer(inputQue_, NUM_2, inputBufSize);
     pipe_->InitBuffer(outputQue_, NUM_2, outputBufSize);
     pipe_->InitBuffer(maskBitQue_, NUM_2, maskBitBufSize);
@@ -316,7 +319,7 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::ComputeContinuous(int64_t baseLi
     LocalTensor<uint8_t> maskBitUb = maskBitQue_.template AllocTensor<uint8_t>();
     LocalTensor<float> randomFloatUb = randomFloatBuf_.Get<float>();
 
-    if (tilingData->outputSize >= 524288) {
+    if (tilingData->outputSize > UINT32_MAX_VALUE) {
         __ubuf__ volatile float* randomFloatPtr = (__ubuf__ volatile float*)randomFloatUb.GetPhyAddr();
         switch (vec_) {
             case VEC_16:
@@ -387,6 +390,7 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::ComputeContinuousSimd(int64_t ba
     constexpr uint32_t randNum = NUM_4 - (VEC % NUM_4);
     constexpr uint32_t counterPerBatch = static_cast<uint32_t>(PhiloxInternal::ELE_CNT_B32_ONCE);
     constexpr uint32_t elemPerBatch = counterPerBatch * randNum;
+    constexpr uint32_t ctrStride = counterPerBatch * NUM_4;
 
     uint32_t key[ALG_KEY_SIZE] = {0, 0};
     uint32_t counter[ALG_COUNTER_SIZE] = {0, 0, 0, 0};
@@ -399,10 +403,19 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::ComputeContinuousSimd(int64_t ba
     float scale = 1.0f / prob_;
 
     uint32_t totalBatches = Ops::Base::CeilDiv(static_cast<uint32_t>(currElements), elemPerBatch);
+    uint32_t fullBatches = (totalBatches > 0) ? (totalBatches - 1) : 0;
 
     __ubuf__ T* inputPtr = (__ubuf__ T*)inputUb.GetPhyAddr();
     __ubuf__ T* outputPtr = (__ubuf__ T*)outputUb.GetPhyAddr();
     __ubuf__ float* randomFloatPtr = (__ubuf__ float*)randomFloatUb.GetPhyAddr();
+    __ubuf__ uint32_t* ctrBufPtr = (__ubuf__ uint32_t*)randomFloatPtr;
+
+    uint32_t key0Phase2 = key[0];
+    uint32_t key1Phase2 = key[1];
+    uint32_t key0Phase3 = key[0] + NUM_4 * PhiloxInternal::CONST_KEY_ADD_0;
+    uint32_t key1Phase3 = key[1] + NUM_4 * PhiloxInternal::CONST_KEY_ADD_1;
+    uint32_t key0Phase4 = key[0] + NUM_8 * PhiloxInternal::CONST_KEY_ADD_0;
+    uint32_t key1Phase4 = key[1] + NUM_8 * PhiloxInternal::CONST_KEY_ADD_1;
 
     __VEC_SCOPE__
     {
@@ -418,19 +431,153 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::ComputeContinuousSimd(int64_t ba
         Reg::RegTensor<uint32_t> mask16Reg;
         Reg::Duplicate(mask16Reg, 0xFFFF);
 
-        for (uint16_t batch = 0; batch < static_cast<uint16_t>(totalBatches); batch++) {
-            // 映射counter
+        for (uint16_t batch = 0; batch < static_cast<uint16_t>(fullBatches); batch++) {
             uint32_t batchStart = batch * elemPerBatch;
             int64_t baseIndex = baseLinearIndex + static_cast<int64_t>(batchStart);
 
-            Reg::RegTensor<uint32_t> key0, key1;
-            Reg::Duplicate(key0, key[0]);
-            Reg::Duplicate(key1, key[1]);
             Reg::RegTensor<uint32_t> ctr0, ctr1, ctr2, ctr3;
             VectorThreadMappingAndSkip<VEC>(baseIndex, randNum, magic32_, shift32_, totalThreads_, counter, ctr0, ctr1,
                                             ctr2, ctr3, pg);
 
-            // 生成随机数
+            __ubuf__ uint32_t* storePtr = ctrBufPtr + batch * ctrStride;
+            Reg::StoreAlign<uint32_t>(storePtr, ctr0, pg);
+            Reg::StoreAlign<uint32_t>(storePtr + counterPerBatch, ctr1, pg);
+            Reg::StoreAlign<uint32_t>(storePtr + NUM_2 * counterPerBatch, ctr2, pg);
+            Reg::StoreAlign<uint32_t>(storePtr + NUM_3 * counterPerBatch, ctr3, pg);
+        }
+
+        Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_LOAD>();
+
+        for (uint16_t batch = 0; batch < static_cast<uint16_t>(fullBatches); batch++) {
+            __ubuf__ uint32_t* bufPtr = ctrBufPtr + batch * ctrStride;
+
+            Reg::RegTensor<uint32_t> ctr0, ctr1, ctr2, ctr3;
+            Reg::LoadAlign<uint32_t>(ctr0, bufPtr);
+            Reg::LoadAlign<uint32_t>(ctr1, bufPtr + counterPerBatch);
+            Reg::LoadAlign<uint32_t>(ctr2, bufPtr + NUM_2 * counterPerBatch);
+            Reg::LoadAlign<uint32_t>(ctr3, bufPtr + NUM_3 * counterPerBatch);
+
+            Reg::RegTensor<uint32_t> key0, key1;
+            Reg::Duplicate(key0, key0Phase2);
+            Reg::Duplicate(key1, key1Phase2);
+
+            Reg::RegTensor<uint32_t> tmpL0, tmpH0, tmpL1, tmpH1;
+            SpNetworkKernel<4>(tmpL0, tmpH0, tmpL1, tmpH1, ctr0, ctr1, ctr2, ctr3, key0, key1, cMul0, cMul1, pg);
+
+            Reg::StoreAlign<uint32_t>(bufPtr, ctr0, pg);
+            Reg::StoreAlign<uint32_t>(bufPtr + counterPerBatch, ctr1, pg);
+            Reg::StoreAlign<uint32_t>(bufPtr + NUM_2 * counterPerBatch, ctr2, pg);
+            Reg::StoreAlign<uint32_t>(bufPtr + NUM_3 * counterPerBatch, ctr3, pg);
+        }
+
+        Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_LOAD>();
+
+        for (uint16_t batch = 0; batch < static_cast<uint16_t>(fullBatches); batch++) {
+            __ubuf__ uint32_t* bufPtr = ctrBufPtr + batch * ctrStride;
+
+            Reg::RegTensor<uint32_t> ctr0, ctr1, ctr2, ctr3;
+            Reg::LoadAlign<uint32_t>(ctr0, bufPtr);
+            Reg::LoadAlign<uint32_t>(ctr1, bufPtr + counterPerBatch);
+            Reg::LoadAlign<uint32_t>(ctr2, bufPtr + NUM_2 * counterPerBatch);
+            Reg::LoadAlign<uint32_t>(ctr3, bufPtr + NUM_3 * counterPerBatch);
+
+            Reg::RegTensor<uint32_t> key0, key1;
+            Reg::Duplicate(key0, key0Phase3);
+            Reg::Duplicate(key1, key1Phase3);
+
+            Reg::RegTensor<uint32_t> tmpL0, tmpH0, tmpL1, tmpH1;
+            SpNetworkKernel<4>(tmpL0, tmpH0, tmpL1, tmpH1, ctr0, ctr1, ctr2, ctr3, key0, key1, cMul0, cMul1, pg);
+
+            Reg::StoreAlign<uint32_t>(bufPtr, ctr0, pg);
+            Reg::StoreAlign<uint32_t>(bufPtr + counterPerBatch, ctr1, pg);
+            Reg::StoreAlign<uint32_t>(bufPtr + NUM_2 * counterPerBatch, ctr2, pg);
+            Reg::StoreAlign<uint32_t>(bufPtr + NUM_3 * counterPerBatch, ctr3, pg);
+        }
+
+        Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_LOAD>();
+
+        for (uint16_t batch = 0; batch < static_cast<uint16_t>(fullBatches); batch++) {
+            __ubuf__ uint32_t* bufPtr = ctrBufPtr + batch * ctrStride;
+
+            Reg::RegTensor<uint32_t> ctr0, ctr1, ctr2, ctr3;
+            Reg::LoadAlign<uint32_t>(ctr0, bufPtr);
+            Reg::LoadAlign<uint32_t>(ctr1, bufPtr + counterPerBatch);
+            Reg::LoadAlign<uint32_t>(ctr2, bufPtr + NUM_2 * counterPerBatch);
+            Reg::LoadAlign<uint32_t>(ctr3, bufPtr + NUM_3 * counterPerBatch);
+
+            Reg::RegTensor<uint32_t> key0, key1;
+            Reg::Duplicate(key0, key0Phase4);
+            Reg::Duplicate(key1, key1Phase4);
+
+            Reg::RegTensor<uint32_t> tmpL0, tmpH0, tmpL1, tmpH1;
+            SpNetworkKernel<2>(tmpL0, tmpH0, tmpL1, tmpH1, ctr0, ctr1, ctr2, ctr3, key0, key1, cMul0, cMul1, pg);
+
+            if constexpr (randNum == NUM_4) {
+                Interleave(ctr0, ctr2, ctr0, ctr2);
+                Interleave(ctr1, ctr3, ctr1, ctr3);
+                Interleave(ctr0, ctr1, ctr0, ctr1);
+                Interleave(ctr2, ctr3, ctr2, ctr3);
+            } else {
+                Interleave(ctr0, ctr1, ctr0, ctr1);
+            }
+
+            Reg::StoreAlign<uint32_t>(bufPtr, ctr0, pg);
+            Reg::StoreAlign<uint32_t>(bufPtr + counterPerBatch, ctr1, pg);
+            Reg::StoreAlign<uint32_t>(bufPtr + NUM_2 * counterPerBatch, ctr2, pg);
+            Reg::StoreAlign<uint32_t>(bufPtr + NUM_3 * counterPerBatch, ctr3, pg);
+        }
+
+        Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_LOAD>();
+
+        for (uint16_t batch = 0; batch < static_cast<uint16_t>(fullBatches); batch++) {
+            uint32_t batchStart = batch * elemPerBatch;
+            __ubuf__ uint32_t* bufPtr = ctrBufPtr + batch * ctrStride;
+
+            Reg::RegTensor<uint32_t> ctr0, ctr1, ctr2, ctr3;
+            Reg::LoadAlign<uint32_t>(ctr0, bufPtr);
+            Reg::LoadAlign<uint32_t>(ctr1, bufPtr + counterPerBatch);
+            Reg::LoadAlign<uint32_t>(ctr2, bufPtr + NUM_2 * counterPerBatch);
+            Reg::LoadAlign<uint32_t>(ctr3, bufPtr + NUM_3 * counterPerBatch);
+
+            __ubuf__ T* batchInputPtr = inputPtr + batchStart;
+            __ubuf__ T* batchOutputPtr = outputPtr + batchStart;
+            __ubuf__ float* batchRandomPtr = randomFloatPtr + batchStart;
+
+            PhiloxCtrConvertAndDropout<T>(ctr0, mask16Reg, zeroFloatReg, counterPerBatch, scale, prob_, batchRandomPtr,
+                                          batchInputPtr, batchOutputPtr);
+            PhiloxCtrConvertAndDropout<T>(ctr1, mask16Reg, zeroFloatReg, counterPerBatch, scale, prob_,
+                                          batchRandomPtr + counterPerBatch, batchInputPtr + counterPerBatch,
+                                          batchOutputPtr + counterPerBatch);
+
+            if constexpr (randNum == NUM_4) {
+                PhiloxCtrConvertAndDropout<T>(ctr2, mask16Reg, zeroFloatReg, counterPerBatch, scale, prob_,
+                                              batchRandomPtr + NUM_2 * counterPerBatch,
+                                              batchInputPtr + NUM_2 * counterPerBatch,
+                                              batchOutputPtr + NUM_2 * counterPerBatch);
+                PhiloxCtrConvertAndDropout<T>(ctr3, mask16Reg, zeroFloatReg, counterPerBatch, scale, prob_,
+                                              batchRandomPtr + NUM_3 * counterPerBatch,
+                                              batchInputPtr + NUM_3 * counterPerBatch,
+                                              batchOutputPtr + NUM_3 * counterPerBatch);
+            }
+        }
+
+        if (totalBatches > 0) {
+            uint32_t batchStart = fullBatches * elemPerBatch;
+            uint32_t tailElements = static_cast<uint32_t>(currElements) - batchStart;
+            int64_t baseIndex = baseLinearIndex + static_cast<int64_t>(batchStart);
+
+            __ubuf__ T* tailInputPtr = inputPtr + batchStart;
+            __ubuf__ T* tailOutputPtr = outputPtr + batchStart;
+            __ubuf__ float* tailRandomPtr = randomFloatPtr + batchStart;
+
+            Reg::RegTensor<uint32_t> key0, key1;
+            Reg::Duplicate(key0, key[0]);
+            Reg::Duplicate(key1, key[1]);
+
+            Reg::RegTensor<uint32_t> ctr0, ctr1, ctr2, ctr3;
+            VectorThreadMappingAndSkip<VEC>(baseIndex, randNum, magic32_, shift32_, totalThreads_, counter, ctr0, ctr1,
+                                            ctr2, ctr3, pg);
+
             Reg::RegTensor<uint32_t> tmpL0, tmpH0, tmpL1, tmpH1;
             SpNetworkKernel<10>(tmpL0, tmpH0, tmpL1, tmpH1, ctr0, ctr1, ctr2, ctr3, key0, key1, cMul0, cMul1, pg);
 
@@ -443,48 +590,34 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::ComputeContinuousSimd(int64_t ba
                 Interleave(ctr0, ctr1, ctr0, ctr1);
             }
 
-            // drop out
-            __ubuf__ T* batchInputPtr = inputPtr + batchStart;
-            __ubuf__ T* batchOutputPtr = outputPtr + batchStart;
-            __ubuf__ float* batchRandomPtr = randomFloatPtr + batchStart;
-
-            __ubuf__ T* iPtr0 = batchInputPtr;
-            __ubuf__ T* iPtr1 = batchInputPtr + counterPerBatch;
-            __ubuf__ T* oPtr0 = batchOutputPtr;
-            __ubuf__ T* oPtr1 = batchOutputPtr + counterPerBatch;
-            __ubuf__ float* rPtr0 = batchRandomPtr;
-            __ubuf__ float* rPtr1 = batchRandomPtr + counterPerBatch;
-
-            uint32_t remaining = (batchStart + elemPerBatch <= static_cast<uint32_t>(currElements)) ?
-                                     elemPerBatch :
-                                     static_cast<uint32_t>(currElements) - batchStart;
+            uint32_t remaining = tailElements;
 
             uint32_t currCount0 = (remaining < counterPerBatch) ? remaining : counterPerBatch;
+            PhiloxCtrConvertAndDropout<T>(ctr0, mask16Reg, zeroFloatReg, currCount0, scale, prob_, tailRandomPtr,
+                                          tailInputPtr, tailOutputPtr);
             remaining -= currCount0;
+
             uint32_t currCount1 = (remaining < counterPerBatch) ? remaining : counterPerBatch;
+            PhiloxCtrConvertAndDropout<T>(ctr1, mask16Reg, zeroFloatReg, currCount1, scale, prob_,
+                                          tailRandomPtr + counterPerBatch, tailInputPtr + counterPerBatch,
+                                          tailOutputPtr + counterPerBatch);
             remaining -= currCount1;
 
-            PhiloxCtrConvertAndDropout<T>(ctr0, mask16Reg, zeroFloatReg, currCount0, scale, prob_, rPtr0, iPtr0, oPtr0);
-            PhiloxCtrConvertAndDropout<T>(ctr1, mask16Reg, zeroFloatReg, currCount1, scale, prob_, rPtr1, iPtr1, oPtr1);
-
             if constexpr (randNum == NUM_4) {
-                __ubuf__ T* iPtr2 = batchInputPtr + NUM_2 * counterPerBatch;
-                __ubuf__ T* iPtr3 = batchInputPtr + NUM_3 * counterPerBatch;
-                __ubuf__ T* oPtr2 = batchOutputPtr + NUM_2 * counterPerBatch;
-                __ubuf__ T* oPtr3 = batchOutputPtr + NUM_3 * counterPerBatch;
-                __ubuf__ float* rPtr2 = batchRandomPtr + NUM_2 * counterPerBatch;
-                __ubuf__ float* rPtr3 = batchRandomPtr + NUM_3 * counterPerBatch;
-
                 uint32_t currCount2 = (remaining < counterPerBatch) ? remaining : counterPerBatch;
+                PhiloxCtrConvertAndDropout<T>(
+                    ctr2, mask16Reg, zeroFloatReg, currCount2, scale, prob_, tailRandomPtr + NUM_2 * counterPerBatch,
+                    tailInputPtr + NUM_2 * counterPerBatch, tailOutputPtr + NUM_2 * counterPerBatch);
                 remaining -= currCount2;
-                uint32_t currCount3 = (remaining < counterPerBatch) ? remaining : counterPerBatch;
 
-                PhiloxCtrConvertAndDropout<T>(ctr2, mask16Reg, zeroFloatReg, currCount2, scale, prob_, rPtr2, iPtr2,
-                                              oPtr2);
-                PhiloxCtrConvertAndDropout<T>(ctr3, mask16Reg, zeroFloatReg, currCount3, scale, prob_, rPtr3, iPtr3,
-                                              oPtr3);
+                uint32_t currCount3 = (remaining < counterPerBatch) ? remaining : counterPerBatch;
+                PhiloxCtrConvertAndDropout<T>(
+                    ctr3, mask16Reg, zeroFloatReg, currCount3, scale, prob_, tailRandomPtr + NUM_3 * counterPerBatch,
+                    tailInputPtr + NUM_3 * counterPerBatch, tailOutputPtr + NUM_3 * counterPerBatch);
             }
         }
+
+        Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_LOAD>();
     }
 
     CompareScalar<float, uint8_t>(maskBitUb, randomFloatUb, prob_, CMPMODE::LT, currElements);
@@ -565,28 +698,22 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::Process(const DropOutV3TilingDat
         return;
     }
 
-    if (blockIdx_ == 0) {
+    if (IsProbEqual(prob_, 0.0f)) {
+        ProcessProbZero(tilingData);
+    } else {
+        ProcessContinuous(tilingData);
+    }
+
+    if (blockIdx_ == tilingData->usedCoreNum - 1) {
         constexpr int64_t BIT_NUMBER = 128;
         constexpr int64_t UINT8_BIT_NUMBER = 8;
         int64_t maskWrittenBytes = Ops::Base::CeilDiv(tilingData->outputSize, UINT8_BIT_NUMBER);
         int64_t maskTotalBytes = Ops::Base::CeilAlign(tilingData->outputSize, BIT_NUMBER) / UINT8_BIT_NUMBER;
-        int64_t tailOffset = Ops::Base::FloorAlign(maskWrittenBytes, (int64_t)NUM_2);
-        int64_t tailBytes = maskTotalBytes - tailOffset;
-        if (tailBytes > 0) {
-            GlobalTensor<uint16_t> maskGmU16;
-            maskGmU16.SetGlobalBuffer((__gm__ uint16_t*)maskGm_.GetPhyAddr());
-            GlobalTensor<uint16_t> maskGmTail = maskGmU16[tailOffset / NUM_2];
-            Fill<uint16_t>(maskGmTail, tailBytes / NUM_2, 0);
+        __gm__ uint8_t* maskU8 = (__gm__ uint8_t*)maskGm_.GetPhyAddr();
+        for (int64_t i = maskWrittenBytes; i < maskTotalBytes; i++) {
+            WriteGmByPassDCache<uint8_t>(maskU8 + i, 0);
         }
     }
-    SyncAll();
-
-    if (IsProbEqual(prob_, 0.0f)) {
-        ProcessProbZero(tilingData);
-        return;
-    }
-
-    ProcessContinuous(tilingData);
 }
 } // namespace DropOutV3
 #endif // DROP_OUT_V3_SIMD_IMPL_H

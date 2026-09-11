@@ -180,17 +180,9 @@ ge::graphStatus DropOutV3Tiling::UniqueProcess()
         }
     }
     dropOutV3TilingData_.vec = vec;
-    dropOutV3TilingData_.transportMode = (vec == 1) ? 1 : 0;
 
-    // 计算 grid 和 totalThreads
-    int64_t blockSize = SIMT_THREAD_GROUP_SIZE;
-    int64_t maxThreadsPerMultiProcessor = MAX_THREADS_PER_AIC;
-    int64_t blocksPerSM = maxThreadsPerMultiProcessor / blockSize;
-    int64_t multiProcessorCount = AIC_CLUSTER_COUNT;
-    int64_t blocksCount = multiProcessorCount * blocksPerSM;
-    int64_t grid = (outputSize + blockSize - 1) / blockSize;
-    grid = (blocksCount < grid) ? blocksCount : grid;
-    dropOutV3TilingData_.totalThreads = static_cast<uint64_t>(grid * blockSize);
+    // 计算 totalThreads
+    dropOutV3TilingData_.totalThreads = AIC_CLUSTER_COUNT * MAX_THREADS_PER_AIC;
 
     // 分核
     int64_t coreGranularity = DROPOUT_CORE_GRANULARITY;
@@ -205,14 +197,15 @@ ge::graphStatus DropOutV3Tiling::UniqueProcess()
     dropOutV3TilingData_.perCoreElements = perCoreElements;
     dropOutV3TilingData_.tailCoreElements = tailCoreElements;
 
-    // 分 UB (双buffer: 2*input + 2*output + 2*maskBit + randomFloatBuf)
+    // 分 UB (双buffer: 2*input + 2*output + 2*maskBit + [2/1]*randomFloatBuf)
+    uint32_t randBufNum = (vec == NUM_2) ? NUM_2 : 1;
     int64_t perBlockBytes = (NUM_2 * coreGranularity * sizeofT) + (NUM_2 * coreGranularity * sizeofT) +
-                            (NUM_2 * coreGranularity / NUM_8) + (coreGranularity * NUM_4);
+                            (NUM_2 * coreGranularity / NUM_8) + (coreGranularity * NUM_4 * randBufNum);
     int64_t ubFactorElements = Ops::Base::FloorDiv(ubSize_, perBlockBytes) * coreGranularity;
     while (NUM_2 * Ops::Base::CeilAlign(ubFactorElements * sizeofT, ALIGNMENT_32) +
                NUM_2 * Ops::Base::CeilAlign(ubFactorElements * sizeofT, ALIGNMENT_32) +
                NUM_2 * Ops::Base::CeilAlign(ubFactorElements / NUM_8, ALIGNMENT_32) +
-               Ops::Base::CeilAlign(ubFactorElements * NUM_4, ALIGNMENT_32) >
+               Ops::Base::CeilAlign(ubFactorElements * NUM_4 * randBufNum, ALIGNMENT_32) >
            ubSize_) {
         ubFactorElements -= coreGranularity;
     }

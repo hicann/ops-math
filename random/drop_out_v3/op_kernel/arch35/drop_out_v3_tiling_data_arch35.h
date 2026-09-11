@@ -23,7 +23,6 @@ public:
     float prob = 0;
 
     uint32_t vec = 0;
-    uint32_t transportMode = 0;
     int64_t totalThreads = 0;
     int64_t perCoreElements = 0;
     int64_t tailCoreElements = 0;
@@ -39,10 +38,10 @@ public:
         info << "[DropOutV3TilingData] "
              << "usedCoreNum: " << usedCoreNum << ", outputSize: " << outputSize << ", seed: " << seed
              << ", offset: " << offset << ", ubSize: " << ubSize << ", prob: " << prob << ", vec: " << vec
-             << ", transportMode: " << transportMode << ", totalThreads: " << totalThreads
-             << ", perCoreElements: " << perCoreElements << ", tailCoreElements: " << tailCoreElements
-             << ", ubLoopCount: " << ubLoopCount << ", tailUbLoopCount: " << tailUbLoopCount
-             << ", ubFactorElements: " << ubFactorElements << ", tailUbFactorElements: " << tailUbFactorElements
+             << ", totalThreads: " << totalThreads << ", perCoreElements: " << perCoreElements
+             << ", tailCoreElements: " << tailCoreElements << ", ubLoopCount: " << ubLoopCount
+             << ", tailUbLoopCount: " << tailUbLoopCount << ", ubFactorElements: " << ubFactorElements
+             << ", tailUbFactorElements: " << tailUbFactorElements
              << ", tailCoreTailUbFactorElements: " << tailCoreTailUbFactorElements;
         return info.str();
     }
