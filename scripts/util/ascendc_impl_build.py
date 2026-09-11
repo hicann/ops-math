@@ -282,9 +282,13 @@ PYPTO_COMPILE_OP_API = """
     pypto_compile_op(src, origin_func_name, op_info, options, code_channel, '{}')
 """
 
-PYPTO_IMPORT_HEADER = (
-    "from pypto_pro.runtime.opc.pypto_compile import pypto_compile_op\n"
-)
+PYPTO_IMPORT_HEADER = """
+import inspect
+from unittest.mock import MagicMock as _PyptoMagicMock
+sys.modules["torch"] = _PyptoMagicMock(name="torch")
+sys.modules["torch_npu"] = _PyptoMagicMock(name="torch_npu")
+from pypto_pro.runtime.opc.pypto_compile import pypto_compile_op
+"""
 
 SUP_API = """
 def {}({}, impl_mode=""):
