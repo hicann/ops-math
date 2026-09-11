@@ -85,7 +85,7 @@ aclnnStatus aclnnBitwiseAndScalar(
       <td>输入</td>
       <td>公式中的self。</td>
       <td>数据类型与other需满足数据类型推导规则（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>），推导后的数据类型需在支持的数据类型范围内。</td>
-      <td>INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL</td>
+      <td>INT16、UINT16、INT32、INT64、INT8、UINT8、UINT32、UINT64、BOOL</td>
       <td>ND</td>
       <td>不超过8维</td>
       <td>√</td>
@@ -95,7 +95,7 @@ aclnnStatus aclnnBitwiseAndScalar(
       <td>输入</td>
       <td>公式中的other。</td>
       <td>数据类型与self需满足数据类型推导规则（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>），推导后的数据类型需在支持的数据类型范围内。</td>
-      <td>INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL</td>
+      <td>INT16、UINT16、INT32、INT64、INT8、UINT8、UINT32、UINT64、BOOL</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -131,6 +131,10 @@ aclnnStatus aclnnBitwiseAndScalar(
       <td>-</td>
     </tr>
   </tbody></table>
+
+  <!-- npu="A3,910b,910,310p" id7 -->
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：self和other的数据类型不支持UINT32、UINT64。
+  <!-- end id7 -->
 
 - **返回值：**
 
