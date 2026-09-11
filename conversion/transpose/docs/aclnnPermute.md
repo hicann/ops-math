@@ -25,11 +25,11 @@
 
 ## 功能说明
 
-对tensor的任意维度进行调换。如输入self是shape为[2, 3, 5]的tensor，dims为(2, 0, 1)，则输出是shape为[5, 2, 3]的tensor。
+对 tensor 的任意维度进行调换。如输入 self 是 shape 为 [2, 3, 5] 的 tensor，dims 为 (2, 0, 1)，则输出是 shape 为 [5, 2, 3] 的 tensor。
 
 ## 函数原型
 
-每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnPermuteGetWorkspaceSize”接口获取计算所需workspace大小以及包含了算子计算流程的执行器，再调用“aclnnPermute”接口执行计算。
+每个算子分为[两段式接口](../../../docs/zh/context/two_phase_api.md)，必须先调用“aclnnPermuteGetWorkspaceSize”接口获取计算所需 workspace 大小以及包含了算子计算流程的执行器，再调用“aclnnPermute”接口执行计算。
 
 ```cpp
 aclnnStatus aclnnPermuteGetWorkspaceSize(
@@ -71,13 +71,13 @@ aclnnStatus aclnnPermute(
       <th>数据类型</th>
       <th>数据格式</th>
       <th>维度（shape）</th>
-      <th>非连续Tensor</th>
+      <th>非连续 Tensor</th>
     </tr></thead>
   <tbody>
     <tr>
       <td>self（aclTensor*）</td>
       <td>输入</td>
-      <td>输入的tensor</td>
+      <td>输入的 tensor</td>
       <td>-</td>
       <td>FLOAT、FLOAT16、DOUBLE、UINT64、INT64、UINT32、INT32、UINT16、INT16、UINT8、INT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN</td>
       <td>ND</td>
@@ -87,8 +87,8 @@ aclnnStatus aclnnPermute(
     <tr>
       <td>dims（aclIntArray*）</td>
       <td>输入</td>
-      <td>整型数组，代表原来tensor的维度，指定新的轴顺序。</td>
-      <td>取值需在[-self的维度数量，self的维度数量-1]范围内。</td>
+      <td>整型数组，代表原来 tensor 的维度，指定新的轴顺序。</td>
+      <td>取值需在 [-self 的维度数量，self 的维度数量 - 1] 范围内。</td>
       <td>INT64</td>
       <td>-</td>
       <td>-</td>
@@ -97,8 +97,8 @@ aclnnStatus aclnnPermute(
     <tr>
       <td>out（aclTensor*）</td>
       <td>输出</td>
-      <td>输出的tensor</td>
-      <td>shape由dims和原self的shape共同决定，dtype需要与self一致。</td>
+      <td>输出的 tensor</td>
+      <td>shape 由 dims 和原 self 的 shape 共同决定，dtype 需要与 self 一致。</td>
       <td>FLOAT、FLOAT16、DOUBLE、UINT64、INT64、UINT32、INT32、UINT16、INT16、UINT8、INT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN。</td>
       <td>ND</td>
       <td>≤8</td>
@@ -107,7 +107,7 @@ aclnnStatus aclnnPermute(
     <tr>
       <td>workspaceSize（uint64_t*）</td>
       <td>输出</td>
-      <td>返回需要在Device侧申请的workspace大小。</td>
+      <td>返回需要在 Device 侧申请的 workspace 大小。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -117,7 +117,7 @@ aclnnStatus aclnnPermute(
     <tr>
       <td>executor（aclOpExecutor**）</td>
       <td>输出</td>
-      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>返回 op 执行器，包含了算子计算流程。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -127,15 +127,15 @@ aclnnStatus aclnnPermute(
    </tbody></table>
 
   <!-- npu="910" id7 -->
-  - <term>Atlas 训练系列产品</term>：数据类型不支持COMPLEX128、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN。
+  - <term>Atlas 训练系列产品</term>：数据类型不支持 COMPLEX128、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN。
   <!-- end id7 -->
   <!-- npu="A3,910b" id8 -->
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型不支持HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN。
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型不支持 HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN。
   <!-- end id8 -->
 
 - **返回值**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn 返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
     <table style="table-layout: fixed; width: 1150px"><colgroup>
@@ -153,21 +153,21 @@ aclnnStatus aclnnPermute(
       <tr>
         <td>ACLNN_ERR_PARAM_NULLPTR</td>
         <td>161001</td>
-        <td>传入的self、dims或out是空指针。</td>
+        <td>传入的 self、dims 或 out 是空指针。</td>
       </tr>
       <tr>
         <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
         <td rowspan="4">161002</td>
-        <td>self和out的数据类型不在支持的范围之内。</td>
+        <td>self 和 out 的数据类型不在支持的范围之内。</td>
       </tr>
       <tr>
-        <td>self和out的数据类型不一致。</td>
+        <td>self 和 out 的数据类型不一致。</td>
       </tr>
       <tr>
-        <td>输入self的维度超过8维。</td>
+        <td>输入 self 的维度超过 8 维。</td>
       </tr>
       <tr>
-        <td>dims的取值不在[-self的维度数量，self的维度数量-1]的范围内。</td>
+        <td>dims 的取值不在 [-self 的维度数量，self 的维度数量 - 1] 的范围内。</td>
       </tr>
     </tbody>
     </table>
@@ -191,40 +191,40 @@ aclnnStatus aclnnPermute(
     <tr>
       <td>workspace</td>
       <td>输入</td>
-      <td>在Device侧申请的workspace内存地址。</td>
+      <td>在 Device 侧申请的 workspace 内存地址。</td>
     </tr>
     <tr>
       <td>workspace_size</td>
       <td>输入</td>
-      <td>在Device侧申请的workspace大小，由第一段接口aclnnPermuteGetWorkspaceSize获取。</td>
+      <td>在 Device 侧申请的 workspace 大小，由第一段接口 aclnnPermuteGetWorkspaceSize 获取。</td>
     </tr>
     <tr>
       <td>executor</td>
       <td>输入</td>
-      <td>op执行器，包含了算子计算流程。</td>
+      <td>op 执行器，包含了算子计算流程。</td>
     </tr>
     <tr>
       <td>stream</td>
       <td>输入</td>
-      <td>指定执行任务的Stream。</td>
+      <td>指定执行任务的 Stream。</td>
     </tr>
   </tbody>
   </table>
 
 - **返回值**
 
-  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../docs/zh/context/aclnn_return_code.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn 返回码](../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 
 - 确定性计算：
-  - aclnnPermute默认确定性实现。
+  - aclnnPermute 默认确定性实现。
 
 ## 调用示例
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
-```Cpp
+```cpp
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"

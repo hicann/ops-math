@@ -133,7 +133,7 @@ int main()
     aclTensor* max = nullptr;
     aclTensor* out = nullptr;
 
-    ret = PrepareInputAndOutput(selfShape, maxShape, outShape, &selfDeviceAddr, &self, &maxDeviceAddr, &max,
+    ret = PrepareInputAndOutput(selfShape, outShape, maxShape, &selfDeviceAddr, &self, &maxDeviceAddr, &max,
                                 &outDeviceAddr, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
