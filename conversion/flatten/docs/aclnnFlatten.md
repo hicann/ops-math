@@ -81,7 +81,7 @@ aclnnStatus aclnnFlatten(
       <td class="tg-0pky">self（aclTensor*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">表示需要进行flatten的输入。</td>
-      <td class="tg-0pky">self最大维度不能超过2。</td>
+      <td class="tg-0pky">self最大维度不能超过8。</td>
       <td class="tg-0pky">INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、BFLOAT16、FLOAT、FLOAT16</td>
       <td class="tg-0pky">ND</td>
       <td class="tg-0pky">2-8</td>
@@ -293,6 +293,7 @@ int main() {
   aclTensor* self = nullptr;
   aclTensor* out = nullptr;
   std::vector<float> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
+  // outHostData 仅为占位初值；aclnnFlatten 执行后 out 应等于 self 的扁平化结果 {0, 1, 2, 3, 4, 5, 6, 7}
   std::vector<float> outHostData = {1, 1, 1, 1, 0, 0, 0, 0};
 
   ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
@@ -326,6 +327,13 @@ int main() {
   CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
   for (int64_t i = 0; i < size; i++) {
     LOG_PRINT("result[%ld] is: %f\n", i, resultData[i]);
+  }
+  std::vector<float> expectedData = {0, 1, 2, 3, 4, 5, 6, 7};
+  for (int64_t i = 0; i < size; i++) {
+    if (resultData[i] != expectedData[i]) {
+      LOG_PRINT("result mismatch at [%ld], expected %f got %f\n", i, expectedData[i], resultData[i]);
+      return -1;
+    }
   }
 
   aclDestroyTensor(self);
