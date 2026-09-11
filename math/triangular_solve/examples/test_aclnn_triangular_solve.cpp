@@ -105,29 +105,29 @@ int main()
 
     // 2. 构造输入与输出，需要根据API的接口自定义构造
     std::vector<int64_t> selfShape = {3, 1};
-    std::vector<int64_t> otherShape = {3, 3};
+    std::vector<int64_t> aShape = {3, 3};
     std::vector<int64_t> xOutShape = {3, 1};
     std::vector<int64_t> mOutShape = {3, 3};
     DeviceMemPtr selfDeviceAddr(nullptr, &aclrtFree);
-    DeviceMemPtr otherDeviceAddr(nullptr, &aclrtFree);
+    DeviceMemPtr aDeviceAddr(nullptr, &aclrtFree);
     DeviceMemPtr xOutDeviceAddr(nullptr, &aclrtFree);
     DeviceMemPtr mOutDeviceAddr(nullptr, &aclrtFree);
     TensorPtr self(nullptr, &aclDestroyTensor);
-    TensorPtr other(nullptr, &aclDestroyTensor);
+    TensorPtr A(nullptr, &aclDestroyTensor);
     TensorPtr xOut(nullptr, &aclDestroyTensor);
     TensorPtr mOut(nullptr, &aclDestroyTensor);
     bool upper = true;
     bool transpose = false;
     bool unitriangular = false;
     std::vector<float> selfHostData = {1, 2, 3};
-    std::vector<float> otherHostData = {1, 2, 3, 0, 4, 5, 0, 0, 6};
+    std::vector<float> aHostData = {1, 2, 3, 0, 4, 5, 0, 0, 6};
     std::vector<float> xOutHostData = {-0.2500, -0.1250, 0.5000};
     std::vector<float> mOutHostData = {1, 2, 3, 0, 4, 5, 0, 0, 6};
     // 创建self aclTensor
     ret = CreateAclTensor(selfHostData, selfShape, aclDataType::ACL_FLOAT, selfDeviceAddr, self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
-    // 创建other aclTensor
-    ret = CreateAclTensor(otherHostData, otherShape, aclDataType::ACL_FLOAT, otherDeviceAddr, other);
+    // 创建A aclTensor
+    ret = CreateAclTensor(aHostData, aShape, aclDataType::ACL_FLOAT, aDeviceAddr, A);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建xOut aclTensor
     ret = CreateAclTensor(xOutHostData, xOutShape, aclDataType::ACL_FLOAT, xOutDeviceAddr, xOut);
@@ -139,7 +139,7 @@ int main()
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
     // 调用aclnnTriangularSolve第一段接口
-    ret = aclnnTriangularSolveGetWorkspaceSize(self.get(), other.get(), upper, transpose, unitriangular, xOut.get(),
+    ret = aclnnTriangularSolveGetWorkspaceSize(self.get(), A.get(), upper, transpose, unitriangular, xOut.get(),
                                                mOut.get(), &workspaceSize, &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnTriangularSolveGetWorkspaceSize failed. ERROR: %d\n", ret);
               return ret);

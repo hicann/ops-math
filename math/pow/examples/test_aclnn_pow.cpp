@@ -87,7 +87,7 @@ int main()
     // 创建self aclTensor
     ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
-    // 创建threshold aclScalar
+    // 创建exponent aclScalar
     exponent = aclCreateScalar(&exponentVal, aclDataType::ACL_FLOAT);
     CHECK_RET(exponent != nullptr, return ret);
     // 创建out aclTensor
@@ -144,7 +144,7 @@ int main()
 
     auto inplaceSize = GetShapeSize(selfShape);
     std::vector<float> inplaceResultData(inplaceSize, 0);
-    ret = aclrtMemcpy(inplaceResultData.data(), inplaceResultData.size() * sizeof(inplaceResultData[0]), outDeviceAddr,
+    ret = aclrtMemcpy(inplaceResultData.data(), inplaceResultData.size() * sizeof(inplaceResultData[0]), selfDeviceAddr,
                       inplaceSize * sizeof(inplaceResultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
     for (int64_t i = 0; i < inplaceSize; i++) {

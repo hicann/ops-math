@@ -91,7 +91,7 @@ int main()
     void* selfDeviceAddr = nullptr;
     void* tensor1DeviceAddr = nullptr;
     void* tensor2DeviceAddr = nullptr;
-    aclTensor* self = nullptr;
+    aclTensor* selfRef = nullptr;
     aclTensor* tensor1 = nullptr;
     aclTensor* tensor2 = nullptr;
     aclScalar* value = nullptr;
@@ -102,7 +102,7 @@ int main()
     float scalarValue = 1.2f;
 
     // 创建self aclTensor
-    ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &self);
+    ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT, &selfRef);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建tensor1 aclTensor
     ret = CreateAclTensor(tensor1HostData, tensor1Shape, &tensor1DeviceAddr, aclDataType::ACL_FLOAT, &tensor1);
@@ -112,13 +112,13 @@ int main()
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建value aclScalar
     value = aclCreateScalar(&scalarValue, aclDataType::ACL_FLOAT);
-    CHECK_RET(value != nullptr, return ret);
+    CHECK_RET(value != nullptr, return ACL_ERROR_INTERNAL_ERROR);
 
     // 3. 调用CANN算子库API，需要修改为具体的Api名称
     uint64_t workspaceSize = 0;
     aclOpExecutor* executor;
     // 调用aclnnInplaceAddcmul第一段接口
-    ret = aclnnInplaceAddcmulGetWorkspaceSize(self, tensor1, tensor2, value, &workspaceSize, &executor);
+    ret = aclnnInplaceAddcmulGetWorkspaceSize(selfRef, tensor1, tensor2, value, &workspaceSize, &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnInplaceAddcmulGetWorkspaceSize failed. ERROR: %d\n", ret);
               return ret);
     // 根据第一段接口计算出的workspaceSize申请device内存
@@ -146,7 +146,7 @@ int main()
     }
 
     // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
-    aclDestroyTensor(self);
+    aclDestroyTensor(selfRef);
     aclDestroyTensor(tensor1);
     aclDestroyTensor(tensor2);
     aclDestroyScalar(value);

@@ -116,7 +116,7 @@ int main()
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建value aclScalar
     value = aclCreateScalar(&scalarValue, aclDataType::ACL_FLOAT);
-    CHECK_RET(value != nullptr, return ret);
+    CHECK_RET(value != nullptr, return ACL_ERROR_INTERNAL_ERROR);
     // 创建out aclTensor
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_FLOAT, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
