@@ -158,7 +158,7 @@ static bool CheckOutputDims(const aclTensor* self, const aclIntArray* kernelSize
                                    op::Shape({outputChannels, outputSpatial}) :
                                    op::Shape({self->GetViewShape().GetDim(DIM_N), outputChannels, outputSpatial});
     if (outShape != out->GetViewShape()) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expect out shape [%s], but got: [%s].", op::ToString(outShape).GetString(),
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expect out shape %s, but got: %s.", op::ToString(outShape).GetString(),
                 op::ToString(out->GetViewShape()).GetString());
         return false;
     }
