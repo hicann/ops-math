@@ -122,7 +122,7 @@ aclError ExecOpApi(aclTensor* self, aclTensor* qOut, aclTensor* rOut, int64_t mo
 
     // 拷贝 qOut
     auto size1 = GetShapeSize(qOutShape);
-    std::vector<double> resultData1(size1, 0);
+    std::vector<float> resultData1(size1, 0);
     ret = aclrtMemcpy(resultData1.data(), resultData1.size() * sizeof(resultData1[0]), qOutDeviceAddr,
                       size1 * sizeof(resultData1[0]), ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);

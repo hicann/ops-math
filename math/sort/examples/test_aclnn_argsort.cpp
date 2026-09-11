@@ -118,7 +118,7 @@ int main()
     // 创建self aclTensor
     ret = CreateAclTensor(selfHostData, selfShape, aclDataType::ACL_INT64, selfDeviceAddr, self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
-    // 创建outValues和outIndices aclTensor
+    // 创建outIndices aclTensor
     ret = CreateAclTensor(outIndicesHostData, outIndicesShape, aclDataType::ACL_INT64, outIndicesDeviceAddr,
                           outIndices);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
