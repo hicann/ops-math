@@ -417,7 +417,7 @@ aclnnStatus aclnnInplaceClampMaxTensor(
 
 **aclnnClampMaxTensor调用示例：**
 
-```Cpp
+```cpp
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
@@ -544,7 +544,7 @@ int main() {
   aclTensor* out = nullptr;
 
   ret = PrepareInputAndOutput(
-      selfShape, maxShape, outShape, &selfDeviceAddr, &self, &maxDeviceAddr, &max, &outDeviceAddr, &out);
+      selfShape, outShape, maxShape, &selfDeviceAddr, &self, &maxDeviceAddr, &max, &outDeviceAddr, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   // 3.调用CANN算子库API，需要修改为具体的API名称
@@ -589,7 +589,7 @@ int main() {
 
 **aclnnInplaceClampMaxTensor调用示例：**
 
-```Cpp
+```cpp
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
@@ -741,7 +741,7 @@ int main() {
   ReleaseTensorAndScalar(self, max);
 
   // 7.释放device资源，需要根据具体API的接口定义修改
-  ReleaseDevice(selfDeviceAddr, maxDeviceAddr,  workspaceSize, workspaceAddr, stream, deviceId);
+  ReleaseDevice(selfDeviceAddr, maxDeviceAddr, workspaceSize, workspaceAddr, stream, deviceId);
 
   return 0;
 }

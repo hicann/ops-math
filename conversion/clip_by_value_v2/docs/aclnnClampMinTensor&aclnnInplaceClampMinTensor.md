@@ -335,7 +335,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
     <tr>
       <td class="tg-0pky">ACLNN_ERR_PARAM_NULLPTR</td>
       <td class="tg-0pky">161001</td>
-      <td class="tg-0pky">传入的selfRef为空指针，min为空指针。</td>
+      <td class="tg-0pky">传入的selfRef为空指针，clipValueMin为空指针。</td>
     </tr>
     <tr>
       <td class="tg-0pky" rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
@@ -343,13 +343,13 @@ aclnnStatus aclnnInplaceClampMinTensor(
       <td class="tg-0pky">selfRef的数据类型和数据格式不在支持的范围之内。</td>
     </tr>
     <tr>
-      <td class="tg-0lax">selfRef和min的shape不满足broadcast关系。</td>
+      <td class="tg-0lax">selfRef和clipValueMin的shape不满足broadcast关系。</td>
     </tr>
     <tr>
-      <td class="tg-0lax">selfRef和min类型推导失败，或推导类型无法转为selfRef的数据类型。</td>
+      <td class="tg-0lax">selfRef和clipValueMin类型推导失败，或推导类型无法转为selfRef的数据类型。</td>
     </tr>
     <tr>
-      <td class="tg-0lax">selfRef和min的维度大小超过8。</td>
+      <td class="tg-0lax">selfRef和clipValueMin的维度大小超过8。</td>
     </tr>
   </tbody>
   </table>
@@ -407,7 +407,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
 
 **aclnnClampMinTensor示例代码：**
 
-```Cpp
+```cpp
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
@@ -534,7 +534,7 @@ int main() {
   aclTensor* out = nullptr;
 
   ret = PrepareInputAndOutput(
-      selfShape, minShape, outShape, &selfDeviceAddr, &self, &minDeviceAddr, &min, &outDeviceAddr, &out);
+      selfShape, outShape, minShape, &selfDeviceAddr, &self, &minDeviceAddr, &min, &outDeviceAddr, &out);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
 
   // 3.调用CANN算子库API，需要修改为具体的API
@@ -547,7 +547,7 @@ int main() {
   void* workspaceAddr = nullptr;
   if (workspaceSize > 0) {
     ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
-    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret;);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
   }
   // 调用aclnnClampMinTensor第二段接口
   ret = aclnnClampMinTensor(workspaceAddr, workspaceSize, executor, stream);
@@ -577,7 +577,7 @@ int main() {
 
 **aclnnInplaceClampMinTensor示例代码：**
 
-```Cpp
+```cpp
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
