@@ -85,7 +85,7 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* other, const ac
 static inline const std::initializer_list<op::DataType>& GetDtypeSupportList()
 {
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion >= SocVersion::ASCEND910B && socVersion <= SocVersion::ASCEND910E) {
+    if ((socVersion >= SocVersion::ASCEND910B && socVersion <= SocVersion::ASCEND910E) || IsRegBase()) {
         return ASCEND910B_DTYPE_SUPPORT_LIST;
     } else {
         return ASCEND910_DTYPE_SUPPORT_LIST;
@@ -95,7 +95,7 @@ static inline const std::initializer_list<op::DataType>& GetDtypeSupportList()
 static inline const std::initializer_list<op::DataType>& GetOutDtypeSupportList()
 {
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion >= SocVersion::ASCEND910B && socVersion <= SocVersion::ASCEND910E) {
+    if ((socVersion >= SocVersion::ASCEND910B && socVersion <= SocVersion::ASCEND910E) || IsRegBase()) {
         return ASCEND910B_OUT_DTYPE_SUPPORT_LIST;
     }
 
@@ -128,9 +128,8 @@ static bool CheckPromoteType(const aclTensor* self, const aclTensor* other, cons
         promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
     }
     if (promoteType == DataType::DT_UNDEFINED) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
         return false;
     }
 
@@ -138,9 +137,8 @@ static bool CheckPromoteType(const aclTensor* self, const aclTensor* other, cons
     if (IsRegBase(npuArch)) {
         auto supportList = GetDtypeSupportList();
         if (!CheckType(promoteType, supportList)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "aclnnLtTensor not implemented for input promote dtype %s.",
-                ToString(promoteType).GetString());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "aclnnLtTensor not implemented for input promote dtype %s.",
+                    ToString(promoteType).GetString());
             return false;
         }
     }
@@ -158,16 +156,15 @@ static bool CheckShape(const aclTensor* self, const aclTensor* other, const aclT
     op::Shape broadcastShape;
     OP_CHECK_BROADCAST_AND_INFER_SHAPE(self, other, broadcastShape, return false);
     if (broadcastShape != out->GetViewShape()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
-            op::ToString(broadcastShape).GetString(), op::ToString(out->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
+                op::ToString(broadcastShape).GetString(), op::ToString(out->GetViewShape()).GetString());
         return false;
     }
     return true;
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* self, const aclTensor* other, const aclTensor* out, DataType& promoteType)
+static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other, const aclTensor* out,
+                               DataType& promoteType)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, other, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -184,8 +181,8 @@ static aclnnStatus CheckParams(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnLtTensorGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnLtTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                          uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnLtTensor, DFX_IN(self, other), DFX_OUT(out));
 
@@ -252,8 +249,8 @@ aclnnStatus aclnnLtTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor
 }
 
 // InplaceLt
-aclnnStatus aclnnInplaceLtTensorGetWorkspaceSize(
-    const aclTensor* selfRef, const aclTensor* other, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceLtTensorGetWorkspaceSize(const aclTensor* selfRef, const aclTensor* other,
+                                                 uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     auto out = const_cast<aclTensor*>(selfRef);
     return aclnnLtTensorGetWorkspaceSize(selfRef, other, out, workspaceSize, executor);

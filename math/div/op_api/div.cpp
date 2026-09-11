@@ -17,6 +17,7 @@
 #include "opdev/op_log.h"
 #include "opdev/platform.h"
 #include "opdev/shape_utils.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -35,9 +36,11 @@ static const std::initializer_list<op::DataType> ASCEND910B_AICORE_DTYPE_SUPPORT
 static inline const std::initializer_list<op::DataType>& GetAiCoreDtypeSupportListBySocVersion()
 {
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
+        return ASCEND910B_AICORE_DTYPE_SUPPORT_LIST;
+    }
     switch (npuArch) {
-        case NpuArch::DAV_2201:
-        case NpuArch::DAV_3510: {
+        case NpuArch::DAV_2201: {
             return ASCEND910B_AICORE_DTYPE_SUPPORT_LIST;
         }
         case NpuArch::DAV_1001:
@@ -55,22 +58,21 @@ static bool IsAiCoreSupport(const aclTensor* self)
 }
 
 // AICORE算子kernel
-static const aclTensor* DivAiCore(
-    const aclTensor* self, const aclTensor* other, aclTensor* divOut, aclOpExecutor* executor)
+static const aclTensor* DivAiCore(const aclTensor* self, const aclTensor* other, aclTensor* divOut,
+                                  aclOpExecutor* executor)
 {
     L0_DFX(DivAiCore, self, other, divOut);
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore Div算子加入任务队列
     // Div是算子的OpType，self、other是算子的输入，divOut是算子的输出
     auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Div, OP_INPUT(self, other), OP_OUTPUT(divOut));
-    OP_CHECK(
-        ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "DivAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-        return nullptr);
+    OP_CHECK(ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "DivAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
+             return nullptr);
     return divOut;
 }
 
 // AICPU算子kernel
-static const aclTensor* DivAiCpu(
-    const aclTensor* self, const aclTensor* other, aclTensor* divOut, aclOpExecutor* executor)
+static const aclTensor* DivAiCpu(const aclTensor* self, const aclTensor* other, aclTensor* divOut,
+                                 aclOpExecutor* executor)
 {
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICPU，将AiCpu Div算子加入任务队列
     // Div是算子的OpType，self、other是算子的输入，divOut是算子的输出
@@ -78,9 +80,8 @@ static const aclTensor* DivAiCpu(
 
     static internal::AicpuTaskSpace space("Div");
     auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Div, OP_ATTR_NAMES(), OP_INPUT(self, other), OP_OUTPUT(divOut));
-    OP_CHECK(
-        ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "DivAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
-        return nullptr);
+    OP_CHECK(ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "DivAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
+             return nullptr);
     return divOut;
 }
 
@@ -88,9 +89,8 @@ const aclTensor* Div(const aclTensor* self, const aclTensor* other, aclOpExecuto
 {
     op::Shape broadcastShape;
     if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
-            op::ToString(other->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
+                op::ToString(other->GetViewShape()).GetString());
         return nullptr;
     }
 

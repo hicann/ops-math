@@ -24,6 +24,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "opdev/op_dfx.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -66,8 +67,9 @@ inline static bool CheckNotNull(const aclTensor* self, const aclTensor* other, c
 
 inline static bool CheckSocVersionIsSupportBf16(void)
 {
-    return GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-           GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E;
+    return (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
+            GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) ||
+           IsRegBase();
 }
 
 // 检查输入的数据类型是否在算子的支持列表内

@@ -16,6 +16,7 @@
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -34,8 +35,10 @@ static const std::initializer_list<op::DataType> REGBASE_DTYPE_SUPPORT_LIST = {
 static inline const std::initializer_list<op::DataType>& GetAiCoreDtypeSupportListBySocVersion()
 {
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
+        return REGBASE_DTYPE_SUPPORT_LIST;
+    }
     switch (npuArch) {
-        case NpuArch::DAV_3510:
         case NpuArch::DAV_2201: {
             return REGBASE_DTYPE_SUPPORT_LIST;
         }
@@ -52,27 +55,25 @@ static bool IsAiCoreSupport(const aclTensor* self)
 }
 
 // AICORE算子kernel
-static const aclTensor* FloorDivAiCore(
-    const aclTensor* self, const aclTensor* other, aclTensor* floorDivOut, aclOpExecutor* executor)
+static const aclTensor* FloorDivAiCore(const aclTensor* self, const aclTensor* other, aclTensor* floorDivOut,
+                                       aclOpExecutor* executor)
 {
     L0_DFX(FloorDivAiCore);
     auto ret = ADD_TO_LAUNCHER_LIST_AICORE(FloorDiv, OP_INPUT(self, other), OP_OUTPUT(floorDivOut));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "FloorDivAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-        return nullptr);
+    OP_CHECK(ret == ACLNN_SUCCESS,
+             OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "FloorDivAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."), return nullptr);
     return floorDivOut;
 }
 
 // AICPU-tf算子kernel
-static const aclTensor* FloorDivAiCpu(
-    const aclTensor* self, const aclTensor* other, aclTensor* floorDivOut, aclOpExecutor* executor)
+static const aclTensor* FloorDivAiCpu(const aclTensor* self, const aclTensor* other, aclTensor* floorDivOut,
+                                      aclOpExecutor* executor)
 {
     L0_DFX(FloorDivAiCpu);
     static internal::AicpuTaskSpace space("FloorDiv", ge::DEPEND_IN_SHAPE, true);
     auto ret = ADD_TO_LAUNCHER_LIST_AICPU(FloorDiv, OP_ATTR_NAMES(), OP_INPUT(self, other), OP_OUTPUT(floorDivOut));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "FloorDivAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
-        return nullptr);
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "FloorDivAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
+             return nullptr);
     return floorDivOut;
 }
 
@@ -80,9 +81,8 @@ const aclTensor* FloorDiv(const aclTensor* self, const aclTensor* other, aclOpEx
 {
     op::Shape broadcastShape;
     if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
-            op::ToString(other->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
+                op::ToString(other->GetViewShape()).GetString());
         return nullptr;
     }
     auto out = executor->AllocTensor(broadcastShape, self->GetDataType());
@@ -97,12 +97,11 @@ const aclTensor* FloorDiv(const aclTensor* self, const aclTensor* other, bool is
 {
     op::Shape broadcastShape;
     if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
-            op::ToString(other->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
+                op::ToString(other->GetViewShape()).GetString());
         return nullptr;
     }
-    
+
     aclTensor* out;
     if (isScalar || self->GetDataType() == other->GetDataType()) {
         out = executor->AllocTensor(broadcastShape, self->GetDataType());

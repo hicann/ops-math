@@ -47,12 +47,12 @@ static constexpr int64_t DIM_FOUR = 4;
 static inline const std::initializer_list<DataType>& GetAiCoreDtypeSupportListBySocVersion()
 {
     auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(curArch)) {
+        return REGBASE_AICORE_DTYPE_SUPPORT_LIST;
+    }
     switch (curArch) {
         case NpuArch::DAV_2201: {
             return ASCEND910B_AICORE_DTYPE_SUPPORT_LIST;
-        }
-        case NpuArch::DAV_3510: {
-            return REGBASE_AICORE_DTYPE_SUPPORT_LIST;
         }
         case NpuArch::DAV_1001: {
             return ASCEND910_AICORE_DTYPE_SUPPORT_LIST;

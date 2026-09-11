@@ -45,9 +45,11 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_COMPLEX = {o
 
 static const std::initializer_list<DataType>& GetDtypeSupportList(NpuArch npuArch, SocVersion socVersion)
 {
+    if (IsRegBase(npuArch)) {
+        return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
+    }
     switch (npuArch) {
-        case NpuArch::DAV_2201:
-        case NpuArch::DAV_3510: {
+        case NpuArch::DAV_2201: {
             return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
         }
         case NpuArch::DAV_1001: {

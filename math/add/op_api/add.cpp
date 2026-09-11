@@ -40,9 +40,11 @@ static inline const std::initializer_list<DataType>& GetAiCoreDtypeSupportListBy
 {
     auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
     OP_LOGI("AddL0", "curArch is %u", static_cast<uint32_t>(curArch));
+    if (IsRegBase(curArch)) {
+        return ASCEND910B_AICORE_DTYPE_SUPPORT_LIST;
+    }
     switch (curArch) {
-        case NpuArch::DAV_2201:
-        case NpuArch::DAV_3510: {
+        case NpuArch::DAV_2201: {
             return ASCEND910B_AICORE_DTYPE_SUPPORT_LIST;
         }
         case NpuArch::DAV_1001: {

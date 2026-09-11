@@ -19,6 +19,7 @@
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 
@@ -42,8 +43,9 @@ static const std::initializer_list<op::DataType> ASCEND610LITE_DTYPE_SUPPORT_LIS
 static bool IsAiCoreSupport(const aclTensor* self)
 {
     // 获取芯片类型,判断是1971还是1980
-    if (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-        GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) {
+    if ((GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
+         GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) ||
+        IsRegBase()) {
         return CheckType(self->GetDataType(), ASCEND910B_AICORE_DTYPE_SUPPORT_LIST);
     }
 
@@ -55,8 +57,8 @@ static bool IsAiCoreSupport(const aclTensor* self)
 }
 
 // AICORE算子kernel
-static const aclTensor* SubAiCore(
-    const aclTensor* self, const aclTensor* other, aclTensor* subOut, aclOpExecutor* executor)
+static const aclTensor* SubAiCore(const aclTensor* self, const aclTensor* other, aclTensor* subOut,
+                                  aclOpExecutor* executor)
 {
     L0_DFX(SubAiCore, self, other, subOut);
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore Sub算子加入任务队列
@@ -66,8 +68,8 @@ static const aclTensor* SubAiCore(
 }
 
 // AICPU算子kernel
-static const aclTensor* SubAiCpu(
-    const aclTensor* self, const aclTensor* other, aclTensor* subOut, aclOpExecutor* executor)
+static const aclTensor* SubAiCpu(const aclTensor* self, const aclTensor* other, aclTensor* subOut,
+                                 aclOpExecutor* executor)
 {
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICPU，将AiCpu Sub算子加入任务队列
     // Sub是算子的OpType，self、other是算子的输入，subOut是算子的输出
@@ -84,9 +86,8 @@ const aclTensor* Sub(const aclTensor* self, const aclTensor* other, aclOpExecuto
     // 通过输入shape推导算子输出shape
     op::Shape broadcastShape;
     if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
-            op::ToString(other->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
+                op::ToString(other->GetViewShape()).GetString());
         return nullptr;
     }
 

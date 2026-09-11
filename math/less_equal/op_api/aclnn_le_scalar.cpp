@@ -1,5 +1,5 @@
 /**
-  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_910_LIST = {
     op::DataType::DT_UINT32,    op::DataType::DT_UINT64,    op::DataType::DT_BOOL,  op::DataType::DT_UINT16,
     op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128};
 
-static const std::initializer_list<op::DataType> REGBASE_OUT_DTYPE_SUPPORT_LIST  = {
+static const std::initializer_list<op::DataType> REGBASE_OUT_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT,     op::DataType::DT_INT32,      op::DataType::DT_INT64, op::DataType::DT_FLOAT16,
     op::DataType::DT_INT16,     op::DataType::DT_INT8,       op::DataType::DT_UINT8, op::DataType::DT_DOUBLE,
     op::DataType::DT_UINT32,    op::DataType::DT_UINT64,     op::DataType::DT_BOOL,  op::DataType::DT_UINT16,
@@ -147,8 +147,8 @@ static inline const std::initializer_list<op::DataType>& GetDtypeSupportList()
 static inline const std::initializer_list<op::DataType>& GetOutputDtypeSupportList()
 {
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    if (socVersion >= SocVersion::ASCEND910B && socVersion <= SocVersion::ASCEND910E) {
-        return REGBASE_OUT_DTYPE_SUPPORT_LIST ;
+    if ((socVersion >= SocVersion::ASCEND910B && socVersion <= SocVersion::ASCEND910E) || IsRegBase()) {
+        return REGBASE_OUT_DTYPE_SUPPORT_LIST;
     }
     return OUT_DTYPE_SUPPORT_910_LIST;
 }
@@ -159,14 +159,11 @@ static bool CheckDtypeValid(const aclTensor* self, const aclScalar* other, const
     OP_CHECK_DTYPE_NOT_SUPPORT(self, supportList, return false);
     OP_CHECK_DTYPE_NOT_SUPPORT(other, supportList, return false);
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
-    auto outSuportList = IsRegBase(npuArch) ?
-                         GetOutputDtypeSupportList() :
-                         supportList;
+    auto outSuportList = IsRegBase(npuArch) ? GetOutputDtypeSupportList() : supportList;
     op::DataType outType = out->GetDataType();
     if ((!CheckType(outType, outSuportList)) && (outType != DataType::DT_BOOL)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "out dtype %s should be in dtype support list [%s].",
-            op::ToString(out->GetDataType()).GetString(), op::ToString(outSuportList).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "out dtype %s should be in dtype support list [%s].",
+                op::ToString(out->GetDataType()).GetString(), op::ToString(outSuportList).GetString());
         return false;
     }
 
@@ -197,9 +194,8 @@ static bool CheckPromoteType(const aclTensor* self, const aclScalar* other, cons
     // 检查self和other能否做数据类型推导
     op::DataType promoteType = PromoteTypeScalar(self, other);
     if (promoteType == DataType::DT_UNDEFINED) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
         return false;
     }
 
@@ -210,11 +206,10 @@ static bool CheckPromoteType(const aclTensor* self, const aclScalar* other, cons
     if (IsRegBase(npuArch)) {
         const auto& supportList = GetDtypeSupportList();
         if (!CheckType(promoteType, supportList)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID,
-                "aclnnLeScalar not implemented for input dtype %s,"
-                "should be in dtype support list [%s].",
-                ToString(promoteType).GetString(), op::ToString(supportList).GetString());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                    "aclnnLeScalar not implemented for input dtype %s,"
+                    "should be in dtype support list [%s].",
+                    ToString(promoteType).GetString(), op::ToString(supportList).GetString());
             return false;
         }
     }
@@ -232,9 +227,8 @@ static bool CheckShape(const aclTensor* self, const aclTensor* out)
 
     // self和out的shape必须一致
     if (self->GetViewShape() != out->GetViewShape()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "self shape is different with out shape, self [%s], out [%s].",
-            op::ToString(self->GetViewShape()).GetString(), op::ToString(out->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self shape is different with out shape, self [%s], out [%s].",
+                op::ToString(self->GetViewShape()).GetString(), op::ToString(out->GetViewShape()).GetString());
         return false;
     }
 
@@ -258,8 +252,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclScalar* other, co
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus aclnnLeScalarCommon(
-    const aclTensor* self, const aclScalar* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus aclnnLeScalarCommon(const aclTensor* self, const aclScalar* other, aclTensor* out,
+                                       uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     // 固定写法，参数检查
     auto ret = CheckParams(self, other, out);
@@ -309,8 +303,8 @@ static aclnnStatus aclnnLeScalarCommon(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnLeScalarGetWorkspaceSize(
-    const aclTensor* self, const aclScalar* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnLeScalarGetWorkspaceSize(const aclTensor* self, const aclScalar* other, aclTensor* out,
+                                          uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnLeScalar, DFX_IN(self, other), DFX_OUT(out));
     return aclnnLeScalarCommon(self, other, out, workspaceSize, executor);
@@ -323,8 +317,8 @@ aclnnStatus aclnnLeScalar(void* workspace, uint64_t workspaceSize, aclOpExecutor
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnInplaceLeScalarGetWorkspaceSize(
-    aclTensor* selfRef, const aclScalar* other, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceLeScalarGetWorkspaceSize(aclTensor* selfRef, const aclScalar* other, uint64_t* workspaceSize,
+                                                 aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceLeScalar, DFX_IN(selfRef, other), DFX_OUT(selfRef));
     return aclnnLeScalarCommon(selfRef, other, selfRef, workspaceSize, executor);

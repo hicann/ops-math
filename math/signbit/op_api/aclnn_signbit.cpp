@@ -47,9 +47,9 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST =
     op::DataType::DT_BF16};
 
 static const std::initializer_list<op::DataType> SIGNBIT_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT,  op::DataType::DT_INT32,  op::DataType::DT_INT64, op::DataType::DT_FLOAT16,
-    op::DataType::DT_INT8,   op::DataType::DT_UINT8, op::DataType::DT_DOUBLE, op::DataType::DT_UINT64,
-    op::DataType::DT_BOOL, op::DataType::DT_BF16};
+    op::DataType::DT_FLOAT, op::DataType::DT_INT32, op::DataType::DT_INT64,  op::DataType::DT_FLOAT16,
+    op::DataType::DT_INT8,  op::DataType::DT_UINT8, op::DataType::DT_DOUBLE, op::DataType::DT_UINT64,
+    op::DataType::DT_BOOL,  op::DataType::DT_BF16};
 
 static bool CanUseSignbit(const aclTensor* self)
 {
@@ -65,8 +65,9 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* out)
 
 static inline const std::initializer_list<op::DataType>& GetDtypeSupportList()
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-        GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) {
+    if ((GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
+         GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) ||
+        IsRegBase()) {
         return ASCEND910B_DTYPE_SUPPORT_LIST;
     } else {
         return ASCEND910_DTYPE_SUPPORT_LIST;
@@ -137,8 +138,8 @@ static aclnnStatus FillScalar(aclTensor* out, bool val, aclOpExecutor* executor)
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnSignbitGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnSignbitGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                         aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnSignbit, DFX_IN(self), DFX_OUT(out));
 
@@ -174,7 +175,8 @@ aclnnStatus aclnnSignbitGetWorkspaceSize(
     } else {
         // 创建数据为0的tensor
         FVector<float> zeroVector = {0};
-        auto zeroTensor = uniqueExecutor.get()->ConvertToTensor(zeroVector.data(), zeroVector.size(), self->GetDataType());
+        auto zeroTensor = uniqueExecutor.get()->ConvertToTensor(zeroVector.data(), zeroVector.size(),
+                                                                self->GetDataType());
         CHECK_RET(zeroTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
         signBitOpOut = l0op::Less(selfContiguous, zeroTensor, uniqueExecutor.get());
     }

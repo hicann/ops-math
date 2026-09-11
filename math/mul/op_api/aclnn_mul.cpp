@@ -121,8 +121,9 @@ static op::DataType GetScalarDefaultDtype(const op::DataType input)
 
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-        GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) {
+    if ((GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
+         GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) ||
+        IsRegBase()) {
         return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
     } else {
         return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;

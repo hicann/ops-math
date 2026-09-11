@@ -132,8 +132,9 @@ static bool CheckPowScalarTensorNotNull(const aclScalar* self, const aclTensor* 
 
 static inline bool CheckSocVersionIsSupportBf16(void)
 {
-    return GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-           GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E;
+    return (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
+            GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) ||
+           IsRegBase();
 }
 
 // 判断910B芯片上，pow是否走AICPU路径

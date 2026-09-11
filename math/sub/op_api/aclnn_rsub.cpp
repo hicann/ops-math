@@ -114,9 +114,11 @@ static op::DataType CombineCategoriesWithComplex(const op::DataType higher, cons
 static inline const std::initializer_list<op::DataType>& GetDtypeSupportListBySocVersion()
 {
     auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(curArch)) {
+        return ASCEND910B_DTYPE_SUPPORT_LIST;
+    }
     switch (curArch) {
-        case NpuArch::DAV_2201:
-        case NpuArch::DAV_3510: {
+        case NpuArch::DAV_2201: {
             return ASCEND910B_DTYPE_SUPPORT_LIST;
         }
         default: {

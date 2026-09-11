@@ -198,12 +198,12 @@ static bool HasEmptyTensor(const aclTensor* self)
 static const std::initializer_list<op::DataType> GetInputDtypeSupportList()
 {
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (IsRegBase(npuArch)) {
+        return REGBASE_DTYPE_SUPPORT_LIST;
+    }
     switch (npuArch) {
         case NpuArch::DAV_2201: {
             return DTYPE_SUPPORT_910B_LIST;
-        }
-        case NpuArch::DAV_3510: {
-            return REGBASE_DTYPE_SUPPORT_LIST;
         }
         case NpuArch::DAV_1001: {
             return DTYPE_SUPPORT_910_LIST;

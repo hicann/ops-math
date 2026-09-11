@@ -87,9 +87,11 @@ static inline const std::initializer_list<op::DataType>& GetDtypeSupportListBySo
 {
     auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
     OP_LOGI("AddAclnn", "curArch is %u", static_cast<uint32_t>(curArch));
+    if (IsRegBase(curArch)) {
+        return ASCEND910B_DTYPE_SUPPORT_LIST;
+    }
     switch (curArch) {
-        case NpuArch::DAV_2201:
-        case NpuArch::DAV_3510: {
+        case NpuArch::DAV_2201: {
             return ASCEND910B_DTYPE_SUPPORT_LIST;
         }
         case NpuArch::DAV_1001: {
