@@ -685,7 +685,9 @@ aclnnStatus CalcNdToNz(const aclTensor* srcTensor, int additionalDtype, int64_t*
     int64_t c0 = 16; // 默认NZ分型的c0为16
     if (!IsRegBase()) {
         aclnnStatus ret = FallbackAclop(srcTensor);
-        CHECK_RET(ret == ACLNN_SUCCESS, ret);
+        if (ret != ACLNN_SUCCESS) {
+            return ACLNN_ERR_RUNTIME_ERROR;
+        }
         c0 = BLOCK_SIZE / ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype));
         *actualFormat = op::Format::FORMAT_FRACTAL_NZ;
     }
@@ -784,7 +786,9 @@ aclnnStatus CalcToNd(const aclTensor* srcTensor, [[maybe_unused]] int additional
                      uint64_t* dstShapeSize, int* actualFormat)
 {
     aclnnStatus ret = FallbackAclop(srcTensor);
-    CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    if (ret != ACLNN_SUCCESS) {
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
     auto viewShape = srcTensor->GetViewShape();
     auto shapeDim = viewShape.GetDimNum();
     *dstShapeSize = shapeDim;
@@ -843,7 +847,13 @@ aclnnStatus CalcNCDHWToNDC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int
                                 uint64_t* dstShapeSize, int* actualFormat)
 {
     aclnnStatus ret = FallbackAclop(srcTensor);
-    CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    if (ret != ACLNN_SUCCESS) {
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    if (srcTensor->GetViewShape().GetDimNum() != DIMS_FIVE) {
+        OP_LOGW("The ViewShape dim of srcTensor must be 5 when converting to NCDHW, fallback to aclop.");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
     int64_t C0 = GetC0ByAdditionalDtype(srcTensor, additionalDtype);
     auto viewShape = srcTensor->GetViewShape();
     int64_t N = viewShape.GetDim(0);
@@ -863,7 +873,13 @@ aclnnStatus CalcNDHWCToNDC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int
                                 uint64_t* dstShapeSize, int* actualFormat)
 {
     aclnnStatus ret = FallbackAclop(srcTensor);
-    CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    if (ret != ACLNN_SUCCESS) {
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    if (srcTensor->GetViewShape().GetDimNum() != DIMS_FIVE) {
+        OP_LOGW("The ViewShape dim of srcTensor must be 5 when converting to NDHWC, fallback to aclop.");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
     int64_t C0 = GetC0ByAdditionalDtype(srcTensor, additionalDtype);
     auto viewShape = srcTensor->GetViewShape();
     int64_t N = viewShape.GetDim(0);
@@ -883,7 +899,13 @@ aclnnStatus CalcNCHWToNC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int a
                               uint64_t* dstShapeSize, int* actualFormat)
 {
     aclnnStatus ret = FallbackAclop(srcTensor);
-    CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    if (ret != ACLNN_SUCCESS) {
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    if (srcTensor->GetViewShape().GetDimNum() != DIMS_FOUR) {
+        OP_LOGW("The ViewShape dim of srcTensor must be 4 when converting to NCHW, fallback to aclop.");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
     int64_t C0 = GetC0ByAdditionalDtype(srcTensor, additionalDtype);
     auto viewShape = srcTensor->GetViewShape();
     int64_t N = viewShape.GetDim(0);
@@ -902,7 +924,13 @@ aclnnStatus CalcNHWCToNC1HWC0(const aclTensor* srcTensor, [[maybe_unused]] int a
                               uint64_t* dstShapeSize, int* actualFormat)
 {
     aclnnStatus ret = FallbackAclop(srcTensor);
-    CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    if (ret != ACLNN_SUCCESS) {
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    if (srcTensor->GetViewShape().GetDimNum() != DIMS_FOUR) {
+        OP_LOGW("The ViewShape dim of srcTensor must be 4 when converting to NHWC, aclnn fallback to aclop.");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
     int64_t C0 = GetC0ByAdditionalDtype(srcTensor, additionalDtype);
     auto viewShape = srcTensor->GetViewShape();
     int64_t N = viewShape.GetDim(0);
@@ -921,7 +949,13 @@ aclnnStatus CalcNCHWToFRACTALZ(const aclTensor* srcTensor, [[maybe_unused]] int 
                                uint64_t* dstShapeSize, int* actualFormat)
 {
     aclnnStatus ret = FallbackAclop(srcTensor);
-    CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    if (ret != ACLNN_SUCCESS) {
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    if (srcTensor->GetViewShape().GetDimNum() != DIMS_FOUR) {
+        OP_LOGW("The ViewShape dim of srcTensor must be 4 when converting to NCHW, aclnn fallback to aclop.");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
     int64_t C0 = GetC0ByAdditionalDtype(srcTensor, additionalDtype);
     int64_t N0 = N0_SIZE; // 私有格式的分形要求
     auto viewShape = srcTensor->GetViewShape();
@@ -942,7 +976,13 @@ aclnnStatus CalcHWCNToFRACTALZ(const aclTensor* srcTensor, [[maybe_unused]] int 
                                uint64_t* dstShapeSize, int* actualFormat)
 {
     aclnnStatus ret = FallbackAclop(srcTensor);
-    CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    if (ret != ACLNN_SUCCESS) {
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    if (srcTensor->GetViewShape().GetDimNum() != DIMS_FOUR) {
+        OP_LOGW("The ViewShape dim of srcTensor must be 4 when converting to HWCN, aclnn fallback to aclop.");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
     int64_t C0 = GetC0ByAdditionalDtype(srcTensor, additionalDtype);
     int64_t N0 = N0_SIZE; // 私有格式的分形要求
     auto viewShape = srcTensor->GetViewShape();
@@ -963,7 +1003,13 @@ aclnnStatus CalcNCDHWToFZ3D(const aclTensor* srcTensor, [[maybe_unused]] int add
                             uint64_t* dstShapeSize, int* actualFormat)
 {
     aclnnStatus ret = FallbackAclop(srcTensor);
-    CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    if (ret != ACLNN_SUCCESS) {
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    if (srcTensor->GetViewShape().GetDimNum() != DIMS_FIVE) {
+        OP_LOGW("The ViewShape dim of srcTensor must be 5 when converting to NCDHW, aclnn fallback to aclop.");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
     int64_t C0 = GetC0ByAdditionalDtype(srcTensor, additionalDtype);
     auto viewShape = srcTensor->GetViewShape();
     int64_t N = viewShape.GetDim(0);
@@ -985,7 +1031,13 @@ aclnnStatus CalcDHWCNToFZ3D(const aclTensor* srcTensor, [[maybe_unused]] int add
                             uint64_t* dstShapeSize, int* actualFormat)
 {
     aclnnStatus ret = FallbackAclop(srcTensor);
-    CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    if (ret != ACLNN_SUCCESS) {
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
+    if (srcTensor->GetViewShape().GetDimNum() != DIMS_FIVE) {
+        OP_LOGW("The ViewShape dim of srcTensor must be 5 when converting to DHWCN, aclnn fallback to aclop.");
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
     int64_t C0 = GetC0ByAdditionalDtype(srcTensor, additionalDtype);
     int64_t N0 = N0_SIZE; // 私有格式的分形要求
     auto viewShape = srcTensor->GetViewShape();
@@ -1007,7 +1059,9 @@ aclnnStatus CalcToNCDHW(const aclTensor* srcTensor, [[maybe_unused]] int additio
                         uint64_t* dstShapeSize, int* actualFormat)
 {
     aclnnStatus ret = FallbackAclop(srcTensor);
-    CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    if (ret != ACLNN_SUCCESS) {
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
     if (srcTensor->GetViewShape().GetDimNum() != DIMS_FIVE) {
         OP_LOGW("The ViewShape dim of srcTensor must be 5 when converting to NCDHW, fallback to aclop.");
         return ACLNN_ERR_RUNTIME_ERROR;
@@ -1029,7 +1083,9 @@ aclnnStatus CalcToNCHW(const aclTensor* srcTensor, [[maybe_unused]] int addition
                        uint64_t* dstShapeSize, int* actualFormat)
 {
     aclnnStatus ret = FallbackAclop(srcTensor);
-    CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    if (ret != ACLNN_SUCCESS) {
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
     if (srcTensor->GetViewShape().GetDimNum() != DIMS_FOUR) {
         OP_LOGW("The ViewShape dim of srcTensor must be 4 when converting to NCHW, fallback to aclop.");
         return ACLNN_ERR_RUNTIME_ERROR;
@@ -1050,7 +1106,9 @@ aclnnStatus CalcToNHWC(const aclTensor* srcTensor, [[maybe_unused]] int addition
                        uint64_t* dstShapeSize, int* actualFormat)
 {
     aclnnStatus ret = FallbackAclop(srcTensor);
-    CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    if (ret != ACLNN_SUCCESS) {
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
     if (srcTensor->GetViewShape().GetDimNum() != DIMS_FOUR) {
         OP_LOGW("The ViewShape dim of srcTensor must be 4 when converting to NHWC, fallback to aclop.");
         return ACLNN_ERR_RUNTIME_ERROR;
@@ -1071,7 +1129,9 @@ aclnnStatus CalcToHWCN(const aclTensor* srcTensor, [[maybe_unused]] int addition
                        uint64_t* dstShapeSize, int* actualFormat)
 {
     aclnnStatus ret = FallbackAclop(srcTensor);
-    CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    if (ret != ACLNN_SUCCESS) {
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
     if (srcTensor->GetViewShape().GetDimNum() != DIMS_FOUR) {
         OP_LOGW("The ViewShape dim of srcTensor must be 4 when converting to HWCN, fallback to aclop.");
         return ACLNN_ERR_RUNTIME_ERROR;
@@ -1092,7 +1152,9 @@ aclnnStatus CalcToDHWCN(const aclTensor* srcTensor, [[maybe_unused]] int additio
                         uint64_t* dstShapeSize, int* actualFormat)
 {
     aclnnStatus ret = FallbackAclop(srcTensor);
-    CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    if (ret != ACLNN_SUCCESS) {
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
     if (srcTensor->GetViewShape().GetDimNum() != DIMS_FIVE) {
         OP_LOGW("The ViewShape dim of srcTensor must be 5 when converting to DHWCN, fallback to aclop.");
         return ACLNN_ERR_RUNTIME_ERROR;
@@ -1114,7 +1176,9 @@ aclnnStatus CalcToNDHWC(const aclTensor* srcTensor, [[maybe_unused]] int additio
                         uint64_t* dstShapeSize, int* actualFormat)
 {
     aclnnStatus ret = FallbackAclop(srcTensor);
-    CHECK_RET(ret == ACLNN_SUCCESS, ret);
+    if (ret != ACLNN_SUCCESS) {
+        return ACLNN_ERR_RUNTIME_ERROR;
+    }
     if (srcTensor->GetViewShape().GetDimNum() != DIMS_FIVE) {
         OP_LOGW("The ViewShape dim of srcTensor must be 5 when converting to NDHWC, fallback to aclop.");
         return ACLNN_ERR_RUNTIME_ERROR;
