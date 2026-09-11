@@ -68,7 +68,7 @@ aclnnStatus aclnnArgMax(
         <td>输入</td>
         <td>输入Tensor。</td>
         <td>-</td>
-        <td>FLOAT、FLOAT16、BFLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8</td>
+        <td>FLOAT、FLOAT16、BFLOAT16、DOUBLE、INT8、INT16、INT32、INT64、UINT8、UINT16</td>
         <td>ND</td>
         <td>-</td>
         <td>√</td>
@@ -126,7 +126,8 @@ aclnnStatus aclnnArgMax(
     </tbody>
     </table>
 
-  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16数据类型。
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：不支持BFLOAT16、UINT16数据类型。
+  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：不支持UINT16数据类型。
 
 - **返回值**：
 

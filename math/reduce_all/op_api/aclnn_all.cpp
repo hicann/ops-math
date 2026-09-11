@@ -182,7 +182,7 @@ static bool CheckShape(const aclTensor* self, const aclTensor* out, const aclInt
     if (outShape == out->GetViewShape()) {
         return true;
     }
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expect out shape [%s], but got: [%s].", op::ToString(outShape).GetString(),
+    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expect out shape %s, but got: %s.", op::ToString(outShape).GetString(),
             op::ToString(out->GetViewShape()).GetString());
     return false;
 }

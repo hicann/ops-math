@@ -112,7 +112,7 @@ aclnnStatus aclnnAny(
         <td>输出</td>
         <td>输出Tensor。</td>
         <td>-</td>
-        <td>BOOL</td>
+        <td>BOOL、UINT8</td>
         <td>ND</td>
         <td>-</td>
         <td>√</td>
