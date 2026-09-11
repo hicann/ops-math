@@ -56,6 +56,7 @@ public:
 
         this->Attr("dtype").AttrType(OPTIONAL).Int(0);
         this->AICore().AddConfig("ascend950");
+        this->AICore().AddConfig("ascend350");
     }
 };
 

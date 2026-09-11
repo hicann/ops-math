@@ -64,6 +64,7 @@ public:
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true);
         this->AICore().AddConfig("ascend950", aicoreconfig);
+        this->AICore().AddConfig("ascend350", aicoreconfig);
     }
 };
 OP_ADD(RandomUniformIntV2);

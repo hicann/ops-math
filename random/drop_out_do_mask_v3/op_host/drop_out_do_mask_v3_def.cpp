@@ -25,11 +25,10 @@ public:
 
     explicit DropOutDoMaskV3(const char* name) : OpDef(name)
     {
-        randomdef::RandomDtypeFmtGen gen(
-            {{"xDataType", xDataType},
-             {"maskDataType", maskDataType},
-             {"keepProbDataType", keepProbDataType},
-             {"baseFormat", baseFormat}});
+        randomdef::RandomDtypeFmtGen gen({{"xDataType", xDataType},
+                                          {"maskDataType", maskDataType},
+                                          {"keepProbDataType", keepProbDataType},
+                                          {"baseFormat", baseFormat}});
         const auto baseFormatSeq = gen.GetSequence<ge::Format>("baseFormat");
 
         this->Input("x")
@@ -64,6 +63,7 @@ public:
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true);
         this->AICore().AddConfig("ascend950");
+        this->AICore().AddConfig("ascend350");
     }
 };
 
