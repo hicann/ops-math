@@ -8,13 +8,13 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-
 #include "fill.h"
 #include "opdev/op_dfx.h"
 #include "opdev/shape_utils.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/aicpu/aicpu_task.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 #include <map>
 
 using namespace op;
@@ -26,15 +26,15 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_910 =
     op::DataType::DT_INT64, op::DataType::DT_INT8,    op::DataType::DT_BOOL};
 
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_GE910B = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT32, op::DataType::DT_INT64,
-    op::DataType::DT_INT8,  op::DataType::DT_BOOL,    op::DataType::DT_BF16, op::DataType::DT_UINT16,
+    op::DataType::DT_FLOAT,  op::DataType::DT_FLOAT16, op::DataType::DT_INT32, op::DataType::DT_INT64,
+    op::DataType::DT_INT8,   op::DataType::DT_BOOL,    op::DataType::DT_BF16,  op::DataType::DT_UINT16,
     op::DataType::DT_UINT32, op::DataType::DT_UINT64};
 
 // 判断芯片类型是否大于等于910B
 static inline bool CheckSocVersionGe910B(void)
 {
-    return GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-           GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E;
+    return GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+           GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase();
 }
 
 // 根据芯片类型、dtype判断算子是否支持走aicore
@@ -49,22 +49,21 @@ inline static bool IsAiCoreSupport(const aclTensor* self)
 }
 
 // AICORE算子kernel
-inline static const aclTensor* FillAiCore(
-    const aclTensor* dims, const aclTensor* value, aclTensor* fillOut, aclOpExecutor* executor)
+inline static const aclTensor* FillAiCore(const aclTensor* dims, const aclTensor* value, aclTensor* fillOut,
+                                          aclOpExecutor* executor)
 {
     L0_DFX(FillAiCore, dims, value, fillOut);
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore Fill算子加入任务队列
     // Fill是算子的OpType，dims、value是算子的输入，fillOut是算子的输出
     auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Fill, OP_INPUT(dims, value), OP_OUTPUT(fillOut));
-    OP_CHECK(
-        ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "FillAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-        return nullptr);
+    OP_CHECK(ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "FillAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
+             return nullptr);
     return fillOut;
 }
 
 // AICPU算子kernel
-static const aclTensor* FillAiCpu(
-    const aclTensor* dims, const aclTensor* value, aclTensor* fillOut, aclOpExecutor* executor)
+static const aclTensor* FillAiCpu(const aclTensor* dims, const aclTensor* value, aclTensor* fillOut,
+                                  aclOpExecutor* executor)
 {
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICPU，将AiCpu Fill算子加入任务队列
     // Fill是算子的OpType，dims、value是算子的输入，fillOut是算子的输出
@@ -73,17 +72,15 @@ static const aclTensor* FillAiCpu(
     static internal::AicpuTaskSpace space("Fill", ge::DEPEND_CONST_VALUE, true);
     op::DataType index_type = dims->GetDataType();
     op::DataType value_type = value->GetDataType();
-    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(
-        Fill, OP_ATTR_NAMES({"index_type", "T"}), OP_INPUT(dims, value), OP_OUTPUT(fillOut),
-        OP_ATTR(index_type, value_type));
-    OP_CHECK(
-        ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "FillAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
-        return nullptr);
+    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Fill, OP_ATTR_NAMES({"index_type", "T"}), OP_INPUT(dims, value),
+                                          OP_OUTPUT(fillOut), OP_ATTR(index_type, value_type));
+    OP_CHECK(ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "FillAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
+             return nullptr);
     return fillOut;
 }
 
-const aclTensor* Fill(
-    const aclTensor* dims, const aclTensor* value, const aclIntArray* outShape, aclOpExecutor* executor)
+const aclTensor* Fill(const aclTensor* dims, const aclTensor* value, const aclIntArray* outShape,
+                      aclOpExecutor* executor)
 {
     OP_LOGI("Entering l0 Fill");
     gert::Shape broadcast_shape;

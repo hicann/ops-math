@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-
 #include "aclnn_fill_scalar.h"
 #include "fill.h"
 #include "aclnn_kernels/cast.h"
@@ -22,6 +21,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "opdev/shape_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 /**
  * 实现说明：
@@ -58,23 +58,23 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_910_LIST = {
     op::DataType::DT_BOOL,  op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128};
 
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_GE910B_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_INT32,     op::DataType::DT_INT64,      op::DataType::DT_FLOAT16,
-    op::DataType::DT_INT16, op::DataType::DT_INT8,      op::DataType::DT_UINT8,      op::DataType::DT_DOUBLE,
-    op::DataType::DT_BOOL,  op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128, op::DataType::DT_BF16,
-    op::DataType::DT_UINT16, op::DataType::DT_UINT32, op::DataType::DT_UINT64};
+    op::DataType::DT_FLOAT,  op::DataType::DT_INT32,     op::DataType::DT_INT64,      op::DataType::DT_FLOAT16,
+    op::DataType::DT_INT16,  op::DataType::DT_INT8,      op::DataType::DT_UINT8,      op::DataType::DT_DOUBLE,
+    op::DataType::DT_BOOL,   op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128, op::DataType::DT_BF16,
+    op::DataType::DT_UINT16, op::DataType::DT_UINT32,    op::DataType::DT_UINT64};
 
 // 判断芯片类型是否大于等于910B
 static inline bool CheckSocVersionGe910B(void)
 {
-    return GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-           GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E;
+    return GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+           GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase();
 }
 
 inline static bool CheckDtypeValid(const aclTensor* self)
 {
     bool is910BSocVersion = CheckSocVersionGe910B();
-    const std::initializer_list<DataType> CURRENT_DTYPE_SUPPORT_LIST =
-        is910BSocVersion ? DTYPE_SUPPORT_GE910B_LIST : DTYPE_SUPPORT_910_LIST;
+    const std::initializer_list<DataType> CURRENT_DTYPE_SUPPORT_LIST = is910BSocVersion ? DTYPE_SUPPORT_GE910B_LIST :
+                                                                                          DTYPE_SUPPORT_910_LIST;
     // 检查self的数据类型是否在fill_scalar算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(self, CURRENT_DTYPE_SUPPORT_LIST, return false);
     return true;
@@ -85,9 +85,8 @@ inline static bool CheckPromoteType(const aclTensor* self, const aclScalar* valu
     // 检查value能否转换为推导后的数据类型
     op::DataType promoteType = op::PromoteType(self->GetDataType(), value->GetDataType());
     if (promoteType == DataType::DT_UNDEFINED) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s and value dtype %s can not promote dtype.",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(value->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s and value dtype %s can not promote dtype.",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(value->GetDataType()).GetString());
         return false;
     }
     return true;
@@ -116,8 +115,8 @@ inline static aclnnStatus CheckParams(const aclTensor* self, const aclScalar* va
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceFillScalarGetWorkspaceSize(
-    aclTensor* selfRef, const aclScalar* value, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceFillScalarGetWorkspaceSize(aclTensor* selfRef, const aclScalar* value, uint64_t* workspaceSize,
+                                                   aclOpExecutor** executor)
 {
     // 固定写法，参数检查
     L2_DFX_PHASE_1(aclnnInplaceFillScalar, DFX_IN(selfRef, value), DFX_OUT());

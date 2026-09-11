@@ -22,6 +22,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -37,8 +38,8 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
 
 static inline bool CheckSocVersionIsSupportBf16(void)
 {
-    return GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-           GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E;
+    return GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+           GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase();
 }
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
