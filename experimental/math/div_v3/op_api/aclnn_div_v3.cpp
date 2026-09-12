@@ -49,9 +49,8 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* other, const ac
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const aclTensor* out)
 {
     if (!CheckType(self->GetDataType(), DTYPE_SUPPORT_LIST)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "self dtype %s not in support list.",
-            op::ToString(self->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self dtype %s not in support list.",
+                op::ToString(self->GetDataType()).GetString());
         return false;
     }
     if (self->GetDataType() != other->GetDataType()) {
@@ -85,9 +84,8 @@ static bool CheckBroadcastShape(const aclTensor* self, const aclTensor* other, c
     BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape);
 
     if (broadcastShape != out->GetViewShape()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "broadcast shape %s != out shape %s.", op::ToString(broadcastShape).GetString(),
-            op::ToString(out->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "broadcast shape %s != out shape %s.",
+                op::ToString(broadcastShape).GetString(), op::ToString(out->GetViewShape()).GetString());
         return false;
     }
     return true;
@@ -116,11 +114,10 @@ static aclIntArray* GetShapeAsIntArray(const aclTensor* tensor, aclOpExecutor* e
     return executor->AllocIntArray(shape.data(), dimNum);
 }
 
-aclnnStatus aclnnDivV3GetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, int64_t mode, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnDivV3GetWorkspaceSize(const aclTensor* self, const aclTensor* other, int64_t mode, aclTensor* out,
+                                       uint64_t* workspaceSize, aclOpExecutor** executor)
 {
-    L2_DFX_PHASE_1(aclnnDivV3, DFX_IN(self, other), DFX_OUT(out));
+    L2_DFX_PHASE_1(aclnnDivV3, DFX_IN(self, other, mode), DFX_OUT(out));
 
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);

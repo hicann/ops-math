@@ -784,7 +784,7 @@ static const aclTensor* InputProcessing(const aclTensor* selfContiguous, int64_t
 aclnnStatus aclRfft1DGetWorkspaceSize(const aclTensor* self, int64_t n, int64_t dim, int64_t norm, aclTensor* out,
                                       uint64_t* workspaceSize, aclOpExecutor** executor)
 {
-    L2_DFX_PHASE_1(aclRfft1D, DFX_IN(self, n, norm), DFX_OUT(out));
+    L2_DFX_PHASE_1(aclRfft1D, DFX_IN(self, n, dim, norm), DFX_OUT(out));
     OP_LOGD("Rfft1D: n %ld, norm %ld", n, norm);
 
     auto uniqueExecutor = CREATE_EXECUTOR();

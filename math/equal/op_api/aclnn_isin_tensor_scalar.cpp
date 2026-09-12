@@ -189,10 +189,10 @@ static aclnnStatus CheckParams(const aclTensor* element, const aclScalar* testEl
 }
 
 aclnnStatus aclnnIsInTensorScalarGetWorkspaceSize(const aclTensor* element, const aclScalar* testElement,
-                                                  [[maybe_unused]] bool assumeUnique, bool invert, aclTensor* out,
+                                                  bool assumeUnique, bool invert, aclTensor* out,
                                                   uint64_t* workspaceSize, aclOpExecutor** executor)
 {
-    L2_DFX_PHASE_1(aclnnIsInTensorScalar, DFX_IN(element, testElement), DFX_OUT(out));
+    L2_DFX_PHASE_1(aclnnIsInTensorScalar, DFX_IN(element, testElement, assumeUnique, invert), DFX_OUT(out));
 
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
