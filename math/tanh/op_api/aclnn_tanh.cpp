@@ -51,8 +51,8 @@ static const std::initializer_list<op::DataType> DTYPE_CAST_LIST = {op::DataType
 
 static const std::initializer_list<DataType>& GetOutDtypeSupportList()
 {
-    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase()) {
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (curArch == NpuArch::DAV_2201 || IsRegBase(curArch)) {
         return ASCEND910B_DTYPE_OUT_LIST;
     } else {
         return ASCEND910_DTYPE_OUT_LIST;
@@ -69,8 +69,8 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* out)
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
     // 检查self的数据类型是否在tanh算子的支持列表内
-    bool isAscend910BSocVersion = (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-                                   GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E);
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    bool isAscend910BSocVersion = (curArch == NpuArch::DAV_2201 || IsRegBase(curArch));
     const std::initializer_list<op::DataType> CURRENT_DTYPE_SUPPORT_LIST = isAscend910BSocVersion ?
                                                                                ASCEND910B_DTYPE_SUPPORT_LIST :
                                                                                ASCEND910_DTYPE_SUPPORT_LIST;
