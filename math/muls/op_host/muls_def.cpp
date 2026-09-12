@@ -14,10 +14,8 @@
  */
 #include "register/op_def_registry.h"
 
-namespace ops
-{
-class Muls : public OpDef
-{
+namespace ops {
+class Muls : public OpDef {
 public:
     explicit Muls(const char* name) : OpDef(name)
     {
@@ -47,8 +45,9 @@ public:
             .PrecisionReduceFlag(true)
             .ExtendCfgInfo("opFile.value", "muls_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend350", aicoreConfig);
     }
 };
 
 OP_ADD(Muls);
-}  // namespace ops
+} // namespace ops
