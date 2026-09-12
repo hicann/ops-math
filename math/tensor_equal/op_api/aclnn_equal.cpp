@@ -95,7 +95,7 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const
     if (!CheckType(promoteType, DTYPE_SUPPORT_LIST)) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID,
                 "Self dtype %s and other dtype %s get promoteType dtype %s should be in "
-                "dtype support list [%s].",
+                "dtype support list %s.",
                 op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString(),
                 op::ToString(promoteType).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
         return false;
