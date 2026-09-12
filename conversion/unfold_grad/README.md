@@ -46,14 +46,14 @@
 | ---------- | -------------- | ------------------------------------------------------------ | ------------------------ | -------- |
 | gradOutput | 输入张量       | 表示梯度更新系数，shape为(..., (sizedim-size)/step+1, size)，要求满足gradOutput的第dim维等于$(inputSizes[dim]-size)/step+1$和gradOut的size等于inputSizes的size+1。 | FLOAT、FLOAT16、BFLOAT16 | ND       |
 | inputSizes | 输入数组       | 表示输出张量的形状，值为(..., sizedim)，inputSizes的size小于等于8。 | INT64                    | ND       |
-| dim        | 输入           | 公式中的$dim$。表示展开发生的维度。$dim$仅支持len($inputSizes$)-1或者len($inputSizes$)-2。。 | INT64                    | -        |
+| dim        | 输入           | 公式中的$dim$。表示展开发生的维度。$dim$仅支持len($inputSizes$)-1或者len($inputSizes$)-2。 | INT64                    | -        |
 | size       | 输入           | 公式中的$size$。表示展开的每个切片的大小。$size$需要满足$size$大于0且$size$小于等于$inputSizes$的第$dim$维。$dim$等于len($inputSizes$)-1时，fp32数据类型，$size$小于等于49088。fp16数据类型，$size$小于等于32720。$dim$等于len($inputSizes$)-2时，fp32数据类型，$size$小于等于88。fp16数据类型，$step$、$size$小于等于72。 | INT64                    | -        |
 | step       | 输入           | 公式中的$step$。表示每个切片之间的步长。$step$需要满足$step$大于0。$dim$等于len($inputSizes$)-1时，fp32数据类型，$size$小于等于49088。fp16数据类型，$size$小于等于32720。$dim$等于len($inputSizes$)-2时，fp32数据类型，$size$小于等于88。fp16数据类型，$step$、$size$小于等于72。 | INT64                    |          |
 | gradIn     | 输出           | 表示Unfold的对应梯度，数据类型必须和gradOut一致。            | FLOAT、FLOAT16、BFLOAT16 |          |
 
 ## 约束说明
 
-1. gradOut的shape满足约束： 
+1. gradOut的shape满足约束：
     - gradOut的第dim维等于(inputSizes[dim]-size)/step+1。
     - gradOut的size等于inputSizes的size+1。
 2. dim、size、step的要求：
