@@ -15,9 +15,8 @@
 #include "tikicpulib.h"
 #include "../../../../random_common/op_kernel/arch35/random_unified_tiling_data_arch35.h"
 
-extern "C" __global__ __aicore__ void stateless_uniform(
-    GM_ADDR shape, GM_ADDR seed, GM_ADDR offset, GM_ADDR from, GM_ADDR to,
-    GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling);
+extern "C" __global__ __aicore__ void stateless_uniform(GM_ADDR shape, GM_ADDR seed, GM_ADDR offset, GM_ADDR from,
+                                                        GM_ADDR to, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling);
 
 namespace {
 constexpr uint32_t kNumBlocks = 1;
@@ -29,10 +28,7 @@ constexpr int64_t MAX_THREADS_PER_SM = 2048;
 constexpr int64_t BLOCKS_PER_SM = MAX_THREADS_PER_SM / GPU_BLOCK_SIZE;
 constexpr int64_t UNROLL_FACTOR = 4;
 
-inline size_t Align32(size_t size)
-{
-    return (size + 31U) / 32U * 32U;
-}
+inline size_t Align32(size_t size) { return (size + 31U) / 32U * 32U; }
 
 void FillSplitBlock(RandomUnifiedSimtTilingDataStruct* td, int64_t numel)
 {
@@ -53,8 +49,7 @@ void FillSplitBlock(RandomUnifiedSimtTilingDataStruct* td, int64_t numel)
 }
 } // namespace
 
-class StatelessUniformKernelTest : public testing::Test {
-};
+class StatelessUniformKernelTest : public testing::Test {};
 
 // Test 1: float32, from=0.0, to=1.0, seed=42, shape=[16,16]=256
 TEST_F(StatelessUniformKernelTest, smoke_float32_default_range)
@@ -95,7 +90,7 @@ TEST_F(StatelessUniformKernelTest, smoke_float32_default_range)
     auto* yData = reinterpret_cast<float*>(y);
     int nonZeroCount = 0;
     for (int64_t i = 0; i < kElementCount; ++i) {
-        EXPECT_GE(yData[i], 0.0f) << "Element " << i << " is below from (0.0)";
+        EXPECT_GE(yData[i], 0.0f) << "Element " << i << " is below (0.0)";
         EXPECT_LT(yData[i], 1.0f) << "Element " << i << " is >= to (1.0)";
         if (yData[i] != 0.0f) {
             nonZeroCount++;
@@ -154,7 +149,7 @@ TEST_F(StatelessUniformKernelTest, smoke_float32_custom_range)
 
     auto* yData = reinterpret_cast<float*>(y);
     for (int64_t i = 0; i < kCount; ++i) {
-        EXPECT_GE(yData[i], kFrom) << "Element " << i << " is below from";
+        EXPECT_GE(yData[i], kFrom) << "Element " << i << " is below";
         EXPECT_LT(yData[i], kTo) << "Element " << i << " is >= to";
     }
 

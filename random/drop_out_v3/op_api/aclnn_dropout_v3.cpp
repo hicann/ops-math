@@ -148,7 +148,8 @@ static bool CheckTupleNullptr(std::tuple<aclTensor*, aclTensor*> tensorTuple)
 {
     static const int RESULT_NUM = 2;
     if (std::tuple_size<decltype(tensorTuple)>::value != RESULT_NUM) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The length of tuple returned by DropoutV3 is not 2.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The length of tuple returned by DropoutV3 is %zu, expected 2.",
+                std::tuple_size<decltype(tensorTuple)>::value);
         return false;
     }
 

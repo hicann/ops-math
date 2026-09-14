@@ -237,7 +237,7 @@ ge::graphStatus RandomTilingParseArch35(gert::TilingParseContext* context, const
                 OP_LOGE(context, "GetHardwareInfo Failed, vectorCoreNum:%ld, ubSize:%ld.", compileInfo->totalCoreNum,
                         compileInfo->ubSize),
                 return ge::GRAPH_FAILED);
-    OP_LOGD(context, "Get totalCoreNum:%ld, ubSize:%ld", compileInfo->totalCoreNum, compileInfo->ubSize);
+    OP_LOGD(context, "Get totalCoreNum:%ld, ubSize:%ld bytes", compileInfo->totalCoreNum, compileInfo->ubSize);
     return ge::GRAPH_SUCCESS;
 }
 

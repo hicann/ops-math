@@ -70,9 +70,10 @@ ge::graphStatus StatelessRandpermTiling::GetPlatformInfo()
                         ubSize_, SIMT_DCACHE_SIZE),
                 return ge::GRAPH_FAILED);
     ubSize_ -= SIMT_DCACHE_SIZE;
-    OP_LOGI(opName_,
-            "StatelessRandpermTiling::GetPlatformInfo ubSize_= %ld, simt dcache size = %ld, totalCoreNum_= %ld",
-            ubSize_, SIMT_DCACHE_SIZE, totalCoreNum_);
+    OP_LOGI(
+        opName_,
+        "StatelessRandpermTiling::GetPlatformInfo ubSize_= %ld bytes, simt dcache size = %ld bytes, totalCoreNum_= %ld",
+        ubSize_, SIMT_DCACHE_SIZE, totalCoreNum_);
     return ge::GRAPH_SUCCESS;
 }
 

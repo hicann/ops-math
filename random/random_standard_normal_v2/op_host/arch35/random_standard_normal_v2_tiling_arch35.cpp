@@ -83,7 +83,7 @@ static ge::graphStatus TilingPrepare4RandomStandardNormalV2Tiling(gert::TilingPa
                 OP_LOGE(context, "RandomStandardNormalV2 GetHardwareInfo Failed, vectorCoreNum:%ld, ubSize:%ld.",
                         compileInfo->totalCoreNum, compileInfo->ubSize),
                 return ge::GRAPH_FAILED);
-    OP_LOGD(context, "Get totalCoreNum:%ld, ubSize:%ld", compileInfo->totalCoreNum, compileInfo->ubSize);
+    OP_LOGD(context, "Get totalCoreNum:%ld, ubSize:%ld bytes", compileInfo->totalCoreNum, compileInfo->ubSize);
     return ge::GRAPH_SUCCESS;
 }
 
