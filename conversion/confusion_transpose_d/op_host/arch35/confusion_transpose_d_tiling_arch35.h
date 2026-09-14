@@ -23,7 +23,6 @@
 #include "log/log.h"
 #include "../../../transpose/op_host/arch35/transpose_tiling_arch35.h"
 
-using namespace std;
 namespace optiling {
 
 BEGIN_TILING_DATA_DEF(ConfusionTransposeDTilingData)
@@ -40,14 +39,14 @@ ge::graphStatus ConfusionTransposeDTilingForAscendC(gert::TilingContext* context
 
 struct ConfusionTransposeDParamInfo {
     gert::Shape xShape;
-    ge::DataType xDtype;
-    ge::Format xFormat;
+    ge::DataType xDtype = ge::DT_UNDEFINED;
+    ge::Format xFormat = ge::FORMAT_RESERVED;
     gert::Shape yShape;
-    ge::DataType yDtype;
-    ge::Format yFormat;
+    ge::DataType yDtype = ge::DT_UNDEFINED;
+    ge::Format yFormat = ge::FORMAT_RESERVED;
     gert::Shape perm;
     gert::Shape shape;
-    bool transpose_first;
+    bool transpose_first = false;
 };
 constexpr int64_t SPLIT_NUM = 16;
 constexpr int64_t MIN_DIM_ND = 1;
@@ -59,7 +58,7 @@ constexpr int64_t MAX_DIM_NZ2ND = 6;
 
 class ConfusionTransposeDTiling {
 public:
-    explicit ConfusionTransposeDTiling(gert::TilingContext* context) : tilingContext_(context){};
+    explicit ConfusionTransposeDTiling(gert::TilingContext* context) : tilingContext_(context) {};
 
     ge::graphStatus ParametersVerifying();
     void ProcessShapeInfo(ShapeInfo& shapeInfo);
