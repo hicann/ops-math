@@ -17,3 +17,9 @@ add_all_modules_sources(OPTYPE dynamic_stitch ACLNNTYPE aclnn_exclude COMPUTE_UN
 if(TARGET ${OPHOST_NAME}_tiling_obj)
     target_sources(${OPHOST_NAME}_tiling_obj PRIVATE op_host/dynamic_stitch_def.cpp)
 endif()
+
+# Keep graph_base loaded for the Host UT shared library under --as-needed linkers.
+if(OP_HOST_UT AND TARGET ${OP_TILING_MODULE_NAME}_cases_obj)
+    target_link_libraries(${OP_TILING_MODULE_NAME}_cases_obj INTERFACE
+        "-Wl,--no-as-needed,$<TARGET_FILE:graph_base>,--as-needed")
+endif()

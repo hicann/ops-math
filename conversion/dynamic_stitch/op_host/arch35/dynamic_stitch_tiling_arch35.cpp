@@ -58,20 +58,16 @@ ge::graphStatus DynamicStitchTilingClass::GetPlatformInfo()
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
         aicoreParams_.ubSize = ubSizePlatForm;
     } else {
-        auto compileInfoPtr = reinterpret_cast<const DynamicStitchCompileInfo*>(context_->GetCompileInfo());
-        OP_CHECK_IF(
-            compileInfoPtr == nullptr, OP_LOGE(context_->GetNodeName(), "compile info is null"),
-            return ge::GRAPH_FAILED);
+        auto compileInfoPtr = static_cast<const DynamicStitchCompileInfo*>(context_->GetCompileInfo());
+        OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_->GetNodeName(), "compile info is null"),
+                    return ge::GRAPH_FAILED);
         aicoreParams_.numBlocks = compileInfoPtr->blockDim;
         aicoreParams_.ubSize = compileInfoPtr->ubSize;
     }
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus DynamicStitchTilingClass::GetShapeAttrsInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus DynamicStitchTilingClass::GetShapeAttrsInfo() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus DynamicStitchTilingClass::CheckAndGetParam()
 {
@@ -82,31 +78,25 @@ ge::graphStatus DynamicStitchTilingClass::CheckAndGetParam()
     auto xInstanceInfo = computeNodeInfo->GetInputInstanceInfo(INPUT_X_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, xInstanceInfo);
     totalTensorCnt_ = indiceInstanceInfo->GetInstanceNum();
-    OP_CHECK_IF(
-        totalTensorCnt_ > MAX_TENSOR_NUM,
-        OP_LOGE_FOR_INVALID_TENSORNUM(
-            context_->GetNodeName(), "indices", totalTensorCnt_, std::to_string(MAX_TENSOR_NUM).c_str()),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(totalTensorCnt_ > MAX_TENSOR_NUM,
+                OP_LOGE_FOR_INVALID_TENSORNUM(context_->GetNodeName(), "indices", totalTensorCnt_,
+                                              std::to_string(MAX_TENSOR_NUM).c_str()),
+                return ge::GRAPH_FAILED);
     if (totalTensorCnt_ != static_cast<int64_t>(xInstanceInfo->GetInstanceNum())) {
-        std::string listLenMsg =
-            std::to_string(totalTensorCnt_) + " and " + std::to_string(xInstanceInfo->GetInstanceNum());
-        OP_LOGE_FOR_INVALID_TENSORNUMS_WITH_REASON(
-            context_->GetNodeName(), "indices and x", listLenMsg.c_str(),
-            "The number of tensors in indices and x must be the same");
+        std::string listLenMsg = std::to_string(totalTensorCnt_) + " and " +
+                                 std::to_string(xInstanceInfo->GetInstanceNum());
+        OP_LOGE_FOR_INVALID_TENSORNUMS_WITH_REASON(context_->GetNodeName(), "indices and x", listLenMsg.c_str(),
+                                                   "The number of tensors in indices and x must be the same");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(
-        CheckAndGetIndiceInputList() != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "CheckAndGetIndiceInputList failed."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CheckAndGetXInputList() != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "CheckAndGetXInputList failed."),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CheckAndGetOutput() != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "CheckAndGetOutput failed."),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CheckAttr() != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "Check attr failed."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckAndGetIndiceInputList() != ge::GRAPH_SUCCESS,
+                OP_LOGE(context_->GetNodeName(), "CheckAndGetIndiceInputList failed."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckAndGetXInputList() != ge::GRAPH_SUCCESS,
+                OP_LOGE(context_->GetNodeName(), "CheckAndGetXInputList failed."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckAndGetOutput() != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "CheckAndGetOutput failed."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckAttr() != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "Check attr failed."),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -115,26 +105,24 @@ ge::graphStatus DynamicStitchTilingClass::CheckAndGetIndiceInputList()
     totalTensorSum_ = 0;
     for (int32_t i = 0; i < totalTensorCnt_; i++) {
         auto indicesDesc = context_->GetDynamicInputDesc(INPUT_INDICES_IDX, i);
-        OP_CHECK_IF(
-            indicesDesc == nullptr, OP_LOGE(context_->GetNodeName(), "The input indices[%d]'s desc is null.", i),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(indicesDesc == nullptr,
+                    OP_LOGE(context_->GetNodeName(), "The input indices[%d]'s desc is null.", i),
+                    return ge::GRAPH_FAILED);
         auto currShape = context_->GetDynamicInputShape(INPUT_INDICES_IDX, i);
-        OP_CHECK_IF(
-            currShape == nullptr, OP_LOGE(context_->GetNodeName(), "The input indices[%d]'s shape is null.", i),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(currShape == nullptr, OP_LOGE(context_->GetNodeName(), "The input indices[%d]'s shape is null.", i),
+                    return ge::GRAPH_FAILED);
         if (indicesDesc->GetDataType() != ge::DT_INT32) {
             std::string paramMsg = "indices " + std::to_string(i) + "th tensor";
-            OP_LOGE_FOR_INVALID_DTYPE(
-                context_->GetNodeName(), paramMsg.c_str(), Ops::Base::ToString(indicesDesc->GetDataType()).c_str(),
-                "int32");
+            OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), paramMsg.c_str(),
+                                      Ops::Base::ToString(indicesDesc->GetDataType()).c_str(), "int32");
             return ge::GRAPH_FAILED;
         }
 
         if (CheckShapeAllNonNeg(currShape->GetStorageShape()) != ge::GRAPH_SUCCESS) {
             std::string paramMsg = "indices " + std::to_string(i) + "th tensor";
-            OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
-                context_->GetNodeName(), paramMsg.c_str(), Ops::Base::ToString(currShape->GetStorageShape()).c_str(),
-                "The input indices's tensor has negative dimension");
+            OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), paramMsg.c_str(),
+                                                  Ops::Base::ToString(currShape->GetStorageShape()).c_str(),
+                                                  "The input indices's tensor has negative dimension");
             return ge::GRAPH_FAILED;
         }
         auto currShapeSize = currShape->GetStorageShape().GetShapeSize();
@@ -153,13 +141,11 @@ ge::graphStatus DynamicStitchTilingClass::CheckAndGetXInputList()
     dataType_ = ge::DT_UNDEFINED;
     for (int32_t i = 0; i < totalTensorCnt_; i++) {
         auto tempDesc = context_->GetDynamicInputDesc(INPUT_X_IDX, i);
-        OP_CHECK_IF(
-            tempDesc == nullptr, OP_LOGE(context_->GetNodeName(), "The input x[%d]'s desc is null.", i),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(tempDesc == nullptr, OP_LOGE(context_->GetNodeName(), "The input x[%d]'s desc is null.", i),
+                    return ge::GRAPH_FAILED);
         auto currShape = context_->GetDynamicInputShape(INPUT_X_IDX, i);
-        OP_CHECK_IF(
-            currShape == nullptr, OP_LOGE(context_->GetNodeName(), "The input x[%d]'s shape is null.", i),
-            return ge::GRAPH_FAILED);
+        OP_CHECK_IF(currShape == nullptr, OP_LOGE(context_->GetNodeName(), "The input x[%d]'s shape is null.", i),
+                    return ge::GRAPH_FAILED);
         auto srcDtype = tempDesc->GetDataType();
         if (std::find(X_SUPPORT_DTYPE.begin(), X_SUPPORT_DTYPE.end(), srcDtype) == X_SUPPORT_DTYPE.end()) {
             std::string paramMsg = "x " + std::to_string(i) + "th tensor";
@@ -173,17 +159,18 @@ ge::graphStatus DynamicStitchTilingClass::CheckAndGetXInputList()
             dataType_ = srcDtype;
         } else if (srcDtype != dataType_) {
             std::string paramMsg = "x " + std::to_string(i) + "th tensor";
-            std::string reasonMsg = "The dtypes of all tensors in x must be the same, but dtype of the " + std::to_string(i) +
-                                    "th tensor is inconsistent with other dtypes " + Ops::Base::ToString(dataType_);
-            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-                context_->GetNodeName(), paramMsg.c_str(), Ops::Base::ToString(srcDtype).c_str(), reasonMsg.c_str());
+            std::string reasonMsg = "The dtypes of all tensors in x must be the same, but dtype of the " +
+                                    std::to_string(i) + "th tensor is inconsistent with other dtypes " +
+                                    Ops::Base::ToString(dataType_);
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), paramMsg.c_str(),
+                                                  Ops::Base::ToString(srcDtype).c_str(), reasonMsg.c_str());
             return ge::GRAPH_FAILED;
         }
         if (CheckShapeAllNonNeg(currShape->GetStorageShape()) != ge::GRAPH_SUCCESS) {
             std::string paramMsg = "x " + std::to_string(i) + "th tensor";
-            OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
-                context_->GetNodeName(), paramMsg.c_str(), Ops::Base::ToString(currShape->GetStorageShape()).c_str(),
-                "The input x's tensor has negative or empty dimension");
+            OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), paramMsg.c_str(),
+                                                  Ops::Base::ToString(currShape->GetStorageShape()).c_str(),
+                                                  "The input x's tensor has negative or empty dimension");
             return ge::GRAPH_FAILED;
         }
     }
@@ -198,20 +185,23 @@ ge::graphStatus DynamicStitchTilingClass::CheckAndGetSliceSize()
         auto indiceDimNum = indicesShape.GetDimNum();
         auto xDimNum = xShape.GetDimNum();
         if (indiceDimNum > xDimNum) {
-            std::string paramMsg = "indices " + std::to_string(i) + "th tensor and " + "x " + std::to_string(i) + "th tensor";
+            std::string paramMsg = "indices " + std::to_string(i) + "th tensor and " + "x " + std::to_string(i) +
+                                   "th tensor";
             std::string dimMsg = std::to_string(indiceDimNum) + " and " + std::to_string(xDimNum);
-            OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
-                context_->GetNodeName(), paramMsg.c_str(), dimMsg.c_str(),
-                "The shape dimension of indice's tensor must be less than or equal to the dimension of x's corresponding tensor");
+            OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(context_->GetNodeName(), paramMsg.c_str(), dimMsg.c_str(),
+                                                      "The shape dimension of indice's tensor must be less than or "
+                                                      "equal to the dimension of x's corresponding tensor");
             return ge::GRAPH_FAILED;
         }
         for (size_t j = 0; j < indiceDimNum; j++) {
             if (indicesShape.GetDim(j) != xShape.GetDim(j)) {
-                std::string paramMsg = "indices " + std::to_string(i) + "th tensor and " + "x " + std::to_string(i) + "th tensor";
+                std::string paramMsg = "indices " + std::to_string(i) + "th tensor and " + "x " + std::to_string(i) +
+                                       "th tensor";
                 std::string shapeMsg = Ops::Base::ToString(indicesShape) + " and " + Ops::Base::ToString(xShape);
                 std::string reasonMsg = "The shape of indices's tensor should match the shape formed by the first " +
                                         std::to_string(indiceDimNum) + " axes of x's corresponding tensor";
-                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context_->GetNodeName(), paramMsg.c_str(), shapeMsg.c_str(), reasonMsg.c_str());
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context_->GetNodeName(), paramMsg.c_str(), shapeMsg.c_str(),
+                                                       reasonMsg.c_str());
                 return ge::GRAPH_FAILED;
             }
         }
@@ -224,14 +214,16 @@ ge::graphStatus DynamicStitchTilingClass::CheckAndGetSliceSize()
         } else {
             auto currSliceShape = GetSliceShapeFromIndiceAndXShape(indicesShape, xShape);
             if (!IsTwoSliceShapeEqual(sliceShape_, currSliceShape)) {
-                std::string paramMsg = "indices " + std::to_string(i) + "th tensor and " + "x " + std::to_string(i) + "th tensor";
+                std::string paramMsg = "indices " + std::to_string(i) + "th tensor and " + "x " + std::to_string(i) +
+                                       "th tensor";
                 std::string shapeMsg = Ops::Base::ToString(indicesShape) + " and " + Ops::Base::ToString(xShape);
-                std::string reasonMsg =
-                    "All x[i].shape - indices[i].shape must be the same, actually x[0].shape - indices[0].shape is " +
-                    ops::ToStringWithSize(sliceShape_.data(), sliceShape_.size()) + ", x[" + std::to_string(i) +
-                    "].shape - indices[" + std::to_string(i) + "].shape is " +
-                    ops::ToStringWithSize(currSliceShape.data(), currSliceShape.size());
-                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context_->GetNodeName(), paramMsg.c_str(), shapeMsg.c_str(), reasonMsg.c_str());
+                std::string reasonMsg = "All x[i].shape - indices[i].shape must be the same, actually x[0].shape - "
+                                        "indices[0].shape is " +
+                                        ops::ToStringWithSize(sliceShape_.data(), sliceShape_.size()) + ", x[" +
+                                        std::to_string(i) + "].shape - indices[" + std::to_string(i) + "].shape is " +
+                                        ops::ToStringWithSize(currSliceShape.data(), currSliceShape.size());
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context_->GetNodeName(), paramMsg.c_str(), shapeMsg.c_str(),
+                                                       reasonMsg.c_str());
                 return ge::GRAPH_FAILED;
             }
         }
@@ -242,26 +234,23 @@ ge::graphStatus DynamicStitchTilingClass::CheckAndGetSliceSize()
 ge::graphStatus DynamicStitchTilingClass::CheckAndGetOutput()
 {
     auto outputDesc = context_->GetOutputDesc(OUTPUT_IDX);
-    OP_CHECK_IF(
-        outputDesc == nullptr, OP_LOGE(context_->GetNodeName(), "output's desc is nullptr."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(outputDesc == nullptr, OP_LOGE(context_->GetNodeName(), "output's desc is nullptr."),
+                return ge::GRAPH_FAILED);
     auto outputDtype = outputDesc->GetDataType();
     if (outputDtype != dataType_) {
         std::string reasonMsg = "The dtype of output y must be the same as the dtypes " +
                                 Ops::Base::ToString(dataType_) + " of all input x's tensors";
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-            context_->GetNodeName(), "y", Ops::Base::ToString(outputDtype).c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "y", Ops::Base::ToString(outputDtype).c_str(),
+                                              reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(
-        context_->GetOutputShape(OUTPUT_IDX) == nullptr, OP_LOGE(context_->GetNodeName(), "output's shape is nullptr."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(context_->GetOutputShape(OUTPUT_IDX) == nullptr,
+                OP_LOGE(context_->GetNodeName(), "output's shape is nullptr."), return ge::GRAPH_FAILED);
     auto& outputShape = context_->GetOutputShape(OUTPUT_IDX)->GetStorageShape();
     OP_CHECK_IF(
         CheckShapeAllNonNeg(outputShape) != ge::GRAPH_SUCCESS,
-        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
-            context_->GetNodeName(), "y", Ops::Base::ToString(outputShape).c_str(),
-            "The output y has negative or empty axes"),
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), "y", Ops::Base::ToString(outputShape).c_str(),
+                                              "The output y has negative or empty axes"),
         return ge::GRAPH_FAILED);
     auto outputDimNum = outputShape.GetDimNum();
     std::vector<int64_t> outputSlice;
@@ -269,13 +258,14 @@ ge::graphStatus DynamicStitchTilingClass::CheckAndGetOutput()
         outputSlice.emplace_back(outputShape.GetDim(i));
     }
     if (!IsTwoSliceShapeEqual(outputSlice, sliceShape_)) {
-        std::string reasonMsg =
-            "All x[i].shape - indices[i].shape must be the same as output.shape[1:-1], actually x[0].shape - "
-            "indices[0].shape is " +
-            ops::ToStringWithSize(sliceShape_.data(), sliceShape_.size()) + ", output.shape[1:-1] is " +
-            ops::ToStringWithSize(outputSlice.data(), outputSlice.size());
-        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(
-            context_->GetNodeName(), "y", Ops::Base::ToString(outputShape).c_str(), reasonMsg.c_str());
+        std::string reasonMsg = "All x[i].shape - indices[i].shape must be the same as output.shape[1:-1], actually "
+                                "x[0].shape - "
+                                "indices[0].shape is " +
+                                ops::ToStringWithSize(sliceShape_.data(), sliceShape_.size()) +
+                                ", output.shape[1:-1] is " +
+                                ops::ToStringWithSize(outputSlice.data(), outputSlice.size());
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(context_->GetNodeName(), "y", Ops::Base::ToString(outputShape).c_str(),
+                                              reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     maxIndex_ = outputShape.GetDim(0) - 1;
@@ -290,15 +280,15 @@ ge::graphStatus DynamicStitchTilingClass::CheckAttr() const
     auto attrNPtr = attrs->GetInt(ATTR_N_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context_, attrNPtr);
     int32_t attrNValue = static_cast<int32_t>(*attrNPtr);
-    OP_CHECK_IF(
-        attrNValue < 1,
-        OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "N", std::to_string(attrNValue).c_str(),
-            "greater than or equal to 1"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(attrNValue < 1,
+                OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "N", std::to_string(attrNValue).c_str(),
+                                          "greater than or equal to 1"),
+                return ge::GRAPH_FAILED);
     if (attrNValue != totalTensorCnt_) {
-        std::string reasonMsg = "The value of attr N must be equal to actual tensor count " + std::to_string(totalTensorCnt_);
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            context_->GetNodeName(), "N", std::to_string(attrNValue).c_str(), reasonMsg.c_str());
+        std::string reasonMsg = "The value of attr N must be equal to actual tensor count " +
+                                std::to_string(totalTensorCnt_);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "N", std::to_string(attrNValue).c_str(),
+                                              reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -315,17 +305,14 @@ ge::graphStatus DynamicStitchTilingClass::DoOpTiling()
     auto writeBackBlockSizeUnAlign = CeilDiv(maxIndex_ + 1, static_cast<int64_t>(aicoreParams_.numBlocks));
     writeBackBlockSize_ = CeilAlign(writeBackBlockSizeUnAlign, indiceAlignFactor);
     writeBackBlockNum_ = CeilDiv(maxIndex_ + 1, writeBackBlockSize_);
-    writeBackTailBlockSize_ = ((maxIndex_ + 1) % writeBackBlockSize_) == 0 ?
-                                  writeBackBlockSize_ :
-                                  ((maxIndex_ + 1) % writeBackBlockSize_);
+    writeBackTailBlockSize_ = ((maxIndex_ + 1) % writeBackBlockSize_) == 0 ? writeBackBlockSize_ :
+                                                                             ((maxIndex_ + 1) % writeBackBlockSize_);
     // 计算clearWorkspace分核
     int64_t workSpaceSize = maxIndex_ + 1 + totalTensorSum_;
     int64_t clrBlockWsSizeUnAlign = CeilDiv(workSpaceSize, static_cast<int64_t>(aicoreParams_.numBlocks));
     clrBlockWsSize_ = CeilAlign(clrBlockWsSizeUnAlign, indiceAlignFactor);
     clrBlockNum_ = CeilDiv(workSpaceSize, clrBlockWsSize_);
-    clrTailBlockWsSize_ = (workSpaceSize % clrBlockWsSize_) == 0 ?
-                              clrBlockWsSize_ :
-                              (workSpaceSize % clrBlockWsSize_);
+    clrTailBlockWsSize_ = (workSpaceSize % clrBlockWsSize_) == 0 ? clrBlockWsSize_ : (workSpaceSize % clrBlockWsSize_);
 
     int64_t blockDim = std::min(static_cast<uint32_t>(aicoreParams_.numBlocks), MAX_CORE_CONT);
     auto blockFactor = CeilDiv(totalTensorSum_, blockDim);
@@ -350,8 +337,8 @@ ge::graphStatus DynamicStitchTilingClass::DoOpTiling()
         ubTailFactor_ = sliceSize_;
         indicesBufferSize_ = ubAlign - CeilAlign(sliceLen, ubBlockSize);
     }
-    indicesBufferSize_ =
-        std::min(indicesBufferSize_, CeilAlign(static_cast<int64_t>(blockFactor_ * sizeof(int32_t)), ubBlockSize));
+    indicesBufferSize_ = std::min(indicesBufferSize_,
+                                  CeilAlign(static_cast<int64_t>(blockFactor_ * sizeof(int32_t)), ubBlockSize));
     return ge::GRAPH_SUCCESS;
 }
 
@@ -475,10 +462,7 @@ ge::graphStatus DynamicStitchTilingClass::PostTiling()
     return ge::GRAPH_SUCCESS;
 }
 
-bool DynamicStitchTilingClass::IsBigSliceSize() const
-{
-    return sliceSize_ >= MIN_SMID_SLICE_VALUE;
-}
+bool DynamicStitchTilingClass::IsBigSliceSize() const { return sliceSize_ >= MIN_SMID_SLICE_VALUE; }
 
 void DynamicStitchTilingClass::PrintTiling() const
 {
@@ -495,12 +479,11 @@ void DynamicStitchTilingClass::PrintTiling() const
         tilingData_->ubLoopTimes, tilingData_->totalTensorSum, tilingData_->totalTensorCnt, tilingData_->maxIndex,
         GetTilingKey());
     for (int64_t i = 0; i < usedCoreNum_; i++) {
-        OP_LOGI(
-            context_->GetNodeName(),
-            "tensorStartList[%ld] = %hu, tensorEndList[%ld] = %hu, tensorStartOffsetList[%ld] = %ld, "
-            "tensorEndOffsetList[%ld] = %ld.",
-            i, tilingData_->tensorStartList[i], i, tilingData_->tensorEndList[i], i,
-            tilingData_->tensorStartOffsetList[i], i, tilingData_->tensorEndOffsetList[i]);
+        OP_LOGI(context_->GetNodeName(),
+                "tensorStartList[%ld] = %hu, tensorEndList[%ld] = %hu, tensorStartOffsetList[%ld] = %ld, "
+                "tensorEndOffsetList[%ld] = %ld.",
+                i, tilingData_->tensorStartList[i], i, tilingData_->tensorEndList[i], i,
+                tilingData_->tensorStartOffsetList[i], i, tilingData_->tensorEndOffsetList[i]);
     }
     for (int64_t i = 0; i <= totalTensorCnt_; i++) {
         OP_LOGI(context_->GetNodeName(), "tensorCumsumList[%ld] = %ld", i, tilingData_->tensorCumsumList[i]);
@@ -529,8 +512,8 @@ uint64_t DynamicStitchTilingClass::GetTilingKey() const
     return tilingKey + static_cast<uint64_t>(sliceType_);
 }
 
-std::vector<int64_t> DynamicStitchTilingClass::GetSliceShapeFromIndiceAndXShape(
-    const gert::Shape& indiceShape, const gert::Shape& xShape) const
+std::vector<int64_t> DynamicStitchTilingClass::GetSliceShapeFromIndiceAndXShape(const gert::Shape& indiceShape,
+                                                                                const gert::Shape& xShape) const
 {
     std::vector<int64_t> sliceShape;
     if (indiceShape.GetDimNum() == xShape.GetDimNum()) {
@@ -542,8 +525,8 @@ std::vector<int64_t> DynamicStitchTilingClass::GetSliceShapeFromIndiceAndXShape(
     return sliceShape;
 }
 
-bool DynamicStitchTilingClass::IsTwoSliceShapeEqual(
-    const std::vector<int64_t>& sliceShape1, const std::vector<int64_t>& sliceShape2) const
+bool DynamicStitchTilingClass::IsTwoSliceShapeEqual(const std::vector<int64_t>& sliceShape1,
+                                                    const std::vector<int64_t>& sliceShape2) const
 {
     if (sliceShape1.size() != sliceShape2.size()) {
         return false;
