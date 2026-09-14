@@ -24,8 +24,7 @@
 using namespace Ops::Base;
 
 namespace optiling {
-constexpr int64_t WORKSPACE_SIZE = 16777216; // 16M
-constexpr int64_t RESERVED_UB_SIZE = 8192;   // 8k
+constexpr int64_t RESERVED_UB_SIZE = 8192; // 8k
 constexpr int64_t FOUR_BUFFER = 4;
 constexpr int64_t TWO_BUFFER = 2;
 constexpr int64_t SEVEN_BUFFER = 8;
@@ -179,16 +178,15 @@ ge::graphStatus TriangulatorTiling::GetPlatformInfo(const TriluCompileInfo* comp
     OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfo);
     baseInfoOp.totalCoreNum = static_cast<int64_t>(compileInfo->availableAICoreNum);
 
-    OP_CHECK_IF(
-        (baseInfoOp.totalCoreNum <= 0),
-        OP_LOGE(nodeName_, "TriangulatorTiling get num of vector core is less than or equal to 0."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((baseInfoOp.totalCoreNum <= 0),
+                OP_LOGE(nodeName_, "TriangulatorTiling get num of vector core is less than or equal to 0."),
+                return ge::GRAPH_FAILED);
 
     baseInfoOp.ubSize = static_cast<int64_t>(compileInfo->availableUBSize);
 
-    OP_CHECK_IF(
-        (baseInfoOp.ubSize <= 0), OP_LOGE(nodeName_, "TriangulatorTiling get ub size is less than or equal to 0."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((baseInfoOp.ubSize <= 0),
+                OP_LOGE(nodeName_, "TriangulatorTiling get ub size is less than or equal to 0."),
+                return ge::GRAPH_FAILED);
 
     baseInfoOp.ubSize -= RESERVED_UB_SIZE; // 可用UB空间
     baseInfoOp.vRegSize = GetVRegSize(context_);
@@ -201,15 +199,13 @@ void TriangulatorTiling::ComputeTilingMode()
     if ((!operatorType_ && baseInfoOp.diagOffset <= -baseInfoOp.row) ||
         (operatorType_ && baseInfoOp.diagOffset >= baseInfoOp.col)) {
         splitCoreOp.tilingMode = OUTPUT_ZERO_MODE;
-    } else if (
-        (!operatorType_ && baseInfoOp.diagOffset >= baseInfoOp.col - 1) ||
-        (operatorType_ && baseInfoOp.diagOffset <= 1 - baseInfoOp.row)) {
+    } else if ((!operatorType_ && baseInfoOp.diagOffset >= baseInfoOp.col - 1) ||
+               (operatorType_ && baseInfoOp.diagOffset <= 1 - baseInfoOp.row)) {
         splitCoreOp.tilingMode = OUTPUT_INPUT_MODE;
     } else if (baseInfoOp.col * baseInfoOp.row * baseInfoOp.dtypeBytes <= baseInfoOp.vRegSize) {
         splitCoreOp.tilingMode = TINY_SHAPE_MODE;
-    } else if (
-        baseInfoOp.row * CeilAlign(baseInfoOp.col * baseInfoOp.dtypeBytes, baseInfoOp.vRegSize) * FOUR_BUFFER <=
-        baseInfoOp.ubSize) {
+    } else if (baseInfoOp.row * CeilAlign(baseInfoOp.col * baseInfoOp.dtypeBytes, baseInfoOp.vRegSize) * FOUR_BUFFER <=
+               baseInfoOp.ubSize) {
         splitCoreOp.tilingMode = MEDIUM_SHAPE_MODE;
     } else {
         splitCoreOp.tilingMode = OUTPUT_NORMAL_MODE;
@@ -221,9 +217,8 @@ void TriangulatorTiling::ComputeTinyInfo()
     OP_LOGD(nodeName_, "[Triangulator] ComputeTinyInfo start running.");
     baseInfoOp.bufferSize = FloorAlign(baseInfoOp.ubSize / FOUR_BUFFER, UB_BLOCK_SIZE);
     baseInfoOp.bufferEleNum = FloorDiv(baseInfoOp.bufferSize, baseInfoOp.dtypeBytes);
-    int64_t tmpInner = FloorDiv(
-        baseInfoOp.bufferEleNum * baseInfoOp.dtypeBytes,
-        baseInfoOp.vRegSize); // pad to vreg size to avoid unaligned access
+    int64_t tmpInner = FloorDiv(baseInfoOp.bufferEleNum * baseInfoOp.dtypeBytes,
+                                baseInfoOp.vRegSize); // pad to vreg size to avoid unaligned access
     int64_t tmpOuter = CeilDiv(baseInfoOp.fusedFrontAxis, tmpInner);
     int64_t minCoreNum = CeilDiv(baseInfoOp.totalCoreNum, MIN_CORE_COE);
     splitCoreOp.highOuter = std::max(minCoreNum, tmpOuter);
@@ -364,11 +359,16 @@ ge::graphStatus TriangulatorTiling::DoTiling()
         splitCoreOp.baseBlockNum = baseInfoOp.fusedFrontAxis * baseInfoOp.col * baseInfoOp.row;
     }
     splitCoreOp.usedCoreNum = std::min(splitCoreOp.baseBlockNum, baseInfoOp.totalCoreNum);
+    if (splitCoreOp.usedCoreNum <= 0) { // empty tensor: baseBlockNum is 0, avoid 0/0 division crash
+        splitCoreOp.usedCoreNum = 1;
+    }
     splitCoreOp.normalCoreProcessNum = splitCoreOp.baseBlockNum / splitCoreOp.usedCoreNum;
     splitCoreOp.tailCoreProcessNum = splitCoreOp.baseBlockNum % splitCoreOp.usedCoreNum;
     if (splitCoreOp.tilingMode == OUTPUT_INPUT_MODE || splitCoreOp.tilingMode == OUTPUT_ZERO_MODE) {
-        std::tie(splitCoreOp.usedCoreNum, splitCoreOp.normalCoreProcessNum, splitCoreOp.tailCoreProcessNum) =
-            OutputZeroAndInputTiling(splitCoreOp.baseBlockNum, baseInfoOp.totalCoreNum, baseInfoOp.dtypeBytes);
+        std::tie(splitCoreOp.usedCoreNum, splitCoreOp.normalCoreProcessNum,
+                 splitCoreOp.tailCoreProcessNum) = OutputZeroAndInputTiling(splitCoreOp.baseBlockNum,
+                                                                            baseInfoOp.totalCoreNum,
+                                                                            baseInfoOp.dtypeBytes);
     }
     ComputeTilingKey();
     OP_LOGD(nodeName_, "[Triangulator] DoTiling run completed.");
@@ -380,7 +380,7 @@ ge::graphStatus TriangulatorTiling::PostTiling()
     OP_LOGD(nodeName_, "[Triangulator] PostTiling start running.");
     size_t* userWorkspaceSize = context_->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, userWorkspaceSize);
-    userWorkspaceSize[0] = WORKSPACE_SIZE;
+    userWorkspaceSize[0] = 0;
 
     SaveToTilingData();
 
@@ -393,32 +393,32 @@ ge::graphStatus TriangulatorTiling::PostTiling()
             if (tinyTilingData.GetDataSize() > context_->GetRawTilingData()->GetCapacity()) {
                 return ge::GRAPH_FAILED;
             }
-            tinyTilingData.SaveToBuffer(
-                context_->GetRawTilingData()->GetData(), context_->GetRawTilingData()->GetCapacity());
+            tinyTilingData.SaveToBuffer(context_->GetRawTilingData()->GetData(),
+                                        context_->GetRawTilingData()->GetCapacity());
             context_->GetRawTilingData()->SetDataSize(tinyTilingData.GetDataSize());
             break;
         case MEDIUM_SHAPE_MODE:
             if (mediumTilingData.GetDataSize() > context_->GetRawTilingData()->GetCapacity()) {
                 return ge::GRAPH_FAILED;
             }
-            mediumTilingData.SaveToBuffer(
-                context_->GetRawTilingData()->GetData(), context_->GetRawTilingData()->GetCapacity());
+            mediumTilingData.SaveToBuffer(context_->GetRawTilingData()->GetData(),
+                                          context_->GetRawTilingData()->GetCapacity());
             context_->GetRawTilingData()->SetDataSize(mediumTilingData.GetDataSize());
             break;
         case OUTPUT_NORMAL_MODE:
             if (normalTilingData.GetDataSize() > context_->GetRawTilingData()->GetCapacity()) {
                 return ge::GRAPH_FAILED;
             }
-            normalTilingData.SaveToBuffer(
-                context_->GetRawTilingData()->GetData(), context_->GetRawTilingData()->GetCapacity());
+            normalTilingData.SaveToBuffer(context_->GetRawTilingData()->GetData(),
+                                          context_->GetRawTilingData()->GetCapacity());
             context_->GetRawTilingData()->SetDataSize(normalTilingData.GetDataSize());
             break;
         default:
             if (tilingData.GetDataSize() > context_->GetRawTilingData()->GetCapacity()) {
                 return ge::GRAPH_FAILED;
             }
-            tilingData.SaveToBuffer(
-                context_->GetRawTilingData()->GetData(), context_->GetRawTilingData()->GetCapacity());
+            tilingData.SaveToBuffer(context_->GetRawTilingData()->GetData(),
+                                    context_->GetRawTilingData()->GetCapacity());
             context_->GetRawTilingData()->SetDataSize(tilingData.GetDataSize());
             break;
     }
@@ -427,8 +427,8 @@ ge::graphStatus TriangulatorTiling::PostTiling()
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus TriangulatorTiling::RunTriangulatorTilingAscendC(
-    const TriluCompileInfo* compileInfo, const TriluTilingParams* params, uint8_t dtypeBytes)
+ge::graphStatus TriangulatorTiling::RunTriangulatorTilingAscendC(const TriluCompileInfo* compileInfo,
+                                                                 const TriluTilingParams* params, uint8_t dtypeBytes)
 {
     OP_LOGD(nodeName_, "[Triangulator] RunTriangulatorTilingAscendC start running.");
     ge::graphStatus ret = ge::GRAPH_SUCCESS;
