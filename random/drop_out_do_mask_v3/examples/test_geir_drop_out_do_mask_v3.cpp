@@ -20,6 +20,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <algorithm>
 #include "assert.h"
 
 #include "graph.h"
@@ -172,7 +173,7 @@ int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor>& input, std::vect
         desc2.SetPlacement(ge::kPlacementHost);
         desc2.SetFormat(FORMAT_ND);
         uint8_t* mask_data = new (std::nothrow) uint8_t[128];
-        std::memset(mask_data, 1, 128);
+        std::fill_n(mask_data, 128, static_cast<uint8_t>(1));
         Tensor tensor2(desc2, mask_data, 128);
         delete[] mask_data;
         placeholder2.update_input_desc_x(desc2);
@@ -184,7 +185,7 @@ int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor>& input, std::vect
     }
     ADD_INPUT(3, keep_prob, ge::DT_FLOAT, keep_prob_shape);
     float keep_prob_val = 0.5f;
-    std::memcpy(input.back().GetData(), &keep_prob_val, sizeof(float));
+    *static_cast<float*>(static_cast<void*>(input.back().GetData())) = keep_prob_val;
     outputs.push_back(dropoutdomaskv3);
     // 添加完毕
     return SUCCESS;

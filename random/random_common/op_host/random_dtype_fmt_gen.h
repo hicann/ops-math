@@ -42,6 +42,8 @@
 #include <utility>
 #include <vector>
 
+#include "graph/types.h"
+
 namespace randomdef {
 namespace detail {
 inline std::string TypeToStr(ge::DataType type)
