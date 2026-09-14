@@ -166,3 +166,27 @@ TEST_F(TransposeInferShapeTest, transpose_infershape_int64_invalid_perm_value)
     gert::InfershapeContextPara infershapeContextPara("Transpose", {x, perm}, {out});
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, {});
 }
+
+// Duplicated values in perm, expect failure
+TEST_F(TransposeInferShapeTest, transpose_infershape_perm_value_duplicated)
+{
+    int64_t perm_value[4] = {0, 2, 2, 1};
+    gert::InfershapeContextPara::TensorDescription x({{36, 203, 26, 31}, {36, 203, 26, 31}}, ge::DT_INT64,
+                                                     ge::FORMAT_ND);
+    gert::InfershapeContextPara::TensorDescription perm({{4}, {4}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::InfershapeContextPara::TensorDescription out({{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::InfershapeContextPara infershapeContextPara("Transpose", {x, perm}, {out});
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, {});
+}
+
+// Duplicated values in perm after negative normalization (-2 and 2 both map to axis 2), expect failure
+TEST_F(TransposeInferShapeTest, transpose_infershape_perm_value_duplicated_after_negative_normalize)
+{
+    int64_t perm_value[4] = {-2, 0, 2, 1};
+    gert::InfershapeContextPara::TensorDescription x({{36, 203, 26, 31}, {36, 203, 26, 31}}, ge::DT_INT64,
+                                                     ge::FORMAT_ND);
+    gert::InfershapeContextPara::TensorDescription perm({{4}, {4}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::InfershapeContextPara::TensorDescription out({{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::InfershapeContextPara infershapeContextPara("Transpose", {x, perm}, {out});
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, {});
+}
