@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025-2026 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -9,30 +9,31 @@
  */
 
 /*!
- * \file exp_segsum_grad.h
- * \brief
+ * \file exp_segsum_grad_arch35.h (arch35 / Ascend950)
+ * \brief arch35 port of ExpSegsumGrad.
  */
 
-#ifndef EXP_SEGSUM_GRAD_H
-#define EXP_SEGSUM_GRAD_H
+#ifndef EXP_SEGSUM_GRAD_ARCH35_H
+#define EXP_SEGSUM_GRAD_ARCH35_H
 
 #include <type_traits>
 #include "kernel_operator.h"
+#include "exp_segsum_grad_tiling_data.h"
 
-namespace ExpSegsumGrad {
+namespace ExpSegsumGradArch35 {
 using namespace AscendC;
 constexpr float ZERO_FLOAT = 0;
 constexpr int32_t NO_BUFFER_NUM = 1;
 constexpr int32_t BLOCK_LEN = 8;
 
 template <typename T, int32_t MODE>
-class ExpSegsumGradND {
+class ExpSegsumGrad {
 public:
     TPipe pipe;
 
-    __aicore__ inline ExpSegsumGradND(){};
+    __aicore__ inline ExpSegsumGrad(){};
     __aicore__ inline void Init(GM_ADDR gradOut, GM_ADDR output, GM_ADDR gradIn, GM_ADDR workspace,
-                                const ExpSegsumGradTilingData* tilingData);
+                                const ExpSegsumGradTilingDataArch35* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -50,7 +51,7 @@ private:
         return a < b ? a : b;
     };
 
-    __aicore__ inline void ParseTilingData(const ExpSegsumGradTilingData* tilingData);
+    __aicore__ inline void ParseTilingData(const ExpSegsumGradTilingDataArch35* tilingData);
     __aicore__ inline void ClearGM();
     __aicore__ inline void ComputeBase();
     __aicore__ inline void ComputeBatches();
@@ -89,8 +90,8 @@ private:
 };
 
 template <typename T, int32_t MODE>
-__aicore__ inline void ExpSegsumGradND<T, MODE>::Init(GM_ADDR gradOut, GM_ADDR output, GM_ADDR gradIn,
-                                                      GM_ADDR workspace, const ExpSegsumGradTilingData* tilingData)
+__aicore__ inline void ExpSegsumGrad<T, MODE>::Init(GM_ADDR gradOut, GM_ADDR output, GM_ADDR gradIn, GM_ADDR workspace,
+                                                    const ExpSegsumGradTilingDataArch35* tilingData)
 {
     blockIdx = GetBlockIdx();
     ParseTilingData(tilingData);
@@ -111,7 +112,7 @@ __aicore__ inline void ExpSegsumGradND<T, MODE>::Init(GM_ADDR gradOut, GM_ADDR o
 };
 
 template <typename T, int32_t MODE>
-__aicore__ inline void ExpSegsumGradND<T, MODE>::Process()
+__aicore__ inline void ExpSegsumGrad<T, MODE>::Process()
 {
     if (blockIdx >= needCoreNum || tailDimLength == 0 || slideSize == 0 || batchStart >= batchEnd) {
         return;
@@ -126,13 +127,16 @@ __aicore__ inline void ExpSegsumGradND<T, MODE>::Process()
 }
 
 template <typename T, int32_t MODE>
-__aicore__ inline void ExpSegsumGradND<T, MODE>::ClearGM()
+__aicore__ inline void ExpSegsumGrad<T, MODE>::ClearGM()
 {
     if (blockIdx >= needCoreNum) {
         return;
     }
     LocalTensor<float> clearRow = lastQueue.Get<float>();
     Duplicate(clearRow, ZERO_FLOAT, slideSize);
+    event_t eventId = static_cast<event_t>(pipe.FetchEventID(HardEvent::V_MTE3));
+    SetFlag<HardEvent::V_MTE3>(eventId);
+    WaitFlag<HardEvent::V_MTE3>(eventId);
     int64_t clearTimes = CeilA2B(tailDimLength, slideSize);
     for (int i = 0; i < clearTimes; i++) {
         int64_t offset = blockIdx * tailDimLength + slideSize * i;
@@ -140,10 +144,10 @@ __aicore__ inline void ExpSegsumGradND<T, MODE>::ClearGM()
         DataCopyExtParams copyParams{1, static_cast<uint32_t>(length * sizeof(float)), 0, 0, 0};
         DataCopyPad(lastTensorsGM[offset], clearRow, copyParams);
     }
+    PipeBarrier<PIPE_ALL>();
 }
-
 template <typename T, int32_t MODE>
-__aicore__ inline void ExpSegsumGradND<T, MODE>::ComputeBase()
+__aicore__ inline void ExpSegsumGrad<T, MODE>::ComputeBase()
 {
     LocalTensor<float> lastRow = lastQueue.Get<float>();
     LocalTensor<float> currentRow = currentQueue.Get<float>();
@@ -153,8 +157,10 @@ __aicore__ inline void ExpSegsumGradND<T, MODE>::ComputeBase()
         for (int64_t rowIdx = tailDimLength - 1; rowIdx >= 0; rowIdx--) {
             int64_t colLoopTimes = CeilA2B(tailDimLength, slideSize);
             LocalTensor<T> yTensor = gradInQueue.AllocTensor<T>();
-            if constexpr (std::is_same<T, bfloat16_t>::value) {
-                Duplicate(yTensor, ToBfloat16(0), BLOCK_LEN * colLoopTimes);
+            if constexpr (std::is_same<T, bfloat16_t>::value || std::is_same<T, half>::value) {
+                // castRow is reused for each input chunk, so preserve all chunk sums in a separate fp32 view.
+                LocalTensor<float> partialTensor = yTensor.template ReinterpretCast<float>();
+                Duplicate(partialTensor, ZERO_FLOAT, BLOCK_LEN * colLoopTimes);
             } else {
                 Duplicate(yTensor, static_cast<T>(ZERO_FLOAT), BLOCK_LEN * colLoopTimes);
             }
@@ -189,7 +195,8 @@ __aicore__ inline void ExpSegsumGradND<T, MODE>::ComputeBase()
                 uint32_t shape[] = {1, static_cast<uint32_t>(num2)};
                 int64_t yOffset = colIdx / slideSize * BLOCK_LEN;
                 if constexpr (std::is_same<T, bfloat16_t>::value || std::is_same<T, half>::value) {
-                    ReduceSum<float, Pattern::Reduce::AR, false>(castRow[yOffset], currentRow, shape, true);
+                    LocalTensor<float> partialTensor = yTensor.template ReinterpretCast<float>();
+                    ReduceSum<float, Pattern::Reduce::AR, false>(partialTensor[yOffset], currentRow, shape, true);
                 } else if constexpr (std::is_same<T, float>::value) {
                     ReduceSum<float, Pattern::Reduce::AR, false>(yTensor[yOffset], currentRow, shape, true);
                 }
@@ -202,10 +209,9 @@ __aicore__ inline void ExpSegsumGradND<T, MODE>::ComputeBase()
         }
     }
 }
-
 template <typename T, int32_t MODE>
-__aicore__ inline void ExpSegsumGradND<T, MODE>::ComputeMul(int64_t num, LocalTensor<float> currentRow,
-                                                            LocalTensor<float> castRow)
+__aicore__ inline void ExpSegsumGrad<T, MODE>::ComputeMul(int64_t num, LocalTensor<float> currentRow,
+                                                          LocalTensor<float> castRow)
 {
     LocalTensor<T> gradOutTensor = gradOutQueue.DeQue<T>();
     LocalTensor<T> outputTensor = outputQueue.DeQue<T>();
@@ -223,14 +229,13 @@ __aicore__ inline void ExpSegsumGradND<T, MODE>::ComputeMul(int64_t num, LocalTe
 }
 
 template <typename T, int32_t MODE>
-__aicore__ inline void ExpSegsumGradND<T, MODE>::ComputeSum(int64_t colLoopTimes, LocalTensor<float> currentRow,
-                                                            LocalTensor<float> castRow, LocalTensor<T> yTensor)
+__aicore__ inline void ExpSegsumGrad<T, MODE>::ComputeSum(int64_t colLoopTimes, LocalTensor<float> currentRow,
+                                                          LocalTensor<float> castRow, LocalTensor<T> yTensor)
 {
     if constexpr (std::is_same<T, bfloat16_t>::value || std::is_same<T, half>::value) {
-        DataCopy(currentRow, castRow, BLOCK_LEN * colLoopTimes);
-        PipeBarrier<PIPE_V>();
+        LocalTensor<float> partialTensor = yTensor.template ReinterpretCast<float>();
         uint32_t shape[] = {1, static_cast<uint32_t>(BLOCK_LEN * colLoopTimes)};
-        ReduceSum<float, Pattern::Reduce::AR, false>(castRow, currentRow, shape, true);
+        ReduceSum<float, Pattern::Reduce::AR, false>(castRow, partialTensor, shape, true);
         PipeBarrier<PIPE_V>();
         Cast(yTensor, castRow, RoundMode::CAST_ROUND, 1);
     } else if constexpr (std::is_same<T, float>::value) {
@@ -242,8 +247,7 @@ __aicore__ inline void ExpSegsumGradND<T, MODE>::ComputeSum(int64_t colLoopTimes
 }
 
 template <typename T, int32_t MODE>
-__aicore__ inline void ExpSegsumGradND<T, MODE>::getLastRow(int64_t offset, uint32_t calSize,
-                                                            LocalTensor<float> lastRow)
+__aicore__ inline void ExpSegsumGrad<T, MODE>::getLastRow(int64_t offset, uint32_t calSize, LocalTensor<float> lastRow)
 {
     event_t eventId1 = static_cast<event_t>(pipe.FetchEventID(HardEvent::V_MTE2));
     SetFlag<HardEvent::V_MTE2>(eventId1);
@@ -257,8 +261,7 @@ __aicore__ inline void ExpSegsumGradND<T, MODE>::getLastRow(int64_t offset, uint
 }
 
 template <typename T, int32_t MODE>
-__aicore__ inline void ExpSegsumGradND<T, MODE>::setLastRow(int64_t offset, uint32_t calSize,
-                                                            LocalTensor<float> lastRow)
+__aicore__ inline void ExpSegsumGrad<T, MODE>::setLastRow(int64_t offset, uint32_t calSize, LocalTensor<float> lastRow)
 {
     event_t eventId1 = static_cast<event_t>(pipe.FetchEventID(HardEvent::V_MTE3));
     SetFlag<HardEvent::V_MTE3>(eventId1);
@@ -269,11 +272,10 @@ __aicore__ inline void ExpSegsumGradND<T, MODE>::setLastRow(int64_t offset, uint
     SetFlag<HardEvent::MTE3_V>(eventId2);
     WaitFlag<HardEvent::MTE3_V>(eventId2);
 }
-
 template <typename T, int32_t MODE>
-__aicore__ inline void ExpSegsumGradND<T, MODE>::ComputeMulBatches(int64_t row, int64_t calNumAlign, int64_t rowIdx,
-                                                                   LocalTensor<float> currentRow,
-                                                                   LocalTensor<float> castRow)
+__aicore__ inline void ExpSegsumGrad<T, MODE>::ComputeMulBatches(int64_t row, int64_t calNumAlign, int64_t rowIdx,
+                                                                 LocalTensor<float> currentRow,
+                                                                 LocalTensor<float> castRow)
 {
     LocalTensor<T> gradOutTensor = gradOutQueue.DeQue<T>();
     LocalTensor<T> outputTensor = outputQueue.DeQue<T>();
@@ -294,7 +296,7 @@ __aicore__ inline void ExpSegsumGradND<T, MODE>::ComputeMulBatches(int64_t row, 
 }
 
 template <typename T, int32_t MODE>
-__aicore__ inline void ExpSegsumGradND<T, MODE>::ComputeBatches()
+__aicore__ inline void ExpSegsumGrad<T, MODE>::ComputeBatches()
 {
     LocalTensor<float> lastRow = lastQueue.Get<float>();
     LocalTensor<float> currentRow = currentQueue.Get<float>();
@@ -336,6 +338,7 @@ __aicore__ inline void ExpSegsumGradND<T, MODE>::ComputeBatches()
             } else if constexpr (std::is_same<T, float>::value) {
                 ReduceSum<float, Pattern::Reduce::AR, false>(yTensor, castRow, shape, true);
             }
+            PipeBarrier<PIPE_V>();
             int64_t outOffset = batchIdx * tailDimLength + rowIdx - row + 1;
 
             gradInQueue.EnQue(yTensor);
@@ -344,7 +347,7 @@ __aicore__ inline void ExpSegsumGradND<T, MODE>::ComputeBatches()
     }
 }
 template <typename T, int32_t MODE>
-__aicore__ inline void ExpSegsumGradND<T, MODE>::CopyInBatch(int64_t offset, int64_t batchesEachCopy, uint32_t calSize)
+__aicore__ inline void ExpSegsumGrad<T, MODE>::CopyInBatch(int64_t offset, int64_t batchesEachCopy, uint32_t calSize)
 {
     LocalTensor<T> gradOutTensor = gradOutQueue.AllocTensor<T>();
     LocalTensor<T> outputTensor = outputQueue.AllocTensor<T>();
@@ -357,8 +360,8 @@ __aicore__ inline void ExpSegsumGradND<T, MODE>::CopyInBatch(int64_t offset, int
 }
 
 template <typename T, int32_t MODE>
-__aicore__ inline void ExpSegsumGradND<T, MODE>::CopyOutBatch(int64_t offset, int64_t batchesEachCopy, int32_t calNum,
-                                                              uint32_t calSize)
+__aicore__ inline void ExpSegsumGrad<T, MODE>::CopyOutBatch(int64_t offset, int64_t batchesEachCopy, int32_t calNum,
+                                                            uint32_t calSize)
 {
     LocalTensor<T> yTensor = gradInQueue.DeQue<T>();
     DataCopyExtParams copyParams{static_cast<uint16_t>(batchesEachCopy), calSize, 0, 0, 0};
@@ -367,7 +370,7 @@ __aicore__ inline void ExpSegsumGradND<T, MODE>::CopyOutBatch(int64_t offset, in
 }
 
 template <typename T, int32_t MODE>
-__aicore__ inline void ExpSegsumGradND<T, MODE>::ParseTilingData(const ExpSegsumGradTilingData* tilingData)
+__aicore__ inline void ExpSegsumGrad<T, MODE>::ParseTilingData(const ExpSegsumGradTilingDataArch35* tilingData)
 {
     slideSize = tilingData->slideSize;
     tailDimLength = tilingData->tailDimLength;
@@ -378,5 +381,5 @@ __aicore__ inline void ExpSegsumGradND<T, MODE>::ParseTilingData(const ExpSegsum
 
     blockSize = 32 / sizeof(T);
 }
-} // namespace ExpSegsumGrad
+} // namespace ExpSegsumGradArch35
 #endif

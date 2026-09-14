@@ -13,7 +13,7 @@
  * \brief
  */
 
-#include "segsum.h"
+#include "segsum_arch22.h"
 
 using namespace Segsum;
 

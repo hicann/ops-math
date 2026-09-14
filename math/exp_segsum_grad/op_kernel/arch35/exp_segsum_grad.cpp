@@ -14,7 +14,7 @@
  *        Reuses the ported A2 compute logic; tiling data comes from a POD struct.
  */
 
-#include "exp_segsum_grad.h"
+#include "exp_segsum_grad_arch35.h"
 
 using namespace ExpSegsumGradArch35;
 
