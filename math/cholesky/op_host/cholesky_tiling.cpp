@@ -26,6 +26,12 @@ constexpr uint32_t WS_SYS_SIZE = 16U * 1024U * 1024U;
 constexpr uint32_t LOCAL_MEMORY_SIZE = 128U * 1024U;
 constexpr uint32_t MAX_BLOCK_SIZE = 256;
 constexpr int64_t MAX_MATRIX_SIZE = 8192;
+// 单矩阵多核启用阈值：M 小于等于该值时 48 核 launch+对角投票的全核同步开销主导
+// （实测 M=1 单核 5.8us vs 全核 26.5us），保持单核与旧版一致；阈值不超过 kernel 侧
+// PANEL_WIDTH（64），保证单核时面板路径仍为单面板完整分解
+constexpr uint32_t SINGLE_MATRIX_SINGLE_CORE_MAX = 4;
+// 批量协同阈值：矩阵维度超过该值时批量模式切换为全核逐矩阵协同面板（kernel 侧 BATCH_COOP_MIN_M）
+constexpr uint32_t BATCH_COOP_MIN_M = 96;
 
 class CholeskyTiling {
 public:
@@ -44,6 +50,7 @@ private:
     uint64_t matrixNumCount = 1;
     uint32_t needCoreNum = 0;
     bool upper = false;
+    bool socSupportsPanel = false;
     uint32_t blockSize = 0;
     uint32_t blockNum = 0;
 };
@@ -133,9 +140,16 @@ ge::graphStatus CholeskyTiling::Init()
     auto compileInfo = reinterpret_cast<const CholeskyCompileInfo*>(tilingContext->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, compileInfo);
     uint32_t coreNumPlatForm = compileInfo->coreNum;
-    // A single matrix assigns one core per panel block; batches assign one core per matrix.
-    needCoreNum = matrixNumCount == 1 ? (coreNumPlatForm < blockNum ? coreNumPlatForm : blockNum) :
-                                        (coreNumPlatForm < matrixNumCount ? coreNumPlatForm : matrixNumCount);
+    socSupportsPanel = compileInfo->socSupportsPanel;
+    // Panel algorithm (all-core trailing update + SIMT transpose) is implemented for the 950
+    // (arch 3510) kernel only; other SoCs keep the original per-column core allocation.
+    const bool cooperative = socSupportsPanel && (matrixNumCount == 1 || matSizeN > BATCH_COOP_MIN_M);
+    if (cooperative) {
+        needCoreNum = matrixNumCount == 1 && matSizeN <= SINGLE_MATRIX_SINGLE_CORE_MAX ? 1 : coreNumPlatForm;
+    } else {
+        needCoreNum = matrixNumCount == 1 ? (coreNumPlatForm < blockNum ? coreNumPlatForm : blockNum) :
+                                            (coreNumPlatForm < matrixNumCount ? coreNumPlatForm : matrixNumCount);
+    }
 
     size_t* currentWorkSpace = tilingContext->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkSpace);
@@ -163,6 +177,13 @@ ge::graphStatus CholeskyTiling::RunBigKernelTiling()
     }
     tilingData.SaveToBuffer(tilingContext->GetRawTilingData()->GetData(),
                             tilingContext->GetRawTilingData()->GetCapacity());
+
+    // 协同面板路径（仅 950，单矩阵或大维度批量）使用 SyncAll，需要 BATCH_MODE_SCHEDULE
+    // （fix 分支先例）。非 950 完全保持原版行为：原版 910b 不设置 ScheduleMode。
+    if (socSupportsPanel && (matrixNumCount == 1 || matSizeN > BATCH_COOP_MIN_M)) {
+        OP_CHECK_IF(tilingContext->SetScheduleMode(1) != ge::GRAPH_SUCCESS,
+                    OP_LOGE(tilingContext, "SetScheduleMode failed"), return ge::GRAPH_FAILED);
+    }
 
     PrintTilingData();
     return ge::GRAPH_SUCCESS;
@@ -201,6 +222,7 @@ static ge::graphStatus tilingPrepareTiling(gert::TilingParseContext* context)
     auto platformInfo = context->GetPlatformInfo();
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
+    compileInfo->socSupportsPanel = ascendcPlatform.GetSocVersion() == platform_ascendc::SocVersion::ASCEND950;
 
     OP_CHECK_IF(
         (compileInfo->coreNum <= 0),

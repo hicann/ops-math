@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #ifndef CHOLESKY_TILING_H
 #define CHOLESKY_TILING_H
 
@@ -16,16 +16,18 @@
 namespace optiling {
 
 struct CholeskyCompileInfo {
-  uint32_t coreNum = 0;
+    uint32_t coreNum = 0;
+    // 面板算法（全核尾随更新 + SIMT 转置）仅在 950（arch 3510）kernel 实现，TilingParse 阶段判定
+    bool socSupportsPanel = false;
 };
 
 BEGIN_TILING_DATA_DEF(CholeskyTilingData)
-    TILING_DATA_FIELD_DEF(uint32_t, matSizeN);
-    TILING_DATA_FIELD_DEF(uint64_t, matrixNumCount);
-    TILING_DATA_FIELD_DEF(uint32_t, blockSize);
-    TILING_DATA_FIELD_DEF(uint32_t, blockNum);
+TILING_DATA_FIELD_DEF(uint32_t, matSizeN);
+TILING_DATA_FIELD_DEF(uint64_t, matrixNumCount);
+TILING_DATA_FIELD_DEF(uint32_t, blockSize);
+TILING_DATA_FIELD_DEF(uint32_t, blockNum);
 END_TILING_DATA_DEF;
 
 REGISTER_TILING_DATA_CLASS(Cholesky, CholeskyTilingData)
-}
+} // namespace optiling
 #endif
