@@ -41,7 +41,8 @@ ge::graphStatus FillTiling::SetTilingData(const ElewiseBaseTiling& elewiseBaseTi
     currentWorkspace[0] = static_cast<uint64_t>(FILL_WORKSPACE_RESERVE_BYTE);
 
     const uint64_t tilingKey = GET_TPL_TILING_KEY(TPL_SCH_MODE_1, dType);
-    OP_LOGD(FILLTILING_OP_NAME, "[TilingData] : tilingKey=%lu", tilingKey);
+    OP_LOGD(FILLTILING_OP_NAME, "[TilingData] : tilingKey=%lu, dType=%lu, outputDtype=%s", tilingKey, dType,
+            Ops::Base::ToString(outputDtype_).c_str());
     context_->SetTilingKey(tilingKey);
     context_->SetBlockDim(elewiseBaseTiling.GetBlockDim());
     return ge::GRAPH_SUCCESS;
@@ -119,7 +120,8 @@ ge::graphStatus FillTiling::CheckInputDims()
 }
 
 static const std::initializer_list<ge::DataType> ASCEND910D_AICORE_INPUTVALUE_DTYPE_SUPPORT_LIST = {
-    ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BOOL, ge::DT_INT64, ge::DT_INT8, ge::DT_INT32, ge::DT_BF16};
+    ge::DT_FLOAT, ge::DT_FLOAT16,       ge::DT_BOOL,        ge::DT_INT64,       ge::DT_INT8,    ge::DT_INT32,
+    ge::DT_BF16,  ge::DT_FLOAT8_E4M3FN, ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E8M0, ge::DT_HIFLOAT8};
 
 ge::graphStatus FillTiling::CheckInputValue()
 {
@@ -140,7 +142,8 @@ ge::graphStatus FillTiling::CheckInputValue()
     ge::DataType inputValueDType = valueDesc->GetDataType();
     if (FillCheckType(inputValueDType, ASCEND910D_AICORE_INPUTVALUE_DTYPE_SUPPORT_LIST) != ge::GRAPH_SUCCESS) {
         OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "value(input)", Ops::Base::ToString(inputValueDType),
-                                  "Float, Float16, Bool, Int64, Int8, Int32 and Bfloat16");
+                                  "Float, Float16, Bool, Int64, Int8, Int32, Bfloat16, Float8_E4M3FN, Float8_E5M2, "
+                                  "Float8_E8M0 and HiFloat8");
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
@@ -169,7 +172,9 @@ ge::graphStatus FillTiling::RunTiling()
     } else if (this->outputDtype_ == ge::DT_BF16) {
         dType = TPL_BF16;
         res = elewiseBaseTiling.DoTiling<FillDag<bfloat16_t>::OpDag, false>(*tiling);
-    } else if (this->outputDtype_ == ge::DT_INT8) {
+    } else if (this->outputDtype_ == ge::DT_INT8 || this->outputDtype_ == ge::DT_FLOAT8_E4M3FN ||
+               this->outputDtype_ == ge::DT_FLOAT8_E5M2 || this->outputDtype_ == ge::DT_FLOAT8_E8M0 ||
+               this->outputDtype_ == ge::DT_HIFLOAT8) {
         dType = TPL_INT8;
         res = elewiseBaseTiling.DoTiling<FillDag<int8_t>::OpDag, false>(*tiling);
     } else if (this->outputDtype_ == ge::DT_INT32) {
@@ -183,7 +188,8 @@ ge::graphStatus FillTiling::RunTiling()
         res = elewiseBaseTiling.DoTiling<FillDag<int8_t>::OpDag, false>(*tiling);
     } else {
         OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "y(output)", Ops::Base::ToString(this->outputDtype_),
-                                  "Float16, Float, BFloat16, Int8, Bool, Int32 and Int64");
+                                  "Float16, Float, BFloat16, Int8, Bool, Int32, Int64, Float8_E4M3FN, Float8_E5M2, "
+                                  "Float8_E8M0 and HiFloat8");
         return ge::GRAPH_FAILED;
     }
 

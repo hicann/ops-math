@@ -18,14 +18,20 @@ namespace ops {
 class Fill : public OpDef {
 public:
     const std::vector<ge::DataType> dimsDataType = {
-        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
+        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
     const std::vector<ge::DataType> baseDataType = {
-        ge::DT_INT64, ge::DT_INT32, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT8, ge::DT_BOOL, ge::DT_BF16,
-        ge::DT_INT64, ge::DT_INT32, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT8, ge::DT_BOOL, ge::DT_BF16};
+        ge::DT_INT64,       ge::DT_INT32,   ge::DT_FLOAT,         ge::DT_FLOAT16,       ge::DT_INT8,
+        ge::DT_BOOL,        ge::DT_BF16,    ge::DT_FLOAT8_E4M3FN, ge::DT_FLOAT8_E5M2,   ge::DT_FLOAT8_E8M0,
+        ge::DT_HIFLOAT8,    ge::DT_INT64,   ge::DT_INT32,         ge::DT_FLOAT,         ge::DT_FLOAT16,
+        ge::DT_INT8,        ge::DT_BOOL,    ge::DT_BF16,          ge::DT_FLOAT8_E4M3FN, ge::DT_FLOAT8_E5M2,
+        ge::DT_FLOAT8_E8M0, ge::DT_HIFLOAT8};
     const std::vector<ge::Format> baseFormat = {
-        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
     explicit Fill(const char* name) : OpDef(name)
     {
         this->Input("dims")

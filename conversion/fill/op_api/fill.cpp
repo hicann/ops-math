@@ -30,6 +30,13 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_GE910
     op::DataType::DT_INT8,   op::DataType::DT_BOOL,    op::DataType::DT_BF16,  op::DataType::DT_UINT16,
     op::DataType::DT_UINT32, op::DataType::DT_UINT64};
 
+static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_REGBASE = {
+    op::DataType::DT_FLOAT,       op::DataType::DT_FLOAT16,       op::DataType::DT_INT32,
+    op::DataType::DT_INT64,       op::DataType::DT_INT8,          op::DataType::DT_BOOL,
+    op::DataType::DT_BF16,        op::DataType::DT_UINT16,        op::DataType::DT_UINT32,
+    op::DataType::DT_UINT64,      op::DataType::DT_FLOAT8_E4M3FN, op::DataType::DT_FLOAT8_E5M2,
+    op::DataType::DT_FLOAT8_E8M0, op::DataType::DT_HIFLOAT8};
+
 // 判断芯片类型是否大于等于910B
 static inline bool CheckSocVersionGe910B(void)
 {
@@ -41,6 +48,9 @@ static inline bool CheckSocVersionGe910B(void)
 inline static bool IsAiCoreSupport(const aclTensor* self)
 {
     // 获取芯片类型
+    if (IsRegBase()) {
+        return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_REGBASE);
+    }
     if (CheckSocVersionGe910B()) {
         return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST_GE910B);
     }

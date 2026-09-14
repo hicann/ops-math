@@ -49,3 +49,75 @@ TEST_F(FillTilingTest, fill_test_0)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
+
+TEST_F(FillTilingTest, fill_test_float8_e4m3fn)
+{
+    optiling::FillCompileInfo compile_info = {64, 262144};
+    gert::TilingContextPara tilingContextPara("Fill",
+                                              {
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT8_E4M3FN, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1}, {1}}, ge::DT_FLOAT8_E4M3FN, ge::FORMAT_ND},
+                                              },
+                                              &compile_info);
+    // fp8 复用 int8 的模板实例(TPL_INT8)，tiling key 与 int8 相同
+    uint64_t expectTilingKey = 9;
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
+}
+
+TEST_F(FillTilingTest, fill_test_float8_e5m2)
+{
+    optiling::FillCompileInfo compile_info = {64, 262144};
+    gert::TilingContextPara tilingContextPara("Fill",
+                                              {
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT8_E5M2, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1}, {1}}, ge::DT_FLOAT8_E5M2, ge::FORMAT_ND},
+                                              },
+                                              &compile_info);
+    // fp8 复用 int8 的模板实例(TPL_INT8)，tiling key 与 int8 相同
+    uint64_t expectTilingKey = 9;
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
+}
+
+TEST_F(FillTilingTest, fill_test_float8_e8m0)
+{
+    optiling::FillCompileInfo compile_info = {64, 262144};
+    gert::TilingContextPara tilingContextPara("Fill",
+                                              {
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT8_E8M0, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1}, {1}}, ge::DT_FLOAT8_E8M0, ge::FORMAT_ND},
+                                              },
+                                              &compile_info);
+    // fp8 复用 int8 的模板实例(TPL_INT8)，tiling key 与 int8 相同
+    uint64_t expectTilingKey = 9;
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
+}
+
+TEST_F(FillTilingTest, fill_test_hifloat8)
+{
+    optiling::FillCompileInfo compile_info = {64, 262144};
+    gert::TilingContextPara tilingContextPara("Fill",
+                                              {
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_HIFLOAT8, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1}, {1}}, ge::DT_HIFLOAT8, ge::FORMAT_ND},
+                                              },
+                                              &compile_info);
+    // fp8 复用 int8 的模板实例(TPL_INT8)，tiling key 与 int8 相同
+    uint64_t expectTilingKey = 9;
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
+}

@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-
 #include "aclnn_fill_tensor.h"
 #include "fill.h"
 #include "aclnn_kernels/contiguous.h"
@@ -42,6 +41,12 @@ static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_910B = {
     DataType::DT_INT16, DataType::DT_INT8,      DataType::DT_UINT8,      DataType::DT_DOUBLE,
     DataType::DT_BOOL,  DataType::DT_COMPLEX64, DataType::DT_COMPLEX128, DataType::DT_BF16};
 
+static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_REGBASE = {
+    DataType::DT_FLOAT,         DataType::DT_INT32,       DataType::DT_INT64,       DataType::DT_FLOAT16,
+    DataType::DT_INT16,         DataType::DT_INT8,        DataType::DT_UINT8,       DataType::DT_DOUBLE,
+    DataType::DT_BOOL,          DataType::DT_COMPLEX64,   DataType::DT_COMPLEX128,  DataType::DT_BF16,
+    DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E8M0, DataType::DT_HIFLOAT8};
+
 static inline bool CheckNotNull(const aclTensor* self, const aclTensor* value)
 {
     // self、value不能为空指针
@@ -54,8 +59,12 @@ static inline bool CheckDtypeValid(const aclTensor* self)
 {
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     bool is910bSocVersion = (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch));
-    const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_CURRENT =
-        is910bSocVersion ? DTYPE_SUPPORT_LIST_910B : DTYPE_SUPPORT_LIST_910;
+    const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_CURRENT = is910bSocVersion ? DTYPE_SUPPORT_LIST_910B :
+                                                                                          DTYPE_SUPPORT_LIST_910;
+    if (IsRegBase()) {
+        OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST_REGBASE, return false);
+        return true;
+    }
 
     // 检查self的数据类型是否在fill_tensor算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST_CURRENT, return false);
@@ -70,9 +79,8 @@ static inline bool CheckShape(const aclTensor* self, const aclTensor* value)
     // value的数据维度只能是0D或者size=1的1D
     auto& valueViewShape = value->GetViewShape();
     if (valueViewShape.GetDimNum() > 1 || (valueViewShape.GetDimNum() == 1 && valueViewShape.GetDim(0) != 1)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "value shape should be 0D or 1D with size = 1, but got %s.",
-            ToString(value->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "value shape should be 0D or 1D with size = 1, but got %s.",
+                ToString(value->GetViewShape()).GetString());
         return false;
     }
 
@@ -108,8 +116,8 @@ static inline FVector<int64_t> getShape(const aclTensor* self)
     return shape;
 }
 
-aclnnStatus aclnnInplaceFillTensorGetWorkspaceSize(
-    aclTensor* selfRef, const aclTensor* value, size_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceFillTensorGetWorkspaceSize(aclTensor* selfRef, const aclTensor* value, size_t* workspaceSize,
+                                                   aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceFillTensor, DFX_IN(selfRef, value), DFX_OUT());
 

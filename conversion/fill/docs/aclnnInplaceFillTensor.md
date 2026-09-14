@@ -78,7 +78,7 @@ aclnnStatus aclnnInplaceFillTensor(
       <td>输入/输出</td>
       <td>输入输出tensor</td>
       <td>-</td>
-      <td>INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、BFLOAT16、FLOAT、FLOAT16</td>
+      <td>INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、BFLOAT16、FLOAT、FLOAT16、FLOAT8_E4M3FN</td>
       <td>ND</td>
       <td>不支持8维以上</td>
       <td>√</td>
@@ -117,8 +117,12 @@ aclnnStatus aclnnInplaceFillTensor(
   </table>
 
   <!-- npu="910,310p" id7 -->
-  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
+  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16、FLOAT8_E4M3FN、FLOAT8_E5M2、FLOAT8_E8M0、HIFLOAT8。
   <!-- end id7 -->
+  <!-- npu="A3,910b" id8 -->
+  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型不支持FLOAT8_E4M3FN、FLOAT8_E5M2、FLOAT8_E8M0、HIFLOAT8。
+  <!-- end id8 -->
+  - 对于CANN 9.0.0版本，selfRef的数据类型为FLOAT8_E4M3FN、FLOAT8_E5M2、FLOAT8_E8M0、HIFLOAT8时不支持。
 
 - **返回值**
 
@@ -158,6 +162,11 @@ aclnnStatus aclnnInplaceFillTensor(
     </tr>
     <tr>
       <td>参数selfRef的维度大于8。</td>
+    </tr>
+    <tr>
+      <td>ACLNN_ERR_INNER_NULLPTR</td>
+      <td>561103</td>
+      <td>算子执行失败或变量初始化失败。</td>
     </tr>
   </tbody>
   </table>
