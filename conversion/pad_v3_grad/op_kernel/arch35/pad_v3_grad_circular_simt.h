@@ -21,6 +21,7 @@
 #include "simt_api/asc_simt.h"
 #include "simt_api/asc_fp16.h"
 #include "simt_api/asc_bf16.h"
+#include "pad_v3_grad_common.h"
 #include "pad_v3_grad_struct.h"
 
 constexpr int32_t CIRCULAR_THREAD_DIM = 2048;
@@ -381,23 +382,9 @@ template <typename T>
 template <typename U>
 __aicore__ inline void PadV3GradCircularSimt<T>::Process()
 {
-    using CastType = std::conditional_t<std::is_same_v<T, bfloat16_t>, float32_t,
-                                        std::conditional_t<std::is_same_v<T, float16_t>, float32_t, T>>;
-    using GmOffsetType = std::conditional_t<std::is_same_v<U, int64_t>, uint64_t, uint32_t>;
+    using CastType = PadV3GradCastType<T>;
+    using GmOffsetType = PadV3GradGmOffsetType<U>;
 
-    uint32_t blockNum = GetBlockNum(); // 获取到核数
-    if (mBlockIdx_ >= blockNum) {
-        return;
-    }
-
-    GmOffsetType outputSize = 1;
-    for (uint8_t i = 0; i < mTD_->dimNum; i++) {
-        outputSize *= mTD_->outShape[i];
-    }
-
-    if (outputSize == 0) {
-        return;
-    }
     // 快速除参数
     __ubuf__ GmOffsetType magics[PAD_GRAD_MAX_DIMS_NUM];
     __ubuf__ GmOffsetType shifts[PAD_GRAD_MAX_DIMS_NUM];
@@ -411,18 +398,11 @@ __aicore__ inline void PadV3GradCircularSimt<T>::Process()
     // 裁剪边界
     __ubuf__ U cutBounds[PAD_GRAD_MAX_DIMS_NUM];
 
-    GmOffsetType m = 0, s = 0;
-    for (int i = 0; i < mTD_->dimNum; i++) {
-        inShapes[i] = static_cast<U>(mTD_->inShape[i]);
-        outShapes[i] = static_cast<U>(mTD_->outShape[i]);
-        inStrides[i] = static_cast<U>(mTD_->inStride[i]);
-        outStrides[i] = static_cast<U>(mTD_->outStride[i]);
-        leftPads[i] = mTD_->leftPad[i];
-        rightPads[i] = mTD_->rightPad[i];
-        GetUintDivMagicAndShift(m, s, static_cast<GmOffsetType>(mTD_->outStride[i]));
-        magics[i] = m;
-        shifts[i] = s;
-        cutBounds[i] = static_cast<U>(mTD_->inShape[i]) * static_cast<U>(mTD_->inStride[i]);
+    uint32_t blockNum = AscendC::GetBlockNum(); // 获取到核数
+    GmOffsetType outputSize = 0;
+    if (!PrepareSimtGradArrays<U, GmOffsetType>(mTD_, blockNum, magics, shifts, inShapes, outShapes, inStrides,
+                                                outStrides, leftPads, rightPads, cutBounds, outputSize)) {
+        return;
     }
 
     if (mTD_->dimNum == 1) {
