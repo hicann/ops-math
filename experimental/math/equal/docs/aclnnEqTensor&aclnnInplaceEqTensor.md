@@ -5,10 +5,11 @@
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term> |    √     |
 
 ## 功能说明
 
-- 接口功能：计算两个Tensor中的元素是否相等，返回一个Tensor，self=other的为True(1.)，否则为False(0.)。
+- 接口功能：计算两个Tensor中的元素是否相等，返回一个Tensor，self=other的为True（1），否则为False（0）。
 - 计算表达式：
 
   $$
@@ -79,7 +80,7 @@ aclnnStatus aclnnInplaceEqTensor(
       <th>使用说明</th>
       <th>数据类型</th>
       <th>数据格式</th>
-      <th>维度(shape)</th>
+      <th>维度（shape）</th>
       <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
@@ -147,7 +148,7 @@ aclnnStatus aclnnInplaceEqTensor(
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -229,7 +230,7 @@ aclnnStatus aclnnInplaceEqTensor(
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## aclnnInplaceEqTensorGetWorkspaceSize
 
@@ -253,7 +254,7 @@ aclnnStatus aclnnInplaceEqTensor(
       <th>使用说明</th>
       <th>数据类型</th>
       <th>数据格式</th>
-      <th>维度(shape)</th>
+      <th>维度（shape）</th>
       <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
@@ -309,7 +310,7 @@ aclnnStatus aclnnInplaceEqTensor(
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
   第一段接口完成入参校验，出现以下场景时报错：
 
@@ -394,7 +395,7 @@ aclnnStatus aclnnInplaceEqTensor(
 
 - **返回值：**
 
-  aclnnStatus: 返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
+  aclnnStatus：返回状态码，具体参见[aclnn返回码](../../../../docs/zh/context/aclnn_return_code.md)。
 
 ## 约束说明
 

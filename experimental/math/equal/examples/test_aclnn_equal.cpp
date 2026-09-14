@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include <iostream>
 #include <vector>
@@ -27,11 +27,11 @@
 
 int64_t GetShapeSize(const std::vector<int64_t>& shape)
 {
-    int64_t shape_size = 1;
+    int64_t shapeSize = 1;
     for (auto i : shape) {
-        shape_size *= i;
+        shapeSize *= i;
     }
-    return shape_size;
+    return shapeSize;
 }
 
 int Init(int32_t deviceId, aclrtStream* stream)
@@ -47,9 +47,8 @@ int Init(int32_t deviceId, aclrtStream* stream)
 }
 
 template <typename T>
-int CreateAclTensor(
-    const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr, aclDataType dataType,
-    aclTensor** tensor)
+int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr,
+                    aclDataType dataType, aclTensor** tensor)
 {
     auto size = GetShapeSize(shape) * sizeof(T);
     // 调用aclrtMalloc申请device侧内存
@@ -67,9 +66,14 @@ int CreateAclTensor(
     }
 
     // 调用aclCreateTensor接口创建aclTensor
-    *tensor = aclCreateTensor(
-        shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND, shape.data(), shape.size(),
-        *deviceAddr);
+    *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND,
+                              shape.data(), shape.size(), *deviceAddr);
+    if (*tensor == nullptr) {
+        LOG_PRINT("aclCreateTensor failed.\n");
+        aclrtFree(*deviceAddr);
+        *deviceAddr = nullptr;
+        return ACL_ERROR_FAILURE;
+    }
     return 0;
 }
 
@@ -80,10 +84,9 @@ aclError InitAcl(int32_t deviceId, aclrtStream* stream)
     return ACL_SUCCESS;
 }
 
-aclError CreateInputs(
-    std::vector<int64_t>& selfShape, std::vector<int64_t>& otherShape, std::vector<int64_t>& outShape,
-    void** selfDeviceAddr, void** otherDeviceAddr, void** outDeviceAddr, aclTensor** self, aclTensor** other,
-    aclTensor** out)
+aclError CreateInputs(const std::vector<int64_t>& selfShape, const std::vector<int64_t>& otherShape,
+                      const std::vector<int64_t>& outShape, void** selfDeviceAddr, void** otherDeviceAddr,
+                      void** outDeviceAddr, aclTensor** self, aclTensor** other, aclTensor** out)
 {
     std::vector<double> selfHostData = {0, 1, 2, 3, 4, 5, 6, 7};
     std::vector<double> otherHostData = {0, 1, 9, 9, 9, 9, 9, 9};
@@ -101,9 +104,9 @@ aclError CreateInputs(
     return ACL_SUCCESS;
 }
 
-aclError ExecOpApi(
-    aclTensor* self, aclTensor* other, aclTensor* out, void** workspaceAddrOut, uint64_t& workspaceSize,
-    void* outDeviceAddr, std::vector<int64_t>& outShape, aclrtStream stream)
+aclError ExecOpApi(const aclTensor* self, const aclTensor* other, aclTensor* out, const void* outDeviceAddr,
+                   const std::vector<int64_t>& outShape, aclrtStream stream, void** workspaceAddrOut,
+                   uint64_t& workspaceSize)
 {
     aclOpExecutor* executor;
 
@@ -126,9 +129,8 @@ aclError ExecOpApi(
     auto size = GetShapeSize(outShape);
     std::vector<char> resultData(size, 0);
 
-    ret = aclrtMemcpy(
-        resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr, size * sizeof(char),
-        ACL_MEMCPY_DEVICE_TO_HOST);
+    ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr, size * sizeof(char),
+                      ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
 
     for (int64_t i = 0; i < size; i++) {
@@ -158,14 +160,14 @@ int main()
     aclTensor* other = nullptr;
     aclTensor* out = nullptr;
 
-    ret = CreateInputs(
-        selfShape, otherShape, outShape, &selfDeviceAddr, &otherDeviceAddr, &outDeviceAddr, &self, &other, &out);
+    ret = CreateInputs(selfShape, otherShape, outShape, &selfDeviceAddr, &otherDeviceAddr, &outDeviceAddr, &self,
+                       &other, &out);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     uint64_t workspaceSize = 0;
     void* workspaceAddr = nullptr;
 
-    ret = ExecOpApi(self, other, out, &workspaceAddr, workspaceSize, outDeviceAddr, outShape, stream);
+    ret = ExecOpApi(self, other, out, outDeviceAddr, outShape, stream, &workspaceAddr, workspaceSize);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
 
     // 释放资源

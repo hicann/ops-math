@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2026 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include "aclnn_eq_scalar.h"
 #include "equal.h"
 #include "aclnn_kernels/contiguous.h"
@@ -31,31 +31,6 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_910B_LIST = {
     op::DataType::DT_FLOAT,  op::DataType::DT_INT32,     op::DataType::DT_INT64,      op::DataType::DT_FLOAT16,
     op::DataType::DT_INT16,  op::DataType::DT_INT8,      op::DataType::DT_UINT8,      op::DataType::DT_BOOL,
     op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128, op::DataType::DT_BF16};
-
-static inline double GetCastedDouble(const aclTensor* self, const aclScalar* other)
-{
-    double res = 0;
-    switch (self->GetDataType()) {
-        case DataType::DT_FLOAT:
-            res = static_cast<double>(other->ToFloat());
-            break;
-        case DataType::DT_FLOAT16:
-            res = static_cast<double>(other->ToFp16());
-            break;
-        default:
-            res = other->ToDouble();
-            break;
-    }
-    return res;
-}
-
-static inline bool IsDoubleEqual(double a, double b)
-{
-    if (std::abs(a - b) <= std::numeric_limits<float>::epsilon()) {
-        return true;
-    }
-    return false;
-}
 
 static op::DataType PromoteTypeScalar(op::DataType selfDtype, op::DataType otherDtype)
 {
@@ -111,9 +86,8 @@ static bool CheckPromoteType(const aclTensor* self, const aclScalar* other, cons
     op::DataType promoteType;
     promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
     if (promoteType == DataType::DT_UNDEFINED) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s cannot be promoted to a common dtype.",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
         return false;
     }
 
@@ -140,24 +114,25 @@ static bool CheckShape(const aclTensor* self, const aclTensor* out)
 
 static aclnnStatus CheckParams(const aclTensor* self, const aclScalar* other, const aclTensor* out)
 {
-    // 1. 检查参数是否为空指针
+    // 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, other, out), ACLNN_ERR_PARAM_NULLPTR);
 
-    // 2. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
+    // 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
     CHECK_RET(CheckDtypeValid(self, other, out), ACLNN_ERR_PARAM_INVALID);
 
-    // 3. 检查self的数据类型能否转换为输出数据类型
+    // 检查self的数据类型能否转换为输出数据类型
     CHECK_RET(CheckPromoteType(self, other, out), ACLNN_ERR_PARAM_INVALID);
 
-    // 4. 检查shape是否满足约束
+    // 检查shape是否满足约束
     CHECK_RET(CheckShape(self, out), ACLNN_ERR_PARAM_INVALID);
 
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnEqScalarGetWorkspaceSize(
-    const aclTensor* self, const aclScalar* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnEqScalarGetWorkspaceSize(const aclTensor* self, const aclScalar* other, aclTensor* out,
+                                          uint64_t* workspaceSize, aclOpExecutor** executor)
 {
+    OP_CHECK_COMM_INPUT(workspaceSize, executor);
     L2_DFX_PHASE_1(aclnnEqScalar, DFX_IN(self, other), DFX_OUT(out));
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -204,8 +179,8 @@ aclnnStatus aclnnEqScalarGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceEqScalarGetWorkspaceSize(
-    const aclTensor* selfRef, const aclScalar* other, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceEqScalarGetWorkspaceSize(const aclTensor* selfRef, const aclScalar* other,
+                                                 uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     auto out = const_cast<aclTensor*>(selfRef);
     return aclnnEqScalarGetWorkspaceSize(selfRef, other, out, workspaceSize, executor);

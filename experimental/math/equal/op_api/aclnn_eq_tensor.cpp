@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2026 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 #include "aclnn_eq_tensor.h"
 #include "equal.h"
 #include "aclnn_kernels/cast.h"
@@ -14,16 +14,17 @@
 #include "aclnn/aclnn_base.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
+#include "opdev/make_op_executor.h"
 #include "opdev/shape_utils.h"
 #include "opdev/format_utils.h"
 #include "opdev/op_dfx.h"
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
-#include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
 
 using namespace op;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -36,22 +37,7 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* other, const ac
     return true;
 }
 
-/* Equal 算子的完整计算流程如下:
- * self                               other
- *   |                                  |
- *   \                                  /
- * Contiguous(workspace_0)    Contiguous(workspace_2)
- *      \                             /
- *     Cast(workspace_1)     Cast(workspace_3)
- *               \            /
- *             Equal(workspace_4)
- *                    |
- *              Cast(workspace_5)
- *                    |
- *                 ViewCopy
- *                    |
- *                  result
- */
+// Equal 由自研 AICore kernel 同时处理连续输入和广播输入。
 
 // 根据API定义，需要列出所能支持的所有dtype (1971)
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_910B_LIST = {
@@ -65,26 +51,27 @@ static const size_t DIM_SUPPORT_MAX = 8;
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const aclTensor* out)
 {
     const std::initializer_list<op::DataType> inputSupportList = DTYPE_SUPPORT_910B_LIST;
+    // Check each input before type promotion so unsupported dtypes cannot enter a supported promotion path.
+    OP_CHECK_DTYPE_NOT_SUPPORT(self, inputSupportList, return false);
+    OP_CHECK_DTYPE_NOT_SUPPORT(other, inputSupportList, return false);
+
     // 检查out的数据类型是否在equal算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(out, inputSupportList, return false);
 
     // 检查self和other能否做数据类型推导
     op::DataType promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
     if (promoteType == DataType::DT_UNDEFINED) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s cannot be promoted to a common dtype.",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
         return false;
     }
 
     // 检查promoteType的数据类型是否在equal算子的支持列表内
     if (!CheckType(promoteType, inputSupportList)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "Self dtype %s and other dtype %s get promoteType dtype %s should be in "
-            "dtype support list [%s].",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString(),
-            op::ToString(promoteType).GetString(), op::ToString(inputSupportList).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "Promoted dtype %s for self dtype %s and other dtype %s is not in the supported dtype list [%s].",
+                op::ToString(promoteType).GetString(), op::ToString(self->GetDataType()).GetString(),
+                op::ToString(other->GetDataType()).GetString(), op::ToString(inputSupportList).GetString());
         return false;
     }
 
@@ -104,9 +91,8 @@ static bool CheckShape(const aclTensor* self, const aclTensor* other, const aclT
     OP_CHECK_BROADCAST_AND_INFER_SHAPE(self, other, outShape, return false);
 
     if (outShape != out->GetViewShape()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "BroadcastShape %s is not equal out's shape %s.",
-            op::ToString(outShape).GetString(), op::ToString(out->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast shape %s does not match the output shape %s.",
+                op::ToString(outShape).GetString(), op::ToString(out->GetViewShape()).GetString());
         return false;
     }
     return true;
@@ -114,25 +100,23 @@ static bool CheckShape(const aclTensor* self, const aclTensor* other, const aclT
 
 static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other, const aclTensor* out)
 {
-    // 1. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
     CHECK_RET(CheckDtypeValid(self, other, out), ACLNN_ERR_PARAM_INVALID);
-
-    // 2. 检查双输入是否能broadcast,检查boradcast后的输出与out是否一致
     CHECK_RET(CheckShape(self, other, out), ACLNN_ERR_PARAM_INVALID);
 
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnEqTensorGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnEqTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                          uint64_t* workspaceSize, aclOpExecutor** executor)
 {
+    OP_CHECK_COMM_INPUT(workspaceSize, executor);
     L2_DFX_PHASE_1(aclnnEqTensor, DFX_IN(self, other), DFX_OUT(out));
 
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
-    // 1. 检查三个入参参数是否为空指针
+    // 检查三个入参是否为空指针
     CHECK_RET(CheckNotNull(self, other, out), ACLNN_ERR_PARAM_NULLPTR);
 
     // 固定写法，参数检查
@@ -164,7 +148,6 @@ aclnnStatus aclnnEqTensorGetWorkspaceSize(
     auto otherCasted = l0op::Cast(otherContiguous, promoteType, uniqueExecutor.get());
     CHECK_RET(otherCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    // 调用Equal算子kernel
     const aclTensor* equalOpOut = l0op::Equal(selfCasted, otherCasted, uniqueExecutor.get());
     CHECK_RET(equalOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
@@ -184,27 +167,27 @@ aclnnStatus aclnnEqTensorGetWorkspaceSize(
 
 static inline aclnnStatus CheckInplace(const aclTensor* selfRef, const aclTensor* other)
 {
-    OP_CHECK_NULL(selfRef, return false);
-    OP_CHECK_NULL(other, return false);
+    OP_CHECK_NULL(selfRef, return ACLNN_ERR_PARAM_NULLPTR);
+    OP_CHECK_NULL(other, return ACLNN_ERR_PARAM_NULLPTR);
+    OP_CHECK(selfRef->IsEmpty() == other->IsEmpty(),
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "selfRef and other must either both be empty or both be non-empty."),
+             return ACLNN_ERR_PARAM_INVALID);
 
     op::Shape broadcastShape;
     OP_CHECK(
         BroadcastInferShape(selfRef->GetViewShape(), other->GetViewShape(), broadcastShape),
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Shape of selfRef and other can't broadcast, got %s, %s.",
-            op::ToString(selfRef->GetViewShape()).GetString(), op::ToString(other->GetViewShape()).GetString()),
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of selfRef and other can't broadcast, got %s, %s.",
+                op::ToString(selfRef->GetViewShape()).GetString(), op::ToString(other->GetViewShape()).GetString()),
         return ACLNN_ERR_PARAM_INVALID);
-    OP_CHECK(
-        selfRef->GetViewShape() == broadcastShape,
-        OP_LOGE(
-            ACLNN_ERR_PARAM_NULLPTR, "Expected shape of selfRef should be %s, but got %s.",
-            op::ToString(broadcastShape).GetString(), op::ToString(selfRef->GetViewShape()).GetString()),
-        return ACLNN_ERR_PARAM_INVALID);
+    OP_CHECK(selfRef->GetViewShape() == broadcastShape,
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expected shape of selfRef should be %s, but got %s.",
+                     op::ToString(broadcastShape).GetString(), op::ToString(selfRef->GetViewShape()).GetString()),
+             return ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceEqTensorGetWorkspaceSize(
-    const aclTensor* selfRef, const aclTensor* other, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceEqTensorGetWorkspaceSize(const aclTensor* selfRef, const aclTensor* other,
+                                                 uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     auto ret = CheckInplace(selfRef, other);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);

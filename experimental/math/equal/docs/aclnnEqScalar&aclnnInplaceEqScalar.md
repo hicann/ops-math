@@ -5,6 +5,7 @@
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -79,7 +80,7 @@ aclnnStatus aclnnInplaceEqScalar(
       <th>使用说明</th>
       <th>数据类型</th>
       <th>数据格式</th>
-      <th>维度(shape)</th>
+      <th>维度（shape）</th>
       <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
@@ -141,7 +142,7 @@ aclnnStatus aclnnInplaceEqScalar(
     - self、other不支持UINT32数据类型。
   - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
     - self与other满足[互推导关系](../../../../docs/zh/context/deduction_relationship.md)。
-    - self、other不支持UINT32、UINT64数据类型
+    - self、other不支持UINT32、UINT64数据类型。
     - out不支持UINT64、UINT32、UINT16数据类型。
   - <term>Atlas 训练系列产品</term>：
     - self与other满足[互推导关系](../../../../docs/zh/context/deduction_relationship.md)。
@@ -253,7 +254,7 @@ aclnnStatus aclnnInplaceEqScalar(
       <th>使用说明</th>
       <th>数据类型</th>
       <th>数据格式</th>
-      <th>维度(shape)</th>
+      <th>维度（shape）</th>
       <th>非连续Tensor</th>
     </tr></thead>
   <tbody>
