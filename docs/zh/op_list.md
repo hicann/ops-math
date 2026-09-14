@@ -1146,6 +1146,16 @@
     <td>AI Core</td>
     <td>判断输入张量的元素是否为正无穷。</td>
   </tr>
+  <tr>
+    <td>math</td>
+    <td><a href="../../math/kl_div/README.md">kl_div</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>计算KL散度（旧图迁移兼容壳算子，计算内核转发KlDivV2）。</td>
+  </tr>
     <tr>
     <td>math</td>
     <td><a href="../../math/kl_div_v2/README.md">kl_div_v2</a></td>
