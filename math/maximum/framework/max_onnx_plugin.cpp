@@ -8,8 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "graph/operator.h"
-#include "register/register.h"
 #include "onnx_common.h"
 #include "stub_ops.h"
 #include "op_math_proto_extend.h"
@@ -20,13 +18,19 @@ using namespace std;
 using namespace ge;
 using ge::Operator;
 namespace domi {
-static Status ParseParamsMaxCall(const ge::Operator& op_src, ge::Operator& op_dest)
+using NodeProto = ge::onnx::NodeProto;
+
+static Status ParseParamsMaxCall(const Message* op_src, ge::Operator& op_dest)
 {
-    int n = static_cast<int>(op_src.GetInputsSize());
+    const NodeProto* node = dynamic_cast<const NodeProto*>(op_src);
+    if (nullptr == node) {
+        OP_LOGE(GetOpName(op_dest).c_str(), "Dynamic cast op_src to NodeProto failed.");
+        return FAILED;
+    }
+
+    int n = node->input_size();
     op_dest.SetAttr("N", n);
-    ge::AscendString source_name;
-    (void)op_src.GetName(source_name);
-    op_dest.SetAttr("name", std::string(source_name.GetString()));
+    op_dest.SetAttr("name", node->name());
     op_dest.DynamicInputRegister("x", n);
     op_dest.DynamicOutputRegister("y", 1);
     op_dest.SetAttr("original_type", "ai.onnx::11::Max");
@@ -79,7 +83,7 @@ REGISTER_CUSTOM_OP("PartitionedCall")
                    ge::AscendString("ai.onnx::14::Max"), ge::AscendString("ai.onnx::15::Max"),
                    ge::AscendString("ai.onnx::16::Max"), ge::AscendString("ai.onnx::17::Max"),
                    ge::AscendString("ai.onnx::18::Max")})
-    .ParseParamsByOperatorFn(ParseParamsMaxCall)
+    .ParseParamsFn(ParseParamsMaxCall)
     .ParseOpToGraphFn(ParseOpToGraphMax)
     .ImplyType(ImplyType::TVM);
 } // namespace domi
