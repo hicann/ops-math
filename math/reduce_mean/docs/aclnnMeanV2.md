@@ -326,7 +326,7 @@ int PrepareInputAndOutput(
 {
     std::vector<int64_t> selfHostData = {2, 3, 5, 8, 4, 12, 6, 7};
     std::vector<int64_t> outHostData = {2, 3, 5, 8};
-    std::vector<int64_t> dimData = {1, 2};
+    std::vector<int64_t> dimData = {2};
 
     // 创建self aclTensor
     auto ret = CreateAclTensor(selfHostData, selfShape, selfDeviceAddr, aclDataType::ACL_INT64, self);
