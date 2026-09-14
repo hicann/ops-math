@@ -147,8 +147,8 @@
 | [aclnnGroupedBiasAddGradV2](../../math/grouped_bias_add_grad/docs/aclnnGroupedBiasAddGradV2.md) | 实现groupBiasAdd的反向计算。本接口是对[aclnnGroupedBiasAddGrad](../../math/grouped_bias_add_grad/docs/aclnnGroupedBiasAddGrad.md)接口的功能扩展，增加了groupIdxType属性，支持指定groupIdx的类型。                   | 默认确定性实现| 默认确定性实现  |
 | [aclnnGtScalar&aclnnInplaceGtScalar](../../math/greater/docs/aclnnGtScalar&aclnnInplaceGtScalar.md) | 判断输入Tensor中的每个元素是否大于other Scalar的值，返回一个Bool类型的Tensor，对应输入Tensor中每个位置的大于判断是否成立。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnGtTensor&aclnnInplaceGtTensor](../../math/greater/docs/aclnnGtTensor&aclnnInplaceGtTensor.md)                                               | 判断self Tensor中的元素是否大于other Tensor中的元素。返回一个Tensor，若self>other，为True(1)；否则为False(0)。 | 默认确定性实现| 默认确定性实现 |
-| [aclnnHansDecode](../../math/hans_decode/docs/aclnnHansDecode.md) | 对压缩后的张量基于PDF进行解码，同时基于mantissa（尾数）重组恢复张量。 | 默认确定性实现| - |
-| [aclnnHansEncode](../../math/hans_encode/docs/aclnnHansEncode.md) | 对张量的指数位所在字节实现PDF统计，按PDF分布统计进行无损压缩。 | 默认确定性实现| - |
+| [aclnnHansDecode](../../math/hans_decode/docs/aclnnHansDecode.md) | 对压缩后的张量基于PDF进行解码，同时基于mantissa（尾数）重组恢复张量。 | 默认确定性实现| 默认确定性实现 |
+| [aclnnHansEncode](../../math/hans_encode/docs/aclnnHansEncode.md) | 对张量的指数位所在字节实现PDF统计，按PDF分布统计进行无损压缩。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnHardtanh&aclnnInplaceHardtanh](../../conversion/clip_by_value_v2/docs/aclnnHardtanh&aclnnInplaceHardtanh.md) | 将输入的所有元素限制在[clipValueMin,clipValueMax]范围内，若元素大于clipValueMax则限制为clipValueMax，若元素小于clipValueMin则限制为clipValueMin，否则等于元素本身。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnHistc](../../math/histogram_v2/docs/aclnnHistc.md) | 以min和max作为统计上下限，在min和max之间划出等宽的数量为bins的区间，统计张量self中元素在各个区间的数量。如果min和max相等，则使用张量中所有元素的最小值和最大值作为统计的上下限。小于min和大于max的元素不会被统计。 | 默认确定性实现| 默认非确定性实现，支持配置开启 |
 | [aclnnIm2col](../../conversion/im2col/docs/aclnnIm2col.md)      | 图像到列，滑动局部窗口数据转为列向量，拼接为大张量。从批处理输入张量中提取滑动窗口。 | 默认确定性实现| 默认确定性实现|

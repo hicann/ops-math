@@ -17,14 +17,16 @@
 #include "register/tilingdata_base.h"
 
 namespace optiling {
-struct HansDecodeCompileInfo {
-};
+struct HansDecodeCompileInfo {};
 
 BEGIN_TILING_DATA_DEF(HansDecodeTilingData)
 TILING_DATA_FIELD_DEF(int64_t, mantissaByteSize);
 TILING_DATA_FIELD_DEF(int64_t, fixedByteSize);
 TILING_DATA_FIELD_DEF(int64_t, recoverExpByteSize);
 TILING_DATA_FIELD_DEF(int64_t, recoverByteSize);
+TILING_DATA_FIELD_DEF(int64_t, varByteSize);
+TILING_DATA_FIELD_DEF(int64_t, outputValueCount);
+TILING_DATA_FIELD_DEF(int64_t, launchCoreDim);
 TILING_DATA_FIELD_DEF(bool, reshuff);
 END_TILING_DATA_DEF;
 

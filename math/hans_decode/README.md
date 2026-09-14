@@ -4,7 +4,7 @@
 
 | 产品 | 是否支持 |
 | ---- | :----:|
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    ×     |
+| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
 | <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
 | <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
 | <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
@@ -79,7 +79,10 @@
 
 ## 约束说明
 
-无
+- Ascend 950 实现采用 SIMD/SIMT 协同解码。
+- Ascend 950 的 mantissa、fixed、var 和 out 数据类型须与编码时的原始张量一致。
+- Ascend 950 的 fixed 至少包含 512 字节公共头；输入码流及 reshuff 属性须与编码端保持一致。
+- Ascend 950 的测试命令和覆盖限制见[验证说明](../hans_encode/tests/README.md)。
 
 ## 调用说明
 
