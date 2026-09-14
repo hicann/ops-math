@@ -1,6 +1,6 @@
 # aclnnTopkV2
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/9.0.0/math/top_k_v2)
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/9.2.0/math/top_k_v2)
 
 ## 产品支持情况
 
@@ -278,7 +278,7 @@ aclnnStatus aclnnTopkV2(
 #include <iostream>
 #include <vector>
 #include "acl/acl.h"
-#include "aclnnop/aclnn_topk_v2.h"
+#include "aclnnop/aclnn_topk.h"
 
 #define CHECK_RET(cond, return_expr) \
   do {                               \
