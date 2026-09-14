@@ -45,8 +45,8 @@ public:
 private:
     GlobalTensor<T> mInputGM_;
     GlobalTensor<T> mOutputGM_;
-    uint32_t mBlockIdx_;               // 核号
-    const PadV3GradACTilingData* mTD_; // tilingData
+    uint32_t mBlockIdx_;                       // 核号
+    const PadV3GradACTilingData* mCircularTD_; // tilingData
 };
 template <typename U>
 struct IdxAndTimes {
@@ -58,7 +58,7 @@ template <typename T>
 __aicore__ inline void PadV3GradCircularSimt<T>::Init(GM_ADDR x, GM_ADDR y, const PadV3GradACTilingData* tilingData)
 {
     mBlockIdx_ = GetBlockIdx();
-    mTD_ = tilingData;
+    mCircularTD_ = tilingData;
 
     mInputGM_.SetGlobalBuffer((__gm__ T*)x);
     mOutputGM_.SetGlobalBuffer((__gm__ T*)y);
@@ -82,20 +82,23 @@ __simt_callee__ __aicore__ void CalPos(GmOffsetType yIdx, U* inIndex, U* outInde
 }
 
 template <uint8_t DIM_NUM, typename U>
-__simt_callee__ __aicore__ void CalCandidate(IdxAndTimes<U>* inIdxCnt, U* inIndex, U* outIndex, __ubuf__ U* inStrides,
-                                             __ubuf__ U* outShapes, __ubuf__ U* leftPads, __ubuf__ U* rightPads)
+__simt_callee__ __aicore__ void CalCandidate(IdxAndTimes<U>* circularCandidateIdxCnt, U* inIndex, U* outIndex,
+                                             __ubuf__ U* inStrides, __ubuf__ U* outShapes, __ubuf__ U* leftPads,
+                                             __ubuf__ U* rightPads)
 {
     for (uint8_t i = 0; i < DIM_NUM; i++) {
-        inIdxCnt[i].inGmIdx[0] = inIndex[i] * inStrides[i];
+        circularCandidateIdxCnt[i].inGmIdx[0] = inIndex[i] * inStrides[i];
         // 判断是否填充到左边
         if (outIndex[i] >= outShapes[i] - leftPads[i]) {
-            inIdxCnt[i].inGmIdx[inIdxCnt[i].cnt] = (inIndex[i] - outShapes[i]) * inStrides[i];
-            inIdxCnt[i].cnt++;
+            circularCandidateIdxCnt[i].inGmIdx[circularCandidateIdxCnt[i].cnt] = (inIndex[i] - outShapes[i]) *
+                                                                                 inStrides[i];
+            circularCandidateIdxCnt[i].cnt++;
         }
         // 判断是否填充到右边
         if (outIndex[i] < rightPads[i]) {
-            inIdxCnt[i].inGmIdx[inIdxCnt[i].cnt] = (inIndex[i] + outShapes[i]) * inStrides[i];
-            inIdxCnt[i].cnt++;
+            circularCandidateIdxCnt[i].inGmIdx[circularCandidateIdxCnt[i].cnt] = (inIndex[i] + outShapes[i]) *
+                                                                                 inStrides[i];
+            circularCandidateIdxCnt[i].cnt++;
         }
     }
 }
@@ -129,16 +132,16 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__
         CalPos<DIM_NUM, U, GmOffsetType>(yIdx, inIndex, outIndex, outStrides, leftPads, magics, shifts);
 
         // 在每一维上填充的个数（包括自身）及其偏移
-        IdxAndTimes<U> inIdxCnt[DIM_NUM];
+        IdxAndTimes<U> circularInIdxCnt1[DIM_NUM];
 
-        CalCandidate<DIM_NUM, U>(inIdxCnt, inIndex, outIndex, inStrides, outShapes, leftPads, rightPads);
+        CalCandidate<DIM_NUM, U>(circularInIdxCnt1, inIndex, outIndex, inStrides, outShapes, leftPads, rightPads);
 
         CastType total = 0;
-        for (uint8_t a0 = 0; a0 < inIdxCnt[0].cnt; a0++) {
-            if (inIdxCnt[0].inGmIdx[a0] < 0 || inIdxCnt[0].inGmIdx[a0] >= cutBounds[0]) {
+        for (uint8_t a0 = 0; a0 < circularInIdxCnt1[0].cnt; a0++) {
+            if (circularInIdxCnt1[0].inGmIdx[a0] < 0 || circularInIdxCnt1[0].inGmIdx[a0] >= cutBounds[0]) {
                 continue;
             }
-            GmOffsetType a0Offset = static_cast<GmOffsetType>(inIdxCnt[0].inGmIdx[a0]);
+            GmOffsetType a0Offset = static_cast<GmOffsetType>(circularInIdxCnt1[0].inGmIdx[a0]);
             CastType tmpVal;
             if constexpr (std::is_same_v<T, bfloat16_t>) {
                 tmpVal = __bfloat162float(inputGM[a0Offset]);
@@ -170,21 +173,21 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__
         CalPos<DIM_NUM, U, GmOffsetType>(yIdx, inIndex, outIndex, outStrides, leftPads, magics, shifts);
 
         // 在每一维上填充的个数（包括自身）及其偏移
-        IdxAndTimes<U> inIdxCnt[DIM_NUM];
+        IdxAndTimes<U> circularInIdxCnt2[DIM_NUM];
 
-        CalCandidate<DIM_NUM, U>(inIdxCnt, inIndex, outIndex, inStrides, outShapes, leftPads, rightPads);
+        CalCandidate<DIM_NUM, U>(circularInIdxCnt2, inIndex, outIndex, inStrides, outShapes, leftPads, rightPads);
 
         CastType total = 0;
-        for (uint8_t a0 = 0; a0 < inIdxCnt[0].cnt; a0++) {
-            if (inIdxCnt[0].inGmIdx[a0] < 0 || inIdxCnt[0].inGmIdx[a0] >= cutBounds[0]) {
+        for (uint8_t a0 = 0; a0 < circularInIdxCnt2[0].cnt; a0++) {
+            if (circularInIdxCnt2[0].inGmIdx[a0] < 0 || circularInIdxCnt2[0].inGmIdx[a0] >= cutBounds[0]) {
                 continue;
             }
-            GmOffsetType a0Offset = static_cast<GmOffsetType>(inIdxCnt[0].inGmIdx[a0]);
-            for (uint8_t a1 = 0; a1 < inIdxCnt[1].cnt; a1++) {
-                if (inIdxCnt[1].inGmIdx[a1] < 0 || inIdxCnt[1].inGmIdx[a1] >= cutBounds[1]) {
+            GmOffsetType a0Offset = static_cast<GmOffsetType>(circularInIdxCnt2[0].inGmIdx[a0]);
+            for (uint8_t a1 = 0; a1 < circularInIdxCnt2[1].cnt; a1++) {
+                if (circularInIdxCnt2[1].inGmIdx[a1] < 0 || circularInIdxCnt2[1].inGmIdx[a1] >= cutBounds[1]) {
                     continue;
                 }
-                GmOffsetType a1Offset = a0Offset + static_cast<GmOffsetType>(inIdxCnt[1].inGmIdx[a1]);
+                GmOffsetType a1Offset = a0Offset + static_cast<GmOffsetType>(circularInIdxCnt2[1].inGmIdx[a1]);
                 CastType tmpVal;
                 if constexpr (std::is_same_v<T, bfloat16_t>) {
                     tmpVal = __bfloat162float(inputGM[a1Offset]);
@@ -217,27 +220,27 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__
         CalPos<DIM_NUM, U, GmOffsetType>(yIdx, inIndex, outIndex, outStrides, leftPads, magics, shifts);
 
         // 在每一维上填充的个数（包括自身）及其偏移
-        IdxAndTimes<U> inIdxCnt[DIM_NUM];
+        IdxAndTimes<U> circularInIdxCnt3[DIM_NUM];
 
-        CalCandidate<DIM_NUM, U>(inIdxCnt, inIndex, outIndex, inStrides, outShapes, leftPads, rightPads);
+        CalCandidate<DIM_NUM, U>(circularInIdxCnt3, inIndex, outIndex, inStrides, outShapes, leftPads, rightPads);
 
         CastType total = 0;
 
-        for (uint8_t a0 = 0; a0 < inIdxCnt[0].cnt; a0++) {
-            if (inIdxCnt[0].inGmIdx[a0] < 0 || inIdxCnt[0].inGmIdx[a0] >= cutBounds[0]) {
+        for (uint8_t a0 = 0; a0 < circularInIdxCnt3[0].cnt; a0++) {
+            if (circularInIdxCnt3[0].inGmIdx[a0] < 0 || circularInIdxCnt3[0].inGmIdx[a0] >= cutBounds[0]) {
                 continue;
             }
-            GmOffsetType a0Offset = static_cast<GmOffsetType>(inIdxCnt[0].inGmIdx[a0]);
-            for (uint8_t a1 = 0; a1 < inIdxCnt[1].cnt; a1++) {
-                if (inIdxCnt[1].inGmIdx[a1] < 0 || inIdxCnt[1].inGmIdx[a1] >= cutBounds[1]) {
+            GmOffsetType a0Offset = static_cast<GmOffsetType>(circularInIdxCnt3[0].inGmIdx[a0]);
+            for (uint8_t a1 = 0; a1 < circularInIdxCnt3[1].cnt; a1++) {
+                if (circularInIdxCnt3[1].inGmIdx[a1] < 0 || circularInIdxCnt3[1].inGmIdx[a1] >= cutBounds[1]) {
                     continue;
                 }
-                GmOffsetType a1Offset = a0Offset + static_cast<GmOffsetType>(inIdxCnt[1].inGmIdx[a1]);
-                for (uint8_t a2 = 0; a2 < inIdxCnt[2].cnt; a2++) {
-                    if (inIdxCnt[2].inGmIdx[a2] < 0 || inIdxCnt[2].inGmIdx[a2] >= cutBounds[2]) {
+                GmOffsetType a1Offset = a0Offset + static_cast<GmOffsetType>(circularInIdxCnt3[1].inGmIdx[a1]);
+                for (uint8_t a2 = 0; a2 < circularInIdxCnt3[2].cnt; a2++) {
+                    if (circularInIdxCnt3[2].inGmIdx[a2] < 0 || circularInIdxCnt3[2].inGmIdx[a2] >= cutBounds[2]) {
                         continue;
                     }
-                    GmOffsetType a2Offset = a1Offset + static_cast<GmOffsetType>(inIdxCnt[2].inGmIdx[a2]);
+                    GmOffsetType a2Offset = a1Offset + static_cast<GmOffsetType>(circularInIdxCnt3[2].inGmIdx[a2]);
                     CastType tmpVal;
                     if constexpr (std::is_same_v<T, bfloat16_t>) {
                         tmpVal = __bfloat162float(inputGM[a2Offset]);
@@ -271,31 +274,31 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__
         CalPos<DIM_NUM, U, GmOffsetType>(yIdx, inIndex, outIndex, outStrides, leftPads, magics, shifts);
 
         // 在每一维上填充的个数（包括自身）及其偏移
-        IdxAndTimes<U> inIdxCnt[DIM_NUM];
+        IdxAndTimes<U> circularInIdxCnt4[DIM_NUM];
 
-        CalCandidate<DIM_NUM, U>(inIdxCnt, inIndex, outIndex, inStrides, outShapes, leftPads, rightPads);
+        CalCandidate<DIM_NUM, U>(circularInIdxCnt4, inIndex, outIndex, inStrides, outShapes, leftPads, rightPads);
 
         CastType total = 0;
-        for (uint8_t a0 = 0; a0 < inIdxCnt[0].cnt; a0++) {
-            if (inIdxCnt[0].inGmIdx[a0] < 0 || inIdxCnt[0].inGmIdx[a0] >= cutBounds[0]) {
+        for (uint8_t a0 = 0; a0 < circularInIdxCnt4[0].cnt; a0++) {
+            if (circularInIdxCnt4[0].inGmIdx[a0] < 0 || circularInIdxCnt4[0].inGmIdx[a0] >= cutBounds[0]) {
                 continue;
             }
-            GmOffsetType a0Offset = static_cast<GmOffsetType>(inIdxCnt[0].inGmIdx[a0]);
-            for (uint8_t a1 = 0; a1 < inIdxCnt[1].cnt; a1++) {
-                if (inIdxCnt[1].inGmIdx[a1] < 0 || inIdxCnt[1].inGmIdx[a1] >= cutBounds[1]) {
+            GmOffsetType a0Offset = static_cast<GmOffsetType>(circularInIdxCnt4[0].inGmIdx[a0]);
+            for (uint8_t a1 = 0; a1 < circularInIdxCnt4[1].cnt; a1++) {
+                if (circularInIdxCnt4[1].inGmIdx[a1] < 0 || circularInIdxCnt4[1].inGmIdx[a1] >= cutBounds[1]) {
                     continue;
                 }
-                GmOffsetType a1Offset = a0Offset + static_cast<GmOffsetType>(inIdxCnt[1].inGmIdx[a1]);
-                for (uint8_t a2 = 0; a2 < inIdxCnt[2].cnt; a2++) {
-                    if (inIdxCnt[2].inGmIdx[a2] < 0 || inIdxCnt[2].inGmIdx[a2] >= cutBounds[2]) {
+                GmOffsetType a1Offset = a0Offset + static_cast<GmOffsetType>(circularInIdxCnt4[1].inGmIdx[a1]);
+                for (uint8_t a2 = 0; a2 < circularInIdxCnt4[2].cnt; a2++) {
+                    if (circularInIdxCnt4[2].inGmIdx[a2] < 0 || circularInIdxCnt4[2].inGmIdx[a2] >= cutBounds[2]) {
                         continue;
                     }
-                    GmOffsetType a2Offset = a1Offset + static_cast<GmOffsetType>(inIdxCnt[2].inGmIdx[a2]);
-                    for (uint8_t a3 = 0; a3 < inIdxCnt[3].cnt; a3++) {
-                        if (inIdxCnt[3].inGmIdx[a3] < 0 || inIdxCnt[3].inGmIdx[a3] >= cutBounds[3]) {
+                    GmOffsetType a2Offset = a1Offset + static_cast<GmOffsetType>(circularInIdxCnt4[2].inGmIdx[a2]);
+                    for (uint8_t a3 = 0; a3 < circularInIdxCnt4[3].cnt; a3++) {
+                        if (circularInIdxCnt4[3].inGmIdx[a3] < 0 || circularInIdxCnt4[3].inGmIdx[a3] >= cutBounds[3]) {
                             continue;
                         }
-                        GmOffsetType a3Offset = a2Offset + static_cast<GmOffsetType>(inIdxCnt[3].inGmIdx[a3]);
+                        GmOffsetType a3Offset = a2Offset + static_cast<GmOffsetType>(circularInIdxCnt4[3].inGmIdx[a3]);
                         CastType tmpVal;
                         if constexpr (std::is_same_v<T, bfloat16_t>) {
                             tmpVal = __bfloat162float(inputGM[a3Offset]);
@@ -330,36 +333,38 @@ __simt_vf__ LAUNCH_BOUND(CIRCULAR_EIGHTH_THREAD_DIM) __aicore__
         CalPos<DIM_NUM, U, GmOffsetType>(yIdx, inIndex, outIndex, outStrides, leftPads, magics, shifts);
 
         // 在每一维上填充的个数（包括自身）及其偏移
-        IdxAndTimes<U> inIdxCnt[DIM_NUM];
+        IdxAndTimes<U> circularInIdxCnt5[DIM_NUM];
 
-        CalCandidate<DIM_NUM, U>(inIdxCnt, inIndex, outIndex, inStrides, outShapes, leftPads, rightPads);
+        CalCandidate<DIM_NUM, U>(circularInIdxCnt5, inIndex, outIndex, inStrides, outShapes, leftPads, rightPads);
 
         CastType total = 0;
-        for (uint8_t a0 = 0; a0 < inIdxCnt[0].cnt; a0++) {
-            if (inIdxCnt[0].inGmIdx[a0] < 0 || inIdxCnt[0].inGmIdx[a0] >= cutBounds[0]) {
+        for (uint8_t a0 = 0; a0 < circularInIdxCnt5[0].cnt; a0++) {
+            if (circularInIdxCnt5[0].inGmIdx[a0] < 0 || circularInIdxCnt5[0].inGmIdx[a0] >= cutBounds[0]) {
                 continue;
             }
-            GmOffsetType a0Offset = static_cast<GmOffsetType>(inIdxCnt[0].inGmIdx[a0]);
-            for (uint8_t a1 = 0; a1 < inIdxCnt[1].cnt; a1++) {
-                if (inIdxCnt[1].inGmIdx[a1] < 0 || inIdxCnt[1].inGmIdx[a1] >= cutBounds[1]) {
+            GmOffsetType a0Offset = static_cast<GmOffsetType>(circularInIdxCnt5[0].inGmIdx[a0]);
+            for (uint8_t a1 = 0; a1 < circularInIdxCnt5[1].cnt; a1++) {
+                if (circularInIdxCnt5[1].inGmIdx[a1] < 0 || circularInIdxCnt5[1].inGmIdx[a1] >= cutBounds[1]) {
                     continue;
                 }
-                GmOffsetType a1Offset = a0Offset + static_cast<GmOffsetType>(inIdxCnt[1].inGmIdx[a1]);
-                for (uint8_t a2 = 0; a2 < inIdxCnt[2].cnt; a2++) {
-                    if (inIdxCnt[2].inGmIdx[a2] < 0 || inIdxCnt[2].inGmIdx[a2] >= cutBounds[2]) {
+                GmOffsetType a1Offset = a0Offset + static_cast<GmOffsetType>(circularInIdxCnt5[1].inGmIdx[a1]);
+                for (uint8_t a2 = 0; a2 < circularInIdxCnt5[2].cnt; a2++) {
+                    if (circularInIdxCnt5[2].inGmIdx[a2] < 0 || circularInIdxCnt5[2].inGmIdx[a2] >= cutBounds[2]) {
                         continue;
                     }
-                    GmOffsetType a2Offset = a1Offset + static_cast<GmOffsetType>(inIdxCnt[2].inGmIdx[a2]);
-                    for (uint8_t a3 = 0; a3 < inIdxCnt[3].cnt; a3++) {
-                        if (inIdxCnt[3].inGmIdx[a3] < 0 || inIdxCnt[3].inGmIdx[a3] >= cutBounds[3]) {
+                    GmOffsetType a2Offset = a1Offset + static_cast<GmOffsetType>(circularInIdxCnt5[2].inGmIdx[a2]);
+                    for (uint8_t a3 = 0; a3 < circularInIdxCnt5[3].cnt; a3++) {
+                        if (circularInIdxCnt5[3].inGmIdx[a3] < 0 || circularInIdxCnt5[3].inGmIdx[a3] >= cutBounds[3]) {
                             continue;
                         }
-                        GmOffsetType a3Offset = a2Offset + static_cast<GmOffsetType>(inIdxCnt[3].inGmIdx[a3]);
-                        for (uint8_t a4 = 0; a4 < inIdxCnt[4].cnt; a4++) {
-                            if (inIdxCnt[4].inGmIdx[a4] < 0 || inIdxCnt[4].inGmIdx[a4] >= cutBounds[4]) {
+                        GmOffsetType a3Offset = a2Offset + static_cast<GmOffsetType>(circularInIdxCnt5[3].inGmIdx[a3]);
+                        for (uint8_t a4 = 0; a4 < circularInIdxCnt5[4].cnt; a4++) {
+                            if (circularInIdxCnt5[4].inGmIdx[a4] < 0 ||
+                                circularInIdxCnt5[4].inGmIdx[a4] >= cutBounds[4]) {
                                 continue;
                             }
-                            GmOffsetType a4Offset = a3Offset + static_cast<GmOffsetType>(inIdxCnt[4].inGmIdx[a4]);
+                            GmOffsetType a4Offset = a3Offset +
+                                                    static_cast<GmOffsetType>(circularInIdxCnt5[4].inGmIdx[a4]);
                             CastType tmpVal;
                             if constexpr (std::is_same_v<T, bfloat16_t>) {
                                 tmpVal = __bfloat162float(inputGM[a4Offset]);
@@ -400,32 +405,32 @@ __aicore__ inline void PadV3GradCircularSimt<T>::Process()
 
     uint32_t blockNum = AscendC::GetBlockNum(); // 获取到核数
     GmOffsetType outputSize = 0;
-    if (!PrepareSimtGradArrays<U, GmOffsetType>(mTD_, blockNum, magics, shifts, inShapes, outShapes, inStrides,
+    if (!PrepareSimtGradArrays<U, GmOffsetType>(mCircularTD_, blockNum, magics, shifts, inShapes, outShapes, inStrides,
                                                 outStrides, leftPads, rightPads, cutBounds, outputSize)) {
         return;
     }
 
-    if (mTD_->dimNum == 1) {
+    if (mCircularTD_->dimNum == 1) {
         asc_vf_call<SimtComputeCircularOne<T, 1, U, GmOffsetType, CastType>>(
             dim3(CIRCULAR_EIGHTH_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
             (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize, mBlockIdx_, blockNum, inShapes, outShapes,
             inStrides, outStrides, leftPads, rightPads, magics, shifts, cutBounds);
-    } else if (mTD_->dimNum == 2) {
+    } else if (mCircularTD_->dimNum == 2) {
         asc_vf_call<SimtComputeCircularTwo<T, 2, U, GmOffsetType, CastType>>(
             dim3(CIRCULAR_EIGHTH_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
             (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize, mBlockIdx_, blockNum, inShapes, outShapes,
             inStrides, outStrides, leftPads, rightPads, magics, shifts, cutBounds);
-    } else if (mTD_->dimNum == 3) {
+    } else if (mCircularTD_->dimNum == 3) {
         asc_vf_call<SimtComputeCircularThree<T, 3, U, GmOffsetType, CastType>>(
             dim3(CIRCULAR_EIGHTH_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
             (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize, mBlockIdx_, blockNum, inShapes, outShapes,
             inStrides, outStrides, leftPads, rightPads, magics, shifts, cutBounds);
-    } else if (mTD_->dimNum == 4) {
+    } else if (mCircularTD_->dimNum == 4) {
         asc_vf_call<SimtComputeCircularFour<T, 4, U, GmOffsetType, CastType>>(
             dim3(CIRCULAR_EIGHTH_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
             (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize, mBlockIdx_, blockNum, inShapes, outShapes,
             inStrides, outStrides, leftPads, rightPads, magics, shifts, cutBounds);
-    } else if (mTD_->dimNum == 5) {
+    } else if (mCircularTD_->dimNum == 5) {
         asc_vf_call<SimtComputeCircularFive<T, 5, U, GmOffsetType, CastType>>(
             dim3(CIRCULAR_EIGHTH_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
             (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize, mBlockIdx_, blockNum, inShapes, outShapes,
