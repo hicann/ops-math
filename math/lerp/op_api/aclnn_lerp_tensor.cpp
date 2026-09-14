@@ -128,8 +128,8 @@ static aclnnStatus CalculateResult(const aclTensor* self, const aclTensor* end, 
     auto ret = CheckParams(self, end, weight, out);
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
-    // 空Tensor处理
-    if (self->IsEmpty()) {
+    // 空Tensor处理：self/end/weight任一为空时，广播结果必为空，直接返回成功
+    if (self->IsEmpty() || end->IsEmpty() || weight->IsEmpty()) {
         return ACLNN_SUCCESS;
     }
 

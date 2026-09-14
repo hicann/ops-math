@@ -27,15 +27,9 @@ using namespace std;
 
 class l2_lerp_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "lerp_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "lerp_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "lerp_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "lerp_test TearDown" << endl; }
 };
 
 TEST_F(l2_lerp_test, ascend910A_case_1_all_support_type)
@@ -47,8 +41,8 @@ TEST_F(l2_lerp_test, ascend910A_case_1_all_support_type)
         auto end_tensor_desc = TensorDesc({2, 3}, dtype, ACL_FORMAT_ND);
         auto weight_tensor_desc = TensorDesc({2, 3}, dtype, ACL_FORMAT_ND);
         auto out_tensor_desc = TensorDesc({2, 3}, dtype, ACL_FORMAT_ND);
-        auto ut =
-            OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc), OUTPUT(out_tensor_desc));
+        auto ut = OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc),
+                            OUTPUT(out_tensor_desc));
 
         // SAMPLE: only test GetWorkspaceSize
         uint64_t workspace_size = 0;
@@ -66,8 +60,8 @@ TEST_F(l2_lerp_test, ascend910B2_case_1_all_support_type)
         auto end_tensor_desc = TensorDesc({2, 3}, dtype, ACL_FORMAT_ND);
         auto weight_tensor_desc = TensorDesc({2, 3}, dtype, ACL_FORMAT_ND);
         auto out_tensor_desc = TensorDesc({2, 3}, dtype, ACL_FORMAT_ND);
-        auto ut =
-            OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc), OUTPUT(out_tensor_desc));
+        auto ut = OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc),
+                            OUTPUT(out_tensor_desc));
 
         // SAMPLE: only test GetWorkspaceSize
         uint64_t workspace_size = 0;
@@ -82,8 +76,8 @@ TEST_F(l2_lerp_test, case_2_self_type_unsupport)
     auto end_tensor_desc = TensorDesc({1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto weight_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto ut =
-        OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc), OUTPUT(out_tensor_desc));
+    auto ut = OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc),
+                        OUTPUT(out_tensor_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -97,8 +91,8 @@ TEST_F(l2_lerp_test, case_3_end_type_unsupport)
     auto end_tensor_desc = TensorDesc({1, 3}, ACL_DOUBLE, ACL_FORMAT_ND);
     auto weight_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto ut =
-        OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc), OUTPUT(out_tensor_desc));
+    auto ut = OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc),
+                        OUTPUT(out_tensor_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -112,8 +106,8 @@ TEST_F(l2_lerp_test, case_4_weight_type_unsupport)
     auto end_tensor_desc = TensorDesc({1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto weight_tensor_desc = TensorDesc({2, 3}, ACL_DOUBLE, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto ut =
-        OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc), OUTPUT(out_tensor_desc));
+    auto ut = OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc),
+                        OUTPUT(out_tensor_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -127,8 +121,8 @@ TEST_F(l2_lerp_test, case_5_out_type_unsupport)
     auto end_tensor_desc = TensorDesc({1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto weight_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({2, 3}, ACL_DOUBLE, ACL_FORMAT_ND);
-    auto ut =
-        OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc), OUTPUT(out_tensor_desc));
+    auto ut = OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc),
+                        OUTPUT(out_tensor_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -142,8 +136,8 @@ TEST_F(l2_lerp_test, case_6_input_type_different)
     auto end_tensor_desc = TensorDesc({1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto weight_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND);
-    auto ut =
-        OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc), OUTPUT(out_tensor_desc));
+    auto ut = OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc),
+                        OUTPUT(out_tensor_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -157,8 +151,8 @@ TEST_F(l2_lerp_test, case_7_self_end_broadcast)
     auto end_tensor_desc = TensorDesc({1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto weight_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto ut =
-        OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc), OUTPUT(out_tensor_desc));
+    auto ut = OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc),
+                        OUTPUT(out_tensor_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -172,8 +166,8 @@ TEST_F(l2_lerp_test, case_8_self_weight_broadcast)
     auto end_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto weight_tensor_desc = TensorDesc({1, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto ut =
-        OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc), OUTPUT(out_tensor_desc));
+    auto ut = OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc),
+                        OUTPUT(out_tensor_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -187,8 +181,8 @@ TEST_F(l2_lerp_test, case_9_self_end_weight_broadcast)
     auto end_tensor_desc = TensorDesc({3, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto weight_tensor_desc = TensorDesc({1}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({3, 3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto ut =
-        OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc), OUTPUT(out_tensor_desc));
+    auto ut = OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc),
+                        OUTPUT(out_tensor_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -202,8 +196,8 @@ TEST_F(l2_lerp_test, case_10_input_broadcast_failed)
     auto end_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto weight_tensor_desc = TensorDesc({2, 2}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({3, 3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto ut =
-        OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc), OUTPUT(out_tensor_desc));
+    auto ut = OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc),
+                        OUTPUT(out_tensor_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -217,8 +211,8 @@ TEST_F(l2_lerp_test, case_11_out_broadcast_failed)
     auto end_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto weight_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({3, 4}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto ut =
-        OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc), OUTPUT(out_tensor_desc));
+    auto ut = OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc),
+                        OUTPUT(out_tensor_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -288,8 +282,8 @@ TEST_F(l2_lerp_test, case_16_dim9)
     auto end_tensor_desc = TensorDesc({2, 3, 3, 3, 3, 3, 3, 3, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto weight_tensor_desc = TensorDesc({1}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({2, 3, 3, 3, 3, 3, 3, 3, 3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto ut =
-        OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc), OUTPUT(out_tensor_desc));
+    auto ut = OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc),
+                        OUTPUT(out_tensor_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -303,8 +297,8 @@ TEST_F(l2_lerp_test, case_17_empty_input)
     auto end_tensor_desc = TensorDesc({2, 0, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto weight_tensor_desc = TensorDesc({1}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({2, 0, 3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto ut =
-        OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc), OUTPUT(out_tensor_desc));
+    auto ut = OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc),
+                        OUTPUT(out_tensor_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -318,8 +312,8 @@ TEST_F(l2_lerp_test, case_18_empty_input_failed)
     auto end_tensor_desc = TensorDesc({2, 0, 3}, ACL_FLOAT, ACL_FORMAT_ND);
     auto weight_tensor_desc = TensorDesc({1}, ACL_FLOAT, ACL_FORMAT_ND);
     auto out_tensor_desc = TensorDesc({2, 2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto ut =
-        OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc), OUTPUT(out_tensor_desc));
+    auto ut = OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc),
+                        OUTPUT(out_tensor_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -333,8 +327,8 @@ TEST_F(l2_lerp_test, case_19_nonContiguous)
     auto end_tensor_desc = TensorDesc({5, 4}, ACL_FLOAT, ACL_FORMAT_ND, {1, 5}, 0, {4, 5});
     auto weight_tensor_desc = TensorDesc({5, 4}, ACL_FLOAT, ACL_FORMAT_ND, {1, 5}, 0, {4, 5});
     auto out_tensor_desc = TensorDesc({5, 4}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto ut =
-        OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc), OUTPUT(out_tensor_desc));
+    auto ut = OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc),
+                        OUTPUT(out_tensor_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -366,4 +360,34 @@ TEST_F(l2_lerp_test, case_21_inplace_broadcast_failed)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
+
+TEST_F(l2_lerp_test, case_22_empty_end_weight_input)
+{
+    auto self_tensor_desc = TensorDesc({2, 1}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto end_tensor_desc = TensorDesc({2, 0}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto weight_tensor_desc = TensorDesc({2, 0}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto out_tensor_desc = TensorDesc({2, 0}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc),
+                        OUTPUT(out_tensor_desc));
+
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+TEST_F(l2_lerp_test, case_23_empty_weight_input)
+{
+    auto self_tensor_desc = TensorDesc({2, 1}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto end_tensor_desc = TensorDesc({2, 1}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto weight_tensor_desc = TensorDesc({2, 0}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto out_tensor_desc = TensorDesc({2, 0}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnLerp, INPUT(self_tensor_desc, end_tensor_desc, weight_tensor_desc),
+                        OUTPUT(out_tensor_desc));
+
+    // SAMPLE: only test GetWorkspaceSize
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
