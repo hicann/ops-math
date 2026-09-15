@@ -51,35 +51,35 @@ $$
     <tr>
       <td>indices</td>
       <td>输入</td>
-      <td>非零元素的多维坐标矩阵，2D张量，shape=(nnz, input_rank)。</td>
+      <td>非零元素的多维坐标矩阵，2D张量，形状为(nnz, input_rank)。</td>
       <td>INT32、INT64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>shape</td>
       <td>输入</td>
-      <td>原始稠密形状，1D张量，shape=(input_rank,)。</td>
+      <td>原始稠密形状，1D张量，形状为(input_rank,)。</td>
       <td>INT32、INT64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>new_shape</td>
       <td>输入</td>
-      <td>目标稠密形状，1D张量，shape=(output_rank,)。允许一个维度为-1，自动推导。</td>
+      <td>目标稠密形状，1D张量，形状为(output_rank,)。允许其中一个值为-1，自动推导。</td>
       <td>INT32、INT64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y_indices</td>
       <td>输出</td>
-      <td>重塑后的非零元素坐标矩阵，2D张量，shape=(nnz, output_rank)。</td>
+      <td>重塑后的非零元素坐标矩阵，2D张量，形状为(nnz, output_rank)。</td>
       <td>INT32、INT64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y_shape</td>
       <td>输出</td>
-      <td>重塑后的稠密形状，1D张量，shape=(output_rank,)。</td>
+      <td>重塑后的稠密形状，1D张量，形状为(output_rank,)。</td>
       <td>INT32、INT64</td>
       <td>ND</td>
     </tr>
@@ -90,8 +90,8 @@ $$
 - 输入indices必须为2D矩阵，shape和new_shape必须为1D向量。
 - 输入indices每行是一个非零元素的多维坐标。元素值大于等于0且小于对应shape维度的size。
 - input_rank和output_rank均不超过8维(MAX_RANK=8)。
-- new_shape中最多允许一个维度为-1，该维度值由总元素数除以其他维度乘积自动推导。
-- 输入shape和输出new_shape的总元素数必须一致。
+- new_shape中最多允许一个值为-1，该值由shape参数的值乘积除以new_shape参数其他非-1值乘积自动推导。
+- 输入shape的值乘积和输入new_shape的值乘积必须一致。
 - 所有输入和输出的dtype必须相同(全部int32或全部int64)。
 
 ## 调用说明
