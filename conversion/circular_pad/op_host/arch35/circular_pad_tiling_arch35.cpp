@@ -40,6 +40,21 @@ struct CircularPadCompileInfo {};
 static constexpr int32_t kXIdx = 0;
 static constexpr int32_t kPaddingsIdx = 1;
 
+// x 维度数约束: 总范围 [3,5]，kXDimNum3DBoundary 为 2D 模式上限与 3D 模式下限的分界
+static constexpr size_t kMinXDimNum = 3;
+static constexpr size_t kMaxXDimNum = 5;
+static constexpr size_t kXDimNum3DBoundary = 4;
+
+// paddings 元素数: 每维 2 个值，2D 模式共 4 个（left/right/top/bottom），3D 模式共 6 个（含 front/back）
+static constexpr size_t kPaddingsPerDim = 2;
+static constexpr int64_t kPaddingsNum2D = 4;
+static constexpr int64_t kPaddingsNum3D = 6;
+
+// 维度距 shape 末尾的偏移（shape 布局 [..., (L), H, W]，W/H/L 分别为倒数第 1/2/3 维）
+static constexpr size_t kWDimOffsetFromEnd = 1;
+static constexpr size_t kHDimOffsetFromEnd = 2;
+static constexpr size_t kLDimOffsetFromEnd = 3;
+
 static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& ubSize, int64_t& coreNum)
 {
     fe::PlatFormInfos* platformInfoPtr = context->GetPlatformInfo();
@@ -93,7 +108,7 @@ static ge::graphStatus ValidateShape(gert::TilingContext* context)
     auto xShape = context->GetInputShape(kXIdx);
     OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
     auto xStorage = xShape->GetStorageShape();
-    OP_CHECK_IF(xStorage.GetDimNum() < 3 || xStorage.GetDimNum() > 5,
+    OP_CHECK_IF(xStorage.GetDimNum() < kMinXDimNum || xStorage.GetDimNum() > kMaxXDimNum,
                 OP_LOGE_FOR_INVALID_SHAPEDIM(context->GetNodeName(), "x", std::to_string(xStorage.GetDimNum()).c_str(),
                                              "[3,5]"),
                 return ge::GRAPH_FAILED);
@@ -112,7 +127,7 @@ static ge::graphStatus ValidateShape(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, paddingsShape);
     int64_t paddingsNum = paddingsShape->GetStorageShape().GetShapeSize();
     OP_CHECK_IF(
-        paddingsNum < 4,
+        paddingsNum < kPaddingsNum2D,
         OP_LOGE_FOR_INVALID_SHAPESIZE(context->GetNodeName(), "paddings", std::to_string(paddingsNum).c_str(), ">= 4"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
@@ -173,7 +188,7 @@ static ge::graphStatus ReadPaddings(gert::TilingContext* context, int64_t& left,
     OP_CHECK_NULL_WITH_CONTEXT(context, paddingsShape);
     int64_t paddingsNum = paddingsShape->GetStorageShape().GetShapeSize();
     OP_CHECK_IF(
-        paddingsNum < 4,
+        paddingsNum < kPaddingsNum2D,
         OP_LOGE_FOR_INVALID_SHAPESIZE(context->GetNodeName(), "paddings", std::to_string(paddingsNum).c_str(), ">= 4"),
         return ge::GRAPH_FAILED);
     auto paddingsTensor = context->GetInputTensor(kPaddingsIdx);
@@ -184,36 +199,36 @@ static ge::graphStatus ReadPaddings(gert::TilingContext* context, int64_t& left,
     auto xShape = context->GetInputShape(kXIdx);
     OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
     size_t xDimNum = xShape->GetStorageShape().GetDimNum();
-    bool isAclnnExpanded = (paddingsNum == static_cast<int64_t>(2 * xDimNum));
+    bool isAclnnExpanded = (paddingsNum == static_cast<int64_t>(kPaddingsPerDim * xDimNum));
 
     front = 0;
     back = 0;
     if (isAclnnExpanded) {
         // aclnn 展开格式：从末尾读取（高维→低维: ..., top, bottom, left, right）
-        int64_t paddingDim = paddingsNum - 4;
+        int64_t paddingDim = paddingsNum - kPaddingsNum2D;
         top = padValues[paddingDim];
         bottom = padValues[paddingDim + 1];
         left = padValues[paddingDim + 2];
         right = padValues[paddingDim + 3];
-        if (paddingsNum >= 6) {
+        if (paddingsNum >= kPaddingsNum3D) {
             front = padValues[paddingDim - 2];
             back = padValues[paddingDim - 1];
         }
         // aclnn 可达性: CircularPad2d 允许 3/4 维输入（pad 末 2 维），CircularPad3d 允许 4/5 维输入（pad 末 3 维）。
         // 4 维输入时 paddings 内容无法区分两个入口，统一按 3D 处理。
-        is3D = (xDimNum >= 4);
+        is3D = (xDimNum >= kXDimNum3DBoundary);
     } else {
         // 原生格式：从头读取（left, right, top, bottom, (front, back)）
         left = padValues[0];
         right = padValues[1];
         top = padValues[2];
         bottom = padValues[3];
-        if (paddingsNum >= 6) {
+        if (paddingsNum >= kPaddingsNum3D) {
             front = padValues[4];
             back = padValues[5];
         }
         // 原生格式：paddings 含 6 个元素即 3D 模式（front/back 为 0 也是）
-        is3D = (paddingsNum >= 6);
+        is3D = (paddingsNum >= kPaddingsNum3D);
     }
     return ge::GRAPH_SUCCESS;
 }
@@ -303,25 +318,25 @@ static ge::graphStatus ReadAndCheckParams(gert::TilingContext* context, [[maybe_
     // 校验 x 维度数: 2D 模式 [3,4] 维, 3D 模式 [4,5] 维（5 维输入必须用 6 元素 paddings）
     size_t xDimNum = xShape.GetDimNum();
     if (p.is3D) {
-        OP_CHECK_IF(xDimNum < 4 || xDimNum > 5,
+        OP_CHECK_IF(xDimNum < kXDimNum3DBoundary || xDimNum > kMaxXDimNum,
                     OP_LOGE_FOR_INVALID_SHAPEDIM(context->GetNodeName(), "x", std::to_string(xDimNum).c_str(),
                                                  "[4,5] (3D mode)"),
                     return ge::GRAPH_FAILED);
     } else {
-        OP_CHECK_IF(xDimNum < 3 || xDimNum > 4,
+        OP_CHECK_IF(xDimNum < kMinXDimNum || xDimNum > kXDimNum3DBoundary,
                     OP_LOGE_FOR_INVALID_SHAPEDIM(context->GetNodeName(), "x", std::to_string(xDimNum).c_str(),
                                                  "[3,4] (2D mode, 5D input requires 6-element paddings)"),
                     return ge::GRAPH_FAILED);
     }
-    p.inputH = xShape.GetDim(xShape.GetDimNum() - 2);
-    p.inputW = xShape.GetDim(xShape.GetDimNum() - 1);
-    p.outputH = yShape.GetDim(yShape.GetDimNum() - 2);
-    p.outputW = yShape.GetDim(yShape.GetDimNum() - 1);
+    p.inputH = xShape.GetDim(xShape.GetDimNum() - kHDimOffsetFromEnd);
+    p.inputW = xShape.GetDim(xShape.GetDimNum() - kWDimOffsetFromEnd);
+    p.outputH = yShape.GetDim(yShape.GetDimNum() - kHDimOffsetFromEnd);
+    p.outputW = yShape.GetDim(yShape.GetDimNum() - kWDimOffsetFromEnd);
     p.inputL = 0;
     p.outputL = 0;
     if (p.is3D) {
-        p.inputL = xShape.GetDim(xShape.GetDimNum() - 3);
-        p.outputL = yShape.GetDim(yShape.GetDimNum() - 3);
+        p.inputL = xShape.GetDim(xShape.GetDimNum() - kLDimOffsetFromEnd);
+        p.outputL = yShape.GetDim(yShape.GetDimNum() - kLDimOffsetFromEnd);
     }
     // 校验 padding 值域约束
     OP_CHECK_IF(CheckPadPair(context, p.left, p.right, p.inputW, "W") != ge::GRAPH_SUCCESS,
