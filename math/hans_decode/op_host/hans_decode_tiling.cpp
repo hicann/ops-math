@@ -12,6 +12,7 @@
  * \file hans_decode_tiling.cpp
  * \brief
  */
+#include <algorithm>
 #include "register/op_impl_registry.h"
 #include "platform/platform_ascendc.h"
 #include "log/log.h"
@@ -23,14 +24,16 @@ constexpr uint64_t TILING_KEY_HALF = 2;
 constexpr uint64_t TILING_KEY_FLOAT = 4;
 constexpr uint64_t TILING_KEY_BFLOAT16 = 2;
 constexpr int64_t PDF_NUMEL_LENGTH = 256;
+constexpr int64_t FIXED_HEADER_BYTES = 512;
+constexpr uint64_t MAX_FORMAT_CORE_NUM = 56;
+constexpr uint64_t SIMT_DCACHE_SIZE = 32 * 1024;
 
 static ge::graphStatus TilingPrepare4HansDecodeTiling([[maybe_unused]] gert::TilingParseContext* context)
 {
     return ge::GRAPH_SUCCESS;
 }
 
-class HansDecodeTiling
-{
+class HansDecodeTiling {
 public:
     explicit HansDecodeTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus Init();
@@ -47,9 +50,12 @@ private:
     int64_t inputSize;
     int64_t pdfNumel;
     int64_t fixedSize;
+    int64_t varSize;
     int64_t mantissaSize;
     int64_t processCoreDim;
     int64_t recoverSize;
+    uint64_t platformUbSize = 0;
+    bool isAscend950 = false;
     bool reshuff;
 
     inline int64_t GetSizeByStorageShape(const gert::StorageShape* shape, int64_t initValue)
@@ -66,6 +72,15 @@ ge::graphStatus HansDecodeTiling::Init()
     const auto ascendcPlatform = platform_ascendc::PlatformAscendC(tilingContext->GetPlatformInfo());
     aivNum = ascendcPlatform.GetCoreNumAiv();
     sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
+    isAscend950 = ascendcPlatform.GetSocVersion() == platform_ascendc::SocVersion::ASCEND950;
+    if (isAscend950) {
+        OP_CHECK_IF(aivNum == 0, OP_LOGE("HansDecode", "AIV core number must be greater than zero."),
+                    return ge::GRAPH_FAILED);
+        ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, platformUbSize);
+        OP_CHECK_IF(platformUbSize <= SIMT_DCACHE_SIZE,
+                    OP_LOGE("HansDecode", "UB size must be greater than the 32 KiB SIMT DCache reserve."),
+                    return ge::GRAPH_FAILED);
+    }
     // check input
     auto mantissa = tilingContext->GetInputTensor(0);
     OP_CHECK_IF(mantissa == nullptr, OP_LOGE("HansDecode", "mantissa is nullptr."), return ge::GRAPH_FAILED);
@@ -84,6 +99,7 @@ ge::graphStatus HansDecodeTiling::Init()
     dtypeBytes = GetSizeByDataType(dataType);
     mantissaSize = tilingContext->GetInputTensor(0)->GetShapeSize();
     fixedSize = tilingContext->GetInputTensor(1)->GetShapeSize();
+    varSize = tilingContext->GetInputTensor(2)->GetShapeSize();
     const gert::StorageShape* recoverShape = tilingContext->GetOutputShape(0);
     OP_CHECK_IF(recoverShape == nullptr, OP_LOGE("HansDecode", "recoverShape is nullptr."), return ge::GRAPH_FAILED);
     recoverSize = GetSizeByStorageShape(recoverShape, 1);
@@ -113,12 +129,21 @@ ge::graphStatus HansDecodeTiling::SetTilingData()
     } else {
         return ge::GRAPH_FAILED;
     }
+    if (isAscend950 && fixedSize * dtypeBytes < FIXED_HEADER_BYTES) {
+        OP_LOGE(tilingContext->GetNodeName(), "The fixed tensor must contain the complete 512-byte HANS header.");
+        return ge::GRAPH_FAILED;
+    }
     tilingContext->SetTilingKey(tilingKey);
     recoverSize = recoverSize * dtypeBytes;
     tilingData.set_mantissaByteSize(mantissaSize * dtypeBytes);
     tilingData.set_fixedByteSize(fixedSize * dtypeBytes);
     tilingData.set_recoverExpByteSize(recoverSize);
     tilingData.set_recoverByteSize(recoverSize * dtypeBytes);
+    tilingData.set_varByteSize(varSize * dtypeBytes);
+    tilingData.set_outputValueCount(recoverSize / dtypeBytes);
+
+    uint64_t launchCoreDim = isAscend950 ? std::min(aivNum, MAX_FORMAT_CORE_NUM) : aivNum;
+    tilingData.set_launchCoreDim(launchCoreDim);
     tilingData.set_reshuff(reshuff);
 
     OP_LOGD(tilingContext->GetNodeName(), "tilingKey: %lu.", tilingKey);
@@ -127,10 +152,17 @@ ge::graphStatus HansDecodeTiling::SetTilingData()
     OP_LOGD(tilingContext->GetNodeName(), "fixedByteSize: %ld.", fixedSize * dtypeBytes);
     OP_LOGD(tilingContext->GetNodeName(), "recoverExpByteSize: %ld.", recoverSize);
     OP_LOGD(tilingContext->GetNodeName(), "recoverByteSize: %ld.", recoverSize * dtypeBytes);
+    OP_LOGD(tilingContext->GetNodeName(), "varByteSize: %ld.", varSize * dtypeBytes);
+    OP_LOGD(tilingContext->GetNodeName(), "outputValueCount: %ld.", recoverSize / dtypeBytes);
     OP_LOGD(tilingContext->GetNodeName(), "reshuff: %d.", reshuff);
-    tilingContext->SetBlockDim(aivNum);
-    tilingData.SaveToBuffer(
-        tilingContext->GetRawTilingData()->GetData(), tilingContext->GetRawTilingData()->GetCapacity());
+    tilingContext->SetBlockDim(launchCoreDim);
+    if (isAscend950) {
+        OP_CHECK_IF(tilingContext->SetLocalMemorySize(static_cast<uint32_t>(platformUbSize - SIMT_DCACHE_SIZE)) !=
+                        ge::GRAPH_SUCCESS,
+                    OP_LOGE(tilingContext->GetNodeName(), "SetLocalMemorySize failed."), return ge::GRAPH_FAILED);
+    }
+    tilingData.SaveToBuffer(tilingContext->GetRawTilingData()->GetData(),
+                            tilingContext->GetRawTilingData()->GetCapacity());
     tilingContext->GetRawTilingData()->SetDataSize(tilingData.GetDataSize());
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
     currentWorkspace[0] = sysWorkspaceSize;
