@@ -86,7 +86,7 @@ aclnnStatus aclnnStridedSliceGrad(
       <td>shape（aclIntArray*）</td>
       <td>输入</td>
       <td>原始输入张量的形状，即输出out的shape。</td>
-      <td><ul><li>元素个数等于out的维度数。</li><li>各元素值大于0。</li><li>与begin/end/strides共同决定dy的shape，推导方法见dy参数说明。</li></ul></td>
+      <td><ul><li>长度与begin/end/strides相同。</li><li>各元素值≥0（0表示空张量）。</li><li>剔除长度为1的维度后秩不超过8。</li></ul></td>
       <td>INT64</td>
       <td>-</td>
       <td>-</td>
@@ -95,8 +95,8 @@ aclnnStatus aclnnStridedSliceGrad(
     <tr>
       <td>begin（aclIntArray*）</td>
       <td>输入</td>
-      <td>切片起始位置索引，对应正向算子StridedSlice的begin参数。</td>
-      <td><ul><li>长度必须与shape相同。</li><li>支持负索引（表示从末尾倒数）。</li><li>与shape/end/strides共同决定dy的shape，推导方法见dy参数说明。</li></ul></td>
+      <td>切片起始索引，对应正向StridedSlice的begin参数。</td>
+      <td><ul><li>长度与shape相同。</li><li>支持负索引（从末尾倒数）。</li></ul></td>
       <td>INT64</td>
       <td>-</td>
       <td>-</td>
@@ -105,8 +105,8 @@ aclnnStatus aclnnStridedSliceGrad(
     <tr>
       <td>end（aclIntArray*）</td>
       <td>输入</td>
-      <td>切片结束位置索引（不含），对应正向算子StridedSlice的end参数。</td>
-      <td><ul><li>长度必须与shape相同。</li><li>支持负索引。</li><li>与shape/begin/strides共同决定dy的shape，推导方法见dy参数说明。</li></ul></td>
+      <td>切片结束索引（不含），对应正向StridedSlice的end参数。</td>
+      <td><ul><li>长度与shape相同。</li><li>支持负索引。</li></ul></td>
       <td>INT64</td>
       <td>-</td>
       <td>-</td>
@@ -115,8 +115,8 @@ aclnnStatus aclnnStridedSliceGrad(
     <tr>
       <td>strides（aclIntArray*）</td>
       <td>输入</td>
-      <td>切片步长，对应正向算子StridedSlice的strides参数。</td>
-      <td><ul><li>长度必须与shape相同。</li><li>元素值不能为0。</li><li>支持负步长（反向切片）。</li><li>正步长时begin须小于等于end，负步长时begin须大于等于end，否则该维视为空切片。</li><li>被shrinkAxisMask置位的维度，其strides必须为1（该维只取begin指向的单个元素，步长无意义）。</li><li>与shape/begin/end共同决定dy的shape，推导方法见dy参数说明。</li></ul></td>
+      <td>切片步长，对应正向StridedSlice的strides参数。</td>
+      <td><ul><li>长度与shape相同。</li><li>元素值不能为0，支持负值（反向切片）。</li><li>被shrinkAxisMask置位的维度，其strides必须为1。</li></ul></td>
       <td>INT64</td>
       <td>-</td>
       <td>-</td>
@@ -126,18 +126,7 @@ aclnnStatus aclnnStridedSliceGrad(
       <td>dy（aclTensor*）</td>
       <td>输入</td>
       <td>切片操作的输出梯度张量。</td>
-      <td><ul>
-        <li>dy的shape必须等于用shape、begin、end、strides及beginMask、endMask、ellipsisMask、newAxisMask、shrinkAxisMask对shape做切片后得到的张量形状。</li>
-        <li>判断dy的shape是否正确的办法：把begin、end、strides按“索引项”与shape的各维逐项对齐（第i个元素对应第i项），再逐项统计切片取多少个元素，dy对应位置就有多大。注意newAxisMask/shrinkAxisMask置位的项会改变begin/end/strides与数据维的对齐关系（见下）。具体来说：
-          <ul>
-            <li>某项若被<code>shrinkAxisMask</code>置位，对应数据维只取begin指向的1个元素并从dy中降维（不计入dy的维数），该项消耗一个begin/end/strides元素；</li>
-            <li>某项若被<code>newAxisMask</code>置位，dy在该位置多出一个长度为1的维度；该项会占用一个begin/end/strides元素但不作用于shape的任何数据维（即其后的begin/end/strides依次对齐到后续数据维）；</li>
-            <li>若<code>ellipsisMask</code>置位，中间省略的若干维度全部保留（等效只切未省略的维度）；</li>
-            <li>其余维度按“从begin开始，每个strides步取一个元素，取到end之前为止”统计个数，若取不到任何元素则该维大小为0；</li>
-            <li><code>beginMask</code>/<code>endMask</code>置位的维度等同于不限制起点/终点，即取满整个维度。</li>
-          </ul>
-        </li>
-      </ul></td>
+      <td><ul><li>dy.shape必须等于对原始shape执行StridedSlice正向操作后的输出shape。</li></ul></td>
       <td>FLOAT16、BFLOAT16、FLOAT、DOUBLE、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、COMPLEX32、COMPLEX64</td>
       <td>ND</td>
       <td>0-8</td>
@@ -249,18 +238,9 @@ aclnnStatus aclnnStridedSliceGrad(
       <td>dy、out存在空指针。</td>
     </tr>
     <tr>
-      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="4">161002</td>
+      <td>ACLNN_ERR_PARAM_INVALID</td>
+      <td>161002</td>
       <td>dy或out的数据类型不在支持的范围之内。</td>
-    </tr>
-    <tr>
-      <td>shape、begin、end、strides的长度不一致。</td>
-    </tr>
-    <tr>
-      <td>strides中存在值为0的元素。</td>
-    </tr>
-    <tr>
-      <td>ellipsisMask中超过1位被置为1。</td>
     </tr>
   </tbody></table>
 
