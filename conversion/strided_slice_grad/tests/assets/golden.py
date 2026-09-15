@@ -11,12 +11,8 @@
 # ----------------------------------------------------------------------------
 """StridedSliceGrad TestSpec golden for TTK (kernel / GEIR / ACLNN / E2E-TF).
 
-真值一律由 TensorFlow 算子 ``tf.raw_ops.StridedSliceGrad`` 计算，与旧 golden
-（``ttk/user_defined_modules/op/golden_funcs/strided_slice_grad.py``）语义一致，
+真值一律由 TensorFlow 算子 ``tf.raw_ops.StridedSliceGrad`` 计算
 仅适配到当前 TTK 的 TestSpec（``__spec__``）框架。不使用 numpy 重实现算法。
-
-注意：``import tensorflow`` 采用惰性导入（放在函数内部），因此在未安装 TF 的环境里
-本文件仍可被 loader 静态索引、被 CSV 校验加载；只有真正生成真值时才要求 TF 可用。
 
 各通路 golden 入参/出参类型（见 ttk-how-write-plugin）：
   - kernel / GEIR : op_name  ``strided_slice_grad``   → 输入 numpy.ndarray，返回 numpy
@@ -28,6 +24,8 @@
   - ACLNN 依 aclnn 头：shape/begin/end/strides 是 aclIntArray（经 attributes 传入），
     dy、out 是张量；mask（beginMask...）经 attributes 传入
 """
+
+import numpy
 
 __spec__ = {
     # kernel 与 GEIR 共用 snake_case 注册名与同一 TestSpec。
@@ -78,6 +76,38 @@ def _to_int_list(v):
     if isinstance(v, (int, float)):
         return [int(v)]
     return [int(x) for x in v]
+
+
+def _nth(seq, idx):
+    """安全取嵌套序列的第 idx 个元素（越界/非序列返回 None）。"""
+    try:
+        return seq[idx]
+    except (TypeError, IndexError, KeyError):
+        return None
+
+
+def _restore_value_input(arr, dtype_name, ori_shape):
+    """把 TTK 存储约定改写的 kernel/GEIR numpy 输入还原为语义张量（本算子仅 dy 需要）。
+
+    TTK 生成 numpy 输入时对两类情形做存储层改写，golden 侧需按 CSV 声明还原：
+    1. complex32：numpy 无该 dtype，按 float16 + 尾维 2（实部/虚部）存储；还原为
+       complex64（与 TTK Promote 路径 real + imag * 1j 同款约定）。Promote 模式下
+       TTK 已提前完成该转换（且 dtype 报告为 complex64），此处条件自然不命中。
+    2. 0 维 ()：eliminate_scalar_shapes 把 () 生成成 (1,)；按声明 shape 还原秩，
+       否则 shrink_axis_mask 场景下 dy 秩与 tf.raw_ops 要求不符。
+    输出侧无需还原：complex32 的 golden 返回 complex64，TTK __normalize_goldens
+    会自动转回 float16 + 尾维 2 存储后再与设备输出比对。
+    """
+    if arr is None or not hasattr(arr, "dtype") or not hasattr(arr, "shape"):
+        return arr
+    if "complex32" in str(dtype_name) and "float16" in str(getattr(arr, "dtype", "")):
+        storage = numpy.asarray(arr)
+        if storage.ndim >= 1 and storage.shape[-1] == 2:
+            real, imag = numpy.split(storage, 2, axis=-1)
+            arr = (real + imag * 1j).reshape(storage.shape[:-1])
+    if ori_shape is not None and len(list(ori_shape)) == 0 and arr.size == 1:
+        arr = arr.reshape(())
+    return arr
 
 
 def _value_dtype_name(dy):
@@ -198,6 +228,12 @@ def strided_slice_grad_golden(
     **kwargs,
 ):
     """Kernel/GEIR golden：tf 计算真值，返回 [numpy.ndarray]。"""
+    # dy 是第 5 个（索引 4）输入；按 CSV 声明还原 TTK 存储约定（complex32 尾维、0 维秩）。
+    dy = _restore_value_input(
+        dy,
+        _nth(kwargs.get("input_dtypes"), 4),
+        _nth(kwargs.get("input_ori_shapes"), 4),
+    )
     res = _compute_tf(
         shape,
         begin,
@@ -252,6 +288,8 @@ def _tf_result_to_torch(res, ref):
     """把 tf 结果张量转成与 ref（torch.Tensor）同 device/dtype 的 torch.Tensor，不经 numpy 计算。"""
     import torch
 
+    if not isinstance(ref, torch.Tensor):
+        return res
     res_shape = list(res.shape)
     data = res.numpy().tolist()  # tf → python 原生嵌套 list（保持 shape）
     out = torch.tensor(data, dtype=ref.dtype, device=ref.device)
