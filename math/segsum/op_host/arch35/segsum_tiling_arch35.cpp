@@ -167,5 +167,10 @@ static ge::graphStatus Tiling4SegsumArch35(gert::TilingContext* context)
     return tilingObject.RunTiling();
 }
 
-IMPL_OP_OPTILING(Segsum).Tiling(Tiling4SegsumArch35);
+static ge::graphStatus TilingPrepare4SegsumArch35([[maybe_unused]] gert::TilingParseContext* context)
+{
+    return ge::GRAPH_SUCCESS;
+}
+
+IMPL_OP_OPTILING(Segsum).Tiling(Tiling4SegsumArch35).TilingParse<SegsumCompileInfoArch35>(TilingPrepare4SegsumArch35);
 } // namespace optiling

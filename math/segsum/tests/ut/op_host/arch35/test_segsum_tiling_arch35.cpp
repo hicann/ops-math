@@ -23,10 +23,12 @@
 #include "platform/platform_info.h"
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
+#include "../../../../op_host/arch35/segsum_tiling_arch35.h"
 #include "../../../../op_kernel/arch35/segsum_tiling_data.h"
 
 using namespace ge;
 using namespace gert;
+using optiling::SegsumCompileInfoArch35;
 
 #define SEGSUM_ARCH35_STR_IMPL(x) #x
 #define SEGSUM_ARCH35_STR(x) SEGSUM_ARCH35_STR_IMPL(x)
@@ -34,8 +36,6 @@ using namespace gert;
 namespace {
 constexpr uint64_t SEGSUM_ARCH35_TILING_KEY_STRIPE = 0;
 constexpr uint64_t SEGSUM_ARCH35_TILING_KEY_ROW_BLOCK = 1;
-
-struct SegsumCompileInfoArch35 {};
 
 bool IsAscend950Build() { return std::string(SEGSUM_ARCH35_STR(BUILD_SOC_VERSION)) == "ascend950"; }
 

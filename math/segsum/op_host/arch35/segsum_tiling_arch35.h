@@ -22,6 +22,10 @@
 
 namespace optiling {
 
+// Empty marker struct used only for TilingParse registration. The arch35 tiling
+// function reads platform information directly from gert::TilingContext.
+struct SegsumCompileInfoArch35 {};
+
 class SegsumTilingArch35 {
 public:
     explicit SegsumTilingArch35(gert::TilingContext* context) : tilingContext(context) {};
