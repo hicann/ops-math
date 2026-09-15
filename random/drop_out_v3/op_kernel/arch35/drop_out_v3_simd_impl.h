@@ -92,7 +92,8 @@ static constexpr Reg::CastTrait castTraitI32ToF32 = {Reg::RegLayout::ZERO, Reg::
 template <typename T>
 __simd_callee__ inline void PhiloxCtrConvertAndDropout(Reg::RegTensor<uint32_t>& currCtr,
                                                        Reg::RegTensor<uint32_t>& mask16Reg,
-                                                       Reg::RegTensor<float>& zeroFloatReg, uint32_t currCount,
+                                                       Reg::RegTensor<float>& zeroFloatReg,
+                                                       Reg::RegTensor<float>& oneFloatReg, uint32_t currCount,
                                                        float scale, float prob, __ubuf__ float* randomFloatPtr,
                                                        __ubuf__ T* inputPtr, __ubuf__ T* outputPtr)
 {
@@ -130,8 +131,10 @@ __simd_callee__ inline void PhiloxCtrConvertAndDropout(Reg::RegTensor<uint32_t>&
 
     Reg::RegTensor<float> scaledInput;
     Reg::Muls<float>(scaledInput, inputFloatReg, scale, mask);
+    Reg::RegTensor<float> maskBitReg;
+    Reg::Select<float>(maskBitReg, oneFloatReg, zeroFloatReg, dropoutMask);
     Reg::RegTensor<float> outputFloatReg;
-    Reg::Select<float>(outputFloatReg, scaledInput, zeroFloatReg, dropoutMask);
+    Reg::Mul<float>(outputFloatReg, scaledInput, maskBitReg, mask);
 
     if constexpr (IsSameType<T, float>::value) {
         Reg::StoreAlign<float>(outputPtr, outputFloatReg, mask);
@@ -428,6 +431,9 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::ComputeContinuousSimd(int64_t ba
         Reg::RegTensor<float> zeroFloatReg;
         Reg::Duplicate(zeroFloatReg, 0.0f);
 
+        Reg::RegTensor<float> oneFloatReg;
+        Reg::Duplicate(oneFloatReg, 1.0f);
+
         Reg::RegTensor<uint32_t> mask16Reg;
         Reg::Duplicate(mask16Reg, 0xFFFF);
 
@@ -543,18 +549,18 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::ComputeContinuousSimd(int64_t ba
             __ubuf__ T* batchOutputPtr = outputPtr + batchStart;
             __ubuf__ float* batchRandomPtr = randomFloatPtr + batchStart;
 
-            PhiloxCtrConvertAndDropout<T>(ctr0, mask16Reg, zeroFloatReg, counterPerBatch, scale, prob_, batchRandomPtr,
-                                          batchInputPtr, batchOutputPtr);
-            PhiloxCtrConvertAndDropout<T>(ctr1, mask16Reg, zeroFloatReg, counterPerBatch, scale, prob_,
+            PhiloxCtrConvertAndDropout<T>(ctr0, mask16Reg, zeroFloatReg, oneFloatReg, counterPerBatch, scale, prob_,
+                                          batchRandomPtr, batchInputPtr, batchOutputPtr);
+            PhiloxCtrConvertAndDropout<T>(ctr1, mask16Reg, zeroFloatReg, oneFloatReg, counterPerBatch, scale, prob_,
                                           batchRandomPtr + counterPerBatch, batchInputPtr + counterPerBatch,
                                           batchOutputPtr + counterPerBatch);
 
             if constexpr (randNum == NUM_4) {
-                PhiloxCtrConvertAndDropout<T>(ctr2, mask16Reg, zeroFloatReg, counterPerBatch, scale, prob_,
+                PhiloxCtrConvertAndDropout<T>(ctr2, mask16Reg, zeroFloatReg, oneFloatReg, counterPerBatch, scale, prob_,
                                               batchRandomPtr + NUM_2 * counterPerBatch,
                                               batchInputPtr + NUM_2 * counterPerBatch,
                                               batchOutputPtr + NUM_2 * counterPerBatch);
-                PhiloxCtrConvertAndDropout<T>(ctr3, mask16Reg, zeroFloatReg, counterPerBatch, scale, prob_,
+                PhiloxCtrConvertAndDropout<T>(ctr3, mask16Reg, zeroFloatReg, oneFloatReg, counterPerBatch, scale, prob_,
                                               batchRandomPtr + NUM_3 * counterPerBatch,
                                               batchInputPtr + NUM_3 * counterPerBatch,
                                               batchOutputPtr + NUM_3 * counterPerBatch);
@@ -593,27 +599,29 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::ComputeContinuousSimd(int64_t ba
             uint32_t remaining = tailElements;
 
             uint32_t currCount0 = (remaining < counterPerBatch) ? remaining : counterPerBatch;
-            PhiloxCtrConvertAndDropout<T>(ctr0, mask16Reg, zeroFloatReg, currCount0, scale, prob_, tailRandomPtr,
-                                          tailInputPtr, tailOutputPtr);
+            PhiloxCtrConvertAndDropout<T>(ctr0, mask16Reg, zeroFloatReg, oneFloatReg, currCount0, scale, prob_,
+                                          tailRandomPtr, tailInputPtr, tailOutputPtr);
             remaining -= currCount0;
 
             uint32_t currCount1 = (remaining < counterPerBatch) ? remaining : counterPerBatch;
-            PhiloxCtrConvertAndDropout<T>(ctr1, mask16Reg, zeroFloatReg, currCount1, scale, prob_,
+            PhiloxCtrConvertAndDropout<T>(ctr1, mask16Reg, zeroFloatReg, oneFloatReg, currCount1, scale, prob_,
                                           tailRandomPtr + counterPerBatch, tailInputPtr + counterPerBatch,
                                           tailOutputPtr + counterPerBatch);
             remaining -= currCount1;
 
             if constexpr (randNum == NUM_4) {
                 uint32_t currCount2 = (remaining < counterPerBatch) ? remaining : counterPerBatch;
-                PhiloxCtrConvertAndDropout<T>(
-                    ctr2, mask16Reg, zeroFloatReg, currCount2, scale, prob_, tailRandomPtr + NUM_2 * counterPerBatch,
-                    tailInputPtr + NUM_2 * counterPerBatch, tailOutputPtr + NUM_2 * counterPerBatch);
+                PhiloxCtrConvertAndDropout<T>(ctr2, mask16Reg, zeroFloatReg, oneFloatReg, currCount2, scale, prob_,
+                                              tailRandomPtr + NUM_2 * counterPerBatch,
+                                              tailInputPtr + NUM_2 * counterPerBatch,
+                                              tailOutputPtr + NUM_2 * counterPerBatch);
                 remaining -= currCount2;
 
                 uint32_t currCount3 = (remaining < counterPerBatch) ? remaining : counterPerBatch;
-                PhiloxCtrConvertAndDropout<T>(
-                    ctr3, mask16Reg, zeroFloatReg, currCount3, scale, prob_, tailRandomPtr + NUM_3 * counterPerBatch,
-                    tailInputPtr + NUM_3 * counterPerBatch, tailOutputPtr + NUM_3 * counterPerBatch);
+                PhiloxCtrConvertAndDropout<T>(ctr3, mask16Reg, zeroFloatReg, oneFloatReg, currCount3, scale, prob_,
+                                              tailRandomPtr + NUM_3 * counterPerBatch,
+                                              tailInputPtr + NUM_3 * counterPerBatch,
+                                              tailOutputPtr + NUM_3 * counterPerBatch);
             }
         }
 
