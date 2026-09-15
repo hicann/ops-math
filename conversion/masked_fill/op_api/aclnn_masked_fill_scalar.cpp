@@ -25,6 +25,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "opdev/op_executor.h"
 #include "opdev/platform.h"
+#include "op_api/aclnn_check.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -150,6 +151,11 @@ aclnnStatus aclnnInplaceMaskedFillScalarGetWorkspaceSize(aclTensor* selfRef, con
     auto maskCasted = l0op::Cast(maskContiguous, DataType::DT_BOOL, uniqueExecutor.get());
     CHECK_RET(maskCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
+    // DT_BOOL场景先按PyTorch语义(bool(nan)=True)转成bool scalar，规避aclScalar::ToBool对浮点NaN的误判
+    if (IsRegBase() && selfRef->GetDataType() == op::DataType::DT_BOOL) {
+        value = uniqueExecutor->AllocScalar(value->ToDouble() != 0.0);
+        CHECK_RET(value != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    }
     const aclTensor* valueTensor = uniqueExecutor->ConvertToTensor(value, selfRef->GetDataType());
 
     // 固定写法，将计算结果转换成输出out的数据类型
