@@ -25,7 +25,6 @@ constexpr size_t INPUT_X_INDEX = 0;
 constexpr size_t INPUT_AXIS_INDEX = 1;
 constexpr size_t ATTR_EXCLUSIVE_INDEX = 0;
 constexpr size_t ATTR_REVERSE_INDEX = 1;
-constexpr size_t WORKSPACE_SIZE = 16777216; // 16 * 1024 * 1024;
 constexpr int32_t CAST_MULT = 3;
 constexpr int32_t CONST_2 = 2;
 constexpr int32_t CONST_3 = 3;
@@ -364,7 +363,8 @@ ge::graphStatus CumsumAscendcTilingImpl::DoTiling()
     }
     size_t* workspaces = context_->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, workspaces);
-    workspaces[0] = WORKSPACE_SIZE;
+    // The floating-point kernels only use UB and input/output GM buffers.
+    workspaces[0] = 0;
 
     OP_LOGD(context_->GetNodeName(), "Exit CumsumAscendcTilingImpl DoTiling");
     return ge::GRAPH_SUCCESS;

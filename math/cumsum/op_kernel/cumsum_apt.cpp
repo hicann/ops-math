@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -47,9 +47,8 @@ extern "C" __aicore__ inline void cumsumSimd(GM_ADDR x, GM_ADDR axis, GM_ADDR y,
     if (TILING_KEY_IS(CUMSUM_ONEWAY_SS_TILING_KEY)) {
         GET_TILING_DATA_WITH_STRUCT(CumsumSklanskyTilingData, tilingDataIn, tiling);
         const CumsumSklanskyTilingData* __restrict tilingData = &tilingDataIn;
-        if constexpr (
-            std::is_same<DTYPE_X, half>::value || std::is_same<DTYPE_X, float>::value ||
-            std::is_same<DTYPE_X, bfloat16_t>::value) {
+        if constexpr (std::is_same<DTYPE_X, half>::value || std::is_same<DTYPE_X, float>::value ||
+                      std::is_same<DTYPE_X, bfloat16_t>::value) {
             CumsumOnewaySs<DTYPE_X, PromoteType> op(pipe);
             op.Init(x, y, tilingData, workspace);
             op.Process();
@@ -57,9 +56,8 @@ extern "C" __aicore__ inline void cumsumSimd(GM_ADDR x, GM_ADDR axis, GM_ADDR y,
     } else if (TILING_KEY_IS(CUMSUM_TWOWAY_SS_TILING_KEY)) {
         GET_TILING_DATA_WITH_STRUCT(CumsumSklanskyTilingData, tilingDataIn, tiling);
         const CumsumSklanskyTilingData* __restrict tilingData = &tilingDataIn;
-        if constexpr (
-            std::is_same<DTYPE_X, half>::value || std::is_same<DTYPE_X, float>::value ||
-            std::is_same<DTYPE_X, bfloat16_t>::value) {
+        if constexpr (std::is_same<DTYPE_X, half>::value || std::is_same<DTYPE_X, float>::value ||
+                      std::is_same<DTYPE_X, bfloat16_t>::value) {
             CumsumTwowaySs<DTYPE_X, PromoteType> op(pipe);
             op.Init(x, y, tilingData, workspace);
             op.Process();
@@ -68,9 +66,8 @@ extern "C" __aicore__ inline void cumsumSimd(GM_ADDR x, GM_ADDR axis, GM_ADDR y,
     } else if (TILING_KEY_IS(CUMSUM_UB_SS_ONEWAY_SS_TILING_KEY)) {
         GET_TILING_DATA_WITH_STRUCT(CumsumSklanskyTilingData, tilingDataIn, tiling);
         const CumsumSklanskyTilingData* __restrict tilingData = &tilingDataIn;
-        if constexpr (
-            std::is_same<DTYPE_X, half>::value || std::is_same<DTYPE_X, float>::value ||
-            std::is_same<DTYPE_X, bfloat16_t>::value) {
+        if constexpr (std::is_same<DTYPE_X, half>::value || std::is_same<DTYPE_X, float>::value ||
+                      std::is_same<DTYPE_X, bfloat16_t>::value) {
             CumsumUbSsOnewaySs<DTYPE_X, PromoteType> op(pipe);
             op.Init(x, y, tilingData, workspace);
             op.Process();
@@ -78,9 +75,8 @@ extern "C" __aicore__ inline void cumsumSimd(GM_ADDR x, GM_ADDR axis, GM_ADDR y,
     } else if (TILING_KEY_IS(CUMSUM_UB_SS_TWOWAY_SS_TILING_KEY)) {
         GET_TILING_DATA_WITH_STRUCT(CumsumSklanskyTilingData, tilingDataIn, tiling);
         const CumsumSklanskyTilingData* __restrict tilingData = &tilingDataIn;
-        if constexpr (
-            std::is_same<DTYPE_X, half>::value || std::is_same<DTYPE_X, float>::value ||
-            std::is_same<DTYPE_X, bfloat16_t>::value) {
+        if constexpr (std::is_same<DTYPE_X, half>::value || std::is_same<DTYPE_X, float>::value ||
+                      std::is_same<DTYPE_X, bfloat16_t>::value) {
             CumsumUbSsTwowaySs<DTYPE_X, PromoteType> op(pipe);
             op.Init(x, y, tilingData, workspace);
             op.Process();
@@ -88,9 +84,8 @@ extern "C" __aicore__ inline void cumsumSimd(GM_ADDR x, GM_ADDR axis, GM_ADDR y,
     } else if (TILING_KEY_IS(CUMSUM_CORE_SS_ONEWAY_SS_TILING_KEY)) {
         GET_TILING_DATA_WITH_STRUCT(CumsumSklanskyTilingData, tilingDataIn, tiling);
         const CumsumSklanskyTilingData* __restrict tilingData = &tilingDataIn;
-        if constexpr (
-            std::is_same<DTYPE_X, half>::value || std::is_same<DTYPE_X, float>::value ||
-            std::is_same<DTYPE_X, bfloat16_t>::value) {
+        if constexpr (std::is_same<DTYPE_X, half>::value || std::is_same<DTYPE_X, float>::value ||
+                      std::is_same<DTYPE_X, bfloat16_t>::value) {
             KERNEL_TASK_TYPE(CUMSUM_CORE_SS_ONEWAY_SS_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
             CumsumCoreSsOnewaySs<DTYPE_X, PromoteType, CumsumOnewaySklansky<DTYPE_X, PromoteType>> op(pipe);
             op.Init(x, y, tilingData, workspace);
@@ -99,9 +94,8 @@ extern "C" __aicore__ inline void cumsumSimd(GM_ADDR x, GM_ADDR axis, GM_ADDR y,
     } else if (TILING_KEY_IS(CUMSUM_CORE_SS_TWOWAY_SS_TILING_KEY)) {
         GET_TILING_DATA_WITH_STRUCT(CumsumSklanskyTilingData, tilingDataIn, tiling);
         const CumsumSklanskyTilingData* __restrict tilingData = &tilingDataIn;
-        if constexpr (
-            std::is_same<DTYPE_X, half>::value || std::is_same<DTYPE_X, float>::value ||
-            std::is_same<DTYPE_X, bfloat16_t>::value) {
+        if constexpr (std::is_same<DTYPE_X, half>::value || std::is_same<DTYPE_X, float>::value ||
+                      std::is_same<DTYPE_X, bfloat16_t>::value) {
             KERNEL_TASK_TYPE(CUMSUM_CORE_SS_TWOWAY_SS_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
             CumsumCoreSsTwowaySs<DTYPE_X, PromoteType, CumsumTwowaySklansky<DTYPE_X, PromoteType>> op(pipe);
             op.Init(x, y, tilingData, workspace);
@@ -110,13 +104,11 @@ extern "C" __aicore__ inline void cumsumSimd(GM_ADDR x, GM_ADDR axis, GM_ADDR y,
     } else if (TILING_KEY_IS(CUMSUM_CORE_SS_UB_SS_ONEWAY_SS_TILING_KEY)) {
         GET_TILING_DATA_WITH_STRUCT(CumsumSklanskyTilingData, tilingDataIn, tiling);
         const CumsumSklanskyTilingData* __restrict tilingData = &tilingDataIn;
-        if constexpr (
-            std::is_same<DTYPE_X, half>::value || std::is_same<DTYPE_X, float>::value ||
-            std::is_same<DTYPE_X, bfloat16_t>::value) {
+        if constexpr (std::is_same<DTYPE_X, half>::value || std::is_same<DTYPE_X, float>::value ||
+                      std::is_same<DTYPE_X, bfloat16_t>::value) {
             KERNEL_TASK_TYPE(CUMSUM_CORE_SS_UB_SS_ONEWAY_SS_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
-            CumsumCoreSsUbSsOnewaySs<
-                DTYPE_X, PromoteType,
-                CumsumUbSklansky<DTYPE_X, PromoteType, CumsumOnewaySklansky<DTYPE_X, PromoteType>>>
+            CumsumCoreSsUbSsOnewaySs<DTYPE_X, PromoteType,
+                                     CumsumUbSklansky<DTYPE_X, PromoteType, CumsumOnewaySklansky<DTYPE_X, PromoteType>>>
                 op(pipe);
             op.Init(x, y, tilingData, workspace);
             op.Process();
@@ -124,13 +116,11 @@ extern "C" __aicore__ inline void cumsumSimd(GM_ADDR x, GM_ADDR axis, GM_ADDR y,
     } else if (TILING_KEY_IS(CUMSUM_CORE_SS_UB_SS_TWOWAY_SS_TILING_KEY)) {
         GET_TILING_DATA_WITH_STRUCT(CumsumSklanskyTilingData, tilingDataIn, tiling);
         const CumsumSklanskyTilingData* __restrict tilingData = &tilingDataIn;
-        if constexpr (
-            std::is_same<DTYPE_X, half>::value || std::is_same<DTYPE_X, float>::value ||
-            std::is_same<DTYPE_X, bfloat16_t>::value) {
+        if constexpr (std::is_same<DTYPE_X, half>::value || std::is_same<DTYPE_X, float>::value ||
+                      std::is_same<DTYPE_X, bfloat16_t>::value) {
             KERNEL_TASK_TYPE(CUMSUM_CORE_SS_UB_SS_TWOWAY_SS_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
-            CumsumCoreSsUbSsTwowaySs<
-                DTYPE_X, PromoteType,
-                CumsumUbSklansky<DTYPE_X, PromoteType, CumsumTwowaySklansky<DTYPE_X, PromoteType>>>
+            CumsumCoreSsUbSsTwowaySs<DTYPE_X, PromoteType,
+                                     CumsumUbSklansky<DTYPE_X, PromoteType, CumsumTwowaySklansky<DTYPE_X, PromoteType>>>
                 op(pipe);
             op.Init(x, y, tilingData, workspace);
             op.Process();
@@ -140,30 +130,23 @@ extern "C" __aicore__ inline void cumsumSimd(GM_ADDR x, GM_ADDR axis, GM_ADDR y,
 
 extern "C" __aicore__ inline void cumsumSimdInt(GM_ADDR x, GM_ADDR axis, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
-    if (workspace == nullptr) {
-        return;
-    }
-    SetSysWorkspace(workspace);
-
     TPipe pipe;
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
 
     if (TILING_KEY_IS(CUM_NO_SPLIT)) {
         GET_TILING_DATA_WITH_STRUCT(Cum4IntTilingData, tilingDataInt, tiling);
-        if constexpr (
-            std::is_same<DTYPE_X, int32_t>::value || std::is_same<DTYPE_X, int64_t>::value ||
-            std::is_same<DTYPE_X, int8_t>::value || std::is_same<DTYPE_X, uint8_t>::value ||
-            std::is_same<DTYPE_X, uint64_t>::value) {
+        if constexpr (std::is_same<DTYPE_X, int32_t>::value || std::is_same<DTYPE_X, int64_t>::value ||
+                      std::is_same<DTYPE_X, int8_t>::value || std::is_same<DTYPE_X, uint8_t>::value ||
+                      std::is_same<DTYPE_X, uint64_t>::value) {
             CumNoSplit<DTYPE_X> op;
             op.Init(x, y, &tilingDataInt, &pipe);
             op.Process();
         }
     } else if (TILING_KEY_IS(CUM_AR_SPLIT)) {
         GET_TILING_DATA_WITH_STRUCT(Cum4IntTilingData, tilingDataInt, tiling);
-        if constexpr (
-            std::is_same<DTYPE_X, int32_t>::value || std::is_same<DTYPE_X, int64_t>::value ||
-            std::is_same<DTYPE_X, int8_t>::value || std::is_same<DTYPE_X, uint8_t>::value ||
-            std::is_same<DTYPE_X, uint64_t>::value) {
+        if constexpr (std::is_same<DTYPE_X, int32_t>::value || std::is_same<DTYPE_X, int64_t>::value ||
+                      std::is_same<DTYPE_X, int8_t>::value || std::is_same<DTYPE_X, uint8_t>::value ||
+                      std::is_same<DTYPE_X, uint64_t>::value) {
             CumSplitAR<DTYPE_X> op;
             op.Init(x, y, &tilingDataInt, &pipe);
             op.Process();
@@ -171,10 +154,9 @@ extern "C" __aicore__ inline void cumsumSimdInt(GM_ADDR x, GM_ADDR axis, GM_ADDR
     } else if (TILING_KEY_IS(CUM_WITH_GROUP)) {
         GET_TILING_DATA_WITH_STRUCT(Cum4IntTilingData, tilingDataInt, tiling);
         KERNEL_TASK_TYPE(CUM_WITH_GROUP, KERNEL_TYPE_MIX_AIV_1_0);
-        if constexpr (
-            std::is_same<DTYPE_X, int32_t>::value || std::is_same<DTYPE_X, int64_t>::value ||
-            std::is_same<DTYPE_X, int8_t>::value || std::is_same<DTYPE_X, uint8_t>::value ||
-            std::is_same<DTYPE_X, uint64_t>::value) {
+        if constexpr (std::is_same<DTYPE_X, int32_t>::value || std::is_same<DTYPE_X, int64_t>::value ||
+                      std::is_same<DTYPE_X, int8_t>::value || std::is_same<DTYPE_X, uint8_t>::value ||
+                      std::is_same<DTYPE_X, uint64_t>::value) {
             CumWithGroup<DTYPE_X> op;
             op.Init(x, y, &tilingDataInt, &pipe);
             op.Process();
@@ -184,14 +166,12 @@ extern "C" __aicore__ inline void cumsumSimdInt(GM_ADDR x, GM_ADDR axis, GM_ADDR
 
 extern "C" __global__ __aicore__ void cumsum(GM_ADDR x, GM_ADDR axis, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
-    if constexpr (
-        std::is_same<DTYPE_X, half>::value || std::is_same<DTYPE_X, float>::value ||
-        std::is_same<DTYPE_X, bfloat16_t>::value) {
+    if constexpr (std::is_same<DTYPE_X, half>::value || std::is_same<DTYPE_X, float>::value ||
+                  std::is_same<DTYPE_X, bfloat16_t>::value) {
         cumsumSimd(x, axis, y, workspace, tiling);
-    } else if constexpr (
-        std::is_same<DTYPE_X, int32_t>::value || std::is_same<DTYPE_X, int64_t>::value ||
-        std::is_same<DTYPE_X, int8_t>::value || std::is_same<DTYPE_X, uint8_t>::value ||
-        std::is_same<DTYPE_X, uint64_t>::value) {
+    } else if constexpr (std::is_same<DTYPE_X, int32_t>::value || std::is_same<DTYPE_X, int64_t>::value ||
+                         std::is_same<DTYPE_X, int8_t>::value || std::is_same<DTYPE_X, uint8_t>::value ||
+                         std::is_same<DTYPE_X, uint64_t>::value) {
         cumsumSimdInt(x, axis, y, workspace, tiling);
     }
 }

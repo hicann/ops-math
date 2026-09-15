@@ -380,9 +380,9 @@ void Cumsum4IntTiling::WriteTilingData()
     tilingData_.SaveToBuffer(context_->GetRawTilingData()->GetData(), context_->GetRawTilingData()->GetCapacity());
     context_->GetRawTilingData()->SetDataSize(tilingData_.GetDataSize());
 
-    constexpr size_t sysWorkspaceSize = size_t(16 * 1024 * 1024);
     size_t* currentWorkspace = context_->GetWorkspaceSizes(1);
-    currentWorkspace[0] = sysWorkspaceSize;
+    // The integer kernels only use UB and input/output GM buffers.
+    currentWorkspace[0] = 0;
 }
 
 std::string Cumsum4IntTiling::PrintTilingData()

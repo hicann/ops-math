@@ -52,6 +52,28 @@ TEST_F(CumsumTiling, Cumsum_test_tiling_001)
         "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
         "0 "
         "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+}
+
+TEST_F(CumsumTiling, Cumsum_test_tiling_uint8_workspace)
+{
+    optiling::CumsumCompileInfo compileInfo = {64, 253952, 0, 0, 1, 1, 0, 32, 256, 256};
+    int32_t axis = 0;
+
+    gert::TilingContextPara tilingContextPara(
+        "Cumsum",
+        {
+            {{{2}, {2}}, ge::DT_UINT8, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, &axis},
+        },
+        {
+            {{{2}, {2}}, ge::DT_UINT8, ge::FORMAT_ND},
+        },
+        {
+            gert::TilingContextPara::OpAttr("exclusive", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+            gert::TilingContextPara::OpAttr("reverse", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+        },
+        &compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 11001, std::vector<size_t>{0});
 }
