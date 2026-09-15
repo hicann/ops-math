@@ -10,34 +10,65 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
+"""Golden for Transpose operator (Kernel and aclnn Permute)."""
+
+__spec__ = {
+    "transpose": "TransposeKernelSpec",
+    "aclnnPermute": "AclnnPermuteSpec",
+}
+
 import numpy as np
 import torch
 
 
-__golden__ = {
-    "aclnn": {
-        "aclnnPermute": "aclnn_permute_golden",
-    },
-    "kernel": {"transpose": "transpose_golden"},
+def _parse_perm(perm):
+    if hasattr(perm, "tolist"):
+        return perm.tolist()
+    if isinstance(perm, int):
+        return [perm]
+    return list(perm)
+
+
+class TransposeImpl:
+    def __call__(self, x, perm, **kwargs):
+        return torch.permute(x, _parse_perm(perm)).contiguous()
+
+
+_TOLERANCE = {
+    "float32": {"standard": "binary_equal"},
+    "float16": {"standard": "binary_equal"},
+    "bfloat16": {"standard": "binary_equal"},
+    "int8": {"standard": "binary_equal"},
+    "int16": {"standard": "binary_equal"},
+    "int32": {"standard": "binary_equal"},
+    "int64": {"standard": "binary_equal"},
+    "uint8": {"standard": "binary_equal"},
+    "uint16": {"standard": "binary_equal"},
+    "uint32": {"standard": "binary_equal"},
+    "uint64": {"standard": "binary_equal"},
+    "bool": {"standard": "binary_equal"},
+    "hifloat8": {"standard": "binary_equal"},
+    "float8_e5m2": {"standard": "binary_equal"},
+    "float8_e4m3fn": {"standard": "binary_equal"},
 }
 
 
-def transpose_golden(x, perm, **kwargs):
-    """
-    Kernel golden for transpose / transpose_d.
-    All the parameters follow @transpose_def.cpp without outputs.
-    All the input Tensors are numpy.ndarray.
-    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
-        input_formats, output_formats, input_ori_formats, output_ori_formats,
-        input_dtypes, output_dtypes.
-    """
-    perm_val = perm.tolist() if isinstance(perm, np.ndarray) else perm
-    return np.transpose(x, perm_val)
+class TransposeKernelSpec:
+    def golden(x, perm, **kwargs):
+        perm_val = _parse_perm(perm)
+        return [np.transpose(x, perm_val)]
+
+    third_party = {"torch": TransposeImpl}
+    tolerance = _TOLERANCE
 
 
-def aclnn_permute_golden(self, dims=0, out=None, **kwargs):
-    if hasattr(dims, "tolist"):
-        dims = dims.tolist()
-    elif isinstance(dims, int):
-        dims = [dims]
-    return [torch.permute(self, dims)]
+class AclnnPermuteSpec:
+    def golden(self, dims=0, out=None, **kwargs):
+        if hasattr(dims, "tolist"):
+            dims = dims.tolist()
+        elif isinstance(dims, int):
+            dims = [dims]
+        return [torch.permute(self, dims).contiguous()]
+
+    third_party = {"torch": TransposeImpl}
+    tolerance = _TOLERANCE
