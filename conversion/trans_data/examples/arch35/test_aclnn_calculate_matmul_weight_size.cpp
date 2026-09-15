@@ -1,17 +1,15 @@
 /**
- * This program is free software, you can redistribute it and/or modify it.
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE. See LICENSE in the root of
- * the software repository for the full text of the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include <iostream>
 #include <vector>
-#include <cmath>
 #include "acl/acl.h"
 #include "aclnnop/aclnn_mm.h"
 #include "aclnnop/aclnn_trans_matmul_weight.h"
@@ -36,30 +34,6 @@ int64_t GetShapeSize(const std::vector<int64_t>& shape)
         shapeSize *= i;
     }
     return shapeSize;
-}
-
-// 将FP16的uint16_t表示转换为float表示
-float Fp16ToFloat(uint16_t h)
-{
-    int s = (h >> 15) & 0x1;  // sign
-    int e = (h >> 10) & 0x1F; // exponent
-    int f = h & 0x3FF;        // fraction
-    if (e == 0) {
-        // Zero or Denormal
-        if (f == 0) {
-            return s ? -0.0f : 0.0f;
-        }
-        // Denormals
-        float sig = f / 1024.0f;
-        float result = sig * pow(2, -24);
-        return s ? -result : result;
-    } else if (e == 31) {
-        // Infinity or NaN
-        return f == 0 ? (s ? -INFINITY : INFINITY) : NAN;
-    }
-    // Normalized FP32
-    float result = (1.0f + f / 1024.0f) * pow(2, e - 15);
-    return s ? -result : result;
 }
 
 int Init(int32_t deviceId, aclrtStream* stream)
@@ -107,13 +81,14 @@ int CreateAclTensorWeight(const std::vector<T>& hostData, const std::vector<int6
     const aclIntArray* mat2Size = aclCreateIntArray(shape.data(), shape.size());
     auto ret = aclnnCalculateMatmulWeightSize(mat2Size, &size);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnCalculateMatmulWeightSize failed. ERROR: %d\n", ret); return ret);
+    aclDestroyIntArray(mat2Size);
     size *= sizeof(T);
 
     // 调用aclrtMalloc申请device侧内存
     ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMalloc failed. ERROR: %d\n", ret); return ret);
     // 调用aclrtMemcpy将host侧数据拷贝到device侧内存上
-    ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
+    ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), hostData.size() * sizeof(T), ACL_MEMCPY_HOST_TO_DEVICE);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
 
     // 计算连续tensor的strides
@@ -133,7 +108,6 @@ int CreateAclTensorWeight(const std::vector<T>& hostData, const std::vector<int6
 
 int main()
 {
-    return 0;
     // 1. （固定写法）device/stream初始化，参考acl API手册
     // 根据自己的实际device填写deviceId
     int32_t deviceId = 0;
@@ -151,9 +125,9 @@ int main()
     aclTensor* self = nullptr;
     aclTensor* mat2 = nullptr;
     aclTensor* out = nullptr;
-    std::vector<uint16_t> selfHostData(512, 0x3C00); // float16_t 用 0x3C00 表示 FP16 的 1.0
-    std::vector<uint16_t> mat2HostData(512, 0x3C00); // float16_t 用 0x3C00 表示 FP16 的 1.0
-    std::vector<uint16_t> outHostData(256, 0);
+    std::vector<aclFloat16> selfHostData(512, aclFloatToFloat16(1.0f));
+    std::vector<aclFloat16> mat2HostData(512, aclFloatToFloat16(1.0f));
+    std::vector<aclFloat16> outHostData(256, aclFloatToFloat16(0.0f));
     // 创建self aclTensor
     ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_FLOAT16, &self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
@@ -172,23 +146,19 @@ int main()
     ret = aclnnTransMatmulWeightGetWorkspaceSize(mat2, &workspaceSize, &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnTransMatmulWeightGetWorkspaceSize failed. ERROR: %d\n", ret);
               return ret);
-
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddr = nullptr;
     if (workspaceSize > 0) {
         ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
         CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
     }
-
     // 调用aclnnTransMatmulWeight第二段接口
     ret = aclnnTransMatmulWeight(workspaceAddr, workspaceSize, executor, stream);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnTransMatmulWeight failed. ERROR: %d\n", ret); return ret);
-
     // 调用aclnnMm第一段接口
     uint64_t workspaceSizeMm = 0;
     ret = aclnnMmGetWorkspaceSize(self, mat2, out, cubeMathType, &workspaceSizeMm, &executor);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnMmGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
-
     // 根据第一段接口计算出的workspaceSize申请device内存
     void* workspaceAddrMm = nullptr;
     if (workspaceSizeMm > 0) {
@@ -205,14 +175,12 @@ int main()
 
     // 5. 获取输出的值，将device侧内存上的结果拷贝至host侧，需要根据具体API的接口定义修改
     auto size = GetShapeSize(outShape);
-    std::vector<uint16_t> resultData(size, 0);
+    std::vector<aclFloat16> resultData(size, 0);
     ret = aclrtMemcpy(resultData.data(), resultData.size() * sizeof(resultData[0]), outDeviceAddr,
                       size * sizeof(resultData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
     CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
-    // C语言中无法直接打印fp16的数据，需要用uint16读出来，自行通过二进制转成float表示的fp16
     for (int64_t i = 0; i < size; i++) {
-        float fp16Float = Fp16ToFloat(resultData[i]);
-        LOG_PRINT("result[%ld] is: %f\n", i, fp16Float);
+        LOG_PRINT("result[%ld] is: %f\n", i, aclFloat16ToFloat(resultData[i]));
     }
 
     // 6. 释放aclTensor和aclScalar，需要根据具体API的接口定义修改
@@ -224,7 +192,6 @@ int main()
     aclrtFree(selfDeviceAddr);
     aclrtFree(mat2DeviceAddr);
     aclrtFree(outDeviceAddr);
-
     if (workspaceSize > 0) {
         aclrtFree(workspaceAddr);
     }
