@@ -54,7 +54,14 @@ static const aclTensor* ArgMaxV2AiCore(const aclTensor* x, const aclTensor* dim,
                                        aclOpExecutor* executor)
 {
     L0_DFX(ArgMaxV2AiCore, x, dim, out);
-    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(ArgMaxV2, OP_INPUT(x, dim), OP_OUTPUT(out));
+    // RegBase(950) 的静态编译 host(apt 生成版)签名带 dtype 位置参数, 需将属性传入 launcher 以落盘 json;
+    // 非 RegBase(A2/A3) 的 legacy host 签名无 dtype, 传入会导致 json->op 位置传参错位, 保持不传
+    aclnnStatus ret = ACL_SUCCESS;
+    if (IsRegBase()) {
+        ret = ADD_TO_LAUNCHER_LIST_AICORE(ArgMaxV2, OP_INPUT(x, dim), OP_OUTPUT(out), OP_ATTR(out->GetDataType()));
+    } else {
+        ret = ADD_TO_LAUNCHER_LIST_AICORE(ArgMaxV2, OP_INPUT(x, dim), OP_OUTPUT(out));
+    }
     OP_CHECK(ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ArgMaxV2AiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
              return nullptr);
     return out;
