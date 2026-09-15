@@ -40,10 +40,11 @@ __input__ = {
 }
 
 
-def _to_f32_array(arr):
-    if hasattr(arr, "astype"):
-        return arr.astype(np.float32)
-    return np.asarray(arr, dtype=np.float32)
+# 不在此声明 tolerance。实测(2026-09-15, 同用例同用例集的 A/B): Spec.tolerance 一旦声明就
+# **覆盖**用例集 CSV 的 precision_tolerances, 而不是作为缺省兜底 —— 声明 cross_check 会把
+# 整个泛化批拖去要三方(GPU)腿, 隧道不通时全批 GOLDEN_FAILURE。本算子的泛化集 978 例已
+# 逐例填了 precision_tolerances(fp32/fp16/bf16 各 326 例, 无一空缺), 不存在落到 TTK 默认
+# 判据的情况; 三方精度批另按跑批配方显式传 --compare cross_check。
 
 
 def _stable_rng(testcase_name):
@@ -102,6 +103,20 @@ def _output_dtype(kwargs, index, default):
     return str(dtype)
 
 
+def _as_torch(x):
+    """numpy -> torch 的无损桥接。ml_dtypes 的 bfloat16 torch 不认, 按位重解释而非转精度。"""
+    if isinstance(x, np.ndarray) and x.dtype.name == "bfloat16":
+        return torch.from_numpy(x.view(np.uint16)).view(torch.bfloat16)
+    return torch.as_tensor(x)
+
+
+def _as_numpy(t):
+    """torch -> numpy 的无损桥接, 同上反向。"""
+    if t.dtype == torch.bfloat16:
+        return t.view(torch.uint16).cpu().numpy().view(_numpy_dtype("bfloat16"))
+    return t.cpu().numpy()
+
+
 def _numpy_dtype(dtype):
     dtype_name = str(dtype).lower()
     if "bfloat16" in dtype_name:
@@ -129,43 +144,41 @@ def _compute(x_t):
     accumulate in float32, mirroring the kernel, and are cast back at the end.
     """
     out_dtype = x_t.dtype
-    if out_dtype in (torch.float16, torch.bfloat16):
-        x_t = x_t.to(torch.float32)
+    # 累加宽度跟内核: fp16/bf16 抬到 fp32, 其余留在下发的类型(三方档已被 Promote 抬过)
+    acc_dtype = (
+        torch.float32 if out_dtype in (torch.float16, torch.bfloat16) else out_dtype
+    )
+    if acc_dtype != out_dtype:
+        x_t = x_t.to(acc_dtype)
     t_dim = x_t.shape[-1]
 
     # broadcast the last dim into a (T, T) block: expanded[..., i, j] = x[..., i]
     expanded = x_t.unsqueeze(-1).expand(*x_t.shape, t_dim)
-    zero = torch.zeros((), dtype=torch.float32, device=x_t.device)
+    zero = torch.zeros((), dtype=acc_dtype, device=x_t.device)
     strict_tril = torch.tril(
         torch.ones(t_dim, t_dim, dtype=torch.bool, device=x_t.device), diagonal=-1
     )
     masked = torch.where(strict_tril, expanded, zero)
-    seg = torch.cumsum(masked, dim=-2, dtype=torch.float32)
+    seg = torch.cumsum(masked, dim=-2, dtype=acc_dtype)
     tril = torch.tril(
         torch.ones(t_dim, t_dim, dtype=torch.bool, device=x_t.device), diagonal=0
     )
-    neg_inf = torch.full((), float("-inf"), dtype=torch.float32, device=x_t.device)
+    neg_inf = torch.full((), float("-inf"), dtype=acc_dtype, device=x_t.device)
     seg = torch.where(tril, seg, neg_inf)
     y = torch.exp(seg)
-    if out_dtype in (torch.float16, torch.bfloat16):
+    if acc_dtype != out_dtype:
         y = y.to(out_dtype)
     return [y]
 
 
 def segsum_golden(x, **kwargs):
-    out_dtype = getattr(x, "dtype", None)
-    x_t = torch.as_tensor(_to_f32_array(x), dtype=torch.float32)
+    # 零 cast: 三方档 TTK 已 Promote(fp16/bf16->fp32, fp32->fp64), 此处再转会撤销它;
+    # 泛化档收到原 dtype, 由 _compute 按内核的 fp32 累加行为加宽并窄回。
+    x_t = _as_torch(x)
     y = _compute(x_t)[0]
-
-    result = y.cpu().numpy()
-    out_dtype_name = (
-        getattr(out_dtype, "name", str(out_dtype)).lower()
-        if out_dtype is not None
-        else ""
-    )
-    if "float16" in out_dtype_name or "bfloat16" in out_dtype_name:
-        return result.astype(_numpy_dtype(out_dtype), copy=False)
-    return result.astype(np.float32, copy=False)
+    result = _as_numpy(y)
+    out_dtype = _output_dtype(kwargs, 0, str(result.dtype))
+    return result.astype(_numpy_dtype(out_dtype), copy=False)
 
 
 class _SegsumCompose:
@@ -181,10 +194,11 @@ class SegsumKernelSpec:
     """kernel spec. The golden entry receives numpy arrays."""
 
     def golden(x, **kwargs):
-        x_t = torch.as_tensor(_to_f32_array(x), dtype=torch.float32)
+        x_t = _as_torch(x)
         outs = _compute(x_t)
-        output_dtype = _output_dtype(kwargs, 0, str(np.asarray(x).dtype))
-        return [outs[0].cpu().numpy().astype(_numpy_dtype(output_dtype), copy=False)]
+        result = _as_numpy(outs[0])
+        output_dtype = _output_dtype(kwargs, 0, str(result.dtype))
+        return [result.astype(_numpy_dtype(output_dtype), copy=False)]
 
     third_party = {"torch": _SegsumCompose}
 
