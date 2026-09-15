@@ -35,7 +35,7 @@ constexpr int64_t PURE_MOVE_BASE_LEN = 128;              // 128B, cacheline
 constexpr int64_t PURE_MOVE_BASE_UB_SIZE = 48 * 1024;    // 48KB
 constexpr int64_t PURE_MOVE_BASE_UB_SIZE_M1 = 24 * 1024; // M == 1 24KB
 constexpr int64_t USED_MIN_UB_SIZE = 8 * 1024;           // 8KB
-constexpr uint64_t WORK_SPACE_SIZE = 16 * 1024 * 1024;
+constexpr uint64_t WORK_SPACE_SIZE = 0;
 constexpr int64_t SPLIT_KEY_PURE_MOVE = 100;                // 等长纯搬运模板
 constexpr int64_t SPLIT_KEY_UB_SPLIT = 101;                 // 等长UB内split模板
 constexpr int64_t SPLIT_KEY_UB_SPLIT_SMALL_G = 111;         // 等长UB内split模板 g轴小的场景

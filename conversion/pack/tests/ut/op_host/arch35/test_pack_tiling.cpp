@@ -41,7 +41,7 @@ TEST_F(PackTilingTest, Pack_asc_tiling_UT_notfirst_axis_align_bitwidth4_01)
                                               },
                                               {3}, {1}, &compileInfo);
     uint64_t expectTilingKey = 22114;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -64,7 +64,7 @@ TEST_F(PackTilingTest, Pack_asc_tiling_UT_first_axis_align_bitwidth2_02)
                                               },
                                               {3}, {1}, &compileInfo);
     uint64_t expectTilingKey = 32112;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -87,7 +87,7 @@ TEST_F(PackTilingTest, Pack_asc_tiling_UT_notfirst_align_same_bitwidth2_03)
                                               },
                                               {3}, {1}, &compileInfo);
     uint64_t expectTilingKey = 32112;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -109,7 +109,7 @@ TEST_F(PackTilingTest, Pack_asc_tiling_UT_notfirst_axis_align_same_bitwidth8_04)
                                               },
                                               {2}, {1}, &compileInfo);
     uint64_t expectTilingKey = 20004;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -131,7 +131,7 @@ TEST_F(PackTilingTest, Pack_asc_tiling_UT_notfirst_axis_align_same_bitwidth1_05)
                                               },
                                               {2}, {1}, &compileInfo);
     uint64_t expectTilingKey = 32111;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -154,7 +154,7 @@ TEST_F(PackTilingTest, Pack_asc_tiling_UT_first_axis_align_same_bitwidth4_06)
                                               },
                                               {3}, {1}, &compileInfo);
     uint64_t expectTilingKey = 32114;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -176,7 +176,7 @@ TEST_F(PackTilingTest, Pack_asc_tiling_UT_first_axis_align_same_bitwidth1_07)
                                               },
                                               {2}, {1}, &compileInfo);
     uint64_t expectTilingKey = 32111;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -198,6 +198,6 @@ TEST_F(PackTilingTest, Pack_asc_tiling_UT_first_axis_align_same_bitwidth8_08)
                                               },
                                               {2}, {1}, &compileInfo);
     uint64_t expectTilingKey = 20004;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }

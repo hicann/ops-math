@@ -144,7 +144,7 @@ TEST_F(ConcatV2Test, test_pure_copy_split_dim1_float32)
     uint8_t* dimBuf = (uint8_t*)AscendC::GmAlloc(dimByteSize);
     uint8_t* y = (uint8_t*)AscendC::GmAlloc(outputByteSize);
 
-    constexpr size_t workspaceSize = 16 * 1024 * 1024;
+    constexpr size_t workspaceSize = 0;
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(workspaceSize);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(sizeof(ConcatTilingData));
 

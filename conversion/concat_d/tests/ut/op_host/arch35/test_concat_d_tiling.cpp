@@ -42,7 +42,7 @@ TEST_F(ConcatDTiling, ConcatD_tiling_UT_one_axis_diff_shape_align)
                                               },
                                               {3}, {1}, &compileInfo);
     uint64_t expectTilingKey = 32224;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -66,7 +66,7 @@ TEST_F(ConcatDTiling, ConcatD_tiling_UT_pure_copy)
                                               },
                                               {3}, {1}, &compileInfo);
     uint64_t expectTilingKey = 20004;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -89,7 +89,7 @@ TEST_F(ConcatDTiling, ConcatD_tiling_UT_one_axis_diff_shape_align_int64)
                                               },
                                               {2}, {1}, &compileInfo);
     uint64_t expectTilingKey = 22128;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -113,7 +113,7 @@ TEST_F(ConcatDTiling, ConcatD_tiling_UT_zero_axis_same_shape_align_float)
                                               },
                                               {3}, {1}, &compileInfo);
     uint64_t expectTilingKey = 32114;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -137,7 +137,7 @@ TEST_F(ConcatDTiling, ConcatD_tiling_UT_zero_axis_diff_shape_align_float)
                                               },
                                               {3}, {1}, &compileInfo);
     uint64_t expectTilingKey = 32124;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -161,7 +161,7 @@ TEST_F(ConcatDTiling, ConcatD_tiling_UT_one_axis_concat_simt_same_shape_no_align
                                               },
                                               {3}, {1}, &compileInfo);
     uint64_t expectTilingKey = 32214;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -185,7 +185,7 @@ TEST_F(ConcatDTiling, ConcatD_tiling_UT_zero_axis_diff_shape_no_align_float)
                                               },
                                               {3}, {1}, &compileInfo);
     uint64_t expectTilingKey = 32224;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -209,7 +209,7 @@ TEST_F(ConcatDTiling, ConcatD_tiling_UT_one_axis_diff_shape_no_align_float)
                                               },
                                               {3}, {1}, &compileInfo);
     uint64_t expectTilingKey = 22224;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -233,7 +233,7 @@ TEST_F(ConcatDTiling, ConcatD_tiling_UT_one_axis_diff_shape_no_align_int8)
                                               },
                                               {3}, {1}, &compileInfo);
     uint64_t expectTilingKey = 22221;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -257,7 +257,7 @@ TEST_F(ConcatDTiling, ConcatD_tiling_UT_one_axis_diff_shape_no_align_int64)
                                               },
                                               {3}, {1}, &compileInfo);
     uint64_t expectTilingKey = 22228;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -281,7 +281,7 @@ TEST_F(ConcatDTiling, ConcatD_tiling_UT_one_axis_same_shape_no_align_float)
                                               },
                                               {3}, {1}, &compileInfo);
     uint64_t expectTilingKey = 22314;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -305,7 +305,7 @@ TEST_F(ConcatDTiling, ConcatD_tiling_UT_one_axis_same_shape_no_align_int8)
                                               },
                                               {3}, {1}, &compileInfo);
     uint64_t expectTilingKey = 22311;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -329,7 +329,7 @@ TEST_F(ConcatDTiling, ConcatD_tiling_UT_one_axis_same_shape_no_align_int64)
                                               },
                                               {3}, {1}, &compileInfo);
     uint64_t expectTilingKey = 22214;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -397,7 +397,7 @@ TEST_F(ConcatDTiling, ConcatD_tiling_UT_for_more_core)
                                               },
                                               {3}, {1}, &compileInfo);
     uint64_t expectTilingKey = 22221;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -420,7 +420,7 @@ TEST_F(ConcatDTiling, ConcatD_tiling_UT_one_axis_concat_simt_no_align_float)
                                               },
                                               {tensorDesc.size()}, {1}, &compileInfo);
     uint64_t expectTilingKey = 30004;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -443,7 +443,7 @@ TEST_F(ConcatDTiling, ConcatD_tiling_UT_one_axis_concat_simt_diff_shape_no_align
                                               },
                                               {tensorDesc.size()}, {1}, &compileInfo);
     uint64_t expectTilingKey = 30008;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -466,6 +466,6 @@ TEST_F(ConcatDTiling, ConcatD_tiling_UT_one_axis_concat_simt_diff_shape_no_align
                                               },
                                               {tensorDesc.size()}, {1}, &compileInfo);
     uint64_t expectTilingKey = 30004;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
