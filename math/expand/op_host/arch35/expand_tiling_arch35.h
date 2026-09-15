@@ -16,16 +16,11 @@
 #ifndef OPS_BUILT_IN_OP_TILING_RUNTIME_EXPAND_H_
 #define OPS_BUILT_IN_OP_TILING_RUNTIME_EXPAND_H_
 #include "conversion/broadcast_to/op_kernel/arch35/broadcast_to_struct.h"
+#include "conversion/broadcast_to/op_host/arch35/broadcast_to_tiling_arch35.h"
 #include "register/tilingdata_base.h"
 
 namespace optiling {
 
-struct ExpandCompileInfo {
-    int64_t coreNum;
-    int64_t ubSize;
-    uint32_t clSize;
-    uint32_t vRegSize;
-    int64_t blockSize;
-};
+using ExpandCompileInfo = BroadcastToCompileInfo;
 } // namespace optiling
 #endif // OPS_BUILT_IN_OP_TILING_RUNTIME_EXPAND_H_

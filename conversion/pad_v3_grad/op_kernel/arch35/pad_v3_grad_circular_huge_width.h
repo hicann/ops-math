@@ -435,47 +435,8 @@ private:
     __aicore__ inline void CopyOutputToGM(__ubuf__ T* srcAddr, __ubuf__ CalType* resAddr, LocalTensor<T> src,
                                           LocalTensor<CalType> res, uint32_t idx, uint64_t outSelfAddr)
     {
-        copyInParams_.blockLen = dataLen_ * sizeof(T);
-        if constexpr (sizeof(T) != sizeof(float32_t)) {
-            uint32_t midUbAddLenVF = dataLen_;
-
-            Cast<T, CalType>(src, res, RoundMode::CAST_RINT, midUbAddLenVF);
-
-            SetEvent<HardEvent::V_MTE3>(idx);
-            WaitEvent<HardEvent::V_MTE3>(idx);
-            // 同步：MTE3_V
-            DataCopyPad(output_gm[outSelfAddr], src[inSrcStart_], copyInParams_);
-
-            SetEvent<HardEvent::MTE3_MTE2>(idx);
-        } else {
-            // 如果是fp32就可以直接往外搬
-            SetEvent<HardEvent::V_MTE3>(idx);
-            WaitEvent<HardEvent::V_MTE3>(idx);
-
-            DataCopyPad(output_gm[outSelfAddr], res[inResStart_], copyInParams_);
-
-            SetEvent<HardEvent::MTE3_V>(idx);
-        }
-    }
-
-    template <HardEvent EVENT>
-    __aicore__ inline void SetEvent(uint32_t bufIdx)
-    {
-        if (bufIdx & 1) {
-            SetFlag<EVENT>(EVENT_ID1);
-        } else {
-            SetFlag<EVENT>(EVENT_ID0);
-        }
-    }
-
-    template <HardEvent EVENT>
-    __aicore__ inline void WaitEvent(uint32_t bufIdx)
-    {
-        if (bufIdx & 1) {
-            WaitFlag<EVENT>(EVENT_ID1);
-        } else {
-            WaitFlag<EVENT>(EVENT_ID0);
-        }
+        CopyGradOutputToGM<T, CalType>(output_gm, copyInParams_, src, res, inSrcStart_, inResStart_, idx, outSelfAddr,
+                                       dataLen_);
     }
 }; // 类
 

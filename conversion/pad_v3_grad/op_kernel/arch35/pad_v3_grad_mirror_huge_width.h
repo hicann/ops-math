@@ -17,6 +17,7 @@
 #define PAD_V3_GRAD_MIRROR_HUGE_WIDTH_H
 
 #include "kernel_operator.h"
+#include "pad_v3_grad_common.h"
 #include "pad_v3_grad_struct.h"
 
 namespace PadV3Grad {
@@ -25,15 +26,6 @@ constexpr uint8_t LEFT_PAD_IDX = 1;
 constexpr uint8_t RIGHT_PAD_IDX = 2;
 constexpr uint8_t MIRROR_SHAPE_MULTIPLIER = 2;
 using namespace AscendC;
-
-template <typename T1, typename T2>
-__aicore__ inline T1 CeilDiv(T1 a, T2 b)
-{
-    if (b == 0) {
-        return 0;
-    }
-    return (a + b - 1) / b;
-};
 
 template <typename T, uint8_t Mode>
 class KernelPadV3GradMirrorHugeWidth {
@@ -546,48 +538,8 @@ private:
     __aicore__ inline void CopyOutputToGM(__ubuf__ T* srcAddr, __ubuf__ CalType* resAddr, LocalTensor<T> src,
                                           LocalTensor<CalType> res, uint32_t idx, uint64_t outSelfAddr)
     {
-        copyInParams_.blockLen = mDataLen_ * sizeof(T);
-        if constexpr (sizeof(T) != sizeof(float32_t)) {
-            uint32_t midUbAddLenVF = mDataLen_;
-            uint16_t repeatSelfTimes = CeilDiv(mDataLen_, oneRepeatSize_);
-
-            Cast<T, CalType>(src, res, RoundMode::CAST_RINT, midUbAddLenVF);
-
-            SetEvent<HardEvent::V_MTE3>(idx);
-            WaitEvent<HardEvent::V_MTE3>(idx);
-            // 同步：MTE3_V
-            DataCopyPad(output_gm[outSelfAddr], src[inSrcStart_], copyInParams_);
-
-            SetEvent<HardEvent::MTE3_MTE2>(idx);
-        } else {
-            // 如果是fp32就可以直接往外搬
-            SetEvent<HardEvent::V_MTE3>(idx);
-            WaitEvent<HardEvent::V_MTE3>(idx);
-
-            DataCopyPad(output_gm[outSelfAddr], res[inResStart_], copyInParams_);
-
-            SetEvent<HardEvent::MTE3_V>(idx);
-        }
-    }
-
-    template <HardEvent EVENT>
-    __aicore__ inline void SetEvent(uint32_t bufIdx)
-    {
-        if (bufIdx & 1) {
-            SetFlag<EVENT>(EVENT_ID1);
-        } else {
-            SetFlag<EVENT>(EVENT_ID0);
-        }
-    }
-
-    template <HardEvent EVENT>
-    __aicore__ inline void WaitEvent(uint32_t bufIdx)
-    {
-        if (bufIdx & 1) {
-            WaitFlag<EVENT>(EVENT_ID1);
-        } else {
-            WaitFlag<EVENT>(EVENT_ID0);
-        }
+        CopyGradOutputToGM<T, CalType>(output_gm, copyInParams_, src, res, inSrcStart_, inResStart_, idx, outSelfAddr,
+                                       mDataLen_);
     }
 }; // 类
 

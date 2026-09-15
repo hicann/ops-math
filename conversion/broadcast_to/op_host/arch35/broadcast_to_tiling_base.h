@@ -21,8 +21,19 @@
 #include "../../op_kernel/arch35/broadcast_to_struct.h"
 #include "register/tilingdata_base.h"
 #include "tiling/tiling_api.h"
+#include "platform/platform_ascendc.h"
+#include "util/platform_util.h"
 
 namespace optiling {
+
+/**
+ * @brief 填充并校验编译期 Soc 信息（coreNum/ubSize/clSize/blockSize/vRegSize）
+ *
+ * BroadcastTo/Expand/Tile 等算子的 CompileInfo 结构字段完全一致，
+ * 统一使用 BroadcastToCompileInfo 装配，避免重复代码。
+ * 任一成员非法时打印详细错误信息并返回 GRAPH_FAILED。
+ */
+ge::graphStatus FillSocCompileInfo(gert::TilingParseContext* context, BroadcastToCompileInfo* compileInfo);
 
 ge::graphStatus Tiling4BroadcastToAscendC(gert::TilingContext* context, const gert::Shape* inShapePtr,
                                           const gert::Shape* outShapePtr);
