@@ -40,11 +40,18 @@ __input__ = {
 }
 
 
-# 不在此声明 tolerance。实测(2026-09-15, 同用例同用例集的 A/B): Spec.tolerance 一旦声明就
-# **覆盖**用例集 CSV 的 precision_tolerances, 而不是作为缺省兜底 —— 声明 cross_check 会把
-# 整个泛化批拖去要三方(GPU)腿, 隧道不通时全批 GOLDEN_FAILURE。本算子的泛化集 978 例已
-# 逐例填了 precision_tolerances(fp32/fp16/bf16 各 326 例, 无一空缺), 不存在落到 TTK 默认
-# 判据的情况; 三方精度批另按跑批配方显式传 --compare cross_check。
+# 判据声明: 覆盖 segsum_def.cpp 注册的全部 dtype(DT_FLOAT16 / DT_FLOAT / DT_BF16)。
+# 浮点一律 cross_check —— 只有 cross_check 才会让 TTK 取三方(GPU)输出并开 golden_mode=Promote;
+# 写成别的标准会让挂在 Spec 上的 third_party 永不被调用。
+# 注意优先级: Spec.tolerance **覆盖**用例集 CSV 的 precision_tolerances(2026-09-15 同用例
+# A/B 实测), 而 CLI 的 --compare 又覆盖 Spec.tolerance。所以要跑纯两方泛化时, 在命令行传
+# --compare(如 mix_tolerance)即可, 不要靠删声明来实现 —— 删掉会让缺声明的 dtype 落到 TTK
+# 默认判据而非算子自己的标准, 属规范缺口。
+_TOL_KERNEL = {
+    "float16": {"standard": "cross_check", "level": "L1"},
+    "float32": {"standard": "cross_check", "level": "L1"},
+    "bfloat16": {"standard": "cross_check", "level": "L1"},
+}
 
 
 def _stable_rng(testcase_name):
@@ -201,18 +208,24 @@ class SegsumKernelSpec:
         return [result.astype(_numpy_dtype(output_dtype), copy=False)]
 
     third_party = {"torch": _SegsumCompose}
+    tolerance = _TOL_KERNEL
 
 
 class SegsumAclnnSpec:
     """aclnnExpSegsum spec. The golden entry receives torch tensors.
 
     The parameter name follows aclnn_segsum.h, where the input is named self.
+
+    TTK 的 aclnn golden 按**头文件形参顺序位置**下发全部形参(含输出 out), 少一个位置参数
+    就 TypeError -> GOLDEN_FAILURE。aclnnExpSegsum(self, out) 是两个张量形参, 故 out 必须
+    出现在签名里; 它只是输出占位, 真值仍由 self 算出。
     """
 
-    def golden(self, **kwargs):
+    def golden(self, out=None, **kwargs):
         return _compute(self)
 
     third_party = {"torch": _SegsumCompose}
+    tolerance = _TOL_KERNEL
 
 
 # 【不存在】geir 通路: 全仓无 IMPL_OP_INFERSHAPE(Segsum), op_graph 下无 proto/infer 实现.
