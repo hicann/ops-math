@@ -1318,6 +1318,16 @@
   </tr>
   <tr>
     <td>math</td>
+    <td><a href="../../math/log_space_d/README.md">log_space_d</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>根据起始值、结束值、步数和底数生成一维对数间隔序列。</td>
+  </tr>
+  <tr>
+    <td>math</td>
     <td><a href="../../math/masked_scale/README.md">masked_scale</a></td>
     <td>×</td>
     <td>×</td>

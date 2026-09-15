@@ -1,0 +1,22 @@
+testcase_name,op_name,input_shapes,input_dtypes,input_formats,output_shapes,output_dtypes,output_formats,attributes,remark
+dtype_assist_control,log_space_d,"((1,),)","('float32',)","('ND',)","((4,),)","('float32',)","('ND',)","{'start': 0.0, 'end': 3.0, 'steps': 4, 'base': 2.0, 'dtype': 1}",supported assist dtype
+dtype_assist_float64,log_space_d,"((1,),)","('float64',)","('ND',)","((4,),)","('float32',)","('ND',)","{'start': 0.0, 'end': 3.0, 'steps': 4, 'base': 2.0, 'dtype': 1}",unsupported assist dtype
+format_assist_control,log_space_d,"((1,),)","('float32',)","('ND',)","((4,),)","('float32',)","('ND',)","{'start': 0.0, 'end': 3.0, 'steps': 4, 'base': 2.0, 'dtype': 1}",supported ND format
+format_assist_nc1hwc0,log_space_d,"((1,),)","('float32',)","('NC1HWC0',)","((4,),)","('float32',)","('ND',)","{'start': 0.0, 'end': 3.0, 'steps': 4, 'base': 2.0, 'dtype': 1}",unsupported assist format
+rank9_assist_control,log_space_d,"((1,),)","('float32',)","('ND',)","((4,),)","('float32',)","('ND',)","{'start': 0.0, 'end': 3.0, 'steps': 4, 'base': 2.0, 'dtype': 1}",rank one control
+rank9_assist_probe,log_space_d,"((1, 1, 1, 1, 1, 1, 1, 1, 1),)","('float32',)","('ND',)","((4,),)","('float32',)","('ND',)","{'start': 0.0, 'end': 3.0, 'steps': 4, 'base': 2.0, 'dtype': 1}",exactly nine dimensions
+attr_steps_control,log_space_d,"((1,),)","('float32',)","('ND',)","((4,),)","('float32',)","('ND',)","{'start': 0.0, 'end': 3.0, 'steps': 4, 'base': 2.0, 'dtype': 1}",nonnegative steps
+attr_steps_negative,log_space_d,"((1,),)","('float32',)","('ND',)","((4,),)","('float32',)","('ND',)","{'start': 0.0, 'end': 3.0, 'steps': -1, 'base': 2.0, 'dtype': 1}",negative steps
+attr_dtype_control,log_space_d,"((1,),)","('float32',)","('ND',)","((4,),)","('float32',)","('ND',)","{'start': 0.0, 'end': 3.0, 'steps': 4, 'base': 2.0, 'dtype': 1}",dtype enum control
+attr_dtype_two,log_space_d,"((1,),)","('float32',)","('ND',)","((4,),)","('float32',)","('ND',)","{'start': 0.0, 'end': 3.0, 'steps': 4, 'base': 2.0, 'dtype': 2}",dtype enum probe
+attr_start_control,log_space_d,"((1,),)","('float32',)","('ND',)","((4,),)","('float32',)","('ND',)","{'start': 0.0, 'end': 3.0, 'steps': 4, 'base': 2.0, 'dtype': 1}",finite start
+attr_start_inf,log_space_d,"((1,),)","('float32',)","('ND',)","((4,),)","('float32',)","('ND',)","{'start': 1e309, 'end': 3.0, 'steps': 4, 'base': 2.0, 'dtype': 1}",infinite start
+attr_end_control,log_space_d,"((1,),)","('float32',)","('ND',)","((4,),)","('float32',)","('ND',)","{'start': 0.0, 'end': 3.0, 'steps': 4, 'base': 2.0, 'dtype': 1}",finite end
+attr_end_inf,log_space_d,"((1,),)","('float32',)","('ND',)","((4,),)","('float32',)","('ND',)","{'start': 0.0, 'end': 1e309, 'steps': 4, 'base': 2.0, 'dtype': 1}",infinite end
+attr_base_control,log_space_d,"((1,),)","('float32',)","('ND',)","((4,),)","('float32',)","('ND',)","{'start': 0.0, 'end': 3.0, 'steps': 4, 'base': 2.0, 'dtype': 1}",finite base
+attr_base_inf,log_space_d,"((1,),)","('float32',)","('ND',)","((4,),)","('float32',)","('ND',)","{'start': 0.0, 'end': 3.0, 'steps': 4, 'base': 1e309, 'dtype': 1}",infinite base
+shape_rank_control,log_space_d,"((1,),)","('float32',)","('ND',)","((4,),)","('float32',)","('ND',)","{'start': 0.0, 'end': 3.0, 'steps': 4, 'base': 2.0, 'dtype': 1}",rank one shape control
+shape_rank2_probe,log_space_d,"((1, 1),)","('float32',)","('ND',)","((4,),)","('float32',)","('ND',)","{'start': 0.0, 'end': 3.0, 'steps': 4, 'base': 2.0, 'dtype': 1}",rank two shape probe
+shape_carrier_control,log_space_d,"((1,),)","('float32',)","('ND',)","((4,),)","('float32',)","('ND',)","{'start': 0.0, 'end': 3.0, 'steps': 4, 'base': 2.0, 'dtype': 1}",fixed one-element carrier control
+shape_carrier_length2,log_space_d,"((2,),)","('float32',)","('ND',)","((4,),)","('float32',)","('ND',)","{'start': 0.0, 'end': 3.0, 'steps': 4, 'base': 2.0, 'dtype': 1}",non-carrier input length probe
+shape_output_steps_control,log_space_d,"((1,),)","('float32',)","('ND',)","((4,),)","('float32',)","('ND',)","{'start': 0.0, 'end': 3.0, 'steps': 4, 'base': 2.0, 'dtype': 1}",output shape follows steps
