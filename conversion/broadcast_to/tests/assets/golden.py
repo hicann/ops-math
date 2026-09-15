@@ -29,10 +29,17 @@ def _parse_shape(shape):
     return list(shape)
 
 
+def _broadcast_result(x, shape_val):
+    result = torch.broadcast_to(x, tuple(shape_val)).contiguous()
+    if tuple(x.shape) == tuple(shape_val):
+        return x.clone()
+    return result
+
+
 class BroadcastToImpl:
     def __call__(self, x, shape):
         shape_val = _parse_shape(shape)
-        return torch.broadcast_to(x, tuple(shape_val))
+        return _broadcast_result(x, shape_val)
 
 
 class BroadcastToKernelSpec:
@@ -51,7 +58,7 @@ class BroadcastToKernelSpec:
         x_t = torch.from_numpy(x)
 
         shape_val = _parse_shape(shape)
-        result = torch.broadcast_to(x_t, tuple(shape_val)).contiguous()
+        result = _broadcast_result(x_t, shape_val)
 
         result_np = result.numpy()
         if (
@@ -85,7 +92,7 @@ class BroadcastToKernelSpec:
 class TorchBroadcastToSpec:
     def golden(x, shape, **kwargs):
         shape_val = _parse_shape(shape)
-        return [torch.broadcast_to(x, tuple(shape_val)).contiguous()]
+        return [_broadcast_result(x, shape_val)]
 
     third_party = {"torch": BroadcastToImpl}
     tolerance = {
