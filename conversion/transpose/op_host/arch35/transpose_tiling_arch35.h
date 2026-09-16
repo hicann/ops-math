@@ -207,6 +207,7 @@ private:
     void CalcTotalVolumeActual();
     ge::graphStatus GetShapeInfo();
     ge::graphStatus CheckShapeDims();
+    ge::graphStatus CheckPermValue();
     ge::graphStatus CheckShapeInfo();
     ge::graphStatus CheckReducedShapeInfo();
     ge::graphStatus TryVCONVTiling();

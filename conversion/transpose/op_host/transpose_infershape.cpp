@@ -26,6 +26,7 @@
  *   perm[i] < 0 时映射为 perm[i] + inputDimSize，例如 perm=[-1] 表示最后一个维度。
  */
 #include <graph/utils/type_utils.h>
+#include <set>
 #include "util/math_util.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"
@@ -49,7 +50,7 @@ constexpr size_t TRANSPOSE_IDX_OUT_Y = 0;
  * @param xShape     输入 shape
  * @param permValue  perm 数组指针
  * @param yShape     [out] 输出 shape
- * @return true 推导成功；false 推导失败（perm 值越界）
+ * @return true 推导成功；false 推导失败（perm 值越界或重复）
  */
 template <typename T>
 static bool TransposeInferCommon(const gert::InferShapeContext* context, const gert::Shape* xShape, const T* permValue,
@@ -69,6 +70,7 @@ static bool TransposeInferCommon(const gert::InferShapeContext* context, const g
     }
     if (insertedByFe == 0) {
         // 正常 Transpose 语义：按 perm 重排 shape
+        std::set<int64_t> permSet;
         for (size_t i = 0; i < inputDimSize; ++i) {
             OP_CHECK_IF(!IsDimValid(inputDimSize, permValue[i]),
                         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
@@ -78,6 +80,12 @@ static bool TransposeInferCommon(const gert::InferShapeContext* context, const g
                         return false);
             // 负值 perm 处理：perm[i] < 0 时映射为 perm[i] + inputDimSize
             T permV = permValue[i] < 0 ? permValue[i] + inputDimSize : permValue[i];
+            // 使用 std::set 对归一化后的 perm 去重，避免双重循环，复杂度 O(nlogn)
+            OP_CHECK_IF(!permSet.insert(static_cast<int64_t>(permV)).second,
+                        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "perm",
+                                                              std::to_string(permValue[i]).c_str(),
+                                                              "The values of perm must not be duplicated"),
+                        return false);
             yShape->SetDim(i, xShape->GetDim(permV)); // yShape[i] = xShape[perm[i]]
         }
     } else {

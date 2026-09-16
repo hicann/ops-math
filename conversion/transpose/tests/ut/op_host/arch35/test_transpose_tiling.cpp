@@ -474,6 +474,42 @@ TEST_F(TransposeTiling, transpose_tiling_perm_value_out_of_range)
     EXPECT_FALSE(success);
 }
 
+// Perm value still negative after normalization (perm[i] < -dimSize), expect failure
+TEST_F(TransposeTiling, transpose_tiling_perm_value_negative_out_of_range)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 40;
+    compileInfo.ubSize = 196608;
+
+    int64_t perm_value[2] = {-3, 0};
+    gert::TilingContextPara::TensorDescription x({{10, 20}, {10, 20}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{20, 10}, {20, 10}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_FALSE(success);
+}
+
+// Duplicated values in perm, expect failure
+TEST_F(TransposeTiling, transpose_tiling_perm_value_duplicated)
+{
+    optiling::TransposeCompilerInfo compileInfo;
+    compileInfo.coreNum = 40;
+    compileInfo.ubSize = 196608;
+
+    int64_t perm_value[4] = {0, 2, 2, 1};
+    gert::TilingContextPara::TensorDescription x({{10, 20, 30, 40}, {10, 20, 30, 40}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara::TensorDescription perm({{4}, {4}}, ge::DT_INT64, ge::FORMAT_ND, true, &perm_value);
+    gert::TilingContextPara::TensorDescription out({{10, 30, 30, 20}, {10, 30, 30, 20}}, ge::DT_FLOAT, ge::FORMAT_ND);
+    gert::TilingContextPara tilingContextPara("Transpose", {x, perm}, {out}, &compileInfo);
+
+    TilingInfo tilingInfo;
+    bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+    EXPECT_FALSE(success);
+}
+
 // All-ones shape input, expect TENSOR_MOVE (reduced to 1D)
 TEST_F(TransposeTiling, transpose_tiling_all_ones_shape)
 {

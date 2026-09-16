@@ -39,6 +39,7 @@
  */
 
 #include <sstream>
+#include <set>
 #include "util/platform_util.h"
 #include "transpose_tiling_base.h"
 #include "transpose_tiling_arch35.h"
@@ -320,18 +321,42 @@ ge::graphStatus TransposeNddmaTiling::CheckShapeDims()
     return ge::GRAPH_SUCCESS;
 }
 
+/**
+ * @brief 校验 perm 每个元素的合法性（取值范围与重复值）
+ *
+ * 使用 std::set 去重，避免双重循环，复杂度 O(nlogn)：
+ * 1. perm[i] 必须在 [0, shape dim of x) 范围内
+ * 2. perm 中各值不允许重复
+ *
+ * @return ge::GRAPH_SUCCESS 成功；ge::GRAPH_FAILED 失败
+ */
+ge::graphStatus TransposeNddmaTiling::CheckPermValue()
+{
+    std::set<int64_t> permSet;
+    for (int64_t i = 0; i < shapeInfo_.inShapeSize; i++) {
+        if (shapeInfo_.perm[i] < 0 || shapeInfo_.perm[i] >= shapeInfo_.inShapeSize) {
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "perm",
+                                                  std::to_string(shapeInfo_.perm[i]).c_str(),
+                                                  "The value of perm must be in the range of [0, shape dim of x)");
+            return ge::GRAPH_FAILED;
+        }
+        if (!permSet.insert(shapeInfo_.perm[i]).second) {
+            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "perm",
+                                                  std::to_string(shapeInfo_.perm[i]).c_str(),
+                                                  "The values of perm must not be duplicated");
+            return ge::GRAPH_FAILED;
+        }
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
 ge::graphStatus TransposeNddmaTiling::CheckShapeInfo()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering CheckShapeInfo.");
     CHECK_RET_SUCC(CheckShapeDims());
+    CHECK_RET_SUCC(CheckPermValue());
 
     for (int64_t i = 0; i < shapeInfo_.inShapeSize; i++) {
-        if (shapeInfo_.perm[i] >= shapeInfo_.inShapeSize) {
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(tilingContext_->GetNodeName(), "perm",
-                                                  std::to_string(shapeInfo_.perm[i]).c_str(),
-                                                  "The value of perm must be less than shape dim of x");
-            return ge::GRAPH_FAILED;
-        }
         if (shapeInfo_.inShape[shapeInfo_.perm[i]] != shapeInfo_.outShape[i]) {
             std::ostringstream oss;
             oss << "The shape of y must be the same as the shape consisting of the axes of x. "
