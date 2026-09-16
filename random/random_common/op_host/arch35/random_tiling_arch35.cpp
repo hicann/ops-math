@@ -234,8 +234,8 @@ ge::graphStatus RandomTilingParseArch35(gert::TilingParseContext* context, const
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
     compileInfo->ubSize = static_cast<int64_t>(ubSizePlatForm);
     OP_CHECK_IF((compileInfo->totalCoreNum <= 0 || compileInfo->ubSize <= 0),
-                OP_LOGE(context, "GetHardwareInfo Failed, vectorCoreNum:%ld, ubSize:%ld.", compileInfo->totalCoreNum,
-                        compileInfo->ubSize),
+                OP_LOGE(context, "GetHardwareInfo Failed, vectorCoreNum:%ld, ubSize:%ld bytes.",
+                        compileInfo->totalCoreNum, compileInfo->ubSize),
                 return ge::GRAPH_FAILED);
     OP_LOGD(context, "Get totalCoreNum:%ld, ubSize:%ld bytes", compileInfo->totalCoreNum, compileInfo->ubSize);
     return ge::GRAPH_SUCCESS;

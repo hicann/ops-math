@@ -80,7 +80,7 @@ static ge::graphStatus TilingPrepare4RandomStandardNormalV2Tiling(gert::TilingPa
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
     compileInfo->ubSize = static_cast<int64_t>(ubSizePlatForm);
     OP_CHECK_IF((compileInfo->totalCoreNum <= 0 || compileInfo->ubSize <= 0),
-                OP_LOGE(context, "RandomStandardNormalV2 GetHardwareInfo Failed, vectorCoreNum:%ld, ubSize:%ld.",
+                OP_LOGE(context, "RandomStandardNormalV2 GetHardwareInfo Failed, vectorCoreNum:%ld, ubSize:%ld bytes.",
                         compileInfo->totalCoreNum, compileInfo->ubSize),
                 return ge::GRAPH_FAILED);
     OP_LOGD(context, "Get totalCoreNum:%ld, ubSize:%ld bytes", compileInfo->totalCoreNum, compileInfo->ubSize);

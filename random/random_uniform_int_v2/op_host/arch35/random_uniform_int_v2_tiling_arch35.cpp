@@ -371,7 +371,7 @@ static ge::graphStatus TilingPrepare4RandomUniformIntV2Tiling(gert::TilingParseC
     OP_CHECK_IF((compileInfo->totalCoreNum <= 0 || compileInfo->ubSize <= 0),
                 OP_LOGE(context,
                         "RandomUniformIntV2 GetHardwareInfo failed, vectorCoreNum and ubSize should be greater than 0, "
-                        "vectorCoreNum:%ld, ubSize:%ld.",
+                        "vectorCoreNum:%ld, ubSize:%ld bytes.",
                         compileInfo->totalCoreNum, compileInfo->ubSize),
                 return ge::GRAPH_FAILED);
     OP_LOGD(context, "Get totalCoreNum:%ld, ubSize:%ld bytes", compileInfo->totalCoreNum, compileInfo->ubSize);
