@@ -126,6 +126,8 @@ add_cann_version_info_targets()
 # ===================================================
 init_tf_plugin_modules()
 
+include(cmake/config/aicpu_builtin_package_manifest.cmake)
+
 add_subdirectory(common)
 if(ENABLE_EXPERIMENTAL)
   add_subdirectory(experimental)
