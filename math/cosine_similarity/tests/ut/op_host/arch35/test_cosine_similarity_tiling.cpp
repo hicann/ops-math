@@ -61,7 +61,7 @@ TEST_F(CosineSimilarityTiling, cosine_similarity_float32)
                                               262144, // ubsize
                                               4096);  // max tiling data size
     uint64_t expectTilingKey = 0;                     // 32-bit path
-    string expectTilingData = "1 4 8 1 4 9431665783 1 4 8 0 0 0 0 0 0 8 1 0 0 0 0 0 0 8 1 0 0 0 0 0 0 ";
+    string expectTilingData = "4 4 8 1 4 9431665783 4294967297 1 0 4 4 8 0 0 0 0 0 0 8 1 0 0 0 0 0 0 8 1 0 0 0 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {16777728};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

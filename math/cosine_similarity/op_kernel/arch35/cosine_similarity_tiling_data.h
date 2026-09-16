@@ -22,9 +22,13 @@ struct CosineSimilarityTilingData {
     float eps = 1e-8f;
     int32_t ndim = 0;
     int32_t reduceDim = 0;
+    int32_t useWarpPath = 0;
+    int64_t chunksPerOutput = 1;
+    int64_t chunkSize = 0;
+    int64_t totalPairs = 0;
     int64_t broadcastShape[8] = {};
     int64_t x1Strides[8] = {};
     int64_t x2Strides[8] = {};
 };
 
-#endif  // COSINE_SIMILARITY_TILING_DATA_H_
+#endif // COSINE_SIMILARITY_TILING_DATA_H_

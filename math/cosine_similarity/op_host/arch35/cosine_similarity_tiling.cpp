@@ -25,7 +25,13 @@ using namespace Ops::Math::OpTiling;
 
 constexpr int32_t MAX_DIMS = 8;
 constexpr int64_t PER_CORE_MIN = 1024;
+constexpr int64_t REDUCE_CHUNK_MIN = 2048;
+constexpr int64_t WARP_PATH_REDUCE_MAX_FEW_OUTPUT = 512;
+constexpr int64_t WARP_PATH_REDUCE_MAX_MULTI_OUTPUT = 2048;
 constexpr uint32_t DCACHE_SIZE = 128 * 1024;
+constexpr int64_t WORKSPACE_MARGIN_BYTES = 512;
+constexpr int64_t PARTIAL_ARRAY_NUM = 3;
+constexpr int64_t CORE_SCRATCH_ELEMS = 24;
 constexpr uint32_t STATIC_UB_ESTIMATE = 0;
 
 struct CosineSimilarityCompileInfo {};
@@ -73,7 +79,6 @@ static void FillCommonShapeAndStrides(const gert::Shape& commonShape, int32_t nd
 static ge::graphStatus ComputeCosineSimilarityTiling(gert::TilingContext* context, CosineSimilarityTilingData* tiling,
                                                      int64_t coreNum)
 {
-    // Get input shapes
     auto x1Input = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, x1Input);
     auto x1Shape = x1Input->GetStorageShape();
@@ -81,7 +86,6 @@ static ge::graphStatus ComputeCosineSimilarityTiling(gert::TilingContext* contex
     OP_CHECK_NULL_WITH_CONTEXT(context, x2Input);
     auto x2Shape = x2Input->GetStorageShape();
 
-    // The two inputs must have exactly the same rank before any per-dimension access.
     int32_t x1Nd = static_cast<int32_t>(x1Shape.GetDimNum());
     int32_t x2Nd = static_cast<int32_t>(x2Shape.GetDimNum());
     if (x1Nd != x2Nd) {
@@ -116,11 +120,8 @@ static ge::graphStatus ComputeCosineSimilarityTiling(gert::TilingContext* contex
             return ge::GRAPH_FAILED;
         }
     }
-    // Keep the existing TilingData ABI. The legacy field names now carry only the
-    // common shape and two identical contiguous strides; no broadcast semantics remain.
     FillCommonShapeAndStrides(x1Shape, ndim, tiling);
 
-    // Get and normalize dim attribute
     int32_t dim = 1;
     auto attrs = context->GetAttrs();
     if (attrs != nullptr) {
@@ -139,7 +140,6 @@ static ge::graphStatus ComputeCosineSimilarityTiling(gert::TilingContext* contex
     }
     tiling->reduceDim = dim;
 
-    // Compute outer/reduce/inner sizes
     int64_t outerSize = 1;
     for (int32_t d = 0; d < dim; d++) {
         outerSize *= x1Shape.GetDim(d);
@@ -153,7 +153,6 @@ static ge::graphStatus ComputeCosineSimilarityTiling(gert::TilingContext* contex
     tiling->innerSize = innerSize;
     tiling->totalOutputElements = outerSize * innerSize;
 
-    // Get eps attribute
     float eps = 1e-8f;
     if (attrs != nullptr) {
         const float* epsPtr = attrs->GetFloat(1);
@@ -163,13 +162,43 @@ static ge::graphStatus ComputeCosineSimilarityTiling(gert::TilingContext* contex
     }
     tiling->eps = eps;
 
-    // Compute core tiling
     int64_t totalOutputs = tiling->totalOutputElements;
-    int64_t perCoreOutputs = (totalOutputs > 0) ? Ops::Base::CeilDiv(totalOutputs, coreNum) : 0;
-    if (perCoreOutputs > 0 && perCoreOutputs < PER_CORE_MIN) {
-        perCoreOutputs = PER_CORE_MIN;
+    if (tiling->reduceSize <= WARP_PATH_REDUCE_MAX_FEW_OUTPUT ||
+        (tiling->reduceSize <= WARP_PATH_REDUCE_MAX_MULTI_OUTPUT && totalOutputs >= coreNum)) {
+        tiling->useWarpPath = 1;
+        tiling->chunksPerOutput = 1;
+        tiling->chunkSize = 0;
+        tiling->totalPairs = totalOutputs;
+        int64_t needCoreNum = (totalOutputs > 0) ? ((coreNum < totalOutputs) ? coreNum : totalOutputs) : 1;
+        tiling->needCoreNum = static_cast<int32_t>(needCoreNum);
+        return ge::GRAPH_SUCCESS;
     }
-    int64_t needCoreNum = (totalOutputs > 0) ? Ops::Base::CeilDiv(totalOutputs, perCoreOutputs) : 1;
+    tiling->useWarpPath = 0;
+    int64_t chunks = 1;
+    if (totalOutputs > 0 && totalOutputs < coreNum && tiling->reduceSize > 1) {
+        chunks = Ops::Base::CeilDiv(coreNum, totalOutputs);
+        int64_t maxChunks = Ops::Base::CeilDiv(tiling->reduceSize, REDUCE_CHUNK_MIN);
+        if (chunks > maxChunks) {
+            chunks = maxChunks;
+        }
+        if (chunks > tiling->reduceSize) {
+            chunks = tiling->reduceSize;
+        }
+        if (chunks < 1) {
+            chunks = 1;
+        }
+    }
+    int64_t chunkSize = (tiling->reduceSize > 0) ? Ops::Base::CeilDiv(tiling->reduceSize, chunks) : 0;
+    if (chunkSize > 0) {
+        chunks = Ops::Base::CeilDiv(tiling->reduceSize, chunkSize);
+    }
+    tiling->chunksPerOutput = chunks;
+    tiling->chunkSize = chunkSize;
+    tiling->totalPairs = totalOutputs * chunks;
+    int64_t needCoreNum = 1;
+    if (tiling->totalPairs > 0) {
+        needCoreNum = (coreNum < tiling->totalPairs) ? coreNum : tiling->totalPairs;
+    }
     tiling->needCoreNum = static_cast<int32_t>(needCoreNum);
 
     return ge::GRAPH_SUCCESS;
@@ -177,7 +206,17 @@ static ge::graphStatus ComputeCosineSimilarityTiling(gert::TilingContext* contex
 
 static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 {
-    int64_t userWorkspaceSize = 512;
+    const CosineSimilarityTilingData* tiling = context->GetTilingData<CosineSimilarityTilingData>();
+    int64_t userWorkspaceSize = WORKSPACE_MARGIN_BYTES;
+    if (tiling != nullptr && tiling->useWarpPath == 0) {
+        int64_t partialBytes = 0;
+        if (tiling->chunksPerOutput > 1) {
+            partialBytes = PARTIAL_ARRAY_NUM * tiling->totalPairs * static_cast<int64_t>(sizeof(float));
+        }
+        userWorkspaceSize = partialBytes +
+                            tiling->needCoreNum * CORE_SCRATCH_ELEMS * static_cast<int64_t>(sizeof(float)) +
+                            WORKSPACE_MARGIN_BYTES;
+    }
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(context->GetPlatformInfo());
     uint64_t sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
@@ -214,7 +253,6 @@ static ge::graphStatus CosineSimilarityTilingFunc(gert::TilingContext* context)
     auto res = context->SetLocalMemorySize(static_cast<uint32_t>(ubSize - DCACHE_SIZE - STATIC_UB_ESTIMATE));
     OP_CHECK_IF((res != ge::GRAPH_SUCCESS), OP_LOGE(context, "SetLocalMemorySize failed"), return ge::GRAPH_FAILED);
 
-    // Set tiling key based on index width
     uint64_t tilingKey = (tiling->totalOutputElements <= static_cast<int64_t>(INT32_MAX)) ?
                              static_cast<uint64_t>(COSINE_SIMILARITY_TPL_KEY_32BIT) :
                              static_cast<uint64_t>(COSINE_SIMILARITY_TPL_KEY_64BIT);

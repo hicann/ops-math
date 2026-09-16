@@ -27,13 +27,16 @@ namespace NsCosineSimilarity {
 
 using namespace AscendC;
 
-// R006: Thread count based on index type (32-bit: 1024, 64-bit: 512)
-static constexpr uint32_t THREAD_NUM_32 = 1024;
+static constexpr uint32_t THREAD_NUM_32 = 512;
 static constexpr uint32_t THREAD_NUM_64 = 512;
 static constexpr uint32_t WARP_SIZE = 32;
+static constexpr uint32_t NUM_WARPS = THREAD_NUM_32 / WARP_SIZE;
+static constexpr uint32_t SCRATCH_MARGIN_ELEMS = 8;
+static constexpr uint32_t CORE_SCRATCH_ELEMS = NUM_WARPS + SCRATCH_MARGIN_ELEMS;
+static constexpr uint32_t VEC = 4;
+static constexpr int64_t GM_ALIGN_BYTES = 32;
 static constexpr uint32_t MAX_NDIM = 8;
 
-// R003: UB index type traits based on IdxT
 template <typename IdxT>
 struct UbIdxTypeTraits;
 
@@ -49,27 +52,135 @@ struct UbIdxTypeTraits<uint64_t> {
     static constexpr uint32_t threadNum = THREAD_NUM_64;
 };
 
-// Helper function for 32B-aligned UB allocation
 __aicore__ inline int64_t AlignAllocN(int64_t n, int64_t elemSize)
 {
     if (elemSize == 0) {
         return 0;
     }
     int64_t totalBytes = n * elemSize;
-    return ((totalBytes + 31) / 32) * 32 / elemSize;
+    return ((totalBytes + GM_ALIGN_BYTES - 1) / GM_ALIGN_BYTES) * GM_ALIGN_BYTES / elemSize;
 }
 
-// UB offsets for tiling arrays (in elements)
 static constexpr uint32_t OFF_BCAST_SHAPE = 0;
 static constexpr uint32_t OFF_X1_STRIDES = MAX_NDIM;
 static constexpr uint32_t OFF_X2_STRIDES = 2 * MAX_NDIM;
 static constexpr uint32_t UB_TOTAL_ELEMS = 3 * MAX_NDIM;
 
-// SIMT VF kernel: each warp processes one output element
-// R006: ThreadNum template parameter for __launch_bounds__
-// R003: UB arrays use UbT (int32_t for 32-bit path, int64_t for 64-bit path)
+__simt_callee__ inline float WarpShflDownReduce(float v)
+{
+    for (uint32_t offset = WARP_SIZE / 2; offset > 0; offset >>= 1) {
+        v += asc_shfl_down(v, offset);
+    }
+    return v;
+}
+
+template <typename T, typename IdxT>
+__simt_callee__ inline float ThreadReduceSquare(const __gm__ T* base, IdxT length, IdxT stride, uint32_t tid)
+{
+    float acc[VEC] = {0.0f, 0.0f, 0.0f, 0.0f};
+    IdxT vecEnd = length / static_cast<IdxT>(VEC);
+    for (IdxT idx = static_cast<IdxT>(tid); idx < vecEnd; idx += static_cast<IdxT>(THREAD_NUM_32)) {
+        IdxT elemBase = idx * static_cast<IdxT>(VEC) * stride;
+        for (uint32_t i = 0; i < VEC; i++) {
+            float v = static_cast<float>(base[elemBase + static_cast<IdxT>(i) * stride]);
+            acc[i] += v * v;
+        }
+    }
+    float total = acc[0];
+    for (uint32_t i = 1; i < VEC; i++) {
+        total += acc[i];
+    }
+    if (tid == 0) {
+        for (IdxT r = vecEnd * static_cast<IdxT>(VEC); r < length; r++) {
+            float v = static_cast<float>(base[r * stride]);
+            total += v * v;
+        }
+    }
+    return total;
+}
+
+template <typename T1, typename T2, typename IdxT>
+__simt_callee__ inline float ThreadReduceDot(const __gm__ T1* x1Base, const __gm__ T2* x2Base, IdxT length,
+                                             IdxT stride1, IdxT stride2, float norm1, float norm2, uint32_t tid)
+{
+    float acc[VEC] = {0.0f, 0.0f, 0.0f, 0.0f};
+    IdxT vecEnd = length / static_cast<IdxT>(VEC);
+    for (IdxT idx = static_cast<IdxT>(tid); idx < vecEnd; idx += static_cast<IdxT>(THREAD_NUM_32)) {
+        IdxT elemBase = idx * static_cast<IdxT>(VEC);
+        for (uint32_t i = 0; i < VEC; i++) {
+            float v1 = static_cast<float>(x1Base[(elemBase + i) * stride1]);
+            float v2 = static_cast<float>(x2Base[(elemBase + i) * stride2]);
+            acc[i] += (v1 / norm1) * (v2 / norm2);
+        }
+    }
+    float total = acc[0];
+    for (uint32_t i = 1; i < VEC; i++) {
+        total += acc[i];
+    }
+    if (tid == 0) {
+        for (IdxT r = vecEnd * static_cast<IdxT>(VEC); r < length; r++) {
+            float v1 = static_cast<float>(x1Base[r * stride1]);
+            float v2 = static_cast<float>(x2Base[r * stride2]);
+            total += (v1 / norm1) * (v2 / norm2);
+        }
+    }
+    return total;
+}
+
+__simt_callee__ inline float BlockReduce(float v, __gm__ float* coreScratch, uint32_t tid)
+{
+    uint32_t warpId = tid / WARP_SIZE;
+    uint32_t laneId = tid % WARP_SIZE;
+    v = WarpShflDownReduce(v);
+    if (laneId == 0) {
+        coreScratch[warpId] = v;
+    }
+    asc_syncthreads();
+    if (warpId == 0) {
+        float p = (laneId < NUM_WARPS) ? coreScratch[laneId] : 0.0f;
+        for (uint32_t offset = NUM_WARPS / 2; offset > 0; offset >>= 1) {
+            p += asc_shfl_down(p, offset);
+        }
+        if (laneId == 0) {
+            coreScratch[0] = p;
+        }
+    }
+    asc_syncthreads();
+    float result = coreScratch[0];
+    asc_syncthreads();
+    return result;
+}
+
+template <typename IdxT>
+__simt_callee__ inline void ComputeBaseOffsets(IdxT outIdx, int32_t ndim, int32_t reduceDim,
+                                               __ubuf__ typename UbIdxTypeTraits<IdxT>::UbT* ubBroadcastShape,
+                                               __ubuf__ typename UbIdxTypeTraits<IdxT>::UbT* ubX1Strides,
+                                               __ubuf__ typename UbIdxTypeTraits<IdxT>::UbT* ubX2Strides,
+                                               IdxT& baseOffsetX1, IdxT& baseOffsetX2)
+{
+    using UbT = typename UbIdxTypeTraits<IdxT>::UbT;
+    baseOffsetX1 = 0;
+    baseOffsetX2 = 0;
+    IdxT rem = outIdx;
+    for (int32_t d = ndim - 1; d >= 0; d--) {
+        if (d == reduceDim)
+            continue;
+        IdxT dimSize = static_cast<IdxT>(ubBroadcastShape[d]);
+        if (dimSize == 0) {
+            dimSize = 1;
+        }
+        IdxT coord = rem % dimSize;
+        rem = rem / dimSize;
+        baseOffsetX1 += coord * static_cast<IdxT>(ubX1Strides[d]);
+        baseOffsetX2 += coord * static_cast<IdxT>(ubX2Strides[d]);
+    }
+}
+
+static constexpr uint32_t WARP_PATH_THREAD_NUM_32 = 1024;
+static constexpr uint32_t WARP_PATH_THREAD_NUM_64 = 512;
+
 template <typename T1, typename T2, typename T, typename IdxT, uint32_t ThreadNum>
-__simt_vf__ __aicore__ __launch_bounds__(ThreadNum) inline void OpCosineSimilaritySimtKernel(
+__simt_vf__ __aicore__ __launch_bounds__(ThreadNum) inline void OpCosineSimilarityWarpKernel(
     IdxT totalOutputElements, IdxT reduceSize, IdxT innerSize, float eps, int32_t ndim, int32_t reduceDim,
     __ubuf__ typename UbIdxTypeTraits<IdxT>::UbT* ubBroadcastShape,
     __ubuf__ typename UbIdxTypeTraits<IdxT>::UbT* ubX1Strides,
@@ -86,28 +197,10 @@ __simt_vf__ __aicore__ __launch_bounds__(ThreadNum) inline void OpCosineSimilari
 
     for (IdxT outIdx = static_cast<IdxT>(blockIdx.x) * numWarps + warpId; outIdx < totalOutputElements;
          outIdx += static_cast<IdxT>(gridDim.x) * numWarps) {
-        // Decompose outIdx to coordinates (skip reduceDim)
-        IdxT baseOffsetX1 = 0;
-        IdxT baseOffsetX2 = 0;
-        IdxT rem = outIdx;
+        IdxT baseOffsetX1, baseOffsetX2;
+        ComputeBaseOffsets<IdxT>(outIdx, ndim, reduceDim, ubBroadcastShape, ubX1Strides, ubX2Strides, baseOffsetX1,
+                                 baseOffsetX2);
 
-        for (int32_t d = ndim - 1; d >= 0; d--) {
-            if (d == reduceDim)
-                continue;
-            IdxT dimSize = static_cast<IdxT>(ubBroadcastShape[d]);
-            // Protection against division by zero
-            if (dimSize == 0) {
-                dimSize = 1;
-            }
-            IdxT coord = rem % dimSize;
-            rem = rem / dimSize;
-            baseOffsetX1 += coord * static_cast<IdxT>(ubX1Strides[d]);
-            baseOffsetX2 += coord * static_cast<IdxT>(ubX2Strides[d]);
-        }
-
-        // A singleton vector has norm abs(v). Avoid v * v here because a
-        // finite FLT_MAX value would overflow before sqrt and incorrectly
-        // produce a zero cosine result.
         if (reduceSize == static_cast<IdxT>(1)) {
             if (laneId == 0) {
                 float v1 = static_cast<float>(x1[baseOffsetX1]);
@@ -121,27 +214,23 @@ __simt_vf__ __aicore__ __launch_bounds__(ThreadNum) inline void OpCosineSimilari
             continue;
         }
 
-        // Warp-collaborative accumulation along reduce dimension
-        // Use float32 accumulators for all dtype combinations
         float w12 = 0.0f;
         float w1 = 0.0f;
         float w2 = 0.0f;
 
-        // 先计算 norm
         for (IdxT r = static_cast<IdxT>(laneId); r < reduceSize; r += WARP_SIZE) {
             IdxT offsetX1 = baseOffsetX1 + r * reduceStride;
             IdxT offsetX2 = baseOffsetX2 + r * x2ReduceStride;
-
-            // Explicit float32 conversion for all input types
             float v1 = static_cast<float>(x1[offsetX1]);
             float v2 = static_cast<float>(x2[offsetX2]);
-
             w1 += v1 * v1;
             w2 += v2 * v2;
         }
 
-        w1 = asc_reduce_add(w1);
-        w2 = asc_reduce_add(w2);
+        w1 = WarpShflDownReduce(w1);
+        w2 = WarpShflDownReduce(w2);
+        w1 = asc_shfl(w1, 0);
+        w2 = asc_shfl(w2, 0);
 
         float norm1 = sqrtf(w1);
         float norm2 = sqrtf(w2);
@@ -151,25 +240,195 @@ __simt_vf__ __aicore__ __launch_bounds__(ThreadNum) inline void OpCosineSimilari
         for (IdxT r = static_cast<IdxT>(laneId); r < reduceSize; r += WARP_SIZE) {
             IdxT offsetX1 = baseOffsetX1 + r * reduceStride;
             IdxT offsetX2 = baseOffsetX2 + r * x2ReduceStride;
-
-            // Explicit float32 conversion for all input types
             float v1 = static_cast<float>(x1[offsetX1]);
             float v2 = static_cast<float>(x2[offsetX2]);
-
             w12 += (v1 / norm1) * (v2 / norm2);
         }
 
-        // Warp-level reduction (float32)
-        w12 = asc_reduce_add(w12);
+        w12 = WarpShflDownReduce(w12);
 
-        // Lane 0 computes final result
         if (laneId == 0) {
             output[outIdx] = static_cast<T>(w12);
         }
     }
 }
 
-// Process entry: sets up UB and launches VF kernel
+template <typename T1, typename T2, typename T, typename IdxT, uint32_t ThreadNum>
+__simt_vf__ __aicore__ __launch_bounds__(ThreadNum) inline void OpCosineSimilaritySingleKernel(
+    IdxT totalOutputElements, IdxT reduceSize, IdxT innerSize, float eps, int32_t ndim, int32_t reduceDim,
+    __ubuf__ typename UbIdxTypeTraits<IdxT>::UbT* ubBroadcastShape,
+    __ubuf__ typename UbIdxTypeTraits<IdxT>::UbT* ubX1Strides,
+    __ubuf__ typename UbIdxTypeTraits<IdxT>::UbT* ubX2Strides, __gm__ float* wsScratch, __gm__ T1* x1, __gm__ T2* x2,
+    __gm__ T* output)
+{
+    using UbT = typename UbIdxTypeTraits<IdxT>::UbT;
+    uint32_t tid = static_cast<uint32_t>(threadIdx.x);
+    __gm__ float* coreScratch = wsScratch + static_cast<IdxT>(blockIdx.x) * CORE_SCRATCH_ELEMS;
+
+    for (IdxT outIdx = static_cast<IdxT>(blockIdx.x); outIdx < totalOutputElements;
+         outIdx += static_cast<IdxT>(gridDim.x)) {
+        IdxT baseOffsetX1, baseOffsetX2;
+        ComputeBaseOffsets<IdxT>(outIdx, ndim, reduceDim, ubBroadcastShape, ubX1Strides, ubX2Strides, baseOffsetX1,
+                                 baseOffsetX2);
+
+        IdxT reduceStride = static_cast<IdxT>(ubX1Strides[reduceDim]);
+        IdxT x2ReduceStride = static_cast<IdxT>(ubX2Strides[reduceDim]);
+        const __gm__ T1* x1Base = x1 + baseOffsetX1;
+        const __gm__ T2* x2Base = x2 + baseOffsetX2;
+
+        if (reduceSize == static_cast<IdxT>(1)) {
+            if (tid == 0) {
+                float v1 = static_cast<float>(x1Base[0]);
+                float v2 = static_cast<float>(x2Base[0]);
+                float norm1 = fabsf(v1);
+                float norm2 = fabsf(v2);
+                norm1 = (norm1 > eps) ? norm1 : eps;
+                norm2 = (norm2 > eps) ? norm2 : eps;
+                output[outIdx] = static_cast<T>((v1 / norm1) * (v2 / norm2));
+            }
+            continue;
+        }
+
+        float w1 = ThreadReduceSquare<T1, IdxT>(x1Base, reduceSize, reduceStride, tid);
+        w1 = BlockReduce(w1, coreScratch, tid);
+        float norm1 = sqrtf(w1);
+        norm1 = (norm1 > eps) ? norm1 : eps;
+
+        float w2 = ThreadReduceSquare<T2, IdxT>(x2Base, reduceSize, x2ReduceStride, tid);
+        w2 = BlockReduce(w2, coreScratch, tid);
+        float norm2 = sqrtf(w2);
+        norm2 = (norm2 > eps) ? norm2 : eps;
+
+        float dot = ThreadReduceDot<T1, T2, IdxT>(x1Base, x2Base, reduceSize, reduceStride, x2ReduceStride, norm1,
+                                                  norm2, tid);
+        dot = BlockReduce(dot, coreScratch, tid);
+
+        if (tid == 0) {
+            output[outIdx] = static_cast<T>(dot);
+        }
+        asc_syncthreads();
+    }
+}
+
+template <typename T1, typename T2, typename T, typename IdxT, uint32_t ThreadNum>
+__simt_vf__ __aicore__ __launch_bounds__(ThreadNum) inline void OpCosineSimilarityPhase1Kernel(
+    IdxT totalPairs, IdxT chunksPerOutput, IdxT chunkSize, IdxT reduceSize, int32_t ndim, int32_t reduceDim,
+    __ubuf__ typename UbIdxTypeTraits<IdxT>::UbT* ubBroadcastShape,
+    __ubuf__ typename UbIdxTypeTraits<IdxT>::UbT* ubX1Strides,
+    __ubuf__ typename UbIdxTypeTraits<IdxT>::UbT* ubX2Strides, __gm__ float* wsScratch, __gm__ float* w1Part,
+    __gm__ float* w2Part, __gm__ T1* x1, __gm__ T2* x2)
+{
+    using UbT = typename UbIdxTypeTraits<IdxT>::UbT;
+    uint32_t tid = static_cast<uint32_t>(threadIdx.x);
+    __gm__ float* coreScratch = wsScratch + static_cast<IdxT>(blockIdx.x) * CORE_SCRATCH_ELEMS;
+
+    for (IdxT p = static_cast<IdxT>(blockIdx.x); p < totalPairs; p += static_cast<IdxT>(gridDim.x)) {
+        IdxT outIdx = p / chunksPerOutput;
+        IdxT ch = p % chunksPerOutput;
+        IdxT chStart = ch * chunkSize;
+        IdxT chLen = reduceSize - chStart;
+        if (chLen > chunkSize) {
+            chLen = chunkSize;
+        }
+
+        IdxT baseOffsetX1, baseOffsetX2;
+        ComputeBaseOffsets<IdxT>(outIdx, ndim, reduceDim, ubBroadcastShape, ubX1Strides, ubX2Strides, baseOffsetX1,
+                                 baseOffsetX2);
+        IdxT reduceStride = static_cast<IdxT>(ubX1Strides[reduceDim]);
+        IdxT x2ReduceStride = static_cast<IdxT>(ubX2Strides[reduceDim]);
+        const __gm__ T1* x1Chunk = x1 + baseOffsetX1 + chStart * reduceStride;
+        const __gm__ T2* x2Chunk = x2 + baseOffsetX2 + chStart * x2ReduceStride;
+
+        float w1 = ThreadReduceSquare<T1, IdxT>(x1Chunk, chLen, reduceStride, tid);
+        w1 = BlockReduce(w1, coreScratch, tid);
+        float w2 = ThreadReduceSquare<T2, IdxT>(x2Chunk, chLen, x2ReduceStride, tid);
+        w2 = BlockReduce(w2, coreScratch, tid);
+        if (tid == 0) {
+            ((volatile __gm__ float*)w1Part)[p] = w1;
+            ((volatile __gm__ float*)w2Part)[p] = w2;
+        }
+        asc_syncthreads();
+    }
+}
+
+template <typename T1, typename T2, typename T, typename IdxT, uint32_t ThreadNum>
+__simt_vf__ __aicore__ __launch_bounds__(ThreadNum) inline void OpCosineSimilarityPhase2Kernel(
+    IdxT totalPairs, IdxT chunksPerOutput, IdxT chunkSize, IdxT reduceSize, float eps, int32_t ndim, int32_t reduceDim,
+    __ubuf__ typename UbIdxTypeTraits<IdxT>::UbT* ubBroadcastShape,
+    __ubuf__ typename UbIdxTypeTraits<IdxT>::UbT* ubX1Strides,
+    __ubuf__ typename UbIdxTypeTraits<IdxT>::UbT* ubX2Strides, __gm__ float* wsScratch, __gm__ float* w1Part,
+    __gm__ float* w2Part, __gm__ float* dotPart, __gm__ T1* x1, __gm__ T2* x2)
+{
+    using UbT = typename UbIdxTypeTraits<IdxT>::UbT;
+    uint32_t tid = static_cast<uint32_t>(threadIdx.x);
+    __gm__ float* coreScratch = wsScratch + static_cast<IdxT>(blockIdx.x) * CORE_SCRATCH_ELEMS;
+
+    for (IdxT p = static_cast<IdxT>(blockIdx.x); p < totalPairs; p += static_cast<IdxT>(gridDim.x)) {
+        IdxT outIdx = p / chunksPerOutput;
+        IdxT ch = p % chunksPerOutput;
+        IdxT chStart = ch * chunkSize;
+        IdxT chLen = reduceSize - chStart;
+        if (chLen > chunkSize) {
+            chLen = chunkSize;
+        }
+
+        IdxT partBase = outIdx * chunksPerOutput;
+        if (tid == 0) {
+            float w1 = 0.0f;
+            float w2 = 0.0f;
+            for (IdxT j = 0; j < chunksPerOutput; j++) {
+                w1 += ((volatile __gm__ float*)w1Part)[partBase + j];
+                w2 += ((volatile __gm__ float*)w2Part)[partBase + j];
+            }
+            coreScratch[NUM_WARPS] = w1;
+            coreScratch[NUM_WARPS + 1] = w2;
+        }
+        asc_syncthreads();
+        float norm1 = sqrtf(coreScratch[NUM_WARPS]);
+        float norm2 = sqrtf(coreScratch[NUM_WARPS + 1]);
+        norm1 = (norm1 > eps) ? norm1 : eps;
+        norm2 = (norm2 > eps) ? norm2 : eps;
+        asc_syncthreads();
+
+        IdxT baseOffsetX1, baseOffsetX2;
+        ComputeBaseOffsets<IdxT>(outIdx, ndim, reduceDim, ubBroadcastShape, ubX1Strides, ubX2Strides, baseOffsetX1,
+                                 baseOffsetX2);
+        IdxT reduceStride = static_cast<IdxT>(ubX1Strides[reduceDim]);
+        IdxT x2ReduceStride = static_cast<IdxT>(ubX2Strides[reduceDim]);
+        const __gm__ T1* x1Chunk = x1 + baseOffsetX1 + chStart * reduceStride;
+        const __gm__ T2* x2Chunk = x2 + baseOffsetX2 + chStart * x2ReduceStride;
+
+        float dot = ThreadReduceDot<T1, T2, IdxT>(x1Chunk, x2Chunk, chLen, reduceStride, x2ReduceStride, norm1, norm2,
+                                                  tid);
+        dot = BlockReduce(dot, coreScratch, tid);
+        if (tid == 0) {
+            ((volatile __gm__ float*)dotPart)[p] = dot;
+        }
+        asc_syncthreads();
+    }
+}
+
+template <typename T, typename IdxT, uint32_t ThreadNum>
+__simt_vf__ __aicore__ __launch_bounds__(ThreadNum) inline void OpCosineSimilarityPhase3Kernel(IdxT totalOutputElements,
+                                                                                               IdxT chunksPerOutput,
+                                                                                               __gm__ float* dotPart,
+                                                                                               __gm__ T* output)
+{
+    uint32_t tid = static_cast<uint32_t>(threadIdx.x);
+    if (tid != 0) {
+        return;
+    }
+    for (IdxT outIdx = static_cast<IdxT>(blockIdx.x); outIdx < totalOutputElements;
+         outIdx += static_cast<IdxT>(gridDim.x)) {
+        float dot = 0.0f;
+        IdxT partBase = outIdx * chunksPerOutput;
+        for (IdxT j = 0; j < chunksPerOutput; j++) {
+            dot += ((volatile __gm__ float*)dotPart)[partBase + j];
+        }
+        output[outIdx] = static_cast<T>(dot);
+    }
+}
+
 template <typename T1, typename T2, typename T, typename IdxT>
 __aicore__ inline void Process(GM_ADDR inputX1, GM_ADDR inputX2, GM_ADDR outputY, GM_ADDR workspace,
                                const CosineSimilarityTilingData* tilingData)
@@ -180,12 +439,11 @@ __aicore__ inline void Process(GM_ADDR inputX1, GM_ADDR inputX2, GM_ADDR outputY
     __gm__ T1* x1Gm = (__gm__ T1*)inputX1;
     __gm__ T2* x2Gm = (__gm__ T2*)inputX2;
     __gm__ T* yGm = (__gm__ T*)outputY;
+    __gm__ float* wsGm = (__gm__ float*)workspace;
 
-    // R003: Allocate UB with type-appropriate element size
     LocalMemAllocator<AscendC::Hardware::UB> ubAlloc;
     LocalTensor<UbT> ubBuf = ubAlloc.Alloc<UbT>(AlignAllocN(UB_TOTAL_ELEMS, sizeof(UbT)));
 
-    // Copy tiling data to UB (cast from int64_t to UbT)
     for (int32_t d = 0; d < tilingData->ndim; d++) {
         ubBuf.SetValue(OFF_BCAST_SHAPE + d, static_cast<UbT>(tilingData->broadcastShape[d]));
         ubBuf.SetValue(OFF_X1_STRIDES + d, static_cast<UbT>(tilingData->x1Strides[d]));
@@ -198,11 +456,44 @@ __aicore__ inline void Process(GM_ADDR inputX1, GM_ADDR inputX2, GM_ADDR outputY
     __ubuf__ UbT* ubX1Ptr = ubPtr + OFF_X1_STRIDES;
     __ubuf__ UbT* ubX2Ptr = ubPtr + OFF_X2_STRIDES;
 
-    // R006: Launch with type-appropriate thread count
-    asc_vf_call<OpCosineSimilaritySimtKernel<T1, T2, T, IdxT, threadNum>>(
-        dim3(threadNum), static_cast<IdxT>(tilingData->totalOutputElements), static_cast<IdxT>(tilingData->reduceSize),
-        static_cast<IdxT>(tilingData->innerSize), tilingData->eps, tilingData->ndim, tilingData->reduceDim, ubShapePtr,
-        ubX1Ptr, ubX2Ptr, x1Gm, x2Gm, yGm);
+    if (tilingData->useWarpPath != 0) {
+        constexpr uint32_t warpThreadNum = (sizeof(IdxT) == 4) ? WARP_PATH_THREAD_NUM_32 : WARP_PATH_THREAD_NUM_64;
+        asc_vf_call<OpCosineSimilarityWarpKernel<T1, T2, T, IdxT, warpThreadNum>>(
+            dim3(warpThreadNum), static_cast<IdxT>(tilingData->totalOutputElements),
+            static_cast<IdxT>(tilingData->reduceSize), static_cast<IdxT>(tilingData->innerSize), tilingData->eps,
+            tilingData->ndim, tilingData->reduceDim, ubShapePtr, ubX1Ptr, ubX2Ptr, x1Gm, x2Gm, yGm);
+        return;
+    }
+
+    IdxT totalPairs = static_cast<IdxT>(tilingData->totalPairs);
+    IdxT chunks = static_cast<IdxT>(tilingData->chunksPerOutput);
+    IdxT chunkSize = static_cast<IdxT>(tilingData->chunkSize);
+    IdxT totalOutputs = static_cast<IdxT>(tilingData->totalOutputElements);
+    IdxT reduceSize = static_cast<IdxT>(tilingData->reduceSize);
+
+    __gm__ float* wsScratch = wsGm;
+
+    if (chunks <= 1) {
+        asc_vf_call<OpCosineSimilaritySingleKernel<T1, T2, T, IdxT, threadNum>>(
+            dim3(threadNum), totalOutputs, reduceSize, static_cast<IdxT>(tilingData->innerSize), tilingData->eps,
+            tilingData->ndim, tilingData->reduceDim, ubShapePtr, ubX1Ptr, ubX2Ptr, wsScratch, x1Gm, x2Gm, yGm);
+        return;
+    }
+
+    __gm__ float* w1Part = wsScratch + static_cast<IdxT>(tilingData->needCoreNum) * CORE_SCRATCH_ELEMS;
+    __gm__ float* w2Part = w1Part + totalPairs;
+    __gm__ float* dotPart = w2Part + totalPairs;
+
+    asc_vf_call<OpCosineSimilarityPhase1Kernel<T1, T2, T, IdxT, threadNum>>(
+        dim3(threadNum), totalPairs, chunks, chunkSize, reduceSize, tilingData->ndim, tilingData->reduceDim, ubShapePtr,
+        ubX1Ptr, ubX2Ptr, wsScratch, w1Part, w2Part, x1Gm, x2Gm);
+    SyncAll();
+    asc_vf_call<OpCosineSimilarityPhase2Kernel<T1, T2, T, IdxT, threadNum>>(
+        dim3(threadNum), totalPairs, chunks, chunkSize, reduceSize, tilingData->eps, tilingData->ndim,
+        tilingData->reduceDim, ubShapePtr, ubX1Ptr, ubX2Ptr, wsScratch, w1Part, w2Part, dotPart, x1Gm, x2Gm);
+    SyncAll();
+    asc_vf_call<OpCosineSimilarityPhase3Kernel<T, IdxT, threadNum>>(dim3(threadNum), totalOutputs, chunks, dotPart,
+                                                                    yGm);
 }
 
 } // namespace NsCosineSimilarity
