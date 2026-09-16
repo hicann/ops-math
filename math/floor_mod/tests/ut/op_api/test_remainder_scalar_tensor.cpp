@@ -24,19 +24,12 @@ using namespace std;
 
 class l2_remainder_scalar_tensor_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "remainder_scalar_tensor_test SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "remainder_scalar_tensor_test SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "remainder_scalar_tensor_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "remainder_scalar_tensor_test TearDown" << std::endl; }
 
-    void test_run(
-        ScalarDesc self, vector<int64_t> otherDims, aclDataType otherDtype, aclFormat otherFormat,
-        vector<int64_t> otherRange, vector<int64_t> outDims, aclDataType outDtype, aclFormat outFormat)
+    void test_run(ScalarDesc self, vector<int64_t> otherDims, aclDataType otherDtype, aclFormat otherFormat,
+                  vector<int64_t> otherRange, vector<int64_t> outDims, aclDataType outDtype, aclFormat outFormat)
     {
         auto other = TensorDesc(otherDims, otherDtype, otherFormat).ValueRange(otherRange[0], otherRange[1]);
         auto out = TensorDesc(outDims, outDtype, outFormat).Precision(0.00001, 0.00001);
@@ -48,9 +41,9 @@ protected:
         // ut.TestPrecision();
     }
 
-    void test_run_invalid(
-        ScalarDesc self, vector<int64_t> otherDims, aclDataType otherDtype, aclFormat otherFormat,
-        vector<int64_t> otherRange, vector<int64_t> outDims, aclDataType outDtype, aclFormat outFormat)
+    void test_run_invalid(ScalarDesc self, vector<int64_t> otherDims, aclDataType otherDtype, aclFormat otherFormat,
+                          vector<int64_t> otherRange, vector<int64_t> outDims, aclDataType outDtype,
+                          aclFormat outFormat)
     {
         auto other = TensorDesc(otherDims, otherDtype, otherFormat).ValueRange(otherRange[0], otherRange[1]);
         auto out = TensorDesc(outDims, outDtype, outFormat).Precision(0.00001, 0.00001);
@@ -119,16 +112,16 @@ TEST_F(l2_remainder_scalar_tensor_test, l2_remainder_scalar_tensor_test_06)
     auto self_desc_int16 = ScalarDesc(value_int16);
 
     test_run_invalid(self_desc_bool, {2, 3, 3}, ACL_BOOL, ACL_FORMAT_ND, {3, 10}, {2, 3, 3}, ACL_BOOL, ACL_FORMAT_ND);
-    test_run_invalid(
-        self_desc_uint8, {2, 3, 3}, ACL_UINT8, ACL_FORMAT_ND, {3, 10}, {2, 3, 3}, ACL_UINT8, ACL_FORMAT_ND);
+    test_run_invalid(self_desc_uint8, {2, 3, 3}, ACL_UINT8, ACL_FORMAT_ND, {3, 10}, {2, 3, 3}, ACL_UINT8,
+                     ACL_FORMAT_ND);
     test_run_invalid(self_desc_int8, {2, 3, 3}, ACL_INT8, ACL_FORMAT_ND, {3, 10}, {2, 3, 3}, ACL_INT8, ACL_FORMAT_ND);
-    test_run_invalid(
-        self_desc_int16, {2, 3, 3}, ACL_INT16, ACL_FORMAT_ND, {3, 10}, {2, 3, 3}, ACL_INT16, ACL_FORMAT_ND);
+    test_run_invalid(self_desc_int16, {2, 3, 3}, ACL_INT16, ACL_FORMAT_ND, {3, 10}, {2, 3, 3}, ACL_INT16,
+                     ACL_FORMAT_ND);
     test_run_invalid(self_desc_uint8, {2, 3, 3}, ACL_BF16, ACL_FORMAT_ND, {3, 10}, {2, 3, 3}, ACL_BF16, ACL_FORMAT_ND);
-    test_run_invalid(
-        self_desc_uint8, {2, 3, 3}, ACL_COMPLEX64, ACL_FORMAT_ND, {3, 10}, {2, 3, 3}, ACL_COMPLEX64, ACL_FORMAT_ND);
-    test_run_invalid(
-        self_desc_uint8, {2, 3, 3}, ACL_COMPLEX128, ACL_FORMAT_ND, {3, 10}, {2, 3, 3}, ACL_COMPLEX128, ACL_FORMAT_ND);
+    test_run_invalid(self_desc_uint8, {2, 3, 3}, ACL_COMPLEX64, ACL_FORMAT_ND, {3, 10}, {2, 3, 3}, ACL_COMPLEX64,
+                     ACL_FORMAT_ND);
+    test_run_invalid(self_desc_uint8, {2, 3, 3}, ACL_COMPLEX128, ACL_FORMAT_ND, {3, 10}, {2, 3, 3}, ACL_COMPLEX128,
+                     ACL_FORMAT_ND);
 }
 
 // other dtype必须属于支持的数据类型 + self能cast成other对应的数据类型 + other.dtype = out.dtype
@@ -144,10 +137,10 @@ TEST_F(l2_remainder_scalar_tensor_test, l2_remainder_scalar_tensor_test_07)
     test_run(self_desc_int64, {2, 3, 3}, ACL_INT8, ACL_FORMAT_ND, {3, 10}, {2, 3, 3}, ACL_INT64, ACL_FORMAT_ND);
     test_run(self_desc_int64, {2, 3, 3}, ACL_INT16, ACL_FORMAT_ND, {3, 10}, {2, 3, 3}, ACL_INT64, ACL_FORMAT_ND);
     test_run(self_desc_float64, {2, 3, 3}, ACL_BF16, ACL_FORMAT_ND, {3, 10}, {2, 3, 3}, ACL_DOUBLE, ACL_FORMAT_ND);
-    test_run_invalid(
-        self_desc_int64, {2, 3, 3}, ACL_COMPLEX64, ACL_FORMAT_ND, {3, 10}, {2, 3, 3}, ACL_INT64, ACL_FORMAT_ND);
-    test_run_invalid(
-        self_desc_int64, {2, 3, 3}, ACL_COMPLEX128, ACL_FORMAT_ND, {3, 10}, {2, 3, 3}, ACL_INT64, ACL_FORMAT_ND);
+    test_run_invalid(self_desc_int64, {2, 3, 3}, ACL_COMPLEX64, ACL_FORMAT_ND, {3, 10}, {2, 3, 3}, ACL_INT64,
+                     ACL_FORMAT_ND);
+    test_run_invalid(self_desc_int64, {2, 3, 3}, ACL_COMPLEX128, ACL_FORMAT_ND, {3, 10}, {2, 3, 3}, ACL_INT64,
+                     ACL_FORMAT_ND);
 
     // self不属于，other属于
     bool value_bool = true;
@@ -283,15 +276,15 @@ TEST_F(l2_remainder_scalar_tensor_test, l2_remainder_scalar_tensor_test_10)
 
     auto ut = OP_API_UT(aclnnRemainderScalarTensor, INPUT(nullptr, other), OUTPUT(out));
     aclnnStatus getWorkspaceResult = ut.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(getWorkspaceResult, ACLNN_ERR_INNER_NULLPTR);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_ERR_PARAM_NULLPTR);
 
     auto ut2 = OP_API_UT(aclnnRemainderScalarTensor, INPUT(self_desc, nullptr), OUTPUT(out));
     getWorkspaceResult = ut2.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(getWorkspaceResult, ACLNN_ERR_INNER_NULLPTR);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_ERR_PARAM_NULLPTR);
 
     auto ut3 = OP_API_UT(aclnnRemainderScalarTensor, INPUT(self_desc, other), OUTPUT(nullptr));
     getWorkspaceResult = ut3.TestGetWorkspaceSize(&workspaceSize);
-    EXPECT_EQ(getWorkspaceResult, ACLNN_ERR_INNER_NULLPTR);
+    EXPECT_EQ(getWorkspaceResult, ACLNN_ERR_PARAM_NULLPTR);
 }
 
 ///////////////////////////////////////
@@ -367,13 +360,11 @@ TEST_F(l2_remainder_scalar_tensor_test, l2_remainder_scalar_tensor_test_15)
     // 1维
     test_run(self_desc, {5}, ACL_FLOAT, ACL_FORMAT_ND, {3, 10}, {5}, ACL_FLOAT, ACL_FORMAT_ND);
     // 8维 精度概率性有问题
-    test_run(
-        self_desc, {3, 2, 2, 2, 1, 1, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND, {3, 10}, {3, 2, 2, 2, 1, 1, 2, 2}, ACL_FLOAT,
-        ACL_FORMAT_ND);
+    test_run(self_desc, {3, 2, 2, 2, 1, 1, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND, {3, 10}, {3, 2, 2, 2, 1, 1, 2, 2},
+             ACL_FLOAT, ACL_FORMAT_ND);
     // 9维
-    test_run_invalid(
-        self_desc, {1, 2, 1, 2, 1, 1, 1, 2, 1}, ACL_FLOAT, ACL_FORMAT_ND, {3, 10}, {1, 2, 1, 2, 1, 1, 1, 2, 1},
-        ACL_FLOAT, ACL_FORMAT_ND);
+    test_run_invalid(self_desc, {1, 2, 1, 2, 1, 1, 1, 2, 1}, ACL_FLOAT, ACL_FORMAT_ND, {3, 10},
+                     {1, 2, 1, 2, 1, 1, 1, 2, 1}, ACL_FLOAT, ACL_FORMAT_ND);
 }
 
 TEST_F(l2_remainder_scalar_tensor_test, Ascend950PR_99_l2_remainder_scalar_tensor_test_01)

@@ -506,9 +506,9 @@ static aclnnStatus CheckParamsInplaceTensorScalar(const aclTensor* self, const a
 static aclnnStatus CheckParamsScalarTensor(const aclScalar* self, const aclTensor* other, const aclTensor* out)
 {
     // 1. 检查参数是否为空指针
-    OP_CHECK_NULL(self, return ACLNN_ERR_INNER_NULLPTR);
-    OP_CHECK_NULL(other, return ACLNN_ERR_INNER_NULLPTR);
-    OP_CHECK_NULL(out, return ACLNN_ERR_INNER_NULLPTR);
+    OP_CHECK_NULL(self, return ACLNN_ERR_PARAM_NULLPTR);
+    OP_CHECK_NULL(other, return ACLNN_ERR_PARAM_NULLPTR);
+    OP_CHECK_NULL(out, return ACLNN_ERR_PARAM_NULLPTR);
     // 2. other和out的shape一致
     OP_CHECK_SHAPE_NOT_EQUAL(other, out, return ACLNN_ERR_PARAM_INVALID);
     // 3. self和other没有complex + other能cast成outDtype + outDtype为算子支持的数据类型
