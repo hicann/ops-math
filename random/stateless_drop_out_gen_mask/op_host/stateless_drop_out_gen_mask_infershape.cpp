@@ -82,7 +82,6 @@ static graphStatus DropOutGenMaskInferShapeFunc(gert::InferShapeContext* context
     }
 
     const ge::DataType shape_dtype = shape_tensor->GetDataType();
-
     if (shape_dtype == ge::DT_INT32) {
         auto shape_data = shape_tensor->GetData<int32_t>();
         if (shape_data == nullptr) {
