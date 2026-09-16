@@ -54,7 +54,12 @@ static const aclTensor* ArgMaxV2AiCore(const aclTensor* x, const aclTensor* dim,
                                        aclOpExecutor* executor)
 {
     L0_DFX(ArgMaxV2AiCore, x, dim, out);
-    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(ArgMaxV2, OP_INPUT(x, dim), OP_OUTPUT(out));
+    aclnnStatus ret = ACL_SUCCESS;
+    if (IsRegBase()) {
+        ret = ADD_TO_LAUNCHER_LIST_AICORE(ArgMaxV2, OP_INPUT(x, dim), OP_OUTPUT(out), OP_ATTR(out->GetDataType()));
+    } else {
+        ret = ADD_TO_LAUNCHER_LIST_AICORE(ArgMaxV2, OP_INPUT(x, dim), OP_OUTPUT(out));
+    }
     OP_CHECK(ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ArgMaxV2AiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
              return nullptr);
     return out;
