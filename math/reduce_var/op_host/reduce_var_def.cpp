@@ -20,22 +20,14 @@ static const std::vector<ge::DataType> dataType = {ge::DT_FLOAT16, ge::DT_FLOAT,
 static const std::vector<ge::Format> format = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
 
 class ReduceVar : public OpDef {
-   public:
-    explicit ReduceVar(const char* name) : OpDef(name) {
-        this->Input("x")
-            .ParamType(REQUIRED)
-            .DataType(dataType)
-            .UnknownShapeFormat(format);
+public:
+    explicit ReduceVar(const char* name) : OpDef(name)
+    {
+        this->Input("x").ParamType(REQUIRED).DataType(dataType).UnknownShapeFormat(format);
 
-        this->Output("var")
-            .ParamType(REQUIRED)
-            .DataType(dataType)
-            .UnknownShapeFormat(format);
+        this->Output("var").ParamType(REQUIRED).DataType(dataType).UnknownShapeFormat(format);
 
-        this->Output("mean")
-            .ParamType(REQUIRED)
-            .DataType(dataType)
-            .UnknownShapeFormat(format);
+        this->Output("mean").ParamType(REQUIRED).DataType(dataType).UnknownShapeFormat(format);
 
         this->Attr("dim").AttrType(OPTIONAL).ListInt();
         this->Attr("correction").AttrType(OPTIONAL).Int();
@@ -48,8 +40,9 @@ class ReduceVar : public OpDef {
             .DynamicShapeSupportFlag(true)
             .ExtendCfgInfo("opFile.value", "reduce_var_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend350", aicoreConfig);
     }
 };
 
 OP_ADD(ReduceVar);
-}  // namespace ops
+} // namespace ops

@@ -19,53 +19,53 @@ namespace ops {
 class ArgMin : public OpDef {
 public:
     const std::vector<ge::DataType> argMinXDataType = {
-        ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_FLOAT, ge::DT_INT64, ge::DT_INT64, ge::DT_BF16,
-        ge::DT_BF16, ge::DT_INT32, ge::DT_INT32, ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_FLOAT,
-        ge::DT_INT64, ge::DT_INT64, ge::DT_BF16,  ge::DT_BF16, ge::DT_INT32, ge::DT_INT32};
+        ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_FLOAT,   ge::DT_INT64,   ge::DT_INT64, ge::DT_BF16,
+        ge::DT_BF16,    ge::DT_INT32,   ge::DT_INT32, ge::DT_FLOAT16, ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_FLOAT,
+        ge::DT_INT64,   ge::DT_INT64,   ge::DT_BF16,  ge::DT_BF16,    ge::DT_INT32,   ge::DT_INT32};
     const std::vector<ge::Format> argMinormat = {
         ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
         ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
         ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
     const std::vector<ge::DataType> dataTypeDimension = {
         ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32,
-        ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
-        ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32,
-        ge::DT_INT64, ge::DT_INT32, ge::DT_INT64};
+        ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64,
+        ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_INT32, ge::DT_INT64};
     const std::vector<ge::DataType> argMinYDataType = {
         ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
- explicit ArgMin(const char* name) : OpDef(name) {
-   this->Input("x")
-       .ParamType(REQUIRED)
-       .DataType(argMinXDataType)
-       .Format(argMinormat)
-       .UnknownShapeFormat(argMinormat);
-   this->Input("dimension")
-       .ParamType(REQUIRED)
-       .ValueDepend(OPTIONAL)
-       .DataType(dataTypeDimension)
-       .Format(argMinormat)
-       .UnknownShapeFormat(argMinormat);
-   this->Output("y")
-       .ParamType(REQUIRED)
-       .DataType(argMinYDataType)
-       .Format(argMinormat)
-       .UnknownShapeFormat(argMinormat);
-    this->Attr("dtype").AttrType(OPTIONAL).Int(3);
+        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
+    explicit ArgMin(const char* name) : OpDef(name)
+    {
+        this->Input("x")
+            .ParamType(REQUIRED)
+            .DataType(argMinXDataType)
+            .Format(argMinormat)
+            .UnknownShapeFormat(argMinormat);
+        this->Input("dimension")
+            .ParamType(REQUIRED)
+            .ValueDepend(OPTIONAL)
+            .DataType(dataTypeDimension)
+            .Format(argMinormat)
+            .UnknownShapeFormat(argMinormat);
+        this->Output("y")
+            .ParamType(REQUIRED)
+            .DataType(argMinYDataType)
+            .Format(argMinormat)
+            .UnknownShapeFormat(argMinormat);
+        this->Attr("dtype").AttrType(OPTIONAL).Int(3);
 
-   OpAICoreConfig aicore_config;
-   aicore_config.DynamicCompileStaticFlag(true)
-       .DynamicFormatFlag(false)
-       .DynamicRankSupportFlag(true)
-       .DynamicShapeSupportFlag(true)
-       .NeedCheckSupportFlag(false)
-       .ExtendCfgInfo("opFile.value", "arg_min_apt");
+        OpAICoreConfig aicore_config;
+        aicore_config.DynamicCompileStaticFlag(true)
+            .DynamicFormatFlag(false)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .NeedCheckSupportFlag(false)
+            .ExtendCfgInfo("opFile.value", "arg_min_apt");
 
-   this->AICore().AddConfig("ascend950", aicore_config);
+        this->AICore().AddConfig("ascend950", aicore_config);
+        this->AICore().AddConfig("ascend350", aicore_config);
     }
 };
 
 OP_ADD(ArgMin);
-}  // namespace ops
+} // namespace ops
