@@ -275,7 +275,7 @@ usage() {
   echo "    --valgrind run ut with valgrind. This option will disable asan, noexec and run utest by valgrind"
   echo "    --ops Compile specified operator, use snake name, like: --ops=add,add_lora, use ',' to separate different operator"
   echo "    --soc Compile binary with specified Ascend SoC, like: --soc=ascend910b"
-  echo "    --soc supported parameters must only in [ascend910b ascend910_93 ascend950 ascend310p ascend910 ascend310b ascend630 ascend610lite ascend031 ascend035 kirinx90 kirin9030 mc62], A3(--soc=ascend910_93)"
+  echo "    --soc supported parameters must only in [ascend910b ascend910_93 ascend950 ascend310p ascend910 ascend310b ascend630 ascend610lite ascend031 ascend035 kirinx90 kirin9030 mc62 ascend5162a], A3(--soc=ascend910_93)"
   echo "    --vendor_name Specify the custom operator package vendor name, like: --vendor_name=customize, default to custom"
   echo "    --aicpu build aicpu task"
   echo "    --noaicpu build noaicpu task"

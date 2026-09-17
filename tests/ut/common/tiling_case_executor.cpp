@@ -33,9 +33,8 @@
     for (size_t index = 0; index < inputNum; index++) {                                                                                                                                                                                      \
         std::unique_ptr<gert::Tensor> curTensor = std::make_unique<gert::Tensor>(                                                                                                                                                            \
             tilingContextPara.inputTensorDesc_[index].shape_,                                                                                                                                                                                \
-            gert::StorageFormat(                                                                                                                                                                                                             \
-                tilingContextPara.inputTensorDesc_[index].format_, tilingContextPara.inputTensorDesc_[index].format_,                                                                                                                        \
-                gert::ExpandDimsType()),                                                                                                                                                                                                     \
+            gert::StorageFormat(tilingContextPara.inputTensorDesc_[index].format_,                                                                                                                                                           \
+                                tilingContextPara.inputTensorDesc_[index].format_, gert::ExpandDimsType()),                                                                                                                                  \
             gert::TensorPlacement::kOnHost, tilingContextPara.inputTensorDesc_[index].dtype_,                                                                                                                                                \
             tilingContextPara.inputTensorDesc_[index].isConst_ ?                                                                                                                                                                             \
                 tilingContextPara.inputTensorDesc_[index].constValue_ :                                                                                                                                                                      \
@@ -46,9 +45,8 @@
     for (size_t index = 0; index < outputNum; index++) {                                                                                                                                                                                     \
         std::unique_ptr<gert::Tensor> curTensor = std::make_unique<gert::Tensor>(                                                                                                                                                            \
             tilingContextPara.outputTensorDesc_[index].shape_,                                                                                                                                                                               \
-            gert::StorageFormat(                                                                                                                                                                                                             \
-                tilingContextPara.outputTensorDesc_[index].format_,                                                                                                                                                                          \
-                tilingContextPara.outputTensorDesc_[index].format_, gert::ExpandDimsType()),                                                                                                                                                 \
+            gert::StorageFormat(tilingContextPara.outputTensorDesc_[index].format_,                                                                                                                                                          \
+                                tilingContextPara.outputTensorDesc_[index].format_, gert::ExpandDimsType()),                                                                                                                                 \
             gert::TensorPlacement::kOnHost, tilingContextPara.outputTensorDesc_[index].dtype_,                                                                                                                                               \
             tilingContextPara.outputTensorDesc_[index].isConst_ ?                                                                                                                                                                            \
                 tilingContextPara.outputTensorDesc_[index].constValue_ :                                                                                                                                                                     \
@@ -78,24 +76,23 @@
                 break;                                                                                                                                                                                                                       \
             }                                                                                                                                                                                                                                \
             case Ops::Math::AnyValue::ValueType::VT_LIST_BOOL: {                                                                                                                                                                             \
-                contextFaker.Attr(                                                                                                                                                                                                           \
-                    attrInfo.attrName_, *reinterpret_cast<std::vector<bool>*>(attrInfo.attr_.valuePtr_.get()));                                                                                                                              \
+                contextFaker.Attr(attrInfo.attrName_,                                                                                                                                                                                        \
+                                  *reinterpret_cast<std::vector<bool>*>(attrInfo.attr_.valuePtr_.get()));                                                                                                                                    \
                 break;                                                                                                                                                                                                                       \
             }                                                                                                                                                                                                                                \
             case Ops::Math::AnyValue::ValueType::VT_LIST_INT: {                                                                                                                                                                              \
-                contextFaker.Attr(                                                                                                                                                                                                           \
-                    attrInfo.attrName_, *reinterpret_cast<std::vector<int64_t>*>(attrInfo.attr_.valuePtr_.get()));                                                                                                                           \
+                contextFaker.Attr(attrInfo.attrName_,                                                                                                                                                                                        \
+                                  *reinterpret_cast<std::vector<int64_t>*>(attrInfo.attr_.valuePtr_.get()));                                                                                                                                 \
                 break;                                                                                                                                                                                                                       \
             }                                                                                                                                                                                                                                \
             case Ops::Math::AnyValue::ValueType::VT_LIST_LIST_INT: {                                                                                                                                                                         \
-                contextFaker.Attr(                                                                                                                                                                                                           \
-                    attrInfo.attrName_,                                                                                                                                                                                                      \
-                    *reinterpret_cast<std::vector<std::vector<int64_t>>*>(attrInfo.attr_.valuePtr_.get()));                                                                                                                                  \
+                contextFaker.Attr(attrInfo.attrName_, *reinterpret_cast<std::vector<std::vector<int64_t>>*>(                                                                                                                                 \
+                                                          attrInfo.attr_.valuePtr_.get()));                                                                                                                                                  \
                 break;                                                                                                                                                                                                                       \
             }                                                                                                                                                                                                                                \
             case Ops::Math::AnyValue::ValueType::VT_LIST_FLOAT: {                                                                                                                                                                            \
-                contextFaker.Attr(                                                                                                                                                                                                           \
-                    attrInfo.attrName_, *reinterpret_cast<std::vector<float>*>(attrInfo.attr_.valuePtr_.get()));                                                                                                                             \
+                contextFaker.Attr(attrInfo.attrName_,                                                                                                                                                                                        \
+                                  *reinterpret_cast<std::vector<float>*>(attrInfo.attr_.valuePtr_.get()));                                                                                                                                   \
                 break;                                                                                                                                                                                                                       \
             }                                                                                                                                                                                                                                \
             default:                                                                                                                                                                                                                         \
@@ -123,7 +120,8 @@
                                       {"ascend910", "Ascend910"},         {"ascend310b", "Ascend310B"},                                                                                                                                      \
                                       {"ascend610lite", "Ascend610Lite"}, {"ascend031", "Ascend031"},                                                                                                                                        \
                                       {"ascend035", "Ascend035"},         {"kirinx90", "KrinX90"},                                                                                                                                           \
-                                      {"kirin9030", "Kirin9030"},         {"mc62", "MC62"}};                                                                                                                                                 \
+                                      {"kirin9030", "Kirin9030"},         {"mc62", "MC62"},                                                                                                                                                  \
+                                      {"ascend5162a", "Ascend5162A"}};                                                                                                                                                                       \
     std::string buildSocVersion = STR(BUILD_SOC_VERSION);                                                                                                                                                                                    \
     if (!buildSocVersion.empty()) {                                                                                                                                                                                                          \
         buildSocVersion = socToUpper[buildSocVersion];                                                                                                                                                                                       \
@@ -134,17 +132,16 @@
     string compileInfoString = compileInfoStringPrefix + std::to_string(tilingContextPara.ubSize_) +                                                                                                                                         \
                                compileInfoStringMiddle + std::to_string(tilingContextPara.coreNum_) +                                                                                                                                        \
                                compileInfoStringSuffix;                                                                                                                                                                                      \
-    map<string, string> socToArch = {                                                                                                                                                                                                        \
-        {"Ascend310P", "2002"},                                                                                                                                                                                                              \
-        {"Ascend910B", "2201"},                                                                                                                                                                                                              \
-        {"Ascend910_93", "2201"},                                                                                                                                                                                                            \
-        {"Ascend950", "3510"},                                                                                                                                                                                                               \
-        {"Ascend910", "1001"}};                                                                                                                                                                                                              \
+    map<string, string> socToArch = {{"Ascend310P", "2002"},                                                                                                                                                                                 \
+                                     {"Ascend910B", "2201"},                                                                                                                                                                                 \
+                                     {"Ascend910_93", "2201"},                                                                                                                                                                               \
+                                     {"Ascend950", "3510"},                                                                                                                                                                                  \
+                                     {"Ascend910", "1001"}};                                                                                                                                                                                 \
     map<string, string> socInfos;                                                                                                                                                                                                            \
     map<string, string> aicoreSpec;                                                                                                                                                                                                          \
     map<string, string> intrinsics;                                                                                                                                                                                                          \
-    map<string, string> socversions = {                                                                                                                                                                                                      \
-        {"NpuArch", socToArch[buildSocVersion]}, {"Short_SoC_version", buildSocVersion}};                                                                                                                                                    \
+    map<string, string> socversions = {{"NpuArch", socToArch[buildSocVersion]},                                                                                                                                                              \
+                                       {"Short_SoC_version", buildSocVersion}};                                                                                                                                                              \
     GetPlatFormInfos(compileInfoString.c_str(), socInfos, aicoreSpec, intrinsics);                                                                                                                                                           \
     auto tilingContext = contextHolder.GetContext();                                                                                                                                                                                         \
     tilingContext->GetPlatformInfo()->SetPlatformRes("SoCInfo", socInfos);                                                                                                                                                                   \
@@ -178,9 +175,8 @@ static string to_string(void* buf, size_t size)
     return result;
 }
 
-static void GetPlatFormInfos(
-    const char* compileInfoStr, map<string, string>& socInfos, map<string, string>& aicoreSpec,
-    map<string, string>& intrinsics)
+static void GetPlatFormInfos(const char* compileInfoStr, map<string, string>& socInfos, map<string, string>& aicoreSpec,
+                             map<string, string>& intrinsics)
 {
     string default_hardward_info = R"({
         "hardware_info": {"BT_SIZE": 0, "load3d_constraints": "1", "Intrinsic_fix_pipe_l0c2out": false,
@@ -193,12 +189,11 @@ static void GetPlatFormInfos(
         compileInfoJson = nlohmann::json::parse(default_hardward_info.c_str());
     }
 
-    map<string, string> socInfoKeys = {
-        {"ai_core_cnt", "CORE_NUM"},
-        {"l2_size", "L2_SIZE"},
-        {"cube_core_cnt", "cube_core_cnt"},
-        {"vector_core_cnt", "vector_core_cnt"},
-        {"core_type_list", "core_type_list"}};
+    map<string, string> socInfoKeys = {{"ai_core_cnt", "CORE_NUM"},
+                                       {"l2_size", "L2_SIZE"},
+                                       {"cube_core_cnt", "cube_core_cnt"},
+                                       {"vector_core_cnt", "vector_core_cnt"},
+                                       {"core_type_list", "core_type_list"}};
     socInfos["core_type_list"] = "AICore";
 
     for (auto& t : socInfoKeys) {
@@ -211,14 +206,13 @@ static void GetPlatFormInfos(
             }
         }
     }
-    map<string, string> aicoreSpecKeys = {
-        {"ub_size", "UB_SIZE"},
-        {"l0_a_size", "L0A_SIZE"},
-        {"l0_b_size", "L0B_SIZE"},
-        {"l0_c_size", "L0C_SIZE"},
-        {"l1_size", "L1_SIZE"},
-        {"bt_size", "BT_SIZE"},
-        {"load3d_constraints", "load3d_constraints"}};
+    map<string, string> aicoreSpecKeys = {{"ub_size", "UB_SIZE"},
+                                          {"l0_a_size", "L0A_SIZE"},
+                                          {"l0_b_size", "L0B_SIZE"},
+                                          {"l0_c_size", "L0C_SIZE"},
+                                          {"l1_size", "L1_SIZE"},
+                                          {"bt_size", "BT_SIZE"},
+                                          {"load3d_constraints", "load3d_constraints"}};
     aicoreSpec["cube_freq"] = "cube_freq";
     for (auto& t : aicoreSpecKeys) {
         if (compileInfoJson.contains("hardware_info") && compileInfoJson["hardware_info"].contains(t.second)) {
@@ -245,9 +239,9 @@ static void GetPlatFormInfos(
     }
 }
 
-void ExecuteTestCase(
-    const gert::TilingContextPara& tilingContextPara, ge::graphStatus expectResult, uint64_t expectTilingKey,
-    const string& expectTilingData, const std::vector<size_t>& expectWorkspaces)
+void ExecuteTestCase(const gert::TilingContextPara& tilingContextPara, ge::graphStatus expectResult,
+                     uint64_t expectTilingKey, const string& expectTilingData,
+                     const std::vector<size_t>& expectWorkspaces)
 {
     DO_TILING(tilingContextPara);
 
@@ -280,9 +274,8 @@ void ExecuteTestCase(
     EXPECT_EQ(tilingDataResult, expectTilingData);
 }
 
-void ExecuteTestCase(
-    const gert::TilingContextPara& tilingContextPara, ge::graphStatus expectResult, uint64_t expectTilingKey,
-    const std::vector<size_t>& expectWorkspaces)
+void ExecuteTestCase(const gert::TilingContextPara& tilingContextPara, ge::graphStatus expectResult,
+                     uint64_t expectTilingKey, const std::vector<size_t>& expectWorkspaces)
 {
     ExecuteTestCase(tilingContextPara, expectResult, expectTilingKey, EMPTY_EXPECT_TILING_DATA, expectWorkspaces);
 }
@@ -353,10 +346,9 @@ static string eleToString(void* buf)
     return result;
 }
 
-void ExecuteTestCaseForEle(
-    const gert::TilingContextPara& tilingContextPara, ge::graphStatus expectResult, bool needCheckTilingKey,
-    uint64_t expectTilingKey, bool needCheckTilingData, const string& expectTilingData,
-    const std::vector<size_t>& expectWorkspaces)
+void ExecuteTestCaseForEle(const gert::TilingContextPara& tilingContextPara, ge::graphStatus expectResult,
+                           bool needCheckTilingKey, uint64_t expectTilingKey, bool needCheckTilingData,
+                           const string& expectTilingData, const std::vector<size_t>& expectWorkspaces)
 {
     DO_TILING(tilingContextPara);
 
