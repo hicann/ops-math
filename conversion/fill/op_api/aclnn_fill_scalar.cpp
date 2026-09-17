@@ -146,6 +146,11 @@ aclnnStatus aclnnInplaceFillScalarGetWorkspaceSize(aclTensor* selfRef, const acl
     }
     // 固定写法，将输入self转换成连续的tensor
     aclOpExecutor* executorP = uniqueExecutor.get();
+    // DT_BOOL场景先按PyTorch语义(bool(nan)=True)转成bool scalar，规避aclScalar::ToBool对浮点NaN的误判
+    if (IsRegBase() && selfRef->GetDataType() == op::DataType::DT_BOOL) {
+        value = executorP->AllocScalar(value->ToDouble() != 0.0);
+        CHECK_RET(value != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    }
     const aclTensor* castTensor = executorP->ConvertToTensor(value, selfRef->GetDataType());
     CHECK_RET(castTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
