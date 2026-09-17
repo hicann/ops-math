@@ -1225,6 +1225,7 @@ VC6@ops-math:
         - ops/ops-math/random/drop_out_v3_grad/examples/
         - ops/ops-math/random/drop_out_v3_grad/tests/
         # stateless_drop_out_gen_mask
+        - ops/ops-math/random/stateless_drop_out_gen_mask/examples/
         - ops/ops-math/random/stateless_drop_out_gen_mask/tests/
         # stateless_random_normal_v2
         - ops/ops-math/random/stateless_random_normal_v2/examples/
@@ -1234,18 +1235,31 @@ VC6@ops-math:
         - ops/ops-math/random/stateless_random_normal_v3/tests/
         # stateless_normal
         - ops/ops-math/random/stateless_normal/tests/
+        - ops/ops-math/random/stateless_normal/examples/
         # stateless_truncated_normal_v2
         - ops/ops-math/random/stateless_truncated_normal_v2/tests/
+        - ops/ops-math/random/stateless_truncated_normal_v2/examples/
         # stateless_random_uniform_v2
         - ops/ops-math/random/stateless_random_uniform_v2/tests/
+        - ops/ops-math/random/stateless_random_uniform_v2/examples/
         # stateless_random_uniform_v3
         - ops/ops-math/random/stateless_random_uniform_v3/tests/
+        - ops/ops-math/random/stateless_random_uniform_v3/examples/
         # stateless_uniform
         - ops/ops-math/random/stateless_uniform/tests/
+        - ops/ops-math/random/stateless_uniform/examples/
         # stateless_random
         - ops/ops-math/random/stateless_random/tests/
+        - ops/ops-math/random/stateless_random/examples/
         # truncated_normal_v2
         - ops/ops-math/random/truncated_normal_v2/tests/
+        - ops/ops-math/random/truncated_normal_v2/examples/
+        # drop_out_do_mask_v3
+        - ops/ops-math/random/drop_out_do_mask_v3/examples/
+        - ops/ops-math/random/drop_out_do_mask_v3/tests/
+        # drop_out_do_mask_v3_d
+        - ops/ops-math/random/drop_out_do_mask_v3_d/examples/
+        - ops/ops-math/random/drop_out_do_mask_v3_d/tests/
       non_delivery: null
       open_source: null
 
@@ -1607,19 +1621,11 @@ conversion@ops-math:
         - ops/ops-math/random/sim_thread_exponential/tests/
         - ops/ops-math/random/stateless_random_uniform_v2/examples/
         - ops/ops-math/random/stateless_random_uniform_v3/examples/
-        - ops/ops-math/random/stateless_truncated_normal_v2/examples/
-        - ops/ops-math/random/stateless_uniform/examples/
-        - ops/ops-math/random/stateless_random/examples/
-        - ops/ops-math/random/stateless_normal/examples/
         - ops/ops-math/random/stateless_randperm/examples/
         - ops/ops-math/random/stateless_randperm/tests/
         - ops/ops-math/random/dsa_random_normal/examples/
         - ops/ops-math/random/dsa_random_normal/tests/
         - ops/ops-math/random/stateless_drop_out_gen_mask/examples/
-        - ops/ops-math/random/drop_out_do_mask_v3/examples/
-        - ops/ops-math/random/drop_out_do_mask_v3/tests/
-        - ops/ops-math/random/drop_out_do_mask_v3_d/examples/
-        - ops/ops-math/random/drop_out_do_mask_v3_d/tests/
         - ops/ops-math/random/dsa_gen_bit_mask/examples/
         - ops/ops-math/random/dsa_gen_bit_mask/tests/
         - ops/ops-math/conversion/identity_n/examples/
