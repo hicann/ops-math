@@ -45,7 +45,7 @@ public:
             // 不允许 allow_mix_precision 下把 FP32 节点降为 FP16
             .PrecisionReduceFlag(false)
             .ExtendCfgInfo("op.pattern", "formatAgnostic")
-            .ExtendCfgInfo("opFile.value", "tensor_redirect_apt");
+            .ExtendCfgInfo("opFile.value", "tensor_redirect");
         this->AICore().AddConfig("ascend950", aicoreConfig);
     }
 };

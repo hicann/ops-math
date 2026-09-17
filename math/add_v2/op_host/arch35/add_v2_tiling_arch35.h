@@ -21,8 +21,12 @@
 namespace optiling {
 
 struct AddV2CompileInfoArch35 {
-    uint64_t totalCoreNum = 0;
+    // 前三个字段必须与 Ops::Base::BroadcastCompileInfo 的布局一致，
+    // BroadcastBaseTiling 在 platformInfo 缺失时会按该布局读取 coreNum/ubSize。
+    bool isAscendC = true;
+    uint64_t coreNum = 0;
     uint64_t ubSize = 0;
+    uint64_t libApiWorkspaceSize = 0;
 };
 
 } // namespace optiling

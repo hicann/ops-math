@@ -82,7 +82,7 @@ def _to_numpy(tensor):
 
 
 def _compute(x1, x2):
-    """Compute AddV2 through the independent PyTorch reference interface."""
+    """Compute AddV2 through the PyTorch reference interface."""
     if x1.dtype != x2.dtype:
         raise ValueError(
             f"add_v2 only supports identical input dtypes, got x1={x1.dtype}, "
@@ -115,7 +115,10 @@ class AddV2KernelSpec:
     def golden(x1, x2, **kwargs):
         return _kernel_golden(x1, x2, **kwargs)
 
-    third_party = {"torch": "torch.add"}
+    third_party = {
+        "torch": "torch.add",
+        "tf": "tf.raw_ops.AddV2",
+    }
     tolerance = _TOLERANCE
 
 

@@ -29,7 +29,7 @@ template <typename T>
 class TensorRedirectKernel {
 public:
     __aicore__ inline TensorRedirectKernel(){};
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR outputX, const TensorRedirectTilingData* tilingData, TPipe* pipe);
+    __aicore__ inline bool Init(GM_ADDR x, GM_ADDR outputX, const TensorRedirectTilingData* tilingData, TPipe* pipe);
     __aicore__ inline void Process();
 
 private:
@@ -38,7 +38,7 @@ private:
     __aicore__ inline void CopyOut(int64_t offset, int64_t dataLen);
 
 private:
-    // 输入输出共用同一块 UB（无 Compute 阶段，输入即输出），省去一次 UB->UB 拷贝
+    // 输入输出共用同一块 UB（无 Compute 阶段，输入即输出），省去一次 UB->UB 拷贝。
     TQueBind<QuePosition::VECIN, QuePosition::VECOUT, DB_BUFFER> dataQueue_;
     GlobalTensor<T> xGm_;
     GlobalTensor<T> yGm_;
@@ -50,7 +50,7 @@ private:
     int64_t tailBlockTailUbFactor_ = 0;
     int64_t blockFactor_ = 0;
     int64_t tailBlockFactor_ = 0;
-    int64_t bufferSize_ = 0;
+    uint32_t bufferSize_ = 0;
     TPipe* pipe_ = nullptr;
 };
 
@@ -65,28 +65,35 @@ __aicore__ inline void TensorRedirectKernel<T>::ParseTilingData(const TensorRedi
 }
 
 template <typename T>
-__aicore__ inline void TensorRedirectKernel<T>::Init(GM_ADDR x, GM_ADDR outputX,
+__aicore__ inline bool TensorRedirectKernel<T>::Init(GM_ADDR x, GM_ADDR outputX,
                                                      const TensorRedirectTilingData* tilingData, TPipe* pipe)
 {
     blockIdx_ = GetBlockIdx();
     pipe_ = pipe;
     ParseTilingData(tilingData);
 
-    // 多核区间划分：每核 GM 基址前移 blockOffset_ 个元素
+    // host 保证分区起点小于 numel 且 numel * sizeof(T) <= INT64_MAX，以下乘法及 GM 字节偏移均可表示。
     blockOffset_ = blockIdx_ * blockFactor_ * ubFactor_;
-    xGm_.SetGlobalBuffer((__gm__ T*)(x) + blockOffset_);
-    yGm_.SetGlobalBuffer((__gm__ T*)(outputX) + blockOffset_);
+    int64_t coreElementCount = blockFactor_ * ubFactor_;
+    if (blockIdx_ == usedCoreNum_ - 1) {
+        coreElementCount = (tailBlockFactor_ - 1) * ubFactor_ + tailBlockTailUbFactor_;
+    }
+    xGm_.SetGlobalBuffer((__gm__ T*)(x) + blockOffset_, static_cast<uint64_t>(coreElementCount));
+    yGm_.SetGlobalBuffer((__gm__ T*)(outputX) + blockOffset_, static_cast<uint64_t>(coreElementCount));
 
-    bufferSize_ = ubFactor_ * sizeof(T);
-    pipe_->InitBuffer(dataQueue_, DB_BUFFER, bufferSize_); // 2 × ubFactor × sizeof(T)
+    // host tiling 已保证 ubFactor * sizeof(T) <= DataCopyPad::blockLen 上限；
+    // 保持与 InitBuffer 长度类型一致，避免隐式窄化。
+    bufferSize_ = static_cast<uint32_t>(ubFactor_) * static_cast<uint32_t>(sizeof(T));
+    return pipe_->InitBuffer(dataQueue_, DB_BUFFER, bufferSize_);
 }
 
 template <typename T>
 __aicore__ inline void TensorRedirectKernel<T>::CopyIn(int64_t offset, int64_t dataLen)
 {
     // blockCount=1；blockLen 单位=字节；srcStride/dstStride=0（单块连续，无间隔）
-    DataCopyExtParams inParams{static_cast<uint16_t>(1), static_cast<uint32_t>(dataLen * sizeof(T)),
-                               static_cast<int64_t>(0), static_cast<int64_t>(0), static_cast<uint32_t>(0)};
+    const uint32_t dataBytes = static_cast<uint32_t>(dataLen) * static_cast<uint32_t>(sizeof(T));
+    DataCopyExtParams inParams{static_cast<uint16_t>(1), dataBytes, static_cast<int64_t>(0), static_cast<int64_t>(0),
+                               static_cast<uint32_t>(0)};
     // isPad=false：不使用 paddingValue；尾块由硬件自动 dummy 补齐到 32B（dummy 不写回 GM）
     DataCopyPadExtParams<T> padParams{false, static_cast<uint8_t>(0), static_cast<uint8_t>(0), static_cast<T>(0)};
     LocalTensor<T> xLocal = dataQueue_.AllocTensor<T>();
@@ -97,10 +104,11 @@ __aicore__ inline void TensorRedirectKernel<T>::CopyIn(int64_t offset, int64_t d
 template <typename T>
 __aicore__ inline void TensorRedirectKernel<T>::CopyOut(int64_t offset, int64_t dataLen)
 {
-    DataCopyExtParams outParams{static_cast<uint16_t>(1), static_cast<uint32_t>(dataLen * sizeof(T)),
-                                static_cast<int64_t>(0), static_cast<int64_t>(0), static_cast<uint32_t>(0)};
+    const uint32_t dataBytes = static_cast<uint32_t>(dataLen) * static_cast<uint32_t>(sizeof(T));
+    DataCopyExtParams outParams{static_cast<uint16_t>(1), dataBytes, static_cast<int64_t>(0), static_cast<int64_t>(0),
+                                static_cast<uint32_t>(0)};
     LocalTensor<T> yLocal = dataQueue_.DeQue<T>();
-    DataCopyPad(yGm_[offset], yLocal, outParams); // UB -> GM（dummy 被硬件丢弃，不污染 output）
+    DataCopyPad(yGm_[offset], yLocal, outParams); // UB -> GM
     dataQueue_.FreeTensor(yLocal);
 }
 
@@ -113,6 +121,7 @@ __aicore__ inline void TensorRedirectKernel<T>::Process()
     }
     int64_t loopSize = (blockIdx_ == usedCoreNum_ - 1) ? tailBlockFactor_ : blockFactor_;
     for (int64_t idx = 0; idx < loopSize - 1; idx++) { // 满块循环
+        // idx < blockFactor <= uo，故 offset < numel，乘法不会越过 int64_t 上界。
         int64_t offset = idx * ubFactor_;
         CopyIn(offset, ubFactor_);
         CopyOut(offset, ubFactor_);

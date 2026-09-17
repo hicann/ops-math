@@ -13,12 +13,14 @@
  * \brief TensorRedirect op_host Tiling UT
  */
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <vector>
 
 #include <gtest/gtest.h>
 
+#include "base/registry/op_impl_space_registry_v2.h"
 #include "tiling_case_executor.h"
 #include "tiling_context_faker.h"
 
@@ -48,6 +50,7 @@ constexpr int64_t UB_FULL_THRESHOLD_FP16 = PLAT_CORE_NUM * MAX_UB_FP16;
 // ---- 4 桶矩阵所需的 dtype 无关量 ----
 constexpr int64_t UB_FACTOR_MIN_BETY = 2048; // UB 单块下界（字节）
 constexpr int64_t ONE_BLK_BYTE = 32;         // ubblock_size
+constexpr int64_t DATA_COPY_MAX_BLOCK_BYTES = 2097151;
 
 // UT 侧独立实现的向上对齐（**刻意不复用**被测代码的 Ops::Base::CeilAlign —— 若复用，
 // 对齐逻辑本身出错时 UT 会跟着一起错，失去判据独立性）。
@@ -71,7 +74,7 @@ struct BucketCase {
     int64_t bytes;
 };
 
-const BucketCase kBuckets[] = {
+constexpr BucketCase kBuckets[] = {
     {"1_BYTES(int8)", ge::DT_INT8, 1},
     {"2_BYTES(fp16)", ge::DT_FLOAT16, 2},
     {"4_BYTES(fp32)", ge::DT_FLOAT, 4},
@@ -85,7 +88,7 @@ optiling::TensorRedirectCompileInfo g_compileInfoSingleCore{1, PLAT_UB_SIZE, sta
 
 // 构造 x / output_x 同 shape 同 dtype 的标准用例参数
 gert::TilingContextPara MakePara(const gert::StorageShape& shape, ge::DataType dtype,
-                                 void* compileInfo = &g_compileInfo)
+                                 optiling::TensorRedirectCompileInfo* compileInfo = &g_compileInfo)
 {
     return gert::TilingContextPara("TensorRedirect", {{shape, dtype, ge::FORMAT_ND}}, {{shape, dtype, ge::FORMAT_ND}},
                                    compileInfo, static_cast<uint64_t>(PLAT_CORE_NUM),
@@ -133,9 +136,11 @@ void CheckCommonInvariants(const TilingInfo& info, int64_t numel, int64_t bytesF
         << "ubFactor 超 UB 预算：无运行时兜底，将表征为 507035 向量核异常 + 静默数据错误";
 
     // 32B 对齐
-    const int64_t elemsPer32B = 32 / bytesForOneData;
+    const int64_t elemsPer32B = ONE_BLK_BYTE / bytesForOneData;
     EXPECT_TRUE(td->ubFactor == numel || td->ubFactor % elemsPer32B == 0)
         << "ubFactor=" << td->ubFactor << " 既不等于 numel 也非 32B 对齐";
+    EXPECT_LE(std::min(td->ubFactor, numel) * bytesForOneData, DATA_COPY_MAX_BLOCK_BYTES)
+        << "DataCopyPad blockLen 不得超过 Ascend950PR 接口上限";
 
     // 循环/尾块恒等式
     EXPECT_GE(td->blockFactor, 1);
@@ -207,7 +212,38 @@ TEST_F(TensorRedirectTilingTest, tiling_empty_tensor_int64_blockdim_must_not_be_
     EXPECT_EQ(info.blockNum, 1U);
 }
 
+// 末尾 0 使数学 numel 为 0；不得先计算溢出的 INT64_MAX * 2 而误拒合法空 Tensor。
+TEST_F(TensorRedirectTilingTest, tiling_empty_tensor_late_zero_after_overflowing_prefix_success)
+{
+    gert::StorageShape shape = {{INT64_MAX, 2, 0}, {INT64_MAX, 2, 0}};
+    TilingInfo info;
+    ASSERT_TRUE(SafeExecuteTiling(MakePara(shape, ge::DT_INT64), info));
+    EXPECT_EQ(info.blockNum, 1U);
+    ASSERT_EQ(info.workspaceSizes.size(), 1U);
+    EXPECT_EQ(static_cast<size_t>(info.workspaceSizes[0]), EXPECT_WORKSPACE);
+}
+
+// 多个 0 轴同样走统一空 Tensor 分支。
+TEST_F(TensorRedirectTilingTest, tiling_empty_tensor_multiple_zero_axes_success)
+{
+    gert::StorageShape shape = {{0, 2, 0}, {0, 2, 0}};
+    TilingInfo info;
+    ASSERT_TRUE(SafeExecuteTiling(MakePara(shape, ge::DT_FLOAT16), info));
+    EXPECT_EQ(info.blockNum, 1U);
+}
+
 // 二、校验路径
+
+// 注册入口必须先判空，日志宏不能在 nullptr 上取节点信息。
+TEST_F(TensorRedirectTilingTest, tiling_null_context_failed_without_dereference)
+{
+    auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+    ASSERT_NE(spaceRegistry, nullptr);
+    auto functionStruct = spaceRegistry->GetOpImpl("TensorRedirect");
+    ASSERT_NE(functionStruct, nullptr);
+    ASSERT_NE(functionStruct->tiling, nullptr);
+    EXPECT_EQ(functionStruct->tiling(nullptr), ge::GRAPH_FAILED);
+}
 
 // rank < 1：0 维标量 → shape_mismatch（spec inputs[0].rank_range = [1,8]）
 TEST_F(TensorRedirectTilingTest, tiling_check_rank_below_min_scalar_failed)
@@ -221,6 +257,24 @@ TEST_F(TensorRedirectTilingTest, tiling_check_rank_above_max_9d_failed)
 {
     gert::StorageShape shape = {{2, 1, 1, 1, 1, 1, 1, 1, 1}, {2, 1, 1, 1, 1, 1, 1, 1, 1}};
     ExecuteTestCase(MakePara(shape, ge::DT_FLOAT16), ge::GRAPH_FAILED, EXPECT_TILING_KEY, std::vector<size_t>{});
+}
+
+// 即使 storage shape 已被压缩为 rank1，原始 rank9 仍违反接口契约。
+TEST_F(TensorRedirectTilingTest, tiling_check_origin_rank_above_max_storage_rank1_failed)
+{
+    gert::StorageShape shape = {{2, 1, 1, 1, 1, 1, 1, 1, 1}, {2}};
+    ExecuteTestCase(MakePara(shape, ge::DT_FLOAT16), ge::GRAPH_FAILED, EXPECT_TILING_KEY, std::vector<size_t>{});
+}
+
+// 输出的原始 rank 也必须独立校验，不能被合法的 rank1 storage shape 掩盖。
+TEST_F(TensorRedirectTilingTest, tiling_check_output_origin_rank_above_max_storage_rank1_failed)
+{
+    gert::StorageShape xShape = {{2}, {2}};
+    gert::StorageShape yShape = {{2, 1, 1, 1, 1, 1, 1, 1, 1}, {2}};
+    gert::TilingContextPara para("TensorRedirect", {{xShape, ge::DT_FLOAT16, ge::FORMAT_ND}},
+                                 {{yShape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &g_compileInfo,
+                                 static_cast<uint64_t>(PLAT_CORE_NUM), static_cast<uint64_t>(PLAT_UB_SIZE));
+    ExecuteTestCase(para, ge::GRAPH_FAILED, EXPECT_TILING_KEY, std::vector<size_t>{});
 }
 
 // rank == 8 边界内侧：合法，须成功
@@ -317,6 +371,13 @@ TEST_F(TensorRedirectTilingTest, tiling_check_shape_size_overflow_failed)
     ExecuteTestCase(MakePara(shape, ge::DT_FLOAT16), ge::GRAPH_FAILED, EXPECT_TILING_KEY, std::vector<size_t>{});
 }
 
+// numel 本身可由 int64_t 表示，但 numel * sizeof(int64_t) 不可表示；必须在 kernel GM 偏移前拒收。
+TEST_F(TensorRedirectTilingTest, tiling_check_tensor_byte_size_overflow_failed)
+{
+    gert::StorageShape shape = {{INT64_MAX}, {INT64_MAX}};
+    ExecuteTestCase(MakePara(shape, ge::DT_INT64), ge::GRAPH_FAILED, EXPECT_TILING_KEY, std::vector<size_t>{});
+}
+
 // 三、多核切分核心路径
 
 // #4：[1048577] 触发提核优化
@@ -393,7 +454,7 @@ TEST_F(TensorRedirectTilingTest, tiling_fp16_1023_unaligned_tail)
     EXPECT_EQ(td->usedCoreNum, 1);
     EXPECT_EQ(td->blockFactor, 1);
     EXPECT_EQ(td->tailBlockTailUbFactor, 1023) << "非对齐尾块由 DataCopyPad 补齐/丢弃";
-    // 提核优化后被下界钳制到 UB_FACTOR_MIN_BETY(2048) / 2 = 1024
+    // 提核优化后被下界钳制到 UB_FACTOR_MIN_BYTES(2048) / 2 = 1024
     EXPECT_EQ(td->ubFactor, 1024);
 }
 
@@ -409,7 +470,7 @@ TEST_F(TensorRedirectTilingTest, tiling_fp16_single_element)
     EXPECT_EQ(td->usedCoreNum, 1);
     EXPECT_EQ(td->blockFactor, 1);
     EXPECT_EQ(td->tailBlockTailUbFactor, 1) << "实际只搬 1 个元素";
-    EXPECT_EQ(td->ubFactor, 1024) << "下界钳制 UB_FACTOR_MIN_BETY(2048)/2";
+    EXPECT_EQ(td->ubFactor, 1024) << "下界钳制 UB_FACTOR_MIN_BYTES(2048)/2";
 }
 
 // #3 小 shape [128]：提核优化触发但被下界钳制
@@ -449,7 +510,7 @@ TEST_F(TensorRedirectTilingTest, tiling_fp16_ub_factor_lower_bound_clamp)
 
     const auto* td = AsTilingData(info);
     // FloorDiv(4096, 64) = 64 → CeilAlign(64,16) = 64 → < 1024 → 钳制为 1024
-    EXPECT_EQ(td->ubFactor, 1024) << "ubFactor 下界 = UB_FACTOR_MIN_BETY(2048) / 2B";
+    EXPECT_EQ(td->ubFactor, 1024) << "ubFactor 下界 = UB_FACTOR_MIN_BYTES(2048) / 2B";
     EXPECT_EQ(td->usedCoreNum, 4);
     EXPECT_EQ(td->blockFactor, 1);
 }
@@ -491,6 +552,58 @@ TEST_F(TensorRedirectTilingTest, tiling_single_core_guard_large_shape_ub_bounded
 
     const int64_t covered = (td->tailBlockFactor - 1) * td->ubFactor + td->tailBlockTailUbFactor;
     EXPECT_EQ(covered, numel);
+}
+
+// 异常小 UB 下，2048B 性能下界不能反向突破真实 UB 容量。
+TEST_F(TensorRedirectTilingTest, tiling_small_ub_clamps_performance_floor_to_capacity)
+{
+    constexpr int64_t tinyUbSize = 64;
+    optiling::TensorRedirectCompileInfo tinyUbCompileInfo{PLAT_CORE_NUM, tinyUbSize,
+                                                          static_cast<int64_t>(EXPECT_WORKSPACE)};
+    gert::StorageShape shape = {{128}, {128}};
+    TilingInfo info;
+    ASSERT_TRUE(SafeExecuteTiling(MakePara(shape, ge::DT_INT64, &tinyUbCompileInfo), info));
+
+    const auto* td = AsTilingData(info);
+    ASSERT_NE(td, nullptr);
+    EXPECT_EQ(td->ubFactor, 4); // 64B / 2 buffers / sizeof(int64_t)
+    EXPECT_EQ(td->ubFactor * static_cast<int64_t>(sizeof(int64_t)) * N_BUFFER, tinyUbSize);
+    EXPECT_EQ(td->usedCoreNum, 32);
+    EXPECT_EQ(info.blockNum, 32U);
+}
+
+// InitBuffer 会把每槽长度向上对齐到 32B，双缓冲至少需要 64B UB。
+TEST_F(TensorRedirectTilingTest, tiling_ub_smaller_than_two_aligned_buffers_failed)
+{
+    gert::StorageShape shape = {{128}, {128}};
+    const int64_t invalidUbSizes[] = {31, 32, 63};
+    for (const int64_t ubSize : invalidUbSizes) {
+        SCOPED_TRACE(ubSize);
+        optiling::TensorRedirectCompileInfo compileInfo{PLAT_CORE_NUM, ubSize, static_cast<int64_t>(EXPECT_WORKSPACE)};
+        ExecuteTestCase(MakePara(shape, ge::DT_INT64, &compileInfo), ge::GRAPH_FAILED, EXPECT_TILING_KEY,
+                        std::vector<size_t>{});
+    }
+}
+
+// 异常超大 UB 也不能让 DataCopyPad::blockLen 超过 2097151B 的接口上限。
+TEST_F(TensorRedirectTilingTest, tiling_huge_ub_caps_data_copy_block_length)
+{
+    constexpr int64_t maxSafeNumel = INT64_MAX / static_cast<int64_t>(sizeof(int64_t));
+    constexpr int64_t maxBufferBytes = DATA_COPY_MAX_BLOCK_BYTES / ONE_BLK_BYTE * ONE_BLK_BYTE;
+    constexpr int64_t maxBufferElements = maxBufferBytes / static_cast<int64_t>(sizeof(int64_t));
+    optiling::TensorRedirectCompileInfo hugeUbCompileInfo{PLAT_CORE_NUM, INT64_MAX,
+                                                          static_cast<int64_t>(EXPECT_WORKSPACE)};
+    gert::StorageShape shape = {{maxSafeNumel}, {maxSafeNumel}};
+    TilingInfo info;
+    ASSERT_TRUE(SafeExecuteTiling(MakePara(shape, ge::DT_INT64, &hugeUbCompileInfo), info));
+
+    const auto* td = AsTilingData(info);
+    ASSERT_NE(td, nullptr);
+    EXPECT_EQ(td->ubFactor, maxBufferElements);
+    EXPECT_LE(td->ubFactor * static_cast<int64_t>(sizeof(int64_t)), maxBufferBytes);
+    EXPECT_LE(td->ubFactor * static_cast<int64_t>(sizeof(int64_t)), DATA_COPY_MAX_BLOCK_BYTES);
+    EXPECT_LE(td->usedCoreNum, PLAT_CORE_NUM);
+    EXPECT_GE(info.blockNum, 1U);
 }
 
 // 五、dtype 字节宽对 UB 切分的影响

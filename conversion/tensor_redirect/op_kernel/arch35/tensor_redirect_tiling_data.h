@@ -18,13 +18,13 @@
 
 #include <cstdint>
 
-// 标准 C++ POD struct
+// 标准 C++ POD struct；Host 会按字节清零并序列化到 Kernel。
 struct TensorRedirectTilingData {
-    int64_t usedCoreNum = 0;           // 实际使用核数（SetBlockDim 用）
-    int64_t blockFactor = 0;           // 单核循环次数
-    int64_t tailBlockFactor = 0;       // 尾核循环次数
-    int64_t ubFactor = 0;              // 单次循环元素数
-    int64_t tailBlockTailUbFactor = 0; // 尾核尾循环元素数
+    int64_t usedCoreNum;           // 实际使用核数（SetBlockDim 用）
+    int64_t blockFactor;           // 单核循环次数
+    int64_t tailBlockFactor;       // 尾核循环次数
+    int64_t ubFactor;              // 单次循环元素数
+    int64_t tailBlockTailUbFactor; // 尾核尾循环元素数
 };
 
 #endif // TENSOR_REDIRECT_TILING_DATA_H

@@ -82,7 +82,7 @@ def _to_numpy_bit_exact(tensor):
 
 
 def _compute(x):
-    """Copy through the independent PyTorch reference interface."""
+    """Copy through the PyTorch reference interface."""
     return [torch.clone(x)]
 
 
@@ -106,7 +106,10 @@ class TensorRedirectKernelSpec:
     def golden(x, **kwargs):
         return _kernel_golden(x, **kwargs)
 
-    third_party = {"torch": "torch.clone"}
+    third_party = {
+        "torch": "torch.clone",
+        "tf": "tf.identity",
+    }
     tolerance = _TOLERANCE
 
 

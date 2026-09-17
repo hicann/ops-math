@@ -8,14 +8,11 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-# 支持的芯片类型
-set(SUPPORT_COMPUTE_UNIT "ascend950")
-# tiling 文件目录
-set(SUPPORT_TILING_DIR "arch35")
-add_all_modules_sources(OPTYPE tensor_redirect ACLNNTYPE aclnn_exclude
-    COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT}
-    TILING_DIR ${SUPPORT_TILING_DIR} DISABLE_IN_OPP TRUE)
-
-if(OP_HOST_UT AND TARGET ${OP_TILING_MODULE_NAME}_cases_obj)
-    target_include_directories(${OP_TILING_MODULE_NAME}_cases_obj PRIVATE ${ASCEND_DIR}/pkg_inc)
+if (UT_TEST_ALL OR OP_KERNEL_UT)
+    set(tensor_redirect_tiling_files
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../op_host/arch35/tensor_redirect_tiling_arch35.cpp
+    )
+    AddOpTestCase(tensor_redirect "ascend950"
+                  "-DDTYPE_X=float -DORIG_DTYPE_X=DT_FLOAT"
+                  "${tensor_redirect_tiling_files}")
 endif()

@@ -9,7 +9,7 @@
  */
 
 /*!
- * \file tensor_redirect_apt.cpp
+ * \file tensor_redirect.cpp
  * \brief tensor_redirect kernel entry
  */
 
@@ -25,6 +25,11 @@ __global__ __aicore__ void tensor_redirect(GM_ADDR x, GM_ADDR output_x, GM_ADDR 
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY); // 纯 Vector，不使用 Cube
     REGISTER_TILING_DEFAULT(TensorRedirectTilingData);
     GET_TILING_DATA_WITH_STRUCT(TensorRedirectTilingData, tilingData, tiling);
+    // 空 Tensor 的 host tiling 固定下发 BlockDim=1、usedCoreNum=0。必须在创建 TPipe/InitBuffer 前返回，
+    // 否则 ubFactor=0 会触发 InitBuffer(..., 0) 的设备侧参数校验。
+    if (tilingData.usedCoreNum == 0) {
+        return;
+    }
 
     if (workspace == nullptr) {
         return;
@@ -36,19 +41,27 @@ __global__ __aicore__ void tensor_redirect(GM_ADDR x, GM_ADDR output_x, GM_ADDR 
     // 按元素字节宽静态分发
     if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
         NsTensorRedirect::TensorRedirectKernel<int8_t> op;
-        op.Init(x, output_x, &tilingData, &pipe);
+        if (!op.Init(x, output_x, &tilingData, &pipe)) {
+            return;
+        }
         op.Process();
     } else if constexpr (sizeof(DTYPE_X) == sizeof(int16_t)) {
         NsTensorRedirect::TensorRedirectKernel<int16_t> op;
-        op.Init(x, output_x, &tilingData, &pipe);
+        if (!op.Init(x, output_x, &tilingData, &pipe)) {
+            return;
+        }
         op.Process();
     } else if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
         NsTensorRedirect::TensorRedirectKernel<int32_t> op;
-        op.Init(x, output_x, &tilingData, &pipe);
+        if (!op.Init(x, output_x, &tilingData, &pipe)) {
+            return;
+        }
         op.Process();
     } else { // sizeof(DTYPE_X) == sizeof(int64_t)
         NsTensorRedirect::TensorRedirectKernel<int64_t> op;
-        op.Init(x, output_x, &tilingData, &pipe);
+        if (!op.Init(x, output_x, &tilingData, &pipe)) {
+            return;
+        }
         op.Process();
     }
 }

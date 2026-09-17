@@ -16,6 +16,10 @@ add_all_modules_sources(OPTYPE add_v2 ACLNNTYPE aclnn_exclude
     COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT}
     TILING_DIR ${SUPPORT_TILING_DIR})
 
+if(OP_HOST_UT AND TARGET ${OP_TILING_MODULE_NAME}_cases_obj)
+    target_include_directories(${OP_TILING_MODULE_NAME}_cases_obj PRIVATE ${ASCEND_DIR}/pkg_inc)
+endif()
+
 add_kernel_sources(
     KERNEL_SRC arch35/add_v2.cpp
     COMPUTE_UNITS ascend950
