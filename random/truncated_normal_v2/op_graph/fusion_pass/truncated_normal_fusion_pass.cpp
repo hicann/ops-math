@@ -115,7 +115,7 @@ bool TruncatedNormalFusionPass::MeetRequirements(const std::unique_ptr<MatchResu
         aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
     }
     if (version < GE_COMPILER_VERSION_900) {
-        OP_LOGD(kPassName.c_str(), "GE runtime version %d < 90000000, skip pass.", version);
+        OP_LOGD(kPassName.c_str(), "GE runtime version %d < 9.0.0, skip pass.", version);
         return false;
     }
 

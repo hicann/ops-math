@@ -127,7 +127,7 @@ bool BernoulliFusionPass::MeetRequirements(const std::unique_ptr<MatchResult>& m
         aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
     }
     if (version < GE_COMPILER_VERSION_900) {
-        OP_LOGD(kPassName.c_str(), "GE runtime version %d < 90000000, skip pass.", version);
+        OP_LOGD(kPassName.c_str(), "GE runtime version %d < 9.0.0, skip pass.", version);
         return false;
     }
 
@@ -216,7 +216,7 @@ std::unique_ptr<Graph> BernoulliFusionPass::Replacement(const std::unique_ptr<Ma
     matchResult->ToSubgraphBoundary()->GetAllInputs(subgraphInputs);
     GraphUniqPtr replaceGraph = replaceGraphBuilder.BuildAndReset({output});
     if (InferShape(replaceGraph, subgraphInputs) != SUCCESS) {
-        OP_LOGE(kPassName.c_str(), "Infershape failed.");
+        OP_LOGE(kPassName.c_str(), "InferShape failed.");
         return nullptr;
     }
     return replaceGraph;

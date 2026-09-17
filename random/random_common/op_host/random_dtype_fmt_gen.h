@@ -13,7 +13,7 @@
  * \brief
  * 使用示例:
  * \code
- * // 1. 准备输入数据 
+ * // 1. 准备输入数据
  *  std::vector<ge::DataType> types = {ge::DT_FLOAT, ge::DT_INT32};
  *  std::vector<ge::Format> fmts = {ge::FORMAT_NCHW, ge::FORMAT_NHWC};
  * // 2. 初始化生成器
@@ -34,7 +34,6 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <iostream>
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -42,51 +41,44 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include <iomanip>
 
 namespace randomdef {
 namespace detail {
-#define GE_CASE(VAL) case ge::VAL: return #VAL
+#define GE_CASE(VAL) \
+    case ge::VAL:    \
+        return #VAL
 inline std::string TypeToStr(ge::DataType type)
 {
     switch (type) {
-        GE_CASE(DT_FLOAT);  GE_CASE(DT_FLOAT16); GE_CASE(DT_BF16);
-        GE_CASE(DT_INT8);   GE_CASE(DT_INT16);   GE_CASE(DT_INT32);  GE_CASE(DT_INT64);
-        GE_CASE(DT_UINT8);  GE_CASE(DT_UINT16);  GE_CASE(DT_UINT32); GE_CASE(DT_UINT64);
+        GE_CASE(DT_FLOAT);
+        GE_CASE(DT_FLOAT16);
+        GE_CASE(DT_BF16);
+        GE_CASE(DT_INT8);
+        GE_CASE(DT_INT16);
+        GE_CASE(DT_INT32);
+        GE_CASE(DT_INT64);
+        GE_CASE(DT_UINT8);
+        GE_CASE(DT_UINT16);
+        GE_CASE(DT_UINT32);
+        GE_CASE(DT_UINT64);
         GE_CASE(DT_BOOL);
-        default: return "DT_" + std::to_string(type);
+        default:
+            return "DT_" + std::to_string(type);
     }
 }
 
 inline std::string TypeToStr(ge::Format fmt)
 {
     switch (fmt) {
-        GE_CASE(FORMAT_NCHW); GE_CASE(FORMAT_NHWC); GE_CASE(FORMAT_ND);
-        default: return "FMT_" + std::to_string(fmt);
+        GE_CASE(FORMAT_NCHW);
+        GE_CASE(FORMAT_NHWC);
+        GE_CASE(FORMAT_ND);
+        default:
+            return "FMT_" + std::to_string(fmt);
     }
 }
-#undef GE_CASE 
+#undef GE_CASE
 
-template <typename T>
-inline void PrintByColsCore(const std::vector<T>& seq, const char* varName, size_t cols)
-{
-    static constexpr int COL_WIDTH = 15;
-    if (cols == 0) {
-        std::cerr << "[Warning] PrintByColsCore: cols is 0, doing nothing." << std::endl;
-        return;
-    }
-    std::cout << ">>> Sequence '" << varName << "' (Total: " << seq.size() << ", Cols: " << cols << "):" << std::endl;
-    for (size_t i = 0; i < seq.size(); ++i) {
-        std::cout << std::left << std::setw(COL_WIDTH) << TypeToStr(seq[i]);
-        if ((i + 1) % cols == 0) {
-            std::cout << std::endl;
-        }
-    }
-    if (seq.size() % cols != 0) {
-        std::cout << std::endl;
-    }
-    std::cout << "------------------------------------------------------------" << std::endl;
-}
 } // namespace detail
 
 struct InputOption {
@@ -95,8 +87,8 @@ struct InputOption {
     template <typename T = ge::DataType>
     InputOption(std::string n, const std::vector<T>& v) : name(std::move(n))
     {
-        static_assert(
-            std::is_arithmetic<T>::value || std::is_enum<T>::value, "InputOption data must be arithmetic or enum");
+        static_assert(std::is_arithmetic<T>::value || std::is_enum<T>::value,
+                      "InputOption data must be arithmetic or enum");
         data.reserve(v.size());
         for (const auto& item : v) {
             data.push_back(static_cast<int64_t>(item));
@@ -104,7 +96,7 @@ struct InputOption {
     }
 };
 
-class RandomDtypeFmtGen  {
+class RandomDtypeFmtGen {
 public:
     static constexpr size_t MAX_COMBINATIONS_LIMIT = 100000000;
 
@@ -142,8 +134,8 @@ public:
                 throw std::overflow_error("Total combinations overflow size_t");
             }
             if (currentStride * currentSize > MAX_COMBINATIONS_LIMIT) {
-                throw std::length_error(
-                    "Total combinations exceed safety limit (" + std::to_string(MAX_COMBINATIONS_LIMIT) + ")");
+                throw std::length_error("Total combinations exceed safety limit (" +
+                                        std::to_string(MAX_COMBINATIONS_LIMIT) + ")");
             }
             currentStride *= currentSize;
         }
@@ -162,13 +154,6 @@ public:
             return result;
         FillColumn(it->second, result);
         return result;
-    }
-
-    template <typename T = ge::DataType>
-    void Print(const std::string& name, size_t cols = 6) const
-    {
-        std::vector<T> seq = GetSequence<T>(name);
-        detail::PrintByColsCore<T>(seq, name.c_str(), cols);
     }
 
 private:

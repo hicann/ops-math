@@ -21,17 +21,14 @@ namespace optiling {
 
 const std::set<ge::DataType> SUPPORT_DTYPE = {ge::DT_BOOL};
 
-bool StatelessRandomChoiceWithMaskSimtTiling::IsCapable()
-{
-    return true;
-}
+bool StatelessRandomChoiceWithMaskSimtTiling::IsCapable() { return true; }
 
 ge::graphStatus StatelessRandomChoiceWithMaskSimtTiling::GetPlatformInfo()
 {
     auto platformPtr = context_->GetPlatformInfo();
     if (platformPtr == nullptr) {
-        auto compileInfoPtr =
-            reinterpret_cast<const StatelessRandomChoiceWithMaskCompileInfo*>(context_->GetCompileInfo());
+        auto compileInfoPtr = reinterpret_cast<const StatelessRandomChoiceWithMaskCompileInfo*>(
+            context_->GetCompileInfo());
         OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_, "compile info is null"), return ge::GRAPH_FAILED);
         coreNum_ = compileInfoPtr->coreNum;
         ubSize_ = compileInfoPtr->ubSize;
@@ -44,12 +41,10 @@ ge::graphStatus StatelessRandomChoiceWithMaskSimtTiling::GetPlatformInfo()
         ubSize_ = static_cast<uint64_t>(ubSizePlatform);
     }
     ubSize_ = ubSize_ - DCACHE_SIZE;
-    OP_CHECK_IF(
-        (coreNum_ <= 0 || ubSize_ <= 0),
-        OP_LOGE(
-            context_, "coreNum and ubSize should not be samller than 0, but got coreNum [%ld] and ubSize [%ld]",
-            coreNum_, ubSize_),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((coreNum_ <= 0 || ubSize_ <= 0),
+                OP_LOGE(context_, "coreNum and ubSize should be greater than 0, but got coreNum [%ld] and ubSize [%ld]",
+                        coreNum_, ubSize_),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -61,9 +56,9 @@ ge::graphStatus StatelessRandomChoiceWithMaskSimtTiling::GetShapeAttrsInfo()
     inputDim_ = xShape_.GetDimNum();
     if (inputDim_ > INPUT_X_MAX_DIM_NUM || inputDim_ < INPUT_X_MIN_DIM_NUM) {
         std::string valueStr = std::to_string(xShape_.GetDimNum());
-        std::string reasonMsg = "xDimNum should be greater than 1 and smaller than 5";
-        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-            context_->GetNodeName(), "input tensor x", valueStr.c_str(), reasonMsg.c_str());
+        std::string reasonMsg = "xDimNum should be in range [1, 5]";
+        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context_->GetNodeName(), "input tensor x", valueStr.c_str(),
+                                                 reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     inputSize_ = xShape_.GetShapeSize();
@@ -73,9 +68,9 @@ ge::graphStatus StatelessRandomChoiceWithMaskSimtTiling::GetShapeAttrsInfo()
     OP_CHECK_NULL_WITH_CONTEXT(context_, seedValue);
     if (seed->GetShapeSize() <= 0) {
         std::string valueStr = std::to_string(seed->GetShapeSize());
-        std::string reasonMsg = "inputSeed shapeSize need be greater than 0";
-        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
-            context_->GetNodeName(), "input seed", valueStr.c_str(), reasonMsg.c_str());
+        std::string reasonMsg = "inputSeed shapeSize must be greater than 0";
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context_->GetNodeName(), "input seed", valueStr.c_str(),
+                                                  reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     seed_ = seed->GetData<int64_t>()[0];
@@ -85,9 +80,9 @@ ge::graphStatus StatelessRandomChoiceWithMaskSimtTiling::GetShapeAttrsInfo()
     OP_CHECK_NULL_WITH_CONTEXT(context_, offsetValue);
     if (offset->GetShapeSize() <= 0) {
         std::string valueStr = std::to_string(offset->GetShapeSize());
-        std::string reasonMsg = "inputOffset shapeSize need be greater than 0";
-        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
-            context_->GetNodeName(), "input offset", valueStr.c_str(), reasonMsg.c_str());
+        std::string reasonMsg = "inputOffset shapeSize must be greater than 0";
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context_->GetNodeName(), "input offset", valueStr.c_str(),
+                                                  reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     OP_CHECK_NULL_WITH_CONTEXT(context_, offset);
@@ -96,8 +91,9 @@ ge::graphStatus StatelessRandomChoiceWithMaskSimtTiling::GetShapeAttrsInfo()
     ge::DataType xDtype = xDesc->GetDataType();
     if (SUPPORT_DTYPE.count(xDtype) == 0) {
         std::string valueStr = Ops::Base::ToString(xDtype);
-        std::string reasonMsg = "input x dtype only support BOOL currently";
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "input tensor x", valueStr.c_str(), reasonMsg.c_str());
+        std::string reasonMsg = "input x dtype only supports BOOL currently";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "input tensor x", valueStr.c_str(),
+                                              reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     auto y = context_->GetOutputShape(OUTPUT_Y_IDX);
@@ -120,8 +116,8 @@ ge::graphStatus StatelessRandomChoiceWithMaskSimtTiling::ComputeCoreNum()
 
 ge::graphStatus StatelessRandomChoiceWithMaskSimtTiling::SetTilingData()
 {
-    StatelessRandomChoiceWithMaskSimtTilingData* tilingData =
-        context_->GetTilingData<StatelessRandomChoiceWithMaskSimtTilingData>();
+    StatelessRandomChoiceWithMaskSimtTilingData*
+        tilingData = context_->GetTilingData<StatelessRandomChoiceWithMaskSimtTilingData>();
     for (int64_t i = 0; i < static_cast<int64_t>(inputDim_); i++) {
         tilingData->inputShape[i] = xShape_.GetDim(i);
     }
@@ -155,10 +151,7 @@ ge::graphStatus StatelessRandomChoiceWithMaskSimtTiling::DoOpTiling()
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus StatelessRandomChoiceWithMaskSimtTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus StatelessRandomChoiceWithMaskSimtTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
 uint64_t StatelessRandomChoiceWithMaskSimtTiling::GetTilingKey() const
 {

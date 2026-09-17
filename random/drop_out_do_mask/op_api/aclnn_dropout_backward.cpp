@@ -87,11 +87,11 @@ static inline bool CheckProbability(double scale)
 {
     double p = ComputeProb(scale);
     if (p > 1 || p < 0) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "The value of scale is error, p = (scale == 0.0) ? 1 : (1 - 1 / scale) has to be between 0 and 1, but got "
-            "scale %f.",
-            scale);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "The value of scale is invalid, p = (scale == 0.0) ? 1 : (1 - 1 / scale) has to be between 0 and 1, "
+                "but got "
+                "scale %f.",
+                scale);
         return false;
     }
     return true;

@@ -27,7 +27,7 @@ const int64_t TWENTY_FIVE_NUM = 25;
 
 ge::graphStatus DropOutV3GradTilingFunc(gert::TilingContext* context)
 {
-    OP_LOGD(context->GetNodeName(), "DropOutV3GradTiling running begin");
+    OP_LOGD(context->GetNodeName(), "DropOutV3GradTiling started");
     auto compileInfo = context->GetCompileInfo<DropOutV3GradCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     return DropOutV3GradTilingForAscendC(context);
@@ -47,14 +47,14 @@ ge::graphStatus TilingPrepareDropOutV3GradForAscendC(gert::TilingParseContext* c
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compileInfo->ubSize = static_cast<int64_t>(ubSize);
-    OP_CHECK_IF((compileInfo->ubSize <= 0), OP_LOGE(context->GetNodeName(), "Invalid ub size."),
-                return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->ubSize <= 0),
+                OP_LOGE(context->GetNodeName(), "Invalid ub size %ld.", compileInfo->ubSize), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus TilingPrepareForDropOutV3Grad(gert::TilingParseContext* context)
 {
-    OP_LOGD(context->GetNodeName(), "TilingPrepareForDropOutV3Grad running begin");
+    OP_LOGD(context->GetNodeName(), "TilingPrepareForDropOutV3Grad started");
     auto compileInfo = context->GetCompiledInfo<DropOutV3GradCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     return TilingPrepareDropOutV3GradForAscendC(context);

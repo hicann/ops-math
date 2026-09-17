@@ -153,27 +153,29 @@ static bool CheckDtypeValidTensor(const aclTensor* self, const aclTensor* seedTe
 static bool CheckShape(const aclTensor* self, int64_t numsamples, const aclTensor* out)
 {
     if (self->GetViewShape().GetDimNum() != DIM_NUM_ONE && self->GetViewShape().GetDimNum() != DIM_NUM_TWO) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Dim of self only can be 1 or 2.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Dim of self can only be 1 or 2, but got %zu.",
+                self->GetViewShape().GetDimNum());
         return false;
     }
     if (self->GetViewShape().GetDimNum() != out->GetViewShape().GetDimNum()) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Dim of self should be equal to dim of out.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Dim of self %zu should be equal to dim of out %zu.",
+                self->GetViewShape().GetDimNum(), out->GetViewShape().GetDimNum());
         return false;
     }
     auto dimNum = out->GetViewShape().GetDimNum();
     auto nCategories = out->GetViewShape().GetDim(dimNum - 1);
     if (nCategories != numsamples) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "excepted the size of out at last dim must be equal with numsamples %ld, but got %ld.", numsamples,
+                "expected the size of out at last dim must be equal to numsamples %ld, but got %ld.", numsamples,
                 nCategories);
         return false;
     }
     if (self->GetViewShape().GetDimNum() != DIM_NUM_ONE &&
         self->GetViewShape().GetDim(DIM_ZERO) != out->GetViewShape().GetDim(DIM_ZERO)) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "excepted the size of out at first dim %ld must be equal with the size of self at first dim %ld when "
+                "expected the size of out at first dim %ld must be equal to the size of self at first dim %ld when "
                 "dimNum > 1",
-                self->GetViewShape().GetDim(DIM_ZERO), out->GetViewShape().GetDim(DIM_ZERO));
+                out->GetViewShape().GetDim(DIM_ZERO), self->GetViewShape().GetDim(DIM_ZERO));
         return false;
     }
     return true;
@@ -182,17 +184,19 @@ static bool CheckShape(const aclTensor* self, int64_t numsamples, const aclTenso
 static bool CheckValueRange(const aclTensor* self, int64_t numsamples, bool replacement)
 {
     if (numsamples <= 0) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Numsamples must > 0.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Numsamples must be greater than 0, but got %ld.", numsamples);
         return false;
     }
     auto dimNum = self->GetViewShape().GetDimNum();
     auto nCategories = self->GetViewShape().GetDim(dimNum - 1);
     if (!replacement && (numsamples > nCategories)) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "numsamples must <= shape.GetDim(dimNum - 1) without replacement");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "numsamples %ld must be no more than the size of last dim %ld without replacement", numsamples,
+                nCategories);
         return false;
     }
     if (nCategories > FLOAT32_MAX_CONSECUTIVE_INT) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "number of categories cannot exceed 2^24");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "number of categories %ld cannot exceed 2^24", nCategories);
         return false;
     }
     return true;

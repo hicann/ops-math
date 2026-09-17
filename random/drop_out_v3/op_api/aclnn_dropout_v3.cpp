@@ -61,7 +61,8 @@ static inline bool CheckNotNull(const aclTensor* input, const aclTensor* out, co
 static inline bool CheckIsNullptr(const aclTensor* optionalNoiseShape)
 {
     if (optionalNoiseShape != nullptr) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "currently, the input of noise_shape must be nullptr, please check.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "currently, the input of noise_shape must be nullptr, but got a non-null tensor, please check.");
         return false;
     }
     return true;
@@ -147,7 +148,8 @@ static bool CheckTupleNullptr(std::tuple<aclTensor*, aclTensor*> tensorTuple)
 {
     static const int RESULT_NUM = 2;
     if (std::tuple_size<decltype(tensorTuple)>::value != RESULT_NUM) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The length of tuple returned by DropoutV3 is not 2.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The length of tuple returned by DropoutV3 is %zu, expected 2.",
+                std::tuple_size<decltype(tensorTuple)>::value);
         return false;
     }
 

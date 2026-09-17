@@ -118,10 +118,10 @@ static Status ParseOpToGraphRandomuniform(const ge::Operator& op, ge::Graph& gra
     }
     auto data0 = op::Const((prop.ori_name + "_data0").c_str()).set_attr_value(prop.shape);
     // cast output to dst_dtype(onnx : Ascend)
-    // float32, float16, int32, int64
+    // float32, float16, int32, uint8
     std::map<int, int> kvlist = {{1, 0}, {10, 1}, {6, 3}, {2, 9}};
     if (kvlist.find(prop.dtype) == kvlist.end()) {
-        OP_LOGE(GetOpName(op).c_str(), "only support float32/float16/int32/int64, but got %d", prop.dtype);
+        OP_LOGE(GetOpName(op).c_str(), "only float32/float16/int32/uint8 are supported, but got %d", prop.dtype);
         return FAILED;
     }
     ge::DataType temp_type = GetOmDtypeFromOnnxDtype(prop.dtype);

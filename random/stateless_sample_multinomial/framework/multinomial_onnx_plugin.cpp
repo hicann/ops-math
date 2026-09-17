@@ -65,7 +65,7 @@ static Status ParseOpToGraphMultinomial(const ge::Operator& op, Graph& graph)
     new_op.SetAttr("seed", seed);
     ge::DataType dtype_om = GetOmDtypeFromOnnxDtype(data_type);
     if (dtype_om == ge::DT_UNDEFINED) {
-        OP_LOGE(GetOpName(op).c_str(), "dtype[%d] is wrong,please select right dtype", data_type);
+        OP_LOGE(GetOpName(op).c_str(), "dtype[%d] is wrong, please select a valid ONNX dtype", data_type);
         return FAILED;
     }
     int int_seed = static_cast<int>(seed);

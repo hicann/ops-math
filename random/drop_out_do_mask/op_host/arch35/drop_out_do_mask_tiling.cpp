@@ -27,7 +27,7 @@ const int64_t TWENTY_FIVE_NUM = 25;
 
 ge::graphStatus DropOutDoMaskTilingFunc(gert::TilingContext* context)
 {
-    OP_LOGD(context->GetNodeName(), "DropOutDoMaskTiling running begin");
+    OP_LOGD(context->GetNodeName(), "DropOutDoMaskTiling started");
     auto compileInfo = context->GetCompileInfo<DropOutDoMaskCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     return DropOutDoMaskTilingForAscendC(context);
@@ -42,20 +42,19 @@ ge::graphStatus TilingPrepareDropOutDoMaskForAscendC(gert::TilingParseContext* c
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        (compileInfo->coreNum <= 0), OP_LOGE(context->GetNodeName(), "Failed to get core num."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->coreNum <= 0), OP_LOGE(context->GetNodeName(), "Failed to get core num."),
+                return ge::GRAPH_FAILED);
     uint64_t ubSize;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
     compileInfo->ubSize = static_cast<int64_t>(ubSize);
-    OP_CHECK_IF(
-        (compileInfo->ubSize <= 0), OP_LOGE(context->GetNodeName(), "Failed to get ub size."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->ubSize <= 0), OP_LOGE(context->GetNodeName(), "Failed to get ub size."),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus TilingPrepareForDropOutDoMask(gert::TilingParseContext* context)
 {
-    OP_LOGD(context->GetNodeName(), "TilingPrepareForDropOutDoMask running begin");
+    OP_LOGD(context->GetNodeName(), "TilingPrepareForDropOutDoMask started");
     auto compileInfo = context->GetCompiledInfo<DropOutDoMaskCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
     return TilingPrepareDropOutDoMaskForAscendC(context);

@@ -35,19 +35,16 @@ OpTilingConfig TruncatedNormalV2Tiling::BuildOpConfig()
 {
     OpTilingConfig config;
 
-    config.inputCheckRules = {
-        {INPUT_IDX_SHAPE, {{ge::DT_INT32, ge::DT_INT64}, -1, {1}, nullptr}},
-        {INPUT_IDX_OFFSET, {{ge::DT_INT64}, 1, {}, nullptr}}};
-    config.outputCheckRules = {
-        {OUTPUT_IDX_Y, {{ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16}, -1, {}, nullptr}}};
-    config.attrCheckRules = {
-        {INDEX_2, [](gert::TilingContext* ctx) {
-            const auto* attrs = ctx->GetAttrs();
-            const int64_t* attrPtr = attrs ? attrs->GetAttrPointer<int64_t>(INDEX_2) : nullptr;
-            const auto* outDesc = ctx->GetOutputDesc(OUTPUT_IDX_Y);
-            return attrPtr != nullptr && outDesc != nullptr &&
-                   static_cast<ge::DataType>(*attrPtr) == outDesc->GetDataType();
-        }}};
+    config.inputCheckRules = {{INPUT_IDX_SHAPE, {{ge::DT_INT32, ge::DT_INT64}, -1, {1}, nullptr}},
+                              {INPUT_IDX_OFFSET, {{ge::DT_INT64}, 1, {}, nullptr}}};
+    config.outputCheckRules = {{OUTPUT_IDX_Y, {{ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16}, -1, {}, nullptr}}};
+    config.attrCheckRules = {{INDEX_2, [](gert::TilingContext* ctx) {
+                                  const auto* attrs = ctx->GetAttrs();
+                                  const int64_t* attrPtr = attrs ? attrs->GetAttrPointer<int64_t>(INDEX_2) : nullptr;
+                                  const auto* outDesc = ctx->GetOutputDesc(OUTPUT_IDX_Y);
+                                  return attrPtr != nullptr && outDesc != nullptr &&
+                                         static_cast<ge::DataType>(*attrPtr) == outDesc->GetDataType();
+                              }}};
     config.getOutputSize = [](gert::TilingContext* ctx, int64_t& size) {
         return RandomUtils::GetAndCheckOutputSize<INPUT_IDX_SHAPE, OUTPUT_IDX_Y, false>(ctx, size);
     };
@@ -75,9 +72,8 @@ OpTilingConfig TruncatedNormalV2Tiling::BuildOpConfig()
 
 ge::graphStatus TruncatedNormalV2Tiling::DoSimtBlockTiling()
 {
-    OP_CHECK_IF(
-        (totalCoreNum_ <= 0), OP_LOGE(opName_, "totalCoreNum is less than or equal to 0. please check."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((totalCoreNum_ <= 0), OP_LOGE(opName_, "totalCoreNum is %ld, must be greater than 0.", totalCoreNum_),
+                return ge::GRAPH_FAILED);
     int64_t threadNum = Ops::Base::CeilAlign(simtTilingData_.outputSize, THREAD_DISPOSAL_NUM);
     int64_t coreNum = Ops::Base::CeilAlign(threadNum, MAX_THREAD_NUM);
     simtTilingData_.usedCoreNum = std::min(coreNum, totalCoreNum_);

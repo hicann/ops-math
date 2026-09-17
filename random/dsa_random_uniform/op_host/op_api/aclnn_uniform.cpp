@@ -53,7 +53,7 @@ static bool CheckDtypeValid(const aclTensor* self)
     // 如果soc是310系列芯片，则不支持DT_BF16，需要校验拦截
     if (!CheckSocVersionIsSupportBf16() && (self->GetDataType() == op::DataType::DT_BF16)) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "Input dtype of aclnnInplaceUniform is not support bfloat16 in current socversion.");
+                "Input dtype of aclnnInplaceUniform does not support bfloat16 in the current soc version.");
         return false;
     }
 
@@ -102,7 +102,7 @@ static aclScalar* CreateScalar(float input, op::DataType dtype, aclOpExecutor* e
             ratioBf16 = input;
             return executor->AllocScalar(&ratioBf16.value, op::DataType::DT_BF16);
         default:
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "invalid dtype, must be bfloat16 or float16.");
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "invalid dtype %d, must be bfloat16 or float16.", static_cast<int>(dtype));
             return nullptr;
     }
 }

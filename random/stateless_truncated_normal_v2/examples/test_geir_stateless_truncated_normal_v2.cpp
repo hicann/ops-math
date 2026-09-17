@@ -37,10 +37,10 @@ using std::map;
 using std::string;
 using std::vector;
 
-#define LOG_PRINT(message, ...)     \
-  do {                              \
-    printf(message, ##__VA_ARGS__); \
-  } while (0)
+#define LOG_PRINT(message, ...)         \
+    do {                                \
+        printf(message, ##__VA_ARGS__); \
+    } while (0)
 
 string GetTime()
 {
@@ -53,26 +53,33 @@ string GetTime()
 
 uint32_t GetDataTypeSize(DataType dt)
 {
-    if (dt == ge::DT_FLOAT) return 4;
-    if (dt == ge::DT_FLOAT16) return 2;
-    if (dt == ge::DT_BF16) return 2;
-    if (dt == ge::DT_INT32) return 4;
-    if (dt == ge::DT_UINT32) return 4;
-    if (dt == ge::DT_INT64) return 8;
-    if (dt == ge::DT_UINT64) return 8;
+    if (dt == ge::DT_FLOAT)
+        return 4;
+    if (dt == ge::DT_FLOAT16)
+        return 2;
+    if (dt == ge::DT_BF16)
+        return 2;
+    if (dt == ge::DT_INT32)
+        return 4;
+    if (dt == ge::DT_UINT32)
+        return 4;
+    if (dt == ge::DT_INT64)
+        return 8;
+    if (dt == ge::DT_UINT64)
+        return 8;
     return 1;
 }
 
-int32_t WriteDataToFile(string bin_file, uint64_t data_size, uint8_t *inputData)
+int32_t WriteDataToFile(string bin_file, uint64_t data_size, uint8_t* inputData)
 {
-    FILE *fp = fopen(bin_file.c_str(), "w");
+    FILE* fp = fopen(bin_file.c_str(), "w");
     fwrite(inputData, sizeof(uint8_t), data_size, fp);
     fclose(fp);
     return SUCCESS;
 }
 
-int CreateOppInGraph(std::vector<ge::Tensor> &input, std::vector<Operator> &inputs,
-    std::vector<Operator> &outputs, Graph &graph)
+int CreateOppInGraph(std::vector<ge::Tensor>& input, std::vector<Operator>& inputs, std::vector<Operator>& outputs,
+                     Graph& graph)
 {
     // StatelessTruncatedNormalV2 op
     auto op1 = op::StatelessTruncatedNormalV2("stateless_truncated_normal_v2");
@@ -82,7 +89,7 @@ int CreateOppInGraph(std::vector<ge::Tensor> &input, std::vector<Operator> &inpu
     auto shapeNode = op::Const("shape_const");
     TensorDesc shapeDesc(ge::Shape(shapeShape), FORMAT_ND, DT_INT32);
     shapeDesc.SetPlacement(ge::kPlacementHost);
-    int32_t shapeData[] = {4, 8};  // output shape: [4, 8]
+    int32_t shapeData[] = {4, 8}; // output shape: [4, 8]
     Tensor shapeTensor(shapeDesc, reinterpret_cast<uint8_t*>(shapeData), sizeof(shapeData));
     shapeNode.SetAttr("value", shapeTensor);
     shapeNode.update_output_desc_y(shapeDesc);
@@ -122,7 +129,7 @@ int CreateOppInGraph(std::vector<ge::Tensor> &input, std::vector<Operator> &inpu
     auto algNode = op::Data("alg_data").set_attr_index(3);
     TensorDesc algDesc(ge::Shape(algShape), FORMAT_ND, DT_INT32);
     algDesc.SetPlacement(ge::kPlacementHost);
-    int32_t algData[] = {1};  // 1 = Philox
+    int32_t algData[] = {1}; // 1 = Philox
     Tensor algTensor(algDesc, reinterpret_cast<uint8_t*>(algData), sizeof(algData));
     algNode.update_input_desc_x(algDesc);
     input.push_back(algTensor);
@@ -131,7 +138,7 @@ int CreateOppInGraph(std::vector<ge::Tensor> &input, std::vector<Operator> &inpu
     inputs.push_back(algNode);
 
     // Attr: dtype
-    op1.set_attr_dtype(0);  // 0 = float32
+    op1.set_attr_dtype(0); // 0 = float32
 
     // Output: y
     std::vector<int64_t> outShape = {4, 8};
@@ -142,9 +149,9 @@ int CreateOppInGraph(std::vector<ge::Tensor> &input, std::vector<Operator> &inpu
     return SUCCESS;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-    const char *graph_name = "tc_ge_irrun_test";
+    const char* graph_name = "tc_ge_irrun_test";
     Graph graph(graph_name);
     std::vector<ge::Tensor> input;
 
@@ -152,7 +159,7 @@ int main(int argc, char *argv[])
     std::map<AscendString, AscendString> global_options = {{"ge.exec.deviceId", "0"}, {"ge.graphRunMode", "1"}};
     Status ret = ge::GEInitialize(global_options);
     if (ret != SUCCESS) {
-        printf("%s - INFO - [XIR]: Initialize ge using ge global options failed\n", GetTime().c_str());
+        printf("%s - ERROR - [XIR]: Initialize ge using ge global options failed\n", GetTime().c_str());
         return FAILED;
     }
     printf("%s - INFO - [XIR]: Initialize ge using ge global options success\n", GetTime().c_str());
@@ -172,7 +179,7 @@ int main(int argc, char *argv[])
 
     std::map<AscendString, AscendString> build_options = {};
     printf("%s - INFO - [XIR]: Start to create ir session\n", GetTime().c_str());
-    ge::Session *session = new Session(build_options);
+    ge::Session* session = new Session(build_options);
     if (session == nullptr) {
         printf("%s - ERROR - [XIR]: Create ir session failed\n", GetTime().c_str());
         return FAILED;
@@ -191,7 +198,7 @@ int main(int argc, char *argv[])
     std::vector<ge::Tensor> output;
     ret = session->RunGraph(graph_id, input, output);
     if (ret != SUCCESS) {
-        printf("%s - INFO - [XIR]: Run graph failed\n", GetTime().c_str());
+        printf("%s - ERROR - [XIR]: Run graph failed\n", GetTime().c_str());
         delete session;
         GEFinalize();
         return FAILED;
@@ -202,12 +209,12 @@ int main(int argc, char *argv[])
     for (int i = 0; i < output_num; i++) {
         std::cout << "output " << i << " dtype: " << output[i].GetTensorDesc().GetDataType() << std::endl;
         string output_file = "./stateless_truncated_normal_v2_output_" + std::to_string(i) + ".bin";
-        uint8_t *output_data_i = output[i].GetData();
+        uint8_t* output_data_i = output[i].GetData();
         int64_t output_shape = output[i].GetTensorDesc().GetShape().GetShapeSize();
         std::cout << "output " << i << " shape size = " << output_shape << std::endl;
         uint32_t data_size = output_shape * GetDataTypeSize(output[i].GetTensorDesc().GetDataType());
         WriteDataToFile(output_file, data_size, output_data_i);
-        float *resultData = (float*)output_data_i;
+        float* resultData = (float*)output_data_i;
         for (int64_t j = 0; j < output_shape && j < 32; j++) {
             LOG_PRINT("result[%ld] is: %f\n", j, resultData[j]);
         }
@@ -216,7 +223,7 @@ int main(int argc, char *argv[])
     printf("%s - INFO - [XIR]: Start to finalize\n", GetTime().c_str());
     ret = ge::GEFinalize();
     if (ret != SUCCESS) {
-        printf("%s - INFO - [XIR]: Finalize failed\n", GetTime().c_str());
+        printf("%s - ERROR - [XIR]: Finalize failed\n", GetTime().c_str());
         return FAILED;
     }
     printf("%s - INFO - [XIR]: Finalize success\n", GetTime().c_str());

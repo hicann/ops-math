@@ -92,7 +92,7 @@ bool CheckTilingDataDefinitions()
         typesMatch = CompareStructMembers<SortRegBaseTilingData, SortRegBaseTilingDataForRandperm, count1 - 1>::value;
 
     if (!typesMatch) {
-        std::cout << "Error: Struct member type is not same." << std::endl;
+        std::cout << "Error: Struct member type is not the same." << std::endl;
         return false;
     }
 

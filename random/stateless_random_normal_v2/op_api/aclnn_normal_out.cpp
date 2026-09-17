@@ -93,7 +93,8 @@ static bool CheckFloatAndTensorShapeOfStd(const aclTensor* std, const aclTensor*
     }
     if (!(out->IsEmpty() && std->Size() == 1)) {
         if (out->GetViewShape() != std->GetViewShape()) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of std should be match with out.");
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of std %s should match with out %s.",
+                    op::ToString(std->GetViewShape()).GetString(), op::ToString(out->GetViewShape()).GetString());
             return false;
         }
     }

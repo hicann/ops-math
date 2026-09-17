@@ -19,7 +19,7 @@ namespace randomCommon {
 template <typename T>
 ge::graphStatus HandleShapeTensor(gert::Shape& outputShape, size_t xShapeSize, const T* xShapeData)
 {
-    std::cerr << "[DEBUG] HandleShapeTensor with type: " << typeid(T).name() << ", dims " << xShapeSize << std::endl;
+    OP_LOGD("RandomInferShape", "HandleShapeTensor with type: %s, dims %ld", typeid(T).name(), xShapeSize);
     outputShape.SetDimNum(xShapeSize);
     for (size_t i = 0U; i < xShapeSize; i++) {
         outputShape.SetDim(i, xShapeData[i]);
@@ -27,9 +27,8 @@ ge::graphStatus HandleShapeTensor(gert::Shape& outputShape, size_t xShapeSize, c
     return ge::GRAPH_SUCCESS;
 }
 
-bool InferShapeForUnknow(
-    gert::InferShapeContext* context, const gert::Shape& inShape, gert::Shape& outShape, int64_t& maskIndex,
-    int64_t& offsetIndex)
+bool InferShapeForUnknow(gert::InferShapeContext* context, const gert::Shape& inShape, gert::Shape& outShape,
+                         int64_t& maskIndex, int64_t& offsetIndex)
 {
     if (Ops::Base::IsUnknownRank(inShape)) {
         Ops::Base::SetUnknownRank(outShape);
@@ -65,7 +64,7 @@ bool DependencyMode(const gert::Tensor* inTensor, gert::Shape& outShape, size_t 
     if (shapeDtype == ge::DT_INT32) {
         auto xShapeData = inTensor->GetData<int32_t>();
         if (xShapeData == nullptr) {
-            std::cerr << "[WARN] Empty DT_INT32 shape tensor, set 0-dim output" << std::endl;
+            OP_LOGW("RandomInferShape", "Empty DT_INT32 shape tensor, set 0-dim output");
             Ops::Base::SetUnknownShape(xShapeSize, outShape);
             return true;
         }
@@ -75,7 +74,7 @@ bool DependencyMode(const gert::Tensor* inTensor, gert::Shape& outShape, size_t 
     } else if (shapeDtype == ge::DT_INT64) {
         auto xShapeData = inTensor->GetData<int64_t>();
         if (xShapeData == nullptr) {
-            std::cerr << "[WARN] Empty DT_INT64 shape tensor, set 0-dim output" << std::endl;
+            OP_LOGW("RandomInferShape", "Empty DT_INT64 shape tensor, set 0-dim output");
             Ops::Base::SetUnknownShape(xShapeSize, outShape);
             return true;
         }
@@ -83,14 +82,14 @@ bool DependencyMode(const gert::Tensor* inTensor, gert::Shape& outShape, size_t 
             return true;
         }
     }
-    std::cerr << "[ERROR] Unsupported dtype: " << static_cast<int>(shapeDtype) << std::endl;
+    OP_LOGE("RandomInferShape", "Unsupported dtype: %d", static_cast<int>(shapeDtype));
     return false;
 }
 
-bool InputAndOutputCheck(
-    gert::InferShapeContext* context, const std::unordered_map<std::string, size_t>& requiredInputMap,
-    const std::unordered_map<std::string, size_t>& outputMap, int64_t& maskIndex, int64_t& offsetIndex,
-    const std::unordered_map<std::string, size_t>& optionalInputMap)
+bool InputAndOutputCheck(gert::InferShapeContext* context,
+                         const std::unordered_map<std::string, size_t>& requiredInputMap,
+                         const std::unordered_map<std::string, size_t>& outputMap, int64_t& maskIndex,
+                         int64_t& offsetIndex, const std::unordered_map<std::string, size_t>& optionalInputMap)
 {
     OP_LOGD(context->GetNodeName(), "InputAndOutputCheck start");
     for (const auto& item : requiredInputMap) {
@@ -119,15 +118,15 @@ bool InputAndOutputCheck(
             offsetIndex = outputIndex;
         }
     }
-    OP_LOGD(
-        context->GetNodeName(), "InputAndOutputCheck end, maskIndex = %ld, offsetIndex = %ld", maskIndex, offsetIndex);
+    OP_LOGD(context->GetNodeName(), "InputAndOutputCheck end, maskIndex = %ld, offsetIndex = %ld", maskIndex,
+            offsetIndex);
     return true;
 }
 
-ge::graphStatus CommonInferShape(
-    gert::InferShapeContext* context, const std::unordered_map<std::string, size_t>& requiredInputMap,
-    const std::unordered_map<std::string, size_t>& outputMap, int32_t mode,
-    const std::unordered_map<std::string, size_t>& optionalInputMap)
+ge::graphStatus CommonInferShape(gert::InferShapeContext* context,
+                                 const std::unordered_map<std::string, size_t>& requiredInputMap,
+                                 const std::unordered_map<std::string, size_t>& outputMap, int32_t mode,
+                                 const std::unordered_map<std::string, size_t>& optionalInputMap)
 {
     if (context == nullptr) {
         return ge::GRAPH_FAILED;

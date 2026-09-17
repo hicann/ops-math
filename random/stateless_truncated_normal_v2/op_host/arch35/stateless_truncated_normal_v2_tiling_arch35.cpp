@@ -100,7 +100,7 @@ OpTilingConfig StatelessTruncatedNormalV2Tiling::BuildOpConfig()
 
 ge::graphStatus StatelessTruncatedNormalV2Tiling::DoSimtBlockTiling()
 {
-    OP_CHECK_IF((totalCoreNum_ <= 0), OP_LOGE(opName_, "totalCoreNum is less than or equal to 0. please check."),
+    OP_CHECK_IF((totalCoreNum_ <= 0), OP_LOGE(opName_, "totalCoreNum is %ld, must be greater than 0.", totalCoreNum_),
                 return ge::GRAPH_FAILED);
     int64_t threadNum = Ops::Base::CeilAlign(simtTilingData_.outputSize, THREAD_DISPOSAL_NUM);
     int64_t coreNum = Ops::Base::CeilAlign(threadNum, MAX_THREAD_NUM);
