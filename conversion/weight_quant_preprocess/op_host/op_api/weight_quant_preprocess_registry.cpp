@@ -193,14 +193,30 @@ static bool IsMMA16F4PerGroupDataFlow(QuantContext& ctx)
     return false;
 }
 
-// A16MXFP4：FP4 weight + MX scale（E8M0，2D [K/32, N] 连续，与 wqbmmv2 MX kernel 约定一致），
-// NZ only，转置由 checks 的 CheckWeightNotTrans 拒绝
-static bool IsMMA16MXF4DataFlow(QuantContext& ctx)
+// A16MXFP4 公共判定：FP4 weight + MX scale（E8M0，2D [K/32, N]，与 wqbmmv2 MX kernel 约定一致）
+static bool IsMMA16MXF4Base(const QuantContext& ctx)
 {
     auto scaleDtype = ctx.weightScale->GetDataType();
 
-    if (IsA16W4Base<op::DataType::DT_FLOAT4_E2M1>(ctx) && scaleDtype == op::DataType::DT_FLOAT8_E8M0 &&
-        IsXScaleUndefined(ctx) && ctx.weightScale->GetViewShape().GetDimNum() == DIMS_2) {
+    return IsA16W4Base<op::DataType::DT_FLOAT4_E2M1>(ctx) && scaleDtype == op::DataType::DT_FLOAT8_E8M0 &&
+           IsXScaleUndefined(ctx) && ctx.weightScale->GetViewShape().GetDimNum() == DIMS_2;
+}
+
+// A16MXFP4 转置（末两维严格转置）→ ND 直拷（wqbmmv2 MX kernel 支持 ND 转置输入）
+static bool IsMMA16MXF4TransDataFlow(QuantContext& ctx)
+{
+    if (IsMMA16MXF4Base(ctx) && IsWeightLastTwoDimsTrans(ctx)) {
+        ctx.dataFlow = QuantDataFlow::MM_A16MXF4;
+        return true;
+    }
+    return false;
+}
+
+// A16MXFP4 非转置 + NZ_C0_16 出 → ND→NZ 分形转换（NZ 出仅支持非转置，转置由转置条目的
+// OUT_WEIGHT_ND_CHECKS 拒绝）
+static bool IsMMA16MXF4NonTransNzDataFlow(QuantContext& ctx)
+{
+    if (IsMMA16MXF4Base(ctx) && !IsWeightLastTwoDimsTrans(ctx) && IsOutWeightNzC016(ctx)) {
         ctx.dataFlow = QuantDataFlow::MM_A16MXF4;
         return true;
     }
@@ -209,13 +225,13 @@ static bool IsMMA16MXF4DataFlow(QuantContext& ctx)
 
 static aclnnStatus CheckWeightNotEmpty(const QuantContext& ctx)
 {
-    OP_CHECK(!ctx.weight->IsEmpty(),
-             OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
-                 "weight_quant_preprocess", "weight", std::to_string(ctx.weight->GetViewShape().GetShapeSize()).c_str(),
-                 (std::string("weight must not be empty tensor when dataFlow is ") +
-                  QuantDataFlowToString(ctx.dataFlow) + ".")
-                     .c_str()),
-             return ACLNN_ERR_PARAM_INVALID);
+    OP_CHECK(
+        !ctx.weight->IsEmpty(),
+        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
+            "weight_quant_preprocess", "weight", std::to_string(ctx.weight->GetViewShape().GetShapeSize()).c_str(),
+            (std::string("weight must not be empty tensor when dataFlow is ") + QuantDataFlowToString(ctx.dataFlow))
+                .c_str()),
+        return ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
 }
 
@@ -286,22 +302,24 @@ static aclnnStatus CheckWeightPackingDimEven(const QuantContext& ctx)
              OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
                  "weight_quant_preprocess", "weight", op::ToString(viewShape).GetString(),
                  (std::string("the packing dim of 4-bit weight must be even when dataFlow is ") +
-                  QuantDataFlowToString(ctx.dataFlow) + ".")
+                  QuantDataFlowToString(ctx.dataFlow))
                      .c_str()),
              return ACLNN_ERR_PARAM_INVALID);
 
     return ACLNN_SUCCESS;
 }
 
-// INT4 直拷（ProcessWeightDirectCopy）以 GetViewOffset()/2 建 UINT8 打包视图按字节物理透传：
+// 4-bit 直拷（ProcessWeightDirectCopy）以 GetViewOffset()/2 建 UINT8 打包视图按字节物理透传：
 // weight 视图必须为连续或末两维严格转置（其余 strides 模式会按错误的打包维寻址），
 // 且 weight/outWeight 的 viewOffset 须为偶数（奇数偏移除以 2 截断后错位半字节）
-static aclnnStatus CheckWeightInt4DirectCopyView(const QuantContext& ctx)
+static aclnnStatus CheckWeight4BitDirectCopyView(const QuantContext& ctx)
 {
-    if (ctx.weight->GetDataType() != op::DataType::DT_INT4) {
+    if (ctx.weight->GetDataType() != op::DataType::DT_INT4 &&
+        ctx.weight->GetDataType() != op::DataType::DT_FLOAT4_E2M1) {
         return ACLNN_SUCCESS;
     }
-    // outWeight 为空属参数错误，由后续 CheckOutWeightNotNullEmpty 报告；此处提前返回避免空指针
+    // outWeight 为空属参数错误，由后续 CheckOutWeightSameAsInput/CheckOutWeightSameBase
+    // 报告；此处提前返回避免空指针
     if (ctx.outWeight == nullptr) {
         return ACLNN_SUCCESS;
     }
@@ -325,138 +343,8 @@ static aclnnStatus CheckWeightInt4DirectCopyView(const QuantContext& ctx)
                                   (std::to_string(ctx.weight->GetViewOffset()) + std::string("/") +
                                    std::to_string(ctx.outWeight->GetViewOffset()))
                                       .c_str(),
-                                  "even (INT4 packs 2 values per byte, odd offset misaligns the nibble)"),
+                                  "even (4-bit packs 2 values per byte, odd offset misaligns the nibble)"),
         return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckWeightScaleNotEmpty(const QuantContext& ctx)
-{
-    OP_CHECK(!ctx.weightScale->IsEmpty(),
-             OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
-                 "weight_quant_preprocess", "weightScale",
-                 std::to_string(ctx.weightScale->GetViewShape().GetShapeSize()).c_str(),
-                 (std::string("weightScale must not be empty tensor when dataFlow is ") +
-                  QuantDataFlowToString(ctx.dataFlow) + ".")
-                     .c_str()),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckWeightScaleFormatND(const QuantContext& ctx)
-{
-    auto scaleFormat = ctx.weightScale->GetStorageFormat();
-    OP_CHECK(scaleFormat == op::Format::FORMAT_ND || scaleFormat == op::Format::FORMAT_NCL ||
-                 scaleFormat == op::Format::FORMAT_NCHW,
-             OP_LOGE_FOR_INVALID_FORMAT("weight_quant_preprocess", "weightScale", op::ToString(scaleFormat).GetString(),
-                                        "ND or NCL or NCHW"),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-template <size_t targetDim>
-static aclnnStatus CheckWeightScaleMx(const QuantContext& ctx)
-{
-    auto scaleViewShape = ctx.weightScale->GetViewShape();
-    size_t scaleViewDim = scaleViewShape.GetDimNum();
-
-    OP_CHECK(scaleViewDim == targetDim,
-             OP_LOGE_FOR_INVALID_SHAPEDIM("weight_quant_preprocess", "weightScale",
-                                          std::to_string(scaleViewDim).c_str(), std::to_string(targetDim).c_str()),
-             return ACLNN_ERR_PARAM_INVALID);
-
-    auto weightViewShape = ctx.weight->GetViewShape();
-    size_t weightViewDim = weightViewShape.GetDimNum();
-    OP_CHECK(
-        scaleViewShape.GetDim(scaleViewDim - IDX_3) ==
-                CeilDiv(weightViewShape.GetDim(weightViewDim - IDX_2), KGROUP_SIZE_MX * DOUBLE) &&
-            scaleViewShape.GetDim(scaleViewDim - IDX_2) == weightViewShape.GetDim(weightViewDim - IDX_1) &&
-            scaleViewShape.GetDim(scaleViewDim - IDX_1) == DOUBLE,
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-            "weight_quant_preprocess", "weightScale, weight",
-            (op::ToString(scaleViewShape).GetString() + std::string(", ") + op::ToString(weightViewShape).GetString())
-                .c_str(),
-            (std::string("weightScale last three dims must be {ceildiv(K,64), N, 2} when dataFlow is ") +
-             QuantDataFlowToString(ctx.dataFlow) + ".")
-                .c_str()),
-        return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-// 校验 weightScale 在相邻两维 (targetIdx, targetIdx+1) 上是否处于转置排列。
-//   - MM 场景 (kScale, n, ...)：targetIdx=0，校验第 0、1 维转置
-//   - GMM 场景 (g, kScale, n, ...)：targetIdx=1，校验第 1、2 维转置
-template <size_t targetIdx>
-static aclnnStatus CheckWeightScaleTrans(const QuantContext& ctx)
-{
-    auto viewShape = ctx.weightScale->GetViewShape();
-    auto viewStrides = ctx.weightScale->GetViewStrides();
-
-    OP_CHECK(viewStrides[targetIdx + IDX_1] == viewStrides[targetIdx] * viewShape.GetDim(targetIdx),
-             OP_LOGE_FOR_INVALID_STRIDE("weight_quant_preprocess", "weightScale", op::ToString(viewStrides).GetString(),
-                                        (std::string("transposed at dims ") + std::to_string(targetIdx) + " and " +
-                                         std::to_string(targetIdx + IDX_1))
-                                            .c_str()),
-             return ACLNN_ERR_PARAM_INVALID);
-
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckWeightScalePerChannelViewShape(const QuantContext& ctx)
-{
-    auto scaleViewShape = ctx.weightScale->GetViewShape();
-    auto weightViewShape = ctx.weight->GetViewShape();
-    int64_t scaleViewDim = static_cast<int64_t>(scaleViewShape.GetDimNum());
-    int64_t n = weightViewShape.GetDim(weightViewShape.GetDimNum() - IDX_1);
-
-    OP_CHECK(scaleViewDim == DIMS_1 || scaleViewDim == DIMS_2,
-             OP_LOGE_FOR_INVALID_SHAPEDIM("weight_quant_preprocess", "weightScale",
-                                          std::to_string(scaleViewDim).c_str(), "1 or 2"),
-             return ACLNN_ERR_PARAM_INVALID);
-    bool isValidShape = scaleViewDim == DIMS_1 ? scaleViewShape.GetDim(IDX_0) == n :
-                                                 scaleViewShape.GetDim(IDX_0) == 1 && scaleViewShape.GetDim(IDX_1) == n;
-    OP_CHECK(isValidShape,
-             OP_LOGE_FOR_INVALID_SHAPE(
-                 "weight_quant_preprocess", "weightScale", op::ToString(scaleViewShape).GetString(),
-                 (std::string("(") + std::to_string(n) + ") or (1, " + std::to_string(n) + ")").c_str()),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-// per-tensor 场景 weightScale 仅含单个元素（{1}/{1,1}）
-static aclnnStatus CheckWeightScalePerTensorViewShape(const QuantContext& ctx)
-{
-    auto scaleViewShape = ctx.weightScale->GetViewShape();
-    OP_CHECK(scaleViewShape.GetShapeSize() == 1,
-             OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-                 "weight_quant_preprocess", "weightScale", op::ToString(scaleViewShape).GetString(),
-                 (std::string("weightScale must contain exactly one element when dataFlow is ") +
-                  QuantDataFlowToString(ctx.dataFlow) + ".")
-                     .c_str()),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckWeightScalePerGroupViewShape(const QuantContext& ctx)
-{
-    auto scaleViewShape = ctx.weightScale->GetViewShape();
-    auto weightViewShape = ctx.weight->GetViewShape();
-    size_t scaleViewDim = scaleViewShape.GetDimNum();
-    size_t weightViewDim = weightViewShape.GetDimNum();
-    int64_t k = weightViewShape.GetDim(weightViewDim - IDX_2);
-    int64_t n = weightViewShape.GetDim(weightViewDim - IDX_1);
-    // MX 分组数按 ceildiv 语义（与 CheckWeightScaleMx 一致），K 非 kGroupSize 整数倍时末组为部分组
-    int64_t expectedG = CeilDiv(k, ctx.kGroupSize);
-
-    OP_CHECK(scaleViewDim == DIMS_2,
-             OP_LOGE_FOR_INVALID_SHAPEDIM("weight_quant_preprocess", "weightScale",
-                                          std::to_string(scaleViewDim).c_str(), "2"),
-             return ACLNN_ERR_PARAM_INVALID);
-    OP_CHECK(scaleViewShape.GetDim(IDX_0) == expectedG && scaleViewShape.GetDim(IDX_1) == n,
-             OP_LOGE_FOR_INVALID_SHAPE(
-                 "weight_quant_preprocess", "weightScale", op::ToString(scaleViewShape).GetString(),
-                 (std::string("(") + std::to_string(expectedG) + ", " + std::to_string(n) + ")").c_str()),
-             return ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
 }
 
@@ -468,281 +356,6 @@ static aclnnStatus CheckWeightOffsetOptionalNull(const QuantContext& ctx)
     OP_CHECK(ctx.outWeightOffsetOptional == nullptr,
              LOGE_WITH_SCENARIO(ACLNN_ERR_PARAM_INVALID, "outWeightOffsetOptional must be nullptr."),
              return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-// offset 无需布局转换，与 scale 同形同 dtype 直拷透传（下游 wqbmmv2 要求 antiquantOffset 与 antiquantScale 同形状）
-static aclnnStatus CheckWeightOffsetOptionalNotEmpty(const QuantContext& ctx)
-{
-    if (ctx.weightOffsetOptional == nullptr) {
-        return ACLNN_SUCCESS;
-    }
-    OP_CHECK(!ctx.weightOffsetOptional->IsEmpty(),
-             OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
-                 "weight_quant_preprocess", "weightOffsetOptional",
-                 std::to_string(ctx.weightOffsetOptional->GetViewShape().GetShapeSize()).c_str(),
-                 (std::string("weightOffsetOptional must not be empty tensor when dataFlow is ") +
-                  QuantDataFlowToString(ctx.dataFlow) + ".")
-                     .c_str()),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckWeightOffsetOptionalFormatND(const QuantContext& ctx)
-{
-    if (ctx.weightOffsetOptional == nullptr) {
-        return ACLNN_SUCCESS;
-    }
-    auto offsetFormat = ctx.weightOffsetOptional->GetStorageFormat();
-    OP_CHECK(offsetFormat == op::Format::FORMAT_ND,
-             OP_LOGE_FOR_INVALID_FORMAT("weight_quant_preprocess", "weightOffsetOptional",
-                                        op::ToString(offsetFormat).GetString(), "ND"),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckWeightOffsetOptionalDtypeSameAsScale(const QuantContext& ctx)
-{
-    if (ctx.weightOffsetOptional == nullptr) {
-        return ACLNN_SUCCESS;
-    }
-    auto offsetDtype = ctx.weightOffsetOptional->GetDataType();
-    auto scaleDtype = ctx.weightScale->GetDataType();
-    OP_CHECK(
-        offsetDtype == scaleDtype,
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            "weight_quant_preprocess", "weightOffsetOptional, weightScale",
-            (op::ToString(offsetDtype).GetString() + std::string(", ") + op::ToString(scaleDtype).GetString()).c_str(),
-            (std::string("weightOffsetOptional and weightScale must have the same dtype when dataFlow is ") +
-             QuantDataFlowToString(ctx.dataFlow) + ".")
-                .c_str()),
-        return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckWeightOffsetOptionalViewShapeSameAsScale(const QuantContext& ctx)
-{
-    if (ctx.weightOffsetOptional == nullptr) {
-        return ACLNN_SUCCESS;
-    }
-    auto offsetViewShape = ctx.weightOffsetOptional->GetViewShape();
-    auto scaleViewShape = ctx.weightScale->GetViewShape();
-    OP_CHECK(
-        offsetViewShape == scaleViewShape,
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-            "weight_quant_preprocess", "weightOffsetOptional, weightScale",
-            (op::ToString(offsetViewShape).GetString() + std::string(", ") + op::ToString(scaleViewShape).GetString())
-                .c_str(),
-            (std::string("weightOffsetOptional and weightScale must have the same viewShape when dataFlow is ") +
-             QuantDataFlowToString(ctx.dataFlow) + ".")
-                .c_str()),
-        return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckBiasOptionalNotEmpty(const QuantContext& ctx)
-{
-    if (ctx.biasOptional == nullptr) {
-        return ACLNN_SUCCESS;
-    }
-    OP_CHECK(!ctx.biasOptional->IsEmpty(),
-             OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
-                 "weight_quant_preprocess", "biasOptional",
-                 std::to_string(ctx.biasOptional->GetViewShape().GetShapeSize()).c_str(),
-                 (std::string("biasOptional must not be empty tensor when dataFlow is ") +
-                  QuantDataFlowToString(ctx.dataFlow) + ".")
-                     .c_str()),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckBiasOptionalFormatND(const QuantContext& ctx)
-{
-    if (ctx.biasOptional == nullptr) {
-        return ACLNN_SUCCESS;
-    }
-    auto biasFormat = ctx.biasOptional->GetStorageFormat();
-    OP_CHECK(biasFormat == op::Format::FORMAT_ND,
-             OP_LOGE_FOR_INVALID_FORMAT("weight_quant_preprocess", "biasOptional", op::ToString(biasFormat).GetString(),
-                                        "ND"),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-template <op::DataType... allowedDtypes>
-static aclnnStatus CheckWeightScaleDtype(const QuantContext& ctx)
-{
-    auto actualDtype = ctx.weightScale->GetDataType();
-    bool match = ((actualDtype == allowedDtypes) || ...);
-    auto allowedDtypesList = {allowedDtypes...};
-    OP_CHECK(match,
-             OP_LOGE_FOR_INVALID_DTYPE("weight_quant_preprocess", "weightScale", op::ToString(actualDtype).GetString(),
-                                       op::ToString(allowedDtypesList).GetString()),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-template <op::DataType... allowedDtypes>
-static aclnnStatus CheckBiasOptionalDtype(const QuantContext& ctx)
-{
-    if (ctx.biasOptional == nullptr) {
-        return ACLNN_SUCCESS;
-    }
-    auto actualDtype = ctx.biasOptional->GetDataType();
-    bool match = ((actualDtype == allowedDtypes) || ...);
-
-    auto allowedDtypesList = {allowedDtypes...};
-
-    OP_CHECK(match,
-             OP_LOGE_FOR_INVALID_DTYPE("weight_quant_preprocess", "biasOptional", op::ToString(actualDtype).GetString(),
-                                       op::ToString(allowedDtypesList).GetString()),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-template <bool isGmm>
-static aclnnStatus CheckBiasOptionalViewShape(const QuantContext& ctx)
-{
-    if (ctx.biasOptional == nullptr) {
-        return ACLNN_SUCCESS;
-    }
-
-    auto biasViewShape = ctx.biasOptional->GetViewShape();
-    auto weightViewShape = ctx.weight->GetViewShape();
-
-    size_t weightViewDim = weightViewShape.GetDimNum();
-    int64_t n = weightViewShape.GetDim(weightViewDim - IDX_1);
-
-    if constexpr (isGmm) {
-        OP_CHECK(biasViewShape.GetDimNum() == DIMS_2,
-                 OP_LOGE_FOR_INVALID_SHAPEDIM("weight_quant_preprocess", "biasOptional",
-                                              std::to_string(biasViewShape.GetDimNum()).c_str(), "2"),
-                 return ACLNN_ERR_PARAM_INVALID);
-
-        int64_t g = weightViewShape.GetDim(IDX_0);
-        OP_CHECK(biasViewShape.GetDim(IDX_0) == g && biasViewShape.GetDim(IDX_1) == n,
-                 OP_LOGE_FOR_INVALID_SHAPE(
-                     "weight_quant_preprocess", "biasOptional", op::ToString(biasViewShape).GetString(),
-                     (std::string("(") + std::to_string(g) + ", " + std::to_string(n) + ")").c_str()),
-                 return ACLNN_ERR_PARAM_INVALID);
-    } else {
-        size_t biasViewDim = biasViewShape.GetDimNum();
-        OP_CHECK(biasViewDim == DIMS_1 || biasViewDim == DIMS_2,
-                 OP_LOGE_FOR_INVALID_SHAPEDIM("weight_quant_preprocess", "biasOptional",
-                                              std::to_string(biasViewDim).c_str(), "1 or 2"),
-                 return ACLNN_ERR_PARAM_INVALID);
-
-        bool isValidShape = biasViewDim == DIMS_1 ?
-                                biasViewShape.GetDim(IDX_0) == n :
-                                biasViewShape.GetDim(IDX_0) == 1 && biasViewShape.GetDim(IDX_1) == n;
-        OP_CHECK(isValidShape,
-                 OP_LOGE_FOR_INVALID_SHAPE(
-                     "weight_quant_preprocess", "biasOptional", op::ToString(biasViewShape).GetString(),
-                     (std::string("(") + std::to_string(n) + ") or (1, " + std::to_string(n) + ")").c_str()),
-                 return ACLNN_ERR_PARAM_INVALID);
-    }
-
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckBiasOptionalContiguous(const QuantContext& ctx)
-{
-    if (ctx.biasOptional == nullptr) {
-        return ACLNN_SUCCESS;
-    }
-    OP_CHECK(IsContiguous(ctx.biasOptional),
-             OP_LOGE_FOR_INVALID_STRIDE("weight_quant_preprocess", "biasOptional",
-                                        op::ToString(ctx.biasOptional->GetViewStrides()).GetString(), "contiguous"),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckKGroupSizeMx(const QuantContext& ctx)
-{
-    OP_CHECK(ctx.kGroupSize == KGROUP_SIZE_MX,
-             OP_LOGE_FOR_INVALID_VALUE("weight_quant_preprocess", "kGroupSize", std::to_string(ctx.kGroupSize).c_str(),
-                                       "32"),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-// per-channel 场景要求 kGroupSize 为 0：per-group 语义（kGroupSize>0）配 per-channel 形状
-// scale {N}/{1,N} 属矛盾输入
-static aclnnStatus CheckKGroupSizeZero(const QuantContext& ctx)
-{
-    OP_CHECK(ctx.kGroupSize == 0,
-             OP_LOGE_FOR_INVALID_VALUE("weight_quant_preprocess", "kGroupSize", std::to_string(ctx.kGroupSize).c_str(),
-                                       "kGroupSize must be 0 when weightScale is per-channel ({N} or {1, N})"),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-// per-group 场景要求 kGroupSize > 0：per-group 形状 scale {G, N} 配 kGroupSize<=0 属矛盾输入；
-// 且须先于 CheckWeightScalePerGroupViewShape 执行——后者要用 kGroupSize 做除法（同 MX 条目 CheckKGroupSizeMx 前置）
-static aclnnStatus CheckKGroupSizePositive(const QuantContext& ctx)
-{
-    OP_CHECK(ctx.kGroupSize > 0,
-             OP_LOGE_FOR_INVALID_VALUE("weight_quant_preprocess", "kGroupSize", std::to_string(ctx.kGroupSize).c_str(),
-                                       "kGroupSize must be > 0 when weightScale is per-group ({G, N})"),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckOutWeightNotNullEmpty(const QuantContext& ctx)
-{
-    OP_CHECK(ctx.outWeight != nullptr, LOGE_WITH_SCENARIO(ACLNN_ERR_PARAM_NULLPTR, "outWeight must not be nullptr."),
-             return ACLNN_ERR_PARAM_NULLPTR);
-    OP_CHECK(
-        !ctx.outWeight->IsEmpty(),
-        OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON("weight_quant_preprocess", "outWeight",
-                                                  std::to_string(ctx.outWeight->GetViewShape().GetShapeSize()).c_str(),
-                                                  (std::string("outWeight must not be empty tensor when dataFlow is ") +
-                                                   QuantDataFlowToString(ctx.dataFlow) + ".")
-                                                      .c_str()),
-        return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckOutWeightFormatND(const QuantContext& ctx)
-{
-    auto outWeightFormat = ctx.outWeight->GetStorageFormat();
-    OP_CHECK(outWeightFormat == op::Format::FORMAT_ND || outWeightFormat == op::Format::FORMAT_NCL,
-             OP_LOGE_FOR_INVALID_FORMAT("weight_quant_preprocess", "outWeight",
-                                        op::ToString(outWeightFormat).GetString(), "FORMAT_ND or FORMAT_NCL"),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckOutWeightDtypeSame(const QuantContext& ctx)
-{
-    auto weightDtype = ctx.weight->GetDataType();
-    auto outWeightDtype = ctx.outWeight->GetDataType();
-    OP_CHECK(outWeightDtype == weightDtype,
-             OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-                 "weight_quant_preprocess", "outWeight, weight",
-                 (op::ToString(outWeightDtype).GetString() + std::string(", ") + op::ToString(weightDtype).GetString())
-                     .c_str(),
-                 (std::string("outWeight and weight must have the same dtype when dataFlow is ") +
-                  QuantDataFlowToString(ctx.dataFlow) + ".")
-                     .c_str()),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckOutWeightViewShapeSame(const QuantContext& ctx)
-{
-    auto weightViewShape = ctx.weight->GetViewShape();
-    auto outViewShape = ctx.outWeight->GetViewShape();
-    OP_CHECK(
-        weightViewShape == outViewShape,
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-            "weight_quant_preprocess", "outWeight, weight",
-            (op::ToString(outViewShape).GetString() + std::string(", ") + op::ToString(weightViewShape).GetString())
-                .c_str(),
-            (std::string("outWeight and weight must have the same viewShape when dataFlow is ") +
-             QuantDataFlowToString(ctx.dataFlow) + ".")
-                .c_str()),
-        return ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
 }
 
@@ -794,285 +407,137 @@ static aclnnStatus CheckOutWeightTransNz(const QuantContext& ctx)
             (op::ToString(outStorageShape).GetString() + std::string(", ") + op::ToString(weightViewShape).GetString())
                 .c_str(),
             (std::string("outWeight storage shape last four dims must be ") + layoutDesc +
-             std::string(" when dataFlow is ") + QuantDataFlowToString(ctx.dataFlow) + ".")
+             std::string(" when dataFlow is ") + QuantDataFlowToString(ctx.dataFlow))
                 .c_str()),
         return ACLNN_ERR_PARAM_INVALID);
 
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus CheckOutWeightScaleNotNullEmpty(const QuantContext& ctx)
+// ===== out 与 input 一致性归一校验 =====
+// 轻量一致性：nullptr 一致（都空或都不空）→ 都非空时 out 非 empty → viewShape ==。
+// 单独用于 NZ 出 weight 等 format/storageShape/dtype 合法异于输入的场景
+static aclnnStatus CheckOutSameBase(const QuantContext& ctx, const aclTensor* input, const aclTensor* output,
+                                    const char* inputName, const char* outputName)
 {
-    OP_CHECK(ctx.outWeightScale != nullptr,
-             LOGE_WITH_SCENARIO(ACLNN_ERR_PARAM_NULLPTR, "outWeightScale must not be nullptr."),
+    OP_CHECK((input == nullptr) == (output == nullptr),
+             LOGE_WITH_SCENARIO(ACLNN_ERR_PARAM_NULLPTR, "%s and %s must be both nullptr or both not nullptr.",
+                                outputName, inputName),
              return ACLNN_ERR_PARAM_NULLPTR);
-    OP_CHECK(!ctx.outWeightScale->IsEmpty(),
+    if (input == nullptr) {
+        return ACLNN_SUCCESS;
+    }
+    OP_CHECK(!output->IsEmpty(),
              OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
-                 "weight_quant_preprocess", "outWeightScale",
-                 std::to_string(ctx.outWeightScale->GetViewShape().GetShapeSize()).c_str(),
-                 (std::string("outWeightScale must not be empty tensor when dataFlow is ") +
-                  QuantDataFlowToString(ctx.dataFlow) + ".")
+                 "weight_quant_preprocess", outputName, std::to_string(output->GetViewShape().GetShapeSize()).c_str(),
+                 (std::string(outputName) + " must not be empty tensor when dataFlow is " +
+                  QuantDataFlowToString(ctx.dataFlow))
+                     .c_str()),
+             return ACLNN_ERR_PARAM_INVALID);
+    auto inViewShape = input->GetViewShape();
+    auto outViewShape = output->GetViewShape();
+    OP_CHECK(outViewShape == inViewShape,
+             OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                 "weight_quant_preprocess", (std::string(outputName) + ", " + inputName).c_str(),
+                 (op::ToString(outViewShape).GetString() + std::string(", ") + op::ToString(inViewShape).GetString())
+                     .c_str(),
+                 (std::string(outputName) + " and " + inputName + " must have the same viewShape when dataFlow is " +
+                  QuantDataFlowToString(ctx.dataFlow))
                      .c_str()),
              return ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus CheckOutWeightScaleFormatND(const QuantContext& ctx)
+// 完整一致性（直拷透传）：Base 之上再要求 format/dtype/storageShape 全 ==、连续性一致
+static aclnnStatus CheckOutSameAsInput(const QuantContext& ctx, const aclTensor* input, const aclTensor* output,
+                                       const char* inputName, const char* outputName)
 {
-    auto outScaleFormat = ctx.outWeightScale->GetStorageFormat();
-    OP_CHECK(outScaleFormat == op::Format::FORMAT_ND || outScaleFormat == op::Format::FORMAT_NCL ||
-                 outScaleFormat == op::Format::FORMAT_NCHW,
-             OP_LOGE_FOR_INVALID_FORMAT("weight_quant_preprocess", "outWeightScale",
-                                        op::ToString(outScaleFormat).GetString(), "ND or NCL or NCHW"),
+    auto status = CheckOutSameBase(ctx, input, output, inputName, outputName);
+    if (status != ACLNN_SUCCESS || input == nullptr) {
+        return status;
+    }
+    // 连续性一致：ViewCopy 直拷要求源连续，非连续输入 + 连续输出（或反之）在此拦截，
+    // 避免错误延后到 process 阶段才以内部错误码暴露（weight 转置直拷两侧同为非连续，不受影响）
+    OP_CHECK(
+        IsContiguous(input) == IsContiguous(output),
+        LOGE_WITH_SCENARIO(ACLNN_ERR_PARAM_INVALID, "%s and %s must have the same contiguity.", outputName, inputName),
+        return ACLNN_ERR_PARAM_INVALID);
+    auto inFormat = input->GetStorageFormat();
+    auto outFormat = output->GetStorageFormat();
+    OP_CHECK(outFormat == inFormat,
+             OP_LOGE_FOR_INVALID_FORMATS_WITH_REASON(
+                 "weight_quant_preprocess", (std::string(outputName) + ", " + inputName).c_str(),
+                 (op::ToString(outFormat).GetString() + std::string(", ") + op::ToString(inFormat).GetString()).c_str(),
+                 (std::string(outputName) + " and " + inputName + " must have the same format when dataFlow is " +
+                  QuantDataFlowToString(ctx.dataFlow))
+                     .c_str()),
              return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckOutWeightScaleDtypeSame(const QuantContext& ctx)
-{
-    auto scaleDtype = ctx.weightScale->GetDataType();
-    auto outScaleDtype = ctx.outWeightScale->GetDataType();
-    OP_CHECK(outScaleDtype == scaleDtype,
+    auto inDtype = input->GetDataType();
+    auto outDtype = output->GetDataType();
+    OP_CHECK(outDtype == inDtype,
              OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-                 "weight_quant_preprocess", "outWeightScale, weightScale",
-                 (op::ToString(outScaleDtype).GetString() + std::string(", ") + op::ToString(scaleDtype).GetString())
-                     .c_str(),
-                 (std::string("outWeightScale and weightScale must have the same dtype when dataFlow is ") +
-                  QuantDataFlowToString(ctx.dataFlow) + ".")
+                 "weight_quant_preprocess", (std::string(outputName) + ", " + inputName).c_str(),
+                 (op::ToString(outDtype).GetString() + std::string(", ") + op::ToString(inDtype).GetString()).c_str(),
+                 (std::string(outputName) + " and " + inputName + " must have the same dtype when dataFlow is " +
+                  QuantDataFlowToString(ctx.dataFlow))
                      .c_str()),
              return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckOutWeightScaleViewShapeSame(const QuantContext& ctx)
-{
-    auto scaleViewShape = ctx.weightScale->GetViewShape();
-    auto outScaleViewShape = ctx.outWeightScale->GetViewShape();
+    auto inStorageShape = input->GetStorageShape();
+    auto outStorageShape = output->GetStorageShape();
     OP_CHECK(
-        outScaleViewShape == scaleViewShape,
+        outStorageShape == inStorageShape,
         OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-            "weight_quant_preprocess", "outWeightScale, weightScale",
-            (op::ToString(outScaleViewShape).GetString() + std::string(", ") + op::ToString(scaleViewShape).GetString())
+            "weight_quant_preprocess", (std::string(outputName) + ", " + inputName).c_str(),
+            (op::ToString(outStorageShape).GetString() + std::string(", ") + op::ToString(inStorageShape).GetString())
                 .c_str(),
-            (std::string("outWeightScale and weightScale must have the same viewShape when dataFlow is ") +
-             QuantDataFlowToString(ctx.dataFlow) + ".")
+            (std::string(outputName) + " and " + inputName + " must have the same storageShape when dataFlow is " +
+             QuantDataFlowToString(ctx.dataFlow))
                 .c_str()),
         return ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus CheckOutWeightScaleStorageShapeSame(const QuantContext& ctx)
+// out weight ND 直拷：与 weight 完全一致
+static aclnnStatus CheckOutWeightSameAsInput(const QuantContext& ctx)
 {
-    auto scaleStorageShape = ctx.weightScale->GetStorageShape();
-    auto outScaleStorageShape = ctx.outWeightScale->GetStorageShape();
-    OP_CHECK(outScaleStorageShape == scaleStorageShape,
-             OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-                 "weight_quant_preprocess", "outWeightScale, weightScale",
-                 (op::ToString(outScaleStorageShape).GetString() + std::string(", ") +
-                  op::ToString(scaleStorageShape).GetString())
-                     .c_str(),
-                 (std::string("outWeightScale and weightScale must have the same storageShape when dataFlow is ") +
-                  QuantDataFlowToString(ctx.dataFlow) + ".")
-                     .c_str()),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
+    return CheckOutSameAsInput(ctx, ctx.weight, ctx.outWeight, "weight", "outWeight");
 }
 
-static aclnnStatus CheckOutBiasOptionalNotNullEmpty(const QuantContext& ctx)
+static aclnnStatus CheckOutWeightScaleSameAsInput(const QuantContext& ctx)
 {
-    if (ctx.biasOptional == nullptr) {
-        return ACLNN_SUCCESS;
-    }
-    OP_CHECK(ctx.outBiasOptional != nullptr,
-             LOGE_WITH_SCENARIO(ACLNN_ERR_PARAM_NULLPTR,
-                                "outBiasOptional must not be nullptr when biasOptional is not nullptr."),
-             return ACLNN_ERR_PARAM_NULLPTR);
-    OP_CHECK(!ctx.outBiasOptional->IsEmpty(),
-             OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
-                 "weight_quant_preprocess", "outBiasOptional",
-                 std::to_string(ctx.outBiasOptional->GetViewShape().GetShapeSize()).c_str(),
-                 (std::string("outBiasOptional must not be empty tensor when dataFlow is ") +
-                  QuantDataFlowToString(ctx.dataFlow) + ".")
-                     .c_str()),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
+    return CheckOutSameAsInput(ctx, ctx.weightScale, ctx.outWeightScale, "weightScale", "outWeightScale");
 }
 
-static aclnnStatus CheckOutBiasOptionalFormatND(const QuantContext& ctx)
+static aclnnStatus CheckOutWeightOffsetOptionalSameAsInput(const QuantContext& ctx)
 {
-    if (ctx.biasOptional == nullptr) {
-        return ACLNN_SUCCESS;
-    }
-    auto outBiasFormat = ctx.outBiasOptional->GetStorageFormat();
-    OP_CHECK(outBiasFormat == op::Format::FORMAT_ND,
-             OP_LOGE_FOR_INVALID_FORMAT("weight_quant_preprocess", "outBiasOptional",
-                                        op::ToString(outBiasFormat).GetString(), "ND"),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
+    return CheckOutSameAsInput(ctx, ctx.weightOffsetOptional, ctx.outWeightOffsetOptional, "weightOffsetOptional",
+                               "outWeightOffsetOptional");
 }
 
-static aclnnStatus CheckOutBiasOptionalContiguous(const QuantContext& ctx)
+static aclnnStatus CheckOutBiasOptionalSameAsInput(const QuantContext& ctx)
 {
-    if (ctx.biasOptional == nullptr) {
-        return ACLNN_SUCCESS;
-    }
-    OP_CHECK(IsContiguous(ctx.outBiasOptional),
-             OP_LOGE_FOR_INVALID_STRIDE("weight_quant_preprocess", "outBiasOptional",
-                                        op::ToString(ctx.outBiasOptional->GetViewStrides()).GetString(), "contiguous"),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
+    return CheckOutSameAsInput(ctx, ctx.biasOptional, ctx.outBiasOptional, "biasOptional", "outBiasOptional");
 }
 
-static aclnnStatus CheckOutBiasOptionalDtypeSame(const QuantContext& ctx)
+// out weight NZ 出：只要求 nullptr/empty 一致 + viewShape 一致（format/storageShape 合法异于输入；
+// dtype 一致性由 CheckOutWeightDtypeSame 单独承担）
+static aclnnStatus CheckOutWeightSameBase(const QuantContext& ctx)
 {
-    if (ctx.biasOptional == nullptr) {
-        return ACLNN_SUCCESS;
-    }
-    auto biasDtype = ctx.biasOptional->GetDataType();
-    auto outBiasDtype = ctx.outBiasOptional->GetDataType();
-    OP_CHECK(
-        outBiasDtype == biasDtype,
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            "weight_quant_preprocess", "outBiasOptional, biasOptional",
-            (op::ToString(outBiasDtype).GetString() + std::string(", ") + op::ToString(biasDtype).GetString()).c_str(),
-            (std::string("outBiasOptional and biasOptional must have the same dtype when dataFlow is ") +
-             QuantDataFlowToString(ctx.dataFlow) + ".")
-                .c_str()),
-        return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
+    return CheckOutSameBase(ctx, ctx.weight, ctx.outWeight, "weight", "outWeight");
 }
 
-static aclnnStatus CheckOutBiasOptionalViewShapeSame(const QuantContext& ctx)
+// out weight NZ 出：dtype 与输入一致（真实场景 NZ 出 dtype 恒等于输入，不一致会在 process ViewCopy 失败）
+static aclnnStatus CheckOutWeightDtypeSame(const QuantContext& ctx)
 {
-    if (ctx.biasOptional == nullptr) {
-        return ACLNN_SUCCESS;
-    }
-    auto biasViewShape = ctx.biasOptional->GetViewShape();
-    auto outBiasViewShape = ctx.outBiasOptional->GetViewShape();
-    OP_CHECK(
-        outBiasViewShape == biasViewShape,
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-            "weight_quant_preprocess", "outBiasOptional, biasOptional",
-            (op::ToString(outBiasViewShape).GetString() + std::string(", ") + op::ToString(biasViewShape).GetString())
-                .c_str(),
-            (std::string("outBiasOptional and biasOptional must have the same viewShape when dataFlow is ") +
-             QuantDataFlowToString(ctx.dataFlow) + ".")
-                .c_str()),
-        return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckOutBiasOptionalStorageShapeSame(const QuantContext& ctx)
-{
-    if (ctx.biasOptional == nullptr) {
-        return ACLNN_SUCCESS;
-    }
-    auto biasStorageShape = ctx.biasOptional->GetStorageShape();
-    auto outBiasStorageShape = ctx.outBiasOptional->GetStorageShape();
-    OP_CHECK(outBiasStorageShape == biasStorageShape,
-             OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-                 "weight_quant_preprocess", "outBiasOptional, biasOptional",
-                 (op::ToString(outBiasStorageShape).GetString() + std::string(", ") +
-                  op::ToString(biasStorageShape).GetString())
-                     .c_str(),
-                 (std::string("outBiasOptional and biasOptional must have the same storageShape when dataFlow is ") +
-                  QuantDataFlowToString(ctx.dataFlow) + ".")
-                     .c_str()),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckOutWeightOffsetOptionalNotNullEmpty(const QuantContext& ctx)
-{
-    if (ctx.weightOffsetOptional == nullptr) {
-        return ACLNN_SUCCESS;
-    }
-    OP_CHECK(
-        ctx.outWeightOffsetOptional != nullptr,
-        LOGE_WITH_SCENARIO(ACLNN_ERR_PARAM_NULLPTR,
-                           "outWeightOffsetOptional must not be nullptr when weightOffsetOptional is not nullptr."),
-        return ACLNN_ERR_PARAM_NULLPTR);
-    OP_CHECK(!ctx.outWeightOffsetOptional->IsEmpty(),
-             OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
-                 "weight_quant_preprocess", "outWeightOffsetOptional",
-                 std::to_string(ctx.outWeightOffsetOptional->GetViewShape().GetShapeSize()).c_str(),
-                 (std::string("outWeightOffsetOptional must not be empty tensor when dataFlow is ") +
-                  QuantDataFlowToString(ctx.dataFlow) + ".")
-                     .c_str()),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckOutWeightOffsetOptionalFormatND(const QuantContext& ctx)
-{
-    if (ctx.weightOffsetOptional == nullptr) {
-        return ACLNN_SUCCESS;
-    }
-    auto outOffsetFormat = ctx.outWeightOffsetOptional->GetStorageFormat();
-    OP_CHECK(outOffsetFormat == op::Format::FORMAT_ND,
-             OP_LOGE_FOR_INVALID_FORMAT("weight_quant_preprocess", "outWeightOffsetOptional",
-                                        op::ToString(outOffsetFormat).GetString(), "ND"),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckOutWeightOffsetOptionalDtypeSame(const QuantContext& ctx)
-{
-    if (ctx.weightOffsetOptional == nullptr) {
-        return ACLNN_SUCCESS;
-    }
-    auto offsetDtype = ctx.weightOffsetOptional->GetDataType();
-    auto outOffsetDtype = ctx.outWeightOffsetOptional->GetDataType();
-    OP_CHECK(outOffsetDtype == offsetDtype,
+    auto weightDtype = ctx.weight->GetDataType();
+    auto outWeightDtype = ctx.outWeight->GetDataType();
+    OP_CHECK(outWeightDtype == weightDtype,
              OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-                 "weight_quant_preprocess", "outWeightOffsetOptional, weightOffsetOptional",
-                 (op::ToString(outOffsetDtype).GetString() + std::string(", ") + op::ToString(offsetDtype).GetString())
+                 "weight_quant_preprocess", "outWeight, weight",
+                 (op::ToString(outWeightDtype).GetString() + std::string(", ") + op::ToString(weightDtype).GetString())
                      .c_str(),
-                 (std::string("outWeightOffsetOptional and weightOffsetOptional must have the same dtype when "
-                              "dataFlow is ") +
-                  QuantDataFlowToString(ctx.dataFlow) + ".")
-                     .c_str()),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckOutWeightOffsetOptionalViewShapeSame(const QuantContext& ctx)
-{
-    if (ctx.weightOffsetOptional == nullptr) {
-        return ACLNN_SUCCESS;
-    }
-    auto offsetViewShape = ctx.weightOffsetOptional->GetViewShape();
-    auto outOffsetViewShape = ctx.outWeightOffsetOptional->GetViewShape();
-    OP_CHECK(outOffsetViewShape == offsetViewShape,
-             OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-                 "weight_quant_preprocess", "outWeightOffsetOptional, weightOffsetOptional",
-                 (op::ToString(outOffsetViewShape).GetString() + std::string(", ") +
-                  op::ToString(offsetViewShape).GetString())
-                     .c_str(),
-                 (std::string("outWeightOffsetOptional and weightOffsetOptional must have the same viewShape when "
-                              "dataFlow is ") +
-                  QuantDataFlowToString(ctx.dataFlow) + ".")
-                     .c_str()),
-             return ACLNN_ERR_PARAM_INVALID);
-    return ACLNN_SUCCESS;
-}
-
-static aclnnStatus CheckOutWeightOffsetOptionalStorageShapeSame(const QuantContext& ctx)
-{
-    if (ctx.weightOffsetOptional == nullptr) {
-        return ACLNN_SUCCESS;
-    }
-    auto offsetStorageShape = ctx.weightOffsetOptional->GetStorageShape();
-    auto outOffsetStorageShape = ctx.outWeightOffsetOptional->GetStorageShape();
-    OP_CHECK(outOffsetStorageShape == offsetStorageShape,
-             OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-                 "weight_quant_preprocess", "outWeightOffsetOptional, weightOffsetOptional",
-                 (op::ToString(outOffsetStorageShape).GetString() + std::string(", ") +
-                  op::ToString(offsetStorageShape).GetString())
-                     .c_str(),
-                 (std::string("outWeightOffsetOptional and weightOffsetOptional must have the same storageShape when "
-                              "dataFlow is ") +
-                  QuantDataFlowToString(ctx.dataFlow) + ".")
+                 (std::string("outWeight and weight must have the same dtype when dataFlow is ") +
+                  QuantDataFlowToString(ctx.dataFlow))
                      .c_str()),
              return ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
@@ -1223,7 +688,7 @@ static aclnnStatus ProcessWeightDirectCopy(QuantContext& ctx)
     auto srcWeight = const_cast<aclTensor*>(ctx.weight);
     auto dstWeight = ctx.outWeight;
 
-    if (srcWeight->GetDataType() == op::DataType::DT_INT4) {
+    if (srcWeight->GetDataType() == op::DataType::DT_INT4 || srcWeight->GetDataType() == op::DataType::DT_FLOAT4_E2M1) {
         auto weightViewShape = srcWeight->GetViewShape();
         auto weightViewStrides = srcWeight->GetViewStrides();
         op::Shape packedShape(weightViewShape);
@@ -1258,59 +723,29 @@ static aclnnStatus ProcessWeightDirectCopy(QuantContext& ctx)
 } // namespace
 
 // ===== A16S4/A16F4 检查组合：按粒度拼装，条目间无内部分流 =====
-// 输入公共检查（紧凑 4-bit 打包维须为偶数；INT4 直拷视图须连续/严格转置且偏移字节对齐）
-const std::vector<CheckFunc> INPUT_BASE_CHECKS = {CheckWeightNotEmpty,       CheckWeightFormatND,
-                                                  CheckWeightPackingDimEven, CheckWeightInt4DirectCopyView,
-                                                  CheckWeightScaleNotEmpty,  CheckWeightScaleFormatND};
+// 输入公共检查（紧凑 4-bit 打包维须为偶数；4-bit 直拷视图须连续/严格转置且偏移字节对齐）
+// scale/offset/bias 为透传参数：out 侧 same 校验已保证输出与输入完全一致，
+// 其自身的 dtype/format/shape 约束 preprocess 不消费也不处理，统一下放下游 wqbmmv2 拦截
+const std::vector<CheckFunc> INPUT_BASE_CHECKS = {CheckWeightNotEmpty, CheckWeightFormatND, CheckWeightPackingDimEven,
+                                                  CheckWeight4BitDirectCopyView};
 
-const std::vector<CheckFunc> SCALE_DTYPE_F16_BF16_CHECK = {
-    CheckWeightScaleDtype<op::DataType::DT_FLOAT16, op::DataType::DT_BF16>};
-
-// per-channel 形状 scale 配 kGroupSize>0 属矛盾输入（CheckKGroupSizeZero）
-const std::vector<CheckFunc> PER_CHANNEL_SCALE_CHECKS = {CheckWeightScalePerChannelViewShape, CheckKGroupSizeZero};
-
-// per-group scale 须为 [ceildiv(K, kGroupSize), N]；kGroupSize<=0 由 CheckKGroupSizePositive 先行拒绝，
-// 避免 CheckWeightScalePerGroupViewShape 中 CeilDiv 除 0
-const std::vector<CheckFunc> PER_GROUP_SCALE_CHECKS = {CheckKGroupSizePositive, CheckWeightScalePerGroupViewShape};
-
-// offset 与 scale 同形同 dtype 直拷透传；bias 仅直拷透传，不校验 dtype（支持 fp16/bf16/fp32 等，由下游 matmul
-// 信息库约束）
-const std::vector<CheckFunc> BIAS_OFFSET_CHECKS = {CheckWeightOffsetOptionalNotEmpty,
-                                                   CheckWeightOffsetOptionalFormatND,
-                                                   CheckWeightOffsetOptionalDtypeSameAsScale,
-                                                   CheckWeightOffsetOptionalViewShapeSameAsScale,
-                                                   CheckBiasOptionalNotEmpty,
-                                                   CheckBiasOptionalFormatND,
-                                                   CheckBiasOptionalViewShape<false>,
-                                                   CheckBiasOptionalContiguous};
+// F4/A8W4-MX 条目无 offset 直拷 process：入参 offset 必须 nullptr，否则会被静默丢弃
+const std::vector<CheckFunc> OFFSET_NULL_CHECK = {CheckWeightOffsetOptionalNull};
 
 // out weight ND 直拷检查
-const std::vector<CheckFunc> OUT_WEIGHT_ND_CHECKS = {CheckOutWeightNotNullEmpty, CheckOutWeightDtypeSame,
-                                                     CheckOutWeightFormatND, CheckOutWeightViewShapeSame};
+const std::vector<CheckFunc> OUT_WEIGHT_ND_CHECKS = {CheckOutWeightSameAsInput};
 
-// out weight NZ_C0_16 分形检查（CheckWeightNotTrans 防御：judge 已保证非转置）
+// 非转置防御（judge 已保证非转置）：供 CombineChecks 条目在 OUT_WEIGHT_NZ_C016_CHECKS 前插入
+const std::vector<CheckFunc> WEIGHT_NOT_TRANS_CHECK = {CheckWeightNotTrans};
+
+// out weight NZ_C0_16 分形检查（非转置防御由 WEIGHT_NOT_TRANS_CHECK 承担）
 const std::vector<CheckFunc> OUT_WEIGHT_NZ_C016_CHECKS = {
-    CheckWeightNotTrans,        CheckOutWeightNotNullEmpty,
-    CheckOutWeightDtypeSame,    CheckOutWeightViewShapeSame,
-    CheckOutWeightNzStorageDim, CheckOutWeightTransNz<NZ_C0_16, op::Format::FORMAT_FRACTAL_NZ_C0_16>};
+    CheckOutWeightSameBase, CheckOutWeightDtypeSame, CheckOutWeightNzStorageDim,
+    CheckOutWeightTransNz<NZ_C0_16, op::Format::FORMAT_FRACTAL_NZ_C0_16>};
 
 // 输出 scale/offset/bias 与入参一致性检查（公共尾部）
-const std::vector<CheckFunc> OUT_TAIL_CHECKS = {CheckOutWeightScaleNotNullEmpty,
-                                                CheckOutWeightScaleFormatND,
-                                                CheckOutWeightScaleDtypeSame,
-                                                CheckOutWeightScaleViewShapeSame,
-                                                CheckOutWeightScaleStorageShapeSame,
-                                                CheckOutWeightOffsetOptionalNotNullEmpty,
-                                                CheckOutWeightOffsetOptionalFormatND,
-                                                CheckOutWeightOffsetOptionalDtypeSame,
-                                                CheckOutWeightOffsetOptionalViewShapeSame,
-                                                CheckOutWeightOffsetOptionalStorageShapeSame,
-                                                CheckOutBiasOptionalNotNullEmpty,
-                                                CheckOutBiasOptionalFormatND,
-                                                CheckOutBiasOptionalContiguous,
-                                                CheckOutBiasOptionalDtypeSame,
-                                                CheckOutBiasOptionalViewShapeSame,
-                                                CheckOutBiasOptionalStorageShapeSame};
+const std::vector<CheckFunc> OUT_TAIL_CHECKS = {CheckOutWeightScaleSameAsInput, CheckOutWeightOffsetOptionalSameAsInput,
+                                                CheckOutBiasOptionalSameAsInput};
 
 template <typename... Groups>
 static std::vector<CheckFunc> CombineChecks(const Groups&... groups)
@@ -1323,157 +758,80 @@ static std::vector<CheckFunc> CombineChecks(const Groups&... groups)
 const std::unordered_map<NpuArch, std::vector<DataFlowEntry>> NPU_DATA_FLOW_REGISTRY_MAP = {
     {NpuArch::DAV_3510,
      {{.judge = IsMMMxA8W4DataFlow,
-       .checks =
-           {CheckWeightNotEmpty, CheckWeightFormatND,
-            CheckWeightTrans, // 校验 weight 最后 2 维是否转置
-            CheckWeightScaleNotEmpty, CheckWeightScaleFormatND,
-            CheckWeightScaleMx<DIMS_3>, // 校验 weightScale 的 viewShape 是否符合 Mx 场景的 3 维形式 (k/64, n, 2)
-            CheckWeightScaleTrans<IDX_0>, // 校验 weightScale 的第 0 维和第 1 维是否转置
-            CheckWeightOffsetOptionalNull, CheckBiasOptionalNotEmpty, CheckBiasOptionalFormatND,
-            CheckBiasOptionalDtype<op::DataType::DT_FLOAT16, op::DataType::DT_BF16>, // 支持 bias 数据类型 FP16/BF16
-            CheckBiasOptionalViewShape<false>, // false 表示非 GMM 场景，bias shape 要求 (n) 或 (1, n)
-            CheckBiasOptionalContiguous,
-            CheckKGroupSizeMx, // Mx 场景要求 kGroupSize 为 32
-            CheckOutWeightNotNullEmpty, CheckOutWeightDtypeSame, CheckOutWeightViewShapeSame,
-            CheckOutWeightNzStorageDim, // 输出 weight 为 NZ 格式，校验 storageShape 维度是否正确
-            CheckOutWeightTransNz<NZ_C0_32, op::Format::FORMAT_FRACTAL_NZ_C0_32>, // 校验输出 weight storageShape 符合
-                                                                                  // C0_32
-            CheckOutWeightScaleNotNullEmpty, CheckOutWeightScaleFormatND, CheckOutWeightScaleDtypeSame,
-            CheckOutWeightScaleViewShapeSame, CheckOutWeightScaleStorageShapeSame, CheckOutBiasOptionalNotNullEmpty,
-            CheckOutBiasOptionalFormatND, CheckOutBiasOptionalContiguous, CheckOutBiasOptionalDtypeSame,
-            CheckOutBiasOptionalViewShapeSame, CheckOutBiasOptionalStorageShapeSame},
+       .checks = {CheckWeightNotEmpty, CheckWeightFormatND,
+                  CheckWeightTrans,              // 校验 weight 最后 2 维是否转置
+                  CheckWeightOffsetOptionalNull, // offset 无直拷 process，入参必须 nullptr，否则被静默丢弃
+                  CheckOutWeightSameBase,        // out 与 input 的 nullptr/empty/viewShape 一致
+                  CheckOutWeightDtypeSame,       // NZ 出 dtype 与输入一致
+                  CheckOutWeightNzStorageDim,    // 输出 weight 为 NZ 格式，校验 storageShape 维度是否正确
+                  CheckOutWeightTransNz<NZ_C0_32, op::Format::FORMAT_FRACTAL_NZ_C0_32>, // 校验输出 weight storageShape
+                                                                                        // 符合 C0_32
+                  CheckOutWeightScaleSameAsInput, CheckOutBiasOptionalSameAsInput},
        .processes = {ProcessWeightTransNd2Nz<IDX_0>, // 对 weight 进行 Nd2Nz 转换，参数表示 k 在 viewShape 中的下标
                      ProcessWeightScaleDirectCopy, ProcessBiasDirectCopy}},
       {.judge = IsGMMMxA8W4DataFlow,
-       .checks =
-           {CheckWeightNotEmpty, CheckWeightFormatND,
-            CheckWeightTrans, // 校验 weight 最后 2 维是否转置
-            CheckWeightScaleNotEmpty, CheckWeightScaleFormatND,
-            CheckWeightScaleMx<DIMS_4>, // 校验 weightScale 的 viewShape 是否符合 Mx 场景的 4 维形式 (g, k/64, n, 2)
-            CheckWeightScaleTrans<IDX_1>, // 校验 weightScale 的第 1 维和第 2 维是否转置
-            CheckWeightOffsetOptionalNull, CheckBiasOptionalNotEmpty, CheckBiasOptionalFormatND,
-            CheckBiasOptionalDtype<op::DataType::DT_FLOAT16, op::DataType::DT_BF16>, // 支持 bias 数据类型 FP16/BF16
-            CheckBiasOptionalViewShape<true>, // true 表示 GMM 场景，bias shape 要求 (g, n)
-            CheckBiasOptionalContiguous,
-            CheckKGroupSizeMx, // Mx 场景要求 kGroupSize 为 32
-            CheckOutWeightNotNullEmpty, CheckOutWeightDtypeSame, CheckOutWeightViewShapeSame,
-            CheckOutWeightNzStorageDim, // 输出 weight 为 NZ 格式，校验 storageShape 维度是否正确
-            CheckOutWeightTransNz<NZ_C0_32, op::Format::FORMAT_FRACTAL_NZ_C0_32>, // 校验输出 weight storageShape 符合
-                                                                                  // C0_32
-            CheckOutWeightScaleNotNullEmpty, CheckOutWeightScaleFormatND, CheckOutWeightScaleDtypeSame,
-            CheckOutWeightScaleViewShapeSame, CheckOutWeightScaleStorageShapeSame, CheckOutBiasOptionalNotNullEmpty,
-            CheckOutBiasOptionalFormatND, CheckOutBiasOptionalContiguous, CheckOutBiasOptionalDtypeSame,
-            CheckOutBiasOptionalViewShapeSame, CheckOutBiasOptionalStorageShapeSame},
+       .checks = {CheckWeightNotEmpty, CheckWeightFormatND,
+                  CheckWeightTrans,              // 校验 weight 最后 2 维是否转置
+                  CheckWeightOffsetOptionalNull, // offset 无直拷 process，入参必须 nullptr，否则被静默丢弃
+                  CheckOutWeightSameBase,        // out 与 input 的 nullptr/empty/viewShape 一致
+                  CheckOutWeightDtypeSame,       // NZ 出 dtype 与输入一致
+                  CheckOutWeightNzStorageDim,    // 输出 weight 为 NZ 格式，校验 storageShape 维度是否正确
+                  CheckOutWeightTransNz<NZ_C0_32, op::Format::FORMAT_FRACTAL_NZ_C0_32>, // 校验输出 weight storageShape
+                                                                                        // 符合 C0_32
+                  CheckOutWeightScaleSameAsInput, CheckOutBiasOptionalSameAsInput},
        .processes = {ProcessWeightTransNd2Nz<IDX_1>, // 对 weight 进行 Nd2Nz 转换，参数表示 k 在 viewShape 中的下标
                      ProcessWeightScaleDirectCopy, ProcessBiasDirectCopy}},
       {.judge = IsMMA16S4PerTensorDataFlow,
        .checks = {CheckWeightNotEmpty, CheckWeightFormatND,
                   CheckWeightPackingDimEven,     // 紧凑 4-bit 打包维须为偶数
-                  CheckWeightInt4DirectCopyView, // INT4 直拷视图须连续/严格转置且偏移字节对齐
-                  CheckWeightScaleNotEmpty, CheckWeightScaleFormatND,
-                  CheckWeightScaleDtype<op::DataType::DT_FLOAT16, op::DataType::DT_BF16>,
-                  CheckWeightScalePerTensorViewShape,
-                  CheckKGroupSizeZero, // per-tensor scale 配 kGroupSize>0 属矛盾输入
-                  CheckWeightOffsetOptionalNotEmpty, CheckWeightOffsetOptionalFormatND,
-                  CheckWeightOffsetOptionalDtypeSameAsScale, CheckWeightOffsetOptionalViewShapeSameAsScale,
-                  CheckBiasOptionalNotEmpty, CheckBiasOptionalFormatND, CheckBiasOptionalViewShape<false>,
-                  CheckBiasOptionalContiguous, CheckOutWeightNotNullEmpty, CheckOutWeightDtypeSame,
-                  // per-tensor 不支持 NZ：outWeight 必须 ND/NCL，转置/非转置 weight 均直拷
-                  CheckOutWeightFormatND, CheckOutWeightViewShapeSame, CheckOutWeightScaleNotNullEmpty,
-                  CheckOutWeightScaleFormatND, CheckOutWeightScaleDtypeSame, CheckOutWeightScaleViewShapeSame,
-                  CheckOutWeightScaleStorageShapeSame, CheckOutWeightOffsetOptionalNotNullEmpty,
-                  CheckOutWeightOffsetOptionalFormatND, CheckOutWeightOffsetOptionalDtypeSame,
-                  CheckOutWeightOffsetOptionalViewShapeSame, CheckOutWeightOffsetOptionalStorageShapeSame,
-                  CheckOutBiasOptionalNotNullEmpty, CheckOutBiasOptionalFormatND, CheckOutBiasOptionalContiguous,
-                  CheckOutBiasOptionalDtypeSame, CheckOutBiasOptionalViewShapeSame,
-                  CheckOutBiasOptionalStorageShapeSame},
+                  CheckWeight4BitDirectCopyView, // 4-bit 直拷视图须连续/严格转置且偏移字节对齐
+                  // per-tensor 不支持 NZ：outWeight 须与 weight 完全一致（format==），转置/非转置 weight 均直拷
+                  CheckOutWeightSameAsInput, CheckOutWeightScaleSameAsInput, CheckOutWeightOffsetOptionalSameAsInput,
+                  CheckOutBiasOptionalSameAsInput},
        .processes = {ProcessWeightDirectCopy, ProcessWeightScaleDirectCopy, ProcessWeightOffsetDirectCopy,
                      ProcessBiasDirectCopy}},
       // A16S4 per-channel 转置：ND 直拷（物理透传）
       {.judge = IsMMA16S4PerChannelTransDataFlow,
-       .checks = CombineChecks(INPUT_BASE_CHECKS, SCALE_DTYPE_F16_BF16_CHECK, PER_CHANNEL_SCALE_CHECKS,
-                               BIAS_OFFSET_CHECKS, OUT_WEIGHT_ND_CHECKS, OUT_TAIL_CHECKS),
+       .checks = CombineChecks(INPUT_BASE_CHECKS, OUT_WEIGHT_ND_CHECKS, OUT_TAIL_CHECKS),
        .processes = {ProcessWeightDirectCopy, ProcessWeightScaleDirectCopy, ProcessWeightOffsetDirectCopy,
                      ProcessBiasDirectCopy}},
       // A16S4 per-channel 非转置 + NZ_C0_16 出：ND→NZ 转换（非转置仅支持 NZ 出）
       {.judge = IsMMA16S4PerChannelNonTransNzDataFlow,
-       .checks = CombineChecks(INPUT_BASE_CHECKS, SCALE_DTYPE_F16_BF16_CHECK, PER_CHANNEL_SCALE_CHECKS,
-                               BIAS_OFFSET_CHECKS, OUT_WEIGHT_NZ_C016_CHECKS, OUT_TAIL_CHECKS),
+       .checks = CombineChecks(INPUT_BASE_CHECKS, WEIGHT_NOT_TRANS_CHECK, OUT_WEIGHT_NZ_C016_CHECKS, OUT_TAIL_CHECKS),
        .processes = {ProcessWeightNonTransNd2Nz<IDX_0>, ProcessWeightScaleDirectCopy, ProcessWeightOffsetDirectCopy,
                      ProcessBiasDirectCopy}},
       // A16S4 per-group 转置：ND 直拷（scale 形状须匹配 per-group 分组语义）
       {.judge = IsMMA16S4PerGroupTransDataFlow,
-       .checks = CombineChecks(INPUT_BASE_CHECKS, SCALE_DTYPE_F16_BF16_CHECK, PER_GROUP_SCALE_CHECKS,
-                               BIAS_OFFSET_CHECKS, OUT_WEIGHT_ND_CHECKS, OUT_TAIL_CHECKS),
+       .checks = CombineChecks(INPUT_BASE_CHECKS, OUT_WEIGHT_ND_CHECKS, OUT_TAIL_CHECKS),
        .processes = {ProcessWeightDirectCopy, ProcessWeightScaleDirectCopy, ProcessWeightOffsetDirectCopy,
                      ProcessBiasDirectCopy}},
       // A16S4 per-group 非转置 + NZ_C0_16 出：ND→NZ 转换（非转置仅支持 NZ 出）
       {.judge = IsMMA16S4PerGroupNonTransNzDataFlow,
-       .checks = CombineChecks(INPUT_BASE_CHECKS, SCALE_DTYPE_F16_BF16_CHECK, PER_GROUP_SCALE_CHECKS,
-                               BIAS_OFFSET_CHECKS, OUT_WEIGHT_NZ_C016_CHECKS, OUT_TAIL_CHECKS),
+       .checks = CombineChecks(INPUT_BASE_CHECKS, WEIGHT_NOT_TRANS_CHECK, OUT_WEIGHT_NZ_C016_CHECKS, OUT_TAIL_CHECKS),
        .processes = {ProcessWeightNonTransNd2Nz<IDX_0>, ProcessWeightScaleDirectCopy, ProcessWeightOffsetDirectCopy,
                      ProcessBiasDirectCopy}},
       {.judge = IsMMA16F4PerGroupDataFlow,
-       .checks = {CheckWeightNotEmpty,
-                  CheckWeightFormatND,
+       .checks = {CheckWeightNotEmpty, CheckWeightFormatND,
                   CheckWeightNotTrans,       // A16F4 per-group NZ 路径仅支持非转置 weight，转置返回错误
                   CheckWeightPackingDimEven, // 紧凑 FP4 打包维须为偶数（与 INT4 同约束）
-                  CheckWeightScaleNotEmpty,
-                  CheckWeightScaleFormatND,
-                  CheckWeightScaleDtype<op::DataType::DT_FLOAT16, op::DataType::DT_BF16>,
-                  CheckKGroupSizePositive,           // 先于 PerGroupViewShape：后者要用 kGroupSize 做除法
-                  CheckWeightScalePerGroupViewShape, // scale 须为 [ceildiv(K, kGroupSize), N]
-                  CheckWeightOffsetOptionalNull,
-                  CheckBiasOptionalNotEmpty,
-                  CheckBiasOptionalFormatND,
-                  CheckBiasOptionalViewShape<false>,
-                  CheckBiasOptionalContiguous,
-                  CheckOutWeightNotNullEmpty,
-                  CheckOutWeightDtypeSame,
-                  CheckOutWeightViewShapeSame,
-                  CheckOutWeightNzStorageDim,
-                  CheckOutWeightTransNz<NZ_C0_16, op::Format::FORMAT_FRACTAL_NZ_C0_16>,
-                  CheckOutWeightScaleNotNullEmpty,
-                  CheckOutWeightScaleFormatND,
-                  CheckOutWeightScaleDtypeSame,
-                  CheckOutWeightScaleViewShapeSame,
-                  CheckOutWeightScaleStorageShapeSame,
-                  CheckOutBiasOptionalNotNullEmpty,
-                  CheckOutBiasOptionalFormatND,
-                  CheckOutBiasOptionalContiguous,
-                  CheckOutBiasOptionalDtypeSame,
-                  CheckOutBiasOptionalViewShapeSame,
-                  CheckOutBiasOptionalStorageShapeSame},
+                  CheckWeightOffsetOptionalNull, // offset 无直拷 process，入参必须 nullptr，否则被静默丢弃
+                  CheckOutWeightSameBase,
+                  CheckOutWeightDtypeSame, // NZ 出 dtype 与输入一致
+                  CheckOutWeightNzStorageDim, CheckOutWeightTransNz<NZ_C0_16, op::Format::FORMAT_FRACTAL_NZ_C0_16>,
+                  CheckOutWeightScaleSameAsInput, CheckOutBiasOptionalSameAsInput},
        .processes = {ProcessWeightNonTransNd2Nz<IDX_0>, ProcessWeightScaleDirectCopy, ProcessBiasDirectCopy}},
-      {.judge = IsMMA16MXF4DataFlow,
-       .checks = {CheckWeightNotEmpty,
-                  CheckWeightFormatND,
-                  CheckWeightNotTrans, // A16MXFP4 路径仅支持非转置 weight，转置返回错误
+      // A16MXFP4 转置：ND 直拷（wqbmmv2 MX kernel 支持 ND 转置输入；offset 不支持必须 nullptr）
+      {.judge = IsMMA16MXF4TransDataFlow,
+       .checks = CombineChecks(INPUT_BASE_CHECKS, OFFSET_NULL_CHECK, OUT_WEIGHT_ND_CHECKS, OUT_TAIL_CHECKS),
+       .processes = {ProcessWeightDirectCopy, ProcessWeightScaleDirectCopy, ProcessBiasDirectCopy}},
+      // A16MXFP4 非转置 + NZ_C0_16 出：ND→NZ 分形转换（NZ 出仅支持非转置）
+      {.judge = IsMMA16MXF4NonTransNzDataFlow,
+       .checks = {CheckWeightNotEmpty, CheckWeightFormatND,
+                  CheckWeightNotTrans, // A16MXFP4 NZ 路径仅支持非转置 weight，转置由转置条目拦截
                   CheckWeightPackingDimEven,
-                  CheckWeightScaleNotEmpty,
-                  CheckWeightScaleFormatND,
-                  CheckWeightScaleDtype<op::DataType::DT_FLOAT8_E8M0>, // MX scale 固定 E8M0
-                  CheckKGroupSizeMx, // 先于 PerGroupViewShape：后者要用 kGroupSize 做除法；MX 场景 kGroupSize 固定为 32
-                  CheckWeightScalePerGroupViewShape, // MX scale 为 2D [ceildiv(K,32), N] 连续
-                  CheckWeightOffsetOptionalNull,
-                  CheckBiasOptionalNotEmpty,
-                  CheckBiasOptionalFormatND,
-                  CheckBiasOptionalViewShape<false>,
-                  CheckBiasOptionalContiguous,
-                  CheckOutWeightNotNullEmpty,
-                  CheckOutWeightDtypeSame,
-                  CheckOutWeightViewShapeSame,
-                  CheckOutWeightNzStorageDim,
-                  CheckOutWeightTransNz<NZ_C0_16, op::Format::FORMAT_FRACTAL_NZ_C0_16>,
-                  CheckOutWeightScaleNotNullEmpty,
-                  CheckOutWeightScaleFormatND,
-                  CheckOutWeightScaleDtypeSame,
-                  CheckOutWeightScaleViewShapeSame,
-                  CheckOutWeightScaleStorageShapeSame,
-                  CheckOutBiasOptionalNotNullEmpty,
-                  CheckOutBiasOptionalFormatND,
-                  CheckOutBiasOptionalContiguous,
-                  CheckOutBiasOptionalDtypeSame,
-                  CheckOutBiasOptionalViewShapeSame,
-                  CheckOutBiasOptionalStorageShapeSame},
+                  CheckWeightOffsetOptionalNull, // offset 无直拷 process，入参必须 nullptr，否则被静默丢弃
+                  CheckOutWeightSameBase,
+                  CheckOutWeightDtypeSame, // NZ 出 dtype 与输入一致
+                  CheckOutWeightNzStorageDim, CheckOutWeightTransNz<NZ_C0_16, op::Format::FORMAT_FRACTAL_NZ_C0_16>,
+                  CheckOutWeightScaleSameAsInput, CheckOutBiasOptionalSameAsInput},
        .processes = {ProcessWeightNonTransNd2Nz<IDX_0>, ProcessWeightScaleDirectCopy, ProcessBiasDirectCopy}}}}};

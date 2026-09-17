@@ -134,8 +134,8 @@ static void TestOneParamCase(const WeightQuantPreprocessTestParam& param)
             // 该类用例预期在 judge 阶段即被拒绝，storageShape 不参与预期结果
             outWeightStorageShape = param.weightViewShape;
         } else if (effOutFormat == ACL_FORMAT_ND) {
-            // ND 直拷：outWeight storageShape 与 viewShape 一致
-            outWeightStorageShape = param.weightViewShape;
+            // ND 直拷：outWeight 与 weight 完全一致，storageShape 镜像 weight（转置视图两者不等）
+            outWeightStorageShape = param.weightStorageShape;
         } else if (effOutFormat == ACL_FORMAT_FRACTAL_NZ_C0_16) {
             // NZ_C0_16（A16W4 紧凑 4-bit）：N 块在前 {ceildiv(N, 16), ceildiv(K, 16), 16, 16}
             size_t dimNum = param.weightViewShape.size();
@@ -163,7 +163,12 @@ static void TestOneParamCase(const WeightQuantPreprocessTestParam& param)
         aclFormat outFormat = param.outWeightFormat != ACL_FORMAT_UNDEFINED ? param.outWeightFormat :
                                                                               ACL_FORMAT_FRACTAL_NZ_C0_32;
         aclDataType outDtype = param.outWeightDtype != ACL_DT_UNDEFINED ? param.outWeightDtype : param.weightDtype;
-        outWeight = aclCreateTensor(outWeightViewShape.data(), outWeightViewShape.size(), outDtype, nullptr, 0,
+        // ND 直拷要求 outWeight 与 weight 完全一致（含连续性）：镜像 weight 的 strides，
+        // 转置 weight 对应转置 outWeight（与真实用法一致，如 op-plugin 的别名透传）
+        const int64_t* outStrides = (outFormat == ACL_FORMAT_ND && !param.weightStrides.empty()) ?
+                                        param.weightStrides.data() :
+                                        nullptr;
+        outWeight = aclCreateTensor(outWeightViewShape.data(), outWeightViewShape.size(), outDtype, outStrides, 0,
                                     outFormat, outWeightStorageShape.data(), outWeightStorageShape.size(),
                                     outWeightDeviceAddr);
     }
@@ -731,7 +736,8 @@ static WeightQuantPreprocessTestParam mmNormalCases[] = {
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
 
-    // [STC a16s4 T-14] per-group scale G=5 与 ceildiv(K=256, gs=64)=4 不对应：CheckWeightScalePerGroupViewShape 拒绝
+    // [STC a16s4 T-14] per-group scale G=5 与 ceildiv(K=256, gs=64)=4 不对应：v2 起 preprocess
+    // 放行（透传参数输入侧校验已下放 wqbmmv2）
     {"ascend950_test_MM_A16S4_pergroup_scale_g_mismatch",
      {256, 256},
      {256, 256},
@@ -747,7 +753,7 @@ static WeightQuantPreprocessTestParam mmNormalCases[] = {
      ACL_DT_UNDEFINED,
      64,
      false,
-     ACLNN_ERR_PARAM_INVALID,
+     ACLNN_SUCCESS,
      false,
      false,
      false,
@@ -823,10 +829,43 @@ static WeightQuantPreprocessTestParam mmNormalCases[] = {
      ACL_FORMAT_FRACTAL_NZ_C0_16,
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
+
+    // [STC a16f4 F-18] A16MXF4 转置 + ND 直拷正例：weight 转置视图 {K,N}={256,128} strides [1,256]，
+    // scale E8M0 转置视图 {G,N}={8,128} strides [1,8]，outWeight ND
+    {"ascend950_test_MM_A16MXF4_trans_nd",
+     {256, 128},
+     {128, 256},
+     {1, 256},
+     {8, 128},
+     {128, 8},
+     {1, 8},
+     ACL_FLOAT4_E2M1,
+     ACL_FLOAT8_E8M0,
+     ACL_FORMAT_ND,
+     ACL_FORMAT_ND,
+     ACL_FLOAT16,
+     ACL_DT_UNDEFINED,
+     32,
+     false,
+     ACLNN_SUCCESS,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     {},
+     {},
+     ACL_DT_UNDEFINED,
+     ACL_FORMAT_ND,
+     ACL_FORMAT_ND,
+     ACL_DT_UNDEFINED,
+     ACL_DT_UNDEFINED},
 };
 
 static WeightQuantPreprocessTestParam casesParams[] = {
 
+    // v2：kGroupSize 一致性校验已删，约束下放 wqbmmv2，preprocess 放行
     {"ascend950_test_GMM_kGroupSize_not_32",
      {2, 64, 128},
      {2, 128, 64},
@@ -842,7 +881,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_FLOAT8_E8M0,
      64,
      true,
-     ACLNN_ERR_PARAM_INVALID,
+     ACLNN_SUCCESS,
      false,
      false,
      false,
@@ -1067,6 +1106,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
 
+    // v2：scale 输入侧 format 校验已删（outScale 同为 NHWC，same 一致），约束下放 wqbmmv2
     {"ascend950_test_weightScale_format_invalid",
      {64, 128},
      {128, 64},
@@ -1082,7 +1122,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_FLOAT8_E8M0,
      32,
      false,
-     ACLNN_ERR_PARAM_INVALID,
+     ACLNN_SUCCESS,
      false,
      false,
      false,
@@ -1217,6 +1257,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
 
+    // A8W4 NZ 出 dtype 须与输入一致：outWeight 传 INT8 而输入为 float8_e4m3fn，拒绝
     {"ascend950_test_outWeight_dtype_mismatch",
      {64, 128},
      {128, 64},
@@ -1367,6 +1408,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
 
+    // v2：kGroupSize 一致性校验已删，约束下放 wqbmmv2，preprocess 放行
     {"ascend950_test_kGroupSize_not_32",
      {64, 128},
      {128, 64},
@@ -1382,7 +1424,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_FLOAT8_E8M0,
      64,
      false,
-     ACLNN_ERR_PARAM_INVALID,
+     ACLNN_SUCCESS,
      false,
      false,
      false,
@@ -1397,6 +1439,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
 
+    // v2：kGroupSize 一致性校验已删，约束下放 wqbmmv2，preprocess 放行
     {"ascend950_test_kGroupSize_zero",
      {64, 128},
      {128, 64},
@@ -1412,7 +1455,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_FLOAT8_E8M0,
      0,
      false,
-     ACLNN_ERR_PARAM_INVALID,
+     ACLNN_SUCCESS,
      false,
      false,
      false,
@@ -1427,6 +1470,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
 
+    // v2：scale 输入侧 viewShape 校验已删，约束下放 wqbmmv2，preprocess 放行
     {"ascend950_test_weightScale_shape_invalid",
      {64, 128},
      {128, 64},
@@ -1442,7 +1486,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_FLOAT8_E8M0,
      32,
      false,
-     ACLNN_ERR_PARAM_INVALID,
+     ACLNN_SUCCESS,
      false,
      false,
      false,
@@ -1457,6 +1501,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
 
+    // v2：scale 输入侧转置校验已删，约束下放 wqbmmv2，preprocess 放行
     {"ascend950_test_weightScale_not_transposed",
      {64, 128},
      {128, 64},
@@ -1472,7 +1517,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_FLOAT8_E8M0,
      32,
      false,
-     ACLNN_ERR_PARAM_INVALID,
+     ACLNN_SUCCESS,
      false,
      false,
      false,
@@ -1517,6 +1562,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
 
+    // v2：bias 输入侧 dtype 校验已删（outBias 同为 INT8，same 一致），约束下放 wqbmmv2
     {"ascend950_test_bias_dtype_invalid",
      {64, 128},
      {128, 64},
@@ -1532,7 +1578,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_FLOAT8_E8M0,
      32,
      false,
-     ACLNN_ERR_PARAM_INVALID,
+     ACLNN_SUCCESS,
      false,
      false,
      false,
@@ -1547,6 +1593,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
 
+    // v2：bias 输入侧 viewShape 校验已删，约束下放 wqbmmv2，preprocess 放行
     {"ascend950_test_bias_shape_invalid",
      {64, 128},
      {128, 64},
@@ -1562,7 +1609,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_FLOAT8_E8M0,
      32,
      false,
-     ACLNN_ERR_PARAM_INVALID,
+     ACLNN_SUCCESS,
      false,
      false,
      false,
@@ -1577,6 +1624,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
 
+    // v2：bias 输入侧 viewShape 校验已删，约束下放 wqbmmv2，preprocess 放行
     {"ascend950_test_bias_1d_shape_invalid",
      {64, 128},
      {128, 64},
@@ -1592,7 +1640,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_FLOAT8_E8M0,
      32,
      false,
-     ACLNN_ERR_PARAM_INVALID,
+     ACLNN_SUCCESS,
      false,
      false,
      false,
@@ -1607,6 +1655,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
 
+    // v2：bias 输入侧 format 校验已删（outBias 同为 NCHW，same 一致），约束下放 wqbmmv2
     {"ascend950_test_bias_format_invalid",
      {64, 128},
      {128, 64},
@@ -1622,7 +1671,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_FLOAT8_E8M0,
      32,
      false,
-     ACLNN_ERR_PARAM_INVALID,
+     ACLNN_SUCCESS,
      false,
      false,
      false,
@@ -1637,6 +1686,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
 
+    // v2：bias 输入侧 viewShape 校验已删，约束下放 wqbmmv2，preprocess 放行
     {"ascend950_test_GMM_bias_shape_invalid",
      {2, 64, 128},
      {2, 128, 64},
@@ -1652,7 +1702,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_FLOAT8_E8M0,
      32,
      true,
-     ACLNN_ERR_PARAM_INVALID,
+     ACLNN_SUCCESS,
      false,
      false,
      false,
@@ -1667,6 +1717,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
 
+    // v2：bias 输入侧 viewShape 校验已删，约束下放 wqbmmv2，preprocess 放行
     {"ascend950_test_GMM_bias_1d_shape_invalid",
      {2, 64, 128},
      {2, 128, 64},
@@ -1682,7 +1733,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_FLOAT8_E8M0,
      32,
      true,
-     ACLNN_ERR_PARAM_INVALID,
+     ACLNN_SUCCESS,
      false,
      false,
      false,
@@ -1729,7 +1780,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED},
 
     // weight 末两维 strides 既非连续也非严格转置（{N, 2}），INT4 视图非法
-    // （NZ_C0_16 出命中非转置 NZ 条目，由 CheckWeightInt4DirectCopyView 拒绝）
+    // （NZ_C0_16 出命中非转置 NZ 条目，由 CheckWeight4BitDirectCopyView 拒绝）
     {"ascend950_test_A16S4_INT4_weight_strides_invalid",
      {64, 128},
      {128, 128},
@@ -1760,7 +1811,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
 
-    // [STC a16s4 T-12] per-channel scale {N} 与 weight N=128 不匹配（CheckWeightScalePerChannelViewShape）
+    // [STC a16s4 T-12] per-channel scale {N} 与 weight N=128 不匹配：v2 起 preprocess 放行（约束下放 wqbmmv2）
     {"ascend950_test_A16S4_perchannel_scale_n_mismatch",
      {64, 128},
      {64, 128},
@@ -1776,7 +1827,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      0,
      false,
-     ACLNN_ERR_PARAM_INVALID,
+     ACLNN_SUCCESS,
      false,
      false,
      false,
@@ -1791,7 +1842,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
 
-    // [STC a16s4 T-13] per-channel scale {1, N} 与 weight N=128 不匹配（CheckWeightScalePerChannelViewShape）
+    // [STC a16s4 T-13] per-channel scale {1, N} 与 weight N=128 不匹配：v2 起 preprocess 放行（约束下放 wqbmmv2）
     {"ascend950_test_A16S4_perchannel_scale_1n_mismatch",
      {64, 128},
      {64, 128},
@@ -1807,7 +1858,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      0,
      false,
-     ACLNN_ERR_PARAM_INVALID,
+     ACLNN_SUCCESS,
      false,
      false,
      false,
@@ -1822,7 +1873,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
 
-    // per-channel 形状 scale {N} 配 kGroupSize>0 属矛盾输入（CheckKGroupSizeZero）
+    // per-channel 形状 scale {N} 配 kGroupSize>0：v2 起 preprocess 放行（kGroupSize 一致性约束下放 wqbmmv2）
     {"ascend950_test_A16S4_perchannel_kgroupsize_nonzero",
      {64, 128},
      {64, 128},
@@ -1838,7 +1889,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      64,
      false,
-     ACLNN_ERR_PARAM_INVALID,
+     ACLNN_SUCCESS,
      false,
      false,
      false,
@@ -1853,7 +1904,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
 
-    // scale {2} 非单元素不命中 per-tensor，路由到 per-channel 后 N 不匹配
+    // scale {2} 非单元素不命中 per-tensor，路由到 per-channel；N 不匹配 v2 起放行（下放 wqbmmv2）
     {"ascend950_test_A16S4_pertensor_scale_two_elem",
      {64, 128},
      {64, 128},
@@ -1869,7 +1920,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      0,
      false,
-     ACLNN_ERR_PARAM_INVALID,
+     ACLNN_SUCCESS,
      false,
      false,
      false,
@@ -1915,7 +1966,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
 
-    // [STC a16s4 T-24] outWeight dtype 与 weight 不同（CheckOutWeightDtypeSame）
+    // [STC a16s4 T-24] outWeight dtype 与 weight 不同：NZ 出 dtype 须与输入一致，拒绝
     {"ascend950_test_A16S4_outWeight_dtype_mismatch",
      {64, 128},
      {64, 128},
@@ -2073,7 +2124,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
 
-    // [STC a16f4 T-31] A16MXF4 kGroupSize=64 ≠ 32（CheckKGroupSizeMx）
+    // [STC a16f4 T-31] A16MXF4 kGroupSize=64 ≠ 32：v2 起 preprocess 放行（kGroupSize 约束下放 wqbmmv2）
     {"ascend950_test_A16MXF4_kgroupsize_not_32",
      {64, 128},
      {64, 128},
@@ -2089,7 +2140,7 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      64,
      false,
-     ACLNN_ERR_PARAM_INVALID,
+     ACLNN_SUCCESS,
      false,
      false,
      false,
@@ -2163,6 +2214,38 @@ static WeightQuantPreprocessTestParam casesParams[] = {
      ACL_DT_UNDEFINED,
      ACL_FORMAT_ND,
      ACL_FORMAT_FRACTAL_NZ_C0_16,
+     ACL_DT_UNDEFINED,
+     ACL_DT_UNDEFINED},
+
+    // [STC a16f4 T-42] A16F4 per-group 转置 weight + ND 出：pergroup 不支持转置（转置仅 MX 支持 ND 直拷），
+    // judge 命中 pergroup NZ 条目后由 CheckWeightNotTrans 拒绝
+    {"ascend950_test_A16F4_pergroup_trans_nd_reject",
+     {64, 128},
+     {128, 64},
+     {1, 64},
+     {2, 128},
+     {2, 128},
+     {128, 1},
+     ACL_FLOAT4_E2M1,
+     ACL_FLOAT16,
+     ACL_FORMAT_ND,
+     ACL_FORMAT_ND,
+     ACL_FLOAT16,
+     ACL_DT_UNDEFINED,
+     32,
+     false,
+     ACLNN_ERR_PARAM_INVALID,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     {},
+     {},
+     ACL_DT_UNDEFINED,
+     ACL_FORMAT_ND,
+     ACL_FORMAT_ND,
      ACL_DT_UNDEFINED,
      ACL_DT_UNDEFINED},
 
