@@ -40,6 +40,10 @@ using namespace Sort;
 #define SORT_RADIX_MORE_CORE_UINT32_DESCENDING_TILING_KEY 65794
 #define SORT_MERGE_MORE_CORE_ASCENDING_TILING_KEY 259
 #define SORT_MERGE_MORE_CORE_DESCENDING_TILING_KEY 65795
+#define SORT_MERGE_DIRECT_ASCENDING_TILING_KEY 268
+#define SORT_MERGE_DIRECT_DESCENDING_TILING_KEY 65804
+#define SORT_MERGE_PATH_ASCENDING_TILING_KEY 269
+#define SORT_MERGE_PATH_DESCENDING_TILING_KEY 65805
 
 template <typename Op>
 __aicore__ inline void LaunchSortKernel(GM_ADDR input, GM_ADDR values, GM_ADDR indices, GM_ADDR userWorkspace,
@@ -64,18 +68,17 @@ __aicore__ inline void LaunchRadixMoreCore(GM_ADDR radixInput, GM_ADDR radixValu
         radixInput, radixValues, radixIndices, radixWorkspace, radixTiling, radixPipeline);
 }
 
-template <uint64_t schId, uint64_t isDescend>
+template <uint64_t isDescend>
 __aicore__ inline void LaunchMergeSortRoute(GM_ADDR mergeInput, GM_ADDR mergeValues, GM_ADDR mergeIndices,
                                             GM_ADDR mergeWorkspace, const SortRegBaseTilingData* mergeTiling,
                                             TPipe* mergePipeline)
 {
-    constexpr bool isSort32SmallAxis = (schId == SORT_SCHID_8);
     if constexpr (std::is_same_v<bfloat16_t, DTYPE_X>) {
-        LaunchSortKernel<MergeSort<DTYPE_X, DTYPE_Y2, float, isDescend, isSort32SmallAxis>>(
-            mergeInput, mergeValues, mergeIndices, mergeWorkspace, mergeTiling, mergePipeline);
+        LaunchSortKernel<MergeSort<DTYPE_X, DTYPE_Y2, float, isDescend>>(mergeInput, mergeValues, mergeIndices,
+                                                                         mergeWorkspace, mergeTiling, mergePipeline);
     } else if constexpr (std::is_same_v<half, DTYPE_X> || std::is_same_v<float, DTYPE_X>) {
-        LaunchSortKernel<MergeSort<DTYPE_X, DTYPE_Y2, DTYPE_X, isDescend, isSort32SmallAxis>>(
-            mergeInput, mergeValues, mergeIndices, mergeWorkspace, mergeTiling, mergePipeline);
+        LaunchSortKernel<MergeSort<DTYPE_X, DTYPE_Y2, DTYPE_X, isDescend>>(mergeInput, mergeValues, mergeIndices,
+                                                                           mergeWorkspace, mergeTiling, mergePipeline);
     }
 }
 
@@ -94,6 +97,10 @@ __global__ __aicore__ void sort(GM_ADDR input, GM_ADDR sortedValues, GM_ADDR sor
     KERNEL_TASK_TYPE(SORT_RADIX_MORE_CORE_UINT32_DESCENDING_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
     KERNEL_TASK_TYPE(SORT_MERGE_MORE_CORE_ASCENDING_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
     KERNEL_TASK_TYPE(SORT_MERGE_MORE_CORE_DESCENDING_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
+    KERNEL_TASK_TYPE(SORT_MERGE_DIRECT_ASCENDING_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
+    KERNEL_TASK_TYPE(SORT_MERGE_DIRECT_DESCENDING_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
+    KERNEL_TASK_TYPE(SORT_MERGE_PATH_ASCENDING_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
+    KERNEL_TASK_TYPE(SORT_MERGE_PATH_DESCENDING_TILING_KEY, KERNEL_TYPE_MIX_AIV_1_0);
     TPipe sortPipeline;
     constexpr bool isDescending = (isDescend != 0);
     if constexpr (schId == SORT_SCHID_7) {
@@ -106,10 +113,13 @@ __global__ __aicore__ void sort(GM_ADDR input, GM_ADDR sortedValues, GM_ADDR sor
         LaunchSortKernel<SortRadixOneCore<DTYPE_X, DTYPE_Y2, isDescending>>(
             input, sortedValues, sortedIndices, sortWorkspace, &sortTilingData, &sortPipeline);
     } else if constexpr (schId == SORT_SCHID_0 || schId == SORT_SCHID_8) {
-        LaunchMergeSortRoute<schId, isDescend>(input, sortedValues, sortedIndices, sortWorkspace, &sortTilingData,
-                                               &sortPipeline);
-    } else if constexpr (schId == SORT_SCHID_3 && std::is_same_v<float, DTYPE_X>) {
-        LaunchSortKernel<MergeSortBigSize<DTYPE_X, DTYPE_X, isDescending, DTYPE_Y2>>(
+        LaunchMergeSortRoute<isDescend>(input, sortedValues, sortedIndices, sortWorkspace, &sortTilingData,
+                                        &sortPipeline);
+    } else if constexpr ((schId == SORT_SCHID_3 || schId == SORT_SCHID_12 || schId == SORT_SCHID_13) &&
+                         std::is_same_v<float, DTYPE_X>) {
+        constexpr bool useDirectSchedule = (schId == SORT_SCHID_12 || schId == SORT_SCHID_13);
+        constexpr bool useMergePath = (schId == SORT_SCHID_13);
+        LaunchSortKernel<MergeSortBigSize<DTYPE_X, DTYPE_X, isDescending, DTYPE_Y2, useDirectSchedule, useMergePath>>(
             input, sortedValues, sortedIndices, sortWorkspace, &sortTilingData, &sortPipeline);
     } else if constexpr (schId == SORT_SCHID_4 && std::is_same_v<float, DTYPE_X>) {
         LaunchSortKernel<Sort::SortMergeIntraCore<DTYPE_X, DTYPE_Y2, isDescending>>(

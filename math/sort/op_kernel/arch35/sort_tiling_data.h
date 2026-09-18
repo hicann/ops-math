@@ -16,6 +16,10 @@
 #ifndef _SORT_REGBASE_TILING_DATA_H_
 #define _SORT_REGBASE_TILING_DATA_H_
 
+constexpr uint32_t SORT_BATCH_MERGE_MIN_ROWS = 4;
+constexpr uint32_t SORT_RESIDENT_MERGE_MIN_BLOCKS = 2U;
+constexpr uint32_t SORT_RESIDENT_MERGE_MAX_BLOCKS = 3U;
+
 struct SortRegBaseTilingData {
     uint32_t numTileDataSize;     // h轴ub一次处理个数
     uint32_t unsortedDimParallel; // b轴使用的核数
@@ -30,6 +34,7 @@ struct SortRegBaseTilingData {
     // radix: 清零 excusiveBinsGmWk_ 的核
     // radix_one_core: y2OutQue 需要的 ub 大小
     // merge: xQue ub 大小
+    // merge more-core(sch3): sort_sync_merge_sort 逻辑块大小，0 表示普通 more-core
     uint32_t keyParams1;
     // radix: 清零的一次 ub 数据量
     // radix_one_core: 输出 int64 时，一半的 ub 偏移
@@ -47,6 +52,8 @@ struct SortRegBaseTilingData {
     // non-last small-axis radix(sch10): phase-shared UB layout flag
     // non-last small-axis two-stage(sch11): outer slices per batch (0 means ordinary mapping)
     uint32_t keyParams4;
+    // merge_sort(sch0): enable row-batched proposal buffers and merge stages
+    // non-last merge(sch9): 0 = ordinary layout, 1 = compact value rows/shared proposals
     uint32_t keyParams5;    // radix：清零chunk大小；intra_core(sch4)：最大归并迭代次数
     uint32_t tmpUbSize;     // sort高级api需要的临时ub大小
     int64_t lastAxisNum;    // h轴大小

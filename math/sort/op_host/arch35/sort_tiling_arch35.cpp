@@ -369,7 +369,7 @@ ge::graphStatus SetMergeMoreCoreTiling(gert::TilingContext* context, SortKthTile
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ComputeMergeMoreCoreTiling", "false",
                                                       "The value of ComputeMergeMoreCoreTiling must be true."),
                 return ge::GRAPH_FAILED);
-    OP_LOGI("[mergeSort]", "maxDealingNum: %u", info.keyParams0);
+    OP_LOGI("[mergeSort]", "maxDealingNum: %u, syncMergeBlockSize: %u", info.keyParams0, info.keyParams1);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -437,12 +437,31 @@ void PrintTilingDataSort(gert::TilingContext* context, SortKthTileInfo& sortTile
     return;
 }
 
-ge::graphStatus SetMergeSortTiling(gert::TilingContext* context, SortKthTileInfo& info)
+ge::graphStatus SetMergeSortTiling(gert::TilingContext* context, SortKthTileInfo& info, bool useUbCapacity = false)
 {
-    OP_CHECK_IF(!ComputeMergeSortTiling(context, info, info.y2DtypeSize),
-                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ComputeMergeSortTiling", "false",
-                                                      "The value of ComputeMergeSortTiling must be true."),
-                return ge::GRAPH_FAILED);
+    // A rejected candidate falls through to another schedule; it is not a tiling error.
+    if (!ComputeMergeSortTiling(context, info, info.y2DtypeSize, useUbCapacity)) {
+        return ge::GRAPH_FAILED;
+    }
+    info.keyParams5 = 0U;
+    // This is a measured batching policy, not a dtype/UB capability check. It must match
+    // the FP16/int64-only SortBatchedRows instantiation; other types keep row-local proposals.
+    if (info.dataType == ge::DT_FLOAT16 && info.y2DtypeSize == sizeof(int64_t) &&
+        info.keyParams0 >= SORT_BATCH_MERGE_MIN_ROWS) {
+        uint64_t batchElements = static_cast<uint64_t>(info.keyParams0) * info.keyParams3;
+        constexpr uint32_t proposalBytes = sizeof(float) + sizeof(uint32_t);
+        uint64_t queueBytesPerElement = static_cast<uint64_t>(info.keyParams4) *
+                                        (2U * info.dtypeSize + info.y2DtypeSize);
+        // Batched merge keeps a B32 index sequence and two 8-byte proposal arrays
+        // for every row, in addition to the existing double-buffered I/O queues.
+        constexpr uint32_t maxSortElements = std::numeric_limits<uint8_t>::max() * SORT32_SMALL_AXIS_THRESHOLD;
+        if (batchElements <= maxSortElements) {
+            uint64_t requiredUb = batchElements * (queueBytesPerElement + sizeof(uint32_t) + 2U * proposalBytes);
+            if (requiredUb <= info.ubSize) {
+                info.keyParams5 = 1U;
+            }
+        }
+    }
     return ge::GRAPH_SUCCESS;
 }
 
@@ -452,6 +471,23 @@ ge::graphStatus SetMergeIntraCoreTiling(gert::TilingContext* context, SortKthTil
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ComputeMergeIntraCoreTiling", "false",
                                                       "The value of ComputeMergeIntraCoreTiling must be true."),
                 return ge::GRAPH_FAILED);
+    if (info.lastDimTileNum == SORT_RESIDENT_MERGE_MAX_BLOCKS) {
+        constexpr uint32_t proposalBytes = sizeof(float) + sizeof(uint32_t);
+        constexpr uint32_t scratchBytes = sizeof(float) + sizeof(uint32_t) + proposalBytes;
+        constexpr uint32_t residentBytes = 2U * SORT_RESIDENT_MERGE_MIN_BLOCKS * proposalBytes + scratchBytes;
+        constexpr uint32_t maxSortElements = std::numeric_limits<uint8_t>::max() * SORT32_SMALL_AXIS_THRESHOLD;
+        uint64_t blockSize = Ops::Base::CeilAlign(
+            Ops::Base::CeilDiv(static_cast<uint64_t>(info.lastAxis),
+                               static_cast<uint64_t>(SORT_RESIDENT_MERGE_MIN_BLOCKS)),
+            static_cast<uint64_t>(SORT32_SMALL_AXIS_THRESHOLD));
+        if (blockSize > 0 && blockSize <= maxSortElements && blockSize * residentBytes <= info.ubSize) {
+            // Resident two-list merging permits larger initial blocks; the old workspace remains an upper bound.
+            info.numTileDataSize = static_cast<uint32_t>(blockSize);
+            info.lastDimTileNum = SORT_RESIDENT_MERGE_MIN_BLOCKS;
+            info.keyParams3 = info.numTileDataSize * SORT_RESIDENT_MERGE_MIN_BLOCKS;
+            info.keyParams5 = static_cast<uint32_t>(INT32_MAX / blockSize);
+        }
+    }
     OP_LOGI("MergeIntraCoreTiling",
             "B %ld, N %ld, batchPerCore %u, actualCoreNum %u, blockSortSize %u, extractChunkSize %u, "
             "blocksPerRow %u, alignNum %u, ubSize %u",
@@ -518,9 +554,9 @@ static bool TryAlignBytesToUint32(uint64_t bytes, uint32_t alignBytes, uint32_t&
 
 static bool AddBankRotationPadding(uint32_t blockBytes, uint32_t& rowBytes)
 {
-    // A merge row stride spanning a multiple of four 32-byte blocks repeatedly addresses the same bank groups.
+    // A merge row stride spanning a multiple of two 32-byte blocks repeatedly addresses the same bank groups.
     // One allocated block of padding rotates successive row starts without changing the logical Sort length.
-    constexpr uint32_t bankConcentrationStrideBlocks = 4U;
+    constexpr uint32_t bankConcentrationStrideBlocks = 2U;
     if (blockBytes == 0U || blockBytes > std::numeric_limits<uint32_t>::max() / bankConcentrationStrideBlocks) {
         return false;
     }
@@ -548,9 +584,7 @@ static bool ComputeSortNonLastUbLayout(const SortKthTileInfo& sortTileInfo, uint
     uint32_t align = sortTileInfo.blockUbSize;
     uint32_t sortDtypeSize = GetNonLastSortDtypeSize(sortTileInfo.dtypeSize, useMergeSort, sortTileInfo.dataType);
     uint64_t valueAxisRawBytes = static_cast<uint64_t>(sortCount) * sortDtypeSize;
-    if (useMergeSort) {
-        // Advanced merge sort stores value/index pairs internally, so each aligned value row
-        // must reserve at least sortCount * 8 bytes even for fp16/bf16 inputs.
+    if (useMergeSort && sortTileInfo.keyParams5 == 0U) {
         valueAxisRawBytes = std::max(valueAxisRawBytes, static_cast<uint64_t>(sortCount) * SORT_STRUCT_BYTES);
     }
     if (!TryAlignBytesToUint32(static_cast<uint64_t>(innerChunk) * sortTileInfo.dtypeSize, align,
@@ -607,9 +641,11 @@ static bool EstimateSortNonLastSmallAxisUb(SortKthTileInfo& sortTileInfo, uint32
     }
 
     uint64_t sortedIndexBytes = static_cast<uint64_t>(innerChunk) * layout.indexAxisBytes;
+    uint64_t proposalBytes = sortTileInfo.keyParams5 != 0U ? static_cast<uint64_t>(sortCount) * SORT_STRUCT_BYTES :
+                                                             static_cast<uint64_t>(innerChunk) * layout.valueAxisBytes;
     uint64_t sortPhaseUb = static_cast<uint64_t>(axisLen) * layout.inputRowBytes +
-                           static_cast<uint64_t>(innerChunk) * layout.valueAxisBytes * 2U + sortedIndexBytes +
-                           bf16CastBytes + static_cast<uint64_t>(sortTileInfo.tmpUbSize);
+                           static_cast<uint64_t>(innerChunk) * layout.valueAxisBytes + proposalBytes +
+                           sortedIndexBytes + bf16CastBytes + static_cast<uint64_t>(sortTileInfo.tmpUbSize);
     peakUb = sortPhaseUb;
     if (innerChunk > 1U) {
         uint64_t outputIndexBytes = static_cast<uint64_t>(axisLen) * layout.outputIndexRowBytes;
@@ -671,6 +707,78 @@ bool ApplyNonLastSmallAxisResult(gert::TilingContext* context, SortKthTileInfo& 
     return true;
 }
 
+static bool UseCompactNonLastMerge(gert::TilingContext* context, const SortKthTileInfo& sortTileInfo, bool useMergeSort)
+{
+    // Limit the compact NDDMA path to short floating axes with enough rows to
+    // amortize two full waves of column tiles. BF16 retains its cast/transpose path.
+    // Start at the third Sort32 run; this crossover is in elements, not UB-block bytes.
+    constexpr uint32_t compactMinAxis = 2U * SORT32_SMALL_AXIS_THRESHOLD + 1U;
+    constexpr uint32_t compactMaxAxis = 256U;
+    const uint32_t compactBatchColumns = Ops::Base::GetVRegSize(context) / sizeof(uint32_t);
+    constexpr uint32_t compactMinWaves = 2U;
+    return useMergeSort && sortTileInfo.dataType != ge::DT_BF16 && sortTileInfo.lastAxis >= compactMinAxis &&
+           sortTileInfo.lastAxis <= compactMaxAxis && sortTileInfo.innerSize >= compactBatchColumns &&
+           static_cast<uint64_t>(sortTileInfo.unsortedDim) >=
+               static_cast<uint64_t>(sortTileInfo.maxCoreNum) * compactBatchColumns * compactMinWaves;
+}
+
+template <typename EstimateUb>
+static void RefineCompactNonLastPlan(gert::TilingContext* context, const SortKthTileInfo& sortTileInfo,
+                                     uint64_t usableUb, const EstimateUb& estimateUb, NonLastSmallAxisCandidate& best,
+                                     SortKthTileInfo& selectedInfo)
+{
+    const uint32_t compactBatchColumns = Ops::Base::GetVRegSize(context) / sizeof(uint32_t);
+    if (sortTileInfo.keyParams5 != 0U) {
+        // Compact value rows and the shared proposal buffer permit wider batches.
+        // Cap at one B32 vector of output indices; retain the original core utilization.
+        constexpr uint32_t chunkReduction = 2U;
+        for (uint32_t chunk : {compactBatchColumns, compactBatchColumns / chunkReduction}) {
+            if (chunk > sortTileInfo.innerSize) {
+                continue;
+            }
+            NonLastSmallAxisCandidate cur;
+            cur.innerChunk = chunk;
+            if (!TryGetSortNonLastTileCount(sortTileInfo, chunk, cur.innerLoopNum, cur.tileCount)) {
+                continue;
+            }
+            cur.activeCore = static_cast<uint32_t>(std::min<uint64_t>(sortTileInfo.maxCoreNum, cur.tileCount));
+            SortKthTileInfo candidateInfo = sortTileInfo;
+            if (!estimateUb(candidateInfo, chunk, cur.peakUb, cur) || cur.peakUb > usableUb) {
+                continue;
+            }
+            if (cur.activeCore > best.activeCore ||
+                (cur.activeCore == best.activeCore && cur.innerChunk > best.innerChunk)) {
+                best = cur;
+                selectedInfo = candidateInfo;
+            }
+        }
+    }
+    const uint32_t minBalancedColumns = compactBatchColumns / 2U;
+    if (sortTileInfo.keyParams5 != 0U && sortTileInfo.outerSize == 1 && best.innerChunk >= minBalancedColumns &&
+        sortTileInfo.maxCoreNum > 0U && best.tileCount > 0U) {
+        // Keep the same number of tile iterations on the busiest core, but reduce
+        // each tile to the columns needed to distribute the row across all cores.
+        uint64_t tilesPerCore = Ops::Base::CeilDiv(best.tileCount, static_cast<uint64_t>(sortTileInfo.maxCoreNum));
+        uint64_t columnsPerCore = Ops::Base::CeilDiv(static_cast<uint64_t>(sortTileInfo.innerSize),
+                                                     static_cast<uint64_t>(sortTileInfo.maxCoreNum));
+        uint64_t balancedColumns = Ops::Base::CeilDiv(columnsPerCore, tilesPerCore);
+        if (balancedColumns >= minBalancedColumns && balancedColumns < best.innerChunk) {
+            NonLastSmallAxisCandidate cur;
+            cur.innerChunk = static_cast<uint32_t>(balancedColumns);
+            SortKthTileInfo candidateInfo = sortTileInfo;
+            if (TryGetSortNonLastTileCount(sortTileInfo, cur.innerChunk, cur.innerLoopNum, cur.tileCount)) {
+                cur.activeCore = static_cast<uint32_t>(std::min<uint64_t>(sortTileInfo.maxCoreNum, cur.tileCount));
+                if (cur.activeCore == best.activeCore &&
+                    Ops::Base::CeilDiv(cur.tileCount, static_cast<uint64_t>(sortTileInfo.maxCoreNum)) <= tilesPerCore &&
+                    estimateUb(candidateInfo, cur.innerChunk, cur.peakUb, cur) && cur.peakUb <= usableUb) {
+                    best = cur;
+                    selectedInfo = candidateInfo;
+                }
+            }
+        }
+    }
+}
+
 bool TryNonLastSmallAxis(gert::TilingContext* context, SortKthTileInfo& sortTileInfo, uint64_t& schId)
 {
     if (!sortTileInfo.isNonLastAxis) {
@@ -690,6 +798,8 @@ bool TryNonLastSmallAxis(gert::TilingContext* context, SortKthTileInfo& sortTile
 
     uint32_t sortCount = GetNonLastSortCount(sortTileInfo.dataType, static_cast<uint32_t>(sortTileInfo.lastAxis));
     bool useMergeSort = UseNonLastMergeSort(sortTileInfo.dataType, static_cast<uint32_t>(sortTileInfo.lastAxis));
+    sortTileInfo.keyParams5 = UseCompactNonLastMerge(context, sortTileInfo, useMergeSort);
+
     // Query Sort tmp with the same aligned sortCount and effective dtype that the
     // kernel will use; BF16 merge sorts as fp32 after the UB cast.
     uint32_t tmpUb = 0;
@@ -708,13 +818,87 @@ bool TryNonLastSmallAxis(gert::TilingContext* context, SortKthTileInfo& sortTile
         OP_LOGI(context->GetNodeName(), "non-last small-axis no-transpose no valid innerChunk");
         return false;
     }
+    RefineCompactNonLastPlan(context, sortTileInfo, usableUb, estimateUb, best, selectedInfo);
     sortTileInfo = selectedInfo;
     return ApplyNonLastSmallAxisResult(context, sortTileInfo, schId, useMergeSort, best, usableUb);
 }
 
+static bool PreferSortMergeMoreCore(const SortKthTileInfo& info)
+{
+    uint32_t dataSize = 0U;
+    if (!IsMergeMoreCoreProfitable(info.dataType, info.lastAxis, info.unsortedDim, info.maxCoreNum) ||
+        !SelectMergeMoreCoreDataSize(info.lastAxis, info.unsortedDim, info.maxCoreNum, dataSize)) {
+        return false;
+    }
+    // Native blocks have no local serial merge; keep this path when all rows fit.
+    uint64_t coresPerRow = Ops::Base::CeilDiv(static_cast<uint64_t>(info.lastAxis), static_cast<uint64_t>(dataSize));
+    if (static_cast<uint64_t>(info.unsortedDim) <= info.maxCoreNum / coresPerRow) {
+        return true;
+    }
+    // Sync blocks must fit all rows in one round. Prefer radix only when its
+    // single-round plan gives each row more cores than the sync-merge plan.
+    uint32_t syncBlockSize = 0U;
+    if (!SelectMergeSyncMergeBlockSize(info.lastAxis, info.unsortedDim, info.maxCoreNum, syncBlockSize)) {
+        return false;
+    }
+    SortKthTileInfo radix = info;
+    uint64_t syncCoresPerRow = Ops::Base::CeilDiv(static_cast<uint64_t>(info.lastAxis),
+                                                  static_cast<uint64_t>(syncBlockSize));
+    return !FillRadixMoreCoreInfo(radix) || radix.sortLoopTimes > 1U || radix.lastDimNeedCore <= syncCoresPerRow;
+}
+
+static void TryParallelFinalMerge(gert::TilingContext* context, const SortKthTileInfo& candidate,
+                                  bool useDirectSchedule, SortKthTileInfo& sortTileInfo, uint64_t& schId)
+{
+    // Keep two final runs for Merge Path. Retile nine to twelve native runs
+    // into eight; their larger native blocks still fit the reserved UB budget.
+    // Reserve SIMT scratch before recomputing the parallel final-merge plan.
+    constexpr uint32_t minParallelRows = 4U;
+    constexpr uint32_t minRetiledRows = 2U;
+    constexpr uint32_t minInitialRuns = 6U;
+    constexpr uint32_t maxInitialRuns = MERGE_SORT_LIST_NUM * 2U;
+    constexpr uint32_t maxRetiledRuns = MERGE_SORT_LIST_NUM * 3U;
+    constexpr uint32_t mergePathRankBytes = 32U; // two int64 co-ranks, UB-block aligned
+    constexpr uint32_t mergePathBytesPerElem = MERGE_SORT_LIST_NUM * MERGE_SORT_DATA_BYTES * DOUBLE_BUFFER_NUM;
+    if (useDirectSchedule &&
+        (candidate.unsortedDim >= minParallelRows ||
+         (candidate.unsortedDim >= minRetiledRows && candidate.lastDimNeedCore > maxInitialRuns)) &&
+        candidate.lastDimNeedCore >= minInitialRuns && candidate.lastDimNeedCore <= maxRetiledRuns &&
+        candidate.ubSize >= SIMT_UB + mergePathRankBytes + mergePathBytesPerElem * MERGE_INTRA_CORE_SORT_ALIGN) {
+        SortKthTileInfo parallel = candidate;
+        parallel.ubSize -= SIMT_UB;
+        if (SetMergeMoreCoreTiling(context, parallel) == ge::GRAPH_SUCCESS) {
+            if (parallel.lastDimNeedCore > maxInitialRuns) {
+                // Direct scheduling already fits all rows. Reducing cores per row
+                // preserves that plan and its row-workspace size.
+                // Phase 1 is FP32: align32(last run) * (4 + 8 + 4 + 8) bytes.
+                // At most 12 initial runs of <=4096 elements give axis <=49152.
+                // After retile, last run = floor(axis/8) + axis%8 <=6151;
+                // align32 <=6176, so phase 1 uses <=148224 bytes. Together
+                // with 32768 SIMT bytes this fits the current 248-KiB usable UB.
+                // ProcessDirect resets the pipe after SyncAll before merge allocation.
+                // Recheck this bound if the run limits or phase-1 buffers change.
+                parallel.lastDimNeedCore = maxInitialRuns;
+                parallel.numTileDataSize = static_cast<uint32_t>(parallel.lastAxis / maxInitialRuns);
+                parallel.coreNumNeed = static_cast<uint32_t>(parallel.unsortedDim) * maxInitialRuns;
+            }
+            // Fused output needs only input/output proposal windows and co-rank scratch.
+            // Kernel rounds the per-run capacity down to a Sort-aligned element count.
+            parallel.keyParams0 = (parallel.ubSize - mergePathRankBytes) / mergePathBytesPerElem;
+            sortTileInfo = parallel;
+            schId = SORT_SCHID_13;
+        }
+    }
+}
+
 bool TryMerge(gert::TilingContext* context, SortKthTileInfo& sortTileInfo, uint64_t& schId)
 {
-    if (IsMergeSortSupported(sortTileInfo.dataType, sortTileInfo.lastAxis)) {
+    // Performance thresholds, independent of kernel buffer capacity.
+    constexpr int64_t maxFp16MergeAxis = 2048;
+    constexpr int64_t maxBf16MergeAxis = 1536;
+    bool useB16Merge = (sortTileInfo.dataType == ge::DT_FLOAT16 && sortTileInfo.lastAxis <= maxFp16MergeAxis) ||
+                       (sortTileInfo.dataType == ge::DT_BF16 && sortTileInfo.lastAxis <= maxBf16MergeAxis);
+    if (useB16Merge || IsMergeSortSupported(sortTileInfo.dataType, sortTileInfo.lastAxis)) {
         SortKthTileInfo candidate = sortTileInfo;
         if (SetMergeSortTiling(context, candidate) == ge::GRAPH_SUCCESS) {
             sortTileInfo = candidate;
@@ -723,16 +907,28 @@ bool TryMerge(gert::TilingContext* context, SortKthTileInfo& sortTileInfo, uint6
         }
     }
 
-    if (IsMergeMoreCoreSupported(sortTileInfo.dataType, sortTileInfo.lastAxis, sortTileInfo.unsortedDim,
-                                 sortTileInfo.maxCoreNum)) {
+    if (PreferSortMergeMoreCore(sortTileInfo)) {
         SortKthTileInfo candidate = sortTileInfo;
         if (SetMergeMoreCoreTiling(context, candidate) == ge::GRAPH_SUCCESS) {
             sortTileInfo = candidate;
-            schId = SORT_SCHID_3;
+            const bool useDirectSchedule = sortTileInfo.sortLoopTimes == 1U && sortTileInfo.keyParams1 == 0U;
+            schId = useDirectSchedule ? SORT_SCHID_12 : SORT_SCHID_3;
+            TryParallelFinalMerge(context, candidate, useDirectSchedule, sortTileInfo, schId);
             return true;
         }
     }
 
+    // Preserve the large-FP32 policy and more-core priority, but keep every schId 0
+    // candidate here. Fitting in UB is necessary; it does not replace the throughput policy.
+    if (IsMergeIntraCoreSupported(sortTileInfo.dataType, sortTileInfo.lastAxis, sortTileInfo.unsortedDim,
+                                  sortTileInfo.maxCoreNum, sortTileInfo.ubSize)) {
+        SortKthTileInfo candidate = sortTileInfo;
+        if (SetMergeSortTiling(context, candidate, true) == ge::GRAPH_SUCCESS) {
+            sortTileInfo = candidate;
+            schId = static_cast<uint64_t>(0);
+            return true;
+        }
+    }
     return false;
 }
 
@@ -781,8 +977,8 @@ ge::graphStatus SelectSortSchedule(gert::TilingContext* context, SortKthTileInfo
             "The value of sortAxis must be the last axis or meet no-transpose schedule constraints.");
         return ge::GRAPH_FAILED;
     }
-    if (TryMerge(context, sortTileInfo, schId) || TryRadixOneCore(context, sortTileInfo, schId) ||
-        TryMergeIntraCore(context, sortTileInfo, schId)) {
+    if (TryMerge(context, sortTileInfo, schId) || TryMergeIntraCore(context, sortTileInfo, schId) ||
+        TryRadixOneCore(context, sortTileInfo, schId)) {
         return ge::GRAPH_SUCCESS;
     }
 

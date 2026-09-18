@@ -104,6 +104,8 @@ public:
     __aicore__ inline void ParseTilingData();
     __aicore__ inline void BuildOutputs(uint32_t curInnerChunk);
     __aicore__ inline void GatherOutputValues(uint32_t curInnerChunk);
+    __aicore__ inline void BuildOutputIndices(uint32_t curInnerChunk);
+    __aicore__ inline void BuildOutputIndicesVector(uint32_t curInnerChunk);
     __aicore__ inline void StoreTileOutput(int64_t baseOffset, uint32_t curInnerChunk);
     __aicore__ inline void StoreSingleInnerTile(int64_t baseOffset);
     __aicore__ inline void StoreConvertedTile(int64_t baseOffset, uint32_t curInnerChunk);
@@ -157,11 +159,15 @@ __aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>
     }
     uint32_t inputCastBytes = IsBf16Merge_ ? this->innerChunk_ * this->inputValueAxisBytes_ : 0U;
     uint32_t sortValueBytes = this->innerChunk_ * this->valueAxisBytes_;
+    // The native proposal remains value/index packed into eight bytes. Only one
+    // row of proposals is live; extracted values stay in compact dtype-sized rows.
+    constexpr uint32_t proposalElemBytes = sizeof(float) + sizeof(uint32_t);
+    uint32_t proposalBytes = this->compactMerge_ ? this->sortCount_ * proposalElemBytes : sortValueBytes;
     uint32_t sortedIndexBytes = this->innerChunk_ * this->indexAxisBytes_;
     uint32_t outputIndexBytes = this->axisLen_ * outputIndexRowBytes_;
     useSharedUb_ = this->tilingData_->keyParams4 == 1U;
     if (useSharedUb_) {
-        uint32_t sortPrefixBytes = inputTileBytes + inputCastBytes + sortValueBytes * 2U + this->tmpUbSize_;
+        uint32_t sortPrefixBytes = inputTileBytes + inputCastBytes + sortValueBytes + proposalBytes + this->tmpUbSize_;
         uint32_t sortPhaseBytes = sortPrefixBytes + sortedIndexBytes;
         uint32_t indexPhaseBytes = outputIndexBytes + sortedIndexBytes;
         uint32_t sharedUbSize = sortPhaseBytes > indexPhaseBytes ? sortPhaseBytes : indexPhaseBytes;
@@ -177,7 +183,7 @@ __aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>
         this->sortInput_ = sharedUb[offset].template ReinterpretCast<SortT_>();
         offset += sortValueBytes;
         this->sortedValue_ = sharedUb[offset].template ReinterpretCast<SortT_>();
-        offset += sortValueBytes;
+        offset += proposalBytes;
         this->tmp_ = sharedUb[offset].template ReinterpretCast<uint8_t>();
         this->sortedIndex_ = sharedUb[sharedUbSize - sortedIndexBytes].template ReinterpretCast<uint32_t>();
         outputIndex_ = sharedUb.template ReinterpretCast<OutIdxT>();
@@ -188,7 +194,7 @@ __aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>
             this->inputCast_ = this->inputCastBuf_.template Get<T>();
         }
         this->pipe_->InitBuffer(this->sortInputBuf_, sortValueBytes);
-        this->pipe_->InitBuffer(this->sortedValueBuf_, sortValueBytes);
+        this->pipe_->InitBuffer(this->sortedValueBuf_, proposalBytes);
         this->pipe_->InitBuffer(this->sortedIndexBuf_, sortedIndexBytes);
         if (this->innerChunk_ > 1) {
             this->pipe_->InitBuffer(this->outputIndexBuf_, outputIndexBytes);
@@ -210,6 +216,7 @@ template <typename T, typename OutIdxT, bool IsDescend, bool UseMergeSort>
 __aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>::ParseTilingData()
 {
     this->axisLen_ = static_cast<uint32_t>(this->tilingData_->lastAxisNum);
+    this->compactMerge_ = UseMergeSort && !IsBf16Merge_ && this->tilingData_->keyParams5 != 0U;
     this->outerSize_ = this->tilingData_->outerSize;
     this->innerSize_ = this->tilingData_->innerSize;
     this->innerLoopNum_ = this->tilingData_->innerLoopNum;
@@ -238,10 +245,72 @@ template <typename T, typename OutIdxT, bool IsDescend, bool UseMergeSort>
 __aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>::BuildOutputs(uint32_t curInnerChunk)
 {
     GatherOutputValues(curInnerChunk);
+    BuildOutputIndices(curInnerChunk);
+}
+
+template <typename T, typename OutIdxT, bool IsDescend, bool UseMergeSort>
+__aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>::BuildOutputIndices(
+    uint32_t curInnerChunk)
+{
+    if constexpr (UseMergeSort && (std::is_same_v<T, half> || std::is_same_v<T, float>)) {
+        // Below one B32 UB block, the per-axis vector loop does not amortize.
+        constexpr uint32_t minVectorInner = Ops::Base::GetUbBlockSize() / sizeof(uint32_t);
+        if (curInnerChunk >= minVectorInner) {
+            BuildOutputIndicesVector(curInnerChunk);
+            return;
+        }
+    }
     asc_vf_call<BuildOutputIndexTile<OutIdxT>>(
         dim3(SmallAxisCommon::NON_LAST_TRANSPOSE_THREAD_NUM), this->axisLen_, curInnerChunk,
         SmallAxisCommon::NON_LAST_TRANSPOSE_THREAD_NUM, this->indexAxisElems_, outputIndexRowElems_,
         (__ubuf__ uint32_t*)this->sortedIndex_.GetPhyAddr(), (__ubuf__ OutIdxT*)outputIndex_.GetPhyAddr());
+}
+
+template <typename T, typename OutIdxT, bool IsDescend, bool UseMergeSort>
+__aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>::BuildOutputIndicesVector(
+    uint32_t curInnerChunk)
+{
+    uint32_t axisLen = this->axisLen_;
+    uint32_t innerChunk = curInnerChunk;
+    uint32_t indexAxisElems = this->indexAxisElems_;
+    uint32_t outputIndexRowElems = outputIndexRowElems_;
+    __ubuf__ uint32_t* sortedIndex = (__ubuf__ uint32_t*)this->sortedIndex_.GetPhyAddr();
+    __ubuf__ OutIdxT* outputIndex = (__ubuf__ OutIdxT*)outputIndex_.GetPhyAddr();
+    // Source indices remain live outside the reused output prefix. Interleave
+    // with zero widens the nonnegative B32 indices to B64 without scalar stores.
+    constexpr uint32_t lanes = Ops::Base::GetVRegSize() / sizeof(uint32_t);
+    uint16_t repeats = static_cast<uint16_t>((innerChunk + lanes - 1U) / lanes);
+    __VEC_SCOPE__
+    {
+        Reg::RegTensor<int32_t> laneIds;
+        Reg::RegTensor<uint32_t> offsets, indices, zero;
+        Reg::RegTensor<OutIdxT> lo, hi;
+        Reg::MaskReg full = Reg::CreateMask<uint32_t>();
+        Reg::Arange(laneIds, 0);
+        Reg::Muls(offsets, (Reg::RegTensor<uint32_t>&)laneIds, indexAxisElems, full);
+        Reg::Duplicate(zero, 0U);
+        for (uint16_t repeat = 0; repeat < repeats; ++repeat) {
+            uint32_t count = innerChunk - repeat * lanes;
+            Reg::MaskReg valid = Reg::UpdateMask<uint32_t>(count);
+            // UpdateMask consumes count64: B64 low gets up to 32 elements;
+            // high gets only the remainder (zero for tails of at most 32).
+            uint32_t count64 = innerChunk - repeat * lanes;
+            Reg::MaskReg lowMask = Reg::UpdateMask<OutIdxT>(count64);
+            Reg::MaskReg highMask = Reg::UpdateMask<OutIdxT>(count64);
+            for (uint16_t axis = 0; axis < axisLen; ++axis) {
+                Reg::Gather(indices, sortedIndex + repeat * lanes * indexAxisElems + axis, offsets, valid);
+                if constexpr (sizeof(OutIdxT) == sizeof(uint64_t)) {
+                    Reg::Interleave((Reg::RegTensor<uint32_t>&)lo, (Reg::RegTensor<uint32_t>&)hi, indices, zero);
+                    Reg::StoreAlign(outputIndex + axis * outputIndexRowElems + repeat * lanes, lo, lowMask);
+                    Reg::StoreAlign(outputIndex + axis * outputIndexRowElems + repeat * lanes + lanes / 2U, hi,
+                                    highMask);
+                } else {
+                    Reg::StoreAlign(outputIndex + axis * outputIndexRowElems + repeat * lanes,
+                                    (Reg::RegTensor<OutIdxT>&)indices, valid);
+                }
+            }
+        }
+    }
 }
 
 template <typename T, typename OutIdxT, bool IsDescend, bool UseMergeSort>
@@ -309,10 +378,7 @@ __aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>
         event_t eventIdMte3ToV = static_cast<event_t>(this->pipe_->FetchEventID(HardEvent::MTE3_V));
         SetFlag<HardEvent::MTE3_V>(eventIdMte3ToV);
         WaitFlag<HardEvent::MTE3_V>(eventIdMte3ToV);
-        asc_vf_call<BuildOutputIndexTile<OutIdxT>>(
-            dim3(SmallAxisCommon::NON_LAST_TRANSPOSE_THREAD_NUM), this->axisLen_, curInnerChunk,
-            SmallAxisCommon::NON_LAST_TRANSPOSE_THREAD_NUM, this->indexAxisElems_, outputIndexRowElems_,
-            (__ubuf__ uint32_t*)this->sortedIndex_.GetPhyAddr(), (__ubuf__ OutIdxT*)outputIndex_.GetPhyAddr());
+        BuildOutputIndices(curInnerChunk);
         eventIdVToMte3 = static_cast<event_t>(this->pipe_->FetchEventID(HardEvent::V_MTE3));
         SetFlag<HardEvent::V_MTE3>(eventIdVToMte3);
         WaitFlag<HardEvent::V_MTE3>(eventIdVToMte3);

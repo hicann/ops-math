@@ -116,6 +116,9 @@ private:
         uint32_t innerSize = static_cast<uint32_t>(innerSize_);
         uint32_t outerElems = segmentLen_ * innerSize;
         // Map contiguous GM [outer, axis, inner] slices directly to dense UB [outer, inner, axis].
+        // Loop order [inner, axis, outer] gives GM = outer*outerElems + axis*innerSize + inner
+        // and UB = outer*outerElems + inner*segmentLen + axis, all in T elements.
+        // validOuter limits the final batch; no padded outer slice is read.
         NdDmaLoopInfo<NDDMA_DIM_NUM> loopInfo{{1, innerSize, static_cast<uint64_t>(outerElems)},
                                               {segmentLen_, 1, outerElems},
                                               {innerSize, segmentLen_, validOuter},

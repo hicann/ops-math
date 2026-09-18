@@ -380,6 +380,21 @@ static const aclTensor* GetTensorWithValueZero(aclTensor* out, aclOpExecutor* ex
     return viewCopyResult;
 }
 
+static bool HasOnlyTrailingSingletons(const aclTensor* self, int64_t dim)
+{
+    const auto& shape = self->GetViewShape();
+    int64_t rank = static_cast<int64_t>(shape.GetDimNum());
+    if (rank > DIM_MAX || dim >= rank - 1) {
+        return false;
+    }
+    for (int64_t i = dim + 1; i < rank; ++i) {
+        if (shape.GetDim(i) != 1) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static aclnnStatus BuildSortGraph(const aclTensor* self, int64_t dimPositive, int64_t dimSize, bool stable,
                                   bool descending, aclTensor* valuesOut, aclTensor* indicesOut, aclOpExecutor* executor)
 {
@@ -397,7 +412,22 @@ static aclnnStatus BuildSortGraph(const aclTensor* self, int64_t dimPositive, in
     auto selfShapeDetail = GetTensorShape(selfContiguous, executor);
     auto indicesType = indicesOut->GetDataType();
     std::tuple<const aclTensor*, const aclTensor*> sortRes;
-    if (UseNoTranspose(selfContiguous, dimPositive)) {
+    if (IsRegBase() && HasOnlyTrailingSingletons(selfContiguous, dimPositive)) {
+        // Removing trailing singleton dimensions preserves the contiguous element order.
+        std::vector<int64_t> compactShape;
+        for (int64_t i = 0; i <= dimPositive; ++i) {
+            compactShape.push_back(selfContiguous->GetViewShape().GetDim(i));
+        }
+        auto shapeArray = executor->AllocIntArray(compactShape.data(), compactShape.size());
+        CHECK_RET(shapeArray != nullptr && selfShapeDetail != nullptr, ACLNN_ERR_PARAM_NULLPTR);
+        auto compactSelf = l0op::Reshape(selfContiguous, shapeArray, executor);
+        CHECK_RET(compactSelf != nullptr, ACLNN_ERR_PARAM_NULLPTR);
+        auto compactRes = l0op::Sort(compactSelf, -1, descending, stable, indicesType, executor);
+        CHECK_RET(CheckTupleNullptr(compactRes), ACLNN_ERR_PARAM_NULLPTR);
+        auto values = l0op::Reshape(std::get<0>(compactRes), selfShapeDetail, executor);
+        auto indices = l0op::Reshape(std::get<1>(compactRes), selfShapeDetail, executor);
+        sortRes = std::make_tuple(values, indices);
+    } else if (UseNoTranspose(selfContiguous, dimPositive)) {
         sortRes = l0op::Sort(selfContiguous, dimPositive, descending, stable, indicesType, executor);
     } else {
         if (dimSize > DIM_MAX) {
