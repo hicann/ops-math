@@ -104,23 +104,16 @@ constexpr int32_t INT64_TILING_KEY = 1002;
 constexpr int32_t FP32_TILING_KEY = 1003;
 constexpr int32_t FP16_TILING_KEY = 1004;
 constexpr int32_t BF16_TILING_KEY = 1005;
-constexpr size_t RESERVED_WORKSPACE = static_cast<size_t>(16 * 1024 * 1024);
+constexpr size_t DEFAULT_WORKSPACE_SIZE = 0;
 
 class RangeRegBaseTilingClass : public Ops::Base::TilingBaseClass {
 public:
-    explicit RangeRegBaseTilingClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit RangeRegBaseTilingClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
-    void Reset(gert::TilingContext* context) override
-    {
-        TilingBaseClass::Reset(context);
-    }
+    void Reset(gert::TilingContext* context) override { TilingBaseClass::Reset(context); }
 
 protected:
-    ge::graphStatus GetPlatformInfo() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus GetPlatformInfo() override { return ge::GRAPH_SUCCESS; }
 
     ge::graphStatus GetShapeAttrsInfo() override
     {
@@ -129,15 +122,9 @@ protected:
         return ge::GRAPH_SUCCESS;
     }
 
-    ge::graphStatus DoLibApiTiling() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus DoLibApiTiling() override { return ge::GRAPH_SUCCESS; }
 
-    ge::graphStatus GetWorkspaceSize() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus GetWorkspaceSize() override { return ge::GRAPH_SUCCESS; }
 
     ge::graphStatus DoOpTiling() override;
 

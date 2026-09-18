@@ -19,6 +19,8 @@
 #include "op_host/tiling_base_util.h"
 
 namespace optiling {
+
+constexpr size_t DEFAULT_WORKSPACE_SIZE = 0;
 constexpr static int64_t CORE_MINEST_NUM = 128;
 constexpr static int64_t RESERVED_UB_SIZE = 1024;
 constexpr static int64_t DOUBLE_UB_SIZE = 2;
@@ -401,7 +403,7 @@ ge::graphStatus LinSpaceRegbaseTilingClass::PostTiling()
     // 设置 userWorkspace
     size_t* userWorkspaceSize = context_->GetWorkspaceSizes(WORKSPACE_COUNT);
     OP_CHECK_NULL_WITH_CONTEXT(context_, userWorkspaceSize);
-    userWorkspaceSize[0] = RESERVED_WORKSPACE;
+    userWorkspaceSize[0] = DEFAULT_WORKSPACE_SIZE;
 
     auto rawTilingDataPtr = context_->GetRawTilingData();
     OP_CHECK_NULL_WITH_CONTEXT(context_, rawTilingDataPtr);

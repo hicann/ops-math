@@ -23,22 +23,13 @@ extern "C" __global__ __aicore__ void lin_space(GM_ADDR start, GM_ADDR stop, GM_
                                                 GM_ADDR workspace, GM_ADDR tiling)
 {
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
-    if (workspace == nullptr) {
-        return;
-    }
-    SetSysWorkspace(workspace);
-    GM_ADDR userWs = GetUserWorkspace(workspace);
-    if (userWs == nullptr) {
-        return;
-    }
-
     GET_TILING_DATA_WITH_STRUCT(LinSpaceRegbaseTilingData, linSpaceTilingData, tiling);
     const LinSpaceRegbaseTilingData* __restrict tilingData = &linSpaceTilingData;
 
     TPipe pipe;
-    if(TILING_KEY_IS(DOUBLE_CAST_TILING_KEY)) {
+    if (TILING_KEY_IS(DOUBLE_CAST_TILING_KEY)) {
         LinSpace::LinSpaceDoubleCast<float, DTYPE_OUTPUT> op;
-        op.Init(start, stop, num, output, userWs, tilingData, &pipe);
+        op.Init(start, stop, num, output, workspace, tilingData, &pipe);
         op.Process(tilingData);
     }
 }

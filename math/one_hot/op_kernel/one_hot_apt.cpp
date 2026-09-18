@@ -21,27 +21,19 @@
 #include "arch35/one_hot_mix.h"
 using namespace AscendC;
 
-extern "C" __global__ __aicore__ void one_hot(
-    GM_ADDR x, GM_ADDR depth, GM_ADDR on_value, GM_ADDR off_value, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+extern "C" __global__ __aicore__ void one_hot(GM_ADDR x, GM_ADDR depth, GM_ADDR on_value, GM_ADDR off_value, GM_ADDR y,
+                                              GM_ADDR workspace, GM_ADDR tiling)
 {
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
-    if (workspace == nullptr) {
-        return;
-    }
-    SetSysWorkspace(workspace);
-    GM_ADDR userWs = GetUserWorkspace(workspace);
-    if (userWs == nullptr) {
-        return;
-    }
     TPipe TPipe;
     GET_TILING_DATA(tilingData, tiling);
     if (TILING_KEY_IS(TILING_KEY_WITHOUT_UB)) {
         OneHot::OneHot<DTYPE_X, DTYPE_DEPTH, DTYPE_Y> op;
-        op.Init(x, depth, on_value, off_value, y, userWs, &tilingData);
+        op.Init(x, depth, on_value, off_value, y, workspace, &tilingData);
         op.Process();
     } else if (TILING_KEY_IS(TILING_KEY_WITH_UB)) {
         OneHot::OneHotMix<DTYPE_X, DTYPE_DEPTH, DTYPE_Y> op;
-        op.Init(x, depth, on_value, off_value, y, userWs, &TPipe, &tilingData);
+        op.Init(x, depth, on_value, off_value, y, workspace, &TPipe, &tilingData);
         op.Process();
     }
 }

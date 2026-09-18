@@ -29,6 +29,7 @@
 
 namespace optiling {
 using namespace std;
+constexpr uint64_t DEFAULT_WORKSPACE_SIZE = 0;
 const static int32_t ONEHOT_INPUT_DEPENDENCY_IDX = 1;
 ge::graphStatus OneHotTilingForAscendC(gert::TilingContext* context);
 
@@ -55,10 +56,7 @@ public:
     ~OneHotTilingBase() override = default;
 
 protected:
-    bool IsCapable() override
-    {
-        return true;
-    }
+    bool IsCapable() override { return true; }
     ge::graphStatus GetPlatformInfo() override;
     ge::graphStatus GetShapeAttrsInfo() override;
     ge::graphStatus PostTiling() override;

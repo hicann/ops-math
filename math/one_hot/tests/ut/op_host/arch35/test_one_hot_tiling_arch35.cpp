@@ -25,15 +25,9 @@ using namespace std;
 
 class OneHotTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "OneHotTilingTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "OneHotTilingTest SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "OneHotTilingTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "OneHotTilingTest TearDown" << std::endl; }
 };
 
 // Helper function to create OpAttr
@@ -53,25 +47,24 @@ TEST_F(OneHotTilingTest, test_tiling_basic)
     int32_t depth = 10;
 
     // Use the test framework's ExecuteTiling function
-    gert::TilingContextPara tilingContextPara(
-        "OneHot",
-        {
-            {{{4, 3, 4}, {4, 3, 4}}, ge::DT_INT32, ge::FORMAT_ND, true, nullptr},
-            {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, &depth},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND, true, nullptr},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND, true, nullptr},
-        },
-        {
-            {{{4, 3, 4, 10}, {4, 3, 4, 10}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            MakeAxisAttr(-1),
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("OneHot",
+                                              {
+                                                  {{{4, 3, 4}, {4, 3, 4}}, ge::DT_INT32, ge::FORMAT_ND, true, nullptr},
+                                                  {{{1}, {1}}, ge::DT_INT32, ge::FORMAT_ND, true, &depth},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND, true, nullptr},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND, true, nullptr},
+                                              },
+                                              {
+                                                  {{{4, 3, 4, 10}, {4, 3, 4, 10}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  MakeAxisAttr(-1),
+                                              },
+                                              &compileInfo);
 
     uint64_t expectTilingKey = 1000;
     string expectTilingData = "65536 48 0 0 0 48 1 64 202752 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {optiling::DEFAULT_WORKSPACE_SIZE};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
@@ -103,7 +96,7 @@ TEST_F(OneHotTilingTest, test0_tiling)
 
     uint64_t expectTilingKey = 1001;
     string expectTilingData = "18014398510530560 1024 2560 0 0 16384 1 64 202752 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {optiling::DEFAULT_WORKSPACE_SIZE};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
@@ -135,7 +128,7 @@ TEST_F(OneHotTilingTest, test1_tiling)
 
     uint64_t expectTilingKey = 1001;
     string expectTilingData = "18014398510530560 1024 2560 0 0 16384 1 64 202752 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {optiling::DEFAULT_WORKSPACE_SIZE};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
@@ -149,25 +142,24 @@ TEST_F(OneHotTilingTest, test2_tiling)
     int32_t depth = 1;
 
     // Use the test framework's ExecuteTiling function
-    gert::TilingContextPara tilingContextPara(
-        "OneHot",
-        {
-            {{{1, 7, 1}, {1, 7, 1}}, ge::DT_INT32, ge::FORMAT_ND, true, nullptr},
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &depth},
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, nullptr},
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, nullptr},
-        },
-        {
-            {{{1, 7, 1, 1}, {1, 7, 1, 1}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        {
-            {"axis", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("OneHot",
+                                              {
+                                                  {{{1, 7, 1}, {1, 7, 1}}, ge::DT_INT32, ge::FORMAT_ND, true, nullptr},
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &depth},
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, nullptr},
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, nullptr},
+                                              },
+                                              {
+                                                  {{{1, 7, 1, 1}, {1, 7, 1, 1}}, ge::DT_INT64, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {"axis", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
+                                              },
+                                              &compileInfo);
 
     uint64_t expectTilingKey = 1000;
     string expectTilingData = "65536 7 0 0 0 7 1 64 202752 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {optiling::DEFAULT_WORKSPACE_SIZE};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
@@ -179,25 +171,24 @@ TEST_F(OneHotTilingTest, test3_tiling)
     int32_t depth = 1;
 
     // Use the test framework's ExecuteTiling function
-    gert::TilingContextPara tilingContextPara(
-        "OneHot",
-        {
-            {{{1, 7, 1}, {1, 7, 1}}, ge::DT_INT32, ge::FORMAT_ND, true, nullptr},
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &depth},
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, nullptr},
-            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, nullptr},
-        },
-        {
-            {{{1, 7, 1, 1}, {1, 7, 1, 1}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        {
-            {"axis", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("OneHot",
+                                              {
+                                                  {{{1, 7, 1}, {1, 7, 1}}, ge::DT_INT32, ge::FORMAT_ND, true, nullptr},
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &depth},
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, nullptr},
+                                                  {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, nullptr},
+                                              },
+                                              {
+                                                  {{{1, 7, 1, 1}, {1, 7, 1, 1}}, ge::DT_INT64, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {"axis", Ops::Math::AnyValue::CreateFrom<int64_t>(3)},
+                                              },
+                                              &compileInfo);
 
     uint64_t expectTilingKey = 1000;
     string expectTilingData = "65536 7 0 0 0 7 1 64 202752 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {optiling::DEFAULT_WORKSPACE_SIZE};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
@@ -227,6 +218,6 @@ TEST_F(OneHotTilingTest, test4_tiling)
 
     uint64_t expectTilingKey = 1001;
     string expectTilingData = "18014402808643585 33554432 134217728 0 0 1 2147483649 64 202752 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {optiling::DEFAULT_WORKSPACE_SIZE};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

@@ -24,48 +24,39 @@
 
 using namespace Range;
 
-extern "C" __global__ __aicore__ void range(
-    GM_ADDR start, GM_ADDR end, GM_ADDR step, GM_ADDR out, GM_ADDR workspace, GM_ADDR tiling)
+extern "C" __global__ __aicore__ void range(GM_ADDR start, GM_ADDR end, GM_ADDR step, GM_ADDR out, GM_ADDR workspace,
+                                            GM_ADDR tiling)
 {
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
-    if (workspace == nullptr) {
-        return;
-    }
-    SetSysWorkspace(workspace);
-    GM_ADDR userWS = GetUserWorkspace(workspace);
-    if (userWS == nullptr) {
-        return;
-    }
-
     if (TILING_KEY_IS(INT32_TILING_KEY)) {
         GET_TILING_DATA_WITH_STRUCT(RangeTilingDataInt, tiling_data_in, tiling);
         const RangeTilingDataInt* __restrict tilingData = &tiling_data_in;
         Range::RangeInt<int32_t> op;
-        op.Init(start, end, step, out, userWS, tilingData);
+        op.Init(start, end, step, out, workspace, tilingData);
         op.Process(tilingData);
     } else if (TILING_KEY_IS(INT64_TILING_KEY)) {
         GET_TILING_DATA_WITH_STRUCT(RangeTilingDataInt, tiling_data_in, tiling);
         const RangeTilingDataInt* __restrict tilingData = &tiling_data_in;
         Range::RangeInt<int64_t> op;
-        op.Init(start, end, step, out, userWS, tilingData);
+        op.Init(start, end, step, out, workspace, tilingData);
         op.Process(tilingData);
     } else if (TILING_KEY_IS(FP32_TILING_KEY)) {
         GET_TILING_DATA_WITH_STRUCT(RangeTilingDataFloat, tiling_data_in, tiling);
         const RangeTilingDataFloat* __restrict tilingData = &tiling_data_in;
         Range::RangeFloat<float, float> op;
-        op.Init(start, end, step, out, userWS, tilingData);
+        op.Init(start, end, step, out, workspace, tilingData);
         op.Process(tilingData);
     } else if (TILING_KEY_IS(FP16_TILING_KEY)) {
         GET_TILING_DATA_WITH_STRUCT(RangeTilingDataFloat, tiling_data_in, tiling);
         const RangeTilingDataFloat* __restrict tilingData = &tiling_data_in;
         Range::RangeFloat<float, half> op;
-        op.Init(start, end, step, out, userWS, tilingData);
+        op.Init(start, end, step, out, workspace, tilingData);
         op.Process(tilingData);
     } else if (TILING_KEY_IS(BF16_TILING_KEY)) {
         GET_TILING_DATA_WITH_STRUCT(RangeTilingDataFloat, tiling_data_in, tiling);
         const RangeTilingDataFloat* __restrict tilingData = &tiling_data_in;
         Range::RangeFloat<float, bfloat16_t> op;
-        op.Init(start, end, step, out, userWS, tilingData);
+        op.Init(start, end, step, out, workspace, tilingData);
         op.Process(tilingData);
     }
 }

@@ -18,8 +18,7 @@
 namespace optiling {
 class RangeRegBaseFloatTilingClass : public RangeRegBaseTilingClass {
 public:
-    explicit RangeRegBaseFloatTilingClass(gert::TilingContext* context) : RangeRegBaseTilingClass(context)
-    {}
+    explicit RangeRegBaseFloatTilingClass(gert::TilingContext* context) : RangeRegBaseTilingClass(context) {}
 
 protected:
     bool IsCapable() override;
@@ -56,19 +55,17 @@ ge::graphStatus RangeRegBaseFloatTilingClass::PostTiling()
     auto tensorDelta = context_->GetInputTensor(2);
     float start(0);
     float delta(0);
-    OP_CHECK_IF(
-        RangeGetConstValue<float>(context_, tensorStart, start) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "get start const value fail."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        RangeGetConstValue<float>(context_, tensorDelta, delta) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "get delta const value fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(RangeGetConstValue<float>(context_, tensorStart, start) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context_->GetNodeName(), "get start const value fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(RangeGetConstValue<float>(context_, tensorDelta, delta) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context_->GetNodeName(), "get delta const value fail."), return ge::GRAPH_FAILED);
     tilingData.set_start(start);
     tilingData.set_delta(delta);
 
     // 设置userWorkspace
     size_t* userWorkspaceSize = context_->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, userWorkspaceSize);
-    userWorkspaceSize[0] = RESERVED_WORKSPACE;
+    userWorkspaceSize[0] = DEFAULT_WORKSPACE_SIZE;
     tilingData.set_workspaceSize(userWorkspaceSize[0]);
 
     if (tilingData.GetDataSize() > context_->GetRawTilingData()->GetCapacity()) {

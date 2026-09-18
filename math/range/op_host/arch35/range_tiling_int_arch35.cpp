@@ -18,8 +18,7 @@
 namespace optiling {
 class RangeRegBaseIntTilingClass : public RangeRegBaseTilingClass {
 public:
-    explicit RangeRegBaseIntTilingClass(gert::TilingContext* context) : RangeRegBaseTilingClass(context)
-    {}
+    explicit RangeRegBaseIntTilingClass(gert::TilingContext* context) : RangeRegBaseTilingClass(context) {}
 
 protected:
     bool IsCapable() override;
@@ -30,10 +29,7 @@ private:
     RangeTilingDataInt tilingData_;
 };
 
-bool RangeRegBaseIntTilingClass::IsCapable()
-{
-    return true;
-}
+bool RangeRegBaseIntTilingClass::IsCapable() { return true; }
 
 template <typename T>
 ge::graphStatus SetStartStep(gert::TilingContext* context, RangeTilingDataInt& tilingData)
@@ -42,12 +38,10 @@ ge::graphStatus SetStartStep(gert::TilingContext* context, RangeTilingDataInt& t
     T delta;
     auto tensorStart = context->GetInputTensor(0);
     auto tensorDelta = context->GetInputTensor(2);
-    OP_CHECK_IF(
-        RangeGetConstValue<T>(context, tensorStart, start) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "get start const value fail."), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        RangeGetConstValue<T>(context, tensorDelta, delta) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context->GetNodeName(), "get delta const value fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(RangeGetConstValue<T>(context, tensorStart, start) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "get start const value fail."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(RangeGetConstValue<T>(context, tensorDelta, delta) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "get delta const value fail."), return ge::GRAPH_FAILED);
     tilingData.set_start(start);
     tilingData.set_delta(delta);
     return ge::GRAPH_SUCCESS;
@@ -78,7 +72,7 @@ ge::graphStatus RangeRegBaseIntTilingClass::PostTiling()
     // 设置userWorkspace
     size_t* userWorkspaceSize = context_->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, userWorkspaceSize);
-    userWorkspaceSize[0] = RESERVED_WORKSPACE;
+    userWorkspaceSize[0] = DEFAULT_WORKSPACE_SIZE;
     tilingData_.set_workspaceSize(userWorkspaceSize[0]);
 
     if (tilingData_.GetDataSize() > context_->GetRawTilingData()->GetCapacity()) {
