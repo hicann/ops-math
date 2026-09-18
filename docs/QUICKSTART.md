@@ -20,6 +20,8 @@
 
 本阶段目的是**快速体验项目标准流程**，验证环境能否成功进行算子源码编译、打包、安装和运行。
 
+> 本指南以单算子编译过程为例，也支持编译整个算子库算子、离线编译等多种场景，编译过程中的常见问题均可参考[《源码构建指南》](zh/install/compile.md)。
+
 ### 1.进入项目源码
 
 - CANNLab云开发环境：
@@ -41,9 +43,7 @@
 
 ### 2.编译AddExample算子
 
-本指南默认采用**单算子编译**：仅构建目标算子，编译时间短，适合快速入门与日常开发。通用命令格式：`bash build.sh --pkg --soc=<芯片版本> --ops=<算子名>`。
-
-> 若需编译整个算子库（省略`--ops`），请参阅 [源码构建指南 · 全量编译（ops-math包）](zh/install/compile.md#ops-math包)。
+通用命令格式：`bash build.sh --pkg --soc=<芯片版本> --ops=<算子名>`。
 
 > **说明**：编译前请确保已配置CANN环境变量，否则可能因找不到`ASCEND_HOME_PATH`等导致编译失败。默认路径安装时执行：
 >
@@ -94,8 +94,10 @@ export LD_LIBRARY_PATH=${ASCEND_HOME_PATH}/opp/vendors/custom_math/op_api/lib:${
 以AddExample为例，其提供了简单算子样例`add_example/examples/test_aclnn_add_example.cpp`，运行该样例验证算子功能是否正常。
 
 ```bash
-bash build.sh --run_example add_example eager cust --vendor_name=custom
+bash build.sh --run_example add_example eager cust --vendor_name=custom --soc=${soc_version}
 ```
+
+> **注意**：运行样例时需确保`--soc`参数与编译算子包时使用的`--soc`取值一致，否则可能报`error 161001`（如`aclnnXxxGetWorkspaceSize failed`）。如遇此错误，请回到[第2节](#2编译addexample算子)核对`--soc`取值后重新编译安装。
 
 预期输出：打印算子`AddExample`的加法计算结果，表明算子已成功部署并正确执行。样例中第一个输入从 1.0 开始递增，第二个输入使用固定随机数种子 42 生成，因此请以实际运行值为准；每组结果应等于两个输入之和。
 
@@ -151,7 +153,7 @@ __aicore__ inline void AddExample<T>::Compute(int64_t currentNum)
 3. **重新验证**：
 
     ```bash
-    bash build.sh --run_example add_example eager cust --vendor_name=custom
+    bash build.sh --run_example add_example eager cust --vendor_name=custom --soc=${soc_version}
     ```
 
 4. **成功标志**：输出结果变成乘法结果，每组结果应等于两个输入之积。输入数据仍沿用样例中的递增序列和固定随机数种子 42，请以实际运行值为准。
@@ -201,7 +203,7 @@ __aicore__ inline void AddExample<T>::Compute(int64_t currentNum)
     调用AddExample算子的example样例，生成可执行文件（test_aclnn_add_example），该文件位于项目`ops-math/build`目录。
 
     ```bash
-    bash build.sh --run_example add_example eager cust --vendor_name=custom
+    bash build.sh --run_example add_example eager cust --vendor_name=custom --soc=${soc_version}
     ```
 
 - **采集性能数据**
@@ -253,7 +255,7 @@ int main()
 2. 重新执行验证命令：
 
     ```bash
-    bash build.sh --run_example add_example eager cust --vendor_name=custom
+    bash build.sh --run_example add_example eager cust --vendor_name=custom --soc=${soc_version}
     ```
 
 3. 观察算子输出结果是否符合预期。

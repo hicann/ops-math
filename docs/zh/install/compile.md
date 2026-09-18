@@ -78,7 +78,7 @@
 
     自定义算子包默认安装路径为```${ASCEND_HOME_PATH}/opp/vendors```，\$\{ASCEND\_HOME\_PATH\}已通过环境变量配置，表示CANN toolkit包安装路径，一般为\$\{install\_path\}/cann。
 
-    > 说明：可通过配置--install-path=\$\{install\_path\}参数定义算子包安装目录，在使用自定义算子包前，需执行source \$\{install_path\}/vendors/${vendor_name}/bin/set_env.bash命令，set\_env.bash脚本将自定义算子包安装路径追加到环境变量ASCEND\_CUSTOM\_OPP\_PATH中，使自定义算子包在当前环境中生效。
+    > 说明：可通过配置--install-path=\$\{install\_path\}参数定义算子包安装目录，在使用自定义算子包前，需执行source \$\{install_path\}/vendors/${vendor_name}_math/bin/set_env.bash命令，set\_env.bash脚本将自定义算子包安装路径追加到环境变量ASCEND\_CUSTOM\_OPP\_PATH中，使自定义算子包在当前环境中生效。
 
 3. **（可选）卸载自定义算子包。**
 
@@ -410,3 +410,26 @@ Global Environment TearDown
 ```
 
 \$\{n\}表示执行了n个用例，\$\{m\}表示m项测试，\$\{x\}表示执行用例消耗的时间，单位为毫秒。
+
+## FAQ
+
+### 安装自定义run包报错权限不足
+
+默认安装目录需要当前用户具备读、写和执行权限。若提示权限不足，可选择以下一种方式：
+
+- 推荐安装到当前用户可写的绝对路径，并加载安装包生成的环境变量脚本：
+
+    ```bash
+    ./build_out/cann-ops-math-${vendor_name}_linux-${arch}.run --install-path=/absolute/path/to/opp
+    source /absolute/path/to/opp/vendors/${vendor_name}_math/bin/set_env.bash
+    ```
+
+- 确需安装到系统CANN目录时，使用`sudo -E`保留当前已配置的CANN环境变量：
+
+    ```bash
+    sudo -E ./build_out/cann-ops-math-${vendor_name}_linux-${arch}.run
+    ```
+
+### 安装自定义run包会校验依赖库 `libnnopbase.so`，当该库不在默认搜索路径时校验失败导致安装中断
+
+若安装包仅因共享库依赖检查失败而退出，请先确认当前CANN版本与构建环境兼容。确认兼容后可追加`--force`跳过共享库依赖检查；错误使用该参数可能导致算子在运行时加载失败，因此不建议默认使用。
