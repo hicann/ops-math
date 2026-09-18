@@ -19,6 +19,8 @@
 namespace {
 constexpr uint32_t kStridedSliceInputNum = 4;
 constexpr uint32_t kStridedSliceOutputNum = 1;
+constexpr int32_t kEndInputIndex = 2;
+constexpr int32_t kStridesInputIndex = 3;
 constexpr const char* kStridedSlice = "StridedSlice";
 } // namespace
 
@@ -36,7 +38,7 @@ static uint32_t ProcessEllipsisMask(const std::vector<int64_t>& begin, const std
                                     int64_t& strides_j, std::vector<int64_t>& begin_res, std::vector<int64_t>& end_res,
                                     std::vector<int64_t>& strides_res)
 {
-    if (ellipsis_mask & bit_mask) {
+    if ((ellipsis_mask & bit_mask) != 0) {
         if (has_ellipsis) {
             KERNEL_LOG_ERROR("[%s] multiple ellipses in slice spec not allowed.", kStridedSlice);
             return KERNEL_STATUS_INNER_ERROR;
@@ -47,7 +49,7 @@ static uint32_t ProcessEllipsisMask(const std::vector<int64_t>& begin, const std
         int64_t ellipsis_bits = static_cast<int64_t>(x_shape.size()) - static_cast<int64_t>(strides.size());
         int64_t bit_mask_tmp = 1;
         for (size_t k = 0; k < strides.size(); ++k) {
-            if ((new_axis_mask & bit_mask_tmp) && !(ellipsis_mask & bit_mask_tmp)) {
+            if (((new_axis_mask & bit_mask_tmp) != 0) && ((ellipsis_mask & bit_mask_tmp) == 0)) {
                 ++ellipsis_bits;
             }
             bit_mask_tmp <<= 1;
@@ -233,8 +235,9 @@ uint32_t StridedSliceCpuKernel::ParseKernelParams(const CpuKernelContext& ctx)
     KERNEL_LOG_INFO("[%s] get input[0] shape: [%s].", kStridedSlice, VectorToString(x_shape_).c_str());
 
     KERNEL_HANDLE_ERROR(ParseIndexInput(ctx, 1, begin_), "[%s] parse index input failed.", kStridedSlice);
-    KERNEL_HANDLE_ERROR(ParseIndexInput(ctx, 2, end_), "[%s] parse index input failed.", kStridedSlice);
-    KERNEL_HANDLE_ERROR(ParseIndexInput(ctx, 3, strides_), "[%s] parse index input failed.", kStridedSlice);
+    KERNEL_HANDLE_ERROR(ParseIndexInput(ctx, kEndInputIndex, end_), "[%s] parse index input failed.", kStridedSlice);
+    KERNEL_HANDLE_ERROR(ParseIndexInput(ctx, kStridesInputIndex, strides_), "[%s] parse index input failed.",
+                        kStridedSlice);
 
     // get masks
     KERNEL_HANDLE_ERROR(GetMaskAttr(ctx, "begin_mask", begin_mask_), "[%s] get mask attr failed.", kStridedSlice);

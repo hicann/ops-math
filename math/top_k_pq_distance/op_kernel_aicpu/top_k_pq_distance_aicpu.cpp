@@ -65,7 +65,7 @@ uint32_t TopKPQDistanceCpuKernel::DoCompute(const CpuKernelContext& ctx)
 
     Item<T> grp_extreme_ptr[k_];
     Item<T> topk_ptr[k_];
-    ret = GetGroupedDistanceTopKHeap(grp_extreme_ptr, input_data);
+    ret = GetGroupedDistanceTopKHeap(grp_extreme_ptr, static_cast<size_t>(k_), input_data);
     if (ret != KERNEL_STATUS_OK) {
         return ret;
     }
@@ -130,7 +130,7 @@ uint32_t TopKPQDistanceCpuKernel::GetInputAndCheck(const CpuKernelContext& ctx, 
 
 template <typename T>
 uint32_t TopKPQDistanceCpuKernel::ProcessResult(const CpuKernelContext& ctx, const InputsData<T>& input_data,
-                                                Item<T> topk_ptr[])
+                                                Item<T> topk_ptr[]) const
 {
     Tensor* topk_distance = ctx.Output(0);
     Tensor* topk_ivf = ctx.Output(1);
@@ -162,7 +162,7 @@ uint32_t TopKPQDistanceCpuKernel::ProcessResult(const CpuKernelContext& ctx, con
 
 template <typename T>
 void TopKPQDistanceCpuKernel::InitTopKHeap(int& cnt, int& cntk, Item<T> topk_ptr[], const Item<T> grp_extreme_ptr[],
-                                           const InputsData<T>& inputs_data)
+                                           const InputsData<T>& inputs_data) const
 {
     T** ptr = inputs_data.pq_distances.GetPointer();
     for (; cntk < k_; cntk++) {
@@ -219,11 +219,14 @@ uint32_t TopKPQDistanceCpuKernel::GetDistanceTopKHeap(Item<T> topk_ptr[], const 
 }
 
 template <typename T>
-uint32_t TopKPQDistanceCpuKernel::GetGroupedDistanceTopKHeap(Item<T> grp_extreme_ptr[], const InputsData<T>& input_data)
+uint32_t TopKPQDistanceCpuKernel::GetGroupedDistanceTopKHeap(Item<T>* grp_extreme_ptr, size_t grp_extreme_len,
+                                                             const InputsData<T>& input_data)
 {
     T** ptr = input_data.grouped_extreme_distances.GetPointer();
     int32_t extreme_size = input_data.actual_count / group_size_;
     int32_t size = std::min(k_, extreme_size);
+    KERNEL_CHECK_FALSE((grp_extreme_len >= static_cast<size_t>(size)), KERNEL_STATUS_PARAM_INVALID,
+                       "grp_extreme_len[%zu] must be >= size[%d]", grp_extreme_len, size);
     int32_t grp = 0;
     int32_t grpi = 0;
     InitGrpExtreme<T>(grp_extreme_ptr, input_data, grp, grpi);
@@ -275,7 +278,7 @@ void TopKPQDistanceCpuKernel::MakeHeap(Item<T> arr_ptr[], const int32_t n)
 }
 
 template <typename T>
-void TopKPQDistanceCpuKernel::PopHeap(Item<T> arr_ptr[], const int32_t n, Item<T>* res)
+void TopKPQDistanceCpuKernel::PopHeap(Item<T> arr_ptr[], const int32_t n, Item<T>* res) const
 {
     *res = arr_ptr[0];
     arr_ptr[0] = arr_ptr[n - 1];
@@ -283,7 +286,7 @@ void TopKPQDistanceCpuKernel::PopHeap(Item<T> arr_ptr[], const int32_t n, Item<T
 }
 
 template <typename T>
-inline void TopKPQDistanceCpuKernel::HeapFixdown(Item<T> a[], const int32_t index, const int32_t n)
+inline void TopKPQDistanceCpuKernel::HeapFixdown(Item<T> a[], const int32_t index, const int32_t n) const
 {
     int32_t j = 0;
     int32_t i = index;

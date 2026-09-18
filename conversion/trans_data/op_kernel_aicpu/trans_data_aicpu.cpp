@@ -133,7 +133,7 @@ struct TransDataTensorInfo {
 uint32_t ExtractTensorInfo(aicpu::Tensor* tensor, TransDataTensorInfo& info, const char* who)
 {
     KERNEL_CHECK_NULLPTR(tensor, KERNEL_STATUS_PARAM_INVALID, "%s get tensor failed, tensor is nullptr.", who);
-    info.data = reinterpret_cast<uint8_t*>(tensor->GetData());
+    info.data = aicpu::PtrToPtr<void, uint8_t>(tensor->GetData());
     info.data_type = tensor->GetDataType();
     auto shape = tensor->GetTensorShape();
     KERNEL_CHECK_NULLPTR(shape, KERNEL_STATUS_PARAM_INVALID, "%s get shape failed, shape is nullptr.", who);
@@ -415,10 +415,10 @@ uint32_t TransDataCpuKernel::HandleHwcnToFzC04(const Tensor* input_tensor, Tenso
     }
     const uint64_t data_type_size = output_tensor->GetDataSize();
     const uint64_t data_byte_size = GetSizeByDataType(data_type) * data_type_size;
-    TransArgs args = {reinterpret_cast<uint8_t*>(input_tensor->GetData()),
+    TransArgs args = {aicpu::PtrToPtr<void, uint8_t>(input_tensor->GetData()),
                       input_tensor->GetTensorShape()->GetDimSizes(), output_tensor->GetTensorShape()->GetDimSizes(),
                       data_type};
-    auto output_addr = reinterpret_cast<uint8_t*>(output_tensor->GetData());
+    auto output_addr = aicpu::PtrToPtr<void, uint8_t>(output_tensor->GetData());
     const int64_t c0_cube = formats::GetC0ValueForTransShape(
         args.src_data_type, static_cast<int32_t>(output_tensor->GetTensorShape()->GetFormat()));
     KERNEL_CHECK_FALSE((c0_cube > 0), KERNEL_STATUS_PARAM_INVALID, "c0_cube must greater than 0, now is [%ld].",
@@ -437,14 +437,14 @@ uint32_t TransDataCpuKernel::DispatchDealData(DataType dt, void* input_data_temp
 {
     switch (dt) {
         case DT_INT8:
-            return DealData(reinterpret_cast<int8_t*>(input_data_temp), reinterpret_cast<int8_t*>(output_data_temp),
-                            input_tensor, output_tensor, group);
+            return DealData(aicpu::PtrToPtr<void, int8_t>(input_data_temp),
+                            aicpu::PtrToPtr<void, int8_t>(output_data_temp), input_tensor, output_tensor, group);
         case DT_FLOAT:
-            return DealData(reinterpret_cast<float*>(input_data_temp), reinterpret_cast<float*>(output_data_temp),
-                            input_tensor, output_tensor, group);
+            return DealData(aicpu::PtrToPtr<void, float>(input_data_temp),
+                            aicpu::PtrToPtr<void, float>(output_data_temp), input_tensor, output_tensor, group);
         case DT_FLOAT16:
-            return DealData(reinterpret_cast<Eigen::half*>(input_data_temp),
-                            reinterpret_cast<Eigen::half*>(output_data_temp), input_tensor, output_tensor, group);
+            return DealData(aicpu::PtrToPtr<void, Eigen::half>(input_data_temp),
+                            aicpu::PtrToPtr<void, Eigen::half>(output_data_temp), input_tensor, output_tensor, group);
         default:
             KERNEL_LOG_WARN("DataType is not DT_INT8 or DT_FLOAT or DT_FLOAT16, and current "
                             "DataType is [%d]",

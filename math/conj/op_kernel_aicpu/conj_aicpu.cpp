@@ -63,8 +63,8 @@ uint32_t Conj::ConjCheck(const CpuKernelContext& ctx) const
 template <typename T>
 uint32_t Conj::ConjCompute(const CpuKernelContext& ctx) const
 {
-    auto input_x = reinterpret_cast<T*>(ctx.Input(0)->GetData());
-    auto output_y = reinterpret_cast<T*>(ctx.Output(0)->GetData());
+    auto input_x = PtrToPtr<void, T>(ctx.Input(0)->GetData());
+    auto output_y = PtrToPtr<void, T>(ctx.Output(0)->GetData());
     int64_t data_num = ctx.Input(0)->NumElements();
     int64_t data_size = data_num * static_cast<int64_t>(sizeof(T));
     if (data_size <= kParallelDataNums) {

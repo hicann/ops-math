@@ -17,8 +17,15 @@
 #include "utils/kernel_util.h"
 
 namespace {
+constexpr int32_t kRank2 = 2;
+constexpr int32_t kRank3 = 3;
+constexpr int32_t kRank4 = 4;
+constexpr int32_t kRank5 = 5;
+constexpr int32_t kRank6 = 6;
+constexpr int32_t kRank7 = 7;
+constexpr int32_t kRank8 = 8;
 const char* const kTileWithAxis = "TileWithAxis";
-}
+} // namespace
 namespace aicpu {
 template <typename T, int32_t OPTION, int32_t DIMS>
 uint32_t TileWithAxisCpuKernel::TileComputeByAxis(const CpuKernelContext& ctx)
@@ -82,20 +89,20 @@ uint32_t TileWithAxisCpuKernel::TileComputeInDims(const CpuKernelContext& ctx)
         }
         case 1:
             return TileComputeByAxis<T, OPTION, 1>(ctx);
-        case 2:
-            return TileComputeByAxis<T, OPTION, 2>(ctx);
-        case 3:
-            return TileComputeByAxis<T, OPTION, 3>(ctx);
-        case 4:
-            return TileComputeByAxis<T, OPTION, 4>(ctx);
-        case 5:
-            return TileComputeByAxis<T, OPTION, 5>(ctx);
-        case 6:
-            return TileComputeByAxis<T, OPTION, 6>(ctx);
-        case 7:
-            return TileComputeByAxis<T, OPTION, 7>(ctx);
-        case 8:
-            return TileComputeByAxis<T, OPTION, 8>(ctx);
+        case kRank2:
+            return TileComputeByAxis<T, OPTION, kRank2>(ctx);
+        case kRank3:
+            return TileComputeByAxis<T, OPTION, kRank3>(ctx);
+        case kRank4:
+            return TileComputeByAxis<T, OPTION, kRank4>(ctx);
+        case kRank5:
+            return TileComputeByAxis<T, OPTION, kRank5>(ctx);
+        case kRank6:
+            return TileComputeByAxis<T, OPTION, kRank6>(ctx);
+        case kRank7:
+            return TileComputeByAxis<T, OPTION, kRank7>(ctx);
+        case kRank8:
+            return TileComputeByAxis<T, OPTION, kRank8>(ctx);
         default:
             KERNEL_LOG_ERROR("[%s] Rank of output should less than 8 but get [%d].", ctx.GetOpType().c_str(), dims);
             return KERNEL_STATUS_PARAM_INVALID;

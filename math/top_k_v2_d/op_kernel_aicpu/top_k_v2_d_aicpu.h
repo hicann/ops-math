@@ -23,7 +23,7 @@ public:
 
     KernelStatus GetInputAndCheck(const CpuKernelContext& ctx);
     template <typename T>
-    KernelStatus DoCompute(const CpuKernelContext& ctx);
+    KernelStatus DoCompute(const CpuKernelContext& ctx) const;
     template <typename T>
     void TopKForNVector(size_t start, size_t end);
     template <typename T>

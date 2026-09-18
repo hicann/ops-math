@@ -293,7 +293,7 @@ uint32_t StridedSliceV2CpuKernel::DoStridedSliceV2(const CpuKernelContext& ctx, 
 }
 
 uint32_t StridedSliceV2CpuKernel::GetInputTensors(CpuKernelContext& ctx, Tensor*& x, Tensor*& begin, Tensor*& end,
-                                                  Tensor*& axes, Tensor*& strides)
+                                                  Tensor*& axes, Tensor*& strides) const
 {
     x = ctx.Input(kFirstInputIndex);
     KERNEL_CHECK_NULLPTR(x, KERNEL_STATUS_PARAM_INVALID, "Get input x failed")

@@ -81,26 +81,27 @@ private:
     uint32_t DoCompute(const CpuKernelContext& ctx);
 
     template <typename T>
-    uint32_t ProcessResult(const CpuKernelContext& ctx, const InputsData<T>& input_data, Item<T> topk_ptr[]);
+    uint32_t ProcessResult(const CpuKernelContext& ctx, const InputsData<T>& input_data, Item<T> topk_ptr[]) const;
 
     template <typename T>
     void InitTopKHeap(int& cnt, int& cntk, Item<T> topk_ptr[], const Item<T> grp_extreme_ptr[],
-                      const InputsData<T>& inputs_data);
+                      const InputsData<T>& inputs_data) const;
 
     template <typename T>
     uint32_t GetDistanceTopKHeap(Item<T> topk_ptr[], const Item<T> grp_extreme_ptr[], const InputsData<T>& inputs_data);
 
     template <typename T>
-    uint32_t GetGroupedDistanceTopKHeap(Item<T> grp_extreme_ptr[], const InputsData<T>& input_data);
+    uint32_t GetGroupedDistanceTopKHeap(Item<T>* grp_extreme_ptr, size_t grp_extreme_len,
+                                        const InputsData<T>& input_data);
 
     template <typename T>
     void MakeHeap(Item<T> arr_ptr[], const int32_t n);
 
     template <typename T>
-    void PopHeap(Item<T> arr_ptr[], const int32_t n, Item<T>* const res);
+    void PopHeap(Item<T> arr_ptr[], const int32_t n, Item<T>* const res) const;
 
     template <typename T>
-    inline void HeapFixdown(Item<T> a[], const int32_t index, const int32_t n);
+    inline void HeapFixdown(Item<T> a[], const int32_t index, const int32_t n) const;
 
     template <typename T>
     void SortHeap(Item<T> arr_ptr[], const int32_t n);

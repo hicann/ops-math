@@ -9,6 +9,7 @@
  */
 
 #include "calc_buckets_limit_and_offset_aicpu.h"
+constexpr int32_t kDataTypeInputIndex = 2;
 #include "aicpu/math_aicpu_register.h"
 
 #include <algorithm>
@@ -104,7 +105,7 @@ uint32_t CalcBucketsLimitAndOffsetCpuKernel::Compute(CpuKernelContext& ctx)
     if (ret != KERNEL_STATUS_OK) {
         return ret;
     }
-    if (ctx.Input(2)->GetDataType() == DT_INT32) {
+    if (ctx.Input(kDataTypeInputIndex)->GetDataType() == DT_INT32) {
         return DoCompute<int32_t>();
     }
     return DoCompute<int64_t>();
