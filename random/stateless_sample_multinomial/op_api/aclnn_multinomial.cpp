@@ -393,7 +393,7 @@ static const aclTensor* Run950AicoreMultinomialWithoutReplacement(const aclTenso
         CHECK_RET(argmaxOut != nullptr, nullptr);
         multinomialOut = l0op::Cast(argmaxOut, op::DataType::DT_INT64, executor);
     } else {
-        auto topkOut = l0op::Topk(divExponential, numsamples, lastDim, true, true, op::DataType::DT_INT64, executor);
+        auto topkOut = l0op::Topk(divExponential, numsamples, lastDim, true, true, op::DataType::DT_INT64, 1, executor);
         multinomialOut = l0op::Cast(std::get<1>(topkOut), op::DataType::DT_INT64, executor);
     }
     CHECK_RET(multinomialOut != nullptr, nullptr);
