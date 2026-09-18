@@ -290,8 +290,8 @@ aclnnStatus aclnnInplacePowTensorScalar(
         <td>公式中的输入exponent</td>
         <td>selfRef和exponent推导后的数据类型为整型时，exponent需要大于等于0。<br>exponent的值需要在selfRef和exponent推导后的数据类型的取值范围内。（参见<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>）</td>
         <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、INT16、BFLOAT16</td>
-        <td>ND</td>
-        <td>0-8</td>
+        <td>-</td>
+        <td>-</td>
         <td>-</td>
       </tr>
       <tr>
