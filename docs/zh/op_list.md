@@ -2199,11 +2199,11 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/trace/README.md">trace</a></td>
+    <td>x</td>
+    <td>x</td>
     <td>√</td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>AI Core</td>
+    <td>x</td>
+    <td>AI Core/AI CPU</td>
     <td>计算矩阵从左上角开始的主对角线元素的和。</td>
   </tr>
   <tr>
