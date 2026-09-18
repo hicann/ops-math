@@ -125,11 +125,11 @@ private:
         Reg::Adds(vregInputMid, vregInputMid, FP32_ONE, mask);
         Reg::Compares<float, CMPMODE::GE>(satMaskReg, vregInputAbs, FP32_SAT_BOUND, mask);
         Reg::Select(vregInputMid, constRegs.vregOne, vregInputMid, satMaskReg);
-        Reg::And(vregSign, constRegs.vregSignMask, (Reg::RegTensor<uint32_t, Reg::RegTraitNumOne>&)vregInput, mask);
-        Reg::Or((Reg::RegTensor<uint32_t, Reg::RegTraitNumOne>&)vregInputMid,
-                (Reg::RegTensor<uint32_t, Reg::RegTraitNumOne>&)vregInputMid, vregSign, mask);
         Reg::Compares<float, CMPMODE::GE>(cmpMaskReg, vregInputAbs, FP32_ZERO_6, mask);
         Reg::Select(vregOutput, vregInputMid, vregOutput, cmpMaskReg);
+        Reg::And(vregSign, constRegs.vregSignMask, (Reg::RegTensor<uint32_t, Reg::RegTraitNumOne>&)vregInput, mask);
+        Reg::Or((Reg::RegTensor<uint32_t, Reg::RegTraitNumOne>&)vregOutput,
+                (Reg::RegTensor<uint32_t, Reg::RegTraitNumOne>&)vregOutput, vregSign, mask);
     }
 #endif // __CCE_AICORE__
 };
