@@ -38,7 +38,7 @@ stages:
             identifier: revise_image
             uses: cann/.gitcode/actions/revise-img@master
             with:
-              repo_name: 'ops-math'
+              repo_name: ${{ env.repo_name }}
               target_branch: ${{ env.TARGET_BRANCH }}
               comment: ${{ atomgit.event.comment.body }}
               token: ${{ secrets.TESTTOKEN }}
@@ -241,7 +241,7 @@ stages:
             identifier: process_checkout
             uses: checkout
             with:
-              token: ${{secrets.GIT_TOKEN}}
+              allow-unsafe-pr-checkout: true
               ref: ${{ atomgit.event.pull_request.merge_commit_sha }}
           -
             name: download
@@ -294,7 +294,7 @@ stages:
             uses: checkout
             with:
               ref: ${{ atomgit.event.pull_request.merge_commit_sha }}
-              token: ${{secrets.GIT_TOKEN}}
+              allow-unsafe-pr-checkout: true
           - name: 执行 Kirin PreSmoke_harmony-infer-chs-math 测试
             run: bash .gitcode/scripts/kirin_smoke_chs.sh
       PreSmoke_harmony-infer-cpro-math:
@@ -307,7 +307,7 @@ stages:
             uses: checkout
             with:
               ref: ${{ atomgit.event.pull_request.merge_commit_sha }}
-              token: ${{secrets.GIT_TOKEN}}
+              allow-unsafe-pr-checkout: true
           - name: 执行 Kirin PreSmoke_harmony-infer-cpro-math 测试
             run: bash .gitcode/scripts/kirin_smoke_cpro.sh
     pre:
