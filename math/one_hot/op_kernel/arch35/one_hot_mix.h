@@ -38,9 +38,8 @@ class OneHotMix {
 public:
     __aicore__ inline OneHotMix(){};
 
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR depth, GM_ADDR on_value, GM_ADDR off_value, GM_ADDR y, GM_ADDR workspace, TPipe* pipe,
-        const OneHotTilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR depth, GM_ADDR on_value, GM_ADDR off_value, GM_ADDR y,
+                                GM_ADDR workspace, TPipe* pipe, const OneHotTilingData* tilingData);
     __aicore__ inline void Process();
     __aicore__ inline void CopyOut(LocalTensor<T3>& srcTensor, int64_t offset, int32_t copyLength);
 
@@ -85,9 +84,9 @@ private:
     uint32_t m_;
 };
 template <typename T1, typename T2, typename T3>
-__aicore__ inline void OneHotMix<T1, T2, T3>::Init(
-    GM_ADDR x, GM_ADDR depth, GM_ADDR on_value, GM_ADDR off_value, GM_ADDR y, GM_ADDR workspace, TPipe* pipe,
-    const OneHotTilingData* tilingData)
+__aicore__ inline void OneHotMix<T1, T2, T3>::Init(GM_ADDR x, GM_ADDR depth, GM_ADDR on_value, GM_ADDR off_value,
+                                                   GM_ADDR y, GM_ADDR workspace, TPipe* pipe,
+                                                   const OneHotTilingData* tilingData)
 {
     pipe_ = pipe;
     tiling = tilingData;
@@ -119,7 +118,7 @@ __aicore__ inline void OneHotMix<T1, T2, T3>::Init(
         int64_t actualLastCoreTotalSize = actualOffValueCalNum;
         offValueInitLoop_ = (actualLastCoreTotalSize + offValueMaxNum - 1) / offValueMaxNum;
         singleCalNum_ = offValueMaxNum;
-        tailOffValueCalNum_ = actualLastCoreTotalSize % offValueMaxNum;
+        tailOffValueCalNum_ = actualLastCoreTotalSize - (offValueInitLoop_ - 1) * offValueMaxNum;
     }
     pipe_->InitBuffer(offValueUb, tiling->ubSize);
     onValue_ = static_cast<T3>(onValueGm.GetValue(0));
@@ -141,9 +140,8 @@ __aicore__ inline void OneHotMix<T1, T2, T3>::Init(
 template <typename T1, typename T2, typename T3>
 __aicore__ inline void OneHotMix<T1, T2, T3>::CopyOut(LocalTensor<T3>& srcTensor, int64_t offset, int32_t copyLength)
 {
-    DataCopyPad(
-        outputGm[offset], srcTensor,
-        {static_cast<uint16_t>(1), static_cast<uint32_t>(copyLength * sizeof(T3)), 0, 0, 0});
+    DataCopyPad(outputGm[offset], srcTensor,
+                {static_cast<uint16_t>(1), static_cast<uint32_t>(copyLength * sizeof(T3)), 0, 0, 0});
 }
 
 template <typename T1, typename T2, typename T3>
@@ -151,8 +149,7 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(BOUND_THREAD_NUM) inline void SimtComputeFor
     int64_t startOffset, int64_t coreFactor, int64_t depth, T3 offValue, T3 onValue, uint64_t factor1,
     uint64_t factorOut1, uint64_t factorOut2, __gm__ T1* inputData, __gm__ T3* outputData)
 {
-    for (int64_t idx = static_cast<int64_t>(threadIdx.x); idx < coreFactor;
-         idx += static_cast<int64_t>(blockDim.x)) {
+    for (int64_t idx = static_cast<int64_t>(threadIdx.x); idx < coreFactor; idx += static_cast<int64_t>(blockDim.x)) {
         int64_t gmIdx = startOffset + idx;
         int64_t i = gmIdx / factor1;
         int64_t j = gmIdx % factor1;
@@ -169,8 +166,7 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(BOUND_THREAD_NUM) inline void SimtComputeMix
     int32_t startOffset, int32_t coreFactor, int64_t depth, T3 offValue, T3 onValue, uint64_t factor1,
     uint64_t factorOut1, uint64_t factorOut2, uint32_t m, uint32_t shift, __gm__ T1* inputData, __gm__ T3* outputData)
 {
-    for (uint32_t idx = static_cast<int32_t>(threadIdx.x); idx < coreFactor;
-         idx += static_cast<int32_t>(blockDim.x)) {
+    for (uint32_t idx = static_cast<int32_t>(threadIdx.x); idx < coreFactor; idx += static_cast<int32_t>(blockDim.x)) {
         int32_t gmIdx = startOffset + idx;
         uint32_t t = __umulhi(gmIdx, m);
         t = t + gmIdx;
@@ -230,13 +226,12 @@ __aicore__ inline void OneHotMix<T1, T2, T3>::Process()
     __gm__ T1* inputData = inputGm.GetPhyAddr(0);
     __gm__ T3* outputData = outputGm.GetPhyAddr(0);
     if (unlikely(endOffset > INT32_MAX)) {
-        asc_vf_call<SimtComputeFor64Mix<T1, T2, T3>>(
-            threadsPerBlock, startOffset, coreFactor, depth_, offValue_, onValue_, factor1, factorOut1, factorOut2,
-            inputData, outputData);
+        asc_vf_call<SimtComputeFor64Mix<T1, T2, T3>>(threadsPerBlock, startOffset, coreFactor, depth_, offValue_,
+                                                     onValue_, factor1, factorOut1, factorOut2, inputData, outputData);
     } else {
-        asc_vf_call<SimtComputeMix<T1, T2, T3>>(
-            threadsPerBlock, static_cast<int32_t>(startOffset), static_cast<int32_t>(coreFactor), depth_, offValue_,
-            onValue_, factor1, factorOut1, factorOut2, m_, shift_, inputData, outputData);
+        asc_vf_call<SimtComputeMix<T1, T2, T3>>(threadsPerBlock, static_cast<int32_t>(startOffset),
+                                                static_cast<int32_t>(coreFactor), depth_, offValue_, onValue_, factor1,
+                                                factorOut1, factorOut2, m_, shift_, inputData, outputData);
     }
 }
 } // namespace OneHot
