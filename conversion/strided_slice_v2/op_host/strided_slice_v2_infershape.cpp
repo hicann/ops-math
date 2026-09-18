@@ -34,10 +34,7 @@ static const size_t IDX_MASK_ELLIPSIS = 2;
 static const size_t IDX_MASK_NEW_AXIS = 3;
 static const size_t IDX_MASK_SHRINK_AXIS = 4;
 
-static bool GetValueList(QuickVector& valueList)
-{
-    return (valueList.GetDimNum() != 0);
-}
+static bool GetValueList(QuickVector& valueList) { return (valueList.GetDimNum() != 0); }
 
 static int64_t CalcMaxShapeSize(int64_t begin_shape_size, int64_t end_shape_size)
 {
@@ -45,9 +42,8 @@ static int64_t CalcMaxShapeSize(int64_t begin_shape_size, int64_t end_shape_size
 
     shape_max = std::max(begin_shape_size, shape_max);
     shape_max = std::max(end_shape_size, shape_max);
-    OP_LOGD(
-        OP_NAME, "begin_shape_size:%ld, end_shape_size:%ld, shape_max:%ld.", begin_shape_size, end_shape_size,
-        shape_max);
+    OP_LOGD(OP_NAME, "begin_shape_size:%ld, end_shape_size:%ld, shape_max:%ld.", begin_shape_size, end_shape_size,
+            shape_max);
     return shape_max;
 }
 
@@ -57,7 +53,7 @@ static void PositiveAxisImpl(int32_t inputDims, const gert::Tensor* axesTensor, 
     int32_t axesSize = static_cast<int32_t>(axesTensor->GetShapeSize());
     const T* data = axesTensor->GetData<T>();
     if (data == nullptr) {
-        OP_LOGE(OP_NAME, "Failed to get tensor data, data is null.");
+        OP_LOGE(OP_NAME, "Failed to get axes tensor data in InferShape, data is null.");
         return;
     }
     for (int32_t i = 0; i < axesSize; i++) {
@@ -102,14 +98,14 @@ static int64_t GetConstIndexValue(const gert::Tensor* tensor, int32_t idx, int64
     if (dataType == ge::DT_INT32) {
         const int32_t* data = tensor->GetData<int32_t>();
         if (data == nullptr) {
-            OP_LOGE(OP_NAME, "Failed to get tensor data, data is null.");
+            OP_LOGE(OP_NAME, "Failed to get int32 tensor data in InferShape, data is null.");
             return defaultValue;
         }
         value = static_cast<int64_t>(data[idx]);
     } else if (dataType == ge::DT_INT64) {
         const int64_t* data = tensor->GetData<int64_t>();
         if (data == nullptr) {
-            OP_LOGE(OP_NAME, "Failed to get tensor data, data is null.");
+            OP_LOGE(OP_NAME, "Failed to get int64 tensor data in InferShape, data is null.");
             return defaultValue;
         }
         value = data[idx];
@@ -129,8 +125,8 @@ static void InitListWithDimNum(QuickVector& list, int32_t dimNum, int64_t initVa
     }
 }
 
-static void ConstructStrideList(
-    const gert::Tensor* strideTensor, int32_t dimNum, const std::vector<int64_t>& axes, QuickVector& list_strides)
+static void ConstructStrideList(const gert::Tensor* strideTensor, int32_t dimNum, const std::vector<int64_t>& axes,
+                                QuickVector& list_strides)
 {
     // Initialize all strides to 1
     InitListWithDimNum(list_strides, dimNum, 1);
@@ -151,9 +147,8 @@ static void ConstructStrideList(
     OP_LOGD(OP_NAME, "strideSize:%d, axesSize:%d.", strideSize, axesSize);
 }
 
-static void ConstructBeginList(
-    const gert::Tensor* beginTensor, const QuickVector* xShape, const std::vector<int64_t>& axes,
-    QuickVector& beginList)
+static void ConstructBeginList(const gert::Tensor* beginTensor, const QuickVector* xShape,
+                               const std::vector<int64_t>& axes, QuickVector& beginList)
 {
     // Initialize beginList with 0
     const int32_t dimNum = static_cast<int32_t>(xShape->GetDimNum());
@@ -171,8 +166,8 @@ static void ConstructBeginList(
     OP_LOGD(OP_NAME, "dimNum:%d, beginsSize:%d, axesSize:%d.", dimNum, beginsSize, axesSize);
 }
 
-static void ConstructEndList(
-    const gert::Tensor* endTensor, const QuickVector* xShape, const std::vector<int64_t>& axes, QuickVector& endList)
+static void ConstructEndList(const gert::Tensor* endTensor, const QuickVector* xShape, const std::vector<int64_t>& axes,
+                             QuickVector& endList)
 {
     // Initialize endList with input_shape
     const int32_t dimNum = static_cast<int32_t>(xShape->GetDimNum());
@@ -219,10 +214,8 @@ static ge::graphStatus InferShape4StridedSliceV2(gert::InferShapeContext* contex
     const gert::Tensor* tensor_strides = context->GetOptionalInputTensor(IDX_STRIDES);
     ConstructStrideList(tensor_strides, input_dim_num, new_axis, input_params.strides);
 
-    OP_LOGI(
-        context, "shape_x:%s, shape_begin:%s, shape_end:%s.",
-        Ops::Base::ToString(*shape_x).c_str(), Ops::Base::ToString(*shape_begin).c_str(),
-        Ops::Base::ToString(*shape_end).c_str());
+    OP_LOGI(context, "shape_x:%s, shape_begin:%s, shape_end:%s.", Ops::Base::ToString(*shape_x).c_str(),
+            Ops::Base::ToString(*shape_begin).c_str(), Ops::Base::ToString(*shape_end).c_str());
 
     // Calculate max shape of (begin, end, strides)
     int64_t shape_max = CalcMaxShapeSize(shape_begin->GetDim(0), shape_end->GetDim(0));
@@ -243,8 +236,8 @@ static ge::graphStatus InferShape4StridedSliceV2(gert::InferShapeContext* contex
 
     OP_LOGD(OP_NAME, "begin_list:%s, valid_begin:%d.", Ops::Base::ToString(input_params.begin).c_str(), valid_begin);
     OP_LOGD(OP_NAME, "end_list:%s, valid_end:%d.", Ops::Base::ToString(input_params.end).c_str(), valid_end);
-    OP_LOGD(
-        OP_NAME, "stride_list:%s, valid_strides:%d.", Ops::Base::ToString(input_params.strides).c_str(), valid_strides);
+    OP_LOGD(OP_NAME, "stride_list:%s, valid_strides:%d.", Ops::Base::ToString(input_params.strides).c_str(),
+            valid_strides);
 
     // Check (begin, end) shape size same
     if (input_params.end.GetDimNum() != input_params.begin.GetDimNum()) {
