@@ -28,6 +28,7 @@ import numpy as np
 __spec__ = {
     "cast": "CastKernelSpec",
     "aclnnCast": "CastAclnnSpec",
+    "torch.Tensor.to": "CastE2eSpec",
 }
 
 __golden__ = {
@@ -234,3 +235,51 @@ class CastAclnnSpec:
 
     third_party = {"torch": _CastCompose}
     tolerance = _KERNEL_TOLERANCE
+
+
+class _CastE2eCompose:
+    """Third-party reference for the E2E path (api ``torch.Tensor.to``).
+
+    torch.Tensor.to is a C builtin without an inspectable signature, so the
+    server-side api mode fails with "no signature found for builtin". This
+    compose re-declares the call in plain Python; tensors are recognized by
+    instance type and the target dtype arrives under the 'dtype' attribute
+    key (string form, e.g. "torch.float32").
+    """
+
+    def __call__(self, *args, **kwargs):
+        import torch
+
+        tensor = None
+        for v in kwargs.values():
+            if isinstance(v, torch.Tensor):
+                tensor = v
+                break
+        if tensor is None:
+            for v in args:
+                if isinstance(v, torch.Tensor):
+                    tensor = v
+                    break
+        dtype = kwargs.get("dtype")
+        if dtype is None:
+            for v in args:
+                if not isinstance(v, torch.Tensor) and not isinstance(v, (list, tuple)):
+                    dtype = v
+                    break
+        if tensor is None or dtype is None:
+            raise ValueError(
+                "cast e2e compose expects one input tensor and a 'dtype' attribute"
+            )
+        if isinstance(dtype, str):
+            dtype = getattr(torch, dtype.rsplit(".", 1)[-1])
+        return [tensor.to(dtype=dtype)]
+
+
+class CastE2eSpec:
+    """E2E spec, keyed by the dotted api name ``torch.Tensor.to`` in __spec__.
+
+    third_party is a compose class so the XPU dispatch runs in spec mode
+    (server instantiates and binds params by name) instead of api mode.
+    """
+
+    third_party = {"torch": _CastE2eCompose}
