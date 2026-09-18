@@ -20,9 +20,9 @@ __spec__ = {
 
 
 _TOL = {
-    "float32": {"standard": "stat_rel_err", "level": "L1"},
-    "float16": {"standard": "stat_rel_err", "level": "L1"},
-    "bfloat16": {"standard": "stat_rel_err", "level": "L1"},
+    "float32": {"standard": "cross_check", "level": "L1"},
+    "float16": {"standard": "cross_check", "level": "L1"},
+    "bfloat16": {"standard": "cross_check", "level": "L1"},
 }
 
 

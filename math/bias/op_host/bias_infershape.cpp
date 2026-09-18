@@ -25,6 +25,10 @@ static ge::graphStatus InferShape4Bias(gert::InferShapeContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
     gert::Shape* yShape = context->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, yShape);
+    if (xShape->GetDimNum() == 0) {
+        yShape->SetDimNum(0);
+        return ge::GRAPH_SUCCESS;
+    }
     *yShape = *xShape;
 
     OP_LOGD(context->GetNodeName(), "End to do InferShape4Bias");
