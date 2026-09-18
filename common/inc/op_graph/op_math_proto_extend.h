@@ -853,6 +853,28 @@ REG_OP(ExpandDims)
     .ATTR(correction, Int, 1)
     .OP_END_FACTORY_REG(ReduceStdWithMean)
 
+/**
+ * @brief SignBitsPack.
+
+ * @par Inputs:
+ * one input, including:
+ * x: A 1D Tensor of float32 or float16.
+ *
+ * @par Attributes:
+ * size: first dim value of output tensor. Must be uint8 type.
+ *
+ * @par Outputs:
+ * y: A 2D Tensor of type uint8 with shape (size, N)
+ */
+#ifndef OPS_PROTO_DEF_SIGNBITSPACK
+#define OPS_PROTO_DEF_SIGNBITSPACK
+        REG_OP(SignBitsPack)
+    .INPUT(x, TensorType({DT_FLOAT, DT_FLOAT16}))
+    .OUTPUT(y, TensorType({DT_UINT8}))
+    .REQUIRED_ATTR(size, Int)
+    .OP_END_FACTORY_REG(SignBitsPack)
+#endif // OPS_PROTO_DEF_SIGNBITSPACK
+
     /**
     *@brief Outputs random values from a truncated normal distribution . \n
 

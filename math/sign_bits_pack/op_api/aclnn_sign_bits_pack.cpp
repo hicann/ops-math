@@ -50,8 +50,7 @@ static inline bool CheckSocVersionIsSupport(void)
 {
     return GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
            GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND310P ||
-           GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-           GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND950;
+           GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93;
 }
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
@@ -115,39 +114,22 @@ static bool CheckShape(const aclTensor* self, const aclTensor* out)
 
 static bool CheckValue(const aclTensor* self, int64_t size, const aclTensor* out)
 {
+    for (size_t i = 0; i < out->GetViewShape().GetDimNum(); i++) {
+        if (out->GetViewShape().GetDim(i) < 0) {
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Dim value of out is negative.");
+            return false;
+        }
+    }
+
+    size_t selfdim = self->GetViewShape().GetDim(0);
+    auto ysize = (selfdim + 7) / 8;
     if (size <= 0) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "size value must bigger than zero.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "size value must bigger zero.");
         return false;
     }
 
-    int64_t selfDim = self->GetViewShape().GetDim(0);
-    if (selfDim < 0) {
-        return true;
-    }
-
-    int64_t ysize = (selfDim + 7) / 8;
-    if (ysize % size != 0) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The number of packed bytes %ld cannot be divided by size %ld.", ysize, size);
-        return false;
-    }
-
-    int64_t outDimOneNum = out->GetViewShape().GetDim(0);
-    if (outDimOneNum < 0) {
-        return true;
-    }
-    if (size != outDimOneNum) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "The value of the first dimension of 'out' is incorrect and should be equal to size.");
-        return false;
-    }
-
-    int64_t outDimTwoNum = out->GetViewShape().GetDim(1);
-    if (outDimTwoNum < 0) {
-        return true;
-    }
-    if (ysize / size != outDimTwoNum) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "The value of the second dimension of 'out' is incorrect and should be equal to ceil(N/8)/size.");
+    if (size != 0 && ysize % size != 0) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "all must need be divisible by size");
         return false;
     }
     return true;
@@ -164,11 +146,11 @@ static aclnnStatus CheckParams(const aclTensor* self, int64_t size, aclTensor* o
     // 检查数据格式是否支持
     CHECK_RET(CheckFormat(self, out), ACLNN_ERR_PARAM_INVALID);
 
-    // 检查数据维度是否合法
-    CHECK_RET(CheckShape(self, out), ACLNN_ERR_PARAM_INVALID);
-
     // 检查参数值是否合法
     CHECK_RET(CheckValue(self, size, out), ACLNN_ERR_PARAM_INVALID);
+
+    // 检查数据维度是否合法
+    CHECK_RET(CheckShape(self, out), ACLNN_ERR_PARAM_INVALID);
 
     return ACLNN_SUCCESS;
 }
