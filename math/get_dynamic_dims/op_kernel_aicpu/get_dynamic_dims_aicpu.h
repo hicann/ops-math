@@ -24,7 +24,7 @@
 namespace aicpu {
 class GetDynamicDimsCpuKernel : public CpuKernel {
 public:
-    ~GetDynamicDimsCpuKernel() = default;
+    ~GetDynamicDimsCpuKernel() override = default;
     uint32_t Compute(CpuKernelContext& ctx) override;
 
 private:
