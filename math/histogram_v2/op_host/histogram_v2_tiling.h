@@ -102,6 +102,11 @@ REGISTER_TILING_DATA_CLASS(HistogramV2_1217, HistogramV2SimtTilingData)
 REGISTER_TILING_DATA_CLASS(HistogramV2_1311, HistogramV2SimtTilingData)
 REGISTER_TILING_DATA_CLASS(HistogramV2_1317, HistogramV2SimtTilingData)
 
+// SIMD deterministic UB_FULL fp32-out (dhistv2 BIN0). Thousands digit = 2.
+// 2100 + 10 + 1/7 = 2111 / 2117
+REGISTER_TILING_DATA_CLASS(HistogramV2_2111, HistogramV2SimtTilingData)
+REGISTER_TILING_DATA_CLASS(HistogramV2_2117, HistogramV2SimtTilingData)
+
 struct HistogramV2CompileInfo {
     int32_t totalCoreNum = 0;
     uint64_t ubSizePlatForm = 0;
@@ -109,16 +114,11 @@ struct HistogramV2CompileInfo {
     NpuArch npuArch = NpuArch::DAV_2201;
 };
 
-class HistogramV2BaseClass : public Ops::Base::TilingBaseClass
-{
+class HistogramV2BaseClass : public Ops::Base::TilingBaseClass {
 public:
-    explicit HistogramV2BaseClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit HistogramV2BaseClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
-    void Reset(gert::TilingContext* context) override
-    {
-        TilingBaseClass::Reset(context);
-    }
+    void Reset(gert::TilingContext* context) override { TilingBaseClass::Reset(context); }
 
 protected:
     ge::graphStatus GetPlatformInfo() override;

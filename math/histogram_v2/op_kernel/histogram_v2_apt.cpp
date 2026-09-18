@@ -30,6 +30,7 @@ constexpr uint32_t THREAD_NUM = 512;
 #include "arch35/histogram_v2_simt_not_full_load.h"
 #include "arch35/histogram_v2_simt_not_full_load_det_fp32out.h"
 #include "arch35/histogram_v2_simt_not_full_load_simt.h"
+#include "arch35/histogram_v2_simd_full_load_det_fp32out.h"
 
 using namespace HistogramV2SIMT;
 
@@ -72,8 +73,11 @@ using namespace HistogramV2SIMT;
 #define TILING_KEY_UB_NOT_FULL_SIMT_DET_FP32_OUT_FP32 1311
 #define TILING_KEY_UB_NOT_FULL_SIMT_DET_FP16_OUT_FP32 1317
 
-extern "C" __global__ __aicore__ void histogram_v2(
-    GM_ADDR x, GM_ADDR min, GM_ADDR max, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+#define TILING_KEY_SIMD_UB_FULL_DET_FP32_OUT_FP32 2111
+#define TILING_KEY_SIMD_UB_FULL_DET_FP16_OUT_FP32 2117
+
+extern "C" __global__ __aicore__ void histogram_v2(GM_ADDR x, GM_ADDR min, GM_ADDR max, GM_ADDR y, GM_ADDR workspace,
+                                                   GM_ADDR tiling)
 {
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
     if (g_coreType == AIC) {
@@ -278,6 +282,18 @@ extern "C" __global__ __aicore__ void histogram_v2(
         const HistogramV2SimtTilingData* __restrict tilingData = &tilingDataIn;
         HistogramV2SIMT::HistogramV2SimtNotFullLoadGmAtomicAdd<half, float, float> op;
         op.Init(x, min, max, y, tilingData);
+        op.Process();
+    } else if (TILING_KEY_IS(TILING_KEY_SIMD_UB_FULL_DET_FP32_OUT_FP32)) {
+        GET_TILING_DATA_WITH_STRUCT(HistogramV2SimtTilingData, tilingDataIn, tiling);
+        const HistogramV2SimtTilingData* __restrict tilingData = &tilingDataIn;
+        HistogramV2SIMD::HistogramV2SimdFullLoadDetFp32Out<float, float> op;
+        op.Init(x, min, max, y, workspace, tilingData, &tpipe);
+        op.Process();
+    } else if (TILING_KEY_IS(TILING_KEY_SIMD_UB_FULL_DET_FP16_OUT_FP32)) {
+        GET_TILING_DATA_WITH_STRUCT(HistogramV2SimtTilingData, tilingDataIn, tiling);
+        const HistogramV2SimtTilingData* __restrict tilingData = &tilingDataIn;
+        HistogramV2SIMD::HistogramV2SimdFullLoadDetFp32Out<half, float> op;
+        op.Init(x, min, max, y, workspace, tilingData, &tpipe);
         op.Process();
     }
 }

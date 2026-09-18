@@ -38,10 +38,13 @@ namespace histogram_v2_ut {
 // Run HistogramV2 tiling, faking the given short SoC (lowercase, e.g. "ascend950" for RegBase or
 // "ascend910b" for non-RegBase) so the template selection is independent of BUILD_SOC_VERSION.
 // Returns true on GRAPH_SUCCESS and writes the resolved tiling key.
-inline bool RunTilingWithSoc(const gert::TilingContextPara& para, const std::string& shortSocLower, uint64_t& tilingKey)
+inline bool RunTilingWithSoc(const gert::TilingContextPara& para, const std::string& shortSocLower, uint64_t& tilingKey,
+                             int32_t deterministic = 0)
 {
     tilingKey = 0;
     auto contextFaker = gert::TilingContextFaker();
+    int32_t detFlag = deterministic;
+    contextFaker.DeterministicInfo(&detFlag);
     size_t inputNum = para.inputTensorDesc_.size();
     size_t outputNum = para.outputTensorDesc_.size();
     if (para.inputInstanceNum_.size() != 0 || para.outputInstanceNum_.size() != 0) {

@@ -237,4 +237,43 @@ TEST_F(HistogramV2SimtTilingTest, tiling_core_num_zero)
     EXPECT_FALSE(RunTiling(para));
 }
 
+// SIMD template: deterministic + fp32-out + bins<=127 + UB_FULL -> 2111 / 2117.
+TEST_F(HistogramV2SimtTilingTest, tiling_simd_det_fp32)
+{
+    auto ci = MakeCompileInfo();
+    auto para = MakePara(&ci, {4096}, ge::DT_FLOAT, {1}, ge::DT_FLOAT, {100}, ge::DT_FLOAT, 100);
+    uint64_t key = 0;
+    EXPECT_TRUE(histogram_v2_ut::RunTilingWithSoc(para, "ascend950", key, 1));
+    EXPECT_EQ(key, 2111u);
+}
+
+TEST_F(HistogramV2SimtTilingTest, tiling_simd_det_fp16)
+{
+    auto ci = MakeCompileInfo();
+    auto para = MakePara(&ci, {256}, ge::DT_FLOAT16, {1}, ge::DT_FLOAT16, {31}, ge::DT_FLOAT, 31);
+    uint64_t key = 0;
+    EXPECT_TRUE(histogram_v2_ut::RunTilingWithSoc(para, "ascend950", key, 1));
+    EXPECT_EQ(key, 2117u);
+}
+
+// bins > 127 stays on SIMT det (1111), SIMD IsCapable is false.
+TEST_F(HistogramV2SimtTilingTest, tiling_simd_bins_over_limit_falls_back)
+{
+    auto ci = MakeCompileInfo();
+    auto para = MakePara(&ci, {256}, ge::DT_FLOAT, {1}, ge::DT_FLOAT, {200}, ge::DT_FLOAT, 200);
+    uint64_t key = 0;
+    EXPECT_TRUE(histogram_v2_ut::RunTilingWithSoc(para, "ascend950", key, 1));
+    EXPECT_EQ(key, 1111u);
+}
+
+// Non-deterministic keeps SIMT fp32-out key 111, not SIMD.
+TEST_F(HistogramV2SimtTilingTest, tiling_simd_not_selected_when_nondet)
+{
+    auto ci = MakeCompileInfo();
+    auto para = MakePara(&ci, {256}, ge::DT_FLOAT, {1}, ge::DT_FLOAT, {100}, ge::DT_FLOAT, 100);
+    uint64_t key = 0;
+    EXPECT_TRUE(RunTiling(para, key));
+    EXPECT_EQ(key, 111u);
+}
+
 } // namespace
