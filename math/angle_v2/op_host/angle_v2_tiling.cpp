@@ -316,7 +316,9 @@ void AngleV2Tiling::TilingDataPrint() const
 static ge::graphStatus TilingAngleV2(gert::TilingContext* context)
 {
     AngleV2Tiling tilingObject(context);
-    tilingObject.Init();
+    if (tilingObject.Init() != ge::GRAPH_SUCCESS) {
+        return ge::GRAPH_FAILED;
+    }
     return tilingObject.RunKernelTiling();
 }
 
