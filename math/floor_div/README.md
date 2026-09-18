@@ -65,24 +65,14 @@
       <td>公式中的输入other。</td>
       <td>
         <ul>
-          <li>数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../docs/zh/context/deduction_relationship.md)）。</li>
-          <li>shape需要与other满足[broadcast关系](../../docs/zh/context/broadcast_relationship.md)。</li>
+          <li>数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../docs/zh/context/deduction_relationship.md)）。</li>
+          <li>shape需要与self满足[broadcast关系](../../docs/zh/context/broadcast_relationship.md)。</li>
         </ul>
       </td>
       <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
       <td>ND</td>
       <td>不超过8维</td>
       <td>√</td>
-    </tr>
-    <tr>
-      <td>alpha</td>
-      <td>输入</td>
-      <td>公式中的alpha。</td>
-      <td>数据类型需要可转换成self与other推导后的数据类型。</td>
-      <td>FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、COMPLEX128、COMPLEX64、BFLOAT16</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
     </tr>
     <tr>
       <td>out</td>
@@ -128,4 +118,4 @@
 
 | 调用方式 | 调用样例                                             | 说明                                                                                         |
 |---------|----------------------------------------------------|----------------------------------------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_floor_divide](./examples/test_aclnn_floor_divide.cpp) | 通过[aclnnFloorDivide和aclnnFloorDivide](./docs/aclnnFloorDivide&aclnnInplaceFloorDivide.md)接口方式调用FloorDiv算子  |
+| aclnn调用 | [test_aclnn_floor_divide](./examples/test_aclnn_floor_divide.cpp) | 通过[aclnnFloorDivide和aclnnInplaceFloorDivide](./docs/aclnnFloorDivide&aclnnInplaceFloorDivide.md)接口方式调用FloorDiv算子  |

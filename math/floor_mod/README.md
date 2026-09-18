@@ -81,4 +81,4 @@ result = remainder(self, other)
 
 | 调用方式 | 调用样例                                             | 说明                                                                                         |
 |---------|----------------------------------------------------|----------------------------------------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_remainder_scalar_tensor](./examples/test_aclnn_remainder_scalar_tensor.cpp) | 通过[aclnnRemainderScalarTensor](./docs/aclnnRemainderScalarTensor.md)接口方式调用FloorDiv算子  |
+| aclnn调用 | [test_aclnn_remainder_scalar_tensor](./examples/test_aclnn_remainder_scalar_tensor.cpp) | 通过[aclnnRemainderScalarTensor](./docs/aclnnRemainderScalarTensor.md)接口方式调用FloorMod算子  |

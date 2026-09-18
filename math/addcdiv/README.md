@@ -40,28 +40,28 @@ $out = self + value × (input_1 / input_2)$
     <tr>
       <td>self</td>
       <td>输入</td>
-      <td>待进行addcidv计算的入参，公式中的self。</td>
+      <td>待进行addcdiv计算的入参，公式中的self。</td>
       <td>FLOAT16、BFLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>input_1</td>
       <td>输入</td>
-      <td>待进行addcidv计算的入参，公式中的input_1。</td>
+      <td>待进行addcdiv计算的入参，公式中的input_1。</td>
       <td>FLOAT16、BFLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>input_2</td>
       <td>输入</td>
-      <td>待进行addcidv计算的入参，公式中的input_2。</td>
+      <td>待进行addcdiv计算的入参，公式中的input_2。</td>
       <td>FLOAT16、BFLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>value</td>
       <td>输入</td>
-      <td>待进行addcidv计算的入参，公式中的value。</td>
+      <td>待进行addcdiv计算的入参，公式中的value。</td>
       <td>FLOAT16、BFLOAT16、FLOAT</td>
       <td>ND</td>
     </tr>

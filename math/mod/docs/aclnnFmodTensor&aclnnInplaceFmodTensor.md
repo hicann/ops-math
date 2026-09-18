@@ -122,7 +122,7 @@ aclnnStatus aclnnInplaceFmodTensor(
       <td>out（aclTensor*）</td>
       <td>输出</td>
       <td>待进行Fmod计算的出参，公式中的out。</td>
-      <td>数据类型需要是self与other推导之后<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">可转换的数据类型</a>。shape需要与self一致。</td>
+      <td>数据类型需要是self与other推导之后<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">可转换的数据类型</a>。shape需要是self与other broadcast之后的shape。</td>
       <td>DOUBLE、BFLOAT16、FLOAT16、FLOAT32、INT32、INT64、INT8、UINT8</td>
       <td>ND</td>
       <td>0-8</td>
