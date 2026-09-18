@@ -47,6 +47,6 @@ TEST_F(SinkhornTiling, sinkhorn_tiling_parse)
         &compileInfo);
     uint64_t expectTilingKey = 0;
     string expectTilingData = "1 48 96 1 48 96 0 0 0 0 0 0 2084 4168 48 2 8 953267991 ";
-    std::vector<size_t> expectWorkspaces = {16777896};
+    std::vector<size_t> expectWorkspaces = {16777496};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

@@ -26,7 +26,6 @@ constexpr static uint32_t BLOCK_SIZE = 256;
 constexpr static uint32_t ROW_BLOCK_SIZE = 32;
 constexpr static uint32_t MAX_TILE_ROW = 127 * 32; // 数据复制时，blockCount最大为4095，向下对齐到 127 * 32
 constexpr static uint32_t WORKSPACE_HEADER_SIZE = 64; // 64B对齐
-constexpr static uint32_t CPU_SUM_GROUP_SIZE = 16;
 } // namespace
 
 namespace optiling {
@@ -112,9 +111,11 @@ ge::graphStatus SinkhornTiling::Init()
     uint64_t dataType = tilingContext->GetInputDesc(0)->GetDataType();
     switch (dataType) {
         case ge::DT_FLOAT:
-        case ge::DT_FLOAT16:
         case ge::DT_BF16:
             sizeOfDataType = sizeof(float);
+            break;
+        case ge::DT_FLOAT16:
+            sizeOfDataType = sizeof(uint16_t);
             break;
         default:
             return ge::GRAPH_FAILED;
@@ -192,14 +193,11 @@ inline ge::graphStatus SinkhornTiling::InitWS()
     // d0
     userWorkspaceSize += totalRow * sizeof(float);
 
-    // PyTorch CPU sum每16行形成一个一级部分和。
-    userWorkspaceSize += ((totalRow + CPU_SUM_GROUP_SIZE - 1) / CPU_SUM_GROUP_SIZE) * totalCol * sizeof(float);
+    // d1 block
+    userWorkspaceSize += numBlocks * totalCol * sizeof(float);
 
     // d1/d1 new global
     userWorkspaceSize += (totalCol + totalCol) * sizeof(float);
-
-    // exp(cost) 始终使用FP32，避免低精度量化进入迭代。
-    userWorkspaceSize += totalRow * totalCol * sizeof(float);
     return ge::GRAPH_SUCCESS;
 }
 

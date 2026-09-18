@@ -84,27 +84,15 @@ namespace AscendC {
         }
         newBegin += totalRow * sizeof(T);
 
-        uint64_t d1GroupCount = (totalRow + CPU_SUM_GROUP_SIZE - 1) / CPU_SUM_GROUP_SIZE;
-        d1BlockInWS.SetGlobalBuffer((__gm__ T*)newBegin, d1GroupCount * totalCol);
-        newBegin += d1GroupCount * totalCol * sizeof(T);
+        // blockDim个
+        d1BlockInWS.SetGlobalBuffer((__gm__ T*)newBegin + blockIdx * totalCol, totalCol);
+        newBegin += numBlocks * totalCol * sizeof(T);
 
         d1GlobalInWS.SetGlobalBuffer((__gm__ T*)newBegin, totalCol);
         newBegin += totalCol * sizeof(T);
 
         d1GlobalInWSNew.SetGlobalBuffer((__gm__ T*)newBegin, totalCol);
         newBegin += totalCol * sizeof(T);
-
-        uint64_t blockOffset;
-        uint64_t blockLength;
-        if (isFormer) {
-            blockOffset = blockIdx * formerRow * totalCol;
-            blockLength = formerRow * totalCol;
-        } else {
-            blockOffset = (formerNum * formerRow + (blockIdx - formerNum) * tailRow) * totalCol;
-            blockLength = tailRow * totalCol;
-        }
-        pFloatAllGlobal.SetGlobalBuffer((__gm__ T*)newBegin, totalRow * totalCol);
-        pFloatGlobal.SetGlobalBuffer((__gm__ T*)newBegin + blockOffset, blockLength);
         OP_LOGD_0_3("workspace: %d", newBegin - workspace);
     }
 
@@ -124,7 +112,6 @@ namespace AscendC {
         pipe.InitBuffer(d1OutQueue, 1, totalColAligned * sizeof(T));
         pipe.InitBuffer(d1OutQueue2, 1, totalColAligned * sizeof(T));
         pipe.InitBuffer(d1OutQueue3, 1, totalColAligned * sizeof(T));
-        pipe.InitBuffer(cpuSumScratch, CPU_SUM_SCRATCH_SIZE * sizeof(T));
 
         // 32B对齐
         uint16_t BLOCK_SIZE = 32;
@@ -133,38 +120,12 @@ namespace AscendC {
     }
 
     template<typename T, typename IT>
-    __aicore__ inline void KernelSinkhorn<T, IT>::FillConstantResult(float value)
-    {
-        for (int t = 0; t < tileNum; t++) {
-            uint32_t tileIdx = t * tileLength;
-            uint32_t row = (t == tileNum - 1) ? lastTileRow : tileRow;
-            LocalTensor<T> resultLocal = costInQueue.AllocTensor<T>();
-            for (int r = 0; r < row; r++) {
-                Duplicate(resultLocal[r * rowLengthAligned], static_cast<T>(value), totalCol);
-            }
-            event_t eventIdVMte3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
-            SetFlag<HardEvent::V_MTE3>(eventIdVMte3);
-            WaitFlag<HardEvent::V_MTE3>(eventIdVMte3);
-            SaveP<IT>(row, pGlobal[tileIdx], resultLocal);
-            costInQueue.FreeTensor(resultLocal);
-        }
-        event_t eventIdMte3S = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_S));
-        SetFlag<HardEvent::MTE3_S>(eventIdMte3S);
-        WaitFlag<HardEvent::MTE3_S>(eventIdMte3S);
-    }
-
-    template<typename T, typename IT>
     __aicore__ inline void KernelSinkhorn<T, IT>::Process()
     {
-        if (totalCol == 1) {
-            FillConstantResult(1.0f / totalRow);
-            return;
-        }
-
         ExpCost();
         InitD();
 
-        while (GetLoopFlag() != 0 && loopCount < MAX_SINKHORN_ITER) {
+        while (GetLoopFlag() != 0) {
             loopCount++;
             UpdateD0();
             UpdateD1();
@@ -266,12 +227,11 @@ namespace AscendC {
     }
 
     template<typename T, typename IT>
-    __aicore__ inline void KernelSinkhorn<T, IT>::ComputeResultCore(
-        uint32_t row, LocalTensor<T> d0Local, LocalTensor<T> d1Local)
+    __aicore__ inline void KernelSinkhorn<T, IT>::ComputeResultCore(int t, uint32_t row, LocalTensor<T> d1Local)
     {
-        LocalTensor<T> costSrcLocal = costInQueue.DeQue<T>();
         {
             LocalTensor<T> costDstLocal = costOutQueue.AllocTensor<T>();
+            LocalTensor<T> costSrcLocal = costInQueue.DeQue<T>();
 
             // 逐行计算
             for (int r = 0; r < row; r++) {
@@ -284,7 +244,7 @@ namespace AscendC {
         }
         {
             LocalTensor<T> costDstLocal = costOutQueue.DeQue<T>();
-            LocalTensor<T> resultLocal = costInQueue.AllocTensor<T>();
+            LocalTensor<T> costSrcLocal = costInQueue.AllocTensor<T>();
 
             // 逐行计算
             event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_S));
@@ -293,13 +253,13 @@ namespace AscendC {
                 uint32_t rowIdx = r * rowLengthAligned;
                 DUMP_LT_2(costDstLocal[rowIdx], totalCol, "cost[*d1]: ");
                 WaitFlag<HardEvent::V_S>(eventId);
-                T d0 = d0Local.GetValue(r);
-                Muls(resultLocal[rowIdx], costDstLocal[rowIdx], d0, totalCol);
+                T d0 = d0BlockInWS.GetValue(r + t * tileRow);
+                Muls(costSrcLocal[rowIdx], costDstLocal[rowIdx], d0, totalCol);
                 SetFlag<HardEvent::V_S>(eventId);
-                DUMP_LT_2(resultLocal[rowIdx], totalCol, "cost[*d0]: ");
+                DUMP_LT_2(costSrcLocal[rowIdx], totalCol, "cost[*d0]: ");
             }
             WaitFlag<HardEvent::V_S>(eventId);
-            costInQueue.EnQue(resultLocal);
+            costInQueue.EnQue(costSrcLocal);
             costOutQueue.FreeTensor(costDstLocal);
         }
     }
@@ -334,18 +294,10 @@ namespace AscendC {
 
             // 搬入cost
             WaitFlag<HardEvent::MTE3_MTE2>(eventId_MTE3_MTE2);
-            CopyInFromP<T>(row, pFloatGlobal[tileIdx]);
-
-            LocalTensor<T> d0Local = d0InQueue.AllocTensor<T>();
-            DataCopyExtParams d0CopyParams{1, static_cast<uint32_t>(row * sizeof(T)), 0, 0, 0};
-            DataCopyPadExtParams<T> d0PadParams{false, 0, 0, 0};
-            DataCopyPad(d0Local, d0BlockInWS[t * tileRow], d0CopyParams, d0PadParams);
-            d0InQueue.EnQue(d0Local);
+            CopyInFromP<IT>(row, pGlobal[tileIdx]);
 
             // 计算
-            d0Local = d0InQueue.DeQue<T>();
-            ComputeResultCore(row, d0Local, d1Local);
-            d0InQueue.FreeTensor(d0Local);
+            ComputeResultCore(t, row, d1Local);
 
             // 搬出cost // d1 * cost * d0 融合后，数据在src中
             {
