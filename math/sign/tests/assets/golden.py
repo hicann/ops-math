@@ -9,37 +9,63 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
+"""Sign multi-pathway golden in the TestSpec format.
+
+通路支持表：
+
+| 通路   | 支持 | 依据 |
+|--------|------|------|
+| kernel | ✅   | op_kernel/arch35 有 arch35 实现 |
+| geir   | ✅   | op_graph/sign_proto.h 有 REG_OP(Sign) |
+| aclnn  | ✅   | op_api/aclnn_sign.cpp 暴露 aclnnSign 符号 |
+| e2e    | ✅   | torch_npu 中 torch.sign 绑定到 aclnnSign |
+"""
 
 import numpy as np
+import torch
 
+__spec__ = {
+    "sign": "SignKernelSpec",
+    "aclnnSign": "SignAclnnSpec",
+}
 
 __golden__ = {
     "aclnn": {
         "aclnnSign": "aclnn_sign_golden",
     },
     "kernel": {"sign": "sign_golden"},
+    "e2e": {"aclnnSign": "aclnn_sign_golden"},
+}
+
+_KERNEL_TOLERANCE = {
+    "float16": {"standard": "cross_check", "level": "L1"},
+    "float32": {"standard": "cross_check", "level": "L1"},
+    "bfloat16": {"standard": "cross_check", "level": "L1"},
+    "int8": {"standard": "binary_equal"},
+    "int16": {"standard": "binary_equal"},
+    "int32": {"standard": "binary_equal"},
+    "int64": {"standard": "binary_equal"},
 }
 
 
-def sign_golden(x, **kwargs):
-    """
-    Kernel golden for sign.
-    All the parameters follow @sign_def.cpp without outputs.
-    All the input Tensors are numpy.ndarray.
-    kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
-        input_formats, output_formats, input_ori_formats, output_ori_formats,
-        input_dtypes, output_dtypes.
-    """
-    import torch
+def _output_dtype(kwargs, index, default):
+    output_dtypes = kwargs.get("output_dtypes") or []
+    if index >= len(output_dtypes):
+        return default
+    dtype = output_dtypes[index]
+    if isinstance(dtype, (list, tuple)):
+        dtype = dtype[0]
+    return str(dtype)
 
+
+def sign_golden(x, **kwargs):
+    """Kernel golden for sign. All input Tensors are numpy.ndarray."""
     ori_dtype = kwargs.get("input_dtypes", ["float32"])[0]
     x_dtype = x.dtype
 
-    if ori_dtype and "bfloat16" in str(ori_dtype).lower():
-        x_tensor = torch.from_numpy(x.astype(np.float32))
-        output = torch.sign(x_tensor)
-        return output.numpy().astype(x_dtype, copy=False)
-    elif ori_dtype and "float16" in str(ori_dtype).lower():
+    if ori_dtype and (
+        "bfloat16" in str(ori_dtype).lower() or "float16" in str(ori_dtype).lower()
+    ):
         x_tensor = torch.from_numpy(x.astype(np.float32))
         output = torch.sign(x_tensor)
         return output.numpy().astype(x_dtype, copy=False)
@@ -50,11 +76,36 @@ def sign_golden(x, **kwargs):
 
 
 def aclnn_sign_golden(self, result=None, **kwargs):
-    """
-    Aclnn golden for aclnnSign.
-    Parameters follow @aclnnSignGetWorkspaceSize without workspaceSize & executor.
-    All the input Tensors are torch.Tensor.
-    """
-    import torch
-
+    """Aclnn golden for aclnnSign. All input Tensors are torch.Tensor."""
     return [torch.sign(self)]
+
+
+class _SignCompose:
+    """Third-party reference executed on the remote GPU server."""
+
+    def __call__(self, self_=None, *args, **kwargs):
+        del args, kwargs
+        return [torch.sign(self_)]
+
+
+class SignKernelSpec:
+    """kernel + geir shared spec. The golden entry receives numpy arrays."""
+
+    @staticmethod
+    def golden(x, **kwargs):
+        return [sign_golden(x, **kwargs)]
+
+    third_party = {"torch": _SignCompose}
+    tolerance = _KERNEL_TOLERANCE
+
+
+class SignAclnnSpec:
+    """aclnnSign spec. The golden entry receives torch tensors."""
+
+    @staticmethod
+    def golden(self, result=None, **kwargs):
+        del result
+        return [torch.sign(self)]
+
+    third_party = {"torch": _SignCompose}
+    tolerance = _KERNEL_TOLERANCE

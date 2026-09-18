@@ -9,14 +9,34 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
+"""Cast multi-pathway golden in the TestSpec format.
+
+通路支持表：
+
+| 通路   | 支持 | 依据 |
+|--------|------|------|
+| kernel | ✅   | op_kernel/cast_apt.cpp 有 arch35 实现 |
+| geir   | ✅   | op_graph/cast_proto.h 有 REG_OP(Cast) |
+| aclnn  | ✅   | op_api/aclnn_cast.cpp 暴露 aclnnCast 符号 |
+| e2e    | ✅   | torch_npu 中 torch.Tensor.to / torch.cast 绑定到 aclnnCast |
+
+kernel 与 geir 共用一个注册键（算子蛇形名），geir 不另写 Spec 类。
+"""
 
 import numpy as np
+
+__spec__ = {
+    "cast": "CastKernelSpec",
+    "aclnnCast": "CastAclnnSpec",
+    "torch.Tensor.to": "CastE2eSpec",
+}
 
 __golden__ = {
     "aclnn": {
         "aclnnCast": "aclnn_cast_golden",
     },
     "kernel": {"cast": "cast_golden"},
+    "e2e": {"aclnnCast": "aclnn_cast_golden"},
 }
 
 _DATA_TYPE_INT_TO_STR = {
@@ -55,6 +75,27 @@ _SPECIAL_DTYPES = (
     "hifloat8",
 )
 
+# 判据声明: 覆盖 cast_def.cpp 注册的全部 dtype。
+# 浮点一律 cross_check —— 只有 cross_check 才会让 TTK 取三方(GPU)输出并开 golden_mode=Promote;
+# 整型/布尔位精确，用 binary_equal; 复数走 stat_rel_err。
+_KERNEL_TOLERANCE = {
+    "float16": {"standard": "cross_check", "level": "L1"},
+    "float32": {"standard": "cross_check", "level": "L1"},
+    "float64": {"standard": "cross_check", "level": "L1"},
+    "bfloat16": {"standard": "cross_check", "level": "L1"},
+    "int8": {"standard": "binary_equal"},
+    "int16": {"standard": "binary_equal"},
+    "int32": {"standard": "binary_equal"},
+    "int64": {"standard": "binary_equal"},
+    "uint8": {"standard": "binary_equal"},
+    "uint16": {"standard": "binary_equal"},
+    "uint32": {"standard": "binary_equal"},
+    "uint64": {"standard": "binary_equal"},
+    "bool": {"standard": "binary_equal"},
+    "complex64": {"standard": "stat_rel_err"},
+    "complex128": {"standard": "stat_rel_err"},
+}
+
 
 def _resolve_custom_numpy_dtype(dtype_str):
     if dtype_str == "bfloat16":
@@ -86,6 +127,16 @@ def _resolve_custom_numpy_dtype(dtype_str):
 
         return float4_e1m2
     return None
+
+
+def _output_dtype(kwargs, index, default):
+    output_dtypes = kwargs.get("output_dtypes") or []
+    if index >= len(output_dtypes):
+        return default
+    dtype = output_dtypes[index]
+    if isinstance(dtype, (list, tuple)):
+        dtype = dtype[0]
+    return str(dtype)
 
 
 def cast_golden(x, dst_type: int, **kwargs):
@@ -128,3 +179,107 @@ def aclnn_cast_golden(self, dtype=0, out=None, **kwargs):
 
     torch_dtype = acl_to_torch_dtype([dtype])[0]
     return self.to(dtype=torch_dtype)
+
+
+def _resolve_torch_dtype(dtype_int):
+    """Map aclnn dtype int to torch dtype, falling back to ttk utilities."""
+    from ttk.utilities import acl_to_torch_dtype
+
+    return acl_to_torch_dtype([dtype_int])[0]
+
+
+class _CastCompose:
+    """Third-party reference executed on the remote GPU server.
+
+    torch.Tensor.to is the competitor interface; the kernel golden uses
+    numpy.astype, so the two paths are independent implementations of the
+    cast semantics and can cross-validate each other.
+    """
+
+    def __call__(self, self_=None, dtype=0, *args, **kwargs):
+        del args, kwargs
+        torch_dtype = _resolve_torch_dtype(dtype)
+        return [self_.to(dtype=torch_dtype)]
+
+
+class CastKernelSpec:
+    """kernel + geir shared spec. The golden entry receives numpy arrays."""
+
+    @staticmethod
+    def golden(x, dst_type, **kwargs):
+        result = cast_golden(x, dst_type, **kwargs)
+        output_dtype = _output_dtype(kwargs, 0, str(result.dtype))
+        np_dtype = _resolve_custom_numpy_dtype(output_dtype)
+        if np_dtype is not None:
+            return [result.astype(np_dtype, copy=False)]
+        target = getattr(np, output_dtype, None)
+        if target is not None:
+            return [result.astype(target, copy=False)]
+        return [result]
+
+    third_party = {"torch": _CastCompose}
+    tolerance = _KERNEL_TOLERANCE
+
+
+class CastAclnnSpec:
+    """aclnnCast spec. The golden entry receives torch tensors.
+
+    The parameter name follows aclnn_cast.h, where the input is named self.
+    """
+
+    @staticmethod
+    def golden(self, dtype=0, out=None, **kwargs):
+        del out
+        torch_dtype = _resolve_torch_dtype(dtype)
+        return [self.to(dtype=torch_dtype)]
+
+    third_party = {"torch": _CastCompose}
+    tolerance = _KERNEL_TOLERANCE
+
+
+class _CastE2eCompose:
+    """Third-party reference for the E2E path (api ``torch.Tensor.to``).
+
+    torch.Tensor.to is a C builtin without an inspectable signature, so the
+    server-side api mode fails with "no signature found for builtin". This
+    compose re-declares the call in plain Python; tensors are recognized by
+    instance type and the target dtype arrives under the 'dtype' attribute
+    key (string form, e.g. "torch.float32").
+    """
+
+    def __call__(self, *args, **kwargs):
+        import torch
+
+        tensor = None
+        for v in kwargs.values():
+            if isinstance(v, torch.Tensor):
+                tensor = v
+                break
+        if tensor is None:
+            for v in args:
+                if isinstance(v, torch.Tensor):
+                    tensor = v
+                    break
+        dtype = kwargs.get("dtype")
+        if dtype is None:
+            for v in args:
+                if not isinstance(v, torch.Tensor) and not isinstance(v, (list, tuple)):
+                    dtype = v
+                    break
+        if tensor is None or dtype is None:
+            raise ValueError(
+                "cast e2e compose expects one input tensor and a 'dtype' attribute"
+            )
+        if isinstance(dtype, str):
+            dtype = getattr(torch, dtype.rsplit(".", 1)[-1])
+        return [tensor.to(dtype=dtype)]
+
+
+class CastE2eSpec:
+    """E2E spec, keyed by the dotted api name ``torch.Tensor.to`` in __spec__.
+
+    third_party is a compose class so the XPU dispatch runs in spec mode
+    (server instantiates and binds params by name) instead of api mode.
+    """
+
+    third_party = {"torch": _CastE2eCompose}
