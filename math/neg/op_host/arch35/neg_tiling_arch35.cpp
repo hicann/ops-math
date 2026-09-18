@@ -163,7 +163,10 @@ ge::graphStatus NegTiling::SetTilingData(const ElewiseBaseTiling& elewiseBaseTil
     auto rawTilingData = tilingContext->GetRawTilingData();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, rawTilingData);
     size_t usrWorkspaceSize = 0;
-    size_t sysWorkspaceSize = static_cast<size_t>(16 * 1024 * 1024);
+    auto platformInfo = tilingContext->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, platformInfo);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    size_t sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = sysWorkspaceSize + usrWorkspaceSize;

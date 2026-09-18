@@ -102,7 +102,6 @@ const uint32_t SMALL_TILE_DATA_NUM = 1024; // 测试数据得出一次至少处�
 const uint32_t INT32_MAX_RANGE_VALUE_FOR_SORT = 1073741823;
 const uint32_t SORT_STRUCT_BYTES = 8;
 
-constexpr size_t SYS_WORK_SPACE_SIZE = static_cast<size_t>(16 * 1024 * 1024);
 struct TopkTileInfo {
     uint32_t coreNumNeed = 0;
     int64_t lastDimTileNum = 0;

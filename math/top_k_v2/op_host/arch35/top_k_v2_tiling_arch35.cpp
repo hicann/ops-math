@@ -29,6 +29,8 @@
 namespace optiling {
 namespace topkV2 {
 
+static size_t sysWorkSpaceSize = 0;
+
 uint32_t ComputeTopkRadixMoreCoreTileData(gert::TilingContext* context, TopKV2TilingDataSimd& topkTilingData,
                                           topkV2DataInfo::TopkComputeNowTileSizeInfo& computeNowTileSizeInfo)
 {
@@ -640,7 +642,7 @@ void GetTopkMergeMoreCoreFp32(gert::TilingContext* context, TopKV2TilingDataSimd
     size_t usrSize = static_cast<size_t>(unsortedDimNum) * alignInput * topkV2DataInfo::SORT_STRUCT_SIZE_FP32 *
                      topkV2DataInfo::CONST_TWO;
     size_t* userWorkSpaceSize = context->GetWorkspaceSizes(1);
-    userWorkSpaceSize[0] = usrSize + topkV2DataInfo::SYS_WORK_SPACE_SIZE;
+    userWorkSpaceSize[0] = usrSize + sysWorkSpaceSize;
     context->SetTilingKey(topkV2DataInfo::TOPK_MERGE_SORT_MORE_CORE_TILING_KEY_FLOAT);
     context->SetBlockDim(coreNumNeed);
     context->SetLocalMemorySize(ubSizePlatForm);
@@ -704,7 +706,7 @@ void GetTopkMergeIntraCoreFp32(gert::TilingContext* context, TopKV2TilingDataSim
                               topkV2DataInfo::CONST_TWO;
     size_t usrSize = perCoreWorkspace * actualCoreNum;
     size_t* userWorkSpaceSize = context->GetWorkspaceSizes(1);
-    userWorkSpaceSize[0] = usrSize + topkV2DataInfo::SYS_WORK_SPACE_SIZE;
+    userWorkSpaceSize[0] = usrSize + sysWorkSpaceSize;
     context->SetTilingKey(topkV2DataInfo::TOPK_MERGE_SORT_INTRA_CORE_TILING_KEY_FLOAT);
     context->SetBlockDim(actualCoreNum);
     context->SetLocalMemorySize(ubSizePlatForm);
@@ -946,7 +948,7 @@ void ComputeWorkSpace(gert::TilingContext* context, topkV2DataInfo::SortTileInfo
     size_t* userWorkSpaceSize = context->GetWorkspaceSizes(1);
     size_t usrSize = excusiveBinsGmWkSize + globalHistGmWkSize + outIdxDbWK + sortOutIdxGMWK + histTileGmWk +
                      xB8GmWkSize + outValueDbWKSize;
-    userWorkSpaceSize[0] = usrSize + topkV2DataInfo::SYS_WORK_SPACE_SIZE;
+    userWorkSpaceSize[0] = usrSize + sysWorkSpaceSize;
     return;
 }
 
@@ -1331,7 +1333,7 @@ ge::graphStatus FillTopkNonLastSmallAxisTilingData(gert::TilingContext* context,
     context->SetLocalMemorySize(computeInfo.ubSizePlatForm);
     context->SetScheduleMode(1);
     size_t* userWorkSpaceSize = context->GetWorkspaceSizes(1);
-    userWorkSpaceSize[0] = topkV2DataInfo::SYS_WORK_SPACE_SIZE;
+    userWorkSpaceSize[0] = sysWorkSpaceSize;
     topkTilingData.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
     context->GetRawTilingData()->SetDataSize(topkTilingData.GetDataSize());
     OP_LOGI(context->GetNodeName(),
@@ -1647,7 +1649,7 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
 
     // set userWorkSpaceSize
     size_t* userWorkSpaceSize = context->GetWorkspaceSizes(1);
-    userWorkSpaceSize[0] = usrSize + topkV2DataInfo::SYS_WORK_SPACE_SIZE;
+    userWorkSpaceSize[0] = usrSize + sysWorkSpaceSize;
     OP_LOGI("[TopKV2Tiling]", "total WorkSpace Size is : %lu", userWorkSpaceSize[0]);
     context->SetLocalMemorySize(ubSizePlatForm);
     context->SetScheduleMode(1);
@@ -1664,6 +1666,7 @@ ge::graphStatus TilingPrepareForTopKV2(gert::TilingParseContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, platInfo);
     platform_ascendc::PlatformAscendC ascendPlatform(platInfo);
     tilingCompileInfo->coreNum = ascendPlatform.GetCoreNumAiv();
+    sysWorkSpaceSize = ascendPlatform.GetLibApiWorkSpaceSize();
     OP_CHECK_IF(tilingCompileInfo->coreNum <= 0,
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "coreNum",
                                                       std::to_string(tilingCompileInfo->coreNum).c_str(),

@@ -20,17 +20,17 @@
 #include "math/muls/op_kernel/arch35/muls_dag.h"
 #include "op_host/tiling_base_util.h"
 
-namespace optiling
-{
+namespace optiling {
 using namespace ge;
 using namespace MulsDag;
-
-constexpr uint64_t WORKSPACE_RESERVE_BYTE = 16777216;  // 16 * 1024 * 1024
 
 ge::graphStatus MulsTiling::SetTilingData()
 {
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
-    currentWorkspace[0] = WORKSPACE_RESERVE_BYTE;
+    auto platformInfo = tilingContext->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, platformInfo);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    currentWorkspace[0] = ascendcPlatform.GetLibApiWorkSpaceSize();
     tilingContext->SetBlockDim(tiling->baseTiling.blockNum);
     return ge::GRAPH_SUCCESS;
 }
@@ -46,10 +46,11 @@ ge::graphStatus MulsTiling::CalcOutputDtype()
     this->outputDtype = outputDesc->GetDataType();
 
     OP_CHECK_IF(inputDtype != this->outputDtype,
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "x and y",
-            (Ops::Base::ToString(inputDtype) + " and " + Ops::Base::ToString(this->outputDtype)).c_str(),
-            "The dtypes of x and y must be the same"),
-        return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+                    tilingContext->GetNodeName(), "x and y",
+                    (Ops::Base::ToString(inputDtype) + " and " + Ops::Base::ToString(this->outputDtype)).c_str(),
+                    "The dtypes of x and y must be the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -68,8 +69,8 @@ ge::graphStatus MulsTiling::CheckShape()
         std::string inputShapeStr = Ops::Base::ToString(inputShape);
         std::string outputShapeStr = Ops::Base::ToString(outputShape);
         std::string shapesStr = inputShapeStr + " and " + outputShapeStr;
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x and y",
-            shapesStr.c_str(), "The shapes of x and y must be the same");
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x and y", shapesStr.c_str(),
+                                               "The shapes of x and y must be the same");
         return ge::GRAPH_FAILED;
     }
 
@@ -79,10 +80,10 @@ ge::graphStatus MulsTiling::CheckShape()
 ge::graphStatus MulsTiling::RunTiling()
 {
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
-    OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED,
-               OP_LOGE(tilingContext, "get output dtype failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
+                return ge::GRAPH_FAILED);
     OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"),
-               return ge::GRAPH_FAILED);
+                return ge::GRAPH_FAILED);
 
     // get tilingdata address in context
     tiling = tilingContext->GetTilingData<MulsTilingData>();
@@ -106,14 +107,12 @@ ge::graphStatus MulsTiling::RunTiling()
     } else if (this->outputDtype == ge::DT_COMPLEX64) {
         res = elewiseBaseTiling.DoTiling<MulsComplex64Op<int64_t>::OpDag>(tiling->baseTiling);
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y",
-            Ops::Base::ToString(this->outputDtype).c_str(),
-            "float16, float32, bfloat16, int32, int16, int64, complex32 or complex64");
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y", Ops::Base::ToString(this->outputDtype).c_str(),
+                                  "float16, float32, bfloat16, int32, int16, int64, complex32 or complex64");
         return ge::GRAPH_FAILED;
     }
 
-    OP_CHECK_IF(res != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext, "DoTiling failed"),
-               return ge::GRAPH_FAILED);
+    OP_CHECK_IF(res != ge::GRAPH_SUCCESS, OP_LOGE(tilingContext, "DoTiling failed"), return ge::GRAPH_FAILED);
 
     auto runtimeAttrs = tilingContext->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, runtimeAttrs);
@@ -130,17 +129,14 @@ ge::graphStatus MulsTiling::RunTiling()
 static ge::graphStatus TilingForMuls(gert::TilingContext* context)
 {
     OP_LOGD("MulsTiling", "Enter TilingForMuls");
-    OP_CHECK_IF(context == nullptr, OP_LOGE(context, "Tiling context is null"),
-               return ge::GRAPH_FAILED);
+    OP_CHECK_IF(context == nullptr, OP_LOGE(context, "Tiling context is null"), return ge::GRAPH_FAILED);
 
     OP_LOGD("MulsTiling", "Enter new MulsTiling");
     MulsTiling mulsTiling(context);
     return mulsTiling.RunTiling();
 }
 
-ge::graphStatus TilingPrepareForMuls([[maybe_unused]] gert::TilingParseContext *context) {
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus TilingPrepareForMuls([[maybe_unused]] gert::TilingParseContext* context) { return ge::GRAPH_SUCCESS; }
 
 IMPL_OP_OPTILING(Muls).Tiling(TilingForMuls).TilingParse<ElewiseCompileInfo>(TilingPrepareForMuls);
-}  // namespace optiling
+} // namespace optiling

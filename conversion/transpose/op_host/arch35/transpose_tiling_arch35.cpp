@@ -131,7 +131,10 @@ ge::graphStatus TransposeNddmaTiling::RunTranposelTiling()
     tilingContext_->SetTilingKey(tilingKey_);
     size_t* workspaces = tilingContext_->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext_, workspaces);
-    workspaces[0] = WORK_SPACE_SIZE;
+    auto platformInfo = tilingContext_->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext_, platformInfo);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    workspaces[0] = ascendcPlatform.GetLibApiWorkSpaceSize();
     OP_LOGD(tilingContext_->GetNodeName(), "Tiling4Transpose success.");
     return ge::GRAPH_SUCCESS;
 }

@@ -14,9 +14,9 @@
  */
 
 #include "pow_tiling_arch35.h"
+#include "platform/platform_ascendc.h"
 
-namespace optiling
-{
+namespace optiling {
 using namespace Ops::Base;
 constexpr size_t INPUT_BASE_IDX = 0;
 constexpr size_t INPUT_EXP_IDX = 1;
@@ -25,34 +25,20 @@ constexpr size_t OUTPUT_POW_IDX = 0;
 constexpr int64_t INPUT_DTYPE_B8 = 1;
 constexpr int64_t INPUT_DTYPE_B16 = 2;
 constexpr int64_t INPUT_DTYPE_B32 = 4;
-static constexpr uint64_t WORKSPACE_SIZE = 16 * 1024 * 1024;
 
-bool PowTilingBase::IsCapable()
-{
-    return true;
-}
+bool PowTilingBase::IsCapable() { return true; }
 
-ge::graphStatus PowTilingBase::DoOpTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus PowTilingBase::DoOpTiling() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus PowTilingBase::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus PowTilingBase::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t PowTilingBase::GetTilingKey() const
-{
-    return 0;
-}
+uint64_t PowTilingBase::GetTilingKey() const { return 0; }
 
 ge::graphStatus PowTilingBase::GetPlatformInfo()
 {
     auto compileInfo = reinterpret_cast<const PowCompileInfo*>(context_->GetCompileInfo());
-    OP_CHECK_IF(compileInfo == nullptr,
-                    OP_LOGE(context_->GetNodeName(), "compile info is null"),
-                    return ge::GRAPH_FAILED);
+    OP_CHECK_IF(compileInfo == nullptr, OP_LOGE(context_->GetNodeName(), "compile info is null"),
+                return ge::GRAPH_FAILED);
     params_.coreNum = compileInfo->coreNum;
     params_.ubSize = compileInfo->ubSize;
     params_.blockSize = compileInfo->blockSize;
@@ -84,9 +70,8 @@ ge::graphStatus PowTilingBase::GetShapeAttrsInfo()
         params_.baseDtypeSize = INPUT_DTYPE_B8;
         params_.computeDtypeSize = INPUT_DTYPE_B8;
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE("Pow", "x1",
-            ge::TypeUtils::DataTypeToSerialString(params_.baseDtype).c_str(),
-            "float32, float16, bfloat16, uint8, int8, int16 or int32");
+        OP_LOGE_FOR_INVALID_DTYPE("Pow", "x1", ge::TypeUtils::DataTypeToSerialString(params_.baseDtype).c_str(),
+                                  "float32, float16, bfloat16, uint8, int8, int16 or int32");
         return ge::GRAPH_FAILED;
     }
 
@@ -112,16 +97,15 @@ ge::graphStatus PowTilingBase::GetShapeAttrsInfo()
 ge::graphStatus PowTilingBase::GetWorkspaceSize()
 {
     size_t* workspaces = context_->GetWorkspaceSizes(1);
-    OP_CHECK_IF(workspaces == nullptr, OP_LOGE("Pow", "failed to get workspace size"),
-                    return ge::GRAPH_FAILED);
-    workspaces[0] = WORKSPACE_SIZE;
+    OP_CHECK_IF(workspaces == nullptr, OP_LOGE("Pow", "failed to get workspace size"), return ge::GRAPH_FAILED);
+    auto platformPtr = context_->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(context_, platformPtr);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformPtr);
+    workspaces[0] = ascendcPlatform.GetLibApiWorkSpaceSize();
 
     return ge::GRAPH_SUCCESS;
 }
 
-ge::graphStatus PowTilingBase::PostTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus PowTilingBase::PostTiling() { return ge::GRAPH_SUCCESS; }
 
-}  // namespace optiling
+} // namespace optiling

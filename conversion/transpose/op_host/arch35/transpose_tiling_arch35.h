@@ -48,7 +48,6 @@ constexpr uint64_t B16_BYTES = 2;                           ///< 16bit 类型字
 constexpr uint64_t B32_BYTES = 4;                           ///< 32bit 类型字节数
 constexpr uint64_t B64_BYTES = 8;                           ///< 64bit 类型字节数
 constexpr uint64_t BUFFER_NUM = 2;                          ///< 双缓冲数量
-constexpr uint64_t WORK_SPACE_SIZE = 16 * 1024 * 1024;      ///< Workspace 大小：16MB
 constexpr double VEC_CORE_USED_THRES_HOLD = 0.9;            ///< 核利用率阈值（低于此值调整切分因子）
 constexpr int64_t MOVEALIGN_LAST_MIN_ELE = 32;              ///< N_LAST_TRANSPOSE 尾轴最小元素数
 constexpr int64_t SMALL_SHAPE_SPLIT_BYTES_ALIGN_SIZE = 128; ///< SmallShape 128字节对齐

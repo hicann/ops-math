@@ -46,7 +46,6 @@ constexpr int64_t INIT_INDEX_SIZE = 512; // 因为只考虑搬入连续的倒数
 constexpr int64_t BLOCK_SIZE = 32;
 constexpr int64_t VL_SIZE = 256;
 constexpr int64_t MIN_MOVE_ALIGN_LEN = 128;
-constexpr uint64_t WORK_SPACE_SIZE = 16777216; // 16 * 1024 * 1024
 constexpr int64_t NUMBER_TWO = 2;
 constexpr int64_t NUMBER_THREE = 3;
 constexpr int64_t NUMBER_FOUR = 4;

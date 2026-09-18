@@ -56,7 +56,6 @@ static constexpr uint64_t CIRCULAR_CUT_LAST_DIM_BRANCH = 34000;
 static constexpr uint64_t CIRCULAR_BIG_LAST_DIM_BRANCH = 34001;
 static constexpr uint64_t CIRCULAR_SMALL_LAST_DIM_GATHER_BRANCH = 34002;
 
-static constexpr uint64_t SYS_WORK_SPACE_SIZE = 16 * 1024 * 1024;
 static constexpr size_t PADDINGS_IDX = 1;
 static constexpr size_t PAIR = 2;
 static constexpr uint64_t SIMT_BRANCH_SIZE = 4 * 1024;
@@ -1494,7 +1493,10 @@ ge::graphStatus PadACTiling::DoTiling()
     context_->SetTilingKey(tilingKey_);
     size_t* workspaces = context_->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, workspaces);
-    workspaces[0] = SYS_WORK_SPACE_SIZE;
+    auto platformInfo = context_->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(context_, platformInfo);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    workspaces[0] = ascendcPlatform.GetLibApiWorkSpaceSize();
     OP_LOGD(context_, "Exit PadACTiling DoTiling.");
     return ge::GRAPH_SUCCESS;
 }

@@ -371,7 +371,10 @@ ge::graphStatus StrideSliceTiling::RunStrideSliceTiling()
     SetBlockDimAndTilingKey();
 
     size_t* workspaces = tilingContext_->GetWorkspaceSizes(1);
-    workspaces[0] = WORK_SPACE_SIZE;
+    auto platformInfo = tilingContext_->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext_, platformInfo);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    workspaces[0] = ascendcPlatform.GetLibApiWorkSpaceSize();
 
     OP_LOGD(tilingContext_->GetNodeName(), "Tiling4StrideSlice success.");
     return ge::GRAPH_SUCCESS;

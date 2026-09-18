@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ using namespace ge;
 std::set<ge::DataType> g_intOrBoolDtypesSet = {DT_INT8,   DT_INT32, DT_UINT8,  DT_INT16, DT_UINT16,
                                                DT_UINT32, DT_INT64, DT_UINT64, DT_BOOL};
 std::set<ge::DataType> g_floatDtypesSet = {DT_FLOAT, DT_FLOAT16, DT_BF16};
-constexpr uint64_t FILL_WORKSPACE_RESERVE_BYTE = 16777216; // 16 * 1024 * 1024
+
 constexpr uint32_t DTYPE_INT = 0;
 constexpr uint32_t DTYPE_FLOAT = 1;
 constexpr uint64_t BLOCK_SIZE = 65536;
@@ -29,12 +29,11 @@ constexpr uint32_t CUSTOM_KEY_VALUE = 99;
 template <typename T>
 void PrintTilingData(T& tilingData, const uint64_t& tilingKey)
 {
-    OP_LOGI(
-        "Mem set v2 tilingData",
-        "[tilingKey]: %ld, [realCoreNum]: %ld, [ubSize]: %ld, [processGMNum]: %ld, [valuesIntListSize]: %ld, "
-        "[valuesFloatListSize]: %ld",
-        tilingKey, tilingData.get_realCoreNum(), tilingData.get_ubSize(), tilingData.get_processGMNum(),
-        tilingData.get_valuesIntListSize(), tilingData.get_processGMNum() - tilingData.get_valuesIntListSize());
+    OP_LOGI("Mem set v2 tilingData",
+            "[tilingKey]: %ld, [realCoreNum]: %ld, [ubSize]: %ld, [processGMNum]: %ld, [valuesIntListSize]: %ld, "
+            "[valuesFloatListSize]: %ld",
+            tilingKey, tilingData.get_realCoreNum(), tilingData.get_ubSize(), tilingData.get_processGMNum(),
+            tilingData.get_valuesIntListSize(), tilingData.get_processGMNum() - tilingData.get_valuesIntListSize());
     std::string intString;
     for (uint32_t i = 0; i < tilingData.get_processGMNum(); i++) {
         intString += std::to_string(tilingData.get_valuesIntList()[i]) + ", ";
@@ -63,9 +62,8 @@ void PrintTilingData(T& tilingData, const uint64_t& tilingKey)
 }
 
 template <typename T>
-ge::graphStatus SetDtypesList(
-    T& tilingData, gert::TilingContext* context, int64_t& valuesIntSizeInDtypesList,
-    int64_t& valuesFloatSizeInDtypesList, const int64_t inputXNum)
+ge::graphStatus SetDtypesList(T& tilingData, gert::TilingContext* context, int64_t& valuesIntSizeInDtypesList,
+                              int64_t& valuesFloatSizeInDtypesList, const int64_t inputXNum)
 {
     // 计算dtypesList中int和float的个数,并转换DataType为int64_t
     vector<int64_t> dtypesArray(inputXNum, 0);
@@ -76,8 +74,8 @@ ge::graphStatus SetDtypesList(
         } else if (g_floatDtypesSet.find(dtypeInt) != g_floatDtypesSet.end()) {
             valuesFloatSizeInDtypesList++;
         } else {
-            OP_CHECK_IF(
-                true, OP_LOGE(context->GetNodeName(), "dtype should be int, float or bool."), return ge::GRAPH_FAILED);
+            OP_CHECK_IF(true, OP_LOGE(context->GetNodeName(), "dtype should be int, float or bool."),
+                        return ge::GRAPH_FAILED);
         }
         dtypesArray[i] = dtypeInt;
     }
@@ -95,31 +93,27 @@ uint32_t GetIntOrFloatDTypeByGmIndex(const uint32_t& dtype)
 }
 
 template <typename T>
-ge::graphStatus SetValuesLists(
-    T& tilingData, gert::TilingContext* context, const int64_t valuesIntSizeInDtypesList,
-    const int64_t valuesFloatSizeInDtypesList)
+ge::graphStatus SetValuesLists(T& tilingData, gert::TilingContext* context, const int64_t valuesIntSizeInDtypesList,
+                               const int64_t valuesFloatSizeInDtypesList)
 {
     auto* attrs = context->GetAttrs();
 
     // 校验valuesInt_array和valuesFloat_array的size是否为0或者等于dtypesList中int和float的个数
     const auto* valuesIntArrayInAttrs = attrs->GetListInt(INDEX_VALUESINT);
     const auto* valuesFloatArrayInAttrs = attrs->GetListFloat(INDEX_VALUESFLOAT);
-    OP_CHECK_IF(
-        valuesIntArrayInAttrs == nullptr || valuesFloatArrayInAttrs == nullptr,
-        OP_LOGE(context->GetNodeName(), "valuesIntArrayInAttrs or valuesFloatArrayInAttrs is nullptr."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(valuesIntArrayInAttrs == nullptr || valuesFloatArrayInAttrs == nullptr,
+                OP_LOGE(context->GetNodeName(), "valuesIntArrayInAttrs or valuesFloatArrayInAttrs is nullptr."),
+                return ge::GRAPH_FAILED);
     int64_t valuesIntArraySize = valuesIntArrayInAttrs->GetCapacity();
     int64_t valuesFloatArraySize = valuesFloatArrayInAttrs->GetCapacity();
-    OP_CHECK_IF(
-        valuesIntArraySize != 0 && valuesIntArraySize != valuesIntSizeInDtypesList,
-        OP_LOGE(
-            context->GetNodeName(), "ValuesInt size should be zero or the same as integer type num in tensor list."),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        valuesFloatArraySize != 0 && valuesFloatArraySize != valuesFloatSizeInDtypesList,
-        OP_LOGE(
-            context->GetNodeName(), "ValuesFloat size should be zero or the same as float type num in tensor list."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(valuesIntArraySize != 0 && valuesIntArraySize != valuesIntSizeInDtypesList,
+                OP_LOGE(context->GetNodeName(),
+                        "ValuesInt size should be zero or the same as integer type num in tensor list."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(valuesFloatArraySize != 0 && valuesFloatArraySize != valuesFloatSizeInDtypesList,
+                OP_LOGE(context->GetNodeName(),
+                        "ValuesFloat size should be zero or the same as float type num in tensor list."),
+                return ge::GRAPH_FAILED);
     if (valuesIntArraySize == 0 && valuesIntSizeInDtypesList > 0) {
         OP_LOGW("Mem set v2 tilingData", "valuesIntArraySize is 0, fill with value 0.");
     }
@@ -148,8 +142,8 @@ ge::graphStatus SetValuesLists(
 }
 
 template <typename T>
-ge::graphStatus SetBlockInfoList(
-    T& tilingData, gert::TilingContext* context, const int64_t inputXNum, const uint64_t coreNum)
+ge::graphStatus SetBlockInfoList(T& tilingData, gert::TilingContext* context, const int64_t inputXNum,
+                                 const uint64_t coreNum)
 {
     vector<uint64_t> blockNumList(inputXNum, 0);
     vector<uint64_t> tailSizeList(inputXNum, 0);
@@ -165,12 +159,10 @@ ge::graphStatus SetBlockInfoList(
         if (i == 0U) {
             startIndexList[i] = 0;
         } else {
-            OP_CHECK_IF(
-                coreNum == 0,
-                OP_LOGE(
-                    context->GetNodeName(),
-                    "ValuesFloat size should be zero or the same as float type num in tensor list."),
-                return ge::GRAPH_FAILED);
+            OP_CHECK_IF(coreNum == 0,
+                        OP_LOGE(context->GetNodeName(),
+                                "ValuesFloat size should be zero or the same as float type num in tensor list."),
+                        return ge::GRAPH_FAILED);
             startIndexList[i] = (startIndexList[i - 1] + blockNumList[i - 1]) % coreNum;
         }
     }
@@ -186,10 +178,9 @@ ge::graphStatus DoTiling(gert::TilingContext* context, uint64_t tilingKey, int64
     T tilingData;
     int64_t valuesIntSizeInDtypesList = 0;
     int64_t valuesFloatSizeInDtypesList = 0;
-    OP_CHECK_IF(
-        SetDtypesList(tilingData, context, valuesIntSizeInDtypesList, valuesFloatSizeInDtypesList, inputXNum) ==
-            ge::GRAPH_FAILED,
-        OP_LOGE(context->GetNodeName(), "SetDtypesList failed."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(SetDtypesList(tilingData, context, valuesIntSizeInDtypesList, valuesFloatSizeInDtypesList, inputXNum) ==
+                    ge::GRAPH_FAILED,
+                OP_LOGE(context->GetNodeName(), "SetDtypesList failed."), return ge::GRAPH_FAILED);
     OP_CHECK_IF(
         SetValuesLists(tilingData, context, valuesIntSizeInDtypesList, valuesFloatSizeInDtypesList) == ge::GRAPH_FAILED,
         OP_LOGE(context->GetNodeName(), "SetValuesLists failed."), return ge::GRAPH_FAILED);
@@ -212,18 +203,16 @@ ge::graphStatus DoTiling(gert::TilingContext* context, uint64_t tilingKey, int64
         ubSize = compileInfo->ubSize;
         coreNum = compileInfo->coreNum;
     }
-    OP_CHECK_IF(
-        (coreNum <= SIZE_ZERO),
-        OP_LOGE(context->GetNodeName(), "MemSetV2Op GetHardwareInfo Failed, coreNum:%lu", coreNum),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        ubSize <= SIZE_ZERO, OP_LOGE(context->GetNodeName(), "MemSetV2Op GetHardwareInfo Failed, ubSize:%lu.", ubSize),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((coreNum <= SIZE_ZERO),
+                OP_LOGE(context->GetNodeName(), "MemSetV2Op GetHardwareInfo Failed, coreNum:%lu", coreNum),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ubSize <= SIZE_ZERO,
+                OP_LOGE(context->GetNodeName(), "MemSetV2Op GetHardwareInfo Failed, ubSize:%lu.", ubSize),
+                return ge::GRAPH_FAILED);
     OP_LOGD(context->GetNodeName(), "GetCoreNum:%lu, ubSize:%lu.", coreNum, ubSize);
 
-    OP_CHECK_IF(
-        SetBlockInfoList(tilingData, context, inputXNum, coreNum) == ge::GRAPH_FAILED,
-        OP_LOGE(context->GetNodeName(), "SetBlockInfoList failed."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(SetBlockInfoList(tilingData, context, inputXNum, coreNum) == ge::GRAPH_FAILED,
+                OP_LOGE(context->GetNodeName(), "SetBlockInfoList failed."), return ge::GRAPH_FAILED);
 
     tilingData.set_realCoreNum(coreNum);
     tilingData.set_ubSize(ubSize);
@@ -235,7 +224,8 @@ ge::graphStatus DoTiling(gert::TilingContext* context, uint64_t tilingKey, int64
 
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, currentWorkspace);
-    currentWorkspace[0] = FILL_WORKSPACE_RESERVE_BYTE;
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    currentWorkspace[0] = ascendcPlatform.GetLibApiWorkSpaceSize();
 
     context->SetTilingKey(tilingKey);
     context->SetBlockDim(tilingData.get_realCoreNum());
@@ -248,9 +238,8 @@ ge::graphStatus Tiling4MemSetV2(gert::TilingContext* context)
     OP_LOGI("MemSetV2 tilingData", "Start tiling for MemSetV2.");
     // 根据input判断tilingkey和tilingData
     int64_t inputXNum = context->GetIrInputInstanceInfo(0)->GetInstanceNum();
-    OP_CHECK_IF(
-        inputXNum <= 0 || inputXNum > 256, OP_LOGE(context->GetNodeName(), "dynamic input num should in [1, 256]."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputXNum <= 0 || inputXNum > 256,
+                OP_LOGE(context->GetNodeName(), "dynamic input num should in [1, 256]."), return ge::GRAPH_FAILED);
     if (inputXNum <= TENSOR_LIST_SIZE_2) {
         return DoTiling<MemSetV2List2TilingData>(context, TILINGKEY_10002, inputXNum);
     }
@@ -286,17 +275,15 @@ ge::graphStatus TilingPrepare4MemSetV2(gert::TilingParseContext* context)
 
     uint64_t ubSize = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
-    OP_CHECK_IF(
-        ubSize <= SIZE_ZERO,
-        OP_LOGE(context->GetNodeName(), "MemSetV2Op GetHardwareInfo Failed, ubSize:%lu.", compileInfo->ubSize),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ubSize <= SIZE_ZERO,
+                OP_LOGE(context->GetNodeName(), "MemSetV2Op GetHardwareInfo Failed, ubSize:%lu.", compileInfo->ubSize),
+                return ge::GRAPH_FAILED);
     compileInfo->ubSize = ubSize;
 
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(
-        (compileInfo->coreNum <= 0),
-        OP_LOGE(context->GetNodeName(), "MemSetV2Op GetHardwareInfo Failed, coreNum:%lu", compileInfo->coreNum),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->coreNum <= 0),
+                OP_LOGE(context->GetNodeName(), "MemSetV2Op GetHardwareInfo Failed, coreNum:%lu", compileInfo->coreNum),
+                return ge::GRAPH_FAILED);
 
     OP_LOGD(context->GetNodeName(), "GetCoreNum:%lu, ubSize:%lu.", compileInfo->coreNum, compileInfo->ubSize);
 
@@ -310,22 +297,19 @@ inline ge::graphStatus GenSimplifiedKey4MemSetV2(gert::TilingContext* context, g
     constexpr size_t DEST_MAX = 100;
     constexpr size_t MAX_LEN_SIMPLIFIED_KEY = 256;
 
-    OP_CHECK_IF(
-        simplifiedKey == nullptr, OP_LOGE("MemSetV2", "GenSimplifiedKey4MemSetV2 SimplifiedKey is null"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        context == nullptr, OP_LOGE("MemSetV2", "GenSimplifiedKey4MemSetV2 Context is null"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(simplifiedKey == nullptr, OP_LOGE("MemSetV2", "GenSimplifiedKey4MemSetV2 SimplifiedKey is null"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(context == nullptr, OP_LOGE("MemSetV2", "GenSimplifiedKey4MemSetV2 Context is null"),
+                return ge::GRAPH_FAILED);
 
     std::string simpleKeyTemp = "";
     strcat_s(simplifiedKey, DEST_MAX, "diy,99");
     OP_LOGW(context->GetNodeName(), "SimpleKeyTemp: %s", simpleKeyTemp.c_str());
     errno_t err = strcat_s(simplifiedKey, DEST_MAX, simpleKeyTemp.c_str());
-    OP_CHECK_IF(
-        (err != 0), OP_LOGE(context->GetNodeName(), "Error: strcat_s failed with error code %d.", err),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        strlen(simplifiedKey) > MAX_LEN_SIMPLIFIED_KEY,
-        OP_LOGE(context->GetNodeName(), "len of simplifiedKey exceeds max length."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((err != 0), OP_LOGE(context->GetNodeName(), "Error: strcat_s failed with error code %d.", err),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(strlen(simplifiedKey) > MAX_LEN_SIMPLIFIED_KEY,
+                OP_LOGE(context->GetNodeName(), "len of simplifiedKey exceeds max length."), return ge::GRAPH_FAILED);
     OP_LOGD("MemSetV2", "Finish MemSetV2 genSimplifiedKey.");
     return ge::GRAPH_SUCCESS;
 }

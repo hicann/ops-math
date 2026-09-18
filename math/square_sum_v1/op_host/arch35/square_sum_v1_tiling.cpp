@@ -21,12 +21,12 @@
 #include "atvoss/reduce/reduce_tiling.h"
 #include "atvoss/elewise/elewise_tiling.h"
 #include "op_host/tiling_base_util.h"
+#include "platform/platform_ascendc.h"
 
 using namespace ge;
 using namespace Ops::Base;
 
 namespace optiling {
-static const int64_t ASCEND_WORKSPACE = 16 * 1024 * 1024;
 static constexpr int32_t SIZE4 = 4;
 static constexpr int32_t SIZE2 = 2;
 
@@ -58,7 +58,10 @@ ge::graphStatus SquareSumV1Tiling::SetTilingData()
             tilingKey);
     if (key_.noop == 1) {
         size_t* currentWorkspace = tilingContext_->GetWorkspaceSizes(1);
-        currentWorkspace[0] = ASCEND_WORKSPACE;
+        auto platformInfo = tilingContext_->GetPlatformInfo();
+        OP_CHECK_NULL_WITH_CONTEXT(tilingContext_, platformInfo);
+        auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+        currentWorkspace[0] = ascendcPlatform.GetLibApiWorkSpaceSize();
         tilingContext_->SetBlockDim(tilingData_->elewiseTiling.blockNum);
     }
     tilingContext_->SetTilingKey(tilingKey);
