@@ -15,6 +15,7 @@
 #include <functional>
 #include "aicpu/math_aicpu_register.h"
 #include "cpu_kernel_utils.h"
+constexpr int64_t kMaxCoreNumForMul = 4;
 #include "cpu_types.h"
 #include "utils/eigen_tensor.h"
 #include "utils/kernel_util.h"
@@ -100,9 +101,9 @@ uint32_t MulCpuKernel::MulDispatch(BCalcInfo& calc_info)
     int32_t rank = static_cast<int32_t>(calc_info.shape_out.size());
     switch (rank) {
         case 0: {
-            T v0 = *(reinterpret_cast<const T*>(calc_info.input_0->GetData()));
-            T v1 = *(reinterpret_cast<const T*>(calc_info.input_1->GetData()));
-            T* value_out = reinterpret_cast<T*>(calc_info.output->GetData());
+            T v0 = *(PtrToPtr<const void, const T>(calc_info.input_0->GetData()));
+            T v1 = *(PtrToPtr<const void, const T>(calc_info.input_1->GetData()));
+            T* value_out = PtrToPtr<void, T>(calc_info.output->GetData());
             *(value_out) = v0 * v1;
             return KERNEL_STATUS_OK;
         }
@@ -155,12 +156,12 @@ uint32_t MulCpuKernel::MulCalculate(BCalcInfo& calc_info)
     auto input_shape_0 = calc_info.input_0->GetTensorShape()->GetDimSizes();
     auto input_shape_1 = calc_info.input_1->GetTensorShape()->GetDimSizes();
     if (input_shape_0.empty()) {
-        T v0 = *(reinterpret_cast<const T*>(calc_info.input_0->GetData()));
+        T v0 = *(PtrToPtr<const void, const T>(calc_info.input_0->GetData()));
         output = v0 * input1;
         return KERNEL_STATUS_OK;
     }
     if (input_shape_1.empty()) {
-        T v1 = *(reinterpret_cast<const T*>(calc_info.input_1->GetData()));
+        T v1 = *(PtrToPtr<const void, const T>(calc_info.input_1->GetData()));
         output = input0 * v1;
         return KERNEL_STATUS_OK;
     }
@@ -192,7 +193,7 @@ int64_t GetMulParallelCoreNum(const CpuKernelContext& ctx, int64_t data_num)
     int64_t max_core_num = std::max(static_cast<int64_t>(min_core_num),
                                     static_cast<int64_t>(aicpu::CpuKernelUtils::GetCPUNum(ctx)) - kResvCpuNum);
     if (data_num <= kParallelDataNumMid) {
-        max_core_num = std::min(max_core_num, static_cast<int64_t>(4));
+        max_core_num = std::min(max_core_num, kMaxCoreNumForMul);
     }
     if (max_core_num > data_num) {
         max_core_num = data_num;
@@ -225,9 +226,9 @@ typename std::enable_if<!std::is_same<TIn1, TOut>::value && !std::is_same<TIn2, 
 template <typename TIn1, typename TIn2, typename TOut>
 uint32_t BcastCompute(const CpuKernelContext& ctx, const Bcast& bcast)
 {
-    auto in0 = reinterpret_cast<TIn1*>(ctx.Input(0)->GetData());
-    auto in1 = reinterpret_cast<TIn2*>(ctx.Input(1)->GetData());
-    auto out = reinterpret_cast<TOut*>(ctx.Output(0)->GetData());
+    auto in0 = PtrToPtr<void, TIn1>(ctx.Input(0)->GetData());
+    auto in1 = PtrToPtr<void, TIn2>(ctx.Input(1)->GetData());
+    auto out = PtrToPtr<void, TOut>(ctx.Output(0)->GetData());
     int64_t data_num = ctx.Output(0)->NumElements();
     if (data_num >= kParallelDataNum) {
         int64_t max_core_num = GetMulParallelCoreNum(ctx, data_num);
@@ -253,9 +254,9 @@ uint32_t BcastCompute(const CpuKernelContext& ctx, const Bcast& bcast)
 template <typename TIn1, typename TIn2, typename TOut>
 void SpecialCompute(BcastShapeType type, int64_t start, int64_t end, CpuKernelContext& ctx)
 {
-    auto in1 = reinterpret_cast<TIn1*>(ctx.Input(0)->GetData());
-    auto in2 = reinterpret_cast<TIn2*>(ctx.Input(1)->GetData());
-    auto output = reinterpret_cast<TOut*>(ctx.Output(0)->GetData());
+    auto in1 = PtrToPtr<void, TIn1>(ctx.Input(0)->GetData());
+    auto in2 = PtrToPtr<void, TIn2>(ctx.Input(1)->GetData());
+    auto output = PtrToPtr<void, TOut>(ctx.Output(0)->GetData());
     switch (type) {
         case BcastShapeType::SAME_SHAPE:
             for (int64_t i = start; i < end; ++i) {

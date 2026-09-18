@@ -379,7 +379,7 @@ uint32_t TileCpuKernel::TileCompute(const CpuKernelContext& ctx)
     return TileKernelCompute<T>(ctx);
 }
 
-uint32_t TileCpuKernel::GetMultiplesValue(Tensor* tensor, std::vector<int64_t>& mtp_value)
+uint32_t TileCpuKernel::GetMultiplesValue(const Tensor* tensor, std::vector<int64_t>& mtp_value)
 {
     auto type = tensor->GetDataType();
     if (type == DT_INT32) {

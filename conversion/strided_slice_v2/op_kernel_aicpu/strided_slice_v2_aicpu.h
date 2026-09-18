@@ -16,75 +16,60 @@
 
 namespace aicpu {
 class StridedSliceV2CpuKernel : public CpuKernel {
- public:
-  ~StridedSliceV2CpuKernel() = default;
-  uint32_t Compute(CpuKernelContext &ctx) override;
+public:
+    ~StridedSliceV2CpuKernel() = default;
+    uint32_t Compute(CpuKernelContext& ctx) override;
 
- private:
-  uint32_t CheckParam(const Tensor *begin, const Tensor *end,
-                      const Tensor *axes, const Tensor *strides);
+private:
+    uint32_t CheckParam(const Tensor* begin, const Tensor* end, const Tensor* axes, const Tensor* strides);
 
-  uint32_t CheckBeginEndDataType(const Tensor *begin, const Tensor *end);
+    uint32_t CheckBeginEndDataType(const Tensor* begin, const Tensor* end);
 
-  uint32_t CheckBeginEndShape(const Tensor *begin, const Tensor *end);
+    uint32_t CheckBeginEndShape(const Tensor* begin, const Tensor* end);
 
-  uint32_t CheckStridesDataTypeAndShape(const Tensor *begin,
-                                          const Tensor *strides,
-                                          const std::shared_ptr<TensorShape> &begin_shape);
+    uint32_t CheckStridesDataTypeAndShape(const Tensor* begin, const Tensor* strides,
+                                          const std::shared_ptr<TensorShape>& begin_shape);
 
-  uint32_t CheckAxesDataType(const Tensor *begin, const Tensor *axes);
+    uint32_t CheckAxesDataType(const Tensor* begin, const Tensor* axes);
 
-  uint32_t GetInputTensors(CpuKernelContext &ctx, Tensor *&x, Tensor *&begin,
-                            Tensor *&end, Tensor *&axes, Tensor *&strides);
+    uint32_t GetInputTensors(CpuKernelContext& ctx, Tensor*& x, Tensor*& begin, Tensor*& end, Tensor*& axes,
+                             Tensor*& strides) const;
 
-  uint32_t GetMaskAttrs(CpuKernelContext &ctx, int64_t &begin_mask_value,
-                         int64_t &end_mask_value, int64_t &ellipsis_mask_value,
-                         int64_t &new_axis_mask_value, int64_t &shrink_axis_mask_value);
+    uint32_t GetMaskAttrs(CpuKernelContext& ctx, int64_t& begin_mask_value, int64_t& end_mask_value,
+                          int64_t& ellipsis_mask_value, int64_t& new_axis_mask_value, int64_t& shrink_axis_mask_value);
 
-  uint32_t CheckAndBuildParamsByType(const Tensor *x, const Tensor *begin,
-                                      const Tensor *end, const Tensor *axes,
-                                      const Tensor *strides,
-                                      std::vector<int64_t> &begin_vec,
-                                      std::vector<int64_t> &end_vec,
-                                      std::vector<int64_t> &strides_vec);
+    uint32_t CheckAndBuildParamsByType(const Tensor* x, const Tensor* begin, const Tensor* end, const Tensor* axes,
+                                       const Tensor* strides, std::vector<int64_t>& begin_vec,
+                                       std::vector<int64_t>& end_vec, std::vector<int64_t>& strides_vec);
 
-  template <typename T>
-  uint32_t BuildBeginParam(const std::shared_ptr<TensorShape> &x_shape,
-                           const Tensor *begin,
-                           std::vector<int64_t> &begin_vec);
+    template <typename T>
+    uint32_t BuildBeginParam(const std::shared_ptr<TensorShape>& x_shape, const Tensor* begin,
+                             std::vector<int64_t>& begin_vec);
 
-  template <typename T>
-  uint32_t BuildEndParam(const std::shared_ptr<TensorShape> &x_shape,
-                         const Tensor *end, std::vector<int64_t> &end_vec);
+    template <typename T>
+    uint32_t BuildEndParam(const std::shared_ptr<TensorShape>& x_shape, const Tensor* end,
+                           std::vector<int64_t>& end_vec);
 
-  template <typename T>
-  uint32_t BuildStridesParam(const std::shared_ptr<TensorShape> &x_shape,
-                             const Tensor *strides,
-                             std::vector<int64_t> &strides_vec);
+    template <typename T>
+    uint32_t BuildStridesParam(const std::shared_ptr<TensorShape>& x_shape, const Tensor* strides,
+                               std::vector<int64_t>& strides_vec);
 
-  template <typename T>
-  uint32_t BuildAxesParam(const std::shared_ptr<TensorShape> &x_shape,
-                          const Tensor *axes, std::vector<int64_t> &axes_vec);
+    template <typename T>
+    uint32_t BuildAxesParam(const std::shared_ptr<TensorShape>& x_shape, const Tensor* axes,
+                            std::vector<int64_t>& axes_vec);
 
-  template <typename T>
-  uint32_t BuildParam(const Tensor *x, const Tensor *begin, const Tensor *end,
-                      const Tensor *axes, const Tensor *strides,
-                      std::vector<int64_t> &begin_vec,
-                      std::vector<int64_t> &end_vec,
-                      std::vector<int64_t> &strides_vec);
+    template <typename T>
+    uint32_t BuildParam(const Tensor* x, const Tensor* begin, const Tensor* end, const Tensor* axes,
+                        const Tensor* strides, std::vector<int64_t>& begin_vec, std::vector<int64_t>& end_vec,
+                        std::vector<int64_t>& strides_vec);
 
-  template <typename T>
-  uint32_t CheckAndBuildParam(const Tensor *x, const Tensor *begin,
-                              const Tensor *end, const Tensor *axes,
-                              const Tensor *strides,
-                              std::vector<int64_t> &begin_vec,
-                              std::vector<int64_t> &end_vec,
-                              std::vector<int64_t> &strides_vec);
+    template <typename T>
+    uint32_t CheckAndBuildParam(const Tensor* x, const Tensor* begin, const Tensor* end, const Tensor* axes,
+                                const Tensor* strides, std::vector<int64_t>& begin_vec, std::vector<int64_t>& end_vec,
+                                std::vector<int64_t>& strides_vec);
 
-  uint32_t DoStridedSliceV2(const CpuKernelContext &ctx,
-                            const std::vector<int64_t> &begin_vec,
-                            const std::vector<int64_t> &end_vec,
-                            const std::vector<int64_t> &strides_vec);
+    uint32_t DoStridedSliceV2(const CpuKernelContext& ctx, const std::vector<int64_t>& begin_vec,
+                              const std::vector<int64_t>& end_vec, const std::vector<int64_t>& strides_vec);
 };
-}  // namespace aicpu
+} // namespace aicpu
 #endif

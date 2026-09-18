@@ -17,7 +17,7 @@ namespace aicpu {
 class CaseConditionCpuKernel : public CpuKernel {
 public:
     CaseConditionCpuKernel() = default;
-    ~CaseConditionCpuKernel() = default;
+    ~CaseConditionCpuKernel() override = default;
     uint32_t Compute(CpuKernelContext& ctx) override;
 
 private:

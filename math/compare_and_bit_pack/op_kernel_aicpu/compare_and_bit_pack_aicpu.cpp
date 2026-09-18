@@ -18,8 +18,16 @@
 #include "utils/kernel_util.h"
 
 namespace {
+constexpr int32_t kBitsPerByte = 8;
+constexpr int32_t kBitShift7 = 7;
+constexpr int32_t kBitShift6 = 6;
+constexpr int32_t kBitShift5 = 5;
+constexpr int32_t kBitShift4 = 4;
+constexpr int32_t kBitShift3 = 3;
+constexpr int32_t kBitShift2 = 2;
+constexpr int32_t kBitShift1 = 1;
 const char* const kCompareAndBitpack = "CompareAndBitpack";
-}
+} // namespace
 
 namespace aicpu {
 uint32_t CompareAndBitpackCpuKernel::Compute(CpuKernelContext& ctx)
@@ -78,8 +86,8 @@ uint32_t CompareAndBitpackCpuKernel::ParaCheck(const CpuKernelContext& ctx) cons
                        "Input1[threshold] must be a scalar");
     KERNEL_CHECK_FALSE((IsVectorOrHigher(input0->GetTensorShape()->GetDimSizes())), KERNEL_STATUS_PARAM_INVALID,
                        "Input0 should be at least a vector, but saw a scalar");
-    KERNEL_CHECK_FALSE((((input0->GetTensorShape()->GetDimSize(last_dim_index)) % 8) == 0), KERNEL_STATUS_PARAM_INVALID,
-                       "Inner dimension of input0 should be divisible by 8");
+    KERNEL_CHECK_FALSE((((input0->GetTensorShape()->GetDimSize(last_dim_index)) % kBitsPerByte) == 0),
+                       KERNEL_STATUS_PARAM_INVALID, "Inner dimension of input0 should be divisible by 8");
     return KERNEL_STATUS_OK;
 }
 
@@ -94,10 +102,11 @@ uint32_t CompareAndBitpackCpuKernel::CompareAndBitpackCompute(const CpuKernelCon
     if (data_num <= kParallelDataNums) {
         for (int64_t i = 0; i < data_num; ++i) {
             uint8_t* out = output + i;
-            const T* input = input0 + 8 * i;
-            *out = ((((input[0] > thresh) << 7)) | (((input[1] > thresh) << 6)) | (((input[2] > thresh) << 5)) |
-                    (((input[3] > thresh) << 4)) | (((input[4] > thresh) << 3)) | (((input[5] > thresh) << 2)) |
-                    (((input[6] > thresh) << 1)) | (((input[7] > thresh))));
+            const T* input = input0 + kBitsPerByte * i;
+            *out = ((((input[0] > thresh) << kBitShift7)) | (((input[1] > thresh) << kBitShift6)) |
+                    (((input[2] > thresh) << kBitShift5)) | (((input[3] > thresh) << kBitShift4)) |
+                    (((input[4] > thresh) << kBitShift3)) | (((input[5] > thresh) << kBitShift2)) |
+                    (((input[6] > thresh) << kBitShift1)) | (((input[7] > thresh))));
         }
     } else {
         uint32_t min_core_num = 1;
@@ -108,10 +117,11 @@ uint32_t CompareAndBitpackCpuKernel::CompareAndBitpackCompute(const CpuKernelCon
         auto shard = [&](size_t start, size_t end) {
             for (size_t i = start; i < end; i++) {
                 uint8_t* out = output + i;
-                const T* input = input0 + 8 * i;
-                *out = ((((input[0] > thresh) << 7)) | (((input[1] > thresh) << 6)) | (((input[2] > thresh) << 5)) |
-                        (((input[3] > thresh) << 4)) | (((input[4] > thresh) << 3)) | (((input[5] > thresh) << 2)) |
-                        (((input[6] > thresh) << 1)) | (((input[7] > thresh))));
+                const T* input = input0 + kBitsPerByte * i;
+                *out = ((((input[0] > thresh) << kBitShift7)) | (((input[1] > thresh) << kBitShift6)) |
+                        (((input[2] > thresh) << kBitShift5)) | (((input[3] > thresh) << kBitShift4)) |
+                        (((input[4] > thresh) << kBitShift3)) | (((input[5] > thresh) << kBitShift2)) |
+                        (((input[6] > thresh) << kBitShift1)) | (((input[7] > thresh))));
             }
         };
         KERNEL_HANDLE_ERROR(CpuKernelUtils::ParallelFor(ctx, data_num, data_num / max_core_num, shard),

@@ -178,9 +178,9 @@ void SpecialComputeImpl(BcastShapeType type, int64_t start, int64_t end, const T
 template <typename T>
 uint32_t NoBcastComputeImpl(const CpuKernelContext& ctx)
 {
-    auto in0 = reinterpret_cast<T*>(ctx.Input(kFirstInputIndex)->GetData());
-    auto in1 = reinterpret_cast<T*>(ctx.Input(kSecondInputIndex)->GetData());
-    auto out = reinterpret_cast<T*>(ctx.Output(kFirstOutputIndex)->GetData());
+    auto in0 = PtrToPtr<void, T>(ctx.Input(kFirstInputIndex)->GetData());
+    auto in1 = PtrToPtr<void, T>(ctx.Input(kSecondInputIndex)->GetData());
+    auto out = PtrToPtr<void, T>(ctx.Output(kFirstOutputIndex)->GetData());
     int64_t in0_num = ctx.Input(kFirstInputIndex)->NumElements();
     int64_t in1_num = ctx.Input(kSecondInputIndex)->NumElements();
     int64_t data_num = ctx.Output(kFirstOutputIndex)->NumElements();
@@ -223,9 +223,9 @@ uint32_t NoBcastComputeImpl(const CpuKernelContext& ctx)
 template <typename T>
 uint32_t BcastComputeImpl(const CpuKernelContext& ctx, const BcastDivInfo& info)
 {
-    auto in0 = reinterpret_cast<const T*>(ctx.Input(kFirstInputIndex)->GetData());
-    auto in1 = reinterpret_cast<const T*>(ctx.Input(kSecondInputIndex)->GetData());
-    auto out = reinterpret_cast<T*>(ctx.Output(kFirstOutputIndex)->GetData());
+    auto in0 = PtrToPtr<const void, const T>(ctx.Input(kFirstInputIndex)->GetData());
+    auto in1 = PtrToPtr<const void, const T>(ctx.Input(kSecondInputIndex)->GetData());
+    auto out = PtrToPtr<void, T>(ctx.Output(kFirstOutputIndex)->GetData());
     const int64_t data_num = info.total_elements;
     const int32_t ndims = info.ndims;
     const int64_t x_inner = info.x_strides[ndims - 1];

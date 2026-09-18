@@ -18,6 +18,10 @@
 #include "utils/kernel_util.h"
 
 namespace {
+constexpr int32_t kCaseOutputIGtKJEqK = 2;
+constexpr int32_t kCaseOutputIEqKJGtK = 3;
+constexpr int32_t kCaseOutputIGtKJGtK = 4;
+constexpr int32_t kCaseOutputDefault = 5;
 const char* const kCaseCondition = "CaseCondition";
 const uint32_t kInputNum = 1;
 const uint32_t kOutputNum = 1;
@@ -31,13 +35,13 @@ void CaseCondition(const T i, const T j, const T k, int32_t* output_data)
     } else if (i == k && j == k) {
         *output_data = 1;
     } else if (i > k && j == k) {
-        *output_data = 2;
+        *output_data = kCaseOutputIGtKJEqK;
     } else if (i == k && j > k) {
-        *output_data = 3;
+        *output_data = kCaseOutputIEqKJGtK;
     } else if (i > k && j > k) {
-        *output_data = 4;
+        *output_data = kCaseOutputIGtKJGtK;
     } else {
-        *output_data = 5;
+        *output_data = kCaseOutputDefault;
     }
     KERNEL_LOG_INFO("%s param value, i=[%ld], j=[%ld], k=[%ld], output=[%d]", kCaseCondition, static_cast<int64_t>(i),
                     static_cast<int64_t>(j), static_cast<int64_t>(k), *output_data);

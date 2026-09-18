@@ -105,7 +105,7 @@ inline int32_t DetectMonotone(const T* __restrict__ in, int32_t jump, int32_t n)
     }
     if (n <= kMonotoneProbeMaxN) {
         const T a = in[0];
-        const T b = in[static_cast<int64_t>(n >> 1) * jump];
+        const T b = in[static_cast<int64_t>(n) / 2 * jump];
         const T c = in[static_cast<int64_t>(n - 1) * jump];
         if (aicpu::IsValueEqual<T>(a, b) && aicpu::IsValueEqual<T>(b, c)) {
             for (int32_t i = 1; i < n; ++i) {

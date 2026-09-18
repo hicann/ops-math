@@ -107,7 +107,8 @@ inline uint32_t ExtraCheckZeta(const CpuKernelContext& ctx)
 
 inline uint32_t CheckZeta(CpuKernelContext& ctx)
 {
-    return NormalCheck(ctx, kInputNum, kOutputNum) ? KERNEL_STATUS_PARAM_INVALID : ExtraCheckZeta(ctx);
+    return (NormalCheck(ctx, kInputNum, kOutputNum) != KERNEL_STATUS_OK) ? KERNEL_STATUS_PARAM_INVALID :
+                                                                           ExtraCheckZeta(ctx);
 }
 
 inline uint32_t ComputeZeta(const CpuKernelContext& ctx)
