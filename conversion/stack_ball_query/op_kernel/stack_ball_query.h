@@ -26,7 +26,7 @@ constexpr int32_t ALIGN_16 = 16;
 constexpr int32_t XYZ_NUM = 3;
 constexpr int32_t XYZ_GM_OFFSET = 2;
 
-template <typename INPUT_T, typename COUNT_T>
+template <typename INPUT_T>
 class KernelStackBallQuery {
 public:
     __aicore__ inline KernelStackBallQuery(AscendC::TPipe* p) : pipe(p){};
@@ -45,7 +45,7 @@ public:
         this->maxRadius = tilingData.maxRadius * tilingData.maxRadius;
         this->sampleNum = tilingData.sampleNum;
         this->typeXyzBlockSize = ALIGN_32 / (sizeof(INPUT_T));
-        this->typeIntBlockSize = ALIGN_32 / sizeof(COUNT_T);
+        this->typeIntBlockSize = ALIGN_NUM;
         this->centerXyzEachSegmentLength = this->centerXyzEachSegmentLength / BUFFER_NUM;
         this->xyzEachSegmentLength = this->xyzEachSegmentLength / BUFFER_NUM;
         this->idxEachSegmentLength = this->idxEachSegmentLength / BUFFER_NUM;
@@ -55,8 +55,8 @@ public:
                                     3 * centerXyzEachCoreLength);
         xyzGm.SetGlobalBuffer((__gm__ INPUT_T*)xyz, 3 * this->totalLengthXyz);
         idxGm.SetGlobalBuffer((__gm__ int32_t*)idx, this->totalIdxLength);
-        centerXyzBatchCntGm.SetGlobalBuffer((__gm__ COUNT_T*)center_xyz_batch_cnt, this->batchSize);
-        xyzBatchCntGm.SetGlobalBuffer((__gm__ COUNT_T*)xyz_batch_cnt, this->batchSize);
+        centerXyzBatchCntGm.SetGlobalBuffer((__gm__ int32_t*)center_xyz_batch_cnt, this->batchSize);
+        xyzBatchCntGm.SetGlobalBuffer((__gm__ int32_t*)xyz_batch_cnt, this->batchSize);
 
         pipe->InitBuffer(inQueueCenterXyz, BUFFER_NUM, XYZ_NUM * this->centerXyzEachSegmentLength * sizeof(INPUT_T));
         pipe->InitBuffer(inQueueX, BUFFER_NUM, this->xyzEachSegmentLength * sizeof(INPUT_T));
@@ -89,9 +89,8 @@ public:
         pipe->InitBuffer(calcBufCenterDistanceX, this->xyzEachSegmentLength * sizeof(INPUT_T));
         pipe->InitBuffer(calcBufCenterDistanceY, this->xyzEachSegmentLength * sizeof(INPUT_T));
         pipe->InitBuffer(calcBufCenterDistanceZ, this->xyzEachSegmentLength * sizeof(INPUT_T));
-        pipe->InitBuffer(xyzBatchValue, this->GetAlignValue(this->batchSize, this->typeIntBlockSize) * sizeof(COUNT_T));
-        pipe->InitBuffer(centerXyzBatchValue,
-                         this->GetAlignValue(this->batchSize, this->typeIntBlockSize) * sizeof(COUNT_T));
+        pipe->InitBuffer(xyzBatchValue, this->GetAlignValue(this->batchSize, ALIGN_NUM) * sizeof(int32_t));
+        pipe->InitBuffer(centerXyzBatchValue, this->GetAlignValue(this->batchSize, ALIGN_NUM) * sizeof(int32_t));
         PipeBarrier<PIPE_ALL>();
         ;
     }
@@ -183,10 +182,10 @@ private:
 
     __aicore__ inline void CopyInBatchCnt()
     {
-        this->centerXyzBatchLocal = centerXyzBatchValue.Get<COUNT_T>();
+        this->centerXyzBatchLocal = centerXyzBatchValue.Get<int32_t>();
         DataCopyGm2UbAlign32(this->centerXyzBatchLocal, centerXyzBatchCntGm, this->batchSize, typeIntBlockSize);
 
-        this->xyzBatchLocal = xyzBatchValue.Get<COUNT_T>();
+        this->xyzBatchLocal = xyzBatchValue.Get<int32_t>();
         DataCopyGm2UbAlign32(this->xyzBatchLocal, xyzBatchCntGm, this->batchSize, typeIntBlockSize);
     }
 
@@ -447,8 +446,8 @@ private:
     TQue<QuePosition::VECIN, BUFFER_NUM> inQueueY;
     TQue<QuePosition::VECIN, BUFFER_NUM> inQueueZ;
 
-    LocalTensor<COUNT_T> centerXyzBatchLocal;
-    LocalTensor<COUNT_T> xyzBatchLocal;
+    LocalTensor<int32_t> centerXyzBatchLocal;
+    LocalTensor<int32_t> xyzBatchLocal;
     LocalTensor<int32_t> resultOut;
     LocalTensor<int32_t> resultOutAlign;
     LocalTensor<uint16_t> ubDstLtLocal;
@@ -459,8 +458,7 @@ private:
     LocalTensor<float> ubOneFloat32Local, ubZeroFloat32Local, ubResultLtLocal;
 
     GlobalTensor<INPUT_T> centerXyzGm, xyzGm;
-    GlobalTensor<int32_t> idxGm;
-    GlobalTensor<COUNT_T> xyzBatchCntGm, centerXyzBatchCntGm;
+    GlobalTensor<int32_t> idxGm, xyzBatchCntGm, centerXyzBatchCntGm;
 
     TBuf<TPosition::VECCALC> calcBufCenterX, calcBufCenterY, calcBufCenterZ, calcBufDistanceResult;
     TBuf<TPosition::VECCALC> calcBufCenterDistanceX, calcBufCenterDistanceY, calcBufCenterDistanceZ;

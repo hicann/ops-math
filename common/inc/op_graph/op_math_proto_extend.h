@@ -38,6 +38,19 @@ REG_OP(ExpandDims)
     .OUTPUT(y, TensorType::ALL())
     .OP_END_FACTORY_REG(ExpandDims)
 
+#ifndef OPS_PROTO_DEF_PRODFORCESEA
+#define OPS_PROTO_DEF_PRODFORCESEA
+        REG_OP(ProdForceSeA)
+    .INPUT(net_deriv, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE}))
+    .INPUT(in_deriv, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE}))
+    .INPUT(nlist, TensorType({DT_INT32}))
+    .INPUT(natoms, TensorType({DT_INT32}))
+    .OUTPUT(atom_force, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE}))
+    .REQUIRED_ATTR(n_a_sel, Int)
+    .REQUIRED_ATTR(n_r_sel, Int)
+    .OP_END_FACTORY_REG(ProdForceSeA)
+#endif
+
     /**
     * @brief Draws binary random numbers (0 or 1) from a Bernoulli distribution.The input tensor
     * should be a tensor containing probabilities p (a value in the range [0, 1]) to be used for

@@ -22,19 +22,11 @@ extern "C" __global__ __aicore__ void stack_ball_query(GM_ADDR xyz, GM_ADDR cent
     AscendC::TPipe pipe;
 
     if (TILING_KEY_IS(1)) {
-        KernelStackBallQuery<float, int32_t> op(&pipe);
+        KernelStackBallQuery<float> op(&pipe);
         op.Init(xyz, center_xyz, xyz_batch_cnt, center_xyz_batch_cnt, idx, tilingData);
         op.Process();
     } else if (TILING_KEY_IS(2)) {
-        KernelStackBallQuery<half, int32_t> op(&pipe);
-        op.Init(xyz, center_xyz, xyz_batch_cnt, center_xyz_batch_cnt, idx, tilingData);
-        op.Process();
-    } else if (TILING_KEY_IS(3)) {
-        KernelStackBallQuery<float, int64_t> op(&pipe);
-        op.Init(xyz, center_xyz, xyz_batch_cnt, center_xyz_batch_cnt, idx, tilingData);
-        op.Process();
-    } else if (TILING_KEY_IS(4)) {
-        KernelStackBallQuery<half, int64_t> op(&pipe);
+        KernelStackBallQuery<half> op(&pipe);
         op.Init(xyz, center_xyz, xyz_batch_cnt, center_xyz_batch_cnt, idx, tilingData);
         op.Process();
     }
