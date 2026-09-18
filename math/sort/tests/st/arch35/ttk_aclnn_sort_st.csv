@@ -4,3 +4,6 @@ aclnn_sort_002,aclnnSort,"('bfloat16','bfloat16','int64')","('ND', 'ND', 'ND')",
 aclnn_sort_003,aclnnSort,"('float32','float32','int64')","('ND', 'ND', 'ND')","{ 'stable': True,'dim': -1, 'descending': False}","((3, 32768), (3, 32768), (3,32768))","(1,2)","((-200,200),)",1
 aclnn_sort_004,aclnnSort,"('int32','int32','int64')","('ND', 'ND', 'ND')","{ 'stable': True,'dim': -1, 'descending': True}","((3, 32768), (3, 32768), (3,32768))","(1,2)","((-200,200),)",1
 aclnn_sort_005,aclnnSort,"('int16','int16','int64')","('ND', 'ND', 'ND')","{ 'stable': True,'dim': -1, 'descending': False}","((3, 32768), (3, 32768), (3,32768))","(1,2)","((-200,200),)",1
+aclnn_sort_trailing_singletons_fp32,aclnnSort,"('float32', 'float32', 'int64')","('ND','ND','ND')","{'stable': True, 'dim': 1, 'descending': False}","((8, 12185, 1, 1), (8, 12185, 1, 1), (8, 12185, 1, 1))","(1,2)","((-2,2),)",1
+aclnn_sort_trailing_singletons_bf16,aclnnSort,"('bfloat16', 'bfloat16', 'int64')","('ND','ND','ND')","{'stable': True, 'dim': -3, 'descending': True}","((2, 65, 1, 1), (2, 65, 1, 1), (2, 65, 1, 1))","(1,2)","((-2,2),)",1
+aclnn_sort_non_singleton_tail,aclnnSort,"('float32', 'float32', 'int64')","('ND','ND','ND')","{'stable': True, 'dim': 1, 'descending': False}","((2, 65, 1, 2), (2, 65, 1, 2), (2, 65, 1, 2))","(1,2)","((-2,2),)",1

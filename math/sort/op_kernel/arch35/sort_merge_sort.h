@@ -8,346 +8,408 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-/* !
- * \file sort_merge_sort.h
- * \brief
- */
-
-#ifndef MERGE_SORT_H
-#define MERGE_SORT_H
+#ifndef SORT_MERGE_SORT_H
+#define SORT_MERGE_SORT_H
 
 #include <cmath>
 #include "kernel_operator.h"
 #include "op_kernel/platform_util.h"
 #include "kernel_tiling/kernel_tiling.h"
 #include "common/merge_sort_constants.h"
+#include "common/ping_pong_merge_sort.h"
 
 namespace Sort {
 using namespace AscendC;
 
+using MergeSortConstants::DEALING_SORT_NUM_ONCE;
+using MergeSortConstants::MERGE_LIST_MAX_NUM;
 using MergeSortConstants::XOR_OP_VALUE_FP;
 using MergeSortConstants::XOR_OP_VALUE_HALF;
 
-const uint32_t UB_AGLIN_VALUE = Ops::Base::GetUbBlockSize();
-const uint32_t CONCAT_AGLIN_VALUE = 16;
-// T1输入x dtype T2输出Idx dtype UT无符号的数据类型
-template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis = 0>
+constexpr uint32_t SORT_PING_PONG_UB_BLOCK_BYTES = Ops::Base::GetUbBlockSize();
+constexpr uint32_t SORT_PROPOSAL_BYTES = 8;
+
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t IsDescend>
 class MergeSort {
 public:
-    __aicore__ inline MergeSort(){};
+    __aicore__ inline MergeSort() {}
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR value, GM_ADDR sortIndex, GM_ADDR workspace,
                                 const SortRegBaseTilingData* __restrict tilingData, TPipe* pipe);
     __aicore__ inline void Process();
 
 private:
-    __aicore__ inline void ProcessSingleBlockSort(GlobalTensor<T1> inputX, int32_t sortLoopRound);
-    __aicore__ inline void ParserTilingData();
-    __aicore__ inline void CopyDataIn(GlobalTensor<T1> inputX, uint64_t tileOffset, uint32_t currTileSize,
-                                      uint32_t oneCoreRowNum);
-    __aicore__ inline void VbsMergeSortBf16(LocalTensor<bfloat16_t> xLocal, LocalTensor<T1> sortedValueLocal,
-                                            LocalTensor<uint32_t> sortedValueIndexLocal, uint32_t currTileSize,
-                                            uint32_t nowCoreRealRowNum);
-    __aicore__ inline void VbsMergeSort(LocalTensor<T1> xLocal, LocalTensor<T1> sortedValueLocal,
-                                        LocalTensor<uint32_t> sortedValueIndexLocal, uint32_t currTileSize,
-                                        uint32_t nowCoreRealRowNum);
-    __aicore__ inline void CopyValue2Gm(uint64_t gmOffset, uint64_t tileOffset, uint32_t outputLastDimValue,
-                                        uint32_t oneCoreRowNum);
-    __aicore__ inline void flipSignBit(LocalTensor<CONVERT_TYPE> xLocal, uint32_t offsetOneRow, uint32_t aglinTileSize);
+    __aicore__ inline void ParseTilingData();
+    __aicore__ inline uint32_t GetRowCount(uint32_t sortLoopRound) const;
+    __aicore__ inline void ProcessCurrentBlock(LocalTensor<T1> xLocal, uint32_t rowCount);
+    __aicore__ inline void CopyOutCurrentBlock(uint32_t sortLoopRound, uint32_t rowCount);
+    __aicore__ inline void ProcessSingleBlock(GlobalTensor<T1> inputX, int32_t sortLoopRound);
+    __aicore__ inline void CopyIn(GlobalTensor<T1> inputX, uint64_t tileOffset, uint32_t rowCount);
+    __aicore__ inline void CopyOut(uint64_t gmOffset, uint64_t tileOffset, uint32_t rowCount);
+    __aicore__ inline void SortRows(LocalTensor<T1> xLocal, LocalTensor<T1> valueLocal,
+                                    LocalTensor<uint32_t> indexLocal, uint32_t rowCount);
+    __aicore__ inline void SortBatchedRows(LocalTensor<T1> xLocal, LocalTensor<T1> valueLocal,
+                                           LocalTensor<uint32_t> indexLocal, uint32_t rowCount);
+    __aicore__ inline void SortRowsBf16(LocalTensor<bfloat16_t> xLocal, LocalTensor<T1> valueLocal,
+                                        LocalTensor<uint32_t> indexLocal, uint32_t rowCount);
+    __aicore__ inline void SortOneRow(LocalTensor<CONVERT_TYPE> dstValue, LocalTensor<uint32_t> dstIndex,
+                                      LocalTensor<CONVERT_TYPE> srcValue, uint32_t repeatTimes);
+    __aicore__ inline void FlipSignBit(LocalTensor<CONVERT_TYPE> tensor, uint32_t count);
 
-    GlobalTensor<T1> inputXGm_;
-    GlobalTensor<T1> outValueGm_;
-    GlobalTensor<T2> outIdxGm_;
+    GlobalTensor<T1> inputGm_;
+    GlobalTensor<T1> outputValueGm_;
+    GlobalTensor<T2> outputIndexGm_;
 
-    TPipe* pipe_;
-    // 599040 5120tile
-    const SortRegBaseTilingData* tilingData_;
-    TQue<QuePosition::VECIN, 1> inQueueX_;
-    TBuf<TPosition::VECCALC> tmpUb_;
-    TQue<QuePosition::VECOUT, 1> outIdxQueue_;
-    TQue<QuePosition::VECOUT, 1> outValueQueue_;
-    // merg sort
-    TBuf<TPosition::VECCALC> contCatTmpTbuf_;
-    TBuf<TPosition::VECCALC> indeXLocalTbuf_;
-    TBuf<TPosition::VECCALC> sortedTmpLocalTbuf_;
-    TBuf<TPosition::VECCALC> sortedLocalResTbuf_;
-    TBuf<TPosition::VECCALC> xLocalCastTbuf_;
-    TBuf<TPosition::VECCALC> sortedValueLocalCastTbuf_;
-    LocalTensor<uint32_t> indexLocal_;
+    TPipe* pipe_ = nullptr;
+    const SortRegBaseTilingData* tilingData_ = nullptr;
+    // InitBuffer selects one or two physical buffers; queue events protect reuse across batches.
+    TQue<QuePosition::VECIN, 2> inputQueue_;
+    TQue<QuePosition::VECOUT, 2> outputIndexQueue_;
+    TQue<QuePosition::VECOUT, 2> outputValueQueue_;
+    TBuf<TPosition::VECCALC> indexBuffer_;
+    TBuf<TPosition::VECCALC> proposalPingBuffer_;
+    TBuf<TPosition::VECCALC> proposalPongBuffer_;
+    TBuf<TPosition::VECCALC> castInputBuffer_;
+
+    LocalTensor<uint32_t> baseIndex_;
     uint32_t blockIdx_ = 0;
-    uint32_t oneCoreRowNum_ = 0;
-    uint32_t tmpUbSize_ = 0;
-    uint32_t numTileData_ = 0;
-    int64_t unsortedDimNum_ = 0;
-    uint32_t unsortedDimParallel_ = 0;
-    uint32_t sortLoopTimes_ = 0;
-    int64_t outputLastDimValue_ = 0;
-    uint32_t alignSize_ = 0;
+    uint32_t rowsPerBatch_ = 0;
+    uint32_t axisLength_ = 0;
+    int64_t totalRows_ = 0;
+    uint32_t parallelRows_ = 0;
+    uint32_t loopCount_ = 0;
+    uint32_t alignedAxis_ = 0;
+    bool batchMerge_ = false;
 };
 
-template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis>
-__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallAxis>::Init(
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t IsDescend>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, IsDescend>::Init(
     GM_ADDR x, GM_ADDR value, GM_ADDR sortIndex, GM_ADDR workspace, const SortRegBaseTilingData* __restrict tilingData,
     TPipe* pipe)
 {
+    (void)workspace;
     blockIdx_ = GetBlockIdx();
     pipe_ = pipe;
     tilingData_ = tilingData;
-    ParserTilingData();
-    inputXGm_.SetGlobalBuffer((__gm__ T1*)x);
-    outValueGm_.SetGlobalBuffer((__gm__ T1*)value);
-    outIdxGm_.SetGlobalBuffer((__gm__ T2*)sortIndex);
+    ParseTilingData();
+
+    inputGm_.SetGlobalBuffer((__gm__ T1*)x);
+    outputValueGm_.SetGlobalBuffer((__gm__ T1*)value);
+    outputIndexGm_.SetGlobalBuffer((__gm__ T2*)sortIndex);
 
     uint32_t bufferNum = tilingData_->keyParams4;
-    pipe_->InitBuffer(inQueueX_, bufferNum, tilingData_->keyParams1);
-    pipe_->InitBuffer(outValueQueue_, bufferNum, tilingData_->keyParams1);
-    pipe_->InitBuffer(outIdxQueue_, bufferNum, tilingData_->keyParams2);
-    pipe_->InitBuffer(tmpUb_, tmpUbSize_);
+    pipe_->InitBuffer(inputQueue_, bufferNum, tilingData_->keyParams1);
+    pipe_->InitBuffer(outputValueQueue_, bufferNum, tilingData_->keyParams1);
+    pipe_->InitBuffer(outputIndexQueue_, bufferNum, tilingData_->keyParams2);
 
-    uint32_t byteSize = 8;
-    uint32_t tmpBufferSize = alignSize_ * byteSize;
-    pipe_->InitBuffer(indeXLocalTbuf_, alignSize_ * sizeof(uint32_t));
-    pipe_->InitBuffer(contCatTmpTbuf_, tmpUbSize_);
-    pipe_->InitBuffer(sortedTmpLocalTbuf_, tmpBufferSize * sizeof(CONVERT_TYPE));
-    pipe_->InitBuffer(sortedLocalResTbuf_, tmpBufferSize * sizeof(CONVERT_TYPE));
-    pipe_->InitBuffer(xLocalCastTbuf_, alignSize_ * sizeof(CONVERT_TYPE) * oneCoreRowNum_);
-    pipe_->InitBuffer(sortedValueLocalCastTbuf_, alignSize_ * sizeof(CONVERT_TYPE) * oneCoreRowNum_);
-    indexLocal_ = indeXLocalTbuf_.AllocTensor<uint32_t>();
-    // init indexLocal value
-    __ubuf__ int32_t* indexValuePtr = (__ubuf__ int32_t*)indexLocal_.GetPhyAddr();
-    uint32_t vfLenB32 = Ops::Base::GetVRegSize() / sizeof(int32_t);
-    uint16_t repeatTime = CeilDivision(alignSize_, vfLenB32);
-    uint32_t aglinTileSizeCopy = alignSize_;
+    // Each proposal is 8 bytes. Merge levels alternate buffers so source and destination never alias.
+    uint32_t indexCount = alignedAxis_;
+    if constexpr (IsSameType<half, T1>::value && IsSameType<int64_t, T2>::value) {
+        if (batchMerge_) {
+            indexCount *= rowsPerBatch_;
+        }
+    }
+    uint32_t proposalBytes = indexCount * SORT_PROPOSAL_BYTES;
+    pipe_->InitBuffer(indexBuffer_, indexCount * sizeof(uint32_t));
+    pipe_->InitBuffer(proposalPingBuffer_, proposalBytes);
+    pipe_->InitBuffer(proposalPongBuffer_, proposalBytes);
+    if constexpr (IsSameType<bfloat16_t, T1>::value) {
+        pipe_->InitBuffer(castInputBuffer_, alignedAxis_ * sizeof(CONVERT_TYPE) * rowsPerBatch_);
+    }
+
+    baseIndex_ = indexBuffer_.AllocTensor<uint32_t>();
+    __ubuf__ int32_t* indexPtr = (__ubuf__ int32_t*)baseIndex_.GetPhyAddr();
+    uint32_t vectorLength = Ops::Base::GetVRegSize() / sizeof(int32_t);
+    uint16_t repeatTimes = CeilDivision(indexCount, vectorLength);
+    uint32_t remaining = indexCount;
     __VEC_SCOPE__
     {
-        Reg::RegTensor<int32_t> vciTensor;
-        Reg::RegTensor<int32_t> indexTensor;
-        Reg::Arange(vciTensor, 0);
-        for (uint16_t i = 0; i < repeatTime; i++) {
-            Reg::MaskReg vciMask = Reg::UpdateMask<uint32_t>(aglinTileSizeCopy);
-            Reg::Adds(indexTensor, vciTensor, i * vfLenB32, vciMask);
-            Reg::StoreAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(indexValuePtr, indexTensor, vfLenB32, vciMask);
+        Reg::RegTensor<int32_t> arange;
+        Reg::RegTensor<int32_t> index;
+        Reg::Arange(arange, 0);
+        for (uint16_t i = 0; i < repeatTimes; ++i) {
+            Reg::MaskReg mask = Reg::UpdateMask<uint32_t>(remaining);
+            Reg::Adds(index, arange, i * vectorLength, mask);
+            Reg::StoreAlign<int32_t, Reg::PostLiteral::POST_MODE_UPDATE>(indexPtr, index, vectorLength, mask);
         }
     }
 }
 
-template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis>
-__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallAxis>::ParserTilingData()
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t IsDescend>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, IsDescend>::ParseTilingData()
 {
-    oneCoreRowNum_ = tilingData_->keyParams0;
-    tmpUbSize_ = tilingData_->tmpUbSize;
-    numTileData_ = tilingData_->numTileDataSize;
-    unsortedDimNum_ = tilingData_->unsortedDimNum;
-    unsortedDimParallel_ = tilingData_->unsortedDimParallel;
-    sortLoopTimes_ = tilingData_->sortLoopTimes;
-    outputLastDimValue_ = tilingData_->lastAxisNum;
-    alignSize_ = tilingData_->keyParams3;
+    rowsPerBatch_ = tilingData_->keyParams0;
+    axisLength_ = tilingData_->numTileDataSize;
+    totalRows_ = tilingData_->unsortedDimNum;
+    parallelRows_ = tilingData_->unsortedDimParallel;
+    loopCount_ = tilingData_->sortLoopTimes;
+    alignedAxis_ = tilingData_->keyParams3;
+    batchMerge_ = tilingData_->keyParams5 != 0U;
 }
-template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis>
-__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallAxis>::CopyDataIn(
-    GlobalTensor<T1> inputX, uint64_t tileOffset, uint32_t currTileSize, uint32_t oneCoreRowNum)
-{
-    LocalTensor<T1> xLocal = inQueueX_.AllocTensor<T1>();
-    uint32_t localTensorLen = alignSize_ * oneCoreRowNum;
-    T1 defaultValue = static_cast<T1>(NAN);
-    if constexpr (isDescend == 1) {
-        defaultValue = static_cast<T1>(-INFINITY);
-    }
-    Duplicate(xLocal, defaultValue, localTensorLen);
-    event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE2));
-    SetFlag<HardEvent::V_MTE2>(eventId);
-    WaitFlag<HardEvent::V_MTE2>(eventId);
-    uint32_t currTileSizeAlign = ROUND_UP_AGLIN(currTileSize * sizeof(T1)) / sizeof(T1);
-    uint32_t dstStride = ((alignSize_ - currTileSizeAlign) * sizeof(T1)) / UB_AGLIN_VALUE;
-    DataCopyPadExtParams<T1> padParams;
-    padParams.isPad = true;
-    padParams.rightPadding = currTileSizeAlign - currTileSize;
-    padParams.paddingValue = static_cast<T1>(defaultValue);
-    DataCopyExtParams dataCopyParam;
-    dataCopyParam.blockCount = oneCoreRowNum;
-    dataCopyParam.blockLen = currTileSize * sizeof(T1);
-    dataCopyParam.srcStride = 0;
-    dataCopyParam.dstStride = dstStride;
-    DataCopyPad(xLocal, inputX[tileOffset], dataCopyParam, padParams);
-    inQueueX_.EnQue(xLocal);
-}
-template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis>
-__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallAxis>::flipSignBit(
-    LocalTensor<CONVERT_TYPE> xLocal, uint32_t offsetOneRow, uint32_t aglinTileSize)
+
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t IsDescend>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, IsDescend>::FlipSignBit(LocalTensor<CONVERT_TYPE> tensor,
+                                                                               uint32_t count)
 {
     if constexpr (IsSameType<float, CONVERT_TYPE>::value) {
-        AscendC::LocalTensor<int32_t> castTensor = xLocal[offsetOneRow].template ReinterpretCast<int32_t>();
-        AscendC::Adds(castTensor, castTensor, XOR_OP_VALUE_FP, aglinTileSize);
+        LocalTensor<int32_t> castTensor = tensor.template ReinterpretCast<int32_t>();
+        Adds(castTensor, castTensor, XOR_OP_VALUE_FP, count);
     } else if constexpr (IsSameType<half, CONVERT_TYPE>::value) {
-        AscendC::LocalTensor<int16_t> castTensor = xLocal[offsetOneRow].template ReinterpretCast<int16_t>();
-        AscendC::Adds(castTensor, castTensor, XOR_OP_VALUE_HALF, aglinTileSize);
+        LocalTensor<int16_t> castTensor = tensor.template ReinterpretCast<int16_t>();
+        Adds(castTensor, castTensor, XOR_OP_VALUE_HALF, count);
     }
 }
-template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis>
-__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallAxis>::VbsMergeSortBf16(
-    LocalTensor<bfloat16_t> xLocal, LocalTensor<T1> sortedValueLocal, LocalTensor<uint32_t> sortedValueIndexLocal,
-    uint32_t currTileSize, uint32_t nowCoreRealRowNum)
-{
-    uint32_t aglinTileSize = alignSize_;
-    uint32_t sortRepeatTimes = alignSize_ / UB_AGLIN_VALUE;
-    uint32_t concatRepeatTimes = alignSize_ / CONCAT_AGLIN_VALUE;
-    uint32_t extractRepeatTimes = sortRepeatTimes;
 
-    AscendC::LocalTensor<CONVERT_TYPE> concatTmpLocal = contCatTmpTbuf_.Get<CONVERT_TYPE>();
-    AscendC::LocalTensor<CONVERT_TYPE> sortedLocal = sortedLocalResTbuf_.Get<CONVERT_TYPE>();
-    AscendC::LocalTensor<CONVERT_TYPE> sortTmpLocal = sortedTmpLocalTbuf_.Get<CONVERT_TYPE>();
-    AscendC::LocalTensor<CONVERT_TYPE> xLocalCast = xLocalCastTbuf_.Get<CONVERT_TYPE>();
-    AscendC::LocalTensor<CONVERT_TYPE> sortedValueLocalCast = sortedValueLocalCastTbuf_.Get<CONVERT_TYPE>();
-    AscendC::Cast(xLocalCast, xLocal, AscendC::RoundMode::CAST_NONE, aglinTileSize * nowCoreRealRowNum);
-    for (int32_t round = 0; round < nowCoreRealRowNum; round++) {
-        uint32_t offsetOneRow = round * aglinTileSize;
-        if constexpr (isDescend == 0) {
-            flipSignBit(xLocalCast, offsetOneRow, aglinTileSize);
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t IsDescend>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, IsDescend>::SortOneRow(LocalTensor<CONVERT_TYPE> dstValue,
+                                                                              LocalTensor<uint32_t> dstIndex,
+                                                                              LocalTensor<CONVERT_TYPE> srcValue,
+                                                                              uint32_t repeatTimes)
+{
+    LocalTensor<CONVERT_TYPE> ping = proposalPingBuffer_.Get<CONVERT_TYPE>();
+    LocalTensor<CONVERT_TYPE> pong = proposalPongBuffer_.Get<CONVERT_TYPE>();
+    bool sourceIsPing = PingPongMergeSortCommon::SortToProposal(ping, pong, srcValue, baseIndex_, repeatTimes);
+    if (sourceIsPing) {
+        Extract(dstValue, dstIndex, ping, repeatTimes);
+    } else {
+        Extract(dstValue, dstIndex, pong, repeatTimes);
+    }
+}
+
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t IsDescend>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, IsDescend>::SortBatchedRows(LocalTensor<T1> xLocal,
+                                                                                   LocalTensor<T1> valueLocal,
+                                                                                   LocalTensor<uint32_t> indexLocal,
+                                                                                   uint32_t rowCount)
+{
+    uint32_t repeats = alignedAxis_ / DEALING_SORT_NUM_ONCE;
+    if constexpr (IsDescend == 0) {
+        FlipSignBit(xLocal, alignedAxis_ * rowCount);
+    }
+    LocalTensor<half> ping = proposalPingBuffer_.Get<half>();
+    LocalTensor<half> pong = proposalPongBuffer_.Get<half>();
+    // Sort32 and Extract consume contiguous rows. MergeStage stays row-local;
+    // Process all rows at each merge level before advancing to the next level.
+    Sort32(ping, xLocal, baseIndex_, repeats * rowCount);
+    uint32_t runLength = DEALING_SORT_NUM_ONCE;
+    uint32_t runCount = repeats;
+    bool inPing = true;
+    while (runCount > 1U) {
+        for (uint32_t row = 0; row < rowCount; ++row) {
+            uint32_t offset = GetSortOffset<half>(row * alignedAxis_);
+            if (inPing) {
+                PingPongMergeSortCommon::MergeStage(pong[offset], ping[offset], alignedAxis_, runLength, runCount);
+            } else {
+                PingPongMergeSortCommon::MergeStage(ping[offset], pong[offset], alignedAxis_, runLength, runCount);
+            }
         }
-        if constexpr (isSort32SmallAxis == 1) {
-            AscendC::Sort32<CONVERT_TYPE>(sortedLocal, xLocalCast[offsetOneRow], indexLocal_, 1);
+        inPing = !inPing;
+        runLength *= MERGE_LIST_MAX_NUM;
+        runCount = (runCount + MERGE_LIST_MAX_NUM - 1U) / MERGE_LIST_MAX_NUM;
+    }
+    Extract(valueLocal, indexLocal, inPing ? ping : pong, repeats * rowCount);
+    // Batched Sort32 used global-in-batch indices; expose row-relative indices.
+    for (uint32_t row = 1; row < rowCount; ++row) {
+        uint32_t offset = row * alignedAxis_;
+        LocalTensor<int32_t> indices = indexLocal[offset].template ReinterpretCast<int32_t>();
+        Adds(indices, indices, -static_cast<int32_t>(offset), alignedAxis_);
+    }
+    if constexpr (IsDescend == 0) {
+        FlipSignBit(valueLocal, alignedAxis_ * rowCount);
+    }
+}
+
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t IsDescend>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, IsDescend>::SortRows(LocalTensor<T1> xLocal,
+                                                                            LocalTensor<T1> valueLocal,
+                                                                            LocalTensor<uint32_t> indexLocal,
+                                                                            uint32_t rowCount)
+{
+    if constexpr (IsSameType<half, T1>::value && IsSameType<int64_t, T2>::value) {
+        if (batchMerge_ && rowCount >= SORT_BATCH_MERGE_MIN_ROWS) {
+            SortBatchedRows(xLocal, valueLocal, indexLocal, rowCount);
+            return;
+        }
+    }
+    uint32_t repeatTimes = alignedAxis_ / DEALING_SORT_NUM_ONCE;
+    if constexpr (IsDescend == 0) {
+        FlipSignBit(xLocal, alignedAxis_ * rowCount);
+    }
+    for (uint32_t row = 0, rowOffset = 0; row < rowCount; ++row, rowOffset += alignedAxis_) {
+        SortOneRow(valueLocal[rowOffset], indexLocal[rowOffset], xLocal[rowOffset], repeatTimes);
+    }
+    if constexpr (IsDescend == 0) {
+        FlipSignBit(valueLocal, alignedAxis_ * rowCount);
+    }
+}
+
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t IsDescend>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, IsDescend>::SortRowsBf16(LocalTensor<bfloat16_t> xLocal,
+                                                                                LocalTensor<T1> valueLocal,
+                                                                                LocalTensor<uint32_t> indexLocal,
+                                                                                uint32_t rowCount)
+{
+    LocalTensor<CONVERT_TYPE> castInput = castInputBuffer_.Get<CONVERT_TYPE>();
+    Cast(castInput, xLocal, RoundMode::CAST_NONE, alignedAxis_ * rowCount);
+    if constexpr (IsDescend == 0) {
+        FlipSignBit(castInput, alignedAxis_ * rowCount);
+    }
+    uint32_t repeatTimes = alignedAxis_ / DEALING_SORT_NUM_ONCE;
+    for (uint32_t row = 0, rowOffset = 0; row < rowCount; ++row, rowOffset += alignedAxis_) {
+        // SortToProposal has finished reading the row before Extract, so the cast input can hold the result.
+        SortOneRow(castInput[rowOffset], indexLocal[rowOffset], castInput[rowOffset], repeatTimes);
+    }
+    if constexpr (IsDescend == 0) {
+        FlipSignBit(castInput, alignedAxis_ * rowCount);
+    }
+    Cast(valueLocal, castInput, RoundMode::CAST_RINT, alignedAxis_ * rowCount);
+}
+
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t IsDescend>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, IsDescend>::CopyIn(GlobalTensor<T1> inputX, uint64_t tileOffset,
+                                                                          uint32_t rowCount)
+{
+    LocalTensor<T1> xLocal = inputQueue_.AllocTensor<T1>();
+    T1 paddingValue = static_cast<T1>(NAN);
+    if constexpr (IsDescend == 1) {
+        paddingValue = static_cast<T1>(-INFINITY);
+    }
+
+    uint32_t alignedCopyElements = ROUND_UP_AGLIN(axisLength_ * sizeof(T1)) / sizeof(T1);
+    uint32_t dmaPaddingElements = alignedCopyElements - axisLength_;
+    uint32_t vectorPaddingElements = alignedAxis_ - alignedCopyElements;
+    uint32_t dstStride = (vectorPaddingElements * sizeof(T1)) / SORT_PING_PONG_UB_BLOCK_BYTES;
+
+    // DataCopyPad supports at most one 32-byte block of padding. Let MTE2 fill the byte-alignment tail and
+    // fill any remaining Sort32 tail on Vector. The two writes are disjoint, so CopyIn needs no V_MTE2 event.
+    DataCopyPadExtParams<T1> padParams{true, 0, static_cast<uint8_t>(dmaPaddingElements), paddingValue};
+    DataCopyExtParams copyParams{static_cast<uint16_t>(rowCount), static_cast<uint32_t>(axisLength_ * sizeof(T1)), 0,
+                                 static_cast<int64_t>(dstStride), 0};
+    DataCopyPad(xLocal, inputX[tileOffset], copyParams, padParams);
+
+    constexpr uint32_t maxDuplicateRepeatStride = 255U;
+    if (vectorPaddingElements > 0U) {
+        uint32_t rowStride = (alignedAxis_ * sizeof(T1)) / SORT_PING_PONG_UB_BLOCK_BYTES;
+        if (rowCount == 1U || rowStride <= maxDuplicateRepeatStride) {
+            uint8_t repeatStride = rowCount == 1U ? 0U : static_cast<uint8_t>(rowStride);
+            Duplicate(xLocal[alignedCopyElements], paddingValue, static_cast<uint64_t>(vectorPaddingElements),
+                      static_cast<uint8_t>(rowCount), 1U, repeatStride);
         } else {
-            AscendC::LocalTensor<CONVERT_TYPE> concatLocal;
-            AscendC::Concat(concatLocal, xLocalCast[offsetOneRow], concatTmpLocal, concatRepeatTimes);
-            AscendC::Sort<CONVERT_TYPE, true>(sortedLocal, concatLocal, indexLocal_, sortTmpLocal, sortRepeatTimes);
-        }
-        // isSort32SmallAxis enables compile-time repeatTimes=1 for hardware Extract fast path
-        AscendC::Extract(sortedValueLocalCast[offsetOneRow], sortedValueIndexLocal[offsetOneRow], sortedLocal,
-                         isSort32SmallAxis == 1 ? 1 : extractRepeatTimes);
-        if constexpr (isDescend == 0) {
-            flipSignBit(sortedValueLocalCast, offsetOneRow, aglinTileSize);
+            for (uint32_t row = 0U; row < rowCount; ++row) {
+                Duplicate(xLocal[row * alignedAxis_ + alignedCopyElements], paddingValue,
+                          static_cast<int32_t>(vectorPaddingElements));
+            }
         }
     }
-    AscendC::Cast(sortedValueLocal, sortedValueLocalCast, AscendC::RoundMode::CAST_RINT,
-                  aglinTileSize * nowCoreRealRowNum);
+    inputQueue_.EnQue(xLocal);
 }
-template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis>
-__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallAxis>::VbsMergeSort(
-    LocalTensor<T1> xLocal, LocalTensor<T1> sortedValueLocal, LocalTensor<uint32_t> sortedValueIndexLocal,
-    uint32_t currTileSize, uint32_t nowCoreRealRowNum)
-{
-    uint32_t sortRepeatTimes = alignSize_ / UB_AGLIN_VALUE;
-    uint32_t concatRepeatTimes = alignSize_ / CONCAT_AGLIN_VALUE;
-    uint32_t extractRepeatTimes = sortRepeatTimes;
 
-    AscendC::LocalTensor<CONVERT_TYPE> concatTmpLocal = contCatTmpTbuf_.Get<CONVERT_TYPE>();
-    AscendC::LocalTensor<CONVERT_TYPE> sortedLocal = sortedLocalResTbuf_.Get<CONVERT_TYPE>();
-    AscendC::LocalTensor<CONVERT_TYPE> sortTmpLocal = sortedTmpLocalTbuf_.Get<CONVERT_TYPE>();
-    for (int32_t round = 0; round < nowCoreRealRowNum; round++) {
-        uint32_t offsetOneRow = round * alignSize_;
-        if constexpr (isDescend == 0) {
-            flipSignBit(xLocal, offsetOneRow, alignSize_);
-        }
-        if constexpr (isSort32SmallAxis == 1) {
-            AscendC::Sort32<T1>(sortedLocal, xLocal[offsetOneRow], indexLocal_, 1);
-        } else {
-            AscendC::LocalTensor<CONVERT_TYPE> concatLocal;
-            AscendC::Concat(concatLocal, xLocal[offsetOneRow], concatTmpLocal, concatRepeatTimes);
-            // sort API中，index必须是int32_t
-            AscendC::Sort<CONVERT_TYPE, true>(sortedLocal, concatLocal, indexLocal_, sortTmpLocal, sortRepeatTimes);
-        }
-        // 处理sort后的结果数据，输出排序后的value和index
-        // isSort32SmallAxis enables compile-time repeatTimes=1 for hardware Extract fast path
-        AscendC::Extract(sortedValueLocal[offsetOneRow], sortedValueIndexLocal[offsetOneRow], sortedLocal,
-                         isSort32SmallAxis == 1 ? 1 : extractRepeatTimes);
-        if constexpr (isDescend == 0) {
-            flipSignBit(sortedValueLocal, offsetOneRow, alignSize_);
-        }
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t IsDescend>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, IsDescend>::CopyOut(uint64_t gmOffset, uint64_t tileOffset,
+                                                                           uint32_t rowCount)
+{
+    uint32_t alignedValueElements = ROUND_UP_AGLIN(axisLength_ * sizeof(T1)) / sizeof(T1);
+    uint32_t valueStride = ((alignedAxis_ - alignedValueElements) * sizeof(T1)) / SORT_PING_PONG_UB_BLOCK_BYTES;
+    uint32_t alignedIndexElements = ROUND_UP_AGLIN(axisLength_ * sizeof(T2)) / sizeof(T2);
+    uint32_t indexStride = ((alignedAxis_ - alignedIndexElements) * sizeof(T2)) / SORT_PING_PONG_UB_BLOCK_BYTES;
+
+    LocalTensor<T1> valueLocal = outputValueQueue_.DeQue<T1>();
+    LocalTensor<T2> indexLocal = outputIndexQueue_.DeQue<T2>();
+    DataCopyExtParams valueParams{static_cast<uint16_t>(rowCount), static_cast<uint32_t>(axisLength_ * sizeof(T1)),
+                                  valueStride, 0, 0};
+    DataCopyPad(outputValueGm_[gmOffset + tileOffset], valueLocal, valueParams);
+    DataCopyExtParams indexParams{static_cast<uint16_t>(rowCount), static_cast<uint32_t>(axisLength_ * sizeof(T2)),
+                                  indexStride, 0, 0};
+    DataCopyPad(outputIndexGm_[gmOffset + tileOffset], indexLocal, indexParams);
+    outputIndexQueue_.FreeTensor(indexLocal);
+    outputValueQueue_.FreeTensor(valueLocal);
+}
+
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t IsDescend>
+__aicore__ inline uint32_t MergeSort<T1, T2, CONVERT_TYPE, IsDescend>::GetRowCount(uint32_t sortLoopRound) const
+{
+    int64_t rowStart = (blockIdx_ + sortLoopRound * parallelRows_) * rowsPerBatch_;
+    if (rowStart >= totalRows_) {
+        return 0U;
     }
+    uint32_t rowCount = rowsPerBatch_;
+    int64_t remainingRows = totalRows_ - rowStart;
+    if (remainingRows < static_cast<int64_t>(rowsPerBatch_)) {
+        rowCount = static_cast<uint32_t>(remainingRows);
+    }
+    return rowCount;
 }
 
-template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis>
-__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallAxis>::CopyValue2Gm(
-    uint64_t gmOffset, uint64_t tileOffset, uint32_t outputLastDimValue, uint32_t oneCoreRowNum)
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t IsDescend>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, IsDescend>::ProcessCurrentBlock(LocalTensor<T1> xLocal,
+                                                                                       uint32_t rowCount)
 {
-    // value stride
-    uint32_t currTileSizeAlign = ROUND_UP_AGLIN(outputLastDimValue * sizeof(T1)) / sizeof(T1);
-    uint32_t ubStrideValue = ((alignSize_ - currTileSizeAlign) * sizeof(T1)) / UB_AGLIN_VALUE;
-    // index stride
-    uint32_t currSrcTileIndexSizeAlign = ROUND_UP_AGLIN(outputLastDimValue * sizeof(int32_t)) / sizeof(int32_t);
-    uint32_t ubSrcStrideIndex = ((alignSize_ - currSrcTileIndexSizeAlign) * sizeof(int32_t)) / UB_AGLIN_VALUE;
+    LocalTensor<T1> valueLocal = outputValueQueue_.AllocTensor<T1>();
 
-    uint32_t currTileIndexSizeAlign = ROUND_UP_AGLIN(outputLastDimValue * sizeof(T2)) / sizeof(T2);
-    uint32_t ubStrideIndex = ((alignSize_ - currTileIndexSizeAlign) * sizeof(T2)) / UB_AGLIN_VALUE;
-    // copy result out
-    AscendC::LocalTensor<T1> outValueLocal = outValueQueue_.DeQue<T1>();
-    AscendC::LocalTensor<T2> outIndexLocal = outIdxQueue_.DeQue<T2>();
-    AscendC::DataCopyExtParams dataCopyParamValue{static_cast<uint16_t>(oneCoreRowNum),
-                                                  static_cast<uint32_t>(outputLastDimValue * sizeof(T1)), ubStrideValue,
-                                                  0, 0};
-    AscendC::DataCopyPad(outValueGm_[gmOffset + tileOffset], outValueLocal, dataCopyParamValue);
+    LocalTensor<int64_t> indexInt64Local;
+    LocalTensor<uint32_t> indexUint32Local;
+    if constexpr (IsSameType<int64_t, T2>::value) {
+        indexInt64Local = outputIndexQueue_.AllocTensor<int64_t>();
+        uint32_t rowElements = alignedAxis_ * rowsPerBatch_;
+        indexUint32Local = indexInt64Local.template ReinterpretCast<uint32_t>()[rowElements];
+    } else {
+        indexUint32Local = outputIndexQueue_.AllocTensor<uint32_t>();
+    }
 
-    AscendC::DataCopyExtParams dataCopyParamIndex{
-        static_cast<uint16_t>(oneCoreRowNum),                   // 连续数据块的个数
-        static_cast<uint32_t>(outputLastDimValue * sizeof(T2)), // 每个连续传输数据块的长度，长度为Byte
-        ubStrideIndex,                                          // 源操作数，相邻连续数据块的间隔
-        0,                                                      // 目的操作数，相邻连续数据块的间隔
-        0};
-    AscendC::DataCopyPad(outIdxGm_[gmOffset + tileOffset], outIndexLocal, dataCopyParamIndex);
-    outIdxQueue_.FreeTensor(outIndexLocal);
-    outValueQueue_.FreeTensor(outValueLocal);
+    if constexpr (IsSameType<bfloat16_t, T1>::value) {
+        SortRowsBf16(xLocal, valueLocal, indexUint32Local, rowCount);
+    } else {
+        SortRows(xLocal, valueLocal, indexUint32Local, rowCount);
+    }
+
+    if constexpr (IsSameType<int64_t, T2>::value) {
+        LocalTensor<int32_t> indexInt32Local = indexUint32Local.template ReinterpretCast<int32_t>();
+        Cast(indexInt64Local, indexInt32Local, RoundMode::CAST_NONE, rowCount * alignedAxis_);
+        outputIndexQueue_.EnQue<int64_t>(indexInt64Local);
+    } else {
+        outputIndexQueue_.EnQue<uint32_t>(indexUint32Local);
+    }
+    outputValueQueue_.EnQue<T1>(valueLocal);
+    inputQueue_.FreeTensor(xLocal);
 }
-template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis>
-__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallAxis>::ProcessSingleBlockSort(
-    GlobalTensor<T1> inputX, int32_t sortLoopRound)
+
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t IsDescend>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, IsDescend>::CopyOutCurrentBlock(uint32_t sortLoopRound,
+                                                                                       uint32_t rowCount)
 {
-    int64_t unsortedDimIndex = (blockIdx_ + sortLoopRound * unsortedDimParallel_) * oneCoreRowNum_;
-    if (unsortedDimIndex >= unsortedDimNum_) {
+    uint64_t gmOffset = sortLoopRound * parallelRows_ * axisLength_ * rowsPerBatch_;
+    uint64_t outputTileOffset = blockIdx_ * axisLength_ * rowsPerBatch_;
+    CopyOut(gmOffset, outputTileOffset, rowCount);
+}
+
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t IsDescend>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, IsDescend>::ProcessSingleBlock(GlobalTensor<T1> inputX,
+                                                                                      int32_t sortLoopRound)
+{
+    uint32_t rowCount = GetRowCount(static_cast<uint32_t>(sortLoopRound));
+    if (rowCount == 0U) {
         return;
     }
-    uint32_t nowCoreRealRowNum = oneCoreRowNum_;
-    int64_t remainNum = unsortedDimNum_ - unsortedDimIndex;
-    if (remainNum < static_cast<int64_t>(oneCoreRowNum_)) {
-        nowCoreRealRowNum = static_cast<uint32_t>(remainNum);
-    }
-    // offset
-    uint64_t tileOffset = blockIdx_ * numTileData_ * oneCoreRowNum_;
-    // copy data
-    CopyDataIn(inputX, tileOffset, numTileData_, nowCoreRealRowNum);
-    AscendC::LocalTensor<T1> xLocal = inQueueX_.DeQue<T1>();
 
-    AscendC::LocalTensor<T1> sortedValueLocal = outValueQueue_.AllocTensor<T1>();
-    // get buffer
-    AscendC::LocalTensor<int64_t> sortedValueIndexInt64Local;
-    AscendC::LocalTensor<uint32_t> sortedValueIndexLocal;
-    if constexpr (IsSameType<int64_t, T2>::value) {
-        sortedValueIndexInt64Local = outIdxQueue_.AllocTensor<int64_t>();
-        uint32_t realNum = alignSize_ * oneCoreRowNum_;
-        sortedValueIndexLocal = sortedValueIndexInt64Local.template ReinterpretCast<uint32_t>()[realNum];
-    } else {
-        sortedValueIndexLocal = outIdxQueue_.AllocTensor<uint32_t>();
-    }
-    if constexpr (IsSameType<bfloat16_t, T1>::value) {
-        VbsMergeSortBf16(xLocal, sortedValueLocal, sortedValueIndexLocal, numTileData_, nowCoreRealRowNum);
-    } else {
-        VbsMergeSort(xLocal, sortedValueLocal, sortedValueIndexLocal, numTileData_, nowCoreRealRowNum);
-    }
-    if constexpr (IsSameType<int64_t, T2>::value) {
-        AscendC::LocalTensor<int32_t> sortedValueIndexInt32Local = sortedValueIndexLocal
-                                                                       .template ReinterpretCast<int32_t>();
-        AscendC::Cast(sortedValueIndexInt64Local, sortedValueIndexInt32Local, AscendC::RoundMode::CAST_NONE,
-                      nowCoreRealRowNum * alignSize_);
-        outIdxQueue_.EnQue<int64_t>(sortedValueIndexInt64Local);
-    } else {
-        outIdxQueue_.EnQue<uint32_t>(sortedValueIndexLocal);
-    }
-    outValueQueue_.EnQue<T1>(sortedValueLocal);
-    inQueueX_.FreeTensor(xLocal);
-    // copy result out
-    uint64_t gmOffset = sortLoopRound * unsortedDimParallel_ * outputLastDimValue_ * oneCoreRowNum_;
-    uint64_t answerTileOffset = blockIdx_ * outputLastDimValue_ * oneCoreRowNum_;
-
-    CopyValue2Gm(gmOffset, answerTileOffset, outputLastDimValue_, nowCoreRealRowNum);
+    uint64_t inputTileOffset = blockIdx_ * axisLength_ * rowsPerBatch_;
+    CopyIn(inputX, inputTileOffset, rowCount);
+    LocalTensor<T1> xLocal = inputQueue_.DeQue<T1>();
+    ProcessCurrentBlock(xLocal, rowCount);
+    CopyOutCurrentBlock(static_cast<uint32_t>(sortLoopRound), rowCount);
 }
-template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t isDescend, uint64_t isSort32SmallAxis>
-__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, isDescend, isSort32SmallAxis>::Process()
+
+template <typename T1, typename T2, typename CONVERT_TYPE, uint64_t IsDescend>
+__aicore__ inline void MergeSort<T1, T2, CONVERT_TYPE, IsDescend>::Process()
 {
     if (blockIdx_ >= GetBlockNum()) {
         return;
     }
-    for (int32_t i = 0; i < sortLoopTimes_; i++) {
-        uint64_t loopOffset = i * unsortedDimParallel_ * oneCoreRowNum_ * numTileData_;
-        ProcessSingleBlockSort(inputXGm_[loopOffset], i);
+
+    for (uint32_t loop = 0; loop < loopCount_; ++loop) {
+        uint64_t loopOffset = loop * parallelRows_ * rowsPerBatch_ * axisLength_;
+        ProcessSingleBlock(inputGm_[loopOffset], static_cast<int32_t>(loop));
     }
 }
+
 } // namespace Sort
-#endif // namespace MergeSort
+
+#endif // SORT_MERGE_SORT_H

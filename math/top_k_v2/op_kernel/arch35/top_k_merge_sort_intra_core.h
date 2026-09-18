@@ -34,10 +34,10 @@ template <typename ValueType, typename IndexType, bool IsDescend>
 class TopKMergeSortIntraCore : public Sort::SortMergeIntraCore<ValueType, IndexType, IsDescend> {
 public:
     using Base = Sort::SortMergeIntraCore<ValueType, IndexType, IsDescend>;
-    
+
     __aicore__ inline TopKMergeSortIntraCore() : Base() {}
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR value, GM_ADDR indices, GM_ADDR workspace,
-        const TopKV2TilingDataSimd* tilingData, TPipe* pipe);
+                                const TopKV2TilingDataSimd* tilingData, TPipe* pipe);
     __aicore__ inline void Process();
 
 private:
@@ -45,26 +45,25 @@ private:
 
     __aicore__ inline uint32_t MergeSingleBatch();
     __aicore__ inline void DoIncrementalMerge(int64_t dstOffsetBase, typename Base::MergeListContext& ctx);
-    __aicore__ inline void MergeOneGroup(uint32_t groupStart, uint32_t groupBlockCount,
-        uint32_t fullBlockElemCount, uint32_t fullBlockSortLen, uint32_t lastBlockElemCount,
-        uint32_t numBlocks, uint32_t pingPongFlag, uint32_t& cumulativeOffset,
-        uint32_t& mergedGroupElemCount);
-    __aicore__ inline void CopyRemainingList(typename Base::MergeListContext& ctx,
-        int64_t dstOffsetBase, uint32_t& dstCumulativeOffset, uint32_t& dstElemCount);
+    __aicore__ inline void MergeOneGroup(uint32_t groupStart, uint32_t groupBlockCount, uint32_t fullBlockElemCount,
+                                         uint32_t fullBlockSortLen, uint32_t lastBlockElemCount, uint32_t numBlocks,
+                                         uint32_t pingPongFlag, uint32_t& cumulativeOffset,
+                                         uint32_t& mergedGroupElemCount);
+    __aicore__ inline void CopyRemainingList(typename Base::MergeListContext& ctx, int64_t dstOffsetBase,
+                                             uint32_t& dstCumulativeOffset, uint32_t& dstElemCount);
     __aicore__ inline void ExtractAndCopyOut(int64_t batchIdx, uint32_t resultRegion);
 };
 
 template <typename ValueType, typename IndexType, bool IsDescend>
 __aicore__ inline void TopKMergeSortIntraCore<ValueType, IndexType, IsDescend>::Init(
-    GM_ADDR x, GM_ADDR value, GM_ADDR indices, GM_ADDR workspace,
-    const TopKV2TilingDataSimd* tilingData, TPipe* pipe)
+    GM_ADDR x, GM_ADDR value, GM_ADDR indices, GM_ADDR workspace, const TopKV2TilingDataSimd* tilingData, TPipe* pipe)
 {
     if (tilingData == nullptr || pipe == nullptr) {
         return;
     }
-    
+
     topKValue_ = static_cast<uint32_t>(tilingData->topKRealValue);
-    
+
     SortRegBaseTilingData sortTilingData;
     sortTilingData.unsortedDimNum = tilingData->unsortedDimNum;
     sortTilingData.lastAxisNum = tilingData->lastAxisNum;
@@ -75,7 +74,7 @@ __aicore__ inline void TopKMergeSortIntraCore<ValueType, IndexType, IsDescend>::
     sortTilingData.keyParams3 = tilingData->keyParams3;
     sortTilingData.keyParams4 = tilingData->keyParams4;
     sortTilingData.keyParams5 = tilingData->keyParams5;
-    
+
     Base::Init(x, value, indices, workspace, &sortTilingData, pipe);
 }
 
@@ -84,16 +83,16 @@ __aicore__ inline void TopKMergeSortIntraCore<ValueType, IndexType, IsDescend>::
 {
     // Calculate batch range for this core
     int64_t startBatch = static_cast<int64_t>(this->blockIdx_) * this->batchPerCore_;
-    int64_t endBatch = (startBatch + this->batchPerCore_ < this->batchNum_) ?
-                       (startBatch + this->batchPerCore_) : this->batchNum_;
+    int64_t endBatch = (startBatch + this->batchPerCore_ < this->batchNum_) ? (startBatch + this->batchPerCore_) :
+                                                                              this->batchNum_;
 
     if (startBatch >= this->batchNum_) {
-        return;  // This core has no work
+        return; // This core has no work
     }
 
     // Process each batch through all 3 phases before moving to the next batch.
-    // This allows cache (workspace) to be reused across batches within the same core,
-    
+    // This allows cache (workspace) to be reused across batches within the same core.
+
     // Precompute buffer sizes (loop-invariant)
     uint32_t mergeBufferSize = Sort::MERGE_LIST_MAX_NUM * this->sortBufferSize_;
     uint32_t extractInSize = AscendC::GetSortLen<ValueType>(this->extractChunkSize_) * sizeof(ValueType);
@@ -101,7 +100,6 @@ __aicore__ inline void TopKMergeSortIntraCore<ValueType, IndexType, IsDescend>::
     for (int64_t batchIdx = startBatch; batchIdx < endBatch; batchIdx++) {
         // ========== Phase 1: Sort blocks in UB ==========
         this->pipe_->InitBuffer(this->inQueueX_, DOUBLE_BUFFER, this->blockSortSize_ * sizeof(ValueType));
-        this->pipe_->InitBuffer(this->concatTmpBuf_, this->sortBufferSize_);
         this->pipe_->InitBuffer(this->sortTmpBuf_, this->sortBufferSize_);
         this->pipe_->InitBuffer(this->sortedOutQueue_, DOUBLE_BUFFER, this->sortBufferSize_);
         this->pipe_->InitBuffer(this->indexTmpBuf_, this->blockSortSize_ * sizeof(uint32_t));
@@ -158,23 +156,23 @@ __aicore__ inline uint32_t TopKMergeSortIntraCore<ValueType, IndexType, IsDescen
         uint32_t newLastBlockElemCount = 0;
 
         for (uint32_t i = 0; i < numBlocks; i += Sort::MERGE_LIST_MAX_NUM) {
-            uint32_t groupBlockCount = (i + Sort::MERGE_LIST_MAX_NUM <= numBlocks) ?
-                Sort::MERGE_LIST_MAX_NUM : (numBlocks - i);
+            uint32_t groupBlockCount = (i + Sort::MERGE_LIST_MAX_NUM <= numBlocks) ? Sort::MERGE_LIST_MAX_NUM :
+                                                                                     (numBlocks - i);
 
             uint32_t mergedGroupElemCount = 0;
-            MergeOneGroup(i, groupBlockCount, fullBlockElemCount, fullBlockSortLen, lastBlockElemCount, 
-                numBlocks, pingPongFlag, cumulativeOffset, mergedGroupElemCount);
+            MergeOneGroup(i, groupBlockCount, fullBlockElemCount, fullBlockSortLen, lastBlockElemCount, numBlocks,
+                          pingPongFlag, cumulativeOffset, mergedGroupElemCount);
             if (newNumBlocks == 0) {
                 newFullBlockElemCount = mergedGroupElemCount;
             }
             newLastBlockElemCount = mergedGroupElemCount;
             newNumBlocks++;
         }
-        
+
         if (newNumBlocks == 0 || newNumBlocks >= numBlocks) {
             break;
         }
-        
+
         numBlocks = newNumBlocks;
         if (numBlocks == 1) {
             fullBlockElemCount = newLastBlockElemCount;
@@ -195,14 +193,13 @@ __aicore__ inline uint32_t TopKMergeSortIntraCore<ValueType, IndexType, IsDescen
 
 template <typename ValueType, typename IndexType, bool IsDescend>
 __aicore__ inline void TopKMergeSortIntraCore<ValueType, IndexType, IsDescend>::MergeOneGroup(
-    uint32_t groupStart, uint32_t groupBlockCount,
-    uint32_t fullBlockElemCount, uint32_t fullBlockSortLen, uint32_t lastBlockElemCount,
-    uint32_t numBlocks, uint32_t pingPongFlag, uint32_t& cumulativeOffset,
+    uint32_t groupStart, uint32_t groupBlockCount, uint32_t fullBlockElemCount, uint32_t fullBlockSortLen,
+    uint32_t lastBlockElemCount, uint32_t numBlocks, uint32_t pingPongFlag, uint32_t& cumulativeOffset,
     uint32_t& mergedGroupElemCount)
 {
     typename Base::MergeListContext ctx;
     ctx.listCount = groupBlockCount;
-    
+
     int64_t srcRegionOffset = (pingPongFlag == 0) ? 0 : this->batchSortLen_;
     int64_t dstRegionOffset = (pingPongFlag == 0) ? this->batchSortLen_ : 0;
 
@@ -219,18 +216,20 @@ __aicore__ inline void TopKMergeSortIntraCore<ValueType, IndexType, IsDescend>::
         for (uint32_t j = 0; j < groupBlockCount; j++) {
             totalElem += ctx.elemCounts[j];
         }
-        mergedGroupElemCount = (totalElem > topKValue_) ? topKValue_ : totalElem;  // TopK limitation
+        mergedGroupElemCount = (totalElem > topKValue_) ? topKValue_ : totalElem; // TopK limitation
         cumulativeOffset += AscendC::GetSortLen<ValueType>(mergedGroupElemCount);
     } else if (groupBlockCount == 1) {
-        mergedGroupElemCount = (ctx.elemCounts[0] > topKValue_) ? topKValue_ : ctx.elemCounts[0];  // TopK limitation
+        mergedGroupElemCount = (ctx.elemCounts[0] > topKValue_) ? topKValue_ : ctx.elemCounts[0]; // TopK limitation
         if (ctx.elemCounts[0] > 0) {
             int64_t srcOffset = ctx.srcOffsets[0];
             uint32_t remainElems = mergedGroupElemCount;
             uint32_t srcChunkOffset = 0;
             while (remainElems > 0) {
                 uint32_t chunkSize = (remainElems > this->blockSortSize_) ? this->blockSortSize_ : remainElems;
-                if (chunkSize == 0) break;
-                this->CopyBlockChunk(srcOffset + AscendC::GetSortLen<ValueType>(srcChunkOffset),
+                if (chunkSize == 0)
+                    break;
+                this->CopyBlockChunk(
+                    srcOffset + AscendC::GetSortLen<ValueType>(srcChunkOffset),
                     dstRegionOffset + cumulativeOffset + AscendC::GetSortLen<ValueType>(srcChunkOffset), chunkSize);
                 remainElems -= chunkSize;
                 srcChunkOffset += chunkSize;
@@ -244,19 +243,22 @@ template <typename ValueType, typename IndexType, bool IsDescend>
 __aicore__ inline void TopKMergeSortIntraCore<ValueType, IndexType, IsDescend>::DoIncrementalMerge(
     int64_t dstOffsetBase, typename Base::MergeListContext& ctx)
 {
-    if (ctx.listCount > Sort::MERGE_LIST_MAX_NUM) return;
+    if (ctx.listCount > Sort::MERGE_LIST_MAX_NUM)
+        return;
 
     for (uint32_t i = 0; i < ctx.listCount; i++) {
         ctx.remains[i] = ctx.elemCounts[i];
     }
-    
+
     uint32_t dstCumulativeOffset = 0, dstElemCount = 0, loopGuard = 0;
-    while (dstElemCount < topKValue_) {  // TopK: early termination
+    while (dstElemCount < topKValue_) { // TopK: early termination
         uint32_t activeLists = 0;
         for (uint32_t i = 0; i < ctx.listCount; i++) {
-            if (ctx.remains[i] > 0) activeLists++;
+            if (ctx.remains[i] > 0)
+                activeLists++;
         }
-        if (activeLists <= 1) break;
+        if (activeLists <= 1)
+            break;
 
         LocalTensor<ValueType> ubMainInput = this->mergeInQueue_.template AllocTensor<ValueType>();
         uint16_t elementCountList[Sort::MERGE_LIST_MAX_NUM] = {0, 0, 0, 0};
@@ -267,8 +269,8 @@ __aicore__ inline void TopKMergeSortIntraCore<ValueType, IndexType, IsDescend>::
         LocalTensor<ValueType> dstLocal = this->mergeOutQueue_.template AllocTensor<ValueType>();
 
         uint32_t listSortedNums[Sort::MERGE_LIST_MAX_NUM] = {0, 0, 0, 0};
-        uint32_t mergedCount = this->ExecuteMrgSort(dstLocal, ubMainInputCalc,
-            elementCountList, listSortedNums, remainListNum);
+        uint32_t mergedCount = this->ExecuteMrgSort(dstLocal, ubMainInputCalc, elementCountList, listSortedNums,
+                                                    remainListNum);
         if (mergedCount == 0) {
             this->mergeInQueue_.FreeTensor(ubMainInputCalc);
             this->mergeOutQueue_.FreeTensor(dstLocal);
@@ -280,10 +282,11 @@ __aicore__ inline void TopKMergeSortIntraCore<ValueType, IndexType, IsDescend>::
 
         LocalTensor<ValueType> dstLocalOut = this->mergeOutQueue_.template DeQue<ValueType>();
         uint32_t copyCount = mergedCount;
-        if (dstElemCount + copyCount > topKValue_) {  // TopK: limit output
+        if (dstElemCount + copyCount > topKValue_) { // TopK: limit output
             copyCount = topKValue_ - dstElemCount;
         }
-        DataCopyExtParams outCopyParams{1, static_cast<uint32_t>(AscendC::GetSortLen<ValueType>(copyCount) * sizeof(ValueType)), 0, 0, 0};
+        DataCopyExtParams outCopyParams{
+            1, static_cast<uint32_t>(AscendC::GetSortLen<ValueType>(copyCount) * sizeof(ValueType)), 0, 0, 0};
         DataCopyPad(this->cacheGm_[dstOffsetBase + dstCumulativeOffset], dstLocalOut, outCopyParams);
         this->mergeOutQueue_.FreeTensor(dstLocalOut);
 
@@ -297,7 +300,8 @@ __aicore__ inline void TopKMergeSortIntraCore<ValueType, IndexType, IsDescend>::
         }
         dstCumulativeOffset += AscendC::GetSortLen<ValueType>(copyCount);
         dstElemCount += copyCount;
-        if (++loopGuard > this->maxMergeIterations_) break;
+        if (++loopGuard > this->maxMergeIterations_)
+            break;
     }
 
     CopyRemainingList(ctx, dstOffsetBase, dstCumulativeOffset, dstElemCount);
@@ -307,18 +311,20 @@ template <typename ValueType, typename IndexType, bool IsDescend>
 __aicore__ inline void TopKMergeSortIntraCore<ValueType, IndexType, IsDescend>::CopyRemainingList(
     typename Base::MergeListContext& ctx, int64_t dstOffsetBase, uint32_t& dstCumulativeOffset, uint32_t& dstElemCount)
 {
-    for (uint32_t listIdx = 0; listIdx < ctx.listCount && dstElemCount < topKValue_; listIdx++) {  // TopK: early stop
+    for (uint32_t listIdx = 0; listIdx < ctx.listCount && dstElemCount < topKValue_; listIdx++) { // TopK: early stop
         while (ctx.remains[listIdx] > 0) {
             if (dstElemCount >= topKValue_) {
                 break;
             }
-            uint32_t loadCount = (ctx.remains[listIdx] > this->blockSortSize_) ? this->blockSortSize_ : ctx.remains[listIdx];
+            uint32_t loadCount = (ctx.remains[listIdx] > this->blockSortSize_) ? this->blockSortSize_ :
+                                                                                 ctx.remains[listIdx];
             uint32_t remainingTopK = topKValue_ - dstElemCount;
-            loadCount = (loadCount > remainingTopK) ? remainingTopK : loadCount;  // TopK: limit chunk
-            if (loadCount == 0) break;
-            
-            this->CopyBlockChunk(ctx.srcOffsets[listIdx] + ctx.gmOffsets[listIdx],
-                dstOffsetBase + dstCumulativeOffset, loadCount);
+            loadCount = (loadCount > remainingTopK) ? remainingTopK : loadCount; // TopK: limit chunk
+            if (loadCount == 0)
+                break;
+
+            this->CopyBlockChunk(ctx.srcOffsets[listIdx] + ctx.gmOffsets[listIdx], dstOffsetBase + dstCumulativeOffset,
+                                 loadCount);
 
             ctx.gmOffsets[listIdx] += AscendC::GetSortLen<ValueType>(loadCount);
             ctx.remains[listIdx] -= loadCount;
@@ -329,21 +335,22 @@ __aicore__ inline void TopKMergeSortIntraCore<ValueType, IndexType, IsDescend>::
 }
 
 template <typename ValueType, typename IndexType, bool IsDescend>
-__aicore__ inline void TopKMergeSortIntraCore<ValueType, IndexType, IsDescend>::ExtractAndCopyOut(
-    int64_t batchIdx, uint32_t resultRegion)
+__aicore__ inline void TopKMergeSortIntraCore<ValueType, IndexType, IsDescend>::ExtractAndCopyOut(int64_t batchIdx,
+                                                                                                  uint32_t resultRegion)
 {
-    int64_t outputOffset = batchIdx * static_cast<int64_t>(topKValue_);  // TopK: output offset
+    int64_t outputOffset = batchIdx * static_cast<int64_t>(topKValue_); // TopK: output offset
 
     int64_t cacheBatchOffset = (resultRegion == 1) ? this->batchSortLen_ : 0;
 
-    uint32_t totalElem = topKValue_;  // TopK: limit output count
+    uint32_t totalElem = topKValue_; // TopK: limit output count
     uint32_t elemProcessed = 0;
     uint32_t cacheOffset = 0;
 
     while (elemProcessed < totalElem) {
-        uint32_t elemCount = (elemProcessed + this->extractChunkSize_ <= totalElem) ?
-                             this->extractChunkSize_ : (totalElem - elemProcessed);
-        if (elemCount == 0) break;
+        uint32_t elemCount = (elemProcessed + this->extractChunkSize_ <= totalElem) ? this->extractChunkSize_ :
+                                                                                      (totalElem - elemProcessed);
+        if (elemCount == 0)
+            break;
 
         this->ExtractAndCopyChunk(cacheBatchOffset, cacheOffset, outputOffset, elemProcessed, elemCount);
 

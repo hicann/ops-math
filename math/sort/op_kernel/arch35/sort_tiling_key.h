@@ -29,11 +29,13 @@
 #define SORT_SCHID_9 9
 #define SORT_SCHID_10 10
 #define SORT_SCHID_11 11
+#define SORT_SCHID_12 12
+#define SORT_SCHID_13 13
 
 #define SORT_TPL_KEY_DECL()                                                                                       \
     ASCENDC_TPL_UINT_DECL(schId, ASCENDC_TPL_8_BW, ASCENDC_TPL_UI_LIST, SORT_SCHID_0, SORT_SCHID_1, SORT_SCHID_2, \
                           SORT_SCHID_3, SORT_SCHID_4, SORT_SCHID_5, SORT_SCHID_6, SORT_SCHID_7, SORT_SCHID_8,     \
-                          SORT_SCHID_9, SORT_SCHID_10, SORT_SCHID_11),                                            \
+                          SORT_SCHID_9, SORT_SCHID_10, SORT_SCHID_11, SORT_SCHID_12, SORT_SCHID_13),              \
         ASCENDC_TPL_UINT_DECL(isInt32, ASCENDC_TPL_8_BW, ASCENDC_TPL_UI_LIST, 0, 1),                              \
         ASCENDC_TPL_UINT_DECL(isDescend, ASCENDC_TPL_8_BW, ASCENDC_TPL_UI_LIST, 0, 1)
 
@@ -52,9 +54,9 @@
         ASCENDC_TPL_UINT_SEL(isInt32, ASCENDC_TPL_UI_LIST, 1),      \
         ASCENDC_TPL_UINT_SEL(isDescend, ASCENDC_TPL_UI_LIST, 0, 1)
 
-#define SORT_TPL_MERGE_BIG_SIZE_KEY_SEL()                           \
-    ASCENDC_TPL_UINT_SEL(schId, ASCENDC_TPL_UI_LIST, SORT_SCHID_3), \
-        ASCENDC_TPL_UINT_SEL(isInt32, ASCENDC_TPL_UI_LIST, 1),      \
+#define SORT_TPL_MERGE_BIG_SIZE_KEY_SEL()                                                         \
+    ASCENDC_TPL_UINT_SEL(schId, ASCENDC_TPL_UI_LIST, SORT_SCHID_3, SORT_SCHID_12, SORT_SCHID_13), \
+        ASCENDC_TPL_UINT_SEL(isInt32, ASCENDC_TPL_UI_LIST, 1),                                    \
         ASCENDC_TPL_UINT_SEL(isDescend, ASCENDC_TPL_UI_LIST, 0, 1)
 
 #define SORT_TPL_MERGE_INTRA_CORE_KEY_SEL()                         \

@@ -12,7 +12,8 @@
  * \file sort_merge_intra_core.h
  * \brief Intra-core block merge sort for fp32
  * \details Each core independently sorts blocks and merges them via 4-way MrgSort.
- *          No cross-core synchronization needed in merge phase.
+ *          Two or three blocks remain in UB through the final merge and output.
+ *          Larger rows use workspace without cross-core merge synchronization.
  *          Handles fp32, N > 4096, blocksPerRow <= 256.
  */
 
@@ -24,6 +25,7 @@
 #include "op_kernel/math_util.h"
 #include "op_kernel/platform_util.h"
 #include "kernel_tiling/kernel_tiling.h"
+#include "sort_tiling_data.h"
 #include "common/merge_sort_constants.h"
 #include "common/merge_intra_core_base.h"
 
@@ -31,7 +33,6 @@ namespace Sort {
 using namespace AscendC;
 
 // Import shared constants from MergeSortConstants namespace
-using MergeSortConstants::DEALING_CONCAT_NUM_ONCE;
 using MergeSortConstants::DEALING_EXTRACT_NUM_ONCE;
 using MergeSortConstants::DEALING_SORT_NUM_ONCE;
 using MergeSortConstants::MERGE_INTRA_BUFFER_NUM;
@@ -58,6 +59,23 @@ public:
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR value, GM_ADDR indices, GM_ADDR workspace,
                                 const SortRegBaseTilingData* tilingData, TPipe* pipe);
 
+    __aicore__ inline void Process()
+    {
+        if (this->blockSortSize_ == 0U) {
+            return;
+        }
+        if (this->blocksPerRow_ < SORT_RESIDENT_MERGE_MIN_BLOCKS ||
+            this->blocksPerRow_ > SORT_RESIDENT_MERGE_MAX_BLOCKS) {
+            Base::Process();
+            return;
+        }
+        int64_t first = static_cast<int64_t>(this->blockIdx_) * this->batchPerCore_;
+        int64_t end = first + this->batchPerCore_ < this->batchNum_ ? first + this->batchPerCore_ : this->batchNum_;
+        for (int64_t row = first; row < end; ++row) {
+            ProcessResidentBatch(row);
+        }
+    }
+
 protected:
     __aicore__ inline void InitPhase1Buffers();
     __aicore__ inline void InitPhase2Buffers();
@@ -67,6 +85,8 @@ protected:
                                                uint32_t elemProcessed, uint32_t elemCount);
 
 private:
+    __aicore__ inline void ProcessResidentBatch(int64_t row);
+    __aicore__ inline void CopyResidentOutputs(int64_t row, LocalTensor<ValueType> proposal);
     // Phase 3 only
     __aicore__ inline void ExtractAndCopyOut(int64_t batchIdx, uint32_t resultRegion);
 };
@@ -102,7 +122,6 @@ __aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::Init
     this->batchSortLen_ = AscendC::GetSortLen<ValueType>(this->alignNum_);
     this->sortBufferSize_ = this->blockSortLen_ * sizeof(ValueType);
     this->sortRepeatTimes_ = this->blockSortSize_ / DEALING_SORT_NUM_ONCE;
-    this->concatRepeatTimes_ = this->blockSortSize_ / DEALING_CONCAT_NUM_ONCE;
     this->lastBlockSize_ = static_cast<uint32_t>(this->sortAxisNum_ -
                                                  static_cast<int64_t>(this->blocksPerRow_ - 1) * this->blockSortSize_);
 
@@ -127,7 +146,6 @@ template <typename ValueType, typename IndexType, bool IsDescend>
 __aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::InitPhase1Buffers()
 {
     this->pipe_->InitBuffer(this->inQueueX_, MERGE_INTRA_BUFFER_NUM, this->blockSortSize_ * sizeof(ValueType));
-    this->pipe_->InitBuffer(this->concatTmpBuf_, this->sortBufferSize_);
     this->pipe_->InitBuffer(this->sortTmpBuf_, this->sortBufferSize_);
     this->pipe_->InitBuffer(this->sortedOutQueue_, MERGE_INTRA_BUFFER_NUM, this->sortBufferSize_);
     this->pipe_->InitBuffer(this->indexTmpBuf_, this->blockSortSize_ * sizeof(uint32_t));
@@ -225,6 +243,85 @@ __aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::Extr
     }
     this->outIdxQueue_.FreeTensor(indexLocal);
     this->outValueQueue_.FreeTensor(valueLocal);
+}
+
+template <typename ValueType, typename IndexType, bool IsDescend>
+__aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::ProcessResidentBatch(int64_t row)
+{
+    // Two proposal arrays plus one block each of input, temporary proposals and source indices
+    // use (16 * blocksPerRow + 16) bytes per block element, at most the existing 64-byte budget.
+    this->pipe_->InitBuffer(this->inQueueX_, 1, this->blockSortSize_ * sizeof(ValueType));
+    this->pipe_->InitBuffer(this->sortTmpBuf_, this->sortBufferSize_);
+    this->pipe_->InitBuffer(this->indexTmpBuf_, this->blockSortSize_ * sizeof(uint32_t));
+    this->pipe_->InitBuffer(this->sortedOutQueue_, 1, this->blocksPerRow_ * this->sortBufferSize_);
+    this->pipe_->InitBuffer(this->mergeOutQueue_, 1, this->blocksPerRow_ * this->sortBufferSize_);
+    LocalTensor<ValueType> sortedBlocks = this->sortedOutQueue_.template AllocTensor<ValueType>();
+    uint16_t counts[MERGE_LIST_MAX_NUM] = {0, 0, 0, 0};
+    for (uint32_t i = 0; i < this->blocksPerRow_; ++i) {
+        counts[i] = i + 1U == this->blocksPerRow_ ? this->lastBlockSize_ : this->blockSortSize_;
+        LocalTensor<ValueType> block = this->inQueueX_.template AllocTensor<ValueType>();
+        this->CopyInBlock(this->inputXGm_[row * this->sortAxisNum_], block, i * this->blockSortSize_, counts[i]);
+        this->inQueueX_.EnQue(block);
+        block = this->inQueueX_.template DeQue<ValueType>();
+        this->SortBlockToStruct(block, sortedBlocks[i * this->blockSortLen_], counts[i], i * this->blockSortSize_);
+        this->inQueueX_.FreeTensor(block);
+    }
+    LocalTensor<ValueType> proposal = this->mergeOutQueue_.template AllocTensor<ValueType>();
+    LocalTensor<ValueType> lists[MERGE_LIST_MAX_NUM];
+    for (uint32_t i = 0; i < MERGE_LIST_MAX_NUM; ++i) {
+        lists[i] = sortedBlocks[i < this->blocksPerRow_ ? i * this->blockSortLen_ : 0U];
+    }
+    MrgSortSrcList<ValueType> sources(lists[0], lists[1], lists[2], lists[3]);
+    uint32_t consumed[MERGE_LIST_MAX_NUM];
+    MrgSort<ValueType, false>(proposal, sources, counts, consumed,
+                              static_cast<uint16_t>((1U << this->blocksPerRow_) - 1U), 1);
+    CopyResidentOutputs(row, proposal);
+    this->sortedOutQueue_.FreeTensor(sortedBlocks);
+    this->mergeOutQueue_.FreeTensor(proposal);
+    event_t flushed = static_cast<event_t>(this->pipe_->FetchEventID(HardEvent::MTE3_MTE2));
+    SetFlag<HardEvent::MTE3_MTE2>(flushed);
+    WaitFlag<HardEvent::MTE3_MTE2>(flushed);
+    this->pipe_->Reset();
+}
+
+template <typename ValueType, typename IndexType, bool IsDescend>
+__aicore__ inline void SortMergeIntraCore<ValueType, IndexType, IsDescend>::CopyResidentOutputs(
+    int64_t row, LocalTensor<ValueType> proposal)
+{
+    // Sorting is complete: reuse input, source-index and temporary-proposal buffers for outputs.
+    LocalTensor<ValueType> values = this->inQueueX_.template AllocTensor<ValueType>();
+    LocalTensor<uint32_t> indices = this->indexTmpBuf_.template Get<uint32_t>();
+    LocalTensor<int64_t> wideIndices = this->sortTmpBuf_.template Get<int64_t>();
+    for (uint32_t offset = 0; offset < this->sortAxisNum_; offset += this->blockSortSize_) {
+        uint32_t count = this->sortAxisNum_ - offset < this->blockSortSize_ ? this->sortAxisNum_ - offset :
+                                                                              this->blockSortSize_;
+        Extract(values, indices, proposal[GetSortLen<ValueType>(offset)],
+                Ops::Base::CeilDiv(count, DEALING_EXTRACT_NUM_ONCE));
+        if constexpr (!IsDescend) {
+            Adds(values.template ReinterpretCast<int32_t>(), values.template ReinterpretCast<int32_t>(),
+                 static_cast<int32_t>(MergeSortConstants::XOR_OP_VALUE_FP), count);
+        }
+        if constexpr (IsSameType<int64_t, IndexType>::value) {
+            Cast(wideIndices, indices.template ReinterpretCast<int32_t>(), RoundMode::CAST_NONE,
+                 Ops::Base::CeilAlign(count, static_cast<uint32_t>(Ops::Base::GetUbBlockSize() / sizeof(int64_t))));
+        }
+        event_t ready = static_cast<event_t>(this->pipe_->FetchEventID(HardEvent::V_MTE3));
+        SetFlag<HardEvent::V_MTE3>(ready);
+        WaitFlag<HardEvent::V_MTE3>(ready);
+        DataCopyExtParams copy{1, static_cast<uint32_t>(count * sizeof(ValueType)), 0, 0, 0};
+        DataCopyPad(this->outValueGm_[row * this->sortAxisNum_ + offset], values, copy);
+        copy.blockLen = count * sizeof(IndexType);
+        if constexpr (IsSameType<int64_t, IndexType>::value) {
+            DataCopyPad(this->outIdxGm_[row * this->sortAxisNum_ + offset], wideIndices, copy);
+        } else {
+            DataCopyPad(this->outIdxGm_[row * this->sortAxisNum_ + offset], indices.template ReinterpretCast<int32_t>(),
+                        copy);
+        }
+        event_t reused = static_cast<event_t>(this->pipe_->FetchEventID(HardEvent::MTE3_V));
+        SetFlag<HardEvent::MTE3_V>(reused);
+        WaitFlag<HardEvent::MTE3_V>(reused);
+    }
+    this->inQueueX_.FreeTensor(values);
 }
 
 } // namespace Sort
