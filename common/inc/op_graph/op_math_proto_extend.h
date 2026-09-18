@@ -348,6 +348,35 @@ REG_OP(ExpandDims)
     .ATTR(seed2, Int, 0)
     .OP_END_FACTORY_REG(RandomUniformInt)
 
+/**
+*@brief Returns cosine similarity between x1 and x2,computed along dim. \n
+
+*@par Inputs:
+*Two inputs, including:
+* @li input_x1: A tensor. Must be the following types: float32.
+* @li input_x2: A tensor. Must of the following types: float32. \n
+
+* @par Attributes:
+* @li dim:The type is Int and the default value is 1.
+* @li eps:The type is Float and the default value is 1e-8. \n
+
+*@par Outputs:
+* output_y: A ND Tensor with the same dtype of input_x's. \n
+
+*@par Third-party framework compatibility
+*Compatible with the PyTorch operator CosineSimilarity. \n
+*/
+#ifndef OPS_PROTO_DEF_COSINESIMILARITY
+#define OPS_PROTO_DEF_COSINESIMILARITY
+        REG_OP(CosineSimilarity)
+    .INPUT(input_x1, TensorType({DT_FLOAT}))  /* "First operand." */
+    .INPUT(input_x2, TensorType({DT_FLOAT}))  /* "Second operand." */
+    .OUTPUT(output_y, TensorType({DT_FLOAT})) /* "Result, has same element type as two inputs" */
+    .ATTR(dim, Int, 1)
+    .ATTR(eps, Float, 1e-8f)
+    .OP_END_FACTORY_REG(CosineSimilarity)
+#endif
+
     /**
     *@brief Outputs random values from a uniform distribution. \n
 

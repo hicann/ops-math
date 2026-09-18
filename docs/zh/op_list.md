@@ -578,16 +578,6 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/cosine_similarity/README.md">cosine_similarity</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>AI Core</td>
-    <td>计算两个输入张量沿指定维度的余弦相似度。</td>
-  </tr>
-  <tr>
-    <td>math</td>
     <td><a href="../../math/cross/README.md">cross</a></td>
     <td>√</td>
     <td>√</td>
