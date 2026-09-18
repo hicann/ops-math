@@ -59,7 +59,7 @@
       ```bash
       # 以cann:9.1.0-beta.1版本为例
       docker pull swr.cn-south-1.myhuaweicloud.com/ascendhub/cann:9.1.0-beta.1-910b-ubuntu22.04-py3.12-devel
-       ```
+      ```
 
       > **说明**：镜像标签格式为`<CANN版本>-<芯片系列>-<操作系统>-<Python版本>-devel`。带`-devel`后缀的镜像为算子开发镜像，内含算子开发编译依赖。
 
