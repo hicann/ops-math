@@ -35,7 +35,6 @@ static constexpr int64_t INDEX_OUTPUT_IDX = 0;
 static constexpr int64_t IDX_ATTR_MIN_RADIUS = 0;
 static constexpr int64_t IDX_ATTR_MAX_RADIUS = 1;
 static constexpr int64_t IDX_ATTR_SAMPLE_NUM = 2;
-static constexpr int64_t COORD_DIM = 3;
 
 static ge::graphStatus InferShape4BallQuery(gert::InferShapeContext* context)
 {
@@ -52,18 +51,14 @@ static ge::graphStatus InferShape4BallQuery(gert::InferShapeContext* context)
     bool isCenterXyzUnknownRank = Ops::Base::IsUnknownRank(*centerXyzShape);
 
     // xyz 布局 (B,3,N)，坐标在中间维；unknownRank 时跳过维数校验
-    if (!isXyzUnknownRank) {
-        if (xyzShape->GetDimNum() != 3 || xyzShape->GetDim(1) != COORD_DIM) {
-            OP_LOGE(context, "xyz must be (B, 3, N), but got dimNum=%zu", xyzShape->GetDimNum());
-            return GRAPH_FAILED;
-        }
+    if (!isXyzUnknownRank && xyzShape->GetDimNum() != 3) {
+        OP_LOGE(context, "xyz must be (B, 3, N), but got dimNum=%zu", xyzShape->GetDimNum());
+        return GRAPH_FAILED;
     }
     // center_xyz 布局 (M,B,3)，坐标在末维；unknownRank 时跳过维数校验
-    if (!isCenterXyzUnknownRank) {
-        if (centerXyzShape->GetDimNum() != 3 || centerXyzShape->GetDim(2) != COORD_DIM) {
-            OP_LOGE(context, "center_xyz must be (M, B, 3), but got dimNum=%zu", centerXyzShape->GetDimNum());
-            return GRAPH_FAILED;
-        }
+    if (!isCenterXyzUnknownRank && centerXyzShape->GetDimNum() != 3) {
+        OP_LOGE(context, "center_xyz must be (M, B, 3), but got dimNum=%zu", centerXyzShape->GetDimNum());
+        return GRAPH_FAILED;
     }
     // B 一致校验：unknownRank 或动态 shape(-1) 场景下不参与等值校验
     if (!isXyzUnknownRank && !isCenterXyzUnknownRank) {
