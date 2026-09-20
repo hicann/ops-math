@@ -60,11 +60,11 @@ uint32_t CalcBucketsLimitAndOffsetCpuKernel::DoCompute()
         KERNEL_LOG_ERROR("%s op alloc counts memory failed.", kOpName);
         return KERNEL_STATUS_PARAM_INVALID;
     }
-    int32_t* bucket_list = reinterpret_cast<int32_t*>(datas_[0]);
-    int32_t* ivf_counts = reinterpret_cast<int32_t*>(datas_[1]);
-    T* ivf_offset = reinterpret_cast<T*>(datas_[2]);
-    int32_t* buckets_limit = reinterpret_cast<int32_t*>(datas_[3]);
-    T* buckets_offset = reinterpret_cast<T*>(datas_[4]);
+    int32_t* bucket_list = PtrToPtr<void, int32_t>(datas_[0]);
+    int32_t* ivf_counts = PtrToPtr<void, int32_t>(datas_[1]);
+    T* ivf_offset = PtrToPtr<void, T>(datas_[2]);
+    int32_t* buckets_limit = PtrToPtr<void, int32_t>(datas_[3]);
+    T* buckets_offset = PtrToPtr<void, T>(datas_[4]);
     const uint32_t input_num_2 = 2;
 
     for (int64_t i = 0; i < input_num_elements_[0]; ++i) {

@@ -49,7 +49,7 @@ void CaseCondition(const T i, const T j, const T k, int32_t* output_data)
 } // namespace
 
 namespace aicpu {
-uint32_t CaseConditionCpuKernel::Check(const Tensor* x, const Tensor* output)
+uint32_t CaseConditionCpuKernel::Check(const Tensor* x, const Tensor* output) const
 {
     DataType x_type = x->GetDataType();
     switch (x_type) {

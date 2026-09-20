@@ -32,7 +32,7 @@ constexpr uint32_t kStridedSliceV2AllInputNum = 5;
 } // namespace
 
 namespace aicpu {
-uint32_t StridedSliceV2CpuKernel::CheckBeginEndDataType(const Tensor* begin, const Tensor* end)
+uint32_t StridedSliceV2CpuKernel::CheckBeginEndDataType(const Tensor* begin, const Tensor* end) const
 {
     DataType begin_type = begin->GetDataType();
     KERNEL_CHECK_FALSE((begin_type == end->GetDataType()), KERNEL_STATUS_PARAM_INVALID,
@@ -42,7 +42,7 @@ uint32_t StridedSliceV2CpuKernel::CheckBeginEndDataType(const Tensor* begin, con
     return KERNEL_STATUS_OK;
 }
 
-uint32_t StridedSliceV2CpuKernel::CheckBeginEndShape(const Tensor* begin, const Tensor* end)
+uint32_t StridedSliceV2CpuKernel::CheckBeginEndShape(const Tensor* begin, const Tensor* end) const
 {
     auto begin_shape = begin->GetTensorShape();
     KERNEL_CHECK_NULLPTR(begin_shape, KERNEL_STATUS_PARAM_INVALID, "Get input begin shape failed")
@@ -60,7 +60,7 @@ uint32_t StridedSliceV2CpuKernel::CheckBeginEndShape(const Tensor* begin, const 
 }
 
 uint32_t StridedSliceV2CpuKernel::CheckStridesDataTypeAndShape(const Tensor* begin, const Tensor* strides,
-                                                               const std::shared_ptr<TensorShape>& begin_shape)
+                                                               const std::shared_ptr<TensorShape>& begin_shape) const
 {
     if (strides == nullptr) {
         return KERNEL_STATUS_OK;
@@ -82,7 +82,7 @@ uint32_t StridedSliceV2CpuKernel::CheckStridesDataTypeAndShape(const Tensor* beg
     return KERNEL_STATUS_OK;
 }
 
-uint32_t StridedSliceV2CpuKernel::CheckAxesDataType(const Tensor* begin, const Tensor* axes)
+uint32_t StridedSliceV2CpuKernel::CheckAxesDataType(const Tensor* begin, const Tensor* axes) const
 {
     if (axes == nullptr) {
         return KERNEL_STATUS_OK;
@@ -117,7 +117,7 @@ uint32_t StridedSliceV2CpuKernel::CheckParam(const Tensor* begin, const Tensor* 
 
 template <typename T>
 uint32_t StridedSliceV2CpuKernel::BuildBeginParam(const std::shared_ptr<TensorShape>& x_shape, const Tensor* begin,
-                                                  std::vector<int64_t>& begin_vec)
+                                                  std::vector<int64_t>& begin_vec) const
 {
     (void)x_shape;
     T* begin_data = static_cast<T*>(begin->GetData());
@@ -130,7 +130,7 @@ uint32_t StridedSliceV2CpuKernel::BuildBeginParam(const std::shared_ptr<TensorSh
 
 template <typename T>
 uint32_t StridedSliceV2CpuKernel::BuildEndParam(const std::shared_ptr<TensorShape>& x_shape, const Tensor* end,
-                                                std::vector<int64_t>& end_vec)
+                                                std::vector<int64_t>& end_vec) const
 {
     (void)x_shape;
     T* end_data = static_cast<T*>(end->GetData());
@@ -143,7 +143,7 @@ uint32_t StridedSliceV2CpuKernel::BuildEndParam(const std::shared_ptr<TensorShap
 
 template <typename T>
 uint32_t StridedSliceV2CpuKernel::BuildStridesParam(const std::shared_ptr<TensorShape>& x_shape, const Tensor* strides,
-                                                    std::vector<int64_t>& strides_vec)
+                                                    std::vector<int64_t>& strides_vec) const
 {
     const int32_t x_dims = x_shape->GetDims();
     if (strides == nullptr) {
@@ -162,7 +162,7 @@ uint32_t StridedSliceV2CpuKernel::BuildStridesParam(const std::shared_ptr<Tensor
 
 template <typename T>
 uint32_t StridedSliceV2CpuKernel::BuildAxesParam(const std::shared_ptr<TensorShape>& x_shape, const Tensor* axes,
-                                                 std::vector<int64_t>& axes_vec)
+                                                 std::vector<int64_t>& axes_vec) const
 {
     const int32_t x_dims = x_shape->GetDims();
     if (axes == nullptr) {
@@ -194,7 +194,7 @@ uint32_t StridedSliceV2CpuKernel::BuildAxesParam(const std::shared_ptr<TensorSha
 template <typename T>
 uint32_t StridedSliceV2CpuKernel::BuildParam(const Tensor* x, const Tensor* begin, const Tensor* end,
                                              const Tensor* axes, const Tensor* strides, std::vector<int64_t>& begin_vec,
-                                             std::vector<int64_t>& end_vec, std::vector<int64_t>& strides_vec)
+                                             std::vector<int64_t>& end_vec, std::vector<int64_t>& strides_vec) const
 {
     auto x_shape = x->GetTensorShape();
 
@@ -252,7 +252,7 @@ uint32_t StridedSliceV2CpuKernel::CheckAndBuildParam(const Tensor* x, const Tens
 
 uint32_t StridedSliceV2CpuKernel::DoStridedSliceV2(const CpuKernelContext& ctx, const std::vector<int64_t>& begin_vec,
                                                    const std::vector<int64_t>& end_vec,
-                                                   const std::vector<int64_t>& strides_vec)
+                                                   const std::vector<int64_t>& strides_vec) const
 {
     uint32_t ret = KERNEL_STATUS_OK;
 #define STRIDED_SLICE_V2_CASE(DT, T)                                                                        \
@@ -331,7 +331,7 @@ uint32_t StridedSliceV2CpuKernel::GetInputTensors(CpuKernelContext& ctx, Tensor*
 
 uint32_t StridedSliceV2CpuKernel::GetMaskAttrs(CpuKernelContext& ctx, int64_t& begin_mask_value,
                                                int64_t& end_mask_value, int64_t& ellipsis_mask_value,
-                                               int64_t& new_axis_mask_value, int64_t& shrink_axis_mask_value)
+                                               int64_t& new_axis_mask_value, int64_t& shrink_axis_mask_value) const
 {
     begin_mask_value = 0;
     AttrValue* begin_mask = ctx.GetAttr(kBeginMask);

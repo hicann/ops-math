@@ -49,7 +49,7 @@ uint32_t InvertPermutation::Compute(CpuKernelContext& ctx)
 }
 
 template <typename T>
-uint32_t InvertPermutation::InvertPermutationCompute(Tensor* x, int64_t num, CpuKernelContext& ctx)
+uint32_t InvertPermutation::InvertPermutationCompute(Tensor* x, int64_t num, CpuKernelContext& ctx) const
 {
     T* x_addrs = reinterpret_cast<T*>(x->GetData());
     T* y_addrs = reinterpret_cast<T*>(ctx.Output(0)->GetData());
