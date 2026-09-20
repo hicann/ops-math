@@ -268,8 +268,14 @@ inline const aclTensor* PadV3GradAiCpu(const aclTensor* gradOutput, const aclTen
 const aclTensor* PadV3Grad(const aclTensor* gradOutput, const aclTensor* paddings, const std::string& mode,
                            const bool paddingsContiguous, const bool padFlag, aclOpExecutor* executor)
 {
-    auto padV3GradOut = executor->AllocTensor(gradOutput->GetDataType(), gradOutput->GetViewFormat(),
-                                              gradOutput->GetViewFormat());
+    auto storageFormat = gradOutput->GetViewFormat();
+    if (gradOutput->GetViewShape().GetDimNum() == AI_CORE_DIM_3D && storageFormat == op::Format::FORMAT_NCHW) {
+        // A 4D no-batch input is expanded to 5D by the level-2 API while retaining NCHW as its view format.
+        // Using NCHW as the storage format for the inferred 5D output truncates its last dimension during
+        // format-based shape conversion, so keep the external view format and use ND for the storage shape.
+        storageFormat = op::Format::FORMAT_ND;
+    }
+    auto padV3GradOut = executor->AllocTensor(gradOutput->GetDataType(), storageFormat, gradOutput->GetViewFormat());
     INFER_SHAPE(PadV3Grad, OP_INPUT(gradOutput, paddings), OP_OUTPUT(padV3GradOut), OP_ATTR(mode, paddingsContiguous));
 
     if (mode == "circular") {
