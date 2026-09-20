@@ -61,10 +61,11 @@ private:
 
     TPipe* pipe_ = nullptr;
     const SortRegBaseTilingData* tilingData_ = nullptr;
+    static constexpr uint32_t DOUBLE_BUFFER_NUM = 2;
     // InitBuffer selects one or two physical buffers; queue events protect reuse across batches.
-    TQue<QuePosition::VECIN, 2> inputQueue_;
-    TQue<QuePosition::VECOUT, 2> outputIndexQueue_;
-    TQue<QuePosition::VECOUT, 2> outputValueQueue_;
+    TQue<QuePosition::VECIN, DOUBLE_BUFFER_NUM> inputQueue_;
+    TQue<QuePosition::VECOUT, DOUBLE_BUFFER_NUM> outputIndexQueue_;
+    TQue<QuePosition::VECOUT, DOUBLE_BUFFER_NUM> outputValueQueue_;
     TBuf<TPosition::VECCALC> indexBuffer_;
     TBuf<TPosition::VECCALC> proposalPingBuffer_;
     TBuf<TPosition::VECCALC> proposalPongBuffer_;
