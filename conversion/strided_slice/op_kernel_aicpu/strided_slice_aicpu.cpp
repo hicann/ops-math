@@ -28,17 +28,17 @@ namespace aicpu {
 template <typename T>
 static inline void DataLeftShift(T& data)
 {
-    data = data << 1;
+    data = data << 1U;
 }
 
 static uint32_t ProcessEllipsisMask(const std::vector<int64_t>& begin, const std::vector<int64_t>& end,
                                     const std::vector<int64_t>& strides, const std::vector<int64_t>& x_shape,
                                     int64_t ellipsis_mask, int64_t new_axis_mask, size_t& i, size_t& j,
-                                    int64_t& bit_mask, bool& has_ellipsis, int64_t& begin_j, int64_t& end_j,
+                                    uint64_t& bit_mask, bool& has_ellipsis, int64_t& begin_j, int64_t& end_j,
                                     int64_t& strides_j, std::vector<int64_t>& begin_res, std::vector<int64_t>& end_res,
                                     std::vector<int64_t>& strides_res)
 {
-    if ((ellipsis_mask & bit_mask) != 0) {
+    if ((static_cast<uint64_t>(ellipsis_mask) & bit_mask) != 0U) {
         if (has_ellipsis) {
             KERNEL_LOG_ERROR("[%s] multiple ellipses in slice spec not allowed.", kStridedSlice);
             return KERNEL_STATUS_INNER_ERROR;
@@ -47,12 +47,13 @@ static uint32_t ProcessEllipsisMask(const std::vector<int64_t>& begin, const std
         j++;
         DataLeftShift(bit_mask);
         int64_t ellipsis_bits = static_cast<int64_t>(x_shape.size()) - static_cast<int64_t>(strides.size());
-        int64_t bit_mask_tmp = 1;
+        uint64_t bit_mask_tmp = 1U;
         for (size_t k = 0; k < strides.size(); ++k) {
-            if (((new_axis_mask & bit_mask_tmp) != 0) && ((ellipsis_mask & bit_mask_tmp) == 0)) {
+            if (((static_cast<uint64_t>(new_axis_mask) & bit_mask_tmp) != 0U) &&
+                ((static_cast<uint64_t>(ellipsis_mask) & bit_mask_tmp) == 0U)) {
                 ++ellipsis_bits;
             }
-            bit_mask_tmp <<= 1;
+            bit_mask_tmp <<= 1U;
         }
 
         for (int64_t k = 0; k <= ellipsis_bits; ++k) {
@@ -72,24 +73,25 @@ static uint32_t ProcessEllipsisMask(const std::vector<int64_t>& begin, const std
 }
 
 inline void ProcessEndMask(const std::vector<int64_t>& strides, const std::vector<int64_t>& x_shape, int64_t end_mask,
-                           int64_t shrink_axis_mask, size_t i, size_t j, int64_t bit_mask, int64_t& end_j)
+                           int64_t shrink_axis_mask, size_t i, size_t j, uint64_t bit_mask, int64_t& end_j)
 {
-    if ((end_mask & bit_mask) && !(shrink_axis_mask & bit_mask)) {
+    if (((static_cast<uint64_t>(end_mask) & bit_mask) != 0U) &&
+        ((static_cast<uint64_t>(shrink_axis_mask) & bit_mask) == 0U)) {
         end_j = (strides[j] > 0) ? x_shape[i] : -(x_shape[i] + 1);
     }
 }
 
-inline bool ProcessNewAxisMask(int64_t new_axis_mask, size_t& i, const int64_t& bit_mask)
+inline bool ProcessNewAxisMask(int64_t new_axis_mask, size_t& i, uint64_t bit_mask)
 {
-    bool result = (new_axis_mask & bit_mask) != 0;
+    bool result = (static_cast<uint64_t>(new_axis_mask) & bit_mask) != 0U;
     i -= result ? 1 : 0;
     return result;
 }
 
 inline uint32_t ProcessShrinkAxisMask(const std::vector<int64_t>& x_shape, int64_t shrink_axis_mask, size_t i,
-                                      int64_t bit_mask, int64_t begin_j, int64_t strides_j, int64_t& end_j)
+                                      uint64_t bit_mask, int64_t begin_j, int64_t strides_j, int64_t& end_j)
 {
-    if (shrink_axis_mask & bit_mask) {
+    if ((static_cast<uint64_t>(shrink_axis_mask) & bit_mask) != 0U) {
         if ((begin_j < -x_shape[i]) || (begin_j >= x_shape[i]) || (strides_j < 0)) {
             KERNEL_LOG_ERROR("[%s] process shrink axis mask failed.", kStridedSlice);
             return KERNEL_STATUS_INNER_ERROR;
@@ -102,7 +104,7 @@ inline uint32_t ProcessShrinkAxisMask(const std::vector<int64_t>& x_shape, int64
 uint32_t ProcessMasks(const std::vector<int64_t>& begin, const std::vector<int64_t>& end,
                       const std::vector<int64_t>& strides, const std::vector<int64_t>& x_shape, int64_t begin_mask,
                       int64_t end_mask, int64_t ellipsis_mask, int64_t new_axis_mask, int64_t shrink_axis_mask,
-                      size_t& i, size_t& j, int64_t& bit_mask, bool& has_ellipsis, std::vector<int64_t>& begin_res,
+                      size_t& i, size_t& j, uint64_t& bit_mask, bool& has_ellipsis, std::vector<int64_t>& begin_res,
                       std::vector<int64_t>& end_res, std::vector<int64_t>& strides_res)
 {
     int64_t begin_j = begin[j];
@@ -115,7 +117,8 @@ uint32_t ProcessMasks(const std::vector<int64_t>& begin, const std::vector<int64
             return KERNEL_STATUS_INNER_ERROR;
         }
 
-        if ((begin_mask & bit_mask) && (!(shrink_axis_mask & bit_mask))) {
+        if (((static_cast<uint64_t>(begin_mask) & bit_mask) != 0U) &&
+            ((static_cast<uint64_t>(shrink_axis_mask) & bit_mask) == 0U)) {
             begin_j = (strides[j] > 0) ? 0 : (x_shape[i] - 1);
         }
 
@@ -146,7 +149,7 @@ uint32_t StridedSliceCpuKernel::InitParamsWithMasks(const std::vector<int64_t>& 
 {
     size_t i = 0;
     size_t j = 0;
-    int64_t bit_mask = 1;
+    uint64_t bit_mask = 1U;
     bool has_ellipsis = false;
     std::vector<int64_t> begin_res;
     std::vector<int64_t> end_res;
@@ -250,7 +253,8 @@ uint32_t StridedSliceCpuKernel::ParseKernelParams(const CpuKernelContext& ctx)
     return KERNEL_STATUS_OK;
 }
 
-uint32_t StridedSliceCpuKernel::ParseIndexInput(const CpuKernelContext& ctx, uint32_t index, std::vector<int64_t>& vec)
+uint32_t StridedSliceCpuKernel::ParseIndexInput(const CpuKernelContext& ctx, uint32_t index,
+                                                std::vector<int64_t>& vec) const
 {
     Tensor* index_tensor = ctx.Input(index);
     int64_t tensor_size = index_tensor->NumElements();

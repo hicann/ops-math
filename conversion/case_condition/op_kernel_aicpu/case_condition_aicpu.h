@@ -21,7 +21,7 @@ public:
     uint32_t Compute(CpuKernelContext& ctx) override;
 
 private:
-    uint32_t Check(const Tensor* x, const Tensor* output);
+    uint32_t Check(const Tensor* x, const Tensor* output) const;
 };
 } // namespace aicpu
 

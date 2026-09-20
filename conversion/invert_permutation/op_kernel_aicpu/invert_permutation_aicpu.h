@@ -15,14 +15,13 @@
 namespace aicpu {
 class InvertPermutation : public CpuKernel {
 public:
-  InvertPermutation() = default;
-  ~InvertPermutation() override = default;
-  uint32_t Compute(CpuKernelContext &ctx) override;
+    InvertPermutation() = default;
+    ~InvertPermutation() override = default;
+    uint32_t Compute(CpuKernelContext& ctx) override;
 
 private:
-  template <typename T>
-  uint32_t InvertPermutationCompute(Tensor *x, int64_t num,
-                                    CpuKernelContext &ctx);
+    template <typename T>
+    uint32_t InvertPermutationCompute(Tensor* x, int64_t num, CpuKernelContext& ctx) const;
 };
-}  // namespace aicpu
+} // namespace aicpu
 #endif
