@@ -900,6 +900,61 @@ bfloat16. \n
     .OP_END_FACTORY_REG(SignBitsPack)
 #endif // OPS_PROTO_DEF_SIGNBITSPACK
 
+#ifndef OPS_PROTO_DEF_STRIDEDSLICEASSIGN
+#define OPS_PROTO_DEF_STRIDEDSLICEASSIGN
+    /**
+            * @brief Assigns "value" to the sliced l-value reference of "var".
+            * The values of "value" are assigned to the positions in the variable. "var"
+            * that are selected by the slice parameters. The slice parameters "begin, "end",
+            * "strides", etc. work exactly as in "StridedSlice" . \n
+
+            * @par Inputs:
+            * Five inputs, including:
+            * @li var: A mutable ND Tensor of type BasicType.
+            * Support Dtype: [float16,float32,int32,int16,bfloat16], Support format: [ND].
+            * @li begin: A mutable ND Tensor of type IndexNumberType. Support dtype: [int64], support format: [ND].
+            * Specifies the index of the first value to select.
+            * @li end: A mutable ND Tensor of type IndexNumberType. Support dtype: [int64], support format: [ND].
+            * Specifies the index of the last value to select.
+            * @li strides: A mutable ND Tensor of type IndexNumberType. Support dtype: [int64], support format: [ND].
+            * Specifies the stride to select.
+            * @li input_value: A mutable ND Tensor of type BasicType .
+            * Support Dtype: [float16,float32,int32,int16,bfloat16], Support format: [ND]. \n
+
+            * @par Attributes:
+            * @li begin_mask: An optional int. Defaults to "0".
+            * @li end_mask: An optional int. Defaults to "0".
+            * @li ellipsis_mask: An optional int. Defaults to "0".
+            * @li new_axis_mask: An optional int. Defaults to "0".
+            * @li shrink_axis_mask: An optional int. Defaults to "0" . \n
+
+            * @par Outputs:
+            * var: A mutable Tensor. Has the same type as "var" . \n
+
+            * @attention Constraints:
+            * This operator currently does not support broadcasting. Therefore, the shape
+            * of "value" must be exactly the shape produced by the slice of "var" . \n
+
+            * @see StridedSlice()
+
+            * @par Third-party framework compatibility
+            * @li Compatible with the TensorFlow operator StridedSlice.
+            */
+    REG_OP(StridedSliceAssign)
+    .INPUT(var, TensorType(BasicType))
+    .INPUT(begin, TensorType(IndexNumberType))
+    .INPUT(end, TensorType(IndexNumberType))
+    .INPUT(strides, TensorType(IndexNumberType))
+    .INPUT(input_value, TensorType(BasicType))
+    .OUTPUT(var, TensorType(BasicType))
+    .ATTR(begin_mask, Int, 0)
+    .ATTR(end_mask, Int, 0)
+    .ATTR(ellipsis_mask, Int, 0)
+    .ATTR(new_axis_mask, Int, 0)
+    .ATTR(shrink_axis_mask, Int, 0)
+    .OP_END_FACTORY_REG(StridedSliceAssign)
+#endif
+
     /**
     *@brief Outputs random values from a truncated normal distribution . \n
 
@@ -956,6 +1011,42 @@ bfloat16. \n
     .OUTPUT(y, TensorType({DT_FLOAT16, DT_FLOAT}))
     .ATTR(p, Float, 2.0)
     .OP_END_FACTORY_REG(Pdist)
+
+#ifndef OPS_PROTO_DEF_MATRIXDIAGPART
+#define OPS_PROTO_DEF_MATRIXDIAGPART
+        REG_OP(MatrixDiagPart)
+    .INPUT(x, TensorType::BasicType())
+    .OUTPUT(y, TensorType::BasicType())
+    .OP_END_FACTORY_REG(MatrixDiagPart)
+#endif
+
+#ifndef OPS_PROTO_DEF_PRODVIRIALSEA
+#define OPS_PROTO_DEF_PRODVIRIALSEA
+        REG_OP(ProdVirialSeA)
+    .INPUT(net_deriv, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE}))
+    .INPUT(in_deriv, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE}))
+    .INPUT(rij, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE}))
+    .INPUT(nlist, TensorType({DT_INT32}))
+    .INPUT(natoms, TensorType({DT_INT32}))
+    .OUTPUT(virial, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE}))
+    .OUTPUT(atom_virial, TensorType({DT_FLOAT16, DT_FLOAT, DT_DOUBLE}))
+    .REQUIRED_ATTR(n_a_sel, Int)
+    .REQUIRED_ATTR(n_r_sel, Int)
+    .OP_END_FACTORY_REG(ProdVirialSeA)
+#endif
+
+#ifndef OPS_PROTO_DEF_SPARSEBINCOUNT
+#define OPS_PROTO_DEF_SPARSEBINCOUNT
+        REG_OP(SparseBincount)
+    .INPUT(indices, TensorType({DT_INT64}))
+    .INPUT(values, TensorType({DT_INT32, DT_INT64}))
+    .INPUT(dense_shape, TensorType({DT_INT64}))
+    .INPUT(size, TensorType({DT_INT32, DT_INT64}))
+    .INPUT(weights, TensorType({DT_INT32, DT_INT64, DT_FLOAT, DT_DOUBLE}))
+    .ATTR(binary_output, Bool, false)
+    .OUTPUT(output, TensorType({DT_INT32, DT_INT64, DT_FLOAT, DT_DOUBLE}))
+    .OP_END_FACTORY_REG(SparseBincount)
+#endif
 
 } // namespace ge
 

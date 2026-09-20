@@ -1918,16 +1918,6 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/sparse_bincount/README.md">sparse_bincount</a></td>
-    <td>√</td>
-    <td>×</td>
-    <td>×</td>
-    <td>×</td>
-    <td>AI Core</td>
-    <td>统计稀疏张量中每个值的出现次数或加权累加和。</td>
-  </tr>
-  <tr>
-    <td>math</td>
     <td><a href="../../math/sinc/README.md">sinc</a></td>
     <td>√</td>
     <td>√</td>
@@ -3118,16 +3108,6 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/matrix_diag_part/README.md">matrix_diag_part</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>√</td>
-    <td>AI Core</td>
-    <td>返回批处理张量最内层矩阵的主对角线元素。</td>
-  </tr>
-  <tr>
-    <td>conversion</td>
     <td><a href="../../conversion/matrix_diag_v3/README.md">matrix_diag_v3</a></td>
     <td>√</td>
     <td>×</td>
@@ -3155,16 +3135,6 @@
     <td>√</td>
     <td>AI CPU</td>
     <td>将张量沿指定维度split_dim平均拆分为num_split份更小的张量。与Split算子不同，split_dim作为属性而非输入提供。</td>
-  </tr>
-  <tr>
-    <td>conversion</td>
-    <td><a href="../../conversion/strided_slice_assign/README.md">strided_slice_assign</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>√</td>
-    <td>AI Core</td>
-    <td>将输入张量input_value的内容赋值给目标张量var中由begin、end、strides指定的切片位置，切片以外的区域保持var原值不变（in-place语义）。</td>
   </tr>
   <tr>
     <td>random</td>
@@ -3385,16 +3355,6 @@
       <td>×</td>
       <td>AI Core</td>
       <td>实现AMP训练中的动态Scale更新，根据当前scale值、growth_tracker计数器以及是否发现Inf/NaN，动态调整loss scale大小。</td>
-  </tr>
-  <tr>
-      <td>math</td>
-      <td><a href="../../math/prod_virial_se_a/README.md">prod_virial_se_a</a></td>
-      <td>√</td>
-      <td>√</td>
-      <td>×</td>
-      <td>√</td>
-      <td>AI Core</td>
-      <td>计算深度势能模型中基于SE原子嵌入描述符的A类型位力张量。</td>
   </tr>
   <tr>
     <td>random</td>
