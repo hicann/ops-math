@@ -14,40 +14,28 @@
  */
 #include "register/op_def_registry.h"
 
-namespace ops
-{
-static const std::vector<ge::DataType> DataTypeValue = {ge::DT_FLOAT16, ge::DT_BF16, ge::DT_FLOAT,
-                                                        ge::DT_INT8, ge::DT_INT16, ge::DT_INT32, ge::DT_INT64,
-                                                        ge::DT_UINT8, ge::DT_UINT16, ge::DT_UINT32, ge::DT_UINT64,
-                                                        ge::DT_FLOAT16, ge::DT_BF16, ge::DT_FLOAT,
-                                                        ge::DT_INT8, ge::DT_INT16, ge::DT_INT32, ge::DT_INT64,
-                                                        ge::DT_UINT8, ge::DT_UINT16, ge::DT_UINT32, ge::DT_UINT64};
-static const std::vector<ge::Format> format = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                               ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
-static const std::vector<ge::DataType> DataTypeIndex = {ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-                                                      ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-                                                      ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-                                                      ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                                                      ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-                                                      ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
+namespace ops {
+static const std::vector<ge::DataType> DataTypeValue = {
+    ge::DT_FLOAT16, ge::DT_BF16,   ge::DT_FLOAT,  ge::DT_INT8,   ge::DT_INT16,  ge::DT_INT32,
+    ge::DT_INT64,   ge::DT_UINT8,  ge::DT_UINT16, ge::DT_UINT32, ge::DT_UINT64, ge::DT_FLOAT16,
+    ge::DT_BF16,    ge::DT_FLOAT,  ge::DT_INT8,   ge::DT_INT16,  ge::DT_INT32,  ge::DT_INT64,
+    ge::DT_UINT8,   ge::DT_UINT16, ge::DT_UINT32, ge::DT_UINT64};
+static const std::vector<ge::Format> format = {
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+static const std::vector<ge::DataType> DataTypeIndex = {
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
 
-class AdjacentDifference : public OpDef
-{
+class AdjacentDifference : public OpDef {
 public:
     explicit AdjacentDifference(const char* name) : OpDef(name)
     {
-        this->Input("x")
-            .ParamType(REQUIRED)
-            .DataType(DataTypeValue)
-            .Format(format);
-        this->Output("y")
-            .ParamType(REQUIRED)
-            .DataType(DataTypeIndex)
-            .Format(format);
+        this->Input("x").ParamType(REQUIRED).DataType(DataTypeValue).Format(format);
+        this->Output("y").ParamType(REQUIRED).DataType(DataTypeIndex).Format(format);
         this->Attr("y_dtype").AttrType(OPTIONAL).Int(ge::DT_INT32);
         OpAICoreConfig aicoreConfig;
         aicoreConfig.DynamicCompileStaticFlag(true)
@@ -57,6 +45,7 @@ public:
             .NeedCheckSupportFlag(false)
             .ExtendCfgInfo("opFile.value", "adjacent_difference_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend350", aicoreConfig);
     }
 };
 

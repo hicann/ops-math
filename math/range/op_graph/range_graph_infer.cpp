@@ -29,12 +29,13 @@ static ge::graphStatus InferDataType4Range(gert::InferDataTypeContext* context)
     DataType deltaDataType = context->GetInputDataType(2);
     fe::PlatformInfo platform_info;
     fe::OptionalInfo optional_info;
-    OP_CHECK_IF(
-        (fe::PlatformInfoManager::Instance().GetPlatformInfoWithOutSocVersion(platform_info, optional_info) !=
-        ge::GRAPH_SUCCESS), OP_LOGE(context->GetNodeName(), "Cannot get platform info!"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((fe::PlatformInfoManager::Instance().GetPlatformInfoWithOutSocVersion(platform_info, optional_info) !=
+                 ge::GRAPH_SUCCESS),
+                OP_LOGE(context->GetNodeName(), "Cannot get platform info!"), return ge::GRAPH_FAILED);
     OP_LOGD(context->GetNodeName(), "soc version is %s", platform_info.str_info.short_soc_version.c_str());
     if ((startDataType == limitDataType) && (limitDataType == deltaDataType)) {
-        if (startDataType == ge::DT_DOUBLE && platform_info.str_info.short_soc_version == "Ascend950") {
+        if (startDataType == ge::DT_DOUBLE && (platform_info.str_info.short_soc_version == "Ascend950" ||
+                                               platform_info.str_info.short_soc_version == "Ascend350")) {
             context->SetOutputDataType(0, ge::DT_FLOAT);
         } else {
             context->SetOutputDataType(0, startDataType);

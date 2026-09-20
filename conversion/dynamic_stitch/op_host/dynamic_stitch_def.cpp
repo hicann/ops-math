@@ -21,37 +21,36 @@ using namespace ge;
 
 constexpr int32_t AICORE_CHECK_LIST_CNT = 64;
 
-const std::vector<DataType> xDType = {
-    DT_INT8,   DT_UINT8, DT_INT16,   DT_UINT16, DT_INT32, DT_UINT32, DT_INT64,
-    DT_UINT64, DT_BOOL,  DT_FLOAT16, DT_BF16,   DT_FLOAT, DT_DOUBLE, DT_COMPLEX64};
-const std::vector<DataType> indicesDType = {
-    DT_INT32, DT_INT32, DT_INT32, DT_INT32, DT_INT32, DT_INT32, DT_INT32,
-    DT_INT32, DT_INT32, DT_INT32, DT_INT32, DT_INT32, DT_INT32, DT_INT32};
-const std::vector<Format> xFormat = {
-    FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND,
-    FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND};
+const std::vector<DataType> xDType = {DT_INT8,   DT_UINT8, DT_INT16,   DT_UINT16, DT_INT32, DT_UINT32, DT_INT64,
+                                      DT_UINT64, DT_BOOL,  DT_FLOAT16, DT_BF16,   DT_FLOAT, DT_DOUBLE, DT_COMPLEX64};
+const std::vector<DataType> indicesDType = {DT_INT32, DT_INT32, DT_INT32, DT_INT32, DT_INT32, DT_INT32, DT_INT32,
+                                            DT_INT32, DT_INT32, DT_INT32, DT_INT32, DT_INT32, DT_INT32, DT_INT32};
+const std::vector<Format> xFormat = {FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND,
+                                     FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND, FORMAT_ND};
 
 graphStatus CheckIfAICoreSupported(const Operator& op, AscendString& result)
 {
     int32_t attrN = 0;
     graphStatus retStatus = op.GetAttr("N", attrN);
     if (retStatus != GRAPH_SUCCESS) {
-        result = AscendString(R"({"isSupported": "False", "dynamicCompileStatic": "True", "reason": "GetAttr N error"})");
+        result = AscendString(
+            R"({"isSupported": "False", "dynamicCompileStatic": "True", "reason": "GetAttr N error"})");
         return GRAPH_FAILED;
     }
     if (attrN < 1 || attrN > AICORE_CHECK_LIST_CNT) {
-        result = AscendString(R"({"isSupported": "False", "dynamicCompileStatic": "True", "reason": "attr out of range."})");
+        result = AscendString(
+            R"({"isSupported": "False", "dynamicCompileStatic": "True", "reason": "attr out of range."})");
         return GRAPH_FAILED;
     }
-    result = AscendString(R"({"isSupported": "True", "dynamicCompileStatic": "True", "reason": "CheckSupported success."})");
+    result = AscendString(
+        R"({"isSupported": "True", "dynamicCompileStatic": "True", "reason": "CheckSupported success."})");
     return GRAPH_SUCCESS;
 }
 
 } // namespace
 
 namespace ops {
-class DynamicStitch : public OpDef
-{
+class DynamicStitch : public OpDef {
 public:
     explicit DynamicStitch(const char* name) : OpDef(name)
     {
@@ -79,6 +78,7 @@ public:
             .NeedCheckSupportFlag(true)
             .ExtendCfgInfo("opFile.value", "dynamic_stitch_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend350", aicoreConfig);
     }
 };
 

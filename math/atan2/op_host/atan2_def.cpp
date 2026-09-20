@@ -33,32 +33,34 @@ static const std::vector<ge::Format> supportedFormats = {
 };
 class Atan2 : public OpDef {
 public:
-  explicit Atan2(const char *name) : OpDef(name) {
-    this->Input("x1")
-        .ParamType(REQUIRED)
-        .DataType(supportedDtypes)
-        .Format(supportedFormats)
-        .UnknownShapeFormat(supportedFormats);
-    this->Input("x2")
-        .ParamType(REQUIRED)
-        .DataType(supportedDtypes)
-        .Format(supportedFormats)
-        .UnknownShapeFormat(supportedFormats);
-    this->Output("y")
-        .ParamType(REQUIRED)
-        .DataType(supportedDtypes)
-        .Format(supportedFormats)
-        .UnknownShapeFormat(supportedFormats);
-    OpAICoreConfig aicoreConfig;
-    aicoreConfig.DynamicCompileStaticFlag(true)
-        .DynamicFormatFlag(false)
-        .DynamicRankSupportFlag(true)
-        .DynamicShapeSupportFlag(true)
-        .NeedCheckSupportFlag(false)
-        .PrecisionReduceFlag(true)
-        .ExtendCfgInfo("opFile.value", "atan2_apt");
-    this->AICore().AddConfig("ascend950", aicoreConfig);
-  }
+    explicit Atan2(const char* name) : OpDef(name)
+    {
+        this->Input("x1")
+            .ParamType(REQUIRED)
+            .DataType(supportedDtypes)
+            .Format(supportedFormats)
+            .UnknownShapeFormat(supportedFormats);
+        this->Input("x2")
+            .ParamType(REQUIRED)
+            .DataType(supportedDtypes)
+            .Format(supportedFormats)
+            .UnknownShapeFormat(supportedFormats);
+        this->Output("y")
+            .ParamType(REQUIRED)
+            .DataType(supportedDtypes)
+            .Format(supportedFormats)
+            .UnknownShapeFormat(supportedFormats);
+        OpAICoreConfig aicoreConfig;
+        aicoreConfig.DynamicCompileStaticFlag(true)
+            .DynamicFormatFlag(false)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .NeedCheckSupportFlag(false)
+            .PrecisionReduceFlag(true)
+            .ExtendCfgInfo("opFile.value", "atan2_apt");
+        this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend350", aicoreConfig);
+    }
 };
 
 OP_ADD(Atan2);
