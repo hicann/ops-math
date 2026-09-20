@@ -157,7 +157,10 @@ int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor>& input, std::vect
                      std::vector<Operator>& outputs, Graph& graph)
 {
     Status ret = SUCCESS;
-    auto dynamicStitch1 = op::DynamicStitch("dynamicStitch1").set_attr_N(2);
+    auto dynamicStitch1 = op::DynamicStitch("dynamicStitch1")
+                              .create_dynamic_input_indices(2, false)
+                              .create_dynamic_input_x(2, false)
+                              .set_attr_N(2);
 
     std::vector<int64_t> indices0_shape = {1};
     std::vector<int64_t> indices1_shape = {1};
@@ -177,7 +180,7 @@ int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor>& input, std::vect
     placeholder_indices0.update_input_desc_x(placeholder_indices0_desc);
     input.push_back(tensor_indices0);
     graph.AddOp(placeholder_indices0);
-    dynamicStitch1.set_input_indices(placeholder_indices0, 0);
+    dynamicStitch1.set_dynamic_input_indices(0, placeholder_indices0);
     inputs.push_back(placeholder_indices0);
 
     auto placeholder_indices1 = op::Data("placeholder_indices1").set_attr_index(1);
@@ -193,7 +196,7 @@ int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor>& input, std::vect
     placeholder_indices1.update_input_desc_x(placeholder_indices1_desc);
     input.push_back(tensor_indices1);
     graph.AddOp(placeholder_indices1);
-    dynamicStitch1.set_input_indices(placeholder_indices1, 1);
+    dynamicStitch1.set_dynamic_input_indices(1, placeholder_indices1);
     inputs.push_back(placeholder_indices1);
 
     auto placeholder_x0 = op::Data("placeholder_x0").set_attr_index(2);
@@ -209,7 +212,7 @@ int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor>& input, std::vect
     placeholder_x0.update_input_desc_x(placeholder_x0_desc);
     input.push_back(tensor_x0);
     graph.AddOp(placeholder_x0);
-    dynamicStitch1.set_input_x(placeholder_x0, 0);
+    dynamicStitch1.set_dynamic_input_x(0, placeholder_x0);
     inputs.push_back(placeholder_x0);
 
     auto placeholder_x1 = op::Data("placeholder_x1").set_attr_index(3);
@@ -225,10 +228,8 @@ int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor>& input, std::vect
     placeholder_x1.update_input_desc_x(placeholder_x1_desc);
     input.push_back(tensor_x1);
     graph.AddOp(placeholder_x1);
-    dynamicStitch1.set_input_x(placeholder_x1, 1);
+    dynamicStitch1.set_dynamic_input_x(1, placeholder_x1);
     inputs.push_back(placeholder_x1);
-
-    dynamicStitch1.create_dynamic_output_y();
 
     outputs.push_back(dynamicStitch1);
 

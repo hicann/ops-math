@@ -190,7 +190,7 @@ int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor>& input, std::vect
                      std::vector<Operator>& outputs, Graph& graph)
 {
     Status ret = SUCCESS;
-    auto concat1 = op::ConcatV2("concat1").create_dynamic_input_x(2, false);
+    auto concat1 = op::Concat("concat1").create_dynamic_input_x(2, false);
     std::vector<int64_t> xShape = {32, 4, 4, 4};
     ADD_DYNAMIC_INPUT(1, inDtype, xShape, X);
     ADD_DYNAMIC_INPUT(2, inDtype, xShape, X);

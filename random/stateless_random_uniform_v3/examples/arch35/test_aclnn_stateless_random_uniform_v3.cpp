@@ -8,7 +8,10 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include "random/stateless_random_uniform_v3/op_api/stateless_random_uniform_v3.h"
+#define _GLIBCXX_USE_CXX11_ABI 0
+
+#include "../../op_api/stateless_random_uniform_v3.h"
+#include "acl/acl.h"
 #include "aclnn/aclnn_base.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"
@@ -36,10 +39,15 @@ int main()
         return -1;
     }
 
-    std::vector<int64_t> shape = {1000};
-    auto self = op::CreateTensor(shape, DataType::DT_FLOAT);
+    auto executor = CREATE_EXECUTOR();
+    if (executor.get() == nullptr) {
+        std::cerr << "CREATE_EXECUTOR failed" << std::endl;
+        return -1;
+    }
+
+    auto self = executor->AllocTensor(op::Shape{1000}, DataType::DT_FLOAT);
     if (self == nullptr) {
-        std::cerr << "CreateTensor failed" << std::endl;
+        std::cerr << "AllocTensor failed" << std::endl;
         return -1;
     }
 
@@ -48,36 +56,27 @@ int main()
     float from = 10.0f;
     float to = 20.0f;
 
-    auto executor = CREATE_EXECUTOR();
-    if (executor.get() == nullptr) {
-        std::cerr << "CREATE_EXECUTOR failed" << std::endl;
-        return -1;
-    }
-
-    auto result = l0op::StatelessRandomUniformV3(self, seed, offset, from, to, executor.get());
+    constexpr int32_t v3KernelMode = 0;
+    auto result = l0op::StatelessRandomUniformV3(self, seed, offset, from, to, v3KernelMode, executor.get());
     if (result == nullptr) {
         std::cerr << "StatelessRandomUniformV3 failed" << std::endl;
         return -1;
     }
 
-    uint64_t workspaceSize = 0;
-    aclOpExecutor* executorPtr = nullptr;
-    auto workspaceRet = executor->GetWorkspaceSize(workspaceSize, &executorPtr);
-    if (workspaceRet != ACLNN_SUCCESS) {
-        std::cerr << "GetWorkspaceSize failed: " << workspaceRet << std::endl;
-        return -1;
-    }
+    uint64_t workspaceSize = executor->GetWorkspaceSize();
 
     void* workspace = nullptr;
     if (workspaceSize > 0) {
-        ret = aclrtMalloc(&workspace, workspaceSize);
+        ret = aclrtMalloc(&workspace, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
         if (ret != ACL_ERROR_NONE) {
             std::cerr << "aclrtMalloc failed, ret: " << ret << std::endl;
             return -1;
         }
     }
 
-    auto runRet = executor->Run(workspace, workspaceSize, executorPtr, stream);
+    executor->UpdateTensorAddr(workspace, workspaceSize);
+    executor->SetStream(stream);
+    auto runRet = executor->Run();
     if (runRet != ACLNN_SUCCESS) {
         std::cerr << "Run failed: " << runRet << std::endl;
         return -1;

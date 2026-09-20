@@ -28,7 +28,6 @@
 
 #include "experiment_ops.h"
 #include "nn_other.h"
-#include "../op_graph/stateless_random_choice_with_mask.h"
 
 #define FAILED -1
 #define SUCCESS 0
@@ -207,7 +206,7 @@ int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor>& input, std::vect
     std::vector<int64_t> yShape = {2, 1};
     std::vector<int64_t> maskShape = {2};
 
-    ADD_INPUT(1, x, ge::DT_BOOL, xShape);
+    ADD_INPUT(1, x, ge::DT_BOOL, xShape, 1.0f);
     ADD_INT_INPUT(2, count, DT_INT32, countShape, 3);
     ADD_INT_INPUT(3, seed, DT_INT64, seedShape, 3);
     ADD_INT_INPUT(4, offset, DT_INT64, offsetShape, 3);
