@@ -51,7 +51,7 @@ uint32_t GetDynamicDimsCpuKernel::Compute(CpuKernelContext& ctx)
 }
 
 template <typename T>
-uint32_t GetDynamicDimsCpuKernel::DoCompute(const CpuKernelContext& ctx)
+uint32_t GetDynamicDimsCpuKernel::DoCompute(const CpuKernelContext& ctx) const
 {
     int64_t count = ctx.GetAttr("N")->GetInt();
     KERNEL_LOG_INFO("[%s] get attr:N [%ld].", kGetDynamicDims, count);
@@ -90,7 +90,7 @@ uint32_t GetDynamicDimsCpuKernel::DoCompute(const CpuKernelContext& ctx)
 }
 
 template <typename T>
-uint32_t GetDynamicDimsCpuKernel::FillOutput(const CpuKernelContext& ctx, std::vector<T>& dims)
+uint32_t GetDynamicDimsCpuKernel::FillOutput(const CpuKernelContext& ctx, std::vector<T>& dims) const
 {
     KERNEL_LOG_INFO("[%s] unknown dims: [%s].", kGetDynamicDims, VectorToString(dims).c_str());
 

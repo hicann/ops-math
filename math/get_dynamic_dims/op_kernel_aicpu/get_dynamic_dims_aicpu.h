@@ -29,10 +29,10 @@ public:
 
 private:
     template <typename T>
-    uint32_t DoCompute(const CpuKernelContext& ctx);
+    uint32_t DoCompute(const CpuKernelContext& ctx) const;
 
     template <typename T>
-    uint32_t FillOutput(const CpuKernelContext& ctx, std::vector<T>& dims);
+    uint32_t FillOutput(const CpuKernelContext& ctx, std::vector<T>& dims) const;
 
     uint32_t GetShapeInfos(const std::vector<int64_t>& shape_info,
                            std::vector<std::vector<int64_t>>& shape_infos) const;
