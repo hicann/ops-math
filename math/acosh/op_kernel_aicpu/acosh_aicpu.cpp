@@ -116,7 +116,8 @@ inline std::uint32_t ExtraCheckAcosh(const CpuKernelContext& ctx)
 
 inline std::uint32_t CheckAcosh(CpuKernelContext& ctx, std::uint32_t inputs_num, std::uint32_t outputs_num)
 {
-    return NormalCheck(ctx, inputs_num, outputs_num) ? KERNEL_STATUS_PARAM_INVALID : ExtraCheckAcosh(ctx);
+    return (NormalCheck(ctx, inputs_num, outputs_num) != KERNEL_STATUS_OK) ? KERNEL_STATUS_PARAM_INVALID :
+                                                                             ExtraCheckAcosh(ctx);
 }
 
 inline std::uint32_t ComputeAcoshDispatch(const CpuKernelContext& ctx)
@@ -146,8 +147,9 @@ inline std::uint32_t ComputeAcoshDispatch(const CpuKernelContext& ctx)
 
 std::uint32_t AcoshCpuKernel::Compute(CpuKernelContext& ctx)
 {
-    return detail::CheckAcosh(ctx, kAcoshInputNum, kAcoshOutputNum) ? KERNEL_STATUS_PARAM_INVALID :
-                                                                      detail::ComputeAcoshDispatch(ctx);
+    return (detail::CheckAcosh(ctx, kAcoshInputNum, kAcoshOutputNum) != KERNEL_STATUS_OK) ?
+               KERNEL_STATUS_PARAM_INVALID :
+               detail::ComputeAcoshDispatch(ctx);
 }
 
 OPS_MATH_REGISTER_CPU_KERNELV2(kAcosh, AcoshCpuKernel);

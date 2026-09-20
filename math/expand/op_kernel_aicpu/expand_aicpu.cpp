@@ -305,8 +305,8 @@ void ExpandCpuKernel::EmptyTensorCompute(const CpuKernelContext& ctx)
     const int64_t shape_num = ctx.Input(kSecondInputIndex)->NumElements();
     KERNEL_LOG_INFO("shape num elements [%ld]", shape_num);
     if (shape_num == 0) {
-        auto* output_data = reinterpret_cast<T*>(ctx.Output(kFirstOutputIndex)->GetData());
-        const auto* input_data = reinterpret_cast<const T*>(ctx.Input(kFirstInputIndex)->GetData());
+        auto* output_data = aicpu::PtrToPtr<void, T>(ctx.Output(kFirstOutputIndex)->GetData());
+        const auto* input_data = aicpu::PtrToPtr<void, const T>(ctx.Input(kFirstInputIndex)->GetData());
         *output_data = *input_data;
         is_empty_tensor_ = true;
     }

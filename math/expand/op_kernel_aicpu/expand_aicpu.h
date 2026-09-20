@@ -20,7 +20,7 @@ namespace aicpu {
 class ExpandCpuKernel : public CpuKernel {
 public:
     ExpandCpuKernel() = default;
-    ~ExpandCpuKernel() = default;
+    ~ExpandCpuKernel() override = default;
 
     uint32_t Compute(CpuKernelContext& ctx) override;
 

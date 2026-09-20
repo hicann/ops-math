@@ -22,7 +22,7 @@ struct TransArgs {
 
 class TransDataCpuKernel : public CpuKernel {
 public:
-    ~TransDataCpuKernel() = default;
+    ~TransDataCpuKernel() override = default;
     uint32_t Compute(CpuKernelContext& ctx) override;
 
 private:
@@ -37,7 +37,7 @@ private:
     uint32_t Transpose(TransArgs& args, const std::vector<int64_t>& perm_arg, std::shared_ptr<uint8_t>& dst) const;
     int64_t GetCubeSizeByDataType(DataType data_type) const;
 
-    bool IsOriginSupportFormatTransfer(Format src_fromat, Format dst_format) const;
+    bool IsOriginSupportFormatTransfer(Format src_format, Format dst_format) const;
 
     uint32_t NewCompute(const CpuKernelContext& ctx);
     uint32_t HandleHwcnToFzC04(const Tensor* input_tensor, const Tensor* output_tensor);
