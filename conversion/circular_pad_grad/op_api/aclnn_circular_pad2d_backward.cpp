@@ -65,7 +65,7 @@ static aclnnStatus commonPad2dBackward(const aclTensor* gradOutput, const aclTen
         if (self->GetViewShape().GetDimNum() == 3) {
             // 1, 2 are indexes
             if (self->GetViewShape().GetDim(1) == 0 || self->GetViewShape().GetDim(2) == 0) {
-                OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input should not be empty.");
+                OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input dim 1 or dim 2 should not be empty.");
                 return ACLNN_ERR_PARAM_INVALID;
             }
         }
@@ -75,7 +75,7 @@ static aclnnStatus commonPad2dBackward(const aclTensor* gradOutput, const aclTen
             if (self->GetViewShape().GetDim(1) == 0 || self->GetViewShape().GetDim(2) == 0 ||
                 // 3 is index
                 self->GetViewShape().GetDim(3) == 0) {
-                OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input should not be empty.");
+                OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input dim 1, dim 2 or dim 3 should not be empty.");
                 return ACLNN_ERR_PARAM_INVALID;
             }
         }

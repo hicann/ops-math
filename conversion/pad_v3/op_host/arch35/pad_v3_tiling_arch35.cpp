@@ -1355,8 +1355,8 @@ ge::graphStatus PadACTiling::DoTilingModeEdge()
         DoTilingWithEdge();
     } else if (isPadAllNegative_) {
         tilingKey_ = CONSTANT_SLICE_BRANCH;
-        OP_CHECK_IF(DoTilingWithSliceOp() == ge::GRAPH_FAILED, OP_LOGE(context_, "PadACTiling with slice op error."),
-                    return ge::GRAPH_FAILED);
+        OP_CHECK_IF(DoTilingWithSliceOp() == ge::GRAPH_FAILED,
+                    OP_LOGE(context_, "PadACTiling Edge with slice op error."), return ge::GRAPH_FAILED);
         context_->SetTilingKey(tilingKey_);
         isUseSlice_ = true;
     } else {
@@ -1378,8 +1378,8 @@ ge::graphStatus PadACTiling::DoTilingModeMirror()
         DoTilingWithReflect();
     } else if (isPadAllNegative_) {
         tilingKey_ = CONSTANT_SLICE_BRANCH;
-        OP_CHECK_IF(DoTilingWithSliceOp() == ge::GRAPH_FAILED, OP_LOGE(context_, "PadACTiling with slice op error."),
-                    return ge::GRAPH_FAILED);
+        OP_CHECK_IF(DoTilingWithSliceOp() == ge::GRAPH_FAILED,
+                    OP_LOGE(context_, "PadACTiling Mirror with slice op error."), return ge::GRAPH_FAILED);
         context_->SetTilingKey(tilingKey_);
         isUseSlice_ = true;
     } else {
@@ -1402,8 +1402,8 @@ ge::graphStatus PadACTiling::DoTilingModeCircular()
         DoTilingWithCircular();
     } else if (isPadAllNegative_) {
         tilingKey_ = CONSTANT_SLICE_BRANCH;
-        OP_CHECK_IF(DoTilingWithSliceOp() == ge::GRAPH_FAILED, OP_LOGE(context_, "PadACTiling with slice op error."),
-                    return ge::GRAPH_FAILED);
+        OP_CHECK_IF(DoTilingWithSliceOp() == ge::GRAPH_FAILED,
+                    OP_LOGE(context_, "PadACTiling Circular with slice op error."), return ge::GRAPH_FAILED);
         context_->SetTilingKey(tilingKey_);
         isUseSlice_ = true;
     } else {
@@ -1427,8 +1427,8 @@ ge::graphStatus PadACTiling::DispatchTilingBranch()
         DoTilingWithConstant();
     } else if (isPadAllNegative_) {
         tilingKey_ = CONSTANT_SLICE_BRANCH;
-        OP_CHECK_IF(DoTilingWithSliceOp() == ge::GRAPH_FAILED, OP_LOGE(context_, "PadACTiling with slice op error."),
-                    return ge::GRAPH_FAILED);
+        OP_CHECK_IF(DoTilingWithSliceOp() == ge::GRAPH_FAILED,
+                    OP_LOGE(context_, "PadACTiling Dispatch with slice op error."), return ge::GRAPH_FAILED);
         context_->SetTilingKey(tilingKey_);
         isUseSlice_ = true;
     } else {

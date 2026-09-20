@@ -230,11 +230,11 @@ static aclnnStatus Pad1dBwdHandleEmptyTensor(const aclTensor* self, Pad1dBackwar
         if (mode == Pad1dBackwardMode::REFLECT) {
             // 1 is index
             if (self->GetViewShape().GetDim(1) == 0) {
-                OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input should not be empty.");
+                OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input dim 1 should not be empty in reflect mode.");
                 return ACLNN_ERR_PARAM_INVALID;
             }
         } else {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input should not be empty.");
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input should not be empty in replicate mode.");
             return ACLNN_ERR_PARAM_INVALID;
         }
     }
@@ -242,7 +242,7 @@ static aclnnStatus Pad1dBwdHandleEmptyTensor(const aclTensor* self, Pad1dBackwar
     if (self->GetViewShape().GetDimNum() == 3) {
         // 1, 2 are indexes
         if (self->GetViewShape().GetDim(1) == 0 || self->GetViewShape().GetDim(2) == 0) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input should not be empty.");
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Input dim 1 or dim 2 should not be empty.");
             return ACLNN_ERR_PARAM_INVALID;
         }
     }
