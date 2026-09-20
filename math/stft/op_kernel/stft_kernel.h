@@ -9,11 +9,13 @@
  */
 
 /*!
- * \file stft.h
- * \brief
+ * \file stft_kernel.h
+ * \brief AICore kernel entry of STFT (renamed from stft.h to avoid the
+ *        name collision with op_host/op_api/stft.h, the host-side l0op
+ *        interface header, when both include paths are present)
  */
-#ifndef STFT_H
-#define STFT_H
+#ifndef STFT_KERNEL_H
+#define STFT_KERNEL_H
 
 #include "kernel_tiling/kernel_tiling.h"
 #include "kernel_operator.h"
@@ -59,16 +61,19 @@ public:
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR window, GM_ADDR y, GM_ADDR workspace, STFTTilingData* tilingData)
     {
         inTilingData = tilingData;
-        size_t windowSplitWorkspaceSize =
-            ((((uint64_t)inTilingData->blockNum * inTilingData->frameCount * inTilingData->nfft * sizeof(T) + 511) / 512) * 512) *
-            inTilingData->aivBatchLoop / sizeof(T);
+        size_t windowSplitWorkspaceSize = ((((uint64_t)inTilingData->blockNum * inTilingData->frameCount *
+                                                 inTilingData->nfft * sizeof(T) +
+                                             511) /
+                                            512) *
+                                           512) *
+                                          inTilingData->aivBatchLoop / sizeof(T);
         if (g_coreType == AIV) {
             inputGm.SetGlobalBuffer((__gm__ T*)x, (uint64_t)inTilingData->batch * inTilingData->inputSize);
-            windowSplitWorkspaceGm.SetGlobalBuffer(
-                (__gm__ T*)workspace,
-                (uint64_t)inTilingData->blockNum * inTilingData->aivBatchLoop * inTilingData->frameCount * inTilingData->nfft);
-            outputGm.SetGlobalBuffer(
-                (__gm__ T*)y, (uint64_t)inTilingData->matmulM * inTilingData->frameCount * inTilingData->batch * DOUBLE_BUFFER);
+            windowSplitWorkspaceGm.SetGlobalBuffer((__gm__ T*)workspace,
+                                                   (uint64_t)inTilingData->blockNum * inTilingData->aivBatchLoop *
+                                                       inTilingData->frameCount * inTilingData->nfft);
+            outputGm.SetGlobalBuffer((__gm__ T*)y, (uint64_t)inTilingData->matmulM * inTilingData->frameCount *
+                                                       inTilingData->batch * DOUBLE_BUFFER);
             gmReal.SetGlobalBuffer(
                 reinterpret_cast<__gm__ T*>(workspace) + windowSplitWorkspaceSize,
                 (uint64_t)inTilingData->batch * inTilingData->matmulM * inTilingData->frameCount * DOUBLE_BUFFER);
@@ -83,11 +88,11 @@ public:
 
         if (g_coreType == AIC) {
             auto blockIdx = GetBlockIdx();
-            a1Global.SetGlobalBuffer(
-                reinterpret_cast<__gm__ T*>(window), (uint64_t)inTilingData->matmulM * inTilingData->nfft * DOUBLE_BUFFER);
-            bGlobal.SetGlobalBuffer(
-                reinterpret_cast<__gm__ T*>(workspace),
-                (uint64_t)inTilingData->blockNum * inTilingData->nfft * inTilingData->frameCount * inTilingData->aivBatchLoop);
+            a1Global.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(window),
+                                     (uint64_t)inTilingData->matmulM * inTilingData->nfft * DOUBLE_BUFFER);
+            bGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(workspace),
+                                    (uint64_t)inTilingData->blockNum * inTilingData->nfft * inTilingData->frameCount *
+                                        inTilingData->aivBatchLoop);
             matMulWorkspaceGm.SetGlobalBuffer(
                 reinterpret_cast<__gm__ T*>(workspace) + windowSplitWorkspaceSize,
                 (uint64_t)inTilingData->matmulM * inTilingData->frameCount * inTilingData->batch * DOUBLE_BUFFER);
@@ -186,8 +191,8 @@ public:
                              (int64_t)(blockIdx % C_V_DOUBLE) * (aivTotalEvenMLen * REAL_IMAG) * frameCount;
             } else {
                 offsetBase = (int64_t)(aivMTailIdx / C_V_DOUBLE) * totalMLen * frameCount +
-                             (int64_t)(((blockIdx % windowLoop) - aivMTailIdx) % C_V_DOUBLE) * (aivTailEvenMLen * REAL_IMAG) *
-                                 frameCount +
+                             (int64_t)(((blockIdx % windowLoop) - aivMTailIdx) % C_V_DOUBLE) *
+                                 (aivTailEvenMLen * REAL_IMAG) * frameCount +
                              (int64_t)(((blockIdx % windowLoop) - aivMTailIdx) / C_V_DOUBLE) * aicTailLen * frameCount;
             }
 
@@ -222,9 +227,9 @@ public:
                         nBurst = len / frameCountAlign;
                     }
                     LocalTensor<T> realBuf = realInQueue.template AllocTensor<T>();
-                    DataCopyExtParams copyGmToUbParams{
-                        static_cast<uint16_t>(nBurst), static_cast<uint32_t>(frameCount * sizeof(T)),
-                        static_cast<uint32_t>(frameCount * sizeof(T)), 0, 0};
+                    DataCopyExtParams copyGmToUbParams{static_cast<uint16_t>(nBurst),
+                                                       static_cast<uint32_t>(frameCount * sizeof(T)),
+                                                       static_cast<uint32_t>(frameCount * sizeof(T)), 0, 0};
                     DataCopyPadExtParams<T> padParams{false, 0, static_cast<uint8_t>(frameCountDiff), 0};
                     DataCopyPad(realBuf, gmRealLocal[j * offset], copyGmToUbParams, padParams);
                     realInQueue.EnQue(realBuf);
@@ -242,9 +247,9 @@ public:
                     imagInQueue.FreeTensor(imagBuf);
 
                     complexBuf = complexOutQueue.template DeQue<T>();
-                    DataCopyExtParams copyUbToGmParams{
-                        static_cast<uint16_t>(nBurst), static_cast<uint32_t>(frameCount * sizeof(T) * REAL_IMAG),
-                        outUbGap, 0, 0};
+                    DataCopyExtParams copyUbToGmParams{static_cast<uint16_t>(nBurst),
+                                                       static_cast<uint32_t>(frameCount * sizeof(T) * REAL_IMAG),
+                                                       outUbGap, 0, 0};
                     DataCopyPad(outputGmLocal[j * offset], complexBuf, copyUbToGmParams);
                     complexOutQueue.FreeTensor(complexBuf);
                 }
@@ -272,9 +277,10 @@ public:
                 a1GlobalOffset = (int64_t)innerReminder * totalMLen * nfft;
                 outputOffsetBase = (int64_t)innerReminder * totalMLen * frameCount;
             } else {
-                a1GlobalOffset = (int64_t)aicMTailIdx * totalMLen * nfft + (int64_t)(innerReminder - aicMTailIdx) * aicTailLen * nfft;
-                outputOffsetBase =
-                    (int64_t)aicMTailIdx * totalMLen * frameCount + (int64_t)(innerReminder - aicMTailIdx) * aicTailLen * frameCount;
+                a1GlobalOffset = (int64_t)aicMTailIdx * totalMLen * nfft +
+                                 (int64_t)(innerReminder - aicMTailIdx) * aicTailLen * nfft;
+                outputOffsetBase = (int64_t)aicMTailIdx * totalMLen * frameCount +
+                                   (int64_t)(innerReminder - aicMTailIdx) * aicTailLen * frameCount;
             }
 
             uint64_t flag_id_mte3 = 3;
@@ -286,8 +292,8 @@ public:
                 }
 
                 int32_t curBatch = curBatchBase + i;
-                int64_t bGlobalOffset =
-                    (int64_t)blockIdx * aicBatchLoop * frameCount * inTilingData->nfft + (int64_t)i * frameCount * inTilingData->nfft;
+                int64_t bGlobalOffset = (int64_t)blockIdx * aicBatchLoop * frameCount * inTilingData->nfft +
+                                        (int64_t)i * frameCount * inTilingData->nfft;
                 int64_t outputOffset = (int64_t)curBatch * matmulM * frameCount * REAL_IMAG + outputOffsetBase;
                 bGM = bGlobal[bGlobalOffset];
                 aGM = a1Global[a1GlobalOffset];
@@ -299,9 +305,8 @@ public:
         }
     }
 
-    __aicore__ inline void CreateGatherMask(
-        LocalTensor<int32_t>& dst, const int32_t row, const int32_t col, const int32_t startValue,
-        const int32_t diffValue)
+    __aicore__ inline void CreateGatherMask(LocalTensor<int32_t>& dst, const int32_t row, const int32_t col,
+                                            const int32_t startValue, const int32_t diffValue)
     {
         int32_t repeatNum = row / BLOCK_NUM;
         int32_t tailNum = row % BLOCK_NUM;
@@ -332,9 +337,8 @@ public:
         }
     }
 
-    __aicore__ inline void AddsComputeAlignment(
-        LocalTensor<int32_t>& dst, LocalTensor<int32_t>& src, const int32_t rowCount, const int32_t colCount,
-        const int32_t scalar)
+    __aicore__ inline void AddsComputeAlignment(LocalTensor<int32_t>& dst, LocalTensor<int32_t>& src,
+                                                const int32_t rowCount, const int32_t colCount, const int32_t scalar)
     {
         int32_t repeatTimesOneRow = (colCount * FLOAT_BYTES + CONTINUOUS_DATA - 1) / CONTINUOUS_DATA;
         int32_t countOneRow32B = (colCount * FLOAT_BYTES + ALIGNMENT_SIZE - 1) / ALIGNMENT_SIZE;
@@ -346,17 +350,15 @@ public:
             repeatParams.srcRepStride = CONTINUOUS_DATA / ALIGNMENT_SIZE;
 
             if ((repeatTimesOneRow - 1) > 0) {
-                Adds(
-                    dst[i * ((countOneRow32B * ALIGNMENT_SIZE) / FLOAT_BYTES)], src[0],
-                    static_cast<int32_t>(i * sizeof(T)), FLOAT_MASK, repeatTimesOneRow - 1, repeatParams);
+                Adds(dst[i * ((countOneRow32B * ALIGNMENT_SIZE) / FLOAT_BYTES)], src[0],
+                     static_cast<int32_t>(i * sizeof(T)), FLOAT_MASK, repeatTimesOneRow - 1, repeatParams);
             }
-            int32_t mask =
-                FLOAT_MASK - (((repeatTimesOneRow * CONTINUOUS_DATA) - (colCount * FLOAT_BYTES)) / FLOAT_BYTES);
-            Adds(
-                dst[i * (countOneRow32B * ALIGNMENT_SIZE / FLOAT_BYTES) +
-                    (repeatTimesOneRow - 1) * (CONTINUOUS_DATA / FLOAT_BYTES)],
-                src[(repeatTimesOneRow - 1) * (CONTINUOUS_DATA / FLOAT_BYTES)],
-                static_cast<int32_t>(i * sizeof(T) * scalar), mask, 1, repeatParams);
+            int32_t mask = FLOAT_MASK -
+                           (((repeatTimesOneRow * CONTINUOUS_DATA) - (colCount * FLOAT_BYTES)) / FLOAT_BYTES);
+            Adds(dst[i * (countOneRow32B * ALIGNMENT_SIZE / FLOAT_BYTES) +
+                     (repeatTimesOneRow - 1) * (CONTINUOUS_DATA / FLOAT_BYTES)],
+                 src[(repeatTimesOneRow - 1) * (CONTINUOUS_DATA / FLOAT_BYTES)],
+                 static_cast<int32_t>(i * sizeof(T) * scalar), mask, 1, repeatParams);
         }
     }
 
@@ -374,8 +376,8 @@ public:
         int32_t remainingFrame = windowLength % blkFrame;
         int32_t halfBlkFrame = loopBlkFrame / DOUBLE_BUFFER;
         int32_t inputGmOffset = curBatch * (inTilingData->inputSize + nfft);
-        int32_t windowSplitOffset =
-            batchOffset * batchLoop * nfft * windowLength + batchLoopIndex * nfft * windowLength;
+        int32_t windowSplitOffset = batchOffset * batchLoop * nfft * windowLength +
+                                    batchLoopIndex * nfft * windowLength;
 
         // 判断BlockIdx是否为偶数
         if (GetBlockIdx() % DOUBLE_BUFFER == 0) {
@@ -435,9 +437,8 @@ private:
     __aicore__ inline void CopyOut(int32_t progress, int32_t remainingFrame, int32_t outputBaseOffset)
     {
         LocalTensor<T> outputLocal2 = outQueueOutput.template DeQue<T>();
-        DataCopy(
-            windowSplitWorkspaceGm[progress * inTilingData->blkFrame * inTilingData->nfft + outputBaseOffset],
-            outputLocal2, remainingFrame * inTilingData->nfft);
+        DataCopy(windowSplitWorkspaceGm[progress * inTilingData->blkFrame * inTilingData->nfft + outputBaseOffset],
+                 outputLocal2, remainingFrame * inTilingData->nfft);
         outQueueOutput.FreeTensor(outputLocal2);
     }
 
@@ -515,9 +516,8 @@ private:
         }
     }
 
-    __aicore__ inline void computeTail(
-        LocalTensor<T>& a1Local, LocalTensor<T>& b1Local, int curAM, int curBN, int useL1M, int useL1N, int useL1K,
-        bool fixpipeBias)
+    __aicore__ inline void computeTail(LocalTensor<T>& a1Local, LocalTensor<T>& b1Local, int curAM, int curBN,
+                                       int useL1M, int useL1N, int useL1K, bool fixpipeBias)
     {
         int nCount = MatmulCeil(useL1N, baseN_);
         int kCount = MatmulCeil(useL1K, baseK_);
@@ -534,10 +534,9 @@ private:
         LoadDataB0v5(useL1K, 0, sizeInK, sizeInN, b1Local);
         a0Local = inQueueA0.DeQue<T>();
         b0Local = inQueueB0.DeQue<T>();
-        Mmad(
-            c0Local, a0Local, b0Local,
-            {static_cast<uint16_t>(sizeInM), static_cast<uint16_t>(sizeInN), static_cast<uint16_t>(sizeInK), 0, false,
-             true});
+        Mmad(c0Local, a0Local, b0Local,
+             {static_cast<uint16_t>(sizeInM), static_cast<uint16_t>(sizeInN), static_cast<uint16_t>(sizeInK), 0, false,
+              true});
 
         AscendC::PipeBarrier<PIPE_M>();
         inQueueA0.FreeTensor(a0Local);
@@ -547,10 +546,9 @@ private:
         LoadDataB0v5(useL1K, 1, sizeInK, sizeInN, b1Local);
         a0Local = inQueueA0.DeQue<T>();
         b0Local = inQueueB0.DeQue<T>();
-        Mmad(
-            c0Local, a0Local, b0Local,
-            {static_cast<uint16_t>(sizeInM), static_cast<uint16_t>(sizeInN), static_cast<uint16_t>(sizeInK), 0, false,
-             false});
+        Mmad(c0Local, a0Local, b0Local,
+             {static_cast<uint16_t>(sizeInM), static_cast<uint16_t>(sizeInN), static_cast<uint16_t>(sizeInK), 0, false,
+              false});
 
         AscendC::PipeBarrier<PIPE_M>();
         inQueueA0.FreeTensor(a0Local);
@@ -561,10 +559,9 @@ private:
         a0Local = inQueueA0.DeQue<T>();
         b0Local = inQueueB0.DeQue<T>();
 
-        Mmad(
-            c0Local, a0Local, b0Local,
-            {static_cast<uint16_t>(sizeInM), static_cast<uint16_t>(sizeInN), static_cast<uint16_t>(sizeInK), 0, false,
-             false});
+        Mmad(c0Local, a0Local, b0Local,
+             {static_cast<uint16_t>(sizeInM), static_cast<uint16_t>(sizeInN), static_cast<uint16_t>(sizeInK), 0, false,
+              false});
         AscendC::PipeBarrier<PIPE_M>();
         inQueueA0.FreeTensor(a0Local);
         inQueueB0.FreeTensor(b0Local);
@@ -573,10 +570,9 @@ private:
         LoadDataB0v5(useL1K, INDEX_K_3, sizeInK, sizeInN, b1Local);
         a0Local = inQueueA0.DeQue<T>();
         b0Local = inQueueB0.DeQue<T>();
-        Mmad(
-            c0Local, a0Local, b0Local,
-            {static_cast<uint16_t>(sizeInM), static_cast<uint16_t>(sizeInN), static_cast<uint16_t>(sizeInK), 0, false,
-             false});
+        Mmad(c0Local, a0Local, b0Local,
+             {static_cast<uint16_t>(sizeInM), static_cast<uint16_t>(sizeInN), static_cast<uint16_t>(sizeInK), 0, false,
+              false});
 
         AscendC::PipeBarrier<PIPE_M>();
         inQueueA0.FreeTensor(a0Local);
@@ -585,10 +581,9 @@ private:
         LoadDataB0v5(useL1K, DIFFS_ONE_BLOCK, tailSizeInK, sizeInN, b1Local);
         a0Local = inQueueA0.DeQue<T>();
         b0Local = inQueueB0.DeQue<T>();
-        Mmad(
-            c0Local, a0Local, b0Local,
-            {static_cast<uint16_t>(sizeInM), static_cast<uint16_t>(sizeInN), static_cast<uint16_t>(tailSizeInK), 0,
-             false, false});
+        Mmad(c0Local, a0Local, b0Local,
+             {static_cast<uint16_t>(sizeInM), static_cast<uint16_t>(sizeInN), static_cast<uint16_t>(tailSizeInK), 0,
+              false, false});
 
         AscendC::PipeBarrier<PIPE_M>();
         inQueueA0.FreeTensor(a0Local);
@@ -640,11 +635,11 @@ private:
         if (setAtomicAdd) {
             SetAtomicAdd<T>();
         }
-        auto intriParams = AscendC::FixpipeParamsV220(sizeInN, // nSize
-                                                      sizeInM, // mSize
-                                                      MatmulCeil(sizeInM, cubeCol_) * cubeCol_,   // srcStride
-                                                      globalN_,   // dstStride
-                                                      false);      // enRelu
+        auto intriParams = AscendC::FixpipeParamsV220(sizeInN,                                  // nSize
+                                                      sizeInM,                                  // mSize
+                                                      MatmulCeil(sizeInM, cubeCol_) * cubeCol_, // srcStride
+                                                      globalN_,                                 // dstStride
+                                                      false);                                   // enRelu
 
         intriParams.quantPre = QuantMode_t::NoQuant;
 
@@ -657,18 +652,18 @@ private:
         outQueueCO.FreeTensor(c0Local);
     }
 
-    __aicore__ inline void CopyGMND2LMNZ(
-        const LocalTensor<T>& dst, const GlobalTensor<T>& src, const uint16_t row, const uint16_t col,
-        const uint16_t height, const uint16_t width, const uint16_t gCol)
+    __aicore__ inline void CopyGMND2LMNZ(const LocalTensor<T>& dst, const GlobalTensor<T>& src, const uint16_t row,
+                                         const uint16_t col, const uint16_t height, const uint16_t width,
+                                         const uint16_t gCol)
     {
         Nd2NzParams param = {1, height, width, 0, gCol, static_cast<uint16_t>(MatmulCeil(height, cubeCol_) * cubeCol_),
                              1, 0};
         DataCopy(dst, src[row * gCol + col], param);
     }
 
-    __aicore__ inline void CopyGMND2LMNZTranspose(
-        const LocalTensor<T>& dst, const GlobalTensor<T>& src, const uint16_t row, const uint16_t col,
-        const uint16_t height, const uint16_t width, const uint16_t gCol)
+    __aicore__ inline void CopyGMND2LMNZTranspose(const LocalTensor<T>& dst, const GlobalTensor<T>& src,
+                                                  const uint16_t row, const uint16_t col, const uint16_t height,
+                                                  const uint16_t width, const uint16_t gCol)
     {
         Nd2NzParams param = {1, width, height, 0, gCol, static_cast<uint16_t>(MatmulCeil(width, cubeCol_) * cubeCol_),
                              1, 0};
