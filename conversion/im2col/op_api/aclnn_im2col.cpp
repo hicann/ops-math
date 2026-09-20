@@ -9,6 +9,7 @@
  */
 #include "aclnn_im2col.h"
 #include "im2col.h"
+#include <limits>
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "conversion/squeeze/op_host/op_api/squeeze.h"
@@ -32,6 +33,7 @@ static constexpr size_t NEED_SQUEEZE = 3;
 static constexpr size_t NO_NEED_SQUEEZE = 4;
 static constexpr size_t ARRAY_SIZE = 2;
 static constexpr size_t PADDING_SIZE = 4;
+static constexpr int64_t SYMMETRIC_PADDING_SIDE_COUNT = 2;
 
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16,
@@ -43,20 +45,30 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_REGBASE = {
     op::DataType::DT_BF16,  op::DataType::DT_FLOAT16,   op::DataType::DT_FLOAT,    op::DataType::DT_DOUBLE,
     op::DataType::DT_BOOL,  op::DataType::DT_COMPLEX32, op::DataType::DT_COMPLEX64};
 
-// Integer division rounding to -Infinity
-template <typename T>
-static inline auto div_rtn(T x, T y) -> T
+static bool SafeMul(int64_t lhs, int64_t rhs, int64_t& result)
 {
-    if (y == 0) {
-        OP_LOGE(ACL_ERROR_INVALID_PARAM, "Division by zero!");
-        return -1;
+    if (lhs < 0 || rhs < 0 || (lhs != 0 && rhs > std::numeric_limits<int64_t>::max() / lhs)) {
+        return false;
     }
-    int q = x / y;
-    int r = x % y;
-    if ((r != 0) && ((r < 0) != (y < 0))) {
-        --q;
-    };
-    return q;
+    result = lhs * rhs;
+    return true;
+}
+
+static bool CalculateOutputDim(int64_t input, int64_t kernel, int64_t dilation, int64_t padding, int64_t stride,
+                               int64_t& output)
+{
+    const __int128 effectiveKernel = static_cast<__int128>(dilation) * (kernel - 1) + 1;
+    const __int128 numerator = static_cast<__int128>(input) +
+                               SYMMETRIC_PADDING_SIDE_COUNT * static_cast<__int128>(padding) - effectiveKernel;
+    if (numerator < 0) {
+        return false;
+    }
+    const __int128 result = numerator / stride + 1;
+    if (result <= 0 || result > std::numeric_limits<int64_t>::max()) {
+        return false;
+    }
+    output = static_cast<int64_t>(result);
+    return true;
 }
 
 #ifdef __cplusplus
@@ -103,27 +115,27 @@ static bool CheckOutputDims(const aclTensor* self, const aclIntArray* kernelSize
     bool isNeedSqueeze = (self->GetViewShape().GetDimNum() == NEED_SQUEEZE);
     int64_t inputHeight = isNeedSqueeze ? self->GetViewShape().GetDim(1) : self->GetViewShape().GetDim(2);
     int64_t inputWidth = isNeedSqueeze ? self->GetViewShape().GetDim(2) : self->GetViewShape().GetDim(3);
-    int64_t outputHeight = div_rtn<int64_t>(
-                               (inputHeight + 2 * (*padding)[0] - ((*dilation)[0] * ((*kernelSize)[0] - 1) + 1)),
-                               (*stride)[0]) +
-                           1;
-    int64_t outputWidth = div_rtn<int64_t>(
-                              (inputWidth + 2 * (*padding)[1] - ((*dilation)[1] * ((*kernelSize)[1] - 1) + 1)),
-                              (*stride)[1]) +
-                          1;
-    if (outputHeight < 1 || outputWidth < 1) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
-                "The shape (%ld, %ld) of the array calculated by other parameters "
-                "must be at least one.",
-                outputHeight, outputWidth);
+    int64_t outputHeight = 0;
+    int64_t outputWidth = 0;
+    if (!CalculateOutputDim(inputHeight, (*kernelSize)[0], (*dilation)[0], (*padding)[0], (*stride)[0], outputHeight) ||
+        !CalculateOutputDim(inputWidth, (*kernelSize)[1], (*dilation)[1], (*padding)[1], (*stride)[1], outputWidth)) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The output spatial dimensions calculated by other parameters are invalid.");
+        return false;
+    }
+    int64_t outputChannels = self->GetViewShape().GetDim(isNeedSqueeze ? 0 : 1);
+    if (!SafeMul(outputChannels, (*kernelSize)[0], outputChannels) ||
+        !SafeMul(outputChannels, (*kernelSize)[1], outputChannels)) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The calculated output channel size overflows.");
+        return false;
+    }
+    int64_t outputSpatial = 0;
+    if (!SafeMul(outputHeight, outputWidth, outputSpatial)) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The calculated output spatial size overflows.");
         return false;
     }
     const op::Shape outShape = isNeedSqueeze ?
-                                   op::Shape({self->GetViewShape().GetDim(0) * (*kernelSize)[0] * (*kernelSize)[1],
-                                              outputHeight * outputWidth}) :
-                                   op::Shape({self->GetViewShape().GetDim(0),
-                                              self->GetViewShape().GetDim(1) * (*kernelSize)[0] * (*kernelSize)[1],
-                                              outputHeight * outputWidth});
+                                   op::Shape({outputChannels, outputSpatial}) :
+                                   op::Shape({self->GetViewShape().GetDim(0), outputChannels, outputSpatial});
     if (outShape != out->GetViewShape()) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expect out shape %s, but got: %s.", op::ToString(outShape).GetString(),
                 op::ToString(out->GetViewShape()).GetString());
