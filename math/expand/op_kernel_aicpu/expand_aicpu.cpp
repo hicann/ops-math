@@ -10,9 +10,11 @@
 
 #include "expand_aicpu.h"
 
-#include <map>
+#include <algorithm>
+#include <limits>
 #include <vector>
 
+#include "securec.h"
 #include "aicpu/math_aicpu_register.h"
 #include "cpu_kernel_utils.h"
 #include "utils/eigen_tensor.h"
@@ -21,6 +23,7 @@ namespace {
 constexpr uint32_t kInputNum = 2;
 constexpr uint32_t kOutputNum = 1;
 const char* const kExpand = "Expand";
+constexpr uint64_t kHalfBulkCopyThreshold = 16U;
 
 #define EXPAND_EMPTY_TENSOR_CASE(DTYPE, TYPE, CTX) \
     case (DTYPE): {                                \
@@ -51,13 +54,6 @@ uint32_t NormalizeExpandShape(std::vector<IndexT>& input_shape, std::vector<Inde
             return aicpu::KERNEL_STATUS_PARAM_INVALID;
         }
 
-        if (i < diff) {
-            if (aicpu::IsValueEqual<IndexT>(target_shape[i], static_cast<IndexT>(-1))) {
-                target_shape[i] = static_cast<IndexT>(1);
-            }
-            continue;
-        }
-
         if (aicpu::IsValueEqual<IndexT>(target_shape[i], static_cast<IndexT>(-1))) {
             target_shape[i] = input_shape[i];
             continue;
@@ -80,221 +76,231 @@ uint32_t NormalizeExpandShape(std::vector<IndexT>& input_shape, std::vector<Inde
     return aicpu::KERNEL_STATUS_OK;
 }
 
-template <typename T, typename IndexT>
-uint32_t CalculateOutIndex(const std::vector<T>& input_values, std::vector<T>& output_values,
-                           const std::vector<IndexT>& input_shape, uint64_t copy_size, uint64_t expand_factor)
+bool CheckedMultiply(uint64_t left, uint64_t right, uint64_t& product)
 {
-    uint64_t input_size = 1;
-    for (auto dim : input_shape) {
-        input_size *= static_cast<uint64_t>(dim);
+    if (right != 0U && left > std::numeric_limits<uint64_t>::max() / right) {
+        return false;
     }
-
-    uint64_t copy_num = input_size / copy_size;
-    for (uint64_t i = 0; i < copy_num; ++i) {
-        for (uint64_t j = 0; j < expand_factor; ++j) {
-            output_values.insert(output_values.end(), input_values.begin() + (i * copy_size),
-                                 input_values.begin() + ((i + 1) * copy_size));
-        }
-    }
-    return aicpu::KERNEL_STATUS_OK;
+    product = left * right;
+    return true;
 }
 
-template <typename T, typename IndexT>
-uint32_t CopyExpandIndex(const std::vector<T>& input_values, std::vector<T>& output_values,
-                         const std::vector<IndexT>& input_shape, const std::vector<IndexT>& target_shape)
-{
-    output_values.clear();
-    uint64_t expand_factor = 1;
-    uint64_t copy_size = 1;
-    uint64_t break_axis = 0;
+template <typename IndexT>
+struct ExpandPlan {
+    std::vector<IndexT> input_shape;
+    std::vector<IndexT> target_shape;
+    std::vector<uint64_t> input_strides;
+    std::vector<uint64_t> coordinates;
+    size_t outer_rank = 0U;
+    uint64_t copy_elements = 1U;
+    uint64_t output_blocks = 1U;
+    uint64_t input_elements = 1U;
+};
 
-    for (int64_t i = static_cast<int64_t>(input_shape.size()) - 1; i >= 0; --i) {
-        if (!aicpu::IsValueEqual<IndexT>(input_shape[static_cast<size_t>(i)], target_shape[static_cast<size_t>(i)])) {
-            if (!aicpu::IsValueEqual<IndexT>(input_shape[static_cast<size_t>(i)], static_cast<IndexT>(1))) {
-                KERNEL_LOG_ERROR("Param error, input_shape[%ld] != 1 when input_shape[%ld] != target_shape[%ld].", i, i,
-                                 i);
-                return aicpu::KERNEL_STATUS_PARAM_INVALID;
-            }
-            if (target_shape[static_cast<size_t>(i)] < 0) {
-                KERNEL_LOG_ERROR("Param error, target_shape[%ld] is invalid at axis[%ld].",
-                                 static_cast<int64_t>(target_shape[static_cast<size_t>(i)]), i);
-                return aicpu::KERNEL_STATUS_PARAM_INVALID;
-            }
-            expand_factor = static_cast<uint64_t>(target_shape[static_cast<size_t>(i)]);
-            break_axis = static_cast<uint64_t>(i);
-            break;
+template <typename IndexT>
+uint32_t BuildExpandPlan(ExpandPlan<IndexT>& plan)
+{
+    for (IndexT dim : plan.target_shape) {
+        if (aicpu::IsValueEqual<IndexT>(dim, static_cast<IndexT>(0))) {
+            plan.copy_elements = 0U;
+            plan.output_blocks = 0U;
+            return aicpu::KERNEL_STATUS_OK;
         }
     }
 
-    if (!input_shape.empty()) {
-        if (break_axis == 0) {
-            for (uint64_t i = input_shape.size() - 1; i > 0; --i) {
-                copy_size *= static_cast<uint64_t>(input_shape[i]);
-            }
-        } else {
-            for (uint64_t i = input_shape.size() - 1; i >= break_axis; --i) {
-                copy_size *= static_cast<uint64_t>(input_shape[i]);
-                if (i == break_axis) {
-                    break;
-                }
-            }
-        }
-    }
-
-    return CalculateOutIndex<T, IndexT>(input_values, output_values, input_shape, copy_size, expand_factor);
-}
-
-template <typename T, typename IndexT>
-uint32_t GetExpandIndex(const std::vector<T>& input_values, std::vector<T>& output_values,
-                        const std::vector<IndexT>& input_shape, const std::vector<IndexT>& target_shape,
-                        std::vector<IndexT>& expanded_shape)
-{
-    IndexT expand_factor = static_cast<IndexT>(1);
-    uint64_t break_axis = 0;
-
-    for (int64_t i = static_cast<int64_t>(input_shape.size()) - 1; i >= 0; --i) {
-        if (!aicpu::IsValueEqual<IndexT>(input_shape[static_cast<size_t>(i)], target_shape[static_cast<size_t>(i)])) {
-            if (!aicpu::IsValueEqual<IndexT>(input_shape[static_cast<size_t>(i)], static_cast<IndexT>(1))) {
-                KERNEL_LOG_ERROR("Param error, input_shape[%ld] != 1 when input_shape[%ld] != target_shape[%ld].", i, i,
-                                 i);
-                return aicpu::KERNEL_STATUS_PARAM_INVALID;
-            }
-            expand_factor = target_shape[static_cast<size_t>(i)];
-            break_axis = static_cast<uint64_t>(i);
-            break;
-        }
-    }
-
-    std::vector<IndexT> temp_shape = input_shape;
-    temp_shape[break_axis] = expand_factor;
-    if (CopyExpandIndex<T, IndexT>(input_values, output_values, input_shape, temp_shape) != aicpu::KERNEL_STATUS_OK) {
-        return aicpu::KERNEL_STATUS_PARAM_INVALID;
-    }
-    expanded_shape = std::move(temp_shape);
-    return aicpu::KERNEL_STATUS_OK;
-}
-
-template <typename T, typename IndexT>
-uint32_t ExpandByLayer(std::vector<T> input_values, std::vector<T>& output_values, std::vector<IndexT> input_shape,
-                       const std::vector<IndexT>& target_shape)
-{
-    std::vector<IndexT> expanded_shape;
-    bool need_continue = true;
-    while (need_continue) {
-        if (GetExpandIndex<T, IndexT>(input_values, output_values, input_shape, target_shape, expanded_shape) !=
-            aicpu::KERNEL_STATUS_OK) {
+    plan.outer_rank = plan.target_shape.size();
+    while (plan.outer_rank > 0U && aicpu::IsValueEqual<IndexT>(plan.input_shape[plan.outer_rank - 1U],
+                                                               plan.target_shape[plan.outer_rank - 1U])) {
+        if (!CheckedMultiply(plan.copy_elements, static_cast<uint64_t>(plan.target_shape[plan.outer_rank - 1U]),
+                             plan.copy_elements)) {
             return aicpu::KERNEL_STATUS_PARAM_INVALID;
         }
-        need_continue = false;
-        for (size_t i = 0; i < input_shape.size(); ++i) {
-            if (!aicpu::IsValueEqual<IndexT>(target_shape[i], expanded_shape[i])) {
-                need_continue = true;
-                break;
-            }
+        --plan.outer_rank;
+    }
+
+    for (size_t i = 0; i < plan.outer_rank; ++i) {
+        if (!CheckedMultiply(plan.output_blocks, static_cast<uint64_t>(plan.target_shape[i]), plan.output_blocks)) {
+            return aicpu::KERNEL_STATUS_PARAM_INVALID;
         }
-        if (need_continue) {
-            input_values = output_values;
-            input_shape = expanded_shape;
+    }
+    plan.input_strides.resize(plan.outer_rank);
+    plan.coordinates.assign(plan.outer_rank, 0U);
+    uint64_t stride = plan.copy_elements;
+    for (size_t i = plan.outer_rank; i > 0U; --i) {
+        plan.input_strides[i - 1U] = stride;
+        if (!CheckedMultiply(stride, static_cast<uint64_t>(plan.input_shape[i - 1U]), stride)) {
+            return aicpu::KERNEL_STATUS_PARAM_INVALID;
+        }
+    }
+    plan.input_elements = stride;
+    return aicpu::KERNEL_STATUS_OK;
+}
+
+template <typename IndexT>
+void AdvanceInputOffset(ExpandPlan<IndexT>& plan, uint64_t& input_offset)
+{
+    for (size_t i = plan.outer_rank; i > 0U; --i) {
+        const size_t axis = i - 1U;
+        ++plan.coordinates[axis];
+        if (plan.coordinates[axis] < static_cast<uint64_t>(plan.target_shape[axis])) {
+            if (!aicpu::IsValueEqual<IndexT>(plan.input_shape[axis], static_cast<IndexT>(1))) {
+                input_offset += plan.input_strides[axis];
+            }
+            return;
+        }
+        plan.coordinates[axis] = 0U;
+        if (!aicpu::IsValueEqual<IndexT>(plan.input_shape[axis], static_cast<IndexT>(1))) {
+            input_offset -= (static_cast<uint64_t>(plan.target_shape[axis]) - 1U) * plan.input_strides[axis];
+        }
+    }
+}
+
+template <typename T, typename IndexT>
+uint32_t ValidateCopyBuffers(const aicpu::CpuKernelContext& ctx, const ExpandPlan<IndexT>& plan, uint64_t& copy_bytes)
+{
+    uint64_t input_bytes = 0U;
+    uint64_t output_elements = 0U;
+    uint64_t output_bytes = 0U;
+    if (!CheckedMultiply(plan.copy_elements, sizeof(T), copy_bytes) ||
+        !CheckedMultiply(plan.input_elements, sizeof(T), input_bytes) ||
+        !CheckedMultiply(plan.output_blocks, plan.copy_elements, output_elements) ||
+        !CheckedMultiply(output_elements, sizeof(T), output_bytes)) {
+        KERNEL_LOG_ERROR("Expand tensor size calculation overflowed.");
+        return aicpu::KERNEL_STATUS_PARAM_INVALID;
+    }
+
+    const uint64_t input_data_size = ctx.Input(0)->GetDataSize();
+    const uint64_t output_data_size = ctx.Output(0)->GetDataSize();
+    const uint64_t max_size = static_cast<uint64_t>(std::numeric_limits<size_t>::max());
+    if (input_bytes > input_data_size || output_bytes > output_data_size || input_bytes > max_size ||
+        output_data_size > max_size) {
+        KERNEL_LOG_ERROR("Expand buffer is invalid, input [%lu/%lu], output [%lu/%lu], copy [%lu].", input_bytes,
+                         input_data_size, output_bytes, output_data_size, copy_bytes);
+        return aicpu::KERNEL_STATUS_PARAM_INVALID;
+    }
+    return aicpu::KERNEL_STATUS_OK;
+}
+
+template <typename T>
+bool ShouldUseBiggerMemCpy(uint64_t copy_bytes)
+{
+    return copy_bytes > static_cast<uint64_t>(SECUREC_MEM_MAX_LEN);
+}
+
+template <>
+bool ShouldUseBiggerMemCpy<Eigen::half>(uint64_t copy_bytes)
+{
+    return copy_bytes >= kHalfBulkCopyThreshold;
+}
+
+template <>
+bool ShouldUseBiggerMemCpy<Eigen::bfloat16>(uint64_t copy_bytes)
+{
+    return copy_bytes >= kHalfBulkCopyThreshold;
+}
+
+template <bool UseBiggerMemCpy, typename T, typename IndexT>
+uint32_t CopyExpandedBlocks(const aicpu::CpuKernelContext& ctx, ExpandPlan<IndexT>& plan, uint64_t copy_bytes)
+{
+    const uint64_t output_data_size = ctx.Output(0)->GetDataSize();
+    const auto* input_data = static_cast<const T*>(ctx.Input(0)->GetData());
+    auto* output_data = static_cast<T*>(ctx.Output(0)->GetData());
+    uint64_t input_offset = 0U;
+    uint64_t output_offset_bytes = 0U;
+    for (uint64_t block = 0U; block < plan.output_blocks; ++block) {
+        if (UseBiggerMemCpy) {
+            if (!aicpu::BiggerMemCpy(output_data + block * plan.copy_elements,
+                                     static_cast<size_t>(output_data_size - output_offset_bytes),
+                                     input_data + input_offset, static_cast<size_t>(copy_bytes))) {
+                KERNEL_LOG_ERROR("Expand copy block [%lu] failed, copy bytes [%lu].", block, copy_bytes);
+                return aicpu::KERNEL_STATUS_INNER_ERROR;
+            }
+        } else {
+            std::copy_n(input_data + input_offset, plan.copy_elements, output_data + block * plan.copy_elements);
+        }
+        output_offset_bytes += copy_bytes;
+        if (block + 1U < plan.output_blocks) {
+            AdvanceInputOffset(plan, input_offset);
         }
     }
     return aicpu::KERNEL_STATUS_OK;
 }
 
 template <typename T, typename IndexT>
-uint32_t PrepareExpandShape(std::vector<T>& input_values, std::vector<IndexT>& input_shape,
-                            std::vector<IndexT>& target_shape, const std::vector<int64_t>& origin_shape,
-                            const T* input_data)
+uint32_t CopyExpandedData(const aicpu::CpuKernelContext& ctx, ExpandPlan<IndexT>& plan)
 {
-    for (auto dim : origin_shape) {
-        input_shape.push_back(static_cast<IndexT>(dim));
+    if (plan.output_blocks == 0U) {
+        return aicpu::KERNEL_STATUS_OK;
     }
-
-    uint64_t input_num = 1;
-    for (auto dim : input_shape) {
-        input_num *= static_cast<uint64_t>(dim);
+    uint64_t copy_bytes = 0U;
+    KERNEL_HANDLE_ERROR(ValidateCopyBuffers<T>(ctx, plan, copy_bytes), "Expand buffer validation failed.");
+    if (ShouldUseBiggerMemCpy<T>(copy_bytes)) {
+        return CopyExpandedBlocks<true, T, IndexT>(ctx, plan, copy_bytes);
     }
-
-    for (uint64_t i = 0; i < input_num; ++i) {
-        input_values.push_back(input_data[i]);
-    }
-
-    return NormalizeExpandShape(input_shape, target_shape);
+    return CopyExpandedBlocks<false, T, IndexT>(ctx, plan, copy_bytes);
 }
 
 template <typename T, typename IndexT>
 uint32_t DoExpandCompute(const aicpu::CpuKernelContext& ctx)
 {
-    const auto* input_data = static_cast<const T*>(ctx.Input(0)->GetData());
     const auto* shape_data = static_cast<const IndexT*>(ctx.Input(1)->GetData());
-    auto* output_data = static_cast<T*>(ctx.Output(0)->GetData());
-
     const auto* input_tensor = ctx.Input(0);
     const auto* shape_tensor = ctx.Input(1);
 
+    ExpandPlan<IndexT> plan;
     std::vector<int64_t> origin_shape = input_tensor->GetTensorShape()->GetDimSizes();
-    const std::vector<int64_t> shape_shape = shape_tensor->GetTensorShape()->GetDimSizes();
+    const int64_t target_rank = shape_tensor->NumElements();
+    if (target_rank < 0) {
+        return aicpu::KERNEL_STATUS_PARAM_INVALID;
+    }
     if (origin_shape.empty()) {
         origin_shape.push_back(static_cast<int64_t>(1));
     }
 
-    std::vector<T> output_values;
-    std::vector<T> input_values;
-    std::vector<IndexT> input_shape;
-    std::vector<IndexT> target_shape;
-    for (int64_t i = 0; i < shape_shape[0]; ++i) {
-        target_shape.push_back(shape_data[i]);
+    plan.input_shape.reserve(static_cast<size_t>(target_rank));
+    plan.target_shape.reserve(static_cast<size_t>(target_rank));
+    for (int64_t dim : origin_shape) {
+        plan.input_shape.push_back(static_cast<IndexT>(dim));
+    }
+    for (int64_t i = 0; i < target_rank; ++i) {
+        plan.target_shape.push_back(shape_data[i]);
     }
 
-    uint32_t ret = PrepareExpandShape<T, IndexT>(input_values, input_shape, target_shape, origin_shape, input_data);
+    uint32_t ret = NormalizeExpandShape(plan.input_shape, plan.target_shape);
     if (ret != aicpu::KERNEL_STATUS_OK) {
         return ret;
     }
-
-    bool need_expand = false;
-    for (size_t i = 0; i < input_shape.size(); ++i) {
-        if (!aicpu::IsValueEqual<IndexT>(input_shape[i], target_shape[i])) {
-            need_expand = true;
-            break;
-        }
-    }
-
-    if (!need_expand) {
-        for (size_t i = 0; i < input_values.size(); ++i) {
-            output_data[i] = input_values[i];
-        }
-        return aicpu::KERNEL_STATUS_OK;
-    }
-
-    ret = ExpandByLayer<T, IndexT>(input_values, output_values, input_shape, target_shape);
+    ret = BuildExpandPlan(plan);
     if (ret != aicpu::KERNEL_STATUS_OK) {
         return ret;
     }
-
-    for (size_t i = 0; i < output_values.size(); ++i) {
-        output_data[i] = output_values[i];
-    }
-    return aicpu::KERNEL_STATUS_OK;
+    return CopyExpandedData<T, IndexT>(ctx, plan);
 }
 
 template <typename IndexT>
 uint32_t IndicesExpandCompute(aicpu::CpuKernelContext& ctx)
 {
     auto input_type = static_cast<aicpu::DataType>(ctx.Input(0)->GetDataType());
-    std::map<int, std::function<uint32_t(aicpu::CpuKernelContext&)>> calls;
-    calls[aicpu::DT_FLOAT16] = DoExpandCompute<Eigen::half, IndexT>;
-    calls[aicpu::DT_BFLOAT16] = DoExpandCompute<Eigen::bfloat16, IndexT>;
-    calls[aicpu::DT_FLOAT] = DoExpandCompute<float, IndexT>;
-    calls[aicpu::DT_INT8] = DoExpandCompute<int8_t, IndexT>;
-    calls[aicpu::DT_INT32] = DoExpandCompute<int32_t, IndexT>;
-    calls[aicpu::DT_INT64] = DoExpandCompute<int64_t, IndexT>;
-    calls[aicpu::DT_UINT8] = DoExpandCompute<uint8_t, IndexT>;
-    calls[aicpu::DT_BOOL] = DoExpandCompute<bool, IndexT>;
-
-    auto found = calls.find(input_type);
-    if (found == calls.end()) {
-        return aicpu::KERNEL_STATUS_PARAM_INVALID;
+    switch (input_type) {
+        case aicpu::DT_FLOAT16:
+            return DoExpandCompute<Eigen::half, IndexT>(ctx);
+        case aicpu::DT_BFLOAT16:
+            return DoExpandCompute<Eigen::bfloat16, IndexT>(ctx);
+        case aicpu::DT_FLOAT:
+            return DoExpandCompute<float, IndexT>(ctx);
+        case aicpu::DT_INT8:
+            return DoExpandCompute<int8_t, IndexT>(ctx);
+        case aicpu::DT_INT32:
+            return DoExpandCompute<int32_t, IndexT>(ctx);
+        case aicpu::DT_INT64:
+            return DoExpandCompute<int64_t, IndexT>(ctx);
+        case aicpu::DT_UINT8:
+            return DoExpandCompute<uint8_t, IndexT>(ctx);
+        case aicpu::DT_BOOL:
+            return DoExpandCompute<bool, IndexT>(ctx);
+        default:
+            return aicpu::KERNEL_STATUS_PARAM_INVALID;
     }
-    return found->second(ctx);
 }
 } // namespace expand
 

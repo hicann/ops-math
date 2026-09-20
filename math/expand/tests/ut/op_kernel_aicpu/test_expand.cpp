@@ -86,9 +86,8 @@ TEST_F(TEST_EXPAND_UT, TestExpandBFloat16)
     Eigen::bfloat16 input[2] = {static_cast<Eigen::bfloat16>(1.5F), static_cast<Eigen::bfloat16>(2.5F)};
     int64_t shape[2] = {2, 2};
     Eigen::bfloat16 output[4] = {static_cast<Eigen::bfloat16>(0.0F)};
-    Eigen::bfloat16 expected[4] = {
-        static_cast<Eigen::bfloat16>(1.5F), static_cast<Eigen::bfloat16>(2.5F), static_cast<Eigen::bfloat16>(1.5F),
-        static_cast<Eigen::bfloat16>(2.5F)};
+    Eigen::bfloat16 expected[4] = {static_cast<Eigen::bfloat16>(1.5F), static_cast<Eigen::bfloat16>(2.5F),
+                                   static_cast<Eigen::bfloat16>(1.5F), static_cast<Eigen::bfloat16>(2.5F)};
     vector<void*> datas = {input, shape, output};
 
     CREATE_EXPAND_NODEDEF(shapes, data_types, datas);
@@ -150,4 +149,18 @@ TEST_F(TEST_EXPAND_UT, TestExpandNegativeOneUsesInputDim)
     CREATE_EXPAND_NODEDEF(shapes, data_types, datas);
     RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
     EXPECT_TRUE(CompareResult<int32_t>(output, expected, 24));
+}
+
+TEST_F(TEST_EXPAND_UT, TestExpandRejectsUndersizedInput)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{2}, {1}, {2}};
+    int32_t input[2] = {1, 2};
+    int32_t shape[1] = {2};
+    int32_t output[2] = {0};
+    vector<void*> datas = {input, shape, output};
+
+    CREATE_EXPAND_NODEDEF(shapes, data_types, datas);
+    node_def->MutableInputs(0)->SetDataSize(sizeof(int32_t));
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
 }
