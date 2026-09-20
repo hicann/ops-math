@@ -340,7 +340,7 @@ uint32_t RunFormatTransfer(const TransDataTensorInfo& in, const TransDataTensorI
 } // namespace
 
 namespace aicpu {
-bool TransDataCpuKernel::IsOriginSupportFormatTransfer(Format src_format, Format dst_format)
+bool TransDataCpuKernel::IsOriginSupportFormatTransfer(Format src_format, Format dst_format) const
 {
     static const map<Format, map<Format, int32_t>> kOriginSupportFormatTransfer = {
         {FORMAT_HWCN, {{FORMAT_FRACTAL_Z_C04, 1}}}};
@@ -404,7 +404,7 @@ uint32_t TransDataCpuKernel::DealData(const T* input_data, T* output_data, const
 // input filter format is NCDHW, calculated the Correspondence of index between
 // NCDHW and FORMAT_FRACTAL_Z_3D , then Convert the old filter to the new
 // filter, and finally added 0 to the position where there is no data.
-uint32_t TransDataCpuKernel::HandleHwcnToFzC04(const Tensor* input_tensor, Tensor* output_tensor)
+uint32_t TransDataCpuKernel::HandleHwcnToFzC04(const Tensor* input_tensor, const Tensor* output_tensor)
 {
     KERNEL_LOG_DEBUG("Begin trans formats from FORMAT_HWCN to FORMAT_FRACTAL_Z_C04");
     const DataType data_type = static_cast<DataType>(input_tensor->GetDataType());
@@ -645,7 +645,8 @@ uint32_t TransDataCpuKernel::GetPaddingOneShape(const TransArgs& args, std::vect
     return KERNEL_STATUS_OK;
 }
 
-uint32_t TransDataCpuKernel::GetPaddingTwoShape(const TransArgs& args, std::vector<int64_t>& dst_shape, int64_t cube)
+uint32_t TransDataCpuKernel::GetPaddingTwoShape(const TransArgs& args, std::vector<int64_t>& dst_shape,
+                                                int64_t cube) const
 {
     auto n = args.src_shape.at(0);
     auto z = args.src_shape.at(1);
@@ -658,7 +659,7 @@ uint32_t TransDataCpuKernel::GetPaddingTwoShape(const TransArgs& args, std::vect
 }
 
 uint32_t TransDataCpuKernel::Transpose(TransArgs& args, const std::vector<int64_t>& perm_arg,
-                                       std::shared_ptr<uint8_t>& dst)
+                                       std::shared_ptr<uint8_t>& dst) const
 {
     std::vector<int64_t>& src_shape = args.src_shape;
     std::vector<int64_t> dst_shape;
@@ -701,7 +702,7 @@ uint32_t TransDataCpuKernel::Transpose(TransArgs& args, const std::vector<int64_
     return KERNEL_STATUS_OK;
 }
 
-int64_t TransDataCpuKernel::GetCubeSizeByDataType(DataType data_type)
+int64_t TransDataCpuKernel::GetCubeSizeByDataType(DataType data_type) const
 {
     // Current cube does not support 4 bytes and longer data
     auto size = GetSizeByDataType(data_type);
