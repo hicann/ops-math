@@ -16,16 +16,16 @@
 
 namespace aicpu {
 class RealDivKernel : public CpuKernel {
- public:
-  ~RealDivKernel() = default;
-  uint32_t Compute(CpuKernelContext &ctx) override;
+public:
+    ~RealDivKernel() = default;
+    uint32_t Compute(CpuKernelContext& ctx) override;
 
- private:
-  uint32_t RealDivSameTypeCompute(const CpuKernelContext &ctx, DataType data_type);
-  template <typename T>
-  bool IsInputHasZero(T *input_data, const int64_t num_of_elems);
-  template <typename T>
-  uint32_t RealDivCompute(const CpuKernelContext &ctx, const bool verify_zero = true);
+private:
+    uint32_t RealDivSameTypeCompute(const CpuKernelContext& ctx, DataType data_type);
+    template <typename T>
+    bool IsInputHasZero(T* input_data, const int64_t num_of_elems) const;
+    template <typename T>
+    uint32_t RealDivCompute(const CpuKernelContext& ctx, const bool verify_zero = true) const;
 };
-}  // namespace aicpu
+} // namespace aicpu
 #endif

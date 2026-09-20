@@ -91,7 +91,7 @@ uint32_t LessCpuKernel::LessParamCheck(const CpuKernelContext& ctx) const
 // 3. input2 is a 1D tensor with only one element or input2 is scalar
 // 4. the shapes of input1 and input2 are different
 template <typename T>
-void LessCpuKernel::SpecialCompute(BcastShapeType type, int64_t start, int64_t end, const CpuKernelContext& ctx)
+void LessCpuKernel::SpecialCompute(BcastShapeType type, int64_t start, int64_t end, const CpuKernelContext& ctx) const
 {
     auto input1 = reinterpret_cast<T*>(ctx.Input(0)->GetData());
     auto input2 = reinterpret_cast<T*>(ctx.Input(1)->GetData());
@@ -119,7 +119,7 @@ void LessCpuKernel::SpecialCompute(BcastShapeType type, int64_t start, int64_t e
 }
 
 template <typename T>
-uint32_t LessCpuKernel::NoBcastCompute(const CpuKernelContext& ctx)
+uint32_t LessCpuKernel::NoBcastCompute(const CpuKernelContext& ctx) const
 {
     int64_t in0_elements_nums = ctx.Input(0)->NumElements();
     int64_t in1_elements_nums = ctx.Input(1)->NumElements();
@@ -154,7 +154,7 @@ uint32_t LessCpuKernel::NoBcastCompute(const CpuKernelContext& ctx)
 }
 
 template <typename T>
-uint32_t LessCpuKernel::BcastCompute(const CpuKernelContext& ctx, const Bcast& bcast)
+uint32_t LessCpuKernel::BcastCompute(const CpuKernelContext& ctx, const Bcast& bcast) const
 {
     auto in0 = reinterpret_cast<T*>(ctx.Input(0)->GetData());
     auto in1 = reinterpret_cast<T*>(ctx.Input(1)->GetData());
@@ -189,7 +189,7 @@ uint32_t LessCpuKernel::BcastCompute(const CpuKernelContext& ctx, const Bcast& b
 }
 
 template <typename T>
-uint32_t LessCpuKernel::LessCompute(const CpuKernelContext& ctx)
+uint32_t LessCpuKernel::LessCompute(const CpuKernelContext& ctx) const
 {
     Tensor* input0_tensor = ctx.Input(0);
     auto input0_shape = input0_tensor->GetTensorShape()->GetDimSizes();

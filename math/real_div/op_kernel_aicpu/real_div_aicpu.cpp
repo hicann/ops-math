@@ -362,7 +362,7 @@ uint32_t RealDivKernel::RealDivSameTypeCompute(const CpuKernelContext& ctx, Data
 }
 
 template <typename T>
-bool RealDivKernel::IsInputHasZero(T* input_data, const int64_t num_of_elems)
+bool RealDivKernel::IsInputHasZero(T* input_data, const int64_t num_of_elems) const
 {
     for (int64_t i = 0; i < num_of_elems; ++i) {
         if (IsValueEqual<T>(input_data[i], T(0))) {
@@ -373,7 +373,7 @@ bool RealDivKernel::IsInputHasZero(T* input_data, const int64_t num_of_elems)
 }
 
 template <typename T>
-uint32_t RealDivKernel::RealDivCompute(const CpuKernelContext& ctx, const bool verify_zero)
+uint32_t RealDivKernel::RealDivCompute(const CpuKernelContext& ctx, const bool verify_zero) const
 {
     Tensor* input0 = ctx.Input(kFirstInputIndex);
     Tensor* input1 = ctx.Input(kSecondInputIndex);
