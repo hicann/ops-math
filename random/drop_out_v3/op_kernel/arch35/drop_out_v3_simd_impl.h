@@ -119,6 +119,8 @@ __simd_callee__ inline void PhiloxCtrConvertAndDropout(Reg::RegTensor<uint32_t>&
 
     Reg::MaskReg dropoutMask;
     Reg::CompareScalar<float, CMPMODE::LT>(dropoutMask, randReg, prob, mask);
+    Reg::RegTensor<float> maskBitReg;
+    Reg::Select<float>(maskBitReg, oneFloatReg, zeroFloatReg, dropoutMask);
 
     Reg::RegTensor<float> inputFloatReg;
     if constexpr (IsSameType<T, float>::value) {
@@ -129,12 +131,9 @@ __simd_callee__ inline void PhiloxCtrConvertAndDropout(Reg::RegTensor<uint32_t>&
         Reg::Cast<float, T, castTraitB16ToB32>(inputFloatReg, inputReg, mask);
     }
 
-    Reg::RegTensor<float> scaledInput;
-    Reg::Muls<float>(scaledInput, inputFloatReg, scale, mask);
-    Reg::RegTensor<float> maskBitReg;
-    Reg::Select<float>(maskBitReg, oneFloatReg, zeroFloatReg, dropoutMask);
     Reg::RegTensor<float> outputFloatReg;
-    Reg::Mul<float>(outputFloatReg, scaledInput, maskBitReg, mask);
+    Reg::Mul<float>(outputFloatReg, inputFloatReg, maskBitReg, mask);
+    Reg::Muls<float>(outputFloatReg, outputFloatReg, scale, mask);
 
     if constexpr (IsSameType<T, float>::value) {
         Reg::StoreAlign<float>(outputPtr, outputFloatReg, mask);
