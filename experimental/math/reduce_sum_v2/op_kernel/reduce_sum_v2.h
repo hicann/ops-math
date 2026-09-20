@@ -1,5 +1,5 @@
 /**
- * This fiis->blockIdxle is part of the OpenBOAT project at Harbin Institute of Technology (HIT)
+ * This file is part of the OpenBOAT project at Harbin Institute of Technology (HIT)
  * and is contributed to the CANN Open Software.
  *
  * Copyright (c) 2025 AISS Group, Harbin Institute of Technology (HIT).
@@ -9,13 +9,12 @@
  * - Pei Haobo<@xiaopei-1>
  * - Su Tonghua <@sutonghua>
  *
- * This program is free software: you can redistribute it and/or modify it.
- * Licensed under the CANN Open Software License Agreement Version 2.0 (the "License").
- * You may not use this file except in compliance with the License.
- * See the LICENSE file at the root of the repository for the full text of the License.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED,
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 /*!
@@ -46,7 +45,7 @@ public:
     __aicore__ inline void Process();
 
 private:
-    __aicore__ inline void CopyIn(int32_t progress);
+    __aicore__ inline void CopyIn(int32_t progress, uint32_t curTileLen);
     __aicore__ inline void ReduceSumV2Axes0();
     __aicore__ inline void ReduceSumV2Axes1();
     __aicore__ inline void ReduceSumV2AxesAll();
@@ -82,8 +81,8 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void ReduceSumV2<T>::Init(
-    GM_ADDR x, GM_ADDR z, GM_ADDR workspace, const ReduceSumV2TilingData* tilingData)
+__aicore__ inline void ReduceSumV2<T>::Init(GM_ADDR x, GM_ADDR z, GM_ADDR workspace,
+                                            const ReduceSumV2TilingData* tilingData)
 {
     ASSERT(AscendC::GetBlockNum() != 0 && "block dim can not be zero!");
     this->blockIdx = AscendC::GetBlockIdx();
@@ -103,8 +102,8 @@ __aicore__ inline void ReduceSumV2<T>::Init(
         this->coreDataNum = tilingData->smallCoreDataNum;
         this->tileNum = tilingData->finalSmallTileNum;
         this->tailDataNum = tilingData->smallTailDataNum;
-        globalBufferIndex -=
-            (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (this->blockIdx - tilingData->tailBlockNum);
+        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) *
+                             (this->blockIdx - tilingData->tailBlockNum);
     }
 
     uint32_t totalElements = this->rows * this->cols;
@@ -152,9 +151,8 @@ __aicore__ inline void ReduceSumV2<T>::Init(
 }
 
 template <typename T>
-__aicore__ inline void ReduceSumV2<T>::CopyIn(int32_t progress)
+__aicore__ inline void ReduceSumV2<T>::CopyIn(int32_t progress, uint32_t curTileLen)
 {
-    uint32_t curTileLen = (progress == tileNum - 1) ? tailDataNum : tileDataNum;
     AscendC::LocalTensor<T> xLocal = inQueueInput.AllocTensor<T>();
     AscendC::DataCopy(xLocal, xGm[progress * this->tileDataNum], curTileLen);
     inQueueInput.EnQue(xLocal);
@@ -192,7 +190,7 @@ __aicore__ inline void ReduceSumV2<T>::ReduceSumV2Axes0()
     for (uint32_t t = 0; t < tileNum; ++t) {
         uint32_t curTileLen = (t == tileNum - 1) ? lastTileLen : tileLen;
 
-        CopyIn(t);
+        CopyIn(t, curTileLen);
         AscendC::LocalTensor<T> tileLocal = inQueueInput.DeQue<T>();
         AscendC::LocalTensor<float> tileFloat = tmpFloat.Get<float>();
 
@@ -262,7 +260,7 @@ __aicore__ inline void ReduceSumV2<T>::ReduceSumV2Axes1()
     for (uint32_t t = 0; t < tileNum; ++t) {
         uint32_t curTileLen = (t == tileNum - 1) ? lastTileLen : tileLen;
 
-        CopyIn(t);
+        CopyIn(t, curTileLen);
         AscendC::LocalTensor<T> tileLocal = inQueueInput.DeQue<T>();
         AscendC::LocalTensor<float> tileFloat = tmpFloat.Get<float>();
         if (keyType == 1) {
@@ -325,19 +323,26 @@ __aicore__ inline void ReduceSumV2<T>::ReduceSumV2AxesAll()
     for (uint32_t t = 0; t < loopCount; ++t) {
         uint32_t curTileLen = (t == loopCount - 1) ? lastTileLen : tileLen;
 
-        CopyIn(t);
+        CopyIn(t, curTileLen);
         AscendC::LocalTensor<T> tileLocal = inQueueInput.DeQue<T>();
 
+        // Init 已按 totalElements 裁剪 coreDataNum; DataCopy 须按 32B 对齐长度搬运,
+        // 但参与求和的只能是本核逻辑元素, 否则非 32B 对齐输入会把 GM pad 计入求和
+        const uint32_t tileOffset = t * tileLen;
+        uint32_t validLen = 0;
+        if (tileOffset < blockLen) {
+            validLen = (blockLen - tileOffset < curTileLen) ? (blockLen - tileOffset) : curTileLen;
+        }
         AscendC::LocalTensor<float> tileFloat = tmpFloat.Get<float>();
         if (keyType == 1) {
             AscendC::Cast(tileFloat, tileLocal, AscendC::RoundMode::CAST_NONE, curTileLen);
         } else {
-            for (uint32_t i = 0; i < curTileLen; ++i) {
+            for (uint32_t i = 0; i < validLen; ++i) {
                 tileFloat.SetValue(i, tileLocal.GetValue(i));
             }
         }
         float tileSum = 0.0f;
-        for (uint32_t i = 0; i < curTileLen; ++i) {
+        for (uint32_t i = 0; i < validLen; ++i) {
             float curv = tileFloat.GetValue(i);
             tileSum += curv;
         }

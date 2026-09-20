@@ -9,13 +9,12 @@
  * - Pei Haobo<@xiaopei-1>
  * - Su Tonghua <@sutonghua>
  *
- * This program is free software: you can redistribute it and/or modify it.
- * Licensed under the CANN Open Software License Agreement Version 2.0 (the "License").
- * You may not use this file except in compliance with the License.
- * See the LICENSE file at the root of the repository for the full text of the License.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED,
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 /*!
@@ -48,7 +47,7 @@ public:
 
 private:
     __aicore__ inline void InitTilingParam(const ReduceMaxV2TilingData* tilingData);
-    __aicore__ inline void CopyIn(int32_t progress);
+    __aicore__ inline void CopyIn(int32_t progress, uint32_t curTileLen);
     __aicore__ inline void CollectAxes(LocalTensor<float> localMax, uint32_t nums);
 
     __aicore__ inline void ReduceMaxV2Axes0();
@@ -105,14 +104,14 @@ __aicore__ inline void ReduceMaxV2<T>::InitTilingParam(const ReduceMaxV2TilingDa
         this->coreDataNum = tilingData->smallCoreDataNum;
         this->tileNum = tilingData->finalSmallTileNum;
         this->tailDataNum = tilingData->smallTailDataNum;
-        globalBufferIndex -=
-            (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) * (coreIdx - tilingData->tailBlockNum);
+        globalBufferIndex -= (tilingData->bigCoreDataNum - tilingData->smallCoreDataNum) *
+                             (coreIdx - tilingData->tailBlockNum);
     }
     this->globalOffset = globalBufferIndex;
 }
 template <typename T>
-__aicore__ inline void ReduceMaxV2<T>::Init(
-    GM_ADDR x, GM_ADDR z, GM_ADDR workspace, const ReduceMaxV2TilingData* tilingData)
+__aicore__ inline void ReduceMaxV2<T>::Init(GM_ADDR x, GM_ADDR z, GM_ADDR workspace,
+                                            const ReduceMaxV2TilingData* tilingData)
 {
     InitTilingParam(tilingData);
     uint32_t totalElements = this->rows * this->cols;
@@ -157,9 +156,8 @@ __aicore__ inline void ReduceMaxV2<T>::Init(
 }
 
 template <typename T>
-__aicore__ inline void ReduceMaxV2<T>::CopyIn(int32_t progress)
+__aicore__ inline void ReduceMaxV2<T>::CopyIn(int32_t progress, uint32_t curTileLen)
 {
-    uint32_t curTileLen = (progress == tileNum - 1) ? tailDataNum : tileDataNum;
     AscendC::LocalTensor<T> xLocal = inQueueInput.AllocTensor<T>();
     AscendC::DataCopy(xLocal, xGm[progress * this->tileDataNum], curTileLen);
     inQueueInput.EnQue(xLocal);
@@ -211,7 +209,7 @@ __aicore__ inline void ReduceMaxV2<T>::ReduceMaxV2Axes0()
     for (uint32_t t = 0; t < this->tileNum; ++t) {
         uint32_t curTileLen = (t == this->tileNum - 1) ? this->tailDataNum : this->tileDataNum;
 
-        CopyIn(t);
+        CopyIn(t, curTileLen);
         AscendC::LocalTensor<T> tileLocal = inQueueInput.DeQue<T>();
         AscendC::LocalTensor<float> tileFloat = tmpFloat.Get<float>();
 
@@ -255,7 +253,7 @@ __aicore__ inline void ReduceMaxV2<T>::ReduceMaxV2Axes1()
     for (uint32_t t = 0; t < this->tileNum; ++t) {
         uint32_t curTileLen = (t == this->tileNum - 1) ? this->tailDataNum : this->tileDataNum;
 
-        CopyIn(t);
+        CopyIn(t, curTileLen);
         AscendC::LocalTensor<T> tileLocal = inQueueInput.DeQue<T>();
         AscendC::LocalTensor<float> tileFloat = tmpFloat.Get<float>();
         if (keyType == 1) {
@@ -289,23 +287,32 @@ template <typename T>
 __aicore__ inline void ReduceMaxV2<T>::ReduceMaxV2AxesAll()
 {
     const uint32_t loopCount = this->tileNum;
+    const uint32_t tileLen = this->tileDataNum;
+    const uint32_t blockLen = this->coreDataNum;
     AscendC::LocalTensor<float> localMax = tmpBase.Get<float>();
     float initVal = -std::numeric_limits<float>::infinity();
     localMax.SetValue(0, initVal);
     for (uint32_t t = 0; t < loopCount; ++t) {
-        uint32_t curTileLen = (t == loopCount - 1) ? this->tailDataNum : this->tileDataNum;
-        CopyIn(t);
+        uint32_t curTileLen = (t == loopCount - 1) ? this->tailDataNum : tileLen;
+        CopyIn(t, curTileLen);
         AscendC::LocalTensor<T> tileLocal = inQueueInput.DeQue<T>();
+        // Init 已按 totalElements 裁剪 coreDataNum; DataCopy 须按 32B 对齐长度搬运,
+        // 但参与最大值比较的只能是本核逻辑元素, 否则非 32B 对齐输入会把 GM pad 计入最大值
+        const uint32_t tileOffset = t * tileLen;
+        uint32_t validLen = 0;
+        if (tileOffset < blockLen) {
+            validLen = (blockLen - tileOffset < curTileLen) ? (blockLen - tileOffset) : curTileLen;
+        }
         AscendC::LocalTensor<float> tileFloat = tmpFloat.Get<float>();
         if (keyType == 1) {
             AscendC::Cast(tileFloat, tileLocal, AscendC::RoundMode::CAST_NONE, curTileLen);
         } else {
-            for (uint32_t i = 0; i < curTileLen; ++i) {
+            for (uint32_t i = 0; i < validLen; ++i) {
                 tileFloat.SetValue(i, tileLocal.GetValue(i));
             }
         }
         float tileMax = -std::numeric_limits<float>::infinity();
-        for (uint32_t i = 0; i < curTileLen; ++i) {
+        for (uint32_t i = 0; i < validLen; ++i) {
             float curv = tileFloat.GetValue(i);
             if (curv > tileMax)
                 tileMax = curv;
