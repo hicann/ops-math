@@ -27,19 +27,19 @@ public:
 
 private:
     template <typename T>
-    uint32_t DealData(const T* input_Data, T* output_data, const Tensor* input_tensor, Tensor* out_put_tensor,
+    uint32_t DealData(const T* input_data, T* output_data, const Tensor* input_tensor, Tensor* output_tensor,
                       int64_t group);
     uint32_t FormatTransferHwcnToFZC04(TransArgs& args, uint8_t* output_addr, uint64_t length, int64_t c0_cube);
     uint32_t PaddingOne(TransArgs& args, std::shared_ptr<uint8_t>& dst);
     uint32_t PaddingTwo(TransArgs& args, std::shared_ptr<uint8_t>& dst, int64_t c0_cube);
-    uint32_t GetPaddingOneShape(const TransArgs& args, std::vector<int64_t>& dst_shape);
+    uint32_t GetPaddingOneShape(const TransArgs& args, std::vector<int64_t>& dst_shape) const;
     uint32_t GetPaddingTwoShape(const TransArgs& args, std::vector<int64_t>& dst_shape, int64_t cube);
     uint32_t Transpose(TransArgs& args, const std::vector<int64_t>& perm_arg, std::shared_ptr<uint8_t>& dst);
     int64_t GetCubeSizeByDataType(DataType data_type);
 
     bool IsOriginSupportFormatTransfer(Format src_format, Format dst_format);
 
-    uint32_t NewCompute(const CpuKernelContext& ctx);
+    uint32_t NewCompute(const CpuKernelContext& ctx) const;
     uint32_t HandleHwcnToFzC04(const Tensor* input_tensor, Tensor* output_tensor);
     uint32_t DispatchDealData(DataType dt, void* input_data_temp, void* output_data_temp, const Tensor* input_tensor,
                               Tensor* output_tensor, int64_t group);

@@ -10,7 +10,6 @@
 #include "format_transfer_ndc1hwc0.h"
 
 #include "format_transfer_utils.h"
-#include "formats_definitions.h"
 #include "kernel_util.h"
 #include "log.h"
 #include "securec.h"

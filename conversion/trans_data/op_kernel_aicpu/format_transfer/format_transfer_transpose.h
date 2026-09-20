@@ -16,7 +16,7 @@
 
 namespace aicpu {
 namespace formats {
-uint32_t Transpose(const uint8_t* src, uint8_t* output, const std::vector<int64_t>& src_shape, DataType src_data_type,
+uint32_t Transpose(const uint8_t* src, uint8_t* dst, const std::vector<int64_t>& src_shape, DataType src_data_type,
                    const std::vector<int64_t>& perm_arg);
 
 uint32_t GetPermByForamt(Format src_format, Format dst_format, std::vector<int64_t>& perm);
