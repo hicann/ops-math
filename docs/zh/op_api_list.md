@@ -152,7 +152,7 @@
 | [aclnnInplaceBitwiseAndScalar](../../math/bitwise_and/docs/aclnnInplaceBitwiseAndScalar.md) | 计算输入tensor中每个元素和输入标量other的按位与结果。输入的tensor与other必须是整型或者BOOL型变量。当输入为BOOL型时，计算逻辑与的结果。             | 默认确定性实现| 默认确定性实现 |
 | [aclnnInplaceBitwiseAndTensor](../../math/bitwise_and/docs/aclnnInplaceBitwiseAndTensor.md) | 输入为BOOL型tensor时，进行逻辑与运算；输入为INT型时，进行位与运算。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnInplaceCopy](../../conversion/view_copy/docs/aclnnInplaceCopy.md) | 将src中的元素复制到selfRef张量中并返回selfRef。              | 默认确定性实现| 默认确定性实现|
-| [aclnnInplaceFillDiagonal](../../conversion/fill_diagonal_v2/docs/aclnnInplaceFillDiagonal.md) | 以fillValue填充tensor对角线。                                | 默认确定性实现| 默认确定性实现 |
+| [aclnnInplaceFillDiagonal](../../conversion/fill_diagonal_v2/docs/aclnnInplaceFillDiagonal.md) | 以fillValue填充tensor对角线。                                | 默认确定性实现| - |
 | [aclnnInplaceFillScalar](../../conversion/fill/docs/aclnnInplaceFillScalar.md) | 对tensor填充指定标量。                                       | 默认确定性实现| 默认确定性实现|
 | [aclnnInplaceFillTensor](../../conversion/fill/docs/aclnnInplaceFillTensor.md) | 对selfRef张量填充value， value是张量。                       | 默认确定性实现| 默认确定性实现|
 | [aclnnInplaceMaskedFillScalar](../../conversion/masked_fill/docs/aclnnInplaceMaskedFillScalar.md) | 用value填充selfRef里面与mask矩阵中值为true的位置相对应的元素。 | 默认确定性实现| 默认确定性实现|
@@ -275,7 +275,7 @@
 | [aclnnSign](../../math/sign/docs/aclnnSign.md)                  | 对输入的tensor逐元素进行Sign符号函数的运算并输出结果tensor。 | 默认确定性实现| 默认确定性实现|
 | [aclnnSignbit](../../math/signbit/docs/aclnnSignbit.md)            | 判断输入中的每个元素符号位是否为1，返回一个tensor。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnSignBitsPack](../../math/sign_bits_pack/docs/aclnnSignBitsPack.md) | 将float16类型或者float32类型的1位Adam打包为uint8。           | 默认确定性实现| - |
-| [aclnnSignBitsUnpack](../../math/sign_bits_unpack/docs/aclnnSignBitsUnpack.md) | 将uint8类型1位Adam拆包为float32或者float16。                 | 默认确定性实现| 默认确定性实现 |
+| [aclnnSignBitsUnpack](../../math/sign_bits_unpack/docs/aclnnSignBitsUnpack.md) | 将uint8类型1位Adam拆包为float32或者float16。                 | 默认确定性实现| - |
 | [aclnnSilentCheck](../../math/silent_check/docs/aclnnSilentCheck.md) | SilentCheckV2算子功能主要根据输入特征值（val），与绝对阈值、相对阈值比较，来识别是否触发静默检测故障。 | 默认确定性实现| - |
 | [aclnnSilentCheckV2](../../math/silent_check_v2/docs/aclnnSilentCheckV2.md) | 根据stepRef参数与马尔可夫不等式阈值来识别是否触发静默检测故障。 | 默认确定性实现| - |
 | [aclnnSimThreadExponential](../../random/sim_thread_exponential/docs/aclnnSimThreadExponential.md) | 生成服从参数为lambda的指数分布随机数，并将其填充到selfRef张量中。                                    | 默认确定性实现| 默认确定性实现 |

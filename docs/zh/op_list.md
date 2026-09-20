@@ -358,26 +358,6 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/bessel_i0e/README.md">bessel_i0e</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>√</td>
-    <td>AI Core</td>
-    <td>计算指数缩放的第一类零阶修正贝塞尔函数，公式y = exp(-|x|) * I0(x)，仅支持图模式调用。</td>
-  </tr>
-  <tr>
-    <td>math</td>
-    <td><a href="../../math/bessel_i1e/README.md">bessel_i1e</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>√</td>
-    <td>AI Core</td>
-    <td>计算指数缩放修正贝塞尔函数（第一类，阶数1）。</td>
-  </tr>
-  <tr>
-    <td>math</td>
     <td><a href="../../math/bias/README.md">bias</a></td>
     <td>√</td>
     <td>√</td>
@@ -785,16 +765,6 @@
     <td>√</td>
     <td>AI Core/AI CPU</td>
     <td>将输入tensor广播到指定的shape。</td>
-  </tr>
-  <tr>
-    <td>math</td>
-    <td><a href="../../math/expint/README.md">expint</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>√</td>
-    <td>AI Core</td>
-    <td>计算指数积分函数。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1849,12 +1819,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/sign_bits_unpack/README.md">sign_bits_unpack</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>√</td>
-    <td>√</td>
+    <td>×</td>
+    <td>×</td>
+    <td>×</td>
+    <td>×</td>
     <td>AI Core</td>
-    <td>将UINT8类型的1-bit Adam符号位拆包为FLOAT32或FLOAT16类型的张量。</td>
+    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1955,16 +1925,6 @@
     <td>√</td>
     <td>AI Core</td>
     <td>将输入tensor按照元素值大小进行排序，index值跟随对应元素值进行排序。</td>
-  </tr>
-  <tr>
-    <td>math</td>
-    <td><a href="../../math/spence/README.md">spence</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>√</td>
-    <td>AI Core</td>
-    <td>计算Spence函数（dilogarithm）：S(x) = -integral_0^x ln(1-t)/t dt。</td>
   </tr>
   <tr>
     <td>math</td>
