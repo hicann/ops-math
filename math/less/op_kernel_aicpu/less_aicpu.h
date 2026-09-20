@@ -16,26 +16,25 @@
 
 namespace aicpu {
 class LessCpuKernel : public CpuKernel {
- public:
-  LessCpuKernel() = default;
-  ~LessCpuKernel() override = default;
-  uint32_t Compute(CpuKernelContext &ctx) override;
+public:
+    LessCpuKernel() = default;
+    ~LessCpuKernel() override = default;
+    uint32_t Compute(CpuKernelContext& ctx) override;
 
- private:
-  uint32_t LessParamCheck(const CpuKernelContext &ctx) const;
+private:
+    uint32_t LessParamCheck(const CpuKernelContext& ctx) const;
 
-  template <typename T>
-  void SpecialCompute(BcastShapeType type, int64_t start, int64_t end,
-                      const CpuKernelContext &ctx);
+    template <typename T>
+    void SpecialCompute(BcastShapeType type, int64_t start, int64_t end, const CpuKernelContext& ctx) const;
 
-  template <typename T>
-  uint32_t NoBcastCompute(const CpuKernelContext &ctx);
+    template <typename T>
+    uint32_t NoBcastCompute(const CpuKernelContext& ctx) const;
 
-  template <typename T>
-  uint32_t BcastCompute(const CpuKernelContext &ctx, const Bcast &bcast);
+    template <typename T>
+    uint32_t BcastCompute(const CpuKernelContext& ctx, const Bcast& bcast) const;
 
-  template <typename T>
-  uint32_t LessCompute(const CpuKernelContext &ctx);
+    template <typename T>
+    uint32_t LessCompute(const CpuKernelContext& ctx) const;
 };
-}  // namespace aicpu
+} // namespace aicpu
 #endif

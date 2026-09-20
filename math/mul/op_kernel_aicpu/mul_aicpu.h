@@ -26,18 +26,18 @@ public:
 
 private:
     template <typename T>
-    uint32_t MulCompute(const CpuKernelContext& ctx);
+    uint32_t MulCompute(const CpuKernelContext& ctx) const;
 
     template <typename T>
-    uint32_t MulDispatch(BCalcInfo& calc_info);
+    uint32_t MulDispatch(BCalcInfo& calc_info) const;
 
     bool AlignedCheck(const BCalcInfo& calc_info) const;
 
     template <int32_t RANK, typename T>
-    uint32_t MulCalculateWithAlignedCheck(BCalcInfo& calc_info);
+    uint32_t MulCalculateWithAlignedCheck(BCalcInfo& calc_info) const;
 
     template <int32_t RANK, typename T, int32_t OPTION>
-    uint32_t MulCalculate(BCalcInfo& calc_info);
+    uint32_t MulCalculate(BCalcInfo& calc_info) const;
 
     uint32_t MulSameTypeCompute(const CpuKernelContext& ctx);
 };

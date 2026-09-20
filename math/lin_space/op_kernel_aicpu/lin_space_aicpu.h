@@ -16,10 +16,10 @@
 
 namespace aicpu {
 class LinSpaceCpuKernel : public CpuKernel {
- public:
-  LinSpaceCpuKernel() = default;
-  ~LinSpaceCpuKernel() = default;
-  uint32_t Compute(CpuKernelContext &ctx) override;
+public:
+    LinSpaceCpuKernel() = default;
+    ~LinSpaceCpuKernel() override = default;
+    uint32_t Compute(CpuKernelContext& ctx) override;
 };
-}  // namespace aicpu
-#endif  // AICPU_KERNELS_NORMALIZED_LIN_SPACE_AICPU_H
+} // namespace aicpu
+#endif // AICPU_KERNELS_NORMALIZED_LIN_SPACE_AICPU_H

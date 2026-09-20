@@ -70,7 +70,7 @@ uint32_t MulCpuKernel::MulSameTypeCompute(const CpuKernelContext& ctx)
 }
 
 template <typename T>
-uint32_t MulCpuKernel::MulCompute(const CpuKernelContext& ctx)
+uint32_t MulCpuKernel::MulCompute(const CpuKernelContext& ctx) const
 {
     BCalcInfo calc_info;
     calc_info.input_0 = ctx.Input(kFirstInputIndex);
@@ -96,7 +96,7 @@ uint32_t MulCpuKernel::MulCompute(const CpuKernelContext& ctx)
 }
 
 template <typename T>
-uint32_t MulCpuKernel::MulDispatch(BCalcInfo& calc_info)
+uint32_t MulCpuKernel::MulDispatch(BCalcInfo& calc_info) const
 {
     int32_t rank = static_cast<int32_t>(calc_info.shape_out.size());
     switch (rank) {
@@ -130,7 +130,7 @@ uint32_t MulCpuKernel::MulDispatch(BCalcInfo& calc_info)
 }
 
 template <int32_t RANK, typename T>
-uint32_t MulCpuKernel::MulCalculateWithAlignedCheck(BCalcInfo& calc_info)
+uint32_t MulCpuKernel::MulCalculateWithAlignedCheck(BCalcInfo& calc_info) const
 {
     if (AlignedCheck(calc_info)) {
         return MulCalculate<RANK, T, Eigen::Aligned>(calc_info);
@@ -145,7 +145,7 @@ bool MulCpuKernel::AlignedCheck(const BCalcInfo& calc_info) const
 }
 
 template <int32_t RANK, typename T, int32_t OPTION>
-uint32_t MulCpuKernel::MulCalculate(BCalcInfo& calc_info)
+uint32_t MulCpuKernel::MulCalculate(BCalcInfo& calc_info) const
 {
     Eigen::TensorMap<Eigen::Tensor<T, 1>, OPTION> input0(static_cast<T*>(calc_info.input_0->GetData()),
                                                          calc_info.input_0->GetTensorShape()->NumElements());
@@ -236,7 +236,7 @@ uint32_t BcastCompute(const CpuKernelContext& ctx, const Bcast& bcast)
             KERNEL_LOG_ERROR("Mul max_core_num is zero, division by zero.");
             return KERNEL_STATUS_PARAM_INVALID;
         }
-        auto sharder_mul = [&](int64_t start, int64_t end) {
+        auto sharder_mul = [&in0, &in1, &out, &bcast](int64_t start, int64_t end) {
             for (int64_t i = start; i < end; ++i) {
                 MulImpl(*(in0 + bcast.GetBroadcastXIndex(i)), *(in1 + bcast.GetBroadcastYIndex(i)), *(out + i));
             }
@@ -294,7 +294,9 @@ uint32_t NoBcastCompute(CpuKernelContext& ctx)
             KERNEL_LOG_ERROR("Mul max_core_num is zero, division by zero.");
             return KERNEL_STATUS_PARAM_INVALID;
         }
-        auto sharder_mul = [&](int64_t start, int64_t end) { SpecialCompute<TIn1, TIn2, TOut>(type, start, end, ctx); };
+        auto sharder_mul = [type, &ctx](int64_t start, int64_t end) {
+            SpecialCompute<TIn1, TIn2, TOut>(type, start, end, ctx);
+        };
         KERNEL_HANDLE_ERROR(CpuKernelUtils::ParallelFor(ctx, data_num, data_num / max_core_num, sharder_mul),
                             "Mul Compute failed.")
     } else {

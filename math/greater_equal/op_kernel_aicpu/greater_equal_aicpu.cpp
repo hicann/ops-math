@@ -82,7 +82,7 @@ uint32_t GreaterEqualCpuKernel::GreaterEqualParamCheck(CpuKernelContext& ctx) co
 
 template <typename T>
 void GreaterEqualCpuKernel::SpecialCompute(BcastShapeType type, int64_t start, int64_t end, const T* input1,
-                                           const T* input2, bool* output)
+                                           const T* input2, bool* output) const
 {
     switch (type) {
         case BcastShapeType::SAME_SHAPE:
@@ -107,11 +107,11 @@ void GreaterEqualCpuKernel::SpecialCompute(BcastShapeType type, int64_t start, i
 }
 
 template <typename T>
-uint32_t GreaterEqualCpuKernel::NoBcastCompute(const CpuKernelContext& ctx)
+uint32_t GreaterEqualCpuKernel::NoBcastCompute(const CpuKernelContext& ctx) const
 {
-    auto input0 = reinterpret_cast<T*>(ctx.Input(0)->GetData());
-    auto input1 = reinterpret_cast<T*>(ctx.Input(1)->GetData());
-    auto output = reinterpret_cast<bool*>(ctx.Output(0)->GetData());
+    auto input0 = PtrToPtr<void, T>(ctx.Input(0)->GetData());
+    auto input1 = PtrToPtr<void, T>(ctx.Input(1)->GetData());
+    auto output = PtrToPtr<void, bool>(ctx.Output(0)->GetData());
     const int64_t input0_elements_nums = ctx.Input(0)->NumElements();
     const int64_t input1_elements_nums = ctx.Input(1)->NumElements();
     const int64_t data_num = ctx.Output(0)->NumElements();
@@ -126,7 +126,7 @@ uint32_t GreaterEqualCpuKernel::NoBcastCompute(const CpuKernelContext& ctx)
             min_core_num, static_cast<int64_t>(aicpu::CpuKernelUtils::GetCPUNum(ctx) - kResvCpuNum));
         const int64_t per_unit_size = data_num / std::min(data_num, max_core_num);
 
-        auto sharder_greater_equal = [&](int64_t start, int64_t end) {
+        auto sharder_greater_equal = [this, type, input0, input1, output](int64_t start, int64_t end) {
             SpecialCompute<T>(type, start, end, input0, input1, output);
         };
 
@@ -140,11 +140,11 @@ uint32_t GreaterEqualCpuKernel::NoBcastCompute(const CpuKernelContext& ctx)
 }
 
 template <typename T>
-uint32_t GreaterEqualCpuKernel::BcastCompute(const CpuKernelContext& ctx, const Bcast& bcast)
+uint32_t GreaterEqualCpuKernel::BcastCompute(const CpuKernelContext& ctx, const Bcast& bcast) const
 {
-    auto input0 = reinterpret_cast<T*>(ctx.Input(0)->GetData());
-    auto input1 = reinterpret_cast<T*>(ctx.Input(1)->GetData());
-    auto output = reinterpret_cast<bool*>(ctx.Output(0)->GetData());
+    auto input0 = PtrToPtr<void, T>(ctx.Input(0)->GetData());
+    auto input1 = PtrToPtr<void, T>(ctx.Input(1)->GetData());
+    auto output = PtrToPtr<void, bool>(ctx.Output(0)->GetData());
 
     const int64_t data_num = ctx.Output(0)->NumElements();
     if (data_num >= kParallelDataNum) {
@@ -153,7 +153,7 @@ uint32_t GreaterEqualCpuKernel::BcastCompute(const CpuKernelContext& ctx, const 
             min_core_num, static_cast<int64_t>(aicpu::CpuKernelUtils::GetCPUNum(ctx) - kResvCpuNum));
         const int64_t per_unit_size = data_num / std::min(data_num, max_core_num);
 
-        auto sharder_greater_equal = [&](int64_t start, int64_t end) {
+        auto sharder_greater_equal = [&output, &input0, &input1, &bcast](int64_t start, int64_t end) {
             for (int64_t i = start; i < end; ++i) {
                 output[i] = input0[bcast.GetBroadcastXIndex(i)] >= input1[bcast.GetBroadcastYIndex(i)];
             }
@@ -170,7 +170,7 @@ uint32_t GreaterEqualCpuKernel::BcastCompute(const CpuKernelContext& ctx, const 
 }
 
 template <typename T>
-uint32_t GreaterEqualCpuKernel::GreaterEqualCompute(const CpuKernelContext& ctx)
+uint32_t GreaterEqualCpuKernel::GreaterEqualCompute(const CpuKernelContext& ctx) const
 {
     Tensor* input0_tensor = ctx.Input(0);
     auto input0_shape = input0_tensor->GetTensorShape()->GetDimSizes();
