@@ -1679,12 +1679,12 @@
   <tr>
     <td>math</td>
     <td><a href="../../math/reduce_std_v2_update/README.md">reduce_std_v2_update</a></td>
-    <td>√</td>
-    <td>√</td>
     <td>×</td>
-    <td>√</td>
+    <td>×</td>
+    <td>×</td>
+    <td>×</td>
     <td>AI Core</td>
-    <td>接收原始输入和预计算均值，沿指定维度归约计算方差或标准差，支持贝塞尔校正与keepdim。</td>
+    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -2065,16 +2065,6 @@
     <td>√</td>
     <td>AI Core/AI CPU</td>
     <td>完成减法计算，被减数按alpha进行缩放。</td>
-  </tr>
-  <tr>
-    <td>math</td>
-    <td><a href="../../math/sub_mul_concat/README.md">sub_mul_concat</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>√</td>
-    <td>AI Core</td>
-    <td>内部融合算子，由CANN既有图融合流程将Sub、Mul和Concat/ConcatV2/ConcatV2D原始图转换后生成，不提供公开ACLNN或直接构造接口。</td>
   </tr>
   <tr>
     <td>math</td>
