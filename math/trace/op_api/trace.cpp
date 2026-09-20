@@ -31,10 +31,10 @@ OP_TYPE_REGISTER(Trace);
 static bool IsAiCoreSupport(const aclTensor* self)
 {
     // 获取芯片类型,判断是1971还是1980
-    if (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-        GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910_93) {
-        return CheckType(
-            self->GetDataType(), {op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16});
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (curArch == NpuArch::DAV_2201) {
+        return CheckType(self->GetDataType(),
+                         {op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16});
     }
 
     // 1980 & other
@@ -55,9 +55,8 @@ const aclTensor* TraceAiCore(const aclTensor* self, aclOpExecutor* executor, acl
 {
     L0_DFX(TraceAiCore, self);
     auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Trace, OP_INPUT(self), OP_OUTPUT(out));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "TraceAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-        return nullptr);
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "TraceAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
+             return nullptr);
     return out;
 }
 

@@ -71,9 +71,8 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* other, const ac
 
 static inline bool CheckSocVersionGe910B(void)
 {
-    return (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-            GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) ||
-           IsRegBase();
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    return curArch == NpuArch::DAV_2201 || IsRegBase(curArch);
 }
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const aclTensor* out)

@@ -49,6 +49,7 @@ public:
         this->Attr("lambd").Float(1.0);
 
         this->AICore().AddConfig("ascend950");
+        this->AICore().AddConfig("ascend350");
     }
 };
 

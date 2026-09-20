@@ -23,6 +23,7 @@
 #include "opdev/op_dfx.h"
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
+#include "opdev/platform.h"
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "aclnn_kernels/common/op_error_check.h"
@@ -53,8 +54,7 @@ static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
     if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510) {
         return ASCEND950_DTYPE_SUPPORT_LIST;
-    } else if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-               GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
+    } else if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201) {
         return ASCEND910B_DTYPE_SUPPORT_LIST;
     } else {
         return ASCEND910_DTYPE_SUPPORT_LIST;

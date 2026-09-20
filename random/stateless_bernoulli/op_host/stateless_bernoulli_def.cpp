@@ -28,17 +28,19 @@ public:
 
     explicit StatelessBernoulli(const char* name) : OpDef(name)
     {
-        randomdef::RandomDtypeFmtGen gen({
-            {"inputDataType", inputDataType}, {"probDataType", probDataType}, {"baseDataType", baseDataType},
-            {"outputDataType", outputDataType}, {"baseFormat", baseFormat}});
-		const auto baseFormatSeq = gen.GetSequence<ge::Format>("baseFormat");
-		
-		this->Input("shape")
-			.ParamType(REQUIRED)
-			.DataType(gen.GetSequence("inputDataType"))
-			.Format(baseFormatSeq)
-			.UnknownShapeFormat(baseFormatSeq)
-			.ValueDepend(OPTIONAL);
+        randomdef::RandomDtypeFmtGen gen({{"inputDataType", inputDataType},
+                                          {"probDataType", probDataType},
+                                          {"baseDataType", baseDataType},
+                                          {"outputDataType", outputDataType},
+                                          {"baseFormat", baseFormat}});
+        const auto baseFormatSeq = gen.GetSequence<ge::Format>("baseFormat");
+
+        this->Input("shape")
+            .ParamType(REQUIRED)
+            .DataType(gen.GetSequence("inputDataType"))
+            .Format(baseFormatSeq)
+            .UnknownShapeFormat(baseFormatSeq)
+            .ValueDepend(OPTIONAL);
         this->Input("prob")
             .ParamType(REQUIRED)
             .DataType(gen.GetSequence("probDataType"))
@@ -71,6 +73,7 @@ public:
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true);
         this->AICore().AddConfig("ascend950");
+        this->AICore().AddConfig("ascend350");
     }
 };
 

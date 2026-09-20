@@ -8,10 +8,11 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-# StatelessExponential only supports ascend950 (arch35 / SIMT). Kernel computation
-# reuses sim_thread_exponential, so it must be listed as a build dependency.
-set(SUPPORT_COMPUTE_UNIT "ascend950")
-set(SUPPORT_TILING_DIR "arch35")
+# StatelessExponential only supports ascend950 and ascend350 (arch35 / SIMT).
+# Kernel computation reuses sim_thread_exponential, so it must be listed as a
+# build dependency.
+set(SUPPORT_COMPUTE_UNIT "ascend950" "ascend350")
+set(SUPPORT_TILING_DIR "arch35" "arch35")
 add_all_modules_sources(OPTYPE stateless_exponential
                         ACLNNTYPE aclnn_exclude
                         COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT}

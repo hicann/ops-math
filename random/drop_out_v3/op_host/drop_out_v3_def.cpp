@@ -27,11 +27,14 @@ public:
 
     explicit DropOutV3(const char* name) : OpDef(name)
     {
-        randomdef::RandomDtypeFmtGen gen({
-            {"seedType", seedType}, {"probType", probType},  {"inOutType", inOutType}, 
-            {"offsetType", offsetType}, {"maskType", maskType}, {"baseFormat", baseFormat}});
+        randomdef::RandomDtypeFmtGen gen({{"seedType", seedType},
+                                          {"probType", probType},
+                                          {"inOutType", inOutType},
+                                          {"offsetType", offsetType},
+                                          {"maskType", maskType},
+                                          {"baseFormat", baseFormat}});
         const auto baseFormatSeq = gen.GetSequence<ge::Format>("baseFormat");
-        
+
         this->Input("x")
             .ParamType(REQUIRED)
             .DataType({gen.GetSequence("inOutType")})
@@ -79,6 +82,7 @@ public:
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true);
         this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend350", aicoreConfig);
     }
 };
 
