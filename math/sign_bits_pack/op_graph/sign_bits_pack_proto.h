@@ -34,11 +34,14 @@ namespace ge {
  *@par Attributes:
  * @li size: Int, required. Output first dimension size, must be >= 1 and ceil(N/8) % size == 0.
  */
+#ifndef OPS_PROTO_DEF_SIGNBITSPACK
+#define OPS_PROTO_DEF_SIGNBITSPACK
 REG_OP(SignBitsPack)
     .INPUT(x, TensorType({DT_FLOAT, DT_FLOAT16}))
     .OUTPUT(y, TensorType({DT_UINT8}))
     .REQUIRED_ATTR(size, Int)
     .OP_END_FACTORY_REG(SignBitsPack)
+#endif // OPS_PROTO_DEF_SIGNBITSPACK
 
 } // namespace ge
 
