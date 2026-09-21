@@ -1069,6 +1069,14 @@ VC5@ops-math:
       open_source: null
   llt:
     ut_filter:
+      - ops/ops-math/conversion/**/op_graph/
+      - ops/ops-math/conversion/**/op_host/arch35/
+      - ops/ops-math/conversion/**/op_host/*_def.cpp
+      - ops/ops-math/conversion/**/op_kernel/
+      - ops/ops-math/math/**/op_graph/
+      - ops/ops-math/math/**/op_host/arch35/
+      - ops/ops-math/math/**/op_host/*_def.cpp
+      - ops/ops-math/math/**/op_kernel/
       - ops/ops-math/math/truncate_div/op_graph/
       - ops/ops-math/math/truncate_div/op_host/
       - ops/ops-math/math/truncate_div/op_kernel/
