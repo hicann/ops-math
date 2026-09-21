@@ -21,6 +21,8 @@ ge::Operator CreateSourceOperator(const std::string& attrs)
     op_src.SetAttr("attribute", ge::AscendString(attrs.c_str()));
     return op_src;
 }
+
+int32_t GetScalarInt32(ge::Tensor& tensor) { return *reinterpret_cast<const int32_t*>(tensor.GetData()); }
 } // namespace
 
 // 全属性解析：depth/num_classes 正确转写，name/original_type 正确
@@ -61,6 +63,31 @@ TEST(OnnxOneHotDPluginTest, DepthOnlyUsesDefaults)
     int num_classes = 123;
     EXPECT_EQ(op_dest.GetAttr("num_classes", num_classes), ge::GRAPH_SUCCESS);
     EXPECT_EQ(num_classes, -1);
+}
+
+// GE 会省略零值 INT 属性的 i 字段，但这些属性仍然存在且值为 0
+TEST(OnnxOneHotDPluginTest, ParsesZeroValuesWithoutIFields)
+{
+    ge::Operator op_src = CreateSourceOperator(
+        R"({"attribute":[{"name":"depth","type":2},{"name":"num_classes","type":2},{"name":"on_value","type":2},{"name":"off_value","type":2}]})");
+    ge::Operator op_dest = CreateOperator("one_hot_d");
+
+    EXPECT_EQ(domi::ParseParamsNpuOneHot(op_src, op_dest), domi::SUCCESS);
+
+    int depth = -1;
+    int num_classes = -1;
+    ge::Tensor on_value;
+    ge::Tensor off_value;
+    EXPECT_EQ(op_dest.GetAttr("depth", depth), ge::GRAPH_SUCCESS);
+    EXPECT_EQ(op_dest.GetAttr("num_classes", num_classes), ge::GRAPH_SUCCESS);
+    EXPECT_EQ(op_dest.GetAttr("on_value", on_value), ge::GRAPH_SUCCESS);
+    EXPECT_EQ(op_dest.GetAttr("off_value", off_value), ge::GRAPH_SUCCESS);
+    EXPECT_EQ(depth, 0);
+    EXPECT_EQ(num_classes, 0);
+    ASSERT_NE(on_value.GetData(), nullptr);
+    ASSERT_NE(off_value.GetData(), nullptr);
+    EXPECT_EQ(GetScalarInt32(on_value), 0);
+    EXPECT_EQ(GetScalarInt32(off_value), 0);
 }
 
 // 缺失必需的 depth 属性：应返回 FAILED

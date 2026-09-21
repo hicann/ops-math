@@ -55,10 +55,10 @@ TEST(OnnxReverseSequencePluginTest, EmptyAttributeArrayKeepsDefaults)
     EXPECT_EQ(seq_dim, 0);
 }
 
-// 仅设置 batch_axis=0：batch_dim 应被覆盖为 0，seq_dim 保持默认 0
+// GE 会省略零值 INT 属性的 i 字段，batch_dim 仍应被覆盖为 0
 TEST(OnnxReverseSequencePluginTest, BatchAxisZeroSetsBatchDimZero)
 {
-    ge::Operator op_src = CreateSourceOperator(R"({"attribute":[{"name":"batch_axis","type":2,"i":0}]})");
+    ge::Operator op_src = CreateSourceOperator(R"({"attribute":[{"name":"batch_axis","type":2}]})");
     ge::Operator op_dest = CreateOperator("reverse_sequence");
 
     EXPECT_EQ(domi::ParseParamsReverseSequence(op_src, op_dest), domi::SUCCESS);

@@ -31,8 +31,8 @@ static Status ParseParamsCorr(const ge::Operator& op_src, ge::Operator& op_dest)
             const json attrs = json::parse(attrs_string.GetString());
             if (attrs.contains("attribute") && attrs["attribute"].is_array()) {
                 for (const json& attr : attrs["attribute"]) {
-                    if (attr.value("name", "") == "groups" && attr.contains("i")) {
-                        groups = attr["i"].get<int64_t>();
+                    if (attr.value("name", "") == "groups") {
+                        groups = attr.contains("i") ? attr["i"].get<int64_t>() : 0;
                     }
                 }
             }

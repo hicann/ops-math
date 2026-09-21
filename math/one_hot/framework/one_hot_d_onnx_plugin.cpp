@@ -42,19 +42,16 @@ static Status ParseParamsNpuOneHot(const ge::Operator& op_src, ge::Operator& op_
             const json attrs = json::parse(attrs_string.GetString());
             if (attrs.contains("attribute") && attrs["attribute"].is_array()) {
                 for (const json& attr : attrs["attribute"]) {
-                    if (!attr.contains("i")) {
-                        continue;
-                    }
                     const std::string name = attr.value("name", "");
                     if (name == "num_classes") {
-                        num_classes = attr["i"].get<int>();
+                        num_classes = attr.contains("i") ? attr["i"].get<int>() : 0;
                     } else if (name == "depth") {
-                        depth = attr["i"].get<int>();
+                        depth = attr.contains("i") ? attr["i"].get<int>() : 0;
                         has_depth = true;
                     } else if (name == "on_value") {
-                        on_value = attr["i"].get<int>();
+                        on_value = attr.contains("i") ? attr["i"].get<int>() : 0;
                     } else if (name == "off_value") {
-                        off_value = attr["i"].get<int>();
+                        off_value = attr.contains("i") ? attr["i"].get<int>() : 0;
                     }
                 }
             }

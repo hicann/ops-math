@@ -69,6 +69,19 @@ TEST(OnnxCorrelationPluginTest, EmptyAttributeArrayKeepsDefaults)
     EXPECT_EQ(groups, 1);
 }
 
+// GE 会省略零值 INT 属性的 i 字段，显式 groups=0 不应回退为默认值 1
+TEST(OnnxCorrelationPluginTest, ParsesZeroGroupsWithoutIField)
+{
+    ge::Operator op_src = CreateSourceOperator(R"({"attribute":[{"name":"groups","type":2}]})");
+    ge::Operator op_dest = CreateOperator("correlation");
+
+    EXPECT_EQ(domi::ParseParamsCorr(op_src, op_dest), domi::SUCCESS);
+
+    int64_t groups = -1;
+    EXPECT_EQ(op_dest.GetAttr("groups", groups), ge::GRAPH_SUCCESS);
+    EXPECT_EQ(groups, 0);
+}
+
 // 非法 JSON 字符串：应返回 FAILED
 TEST(OnnxCorrelationPluginTest, MalformedJsonReturnsFailed)
 {

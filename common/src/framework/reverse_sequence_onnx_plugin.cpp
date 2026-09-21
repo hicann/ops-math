@@ -19,11 +19,12 @@ using json = nlohmann::json;
 
 static void ApplyReverseSequenceAttr(ge::Operator& op_dest, const json& attr)
 {
-    if (attr.value("name", "") == "batch_axis" && attr.contains("i")) {
-        op_dest.SetAttr("batch_dim", attr["i"].get<int>() == 1 ? 1 : 0);
-    }
-    if (attr.value("name", "") == "time_axis" && attr.contains("i")) {
-        op_dest.SetAttr("seq_dim", attr["i"].get<int>());
+    const std::string name = attr.value("name", "");
+    if (name == "batch_axis") {
+        const int batch_axis = attr.contains("i") ? attr["i"].get<int>() : 0;
+        op_dest.SetAttr("batch_dim", batch_axis == 1 ? 1 : 0);
+    } else if (name == "time_axis") {
+        op_dest.SetAttr("seq_dim", attr.contains("i") ? attr["i"].get<int>() : 0);
     }
 }
 
