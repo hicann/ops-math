@@ -11,29 +11,28 @@
 #ifndef AICPU_KERNELS_NORMALIZED_SEARCH_SORTED_H
 #define AICPU_KERNELS_NORMALIZED_SEARCH_SORTED_H
 
-#include <type_traits>
 #include "cpu_kernel.h"
 #include "utils/status.h"
 
 namespace aicpu {
 
 class SearchSortedKernel : public CpuKernel {
- public:
-  ~SearchSortedKernel() override = default;
-  uint32_t Compute(CpuKernelContext &ctx) override;
+public:
+    ~SearchSortedKernel() override = default;
+    uint32_t Compute(CpuKernelContext& ctx) override;
 
- private:
-  KernelStatus GetInputAndCheck(const CpuKernelContext &ctx);
+private:
+    KernelStatus GetInputAndCheck(const CpuKernelContext& ctx);
 
-  bool right_ = false;
-  DataType sequence_dtype_ = DT_INT32;
-  DataType values_dtype_ = DT_INT32;
-  DataType output_dtype_ = DT_INT32;
+    bool right_ = false;
+    DataType sequence_dtype_ = DT_INT32;
+    DataType values_dtype_ = DT_INT32;
+    DataType output_dtype_ = DT_INT32;
 
-  Tensor *sequence_t_ = nullptr;
-  Tensor *values_t_ = nullptr;
-  Tensor *sorter_t_ = nullptr;
-  Tensor *output_t_ = nullptr;
+    Tensor* sequence_t_ = nullptr;
+    Tensor* values_t_ = nullptr;
+    Tensor* sorter_t_ = nullptr;
+    Tensor* output_t_ = nullptr;
 };
-}  // namespace aicpu
+} // namespace aicpu
 #endif

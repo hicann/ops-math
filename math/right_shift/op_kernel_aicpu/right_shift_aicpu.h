@@ -17,27 +17,27 @@
 namespace aicpu {
 
 class RightShiftCpuKernel : public CpuKernel {
- public:
-  RightShiftCpuKernel() = default;
-  ~RightShiftCpuKernel() override = default;
+public:
+    RightShiftCpuKernel() = default;
+    ~RightShiftCpuKernel() override = default;
 
-  uint32_t Compute(CpuKernelContext &ctx) override;
+    uint32_t Compute(CpuKernelContext& ctx) override;
 
- private:
-  static uint32_t RightShiftParamCheck(const CpuKernelContext &ctx);
+private:
+    static uint32_t RightShiftParamCheck(const CpuKernelContext& ctx);
 
-  template <typename T>
-  void SpecialCompute(BcastShapeType type, int64_t start, int64_t end,
-                      const T *input1, const T *input2, T *output);
+    template <typename T>
+    void SpecialCompute(BcastShapeType type, int64_t start, int64_t end, const T* input1, const T* input2,
+                        T* output) const;
 
-  template <typename T>
-  uint32_t NoBcastCompute(const CpuKernelContext &ctx);
+    template <typename T>
+    uint32_t NoBcastCompute(const CpuKernelContext& ctx) const;
 
-  template <typename T>
-  uint32_t BcastCompute(const CpuKernelContext &ctx, const Bcast &bcast);
+    template <typename T>
+    uint32_t BcastCompute(const CpuKernelContext& ctx, const Bcast& bcast) const;
 
-  template <typename T>
-  uint32_t RightShiftCompute(const CpuKernelContext &ctx);
+    template <typename T>
+    uint32_t RightShiftCompute(const CpuKernelContext& ctx) const;
 };
-}  // namespace aicpu
+} // namespace aicpu
 #endif
