@@ -8,12 +8,26 @@
 
 from typing import ClassVar
 
-import numpy as np
 import torch
 
-__spec__ = {"dense_bincount": "DenseBincountKernelSpec"}
+__spec__ = {
+    "dense_bincount": "DenseBincountKernelSpec",
+    "tf.raw_ops.DenseBincount": "DenseBincountTfSpec",
+}
 
-_TOLERANCE = {"float32": {"standard": "cross_check", "level": "L1"}}
+_TOLERANCE = {
+    "float32": {"standard": "cross_check", "level": "L1"},
+}
+
+_E2E_TOLERANCE = {
+    "float32": {"standard": "stat_rel_err"},
+}
+
+# TTK resolves tolerance from output dtype, not input dtype or attributes. The
+# 950 definition has one FP32 output, so weighted cases use cross_check here to
+# retain the GPU leg. Run binary_output/empty-weight counting cases in an
+# additional CLI --compare binary_equal round for exact two-leg validation;
+# TestSpec has no per-attribute tolerance routing.
 
 
 def _bool_attr(value, default=False):
@@ -134,29 +148,53 @@ class _DenseBincountCompose:
 
 class DenseBincountKernelSpec:
     def golden(*inputs, **kwargs):
-        tensors = [torch.from_numpy(np.ascontiguousarray(value)) for value in inputs]
-        outputs = _compute(*tensors, binary_output=kwargs.get("binary_output", False))
-        output_dtypes = kwargs.get("output_dtypes") or []
-        output_dtypes = [
-            dtype[0] if isinstance(dtype, (list, tuple)) else str(dtype)
-            for dtype in output_dtypes
-        ]
-        return [
-            output.numpy().astype(output_dtypes[index])
-            if index < len(output_dtypes)
-            else output.numpy()
-            for index, output in enumerate(outputs)
-        ]
+        import tensorflow as tf
+
+        input_tensor, size_tensor, weights_tensor = inputs
+        output = tf.raw_ops.DenseBincount(
+            input=tf.convert_to_tensor(input_tensor),
+            size=tf.reshape(tf.convert_to_tensor(size_tensor), []),
+            weights=tf.convert_to_tensor(weights_tensor),
+            binary_output=_bool_attr(kwargs.get("binary_output", False)),
+        )
+        return [output.numpy()]
 
     third_party: ClassVar[dict] = {"torch": _DenseBincountCompose}
     tolerance: ClassVar[dict] = _TOLERANCE
 
 
+class DenseBincountTfSpec:
+    """TensorFlow E2E spec for ``tf.raw_ops.DenseBincount``."""
+
+    @staticmethod
+    def golden(input, size, weights, binary_output=False, **kwargs):
+        del kwargs
+        import tensorflow as tf
+
+        def to_tf_tensor(value):
+            if tf.is_tensor(value):
+                return value
+            if isinstance(value, torch.Tensor):
+                value = value.detach().cpu().numpy()
+            return tf.convert_to_tensor(value)
+
+        output = tf.raw_ops.DenseBincount(
+            input=to_tf_tensor(input),
+            size=tf.reshape(to_tf_tensor(size), []),
+            weights=to_tf_tensor(weights),
+            binary_output=_bool_attr(binary_output),
+        )
+        return [output]
+
+    third_party: ClassVar[dict] = {"torch": _DenseBincountCompose}
+    tolerance: ClassVar[dict] = _E2E_TOLERANCE
+
+
 def dense_bincount_golden(input_tensor, size_tensor, weights_tensor, **kwargs):
-    """Compatibility entry for lightweight repository probes; TTK uses __spec__."""
     return DenseBincountKernelSpec.golden(
         input_tensor, size_tensor, weights_tensor, **kwargs
     )
 
 
-# No aclnn/e2e spec: DenseBincount has no aclnn interface or torch binding.
+# No ACLNN or Torch E2E spec: DenseBincount exposes neither interface. The
+# TensorFlow E2E path is registered above from framework/dense_bincount_tf_plugin.cpp.
