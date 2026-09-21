@@ -698,53 +698,6 @@ REG_OP(ExpandDims)
     .OP_END_FACTORY_REG(RandomChoiceWithMask)
 
     /**
-    * @brief Calculates the standard deviation of Tensors.
-
-    * @par Inputs:
-    * include:
-    * @li x: A tensor. Must be one of the following types: float16, float32, bfloat16.
-          The format must be NCHW, NHWC, or ND. \n
-    * @li mean: A tensor. It's the mean of X. Has the same shape, format and type as "x". \n
-
-
-    * @par Attributes:
-    * Six Attributes, including:
-    * @li dim: The dimensions to reduce. An optional listint, Defaults to "None".
-    *     If None (the default), reduces all dimensions.
-    *     Must be in the range [-rank(x), rank(x)). \n
-    * @li unbiased: An optional bool. Defaults to "True".
-    *     If "True", Use Bessel Correction.
-    *     If "False", Do not use Bessel Correction. \n
-    * @li keepdim: An optional bool. Defaults to "False".
-    *     If "True", Keep the original tensor dimension.
-    *     If "False", Do not keep the original tensor dimension. \n
-    * @li invert: An optional bool, Defaults to "False".
-    *     If "True", the output is inverse of variance.
-    *     If "False", the output is variance.
-    * @li epsilon: An optional float, Defaults to 0.001.
-    *     Prevent division by 0.
-    * @li correction: An optional int. Defaults to 1.
-    *     If unbiased is "True", use Bessel Correction. \n
-
-    * @par Outputs:
-    * y: A tensor. It's the variance of X or reciprocal of vaiance of X. Has the same type and format as "x".
-
-    * @par Third-party framework compatibility
-    * Compatible with the Pytorch operator ReduceStdWithMean.
-    */
-    REG_OP(ReduceStdWithMean)
-    .INPUT(x, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16}))
-    .INPUT(mean, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16}))
-    .OUTPUT(y, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16}))
-    .ATTR(dim, ListInt, {})
-    .ATTR(unbiased, Bool, true)
-    .ATTR(keepdim, Bool, false)
-    .ATTR(invert, Bool, false)
-    .ATTR(epsilon, Float, 0.001)
-    .ATTR(correction, Int, 1)
-    .OP_END_FACTORY_REG(ReduceStdWithMean)
-
-    /**
     *@brief Outputs random values from a truncated normal distribution . \n
 
     *@par Inputs:
