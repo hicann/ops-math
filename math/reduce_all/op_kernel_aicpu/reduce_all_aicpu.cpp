@@ -27,8 +27,8 @@ const char* const kReduceAll = "ReduceAll";
 namespace aicpu {
 uint32_t ReduceAllCpuKernel::GenDataNoAxis(const CpuKernelContext& ctx) const
 {
-    auto x_data = reinterpret_cast<bool*>(ctx.Input(kFirstInputIndex)->GetData());
-    auto y_data = reinterpret_cast<bool*>(ctx.Output(kFirstOutputIndex)->GetData());
+    auto x_data = static_cast<bool*>(ctx.Input(kFirstInputIndex)->GetData());
+    auto y_data = static_cast<bool*>(ctx.Output(kFirstOutputIndex)->GetData());
     int64_t input_data_size = ctx.Input(kFirstInputIndex)->NumElements();
     bool output_y = true;
     for (int64_t i = 0; i < input_data_size; ++i) {
@@ -67,7 +67,7 @@ uint32_t ReduceAllCpuKernel::AxisCal(T axis, const std::vector<int64_t>& data_di
 }
 
 template <typename T>
-std::vector<int64_t> ReduceAllCpuKernel::GetOutputShape(const std::vector<int64_t>& input_shape, const T& axis)
+std::vector<int64_t> ReduceAllCpuKernel::GetOutputShape(const std::vector<int64_t>& input_shape, const T& axis) const
 {
     std::vector<int64_t> output_shape;
     for (size_t i = 0; i < input_shape.size(); ++i) {
@@ -85,7 +85,7 @@ std::vector<int64_t> ReduceAllCpuKernel::GetOutputShape(const std::vector<int64_
 template <typename T>
 uint32_t ReduceAllCpuKernel::AxesRankCheckAndReverse(const CpuKernelContext& ctx, const T* axis_data,
                                                      const int64_t& axes_num, std::map<T, int64_t>& axis_map,
-                                                     int32_t& rank)
+                                                     int32_t& rank) const
 {
     T axis_temp = 0;
     rank = static_cast<T>(rank);
@@ -156,7 +156,7 @@ uint32_t ReduceAllCpuKernel::ReduceAllCompute(const CpuKernelContext& ctx)
     Tensor* axes = ctx.Input(kSecondInputIndex);
     Tensor* y = ctx.Output(kFirstInputIndex);
 
-    auto* output_data = reinterpret_cast<T*>(y->GetData());
+    auto* output_data = static_cast<T*>(y->GetData());
     auto* keep_dims = ctx.GetAttr("keep_dims");
     KERNEL_CHECK_NULLPTR(keep_dims, KERNEL_STATUS_PARAM_INVALID, "Get attr [keep_dims] failed.");
     keep_dims_ = keep_dims->GetBool();
@@ -176,8 +176,8 @@ uint32_t ReduceAllCpuKernel::ReduceAllCompute(const CpuKernelContext& ctx)
         return GenDataNoAxis(ctx);
     }
 
-    auto* input_data = reinterpret_cast<T*>(x->GetData());
-    auto* axis_data = reinterpret_cast<T2*>(axes->GetData());
+    auto* input_data = static_cast<T*>(x->GetData());
+    auto* axis_data = static_cast<T2*>(axes->GetData());
     int64_t axes_num = axes->GetTensorShape()->NumElements();
     std::vector<int64_t> input_dims = x->GetTensorShape()->GetDimSizes();
     int32_t rank = x->GetTensorShape()->GetDims();

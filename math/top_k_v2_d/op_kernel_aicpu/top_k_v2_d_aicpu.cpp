@@ -84,7 +84,7 @@ inline int32_t DetectMonotone(const T* __restrict__ in, int32_t jump, int32_t n)
     }
     if (n <= kMonotoneProbeMaxN) {
         const T a = in[0];
-        const T b = in[static_cast<int64_t>(n >> 1) * jump];
+        const T b = in[static_cast<int64_t>(static_cast<uint32_t>(n) >> 1) * jump];
         const T c = in[static_cast<int64_t>(n - 1) * jump];
         if (aicpu::IsValueEqual<T>(a, b) && aicpu::IsValueEqual<T>(b, c)) {
             for (int32_t i = 1; i < n; ++i) {
@@ -492,7 +492,7 @@ void TopkV2DCpuKernel::TopKForNVectorImpl(T* in, T* val, int32_t* indice, int64_
 }
 
 template <typename T>
-void TopkV2DCpuKernel::TopKForNVector(size_t start, size_t end)
+void TopkV2DCpuKernel::TopKForNVector(size_t start, size_t end) const
 {
     T* in = PtrToPtr<void, T>(input_tensor_->GetData());
     T* val = PtrToPtr<void, T>(output_values_->GetData());
