@@ -87,22 +87,22 @@ uint32_t RightShiftCpuKernel::RightShiftParamCheck(const CpuKernelContext& ctx)
 // 4. the shapes of input1 and input2 are different
 template <typename T>
 void RightShiftCpuKernel::SpecialCompute(BcastShapeType type, int64_t start, int64_t end, const T* input1,
-                                         const T* input2, T* output)
+                                         const T* input2, T* output) const
 {
     switch (type) {
         case BcastShapeType::SAME_SHAPE:
             for (int64_t i = start; i < end; ++i) {
-                *(output + i) = *(input1 + i) >> *(input2 + i);
+                *(output + i) = static_cast<T>(*(input1 + i) >> *(input2 + i));
             }
             break;
         case BcastShapeType::X_ONE_ELEMENT:
             for (int64_t i = start; i < end; ++i) {
-                *(output + i) = *input1 >> *(input2 + i);
+                *(output + i) = static_cast<T>(*input1 >> *(input2 + i));
             }
             break;
         case BcastShapeType::Y_ONE_ELEMENT:
             for (int64_t i = start; i < end; ++i) {
-                *(output + i) = *(input1 + i) >> *input2;
+                *(output + i) = static_cast<T>(*(input1 + i) >> *input2);
             }
             break;
         default:
@@ -112,7 +112,7 @@ void RightShiftCpuKernel::SpecialCompute(BcastShapeType type, int64_t start, int
 }
 
 template <typename T>
-uint32_t RightShiftCpuKernel::NoBcastCompute(const CpuKernelContext& ctx)
+uint32_t RightShiftCpuKernel::NoBcastCompute(const CpuKernelContext& ctx) const
 {
     auto in0 = reinterpret_cast<T*>(ctx.Input(0)->GetData());
     auto in1 = reinterpret_cast<T*>(ctx.Input(1)->GetData());
@@ -165,7 +165,7 @@ uint32_t RightShiftCpuKernel::NoBcastCompute(const CpuKernelContext& ctx)
 }
 
 template <typename T>
-uint32_t RightShiftCpuKernel::BcastCompute(const CpuKernelContext& ctx, const Bcast& bcast)
+uint32_t RightShiftCpuKernel::BcastCompute(const CpuKernelContext& ctx, const Bcast& bcast) const
 {
     auto in0 = reinterpret_cast<T*>(ctx.Input(0)->GetData());
     auto in1 = reinterpret_cast<T*>(ctx.Input(1)->GetData());
@@ -199,7 +199,8 @@ uint32_t RightShiftCpuKernel::BcastCompute(const CpuKernelContext& ctx, const Bc
 
         auto sharder_less = [&in0, &in1_clamped, &bcast, &out](int64_t start, int64_t end) {
             for (int64_t i = start; i < end; ++i) {
-                *(out + i) = *(in0 + bcast.GetBroadcastXIndex(i)) >> *(in1_clamped + bcast.GetBroadcastYIndex(i));
+                *(out + i) = static_cast<T>(*(in0 + bcast.GetBroadcastXIndex(i)) >>
+                                            *(in1_clamped + bcast.GetBroadcastYIndex(i)));
             }
         };
         if (max_core_num == 0) {
@@ -210,7 +211,8 @@ uint32_t RightShiftCpuKernel::BcastCompute(const CpuKernelContext& ctx, const Bc
         KERNEL_HANDLE_ERROR(flag, "RightShift Compute failed.")
     } else {
         for (int64_t i = 0; i < data_num; ++i) {
-            *(out + i) = *(in0 + bcast.GetBroadcastXIndex(i)) >> *(in1_clamped + bcast.GetBroadcastYIndex(i));
+            *(out + i) = static_cast<T>(*(in0 + bcast.GetBroadcastXIndex(i)) >>
+                                        *(in1_clamped + bcast.GetBroadcastYIndex(i)));
         }
         delete[] in1_clamped;
     }
@@ -218,7 +220,7 @@ uint32_t RightShiftCpuKernel::BcastCompute(const CpuKernelContext& ctx, const Bc
 }
 
 template <typename T>
-uint32_t RightShiftCpuKernel::RightShiftCompute(const CpuKernelContext& ctx)
+uint32_t RightShiftCpuKernel::RightShiftCompute(const CpuKernelContext& ctx) const
 {
     Tensor* input0_tensor = ctx.Input(0);
     auto input0_shape = input0_tensor->GetTensorShape()->GetDimSizes();

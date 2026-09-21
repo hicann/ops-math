@@ -418,7 +418,7 @@ uint32_t TileCpuKernel::TileParamCheck(const CpuKernelContext& ctx)
                        "Expected multiples to "
                        "be 1-D tensors , but got [%zu]-D tensors.",
                        input_x_dims.size())
-    KERNEL_CHECK_FALSE((multiples_tensor->NumElements() == (unsigned int)input_x_dims.size()),
+    KERNEL_CHECK_FALSE((multiples_tensor->NumElements() == static_cast<uint64_t>(input_x_dims.size())),
                        KERNEL_STATUS_PARAM_INVALID,
                        "Expected the size of multiples to be [%zu], but "
                        "got [%ld].",
@@ -433,7 +433,7 @@ uint32_t TileCpuKernel::TileParamCheck(const CpuKernelContext& ctx)
                        "but got [%s].",
                        DTypeStr(multiples_tensor->GetDataType()).c_str())
     std::vector<int64_t> shape_output(input_x_dims.size());
-    for (int64_t i = 0; i < (unsigned int)input_x_dims.size(); ++i) {
+    for (int64_t i = 0; i < static_cast<int64_t>(input_x_dims.size()); ++i) {
         int64_t multiple_value = multiples_.at(i);
         if (input_x_dims.at(i) == 0) {
             is_empty_tensor_ = true;

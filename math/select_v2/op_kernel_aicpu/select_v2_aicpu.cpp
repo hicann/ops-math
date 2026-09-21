@@ -23,9 +23,9 @@ const uint32_t kInputNum = 3;
 const int64_t kNoBroadcastValue = 1;
 const int64_t kNoRepeatElements = 2;
 
-#define SELECTV2_COMPUTE_CASE(DTYPE, TYPE)                       \
+#define SELECTV2_COMPUTE_CASE(DTYPE, TYPE, CTX)                  \
     case (DTYPE): {                                              \
-        KernelStatus result = Selectv2BuildBcast<TYPE>(ctx);     \
+        KernelStatus result = Selectv2BuildBcast<TYPE>(CTX);     \
         if (result != KERNEL_STATUS_OK) {                        \
             KERNEL_LOG_ERROR("SelectV2 kernel compute failed."); \
             return static_cast<uint32_t>(result);                \
@@ -33,14 +33,14 @@ const int64_t kNoRepeatElements = 2;
         break;                                                   \
     }
 
-#define SELECTV2_DIM_CASE(RANK)                                                      \
-    case (RANK): {                                                                   \
-        KernelStatus result = SelectV2CalculateWithAlignedCheck<RANK, T>(calc_info); \
-        if (result != KERNEL_STATUS_OK) {                                            \
-            KERNEL_LOG_ERROR("SelectV2 kernel compute failed.");                     \
-            return result;                                                           \
-        }                                                                            \
-        break;                                                                       \
+#define SELECTV2_DIM_CASE(RANK, TYPE, CALC_INFO)                                                              \
+    case static_cast<int32_t>(RANK): {                                                                        \
+        KernelStatus result = SelectV2CalculateWithAlignedCheck<static_cast<int32_t>(RANK), TYPE>(CALC_INFO); \
+        if (result != KERNEL_STATUS_OK) {                                                                     \
+            KERNEL_LOG_ERROR("SelectV2 kernel compute failed.");                                              \
+            return result;                                                                                    \
+        }                                                                                                     \
+        break;                                                                                                \
     }
 } // namespace
 
@@ -54,20 +54,20 @@ uint32_t Selectv2CpuKernel::Compute(CpuKernelContext& ctx)
     // choose compute function depend on dataType
     auto data_type = static_cast<DataType>(ctx.Input(kSecondInputIndex)->GetDataType());
     switch (data_type) {
-        SELECTV2_COMPUTE_CASE(DT_FLOAT16, Eigen::half);
-        SELECTV2_COMPUTE_CASE(DT_FLOAT, float);
-        SELECTV2_COMPUTE_CASE(DT_DOUBLE, double);
-        SELECTV2_COMPUTE_CASE(DT_INT8, int8_t);
-        SELECTV2_COMPUTE_CASE(DT_INT16, int16_t);
-        SELECTV2_COMPUTE_CASE(DT_INT32, int32_t);
-        SELECTV2_COMPUTE_CASE(DT_INT64, int64_t);
-        SELECTV2_COMPUTE_CASE(DT_UINT8, uint8_t);
-        SELECTV2_COMPUTE_CASE(DT_UINT16, uint16_t);
-        SELECTV2_COMPUTE_CASE(DT_UINT32, uint32_t);
-        SELECTV2_COMPUTE_CASE(DT_UINT64, uint64_t);
-        SELECTV2_COMPUTE_CASE(DT_COMPLEX64, std::complex<float>);
-        SELECTV2_COMPUTE_CASE(DT_COMPLEX128, std::complex<double>);
-        SELECTV2_COMPUTE_CASE(DT_BOOL, bool);
+        SELECTV2_COMPUTE_CASE(DT_FLOAT16, Eigen::half, ctx);
+        SELECTV2_COMPUTE_CASE(DT_FLOAT, float, ctx);
+        SELECTV2_COMPUTE_CASE(DT_DOUBLE, double, ctx);
+        SELECTV2_COMPUTE_CASE(DT_INT8, int8_t, ctx);
+        SELECTV2_COMPUTE_CASE(DT_INT16, int16_t, ctx);
+        SELECTV2_COMPUTE_CASE(DT_INT32, int32_t, ctx);
+        SELECTV2_COMPUTE_CASE(DT_INT64, int64_t, ctx);
+        SELECTV2_COMPUTE_CASE(DT_UINT8, uint8_t, ctx);
+        SELECTV2_COMPUTE_CASE(DT_UINT16, uint16_t, ctx);
+        SELECTV2_COMPUTE_CASE(DT_UINT32, uint32_t, ctx);
+        SELECTV2_COMPUTE_CASE(DT_UINT64, uint64_t, ctx);
+        SELECTV2_COMPUTE_CASE(DT_COMPLEX64, std::complex<float>, ctx);
+        SELECTV2_COMPUTE_CASE(DT_COMPLEX128, std::complex<double>, ctx);
+        SELECTV2_COMPUTE_CASE(DT_BOOL, bool, ctx);
         default:
             KERNEL_LOG_ERROR("[%s] Data type of input is not support, input data type is [%s].",
                              ctx.GetOpType().c_str(), DTypeStr(data_type).c_str());
@@ -146,22 +146,22 @@ KernelStatus Selectv2CpuKernel::Selectv2BuildBcast(const CpuKernelContext& ctx)
     SelectV2GetBcastVec(calc_info);
     int32_t rank = static_cast<int32_t>(calc_info.shape_out.size());
     switch (rank) {
-        case SCALAR: {
-            bool v0 = *(reinterpret_cast<const bool*>(calc_info.input_0->GetData()));
-            T v1 = *(reinterpret_cast<const T*>(calc_info.input_1->GetData()));
-            T v2 = *(reinterpret_cast<const T*>(calc_info.input_2->GetData()));
-            T* value_out = reinterpret_cast<T*>(calc_info.output->GetData());
+        case static_cast<int32_t>(Dim::SCALAR): {
+            bool v0 = *(static_cast<const bool*>(calc_info.input_0->GetData()));
+            T v1 = *(static_cast<const T*>(calc_info.input_1->GetData()));
+            T v2 = *(static_cast<const T*>(calc_info.input_2->GetData()));
+            T* value_out = static_cast<T*>(calc_info.output->GetData());
             *(value_out) = (v0 == true) ? v1 : v2;
             return KERNEL_STATUS_OK;
         }
-            SELECTV2_DIM_CASE(ONE_DIM);
-            SELECTV2_DIM_CASE(TWO_DIM);
-            SELECTV2_DIM_CASE(THREE_DIM);
-            SELECTV2_DIM_CASE(FOUR_DIM);
-            SELECTV2_DIM_CASE(FIVE_DIM);
-            SELECTV2_DIM_CASE(SIX_DIM);
-            SELECTV2_DIM_CASE(SEVEN_DIM);
-            SELECTV2_DIM_CASE(EIGHT_DIM);
+            SELECTV2_DIM_CASE(Dim::ONE_DIM, T, calc_info);
+            SELECTV2_DIM_CASE(Dim::TWO_DIM, T, calc_info);
+            SELECTV2_DIM_CASE(Dim::THREE_DIM, T, calc_info);
+            SELECTV2_DIM_CASE(Dim::FOUR_DIM, T, calc_info);
+            SELECTV2_DIM_CASE(Dim::FIVE_DIM, T, calc_info);
+            SELECTV2_DIM_CASE(Dim::SIX_DIM, T, calc_info);
+            SELECTV2_DIM_CASE(Dim::SEVEN_DIM, T, calc_info);
+            SELECTV2_DIM_CASE(Dim::EIGHT_DIM, T, calc_info);
         default:
             KERNEL_LOG_ERROR("[%s] Rank of output should less than 9 but get [%zu].", ctx.GetOpType().c_str(),
                              calc_info.shape_out.size());
@@ -171,7 +171,7 @@ KernelStatus Selectv2CpuKernel::Selectv2BuildBcast(const CpuKernelContext& ctx)
 }
 
 template <int32_t RANK, typename T>
-KernelStatus Selectv2CpuKernel::SelectV2CalculateWithAlignedCheck(SelectV2BCalcInfo& calc_info)
+KernelStatus Selectv2CpuKernel::SelectV2CalculateWithAlignedCheck(SelectV2BCalcInfo& calc_info) const
 {
     if (AlignedCheck(calc_info)) {
         return SelectV2Calculate<RANK, T, Eigen::Aligned>(calc_info);
@@ -186,7 +186,7 @@ bool Selectv2CpuKernel::AlignedCheck(const SelectV2BCalcInfo& calc_info) const
 }
 
 template <int32_t RANK, typename T, int32_t OPTION>
-KernelStatus Selectv2CpuKernel::SelectV2Calculate(SelectV2BCalcInfo& calc_info)
+KernelStatus Selectv2CpuKernel::SelectV2Calculate(SelectV2BCalcInfo& calc_info) const
 {
     Eigen::TensorMap<Eigen::Tensor<bool, 1>, OPTION> input0(static_cast<bool*>(calc_info.input_0->GetData()),
                                                             calc_info.input_0->GetTensorShape()->NumElements());

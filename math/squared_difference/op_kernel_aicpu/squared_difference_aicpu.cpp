@@ -104,7 +104,7 @@ uint32_t SquaredDifferenceCpuKernel::SquaredDifferenceCheck(const CpuKernelConte
 // 4. the shapes of input1 and input2 are different
 template <typename T>
 void SquaredDifferenceCpuKernel::SpecialCompute(BcastShapeType type, int64_t start, int64_t end, const T* input1,
-                                                const T* input2, T* output)
+                                                const T* input2, T* output) const
 {
     switch (type) {
         case BcastShapeType::SAME_SHAPE:
@@ -134,7 +134,7 @@ void SquaredDifferenceCpuKernel::SpecialCompute(BcastShapeType type, int64_t sta
 }
 
 template <typename T>
-uint32_t SquaredDifferenceCpuKernel::NoBcastCompute(const CpuKernelContext& ctx)
+uint32_t SquaredDifferenceCpuKernel::NoBcastCompute(const CpuKernelContext& ctx) const
 {
     auto in0 = static_cast<T*>(ctx.Input(0)->GetData());
     auto in1 = static_cast<T*>(ctx.Input(1)->GetData());
@@ -176,7 +176,7 @@ uint32_t SquaredDifferenceCpuKernel::NoBcastCompute(const CpuKernelContext& ctx)
 }
 
 template <typename T>
-uint32_t SquaredDifferenceCpuKernel::BcastCompute(const CpuKernelContext& ctx, const Bcast& bcast)
+uint32_t SquaredDifferenceCpuKernel::BcastCompute(const CpuKernelContext& ctx, const Bcast& bcast) const
 {
     auto in0 = static_cast<T*>(ctx.Input(0)->GetData());
     auto in1 = static_cast<T*>(ctx.Input(1)->GetData());
@@ -217,7 +217,7 @@ uint32_t SquaredDifferenceCpuKernel::BcastCompute(const CpuKernelContext& ctx, c
 }
 
 template <typename T>
-uint32_t SquaredDifferenceCpuKernel::SquaredDifferenceCompute(const CpuKernelContext& ctx)
+uint32_t SquaredDifferenceCpuKernel::SquaredDifferenceCompute(const CpuKernelContext& ctx) const
 {
     Tensor* input0_tensor = ctx.Input(0);
     auto input0_shape = input0_tensor->GetTensorShape()->GetDimSizes();

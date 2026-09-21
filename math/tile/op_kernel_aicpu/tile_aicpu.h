@@ -22,7 +22,7 @@ namespace aicpu {
 class TileCpuKernel : public CpuKernel {
 public:
     TileCpuKernel() = default;
-    ~TileCpuKernel() = default;
+    ~TileCpuKernel() override = default;
     uint32_t Compute(CpuKernelContext& ctx) override;
 
 private:
