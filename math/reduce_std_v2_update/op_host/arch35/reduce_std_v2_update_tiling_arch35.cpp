@@ -87,7 +87,7 @@ static constexpr int64_t kGroupCoreDivisor = 2;
 enum class ReduceStdV2UpdateEmptyKind {
     NORMAL = 0,
     EMPTY_A, // ∃ A 轴 axisShape==0 → output 空 tensor、kernel 零操作
-    EMPTY_R, // ∃ R 轴 axisShape==0 且 ∀ A 轴 axisShape>0 → empty_r_output_value=0.0f
+    EMPTY_R, // ∃ R 轴 axisShape==0 且 ∀ A 轴 axisShape>0 → empty_r_output_value=NaN
 };
 
 // 内部工作上下文
@@ -933,13 +933,13 @@ static void ComputeEmptyRTiling(ReduceStdV2UpdateCtx& ctx)
     int64_t outRaw = aUbFactor * ctx.dtypeSize;
     outRaw = std::max(outRaw, kNOut * ctx.blockSize);
     ctx.postReduceUbSize = (outRaw + ctx.blockSize - 1) / ctx.blockSize * ctx.blockSize;
-    // EMPTY_R has_post_elewise=true → tmpBuf 1 份（fp32 中转，Duplicate 0.0f → Cast→D_T）
+    // EMPTY_R has_post_elewise=true → tmpBuf 1 份（fp32 中转，Duplicate NaN → Cast→D_T）
     int64_t tmpRaw = aUbFactor * kFp32Bytes;
     tmpRaw = std::max(tmpRaw, ctx.blockSize);
     ctx.tmpBufUbSize = (tmpRaw + ctx.blockSize - 1) / ctx.blockSize * ctx.blockSize;
     ctx.preReduceUbSize = 0;
-    // EMPTY_R 跳过 post_op（cof=0），empty_r_output_value=0.0f
-    ctx.cof = 0.0f;
+    // N=0 makes the variance/std denominator non-positive for both supported corrections.
+    ctx.cof = NAN;
     ctx.ifStdFlag = 0;
 }
 
@@ -967,7 +967,7 @@ static ge::graphStatus FillEmptyTilingData(gert::TilingContext* context, const R
     td->aUbFactor = ctx.aUbFactor;
     td->postReduceUbSize = ctx.postReduceUbSize;
     td->tmpBufUbSize = ctx.tmpBufUbSize;
-    td->cof = 0.0f;
+    td->cof = ctx.cof;
     td->ifStd = 0;
 
     OP_LOGI(context,

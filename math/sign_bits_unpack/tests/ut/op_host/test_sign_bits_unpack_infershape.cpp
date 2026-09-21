@@ -118,7 +118,7 @@ TEST_F(SignBitsUnpackInfershapeTest, size_negative_fails)
     ExecuteTestCase(context, ge::GRAPH_FAILED, {});
 }
 
-TEST_F(SignBitsUnpackInfershapeTest, non_divisible_size_uses_integer_division)
+TEST_F(SignBitsUnpackInfershapeTest, non_divisible_size_fails)
 {
     gert::InfershapeContextPara context("SignBitsUnpack",
                                         {
@@ -130,9 +130,7 @@ TEST_F(SignBitsUnpackInfershapeTest, non_divisible_size_uses_integer_division)
                                         {
                                             {"size", Ops::Math::AnyValue::CreateFrom<int64_t>(5)},
                                         });
-    std::vector<std::vector<int64_t>> expectedShape = {{5, 4}};
-
-    ExecuteTestCase(context, ge::GRAPH_SUCCESS, expectedShape);
+    ExecuteTestCase(context, ge::GRAPH_FAILED, {});
 }
 
 TEST_F(SignBitsUnpackInfershapeTest, input_rank_must_be_one)

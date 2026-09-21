@@ -40,38 +40,40 @@ constexpr size_t kInputMeanIdx = 1;
 constexpr size_t kOutputIdx = 0;
 constexpr size_t kAttrDimIdx = 0;
 constexpr size_t kAttrKeepDimIdx = 3; // def.cpp 属性顺序: dim(0), if_std(1), unbiased(2), keepdim(3), correction(4)
+constexpr size_t kMaxSupportedRank = 8;
 
 // 将 dim 属性（ContinuousVector int64）解析为归一化（非负、去重、排序）的 reduce 轴集合
-static std::vector<int64_t> ParseAndNormalizeDim(const gert::InferShapeContext* context, int64_t rank)
+static ge::graphStatus ParseAndNormalizeDim(const gert::InferShapeContext* context, int64_t rank,
+                                            std::vector<int64_t>& reduceAxes)
 {
-    std::vector<int64_t> reduceAxes;
     const auto* attrs = context->GetAttrs();
-    if (attrs == nullptr) {
-        return reduceAxes;
-    }
+    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
     const gert::ContinuousVector* dimVec = attrs->GetAttrPointer<gert::ContinuousVector>(kAttrDimIdx);
-    if (dimVec == nullptr || dimVec->GetSize() == 0) {
+    OP_CHECK_NULL_WITH_CONTEXT(context, dimVec);
+    const int64_t effectiveRank = (rank == 0) ? 1 : rank;
+    if (dimVec->GetSize() == 0) {
         // dim 为空 → 全归约 [0..rank-1]
         for (int64_t i = 0; i < rank; ++i) {
             reduceAxes.push_back(i);
         }
-        return reduceAxes;
+        return ge::GRAPH_SUCCESS;
     }
     const int64_t dimNum = static_cast<int64_t>(dimVec->GetSize());
     const int64_t* dimData = static_cast<const int64_t*>(dimVec->GetData());
     std::set<int64_t> seen;
     for (int64_t i = 0; i < dimNum; ++i) {
         int64_t v = dimData[i];
+        OP_CHECK_IF(v < -effectiveRank || v >= effectiveRank,
+                    OP_LOGE(context->GetNodeName(), "dim[%ld]=%ld out of range [-%ld, %ld)", i, v, effectiveRank,
+                            effectiveRank),
+                    return ge::GRAPH_FAILED);
         if (v < 0) {
-            v += rank;
-        }
-        if (v < 0 || v >= rank) {
-            continue; // 越界由 aclnn 层拦截，InferShape 容错
+            v += effectiveRank;
         }
         seen.insert(v);
     }
     reduceAxes.assign(seen.begin(), seen.end());
-    return reduceAxes;
+    return ge::GRAPH_SUCCESS;
 }
 
 } // namespace
@@ -80,12 +82,42 @@ static ge::graphStatus InferShape4ReduceStdV2Update(gert::InferShapeContext* con
 {
     const gert::Shape* xShape = context->GetInputShape(kInputXIdx);
     OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
+    const gert::Shape* meanShape = context->GetInputShape(kInputMeanIdx);
+    OP_CHECK_NULL_WITH_CONTEXT(context, meanShape);
 
     gert::Shape* outShape = context->GetOutputShape(kOutputIdx);
     OP_CHECK_NULL_WITH_CONTEXT(context, outShape);
 
+    const bool xUnknownRank = Ops::Base::IsUnknownRank(*xShape);
+    const bool meanUnknownRank = Ops::Base::IsUnknownRank(*meanShape);
+    if (!xUnknownRank) {
+        const size_t xRank = xShape->GetDimNum();
+        OP_CHECK_IF(xRank > kMaxSupportedRank,
+                    OP_LOGE(context->GetNodeName(), "x rank=%zu exceeds supported range [0, 8]", xRank),
+                    return ge::GRAPH_FAILED);
+    }
+    if (!xUnknownRank && !meanUnknownRank) {
+        const size_t xRank = xShape->GetDimNum();
+        const size_t meanRank = meanShape->GetDimNum();
+        OP_CHECK_IF(meanRank != xRank, OP_LOGE(context->GetNodeName(), "mean rank=%zu != x rank=%zu", meanRank, xRank),
+                    return ge::GRAPH_FAILED);
+        for (size_t i = 0; i < xRank; ++i) {
+            const int64_t xDim = xShape->GetDim(i);
+            const int64_t meanDim = meanShape->GetDim(i);
+            OP_CHECK_IF(xDim >= 0 && meanDim >= 0 && xDim != meanDim,
+                        OP_LOGE(context->GetNodeName(), "mean dim[%zu]=%ld != x dim[%zu]=%ld", i, meanDim, i, xDim),
+                        return ge::GRAPH_FAILED);
+        }
+    }
+
+    if (xUnknownRank) {
+        Ops::Base::SetUnknownRank(*outShape);
+        return ge::GRAPH_SUCCESS;
+    }
+
     const int64_t rank = static_cast<int64_t>(xShape->GetDimNum());
-    const auto reduceAxes = ParseAndNormalizeDim(context, rank);
+    std::vector<int64_t> reduceAxes;
+    OP_CHECK_IF(ParseAndNormalizeDim(context, rank, reduceAxes) != ge::GRAPH_SUCCESS, , return ge::GRAPH_FAILED);
 
     // keepdim 兜底（OPTIONAL，用 nullptr 判断默认 false）
     const auto* attrs = context->GetAttrs();

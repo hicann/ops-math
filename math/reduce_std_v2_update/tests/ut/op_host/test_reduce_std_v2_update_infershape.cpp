@@ -36,9 +36,10 @@ static void ExeTestCase(std::vector<int64_t> expectedResult, const std::vector<g
                         ge::graphStatus testCaseResult = ge::GRAPH_SUCCESS)
 {
     const auto& xStorageShape = inputShapes[0];
+    const auto& meanStorageShape = inputShapes.size() > 1 ? inputShapes[1] : inputShapes[0];
     ge::DataType outputDtype = dtypes[0];
 
-    std::vector<gert::Tensor*> inputTensors = {(gert::Tensor*)&xStorageShape};
+    std::vector<gert::Tensor*> inputTensors = {(gert::Tensor*)&xStorageShape, (gert::Tensor*)&meanStorageShape};
     std::vector<gert::StorageShape*> outputShapes = {&outStorageShape};
     auto contextHolder = gert::InferShapeContextFaker()
                              .SetOpType("ReduceStdV2Update")
@@ -97,4 +98,49 @@ TEST_F(ReduceStdV2Update, infershape_negative_dim)
     std::vector<int64_t> expectedResult = {4};
     gert::StorageShape outStorageShape = {};
     ExeTestCase(expectedResult, inputShapes, dtypes, outStorageShape, {-1}, true, false, false, 0);
+}
+
+TEST_F(ReduceStdV2Update, infershape_multiple_dims)
+{
+    std::vector<gert::StorageShape> inputShapes = {{{2, 3, 4, 5}, {2, 3, 4, 5}}};
+    std::vector<ge::DataType> dtypes = {ge::DT_FLOAT, ge::DT_FLOAT};
+    std::vector<int64_t> expectedResult = {2, 4};
+    gert::StorageShape outStorageShape = {};
+    ExeTestCase(expectedResult, inputShapes, dtypes, outStorageShape, {1, -1}, false, true, false, 1);
+}
+
+TEST_F(ReduceStdV2Update, infershape_dim_out_of_range)
+{
+    std::vector<gert::StorageShape> inputShapes = {{{4, 8}, {4, 8}}};
+    std::vector<ge::DataType> dtypes = {ge::DT_FLOAT, ge::DT_FLOAT};
+    std::vector<int64_t> expectedResult = {};
+    gert::StorageShape outStorageShape = {};
+    ExeTestCase(expectedResult, inputShapes, dtypes, outStorageShape, {2}, false, true, false, 1, ge::GRAPH_FAILED);
+}
+
+TEST_F(ReduceStdV2Update, infershape_mean_shape_mismatch)
+{
+    std::vector<gert::StorageShape> inputShapes = {{{4, 8}, {4, 8}}, {{2, 16}, {2, 16}}};
+    std::vector<ge::DataType> dtypes = {ge::DT_FLOAT, ge::DT_FLOAT};
+    std::vector<int64_t> expectedResult = {};
+    gert::StorageShape outStorageShape = {};
+    ExeTestCase(expectedResult, inputShapes, dtypes, outStorageShape, {1}, false, true, false, 1, ge::GRAPH_FAILED);
+}
+
+TEST_F(ReduceStdV2Update, infershape_unknown_rank)
+{
+    std::vector<gert::StorageShape> inputShapes = {{{-2}, {-2}}, {{-2}, {-2}}};
+    std::vector<ge::DataType> dtypes = {ge::DT_FLOAT16, ge::DT_FLOAT16};
+    std::vector<int64_t> expectedResult = {-2};
+    gert::StorageShape outStorageShape = {};
+    ExeTestCase(expectedResult, inputShapes, dtypes, outStorageShape, {0}, false, true, false, 1);
+}
+
+TEST_F(ReduceStdV2Update, infershape_rank_9_rejected)
+{
+    std::vector<gert::StorageShape> inputShapes = {{{1, 1, 1, 1, 1, 1, 1, 1, 2}, {1, 1, 1, 1, 1, 1, 1, 1, 2}}};
+    std::vector<ge::DataType> dtypes = {ge::DT_FLOAT, ge::DT_FLOAT};
+    std::vector<int64_t> expectedResult = {};
+    gert::StorageShape outStorageShape = {};
+    ExeTestCase(expectedResult, inputShapes, dtypes, outStorageShape, {8}, false, true, false, 1, ge::GRAPH_FAILED);
 }

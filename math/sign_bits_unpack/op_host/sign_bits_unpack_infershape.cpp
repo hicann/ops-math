@@ -14,6 +14,7 @@
  * \file sign_bits_unpack_infershape.cpp
  * \brief
  */
+#include <limits>
 #include "util/shape_util.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"
@@ -48,7 +49,12 @@ static ge::graphStatus InferShape4SignBitsUnpack(gert::InferShapeContext* contex
     gert::Shape* outShape = context->GetOutputShape(OUTPUT_Y_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context, outShape);
 
-    int64_t yShape = xShape * PACK_RATE / *dim;
+    OP_CHECK_IF(xShape < 0 || xShape > std::numeric_limits<int64_t>::max() / PACK_RATE,
+                OP_LOGE(context->GetNodeName(), "input size overflows packed bit count"), return ge::GRAPH_FAILED);
+    const int64_t packedBits = xShape * PACK_RATE;
+    OP_CHECK_IF(packedBits % *dim != 0, OP_LOGE(context->GetNodeName(), "input bit count must be divisible by size"),
+                return ge::GRAPH_FAILED);
+    int64_t yShape = packedBits / *dim;
 
     outShape->SetDimNum(0);
     outShape->AppendDim(*dim);

@@ -15,17 +15,17 @@
  * \brief SignBitsUnpack AscendC kernel (arch35/DAV_3510)
  *
  * Algorithm:
- *   VSEL_TENSOR_TENSOR_MODE on arch35 consumes consecutive selMask bytes in
- *   LSB-first order, which matches the LSB-first spec for this operator:
- *   - bit 0 (LSB) controls output element 0
- *   - bit 1 controls output element 1
+ *   SignBitsPack stores each group in MSB-first order, while
+ *   VSEL_TENSOR_TENSOR_MODE consumes selMask bytes in LSB-first order. Reverse
+ *   every input byte before Select so that:
+ *   - bit 7 (MSB) controls output element 0
+ *   - bit 6 controls output element 1
  *   - ...
- *   - bit 7 (MSB) controls output element 7
+ *   - bit 0 (LSB) controls output element 7
  *
- *   For bit=1: select posLocal (+1.0); for bit=0: select negLocal (-1.0).
- *   No bit-reversal is needed. Tensor-tensor mode is required so vector
- *   repeats advance through every packed mask group instead of reusing the
- *   first group.
+ *   For bit=1: select negLocal (-1.0); for bit=0: select posLocal (+1.0),
+ *   matching SignBitsPack's negative-sign encoding. Tensor-tensor mode is
+ *   required so vector repeats advance through every packed mask group.
  */
 #ifndef SIGN_BITS_UNPACK_H
 #define SIGN_BITS_UNPACK_H
@@ -38,12 +38,53 @@ namespace NsSignBitsUnpack {
 
 using namespace AscendC;
 
+__simd_vf__ inline void SignBitsUnpackBitReverseVF(__ubuf__ uint16_t* addr, uint32_t count, uint32_t oneRepeatSize,
+                                                   uint16_t repeatTimes)
+{
+    AscendC::Reg::RegTensor<uint16_t> regV, regT, regMask, regNotMask;
+    AscendC::Reg::MaskReg predMask;
+    AscendC::Reg::AddrReg addrReg;
+
+    for (uint16_t i = 0; i < repeatTimes; ++i) {
+        addrReg = AscendC::Reg::CreateAddrReg<uint16_t>(i, oneRepeatSize);
+        predMask = AscendC::Reg::UpdateMask<uint16_t>(count);
+        AscendC::Reg::LoadAlign(regV, addr, addrReg);
+
+        AscendC::Reg::Duplicate(regMask, static_cast<uint16_t>(0x5555U));
+        AscendC::Reg::Duplicate(regNotMask, static_cast<uint16_t>(0xAAAAU));
+        AscendC::Reg::And(regT, regV, regMask, predMask);
+        AscendC::Reg::ShiftLefts(regT, regT, static_cast<int16_t>(1), predMask);
+        AscendC::Reg::And(regV, regV, regNotMask, predMask);
+        AscendC::Reg::ShiftRights(regV, regV, static_cast<int16_t>(1), predMask);
+        AscendC::Reg::Or(regV, regV, regT, predMask);
+
+        AscendC::Reg::Duplicate(regMask, static_cast<uint16_t>(0x3333U));
+        AscendC::Reg::Duplicate(regNotMask, static_cast<uint16_t>(0xCCCCU));
+        AscendC::Reg::And(regT, regV, regMask, predMask);
+        AscendC::Reg::ShiftLefts(regT, regT, static_cast<int16_t>(2), predMask);
+        AscendC::Reg::And(regV, regV, regNotMask, predMask);
+        AscendC::Reg::ShiftRights(regV, regV, static_cast<int16_t>(2), predMask);
+        AscendC::Reg::Or(regV, regV, regT, predMask);
+
+        AscendC::Reg::Duplicate(regMask, static_cast<uint16_t>(0x0F0FU));
+        AscendC::Reg::Duplicate(regNotMask, static_cast<uint16_t>(0xF0F0U));
+        AscendC::Reg::And(regT, regV, regMask, predMask);
+        AscendC::Reg::ShiftLefts(regT, regT, static_cast<int16_t>(4), predMask);
+        AscendC::Reg::And(regV, regV, regNotMask, predMask);
+        AscendC::Reg::ShiftRights(regV, regV, static_cast<int16_t>(4), predMask);
+        AscendC::Reg::Or(regV, regV, regT, predMask);
+
+        AscendC::Reg::StoreAlign(addr, regV, addrReg, predMask);
+    }
+}
+
 template <typename T1, typename T2>
 class SignBitsUnpackKernel {
     static constexpr uint32_t SINGLE_BUFFER = 1;
     static constexpr uint32_t IN_UNIT_BYTES = 16;
     static constexpr uint32_t OUT_UNIT_ELEM = 128;
     static constexpr int64_t UNPACK_FACTOR = 8;
+    static constexpr uint32_t VEC_LEN_U16 = AscendC::GetVecLen() / sizeof(uint16_t);
 
 public:
     __aicore__ inline SignBitsUnpackKernel() {}
@@ -116,6 +157,11 @@ __aicore__ inline void SignBitsUnpackKernel<T1, T2>::Compute(int64_t actualOutEl
 {
     auto inLocal = inQueue.template DeQue<T1>();
     const uint32_t nElems = static_cast<uint32_t>(actualOutElems);
+    const uint32_t inputBytes = nElems / UNPACK_FACTOR;
+    const uint32_t inputWords = (inputBytes + sizeof(uint16_t) - 1U) / sizeof(uint16_t);
+    const uint16_t repeatTimes = static_cast<uint16_t>((inputWords + VEC_LEN_U16 - 1U) / VEC_LEN_U16);
+    __ubuf__ uint16_t* inputAddr = (__ubuf__ uint16_t*)inLocal.GetPhyAddr();
+    asc_vf_call<SignBitsUnpackBitReverseVF>(inputAddr, inputWords, VEC_LEN_U16, repeatTimes);
 
     auto posLocal = posOneBuf_.template Get<half>();
     auto negLocal = negOneBuf_.template Get<half>();
@@ -124,11 +170,11 @@ __aicore__ inline void SignBitsUnpackKernel<T1, T2>::Compute(int64_t actualOutEl
 
     if constexpr (std::is_same_v<T2, half>) {
         auto outLocal = outQueue.template AllocTensor<half>();
-        AscendC::Select(outLocal, inLocal, posLocal, negLocal, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, nElems);
+        AscendC::Select(outLocal, inLocal, negLocal, posLocal, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, nElems);
         outQueue.template EnQue<half>(outLocal);
     } else {
         auto outLocal = outQueue.template AllocTensor<float>();
-        AscendC::Select(posLocal, inLocal, posLocal, negLocal, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, nElems);
+        AscendC::Select(posLocal, inLocal, negLocal, posLocal, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, nElems);
         AscendC::Cast(outLocal, posLocal, AscendC::RoundMode::CAST_NONE, nElems);
         outQueue.template EnQue<float>(outLocal);
     }

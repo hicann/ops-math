@@ -17,10 +17,10 @@
 
 - 计算公式：
 
-设输入`self`为长度为N的1D UINT8张量，每个字节包含8个符号位（按LSB优先顺序），第$j$个字节$b_j$的第$i$位（$i = 0, 1, \dots, 7$）解包规则如下：
+设输入`self`为长度为N的1D UINT8张量，每个字节包含8个符号位（与SignBitsPack一致，按MSB优先顺序），第$j$个字节$b_j$中从高到低的第$i$位（$i = 0, 1, \dots, 7$）解包规则如下：
 
 $$
-out_{j \cdot 8 + i} = \begin{cases} +1.0, & \text{bit}_i(b_j) = 1 \\ -1.0, & \text{bit}_i(b_j) = 0 \end{cases}
+out_{j \cdot 8 + i} = \begin{cases} -1.0, & \text{bit}_{7-i}(b_j) = 1 \\ +1.0, & \text{bit}_{7-i}(b_j) = 0 \end{cases}
 $$
 
 输出张量共$N \times 8$个元素，并被reshape为二维，其shape为：
@@ -84,7 +84,7 @@ $$
 - `self`必须是1维张量，`out`必须是2维张量。
 - `size`必须大于0，且（`self`的元素个数 × 8）能被`size`整除。
 - `out`的第一维度必须等于`size`。
-- `out`的数据类型必须与`dtype`参数一致。
+- `dtype`参数仅支持FLOAT16、FLOAT，且`out`的数据类型必须与`dtype`参数一致；UINT8是`self`的数据类型，INT64是`size`的接口类型，均不是`dtype`参数的可选值。
 - 数据格式仅支持ND。
 - 支持空tensor场景。
 - 确定性计算：aclnnSignBitsUnpack默认确定性实现。

@@ -64,7 +64,7 @@ public:
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true)
-            .ExtendCfgInfo("opFile.value", "reduce_std_v2_update_apt");
+            .ExtendCfgInfo("opFile.value", "reduce_std_v2_update");
         this->AICore().AddConfig("ascend950", aiCoreConfig);
         this->AICore().AddConfig("ascend350", aiCoreConfig);
     }

@@ -86,7 +86,7 @@ TEST_F(sign_bits_unpack_test, ascend910B2_case_valid_out)
 }
 
 // CheckDtypeValid dtype
-TEST_F(sign_bits_unpack_test, ascend910B2_case_valid_dtype)
+TEST_F(sign_bits_unpack_test, ascend910B2_case_invalid_dtype)
 {
     int64_t size = 2;
     aclDataType dType = ACL_UINT8;

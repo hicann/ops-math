@@ -129,7 +129,7 @@
 - 输入数据类型限制：`x` 与 `mean` 仅支持 FLOAT、FLOAT16、BFLOAT16，且二者数据类型须一致；不支持 DOUBLE、复数、整型。
 - shape 约束：`mean` 必须已通过 Expand 广播到 `x` 的 shape；output shape 为 `x` 沿 `dim` 归约后的 shape（keepdim=true 维度设 1，false 移除）。
 - correction/unbiased 约束：仅支持 correction=0（有偏）和 correction=1（无偏）两种语义；correction>1 由上层 `aclnnVarCorrection` 处理。
-- 边界情况：空 Tensor、单元素且 correction≥1 的场景由上层 `aclnnVar`/`aclnnVarCorrection` 提前拦截返回 NAN/INF，不会到达本算子；kernel 实现仍需防御性处理这些边界。
+- 边界情况：空Tensor、单元素且correction≥1的场景通常由上层 `aclnnVar`/`aclnnVarCorrection` 提前处理；kernel仍做防御性处理，其中输出为空的EMPTY_A路径零操作，归约轴为空但输出非空的EMPTY_R路径返回NaN，normal路径在 `N <= correction` 时通过 `cof=NaN` 保持相同语义。
 - 精度约束（950 实现严格对齐 canndev 原型）：
   - FP16/BF16 输入固定提升到 FP32 累加（固定提升，无 GetPromoteType），FP32 输入直接计算；结果转回原 dtype。
   - BF16 输出回转使用 round 模式（对应 AscendC Cast round），保留 BF16 舍入语义。

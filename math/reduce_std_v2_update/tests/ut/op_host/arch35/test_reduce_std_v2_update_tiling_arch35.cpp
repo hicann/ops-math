@@ -8,10 +8,12 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <cmath>
 #include <iostream>
 #include <gtest/gtest.h>
 #include "tiling_context_faker.h"
 #include "tiling_case_executor.h"
+#include "../../../../op_kernel/arch35/reduce_std_v2_update_tiling_data.h"
 
 using namespace std;
 using namespace ge;
@@ -292,4 +294,71 @@ TEST_F(ReduceStdV2UpdateTiling, tiling_rank_9_rejected)
          gert::TilingContextPara::OpAttr("correction", Ops::Math::AnyValue::CreateFrom<int64_t>(1))},
         &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, 0U, std::vector<size_t>{});
+}
+
+TEST_F(ReduceStdV2UpdateTiling, tiling_empty_a_uses_zero_operation_path)
+{
+    ReduceStdV2UpdateCompileInfo compileInfo;
+    gert::TilingContextPara tilingContextPara(
+        "ReduceStdV2Update",
+        {{{{0, 4}, {0, 4}}, ge::DT_FLOAT, ge::FORMAT_ND}, {{{0, 4}, {0, 4}}, ge::DT_FLOAT, ge::FORMAT_ND}},
+        {{{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND}},
+        {gert::TilingContextPara::OpAttr("dim", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1})),
+         gert::TilingContextPara::OpAttr("if_std", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::TilingContextPara::OpAttr("unbiased", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::TilingContextPara::OpAttr("keepdim", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::TilingContextPara::OpAttr("correction", Ops::Math::AnyValue::CreateFrom<int64_t>(0))},
+        &compileInfo);
+
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+    ASSERT_GE(tilingInfo.tilingDataSize, sizeof(ReduceStdV2UpdateTilingData));
+    const auto* tilingData = reinterpret_cast<const ReduceStdV2UpdateTilingData*>(tilingInfo.tilingData.get());
+    EXPECT_EQ(tilingData->usedCoreNum, 0);
+    EXPECT_EQ(tilingInfo.blockNum, 1U);
+}
+
+TEST_F(ReduceStdV2UpdateTiling, tiling_empty_r_uses_nan_and_fits_single_buffer_budget)
+{
+    constexpr uint64_t ubSize = 248U * 1024U;
+    ReduceStdV2UpdateCompileInfo compileInfo;
+    gert::TilingContextPara tilingContextPara(
+        "ReduceStdV2Update",
+        {{{{32768, 0}, {32768, 0}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+         {{{32768, 0}, {32768, 0}}, ge::DT_FLOAT16, ge::FORMAT_ND}},
+        {{{{32768}, {32768}}, ge::DT_FLOAT16, ge::FORMAT_ND}},
+        {gert::TilingContextPara::OpAttr("dim", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1})),
+         gert::TilingContextPara::OpAttr("if_std", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::TilingContextPara::OpAttr("unbiased", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::TilingContextPara::OpAttr("keepdim", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::TilingContextPara::OpAttr("correction", Ops::Math::AnyValue::CreateFrom<int64_t>(0))},
+        &compileInfo, 1U, ubSize);
+
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+    ASSERT_GE(tilingInfo.tilingDataSize, sizeof(ReduceStdV2UpdateTilingData));
+    const auto* tilingData = reinterpret_cast<const ReduceStdV2UpdateTilingData*>(tilingInfo.tilingData.get());
+    EXPECT_TRUE(std::isnan(tilingData->cof));
+    EXPECT_LE(tilingData->postReduceUbSize + tilingData->tmpBufUbSize, static_cast<int64_t>(ubSize));
+}
+
+TEST_F(ReduceStdV2UpdateTiling, tiling_normal_non_positive_denominator_uses_nan_cof)
+{
+    ReduceStdV2UpdateCompileInfo compileInfo;
+    gert::TilingContextPara tilingContextPara(
+        "ReduceStdV2Update",
+        {{{{4, 1}, {4, 1}}, ge::DT_FLOAT, ge::FORMAT_ND}, {{{4, 1}, {4, 1}}, ge::DT_FLOAT, ge::FORMAT_ND}},
+        {{{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND}},
+        {gert::TilingContextPara::OpAttr("dim", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1})),
+         gert::TilingContextPara::OpAttr("if_std", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::TilingContextPara::OpAttr("unbiased", Ops::Math::AnyValue::CreateFrom<bool>(true)),
+         gert::TilingContextPara::OpAttr("keepdim", Ops::Math::AnyValue::CreateFrom<bool>(false)),
+         gert::TilingContextPara::OpAttr("correction", Ops::Math::AnyValue::CreateFrom<int64_t>(1))},
+        &compileInfo);
+
+    TilingInfo tilingInfo;
+    ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
+    ASSERT_GE(tilingInfo.tilingDataSize, sizeof(ReduceStdV2UpdateTilingData));
+    const auto* tilingData = reinterpret_cast<const ReduceStdV2UpdateTilingData*>(tilingInfo.tilingData.get());
+    EXPECT_TRUE(std::isnan(tilingData->cof));
 }

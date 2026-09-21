@@ -18,9 +18,9 @@
  *   EMPTY_A (∃ A 轴 axisShape==0)：output 是空 tensor，kernel 零操作。
  *       usedCoreNum=0、SetBlockDim(1)、所有核命中 `blockIdx >= usedCoreNum` 早退。
  *   EMPTY_R (∃ R 轴 axisShape==0 且 ∀ A 轴 axisShape>0)：
- *       empty_r_output_value=0.0f（sum identity）。
- *       本算子 has_post_elewise=true（Cast 至少存在），走 Duplicate fp32 0.0f → tmpBuf →
- *       Cast 缩位（跳过 post_op Muls(cof)，避免 cof=1/(N-correction) 除零）→ outBuf → CopyOut。
+ *       empty_r_output_value=NaN，与 normal 模板 N<=correction 时的 cof=NaN 语义一致。
+ *       本算子 has_post_elewise=true（Cast 至少存在），走 Duplicate fp32 NaN → tmpBuf →
+ *       Cast 缩位 → outBuf → CopyOut。
  *
  * 与 normal 模板共享：
  *   - TilingData struct（字段含义按重映射；新增 aTotal 走 axisShape[0]）
@@ -57,14 +57,14 @@ public:
     static constexpr uint32_t kVlBytes = 256;
     static constexpr uint32_t kRepF32 = kVlBytes / sizeof(float); // = 64
     static constexpr uint16_t kRepF32U = static_cast<uint16_t>(kRepF32);
-    static constexpr uint8_t kOutputBufferNum = 2;
+    static constexpr uint8_t kOutputBufferNum = 1;
     // UpdateMask updates its scalar argument by reference; do not decrement it again.
 
     __aicore__ inline ReduceStdV2UpdateEmptyKernel() {}
 
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR mean, GM_ADDR output, const ReduceStdV2UpdateTilingData* td)
     {
-        // Empty 模板不读 x/mean（写 empty_r_output_value=0.0f），签名保留扩展灵活性
+        // Empty 模板不读 x/mean，签名保留扩展灵活性。
         (void)x;
         (void)mean;
         usedCoreNum_ = td->usedCoreNum;
@@ -73,6 +73,7 @@ public:
         aBigCoreCnt_ = td->aBigCoreCnt;
         aBigCoreLoopCnt_ = td->aBigCoreLoopCnt;
         aSmallCoreLoopCnt_ = td->aSmallCoreLoopCnt;
+        outputValue_ = td->cof;
 
         outputGm_.SetGlobalBuffer(reinterpret_cast<__gm__ D_T*>(output));
         // 仅 outBuf + tmpBuf：N_out=1, N_tmp=1（fp32 中转）
@@ -105,20 +106,17 @@ public:
 
         for (int64_t aOff = aStart; aOff < aEnd; aOff += aUbFactor_) {
             const int64_t aLen = (aOff + aUbFactor_ > aEnd) ? (aEnd - aOff) : aUbFactor_;
-            FillZeroAndCopyOut(aOff, aLen);
+            FillNanAndCopyOut(aOff, aLen);
         }
     }
 
 private:
     // ════════════════════════════════════════════════════════════════════════
-    // 单 chunk：Duplicate fp32(0.0f) → tmpBuf → Cast→D_T → outBuf → DataCopyPad
-    //   empty_r_output_value=0.0f（sum identity）
-    //   ⚠ 跳过 post_op（Muls cof）：cof = 1/(N-correction)，空 R 时 N=0 → cof 为 inf/-1，
-    //      0×cof 会产生 NaN，故必须跳过
+    // 单 chunk：Duplicate fp32 NaN → tmpBuf → Cast→D_T → outBuf → DataCopyPad
     // ════════════════════════════════════════════════════════════════════════
-    __aicore__ inline void FillZeroAndCopyOut(int64_t outOff, int64_t aLen)
+    __aicore__ inline void FillNanAndCopyOut(int64_t outOff, int64_t aLen)
     {
-        // Step 1: Duplicate fp32(0.0f) → tmpBuf
+        // Step 1: Duplicate fp32 NaN → tmpBuf
         auto tmpLocal = tmpBuf_.Get<float>();
         __ubuf__ float* tmpPtr = reinterpret_cast<__ubuf__ float*>(tmpLocal.GetPhyAddr());
 
@@ -128,7 +126,7 @@ private:
         __VEC_SCOPE__
         {
             AscendC::Reg::RegTensor<float> f32Reg;
-            AscendC::Reg::Duplicate(f32Reg, 0.0f); // empty_r_output_value=0.0f
+            AscendC::Reg::Duplicate(f32Reg, outputValue_);
             AscendC::Reg::MaskReg mask;
             uint32_t remaining = totalElems;
 
@@ -183,12 +181,13 @@ private:
     int32_t aBigCoreCnt_ = 0;
     int64_t aBigCoreLoopCnt_ = 0;
     int64_t aSmallCoreLoopCnt_ = 0;
+    float outputValue_ = 0.0F;
 
     // ─── GM + UB ───
     GlobalTensor<D_T> outputGm_;
     TPipe pipe_;
     TBuf<QuePosition::VECCALC> tmpBuf_; // fp32 中转（empty_r_output_value 写入）
-    TQue<QuePosition::VECOUT, 2> outQue_;
+    TQue<QuePosition::VECOUT, 1> outQue_;
 };
 
 } // namespace NsReduceStdV2Update

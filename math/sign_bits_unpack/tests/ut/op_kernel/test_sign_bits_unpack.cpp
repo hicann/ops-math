@@ -75,9 +75,10 @@ void ExpectUnpacked(const uint8_t* input, const T* output, size_t inputCount)
     for (size_t byteIndex = 0; byteIndex < inputCount; ++byteIndex) {
         for (size_t bitIndex = 0; bitIndex < 8; ++bitIndex) {
             const size_t outputIndex = byteIndex * 8 + bitIndex;
-            const float expected = ((input[byteIndex] >> bitIndex) & 1U) != 0 ? 1.0F : -1.0F;
+            const size_t packedBitIndex = 7U - bitIndex;
+            const float expected = ((input[byteIndex] >> packedBitIndex) & 1U) != 0 ? -1.0F : 1.0F;
             EXPECT_FLOAT_EQ(static_cast<float>(output[outputIndex]), expected)
-                << "byte=" << byteIndex << ", bit=" << bitIndex;
+                << "byte=" << byteIndex << ", packed bit=" << packedBitIndex;
         }
     }
 }
@@ -121,6 +122,19 @@ TEST_F(SignBitsUnpackKernelTest, float16_known_bit_patterns)
     ICPU_RUN_KF(sign_bits_unpack_half_for_test, 1, buffers.input, buffers.output, buffers.workspace, buffers.tiling);
 
     ExpectUnpacked(inputData.data(), reinterpret_cast<const half*>(buffers.output), inputData.size());
+}
+
+TEST_F(SignBitsUnpackKernelTest, pack_compatible_msb_order_and_negative_polarity)
+{
+    constexpr std::array<uint8_t, 3> inputData = {0x80, 0x01, 0x00};
+    KernelBuffers buffers(inputData.size(), sizeof(float));
+    std::memcpy(buffers.input, inputData.data(), inputData.size());
+    SetTilingData(buffers.tiling, inputData.size(), inputData.size(), 1);
+
+    AscendC::SetKernelMode(KernelMode::AIV_MODE);
+    ICPU_RUN_KF(sign_bits_unpack, 1, buffers.input, buffers.output, buffers.workspace, buffers.tiling);
+
+    ExpectUnpacked(inputData.data(), reinterpret_cast<const float*>(buffers.output), inputData.size());
 }
 
 TEST_F(SignBitsUnpackKernelTest, float32_consumes_all_mask_groups_in_one_ub_iteration)

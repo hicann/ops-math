@@ -32,7 +32,7 @@
  *
  * Reducer 7 参数：
  *   identity=0.0f, combine=Add, pad_value=0, post_op=acc×cof(+sqrt),
- *   empty_r_output_value=0.0f, needs_bisection=true, is_fast_path=true
+ *   empty_r_output_value=NaN, needs_bisection=true, is_fast_path=true
  *
  * 3 dtype 路径（编译期 if constexpr 分发）：
  *   fp32：     LoadAlign / StoreAlign 直通，无需 Cast

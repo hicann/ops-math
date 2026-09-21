@@ -97,7 +97,7 @@ aclnnStatus aclnnSignBitsUnpack(
       <td>dtype（aclDataType）</td>
       <td>输入</td>
       <td>表示量化输出Tensor的数据类型。</td>
-      <td>支持ACL_FLOAT16、ACL_FLOAT。</td>
+      <td>仅支持ACL_FLOAT16、ACL_FLOAT；不支持ACL_INT64、ACL_INT8等其他取值。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>

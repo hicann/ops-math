@@ -75,11 +75,17 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out, aclData
     // 检查self的数据类型是否在算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(self, SELF_DTYPE_SUPPORT_LIST, return false);
 
+    // 检查dtype属性指定的数据类型是否在算子的支持列表内
+    const op::DataType dtypeOP = op::ToOpDataType(dtype);
+    if (!CheckType(dtypeOP, OUT_DTYPE_SUPPORT_LIST)) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "dtype %s should be FLOAT or FLOAT16.", op::ToString(dtypeOP).GetString());
+        return false;
+    }
+
     // 检查out的数据类型是否在算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(out, OUT_DTYPE_SUPPORT_LIST, return false);
 
     // 检查out与dtype的数据类型是否一致
-    op::DataType dtypeOP = op::ToOpDataType(dtype);
     OP_CHECK_DTYPE_NOT_MATCH(out, dtypeOP, return false);
 
     return true;
