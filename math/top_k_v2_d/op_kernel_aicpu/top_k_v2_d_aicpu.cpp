@@ -367,7 +367,7 @@ uint32_t TopkV2DCpuKernel::Compute(CpuKernelContext& ctx)
     return static_cast<uint32_t>(KERNEL_STATUS_OK);
 }
 
-KernelStatus TopkV2DCpuKernel::DispatchByDtype(const CpuKernelContext& ctx)
+KernelStatus TopkV2DCpuKernel::DispatchByDtype(const CpuKernelContext& ctx) const
 {
     switch (data_type_) {
         case DT_FLOAT16:

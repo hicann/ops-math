@@ -66,7 +66,7 @@ private:
     template <typename T>
     uint32_t TileKernelCompute(const CpuKernelContext& ctx);
     uint32_t TileParamCheck(const CpuKernelContext& ctx);
-    uint32_t GetMultiplesValue(const Tensor* tensor, std::vector<int64_t>& mtp_value);
+    uint32_t GetMultiplesValue(const Tensor* tensor, std::vector<int64_t>& mtp_value) const;
     template <typename T>
     uint32_t TileCompute(const CpuKernelContext& ctx);
 };
