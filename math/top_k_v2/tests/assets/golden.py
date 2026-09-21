@@ -199,6 +199,152 @@ def _small_bitonic_sort(values, indices, largest):
     return keys[:count], result_indices[:count]
 
 
+_BITONIC_SCHEDULE_CACHE = {}
+
+
+def _bitonic_network_schedule(slots=32):
+    """Compare-exchange levels of the reference 32-slot bitonic network.
+
+    Each level is (pos_list, other_list, direction_list, invert): the reference
+    swaps a pair when ``swap == direction`` (first phase) or when ``not swap``
+    (final merge).  Pairs inside one level touch disjoint slots, so a level can
+    be applied to a whole row batch with advanced indexing.
+    """
+    cached = _BITONIC_SCHEDULE_CACHE.get(slots)
+    if cached is not None:
+        return cached
+    levels = []
+    size = 2
+    while size < slots:
+        stride = size // 2
+        while stride > 0:
+            pos_l, other_l, dir_l = [], [], []
+            for thread in range(slots // 2):
+                pos = 2 * thread - (thread & (stride - 1))
+                pos_l.append(pos)
+                other_l.append(pos + stride)
+                dir_l.append(bool(thread & (size // 2)))
+            levels.append((pos_l, other_l, dir_l, False))
+            stride //= 2
+        size *= 2
+    stride = slots // 2
+    while stride > 0:
+        pos_l, other_l = [], []
+        for thread in range(slots // 2):
+            pos = 2 * thread - (thread & (stride - 1))
+            pos_l.append(pos)
+            other_l.append(pos + stride)
+        levels.append((pos_l, other_l, [False] * (slots // 2), True))
+        stride //= 2
+    for pos_l, other_l, _, _ in levels:
+        touched = pos_l + other_l
+        if len(touched) != len(set(touched)):
+            raise AssertionError("bitonic level pairs overlap; batched apply invalid")
+    _BITONIC_SCHEDULE_CACHE[slots] = levels
+    return levels
+
+
+def _small_bitonic_sort_batch(values, indices, largest):
+    """Batched _small_bitonic_sort: bit-exact with the per-row reference.
+
+    Integer dtypes are carried in an int64 working representation (uint64 via
+    bit-view) because torch CPU advanced indexing is not implemented for the
+    unsigned dtypes; comparisons use int64 radix keys, matching _value_better.
+    Padding values in invalid slots never influence swaps (validity-masked)
+    nor the returned head (same data movement as the reference).
+    """
+    batch, count = values.shape
+    slots = 32
+    orig_dtype = values.dtype
+    is_float = orig_dtype.is_floating_point
+    if is_float:
+        cmp_keys = torch.zeros((batch, slots), dtype=orig_dtype)
+        cmp_keys[:, :count] = values
+        store = cmp_keys
+    else:
+        cmp_keys = torch.zeros((batch, slots), dtype=torch.int64)
+        cmp_keys[:, :count] = _radix_keys(values)
+        store = torch.zeros((batch, slots), dtype=torch.int64)
+        if orig_dtype == torch.uint64:
+            store[:, :count] = values.view(torch.int64)
+        else:
+            store[:, :count] = values.to(torch.int64)
+    result_indices = torch.zeros((batch, slots), dtype=indices.dtype)
+    result_indices[:, :count] = indices
+    valid = torch.zeros((batch, slots), dtype=torch.bool)
+    valid[:, :count] = True
+    for pos_l, other_l, dir_l, invert in _bitonic_network_schedule(slots):
+        a = cmp_keys[:, pos_l]
+        b = cmp_keys[:, other_l]
+        va = valid[:, pos_l]
+        vb = valid[:, other_l]
+        if is_float:
+            a_nan = torch.isnan(a)
+            b_nan = torch.isnan(b)
+            if largest:
+                better = (a_nan & ~b_nan) | (a > b)
+            else:
+                better = (b_nan & ~a_nan) | (a < b)
+        else:
+            better = a > b if largest else a < b
+        swap = (better & va) | ~vb
+        if invert:
+            do_swap = ~swap
+        else:
+            do_swap = swap == torch.tensor(dir_l, dtype=torch.bool)
+        a_new = torch.where(do_swap, b, a)
+        b_new = torch.where(do_swap, a, b)
+        sa = store[:, pos_l]
+        sb = store[:, other_l]
+        sa_new = torch.where(do_swap, sb, sa)
+        sb_new = torch.where(do_swap, sa, sb)
+        va_new = torch.where(do_swap, vb, va)
+        vb_new = torch.where(do_swap, va, vb)
+        ia = result_indices[:, pos_l]
+        ib = result_indices[:, other_l]
+        ia_new = torch.where(do_swap, ib, ia)
+        ib_new = torch.where(do_swap, ia, ib)
+        cmp_keys[:, pos_l] = a_new
+        cmp_keys[:, other_l] = b_new
+        if store is not cmp_keys:
+            store[:, pos_l] = sa_new
+            store[:, other_l] = sb_new
+        valid[:, pos_l] = va_new
+        valid[:, other_l] = vb_new
+        result_indices[:, pos_l] = ia_new
+        result_indices[:, other_l] = ib_new
+    out_values = store[:, :count]
+    if not is_float:
+        if orig_dtype == torch.uint64:
+            out_values = out_values.contiguous().view(torch.uint64)
+        else:
+            out_values = out_values.to(orig_dtype)
+    return out_values, result_indices[:, :count]
+
+
+def _cuda_topk_rows_batch(rows, k, largest, index_dtype):
+    """Batched _cuda_topk_row: threshold gather + bitonic sort, bit-exact."""
+    n, length = rows.shape
+    keys = _radix_keys(rows)
+    threshold_pos = length - k if largest else k - 1
+    threshold = torch.kthvalue(keys, threshold_pos + 1, dim=1).values
+    strict = keys > threshold.unsqueeze(1) if largest else keys < threshold.unsqueeze(1)
+    equal = keys == threshold.unsqueeze(1)
+    strict_count = strict.sum(dim=1, keepdim=True)
+    strict_rank = strict.cumsum(dim=1) - 1
+    equal_rank = equal.cumsum(dim=1) - 1
+    concat_pos = torch.where(strict, strict_rank, strict_count + equal_rank)
+    # candidates are exactly the strict positions (ascending) followed by the
+    # equal positions (ascending), mirroring cat(nonzero(strict), nonzero(eq))
+    chosen = (strict | equal) & (concat_pos < k)
+    columns = torch.arange(length).expand(n, length)
+    order_key = torch.where(chosen, concat_pos, 2 * length + columns)
+    gathered = torch.argsort(order_key, dim=1)[:, :k]
+    values = _gather_values(rows, 1, gathered)
+    indices = gathered.to(index_dtype)
+    return _small_bitonic_sort_batch(values, indices, largest)
+
+
 def _cuda_topk_row(row, k, largest, index_dtype):
     keys = _radix_keys(row)
     threshold_pos = len(keys) - k if largest else k - 1
@@ -212,6 +358,10 @@ def _cuda_topk_row(row, k, largest, index_dtype):
     return _small_bitonic_sort(values, indices, largest)
 
 
+_CUDA_SMALL_TOPK_PER_ROW_MAX = 4096
+_CUDA_SMALL_TOPK_CHUNK = 200_000
+
+
 def _cuda_small_topk(x, k, dim, largest, index_dtype):
     axis = _normalize_axis(dim, x.ndim)
     moved = torch.movedim(x, axis, -1).contiguous()
@@ -220,9 +370,25 @@ def _cuda_small_topk(x, k, dim, largest, index_dtype):
         shape = list(x.shape)
         shape[axis] = k
         return torch.empty(shape, dtype=x.dtype), torch.empty(shape, dtype=index_dtype)
-    outputs = [_cuda_topk_row(row, k, bool(largest), index_dtype) for row in rows]
-    values = torch.stack([output[0] for output in outputs])
-    indices = torch.stack([output[1] for output in outputs])
+    if rows.shape[0] <= _CUDA_SMALL_TOPK_PER_ROW_MAX:
+        outputs = [_cuda_topk_row(row, k, bool(largest), index_dtype) for row in rows]
+        values = torch.stack([output[0] for output in outputs])
+        indices = torch.stack([output[1] for output in outputs])
+    else:
+        # Large row counts: batched chunked path (bit-exact with the per-row
+        # reference, verified by differential tests; the per-row loop costs
+        # ~10ms/row which is infeasible for million-row rig cases).
+        value_chunks = []
+        index_chunks = []
+        for begin in range(0, rows.shape[0], _CUDA_SMALL_TOPK_CHUNK):
+            chunk = rows[begin : begin + _CUDA_SMALL_TOPK_CHUNK]
+            chunk_values, chunk_indices = _cuda_topk_rows_batch(
+                chunk, k, bool(largest), index_dtype
+            )
+            value_chunks.append(chunk_values)
+            index_chunks.append(chunk_indices)
+        values = torch.cat(value_chunks, dim=0)
+        indices = torch.cat(index_chunks, dim=0)
     moved_shape = (*moved.shape[:-1], k)
     return (
         torch.movedim(values.reshape(moved_shape), -1, axis).contiguous(),
@@ -292,6 +458,85 @@ def top_k_v2_input(x, k, *, dim=-1, testcase_name="", **kwargs):
         shape = [1] * tensor.ndim
         shape[axis] = tensor.shape[axis]
         tensor.copy_(axis_values.reshape(shape).expand(tensor.shape))
+    elif name.endswith("_nan_mixed"):
+        if tensor.dtype == torch.float32:
+            pattern = torch.tensor(
+                [0x7FC00000, 0x7FC00001] * 2, dtype=torch.int32
+            ).view(torch.float32)
+        elif tensor.dtype == torch.float16:
+            pattern = torch.tensor([0x7E00, 0x7E01] * 2, dtype=torch.int16).view(
+                torch.float16
+            )
+        elif tensor.dtype == torch.bfloat16:
+            pattern = torch.tensor([0x7FC0, 0x7FC1] * 2, dtype=torch.int16).view(
+                torch.bfloat16
+            )
+        else:
+            pattern = None
+        if pattern is not None:
+            repeats = (tensor.shape[axis] + pattern.numel() - 1) // pattern.numel()
+            axis_values = pattern.repeat(repeats)[: tensor.shape[axis]]
+            shape = [1] * tensor.ndim
+            shape[axis] = tensor.shape[axis]
+            tensor.copy_(axis_values.reshape(shape).expand(tensor.shape))
+    elif name.endswith("_nan_finite_mixed"):
+        # Deterministic NaN/finite interleaved segments with the P1 trigger shape:
+        # a small finite before a NaN and a larger finite after it ([1, NaN, 3, 2, ...]).
+        # NaN payloads alternate (0x...00/0x...01) so distinct-payload NaN pairs meet
+        # the double-NaN stable branch; truncation to N=4 keeps the minimal [1, NaN, 3, 2].
+        # Bit patterns (hex, as signed literals): 1.0, NaN, 3.0, 2.0, NaN', 5.0, -4.0, 0.0.
+        if tensor.dtype == torch.float32:
+            pattern = torch.tensor(
+                [
+                    1065353216,
+                    2143289344,
+                    1077936128,
+                    1073741824,
+                    2143289345,
+                    1084227584,
+                    -1065353216,
+                    0,
+                ],
+                dtype=torch.int32,
+            ).view(torch.float32)
+        elif tensor.dtype == torch.float16:
+            pattern = torch.tensor(
+                [15360, 32256, 16896, 16384, 32257, 17664, -15360, 0], dtype=torch.int16
+            ).view(torch.float16)
+        elif tensor.dtype == torch.bfloat16:
+            pattern = torch.tensor(
+                [16256, 32704, 16448, 16384, 32705, 16544, -16256, 0], dtype=torch.int16
+            ).view(torch.bfloat16)
+        else:
+            pattern = None
+        if pattern is not None:
+            repeats = (tensor.shape[axis] + pattern.numel() - 1) // pattern.numel()
+            axis_values = pattern.repeat(repeats)[: tensor.shape[axis]]
+            shape = [1] * tensor.ndim
+            shape[axis] = tensor.shape[axis]
+            tensor.copy_(axis_values.reshape(shape).expand(tensor.shape))
+    elif name.endswith("_signed_zero_mixed"):
+        axis_len = int(tensor.shape[axis])
+        half = (axis_len + 1) // 2
+        pos = torch.zeros(half, dtype=tensor.dtype)
+        neg = torch.full((axis_len - half,), -0.0, dtype=tensor.dtype)
+        axis_values = torch.cat((pos, neg))
+        shape = [1] * tensor.ndim
+        shape[axis] = axis_len
+        tensor.copy_(axis_values.reshape(shape).expand(tensor.shape))
+    elif name.endswith("_rowmixed"):
+        axis_len = tensor.shape[axis]
+        pattern = torch.tensor(patterns["duplicate"], dtype=tensor.dtype)
+        dup_row = pattern.repeat((axis_len + pattern.numel() - 1) // pattern.numel())[
+            :axis_len
+        ]
+        unique_row = torch.arange(axis_len, dtype=torch.int64).to(tensor.dtype)
+        rows = int(tensor.numel() // axis_len)
+        moved_shape = (*tensor.shape[:axis], *tensor.shape[axis + 1 :], axis_len)
+        data = torch.stack(
+            [unique_row if (row % 2 == 0) else dup_row for row in range(rows)]
+        ).reshape(moved_shape)
+        tensor.copy_(torch.movedim(data, -1, axis))
     return x, k
 
 

@@ -30,7 +30,6 @@ namespace topkV2DataInfo {
 const uint32_t CONST_ZERO = 0;
 const uint32_t CONST_TWO = 2;
 const uint32_t CONST_THREE = 3;
-// TopKV2属性在IR中的索引，顺序与config json中attrs定义一致: sorted/dim/largest/indices_dtype/sort_policy
 const uint32_t SORTED_ATTR_INDEX = 0;
 const uint32_t DIM_ATTR_INDEX = 1;
 const uint32_t LARGEST_ATTR_INDEX = 2;
@@ -62,6 +61,8 @@ const uint32_t FP32_MERGE_INTRA_CORE_MODE = 7;
 const uint32_t NON_LAST_SMALL_AXIS_MODE = 8;
 const uint32_t NON_LAST_SMALL_AXIS_RADIX_SELECT = 0;
 const uint32_t NON_LAST_SMALL_AXIS_MERGE_SORT = 1;
+const uint32_t SMALL_AXIS_INSERTION_MODE = 9;
+const uint32_t SMALL_AXIS_TWO_STAGE_MODE = 10;
 const uint32_t INT64_BYTE = 8;
 const uint32_t INT32_BYTE = 4;
 // SortAndTopk的阈值，排序轴大于该阈值的场景，走sortAndTopK模板

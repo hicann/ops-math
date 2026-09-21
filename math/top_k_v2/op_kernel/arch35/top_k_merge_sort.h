@@ -33,6 +33,8 @@ struct MergeSort {
                                       uint32_t oneCoreRowNum);
     __aicore__ inline void CopyValue2Gm(uint64_t gmOffset, uint64_t tileOffset, uint32_t ouputLastDimValue,
                                         uint32_t oneCoreRowNum);
+    __aicore__ inline void CastIndexToInt64(AscendC::LocalTensor<int64_t> indexInt64Local,
+                                            AscendC::LocalTensor<int32_t> indexInt32Local, uint32_t nowCoreRealRowNum);
 
 protected:
     __aicore__ inline void InitTilingData(const TILING_DATA_TYPE* tilingData);
@@ -173,8 +175,7 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
     if constexpr (is_same<int64_t, INDEX_TYPE>::value) {
         AscendC::LocalTensor<int32_t> sortedValueIndexInt32Local = sortedValueIndexLocal
                                                                        .template ReinterpretCast<int32_t>();
-        AscendC::Cast(sortedValueIndexInt64Local, sortedValueIndexInt32Local, AscendC::RoundMode::CAST_NONE,
-                      nowCoreRealRowNum * ROUND_UP_AGLIN(numTileData_));
+        CastIndexToInt64(sortedValueIndexInt64Local, sortedValueIndexInt32Local, nowCoreRealRowNum);
         outIndexQueue_.EnQue<int64_t>(sortedValueIndexInt64Local);
     } else {
         outIndexQueue_.EnQue<uint32_t>(sortedValueIndexLocal);
@@ -191,6 +192,27 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
 template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE,
           bool IS_BITONIC_SORT>
 __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE,
+                                 IS_BITONIC_SORT>::CastIndexToInt64(AscendC::LocalTensor<int64_t> indexInt64Local,
+                                                                    AscendC::LocalTensor<int32_t> indexInt32Local,
+                                                                    uint32_t nowCoreRealRowNum)
+{
+    if constexpr (IS_BITONIC_SORT) {
+        if (outputLastDimValue_ > 0) {
+            uint32_t aglinOneRow = ROUND_UP_AGLIN(numTileData_);
+            for (uint32_t row = 0; row < nowCoreRealRowNum; row++) {
+                AscendC::Cast(indexInt64Local[row * aglinOneRow], indexInt32Local[row * aglinOneRow],
+                              AscendC::RoundMode::CAST_NONE, outputLastDimValue_);
+            }
+        }
+    } else {
+        AscendC::Cast(indexInt64Local, indexInt32Local, AscendC::RoundMode::CAST_NONE,
+                      nowCoreRealRowNum * ROUND_UP_AGLIN(numTileData_));
+    }
+}
+
+template <typename T, typename CONVERT_TYPE, typename TILING_DATA_TYPE, bool IS_LARGEST, typename INDEX_TYPE,
+          bool IS_BITONIC_SORT>
+__aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, INDEX_TYPE,
                                  IS_BITONIC_SORT>::CopyDataIn(GlobalTensor<T> inputX, uint64_t tileOffset,
                                                               uint32_t currTileSize, uint32_t oneCoreRowNum)
 {
@@ -198,11 +220,23 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
     uint32_t aglinOneRowTileSize = ROUND_UP_AGLIN(currTileSize);
     uint32_t localTensorLen = aglinOneRowTileSize * oneCoreRowNum;
     T defaultValue = IS_LARGEST ? static_cast<T>(-INFINITY) : static_cast<T>(NAN);
-    Duplicate(xLocal, defaultValue, localTensorLen);
-    event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE2));
-    SetFlag<HardEvent::V_MTE2>(eventId);
-    WaitFlag<HardEvent::V_MTE2>(eventId);
     uint32_t currTileSizeAlign = ROUND_UP_AGLIN(currTileSize * sizeof(T)) / sizeof(T);
+    if constexpr (IS_BITONIC_SORT) {
+        uint32_t gapLen = aglinOneRowTileSize - currTileSizeAlign;
+        if (gapLen > 0) {
+            for (uint32_t r = 0; r < oneCoreRowNum; r++) {
+                Duplicate(xLocal[r * aglinOneRowTileSize + currTileSizeAlign], defaultValue, gapLen);
+            }
+            event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE2));
+            SetFlag<HardEvent::V_MTE2>(eventId);
+            WaitFlag<HardEvent::V_MTE2>(eventId);
+        }
+    } else {
+        Duplicate(xLocal, defaultValue, localTensorLen);
+        event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE2));
+        SetFlag<HardEvent::V_MTE2>(eventId);
+        WaitFlag<HardEvent::V_MTE2>(eventId);
+    }
     uint32_t dstStride = ((aglinOneRowTileSize - currTileSizeAlign) * sizeof(T)) / UB_AGLIN_VALUE;
     DataCopyPadExtParams<T> padParams;
     padParams.isPad = true;

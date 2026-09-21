@@ -99,19 +99,17 @@ __aicore__ inline void KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND, IS_BITONI
         }
         AscendC::LocalTensor<CONVERT_TYPE> concatLocal;
         AscendC::Concat(concatLocal, xLocal[offsetOneRow], concatTmpLocal, concatRepeatTimes);
-        // sort API中，index必须是int32_t
         AscendC::Sort<CONVERT_TYPE, true>(sortedLocal, concatLocal, indexLocal_, sortTmpLocal, sortRepeatTimes);
-        // 处理sort后的结果数据，输出排序后的value和index
         AscendC::Extract(sortedValueLocal[offsetOneRow], sortedValueIndexLocal[offsetOneRow], sortedLocal,
                          extractRepeatTimes);
         if constexpr (!IS_DESCEND) {
             flipSignBit(sortedValueLocal, offsetOneRow, aglinTileSize);
         }
-        if constexpr (IS_BITONIC_SORT) {
-            RunBitonicSmallTopKFinalize<T, uint32_t, IS_DESCEND>(sortedValueLocal[offsetOneRow],
-                                                                 sortedValueIndexLocal[offsetOneRow], outputK, 1U,
-                                                                 aglinTileSize, aglinTileSize);
-        }
+    }
+    if constexpr (IS_BITONIC_SORT) {
+        RunBitonicSmallTopKFinalizeWithFlags<T, uint32_t, IS_DESCEND>(
+            sortedValueLocal, sortedValueIndexLocal, (__ubuf__ uint32_t*)sortTmpLocal.GetPhyAddr(), outputK,
+            static_cast<uint32_t>(nowCoreRealRowNum), aglinTileSize, aglinTileSize);
     }
 }
 
@@ -148,9 +146,9 @@ __aicore__ inline void KernelVbsMergeSort<T, CONVERT_TYPE, IS_DESCEND, IS_BITONI
     AscendC::Cast(sortedValueLocal, sortedValueLocalCast, AscendC::RoundMode::CAST_RINT,
                   aglinTileSize * nowCoreRealRowNum);
     if constexpr (IS_BITONIC_SORT) {
-        RunBitonicSmallTopKFinalize<T, uint32_t, IS_DESCEND>(sortedValueLocal, sortedValueIndexLocal, outputK,
-                                                             static_cast<uint32_t>(nowCoreRealRowNum), aglinTileSize,
-                                                             aglinTileSize);
+        RunBitonicSmallTopKFinalizeWithFlags<T, uint32_t, IS_DESCEND>(
+            sortedValueLocal, sortedValueIndexLocal, (__ubuf__ uint32_t*)sortTmpLocal.GetPhyAddr(), outputK,
+            static_cast<uint32_t>(nowCoreRealRowNum), aglinTileSize, aglinTileSize);
     }
 }
 

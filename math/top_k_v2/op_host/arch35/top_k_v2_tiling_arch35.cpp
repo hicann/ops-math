@@ -19,6 +19,7 @@
 #include "atvoss/broadcast/broadcast_tiling.h"
 #include "sort_with_index_tiling.h"
 #include "top_k_v2_tiling_base.h"
+#include "../../../sort/op_host/arch35/sort_tiling_common.h"
 
 #include <algorithm>
 #include <limits>
@@ -1347,6 +1348,218 @@ ge::graphStatus FillTopkNonLastSmallAxisTilingData(gert::TilingContext* context,
 }
 
 /**
+ * @brief 初始化小轴排序路由的SortKthTileInfo基础字段
+ * @details 填充数据类型、UB、核心数等基础字段，并调用ComputeAxisDimProducts计算轴维乘积。
+ * @param info 排序Tiling信息
+ * @param computeInfo TopK计算信息
+ * @param inputShape 输入张量的形状
+ * @param axis TopK操作的目标轴索引
+ * @param originUbSize 原始UB大小
+ */
+static void InitTopKSmallAxisTileInfo(SortKthTileInfo& info,
+                                      const topkV2DataInfo::TopkComputeNowTileSizeInfo& computeInfo,
+                                      const gert::Shape& inputShape, int32_t axis, uint64_t originUbSize)
+{
+    info.dataType = computeInfo.dataType;
+    info.dtypeSize = GetDataTypeSize(computeInfo.dataType);
+    // UB内索引固定为uint32_t，与kernel侧IDX_T一致，保证段占用估算与实际UB分配吻合
+    info.y2DtypeSize = static_cast<uint32_t>(sizeof(uint32_t));
+    info.blockUbSize = static_cast<uint32_t>(computeInfo.ubBlockAlignSize);
+    info.maxCoreNum = computeInfo.maxCoreNum;
+    // 传入未扣SIMT预留的原始UB，sort路由函数内部自行扣除SIMT_UB
+    info.ubSize = static_cast<uint32_t>(originUbSize);
+    info.lastAxis = computeInfo.lastAxisNum;
+    info.rank = static_cast<int64_t>(inputShape.GetDimNum());
+    info.sortAxis = axis;
+    info.isNonLastAxis = (axis != static_cast<int32_t>(inputShape.GetDimNum()) - 1);
+    ComputeAxisDimProducts(inputShape, axis, info);
+}
+
+/**
+ * @brief 选择小轴排序路由，仅接管INSERTION/TWO_STAGE两种kind
+ * @param info 排序Tiling信息
+ * @param plan 待填充的小轴路由方案
+ * @param isTwoStage 出参，是否为TWO_STAGE路由
+ * @return true 表示命中可接管的排序路由；false 表示未命中，需回落原有模式
+ */
+static bool SelectTopKSmallAxisRoute(const SortKthTileInfo& info, SmallAxisRoutePlan& plan, bool& isTwoStage)
+{
+    bool selected = info.isNonLastAxis ? SelectNonLastSmallAxisRoute(info, plan) : SelectSmallAxisRoute(info, plan);
+    if (!selected || (plan.kind != SmallAxisRouteKind::INSERTION && plan.kind != SmallAxisRouteKind::TWO_STAGE)) {
+        return false;
+    }
+    isTwoStage = plan.kind == SmallAxisRouteKind::TWO_STAGE;
+    return true;
+}
+
+/**
+ * @brief 填充小轴排序路由的公共Tiling字段并判定bitonic终排
+ * @param topkTilingData TopK Tiling数据结构
+ * @param computeInfo TopK计算信息
+ * @param info 排序Tiling信息
+ * @param plan 已选定的小轴路由方案
+ * @param isTwoStage 是否为TWO_STAGE路由
+ * @param useBitonicFinalize 出参，是否追加bitonic确定性终排
+ */
+static void FillTopKSmallAxisCommonTiling(TopKV2TilingDataSimd& topkTilingData,
+                                          const topkV2DataInfo::TopkComputeNowTileSizeInfo& computeInfo,
+                                          const SortKthTileInfo& info, const SmallAxisRoutePlan& plan, bool isTwoStage,
+                                          bool& useBitonicFinalize)
+{
+    // sort_policy=1(且sorted)时对已选出的k个候选追加bitonic确定性终排。
+    // k>32时bitonic网络(32通道)放不下,不接管终排照常输出; 终排只重排值与索引,不改变UB布局。
+    useBitonicFinalize = IsBitonicSmallTopkMode(computeInfo.kValue, topkTilingData.get_sortPolicy(),
+                                                computeInfo.isSort);
+
+    topkTilingData.set_modeType(isTwoStage ? topkV2DataInfo::SMALL_AXIS_TWO_STAGE_MODE :
+                                             topkV2DataInfo::SMALL_AXIS_INSERTION_MODE);
+    topkTilingData.set_isLargest(computeInfo.isLargest);
+    topkTilingData.set_isSort(computeInfo.isSort);
+    topkTilingData.set_isInInt32Range(computeInfo.isInInt32Range);
+    topkTilingData.set_lastAxisNum(info.lastAxis);
+    topkTilingData.set_numTileDataSize(static_cast<uint32_t>(info.lastAxis));
+    topkTilingData.set_topKRealValue(computeInfo.kValue);
+    topkTilingData.set_outputLastDimValue(computeInfo.kValue);
+    topkTilingData.set_platformCoreNum(computeInfo.maxCoreNum);
+    topkTilingData.set_keyParams0(plan.batchSize);
+    topkTilingData.set_keyParams1(plan.batchNum);
+    // INSERTION: keyParams2复用为非last的innerLoopNum；TWO_STAGE: keyParams2为rank-inverse标志（sort sch6同款）
+    topkTilingData.set_keyParams2(!isTwoStage ? 0U : (plan.useRankInverse ? 1U : 0U));
+    topkTilingData.set_keyParams4(0U);
+    topkTilingData.set_tmpUbSize(isTwoStage ? plan.tmpUbSize : 0U);
+    topkTilingData.set_unsortedDimParallel(plan.blockDim);
+    topkTilingData.set_sortLoopTimes(1);
+    topkTilingData.set_lastDimTileNum(1);
+    topkTilingData.set_lastDimNeedCore(1);
+}
+
+/**
+ * @brief 填充小轴排序路由的last/非last布局字段
+ * @details 非last轴按模式8同款约定填充unsortedDimNum/oneCoreRowNum并计算innerLoopNum，
+ *          再按路由kind将innerLoopNum写入keyParams4（TWO_STAGE）或keyParams2（INSERTION）。
+ * @param topkTilingData TopK Tiling数据结构
+ * @param info 排序Tiling信息
+ * @param plan 已选定的小轴路由方案
+ * @param isTwoStage 是否为TWO_STAGE路由
+ * @return true 表示布局字段填充成功；false 表示innerChunk为0或innerLoop溢出，需回落原有模式
+ */
+static bool FillTopKSmallAxisAxisLayout(TopKV2TilingDataSimd& topkTilingData, const SortKthTileInfo& info,
+                                        const SmallAxisRoutePlan& plan, bool isTwoStage)
+{
+    uint32_t innerLoopNum = 0U;
+    if (info.isNonLastAxis) {
+        // 模式8同款约定：unsortedDimNum=innerSize，oneCoreRowNum=outerSize
+        uint32_t innerChunk = static_cast<uint32_t>(std::min<int64_t>(plan.batchSize, info.innerSize));
+        if (innerChunk == 0U) {
+            return false;
+        }
+        uint64_t innerLoop = Ops::Base::CeilDiv(static_cast<uint64_t>(info.innerSize),
+                                                static_cast<uint64_t>(innerChunk));
+        if (innerLoop == 0U || innerLoop > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
+            return false;
+        }
+        innerLoopNum = static_cast<uint32_t>(innerLoop);
+        topkTilingData.set_keyParams3(1U);
+        topkTilingData.set_unsortedDimNum(static_cast<uint64_t>(info.innerSize));
+        topkTilingData.set_oneCoreRowNum(static_cast<uint64_t>(info.outerSize));
+    } else {
+        topkTilingData.set_keyParams3(0U);
+        topkTilingData.set_unsortedDimNum(static_cast<uint64_t>(info.unsortedDim));
+        topkTilingData.set_oneCoreRowNum(1U);
+    }
+    if (isTwoStage) {
+        // TWO_STAGE的非last innerLoopNum放在keyParams4（keyParams2已被rank-inverse占用）
+        topkTilingData.set_keyParams4(innerLoopNum);
+    } else {
+        topkTilingData.set_keyParams2(innerLoopNum);
+    }
+    return true;
+}
+
+/**
+ * @brief 设置小轴排序路由的Context参数并保存TilingData
+ * @details 依次设置TilingKey/BlockDim/LocalMemorySize/ScheduleMode与workspace，
+ *          保存TilingData并打印已选路由的关键参数日志。
+ * @param context Tiling上下文
+ * @param topkTilingData TopK Tiling数据结构
+ * @param computeInfo TopK计算信息
+ * @param info 排序Tiling信息
+ * @param plan 已选定的小轴路由方案
+ * @param dataTypeKey 数据类型对应的Tiling Key
+ * @param axis TopK操作的目标轴索引
+ * @param isTwoStage 是否为TWO_STAGE路由
+ * @param useBitonicFinalize 是否追加bitonic确定性终排
+ * @return true 表示已完成Context设置与TilingData保存
+ */
+static bool FinalizeTopKSmallAxisContext(gert::TilingContext* context, TopKV2TilingDataSimd& topkTilingData,
+                                         const topkV2DataInfo::TopkComputeNowTileSizeInfo& computeInfo,
+                                         const SortKthTileInfo& info, const SmallAxisRoutePlan& plan,
+                                         uint32_t dataTypeKey, int32_t axis, bool isTwoStage, bool useBitonicFinalize)
+{
+    context->SetTilingKey(dataTypeKey);
+    context->SetBlockDim(plan.blockDim);
+    // SIMT kernel需预留32K（sort路由内部按ubSize-SIMT_UB规划批量，此处LocalMemory同步扣减）
+    context->SetLocalMemorySize(computeInfo.ubSizePlatForm);
+    context->SetScheduleMode(1);
+    size_t* userWorkSpaceSize = context->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context, userWorkSpaceSize);
+    userWorkSpaceSize[0] = sysWorkSpaceSize;
+    topkTilingData.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
+    context->GetRawTilingData()->SetDataSize(topkTilingData.GetDataSize());
+    OP_LOGI(context->GetNodeName(),
+            "TopKV2 small-axis %s selected axis=%d axisLen=%ld k=%ld outer=%ld inner=%ld batchSize=%u "
+            "batchNum=%u blockDim=%u useRankInverse=%d tmpUbSize=%u bitonicFinalize=%d",
+            isTwoStage ? "two-stage" : "insertion", axis, info.lastAxis, computeInfo.kValue, info.outerSize,
+            info.innerSize, plan.batchSize, plan.batchNum, plan.blockDim, static_cast<int>(plan.useRankInverse),
+            plan.tmpUbSize, static_cast<int>(useBitonicFinalize));
+    return true;
+}
+
+/**
+ * @brief 小轴排序路由（复用sort的SmallAxisInsertionBase/SmallAxisTwoStageBase实现）
+ * @details 编排层，步骤见各helper
+ * @return true 表示已接管并完成Tiling填充；false 表示未命中，需回落原有模式
+ */
+static bool TryTopKSmallAxisSort(gert::TilingContext* context, TopKV2TilingDataSimd& topkTilingData,
+                                 const topkV2DataInfo::TopkComputeNowTileSizeInfo& computeInfo,
+                                 const gert::Shape& inputShape, int32_t axis, uint32_t dataTypeKey,
+                                 uint64_t originUbSize)
+{
+    // 步骤1：小轴排序仅覆盖小轴；轴长为1或超过小轴阈值时直接回落
+    if (computeInfo.lastAxisNum <= 1 || computeInfo.kValue <= 0 || computeInfo.kValue > computeInfo.lastAxisNum ||
+        computeInfo.lastAxisNum > static_cast<int64_t>(SMALL_AXIS_THRESHOLD)) {
+        return false;
+    }
+
+    // 步骤2：初始化排序Tiling基础字段并计算轴维乘积
+    SortKthTileInfo info;
+    InitTopKSmallAxisTileInfo(info, computeInfo, inputShape, axis, originUbSize);
+
+    // 步骤3：选择小轴排序路由，仅接管INSERTION/TWO_STAGE
+    SmallAxisRoutePlan plan;
+    bool isTwoStage = false;
+    if (!SelectTopKSmallAxisRoute(info, plan, isTwoStage)) {
+        return false;
+    }
+
+    // 步骤4：填充公共Tiling字段并判定bitonic终排
+    bool useBitonicFinalize = false;
+    FillTopKSmallAxisCommonTiling(topkTilingData, computeInfo, info, plan, isTwoStage, useBitonicFinalize);
+
+    // 步骤5：填充last/非last布局字段
+    if (!FillTopKSmallAxisAxisLayout(topkTilingData, info, plan, isTwoStage)) {
+        return false;
+    }
+
+    // keyParams5: bitonic终排标志（policy=1且sorted且k∈[2,32]时置1，kernel侧store前终排）
+    topkTilingData.set_keyParams5(useBitonicFinalize ? 1U : 0U);
+
+    // 步骤6：设置Context参数并保存TilingData
+    return FinalizeTopKSmallAxisContext(context, topkTilingData, computeInfo, info, plan, dataTypeKey, axis, isTwoStage,
+                                        useBitonicFinalize);
+}
+
+/**
  * @brief 非尾轴小轴TopK模式的Tiling主函数（优化版本，不超过50行）
  * @details 该函数通过调用多个辅助函数，完成非尾轴小轴TopK场景的Tiling参数计算。
  *          处理流程：
@@ -1439,14 +1652,17 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
             static_cast<int64_t>(indicesDType));
 
     const int* sortPolicy = attrs->GetAttrPointer<int>(topkV2DataInfo::SORT_POLICY_ATTR_INDEX);
-    OP_CHECK_NULL_WITH_CONTEXT(context, sortPolicy);
-    OP_LOGD(context->GetNodeName(), "topk sortPolicy=%d.", *sortPolicy);
-    OP_CHECK_IF(*sortPolicy != 0 && *sortPolicy != 1,
-                OP_LOGE_WITH_INVALID_ATTR(context->GetNodeName(), "sort_policy", std::to_string(*sortPolicy).c_str(),
-                                          "range [0, 1]"),
-                return ge::GRAPH_FAILED);
+    int sortPolicyValue = 0;
+    if (sortPolicy != nullptr) {
+        OP_LOGD(context->GetNodeName(), "topk sortPolicy=%d.", *sortPolicy);
+        OP_CHECK_IF(*sortPolicy != 0 && *sortPolicy != 1,
+                    OP_LOGE_WITH_INVALID_ATTR(context->GetNodeName(), "sort_policy",
+                                              std::to_string(*sortPolicy).c_str(), "range [0, 1]"),
+                    return ge::GRAPH_FAILED);
+        sortPolicyValue = *sortPolicy;
+    }
     // 设置排序策略
-    topkTilingData.set_sortPolicy(*sortPolicy);
+    topkTilingData.set_sortPolicy(sortPolicyValue);
 
     // 获取输入张量的维度数量
     size_t inputDimNum = inputShape.GetDimNum();
@@ -1521,6 +1737,10 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
         computeNowTileSizeInfo.lastAxisNum = inputShape.GetDim(dimValue);
         computeNowTileSizeInfo.kValue = outShape.GetDim(dimValue);
         computeNowTileSizeInfo.isInInt32Range = computeNowTileSizeInfo.lastAxisNum <= int32Max;
+        if (TryTopKSmallAxisSort(context, topkTilingData, computeNowTileSizeInfo, inputShape, dimValue, dataTypeKey,
+                                 originUbSizePlatForm)) {
+            return ge::GRAPH_SUCCESS;
+        }
         if (IsBitonicSmallTopkMode(computeNowTileSizeInfo.kValue, topkTilingData.get_sortPolicy(),
                                    computeNowTileSizeInfo.isSort)) {
             dataTypeKey += topkV2DataInfo::BITONIC_SORT_TILING_OFFSET;
@@ -1529,13 +1749,18 @@ ge::graphStatus TopKV2Tiling(gert::TilingContext* context, int32_t maxCoreNum)
                                             dataTypeKey, originUbSizePlatForm);
     }
 
+    // 处理尾轴的场景：先尝试小轴排序快路径（复用sort实现），未命中回落现有链路
+    if (TryTopKSmallAxisSort(context, topkTilingData, computeNowTileSizeInfo, inputShape,
+                             static_cast<int32_t>(inputDimNum) - 1, dataTypeKey, originUbSizePlatForm)) {
+        return ge::GRAPH_SUCCESS;
+    }
+
     // 尾轴场景：kValue 已正确设置为 outLastAxisNum
     if (IsBitonicSmallTopkMode(computeNowTileSizeInfo.kValue, topkTilingData.get_sortPolicy(),
                                computeNowTileSizeInfo.isSort)) {
         dataTypeKey += topkV2DataInfo::BITONIC_SORT_TILING_OFFSET;
     }
 
-    // 处理尾轴的场景
     if (IsSmallSizeMergeSortMode(dataType, lastAxisNum)) {
         TileModeSmallSizeOptim(context, topkTilingData, topkTileInfo, computeNowTileSizeInfo);
         dataTypeKey += topkV2DataInfo::MERGE_SORT_TILING_OFFSET;
