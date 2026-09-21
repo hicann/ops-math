@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas A2系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -131,7 +131,7 @@ aclnnStatus aclnnIsInTensorScalar(
     </tr>
   </tbody></table>
 
-  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：不支持BFLOAT16、COMPLEX64、COMPLEX128。
+  - <term>Atlas训练系列产品</term>、<term>Atlas推理系列产品</term>：不支持BFLOAT16、COMPLEX64、COMPLEX128。
 
 - **返回值：**
 

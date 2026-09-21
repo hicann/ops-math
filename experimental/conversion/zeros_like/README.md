@@ -6,7 +6,7 @@
 
 | 产品                                                                            | 是否支持 |
 | :------------------------------------------------------------------------------ | :------: |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas A2系列产品</term> |    √     |
 
 - 本 experimental 实现仅在 `op_host/zeros_like_def.cpp` 中 `AddConfig("ascend910b", ...)`，目标芯片为 Ascend910B（SocVersion `ASCEND910B`，NpuArch `DAV_2201`，即 arch22）。
 - 950（DAV_3510 / arch35）由内建 `conversion/zeros_like` 覆盖，不在本目录范围内（差异见下文「与内建 ascend950 版差异」）。
@@ -39,7 +39,7 @@
 | x      | 输入张量 | 输入张量，仅用于推导输出 shape/dtype。       | FLOAT16、BF16、FLOAT32、INT32、INT64、INT8、UINT8、BOOL | ND       |
 | y      | 输出张量 | 与输入张量形状、dtype 相同的新张量，所有元素都为 0。 | 与x一致                              | ND       |
 
-- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型支持 FLOAT16、BF16、FLOAT32、INT32、INT64、INT8、UINT8、BOOL，共 **8 种**。
+- <term>Atlas A2系列产品</term>：数据类型支持 FLOAT16、BF16、FLOAT32、INT32、INT64、INT8、UINT8、BOOL，共 **8 种**。
 
 ### 支持的数据类型（8 种）
 

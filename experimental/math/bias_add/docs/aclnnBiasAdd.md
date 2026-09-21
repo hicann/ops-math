@@ -4,7 +4,7 @@
 
 | 产品 | 是否支持 |
 | ---- | :----: |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> | √ |
+| <term>Atlas A2系列产品</term> | √ |
 
 ## 功能说明
 
@@ -58,7 +58,7 @@ $$out_i = x_i + bias_{c(i)}$$
 
 ## 约束说明
 
-- 仅支持 <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>。
+- 仅支持 <term>Atlas A2系列产品</term>。
 - `bias` 的长度必须等于 `x` 在 `dataFormat` 指定 C 维上的大小。
 
 ## 调用示例

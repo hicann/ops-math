@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas A2系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -136,12 +136,12 @@ aclnnStatus aclnnInplaceEqTensor(
   </tbody>
   </table>
 
-  - <term>Ascend 950PR/Ascend 950DT</term>：
+  - <term>Ascend950PR&Ascend950DT系列产品</term>：
     - self、other不支持UINT32数据类型。
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+  - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：
     - self、other不支持UINT32、UINT64数据类型。
     - out不支持UINT64、UINT32、UINT16数据类型。
-  - <term>Atlas 训练系列产品</term>：
+  - <term>Atlas训练系列产品</term>：
     - 不支持BFLOAT16数据类型。
     - out不支持BFLOAT16、UINT64、UINT32、UINT16数据类型。
 
@@ -300,11 +300,11 @@ aclnnStatus aclnnInplaceEqTensor(
   </tbody>
   </table>
 
-  - <term>Ascend 950PR/Ascend 950DT</term>：
+  - <term>Ascend950PR&Ascend950DT系列产品</term>：
     - selfRef、other不支持UINT32数据类型。
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+  - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：
     - selfRef、other不支持UINT32、UINT64数据类型。
-  - <term>Atlas 训练系列产品</term>：
+  - <term>Atlas训练系列产品</term>：
     - 不支持BFLOAT16数据类型。
 
 - **返回值：**

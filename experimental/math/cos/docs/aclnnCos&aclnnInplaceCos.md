@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas A2系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -344,7 +344,7 @@ aclnnStatus aclnnInplaceCos(
 - 确定性计算：
   - aclnnCos&aclnnInplaceCos默认确定性实现。
 
-- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：FLOAT、FLOAT16、BFLOAT16数据类型的输入数据范围为[-10^7,10^7]时满足精度要求，超过数值范围无法保证，请使用CPU进行计算。
+- <term>Atlas A2系列产品</term>：FLOAT、FLOAT16、BFLOAT16数据类型的输入数据范围为[-10^7,10^7]时满足精度要求，超过数值范围无法保证，请使用CPU进行计算。
 
 ## 调用示例
 

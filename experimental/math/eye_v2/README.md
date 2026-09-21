@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------- |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> | √        |
+| <term>Atlas A2系列产品</term> | √        |
 
 ## 功能说明
 
@@ -22,7 +22,7 @@ $$
 | x   | 输入           | 输入任意矩阵                                                 | 见下方   | ND       |
 | y    | 输出           | 输出的单位矩阵                                             | 见下方   | ND       |
 
-- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT16、BFLOAT16。
+- <term>Atlas A2系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT16、BFLOAT16。
 
 ## 约束说明
 

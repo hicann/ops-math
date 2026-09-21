@@ -187,7 +187,7 @@ flowchart TD
 | Atlas A2 训练系列产品 / Atlas A2 推理系列产品 (ascend910b) | √ |
 | Atlas A3 训练系列产品 / Atlas A3 推理系列产品 (ascend910_93) | √ |
 
-## 使能方式
+## 启用方式
 
 | 上层框架 | 勾选 |
 | --- | :---: |

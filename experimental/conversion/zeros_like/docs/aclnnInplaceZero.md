@@ -4,7 +4,7 @@
 
 | 产品                                          | 是否支持 |
 | :------------------------------------------------------| :------: |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas A2系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -188,7 +188,7 @@ aclnnStatus aclnnInplaceZero(
 - 确定性计算：
   - aclnnInplaceZero默认确定性实现。
 - 数据类型范围：
-  - 本（experimental）实现目标为 <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>（Ascend910B / DAV_2201），AI Core 原生支持 FLOAT16、BF16、FLOAT32、INT32、INT64、INT8、UINT8、BOOL 共 8 种 dtype。
+  - 本（experimental）实现目标为 <term>Atlas A2系列产品</term>（Ascend910B / DAV_2201），AI Core 原生支持 FLOAT16、BF16、FLOAT32、INT32、INT64、INT8、UINT8、BOOL 共 8 种 dtype。
   - 与 `math/zero_op` 内建真值源接口语义一致；内建版另支持 DOUBLE、INT16、UINT16、COMPLEX64、COMPLEX128（经 AICPU 兜底）及 Ascend 950 的窄浮点类型（FP8/FP4/HIFLOAT8），不在本 experimental 910b 实现的验收范围内。
 
 ## 调用示例

@@ -1,26 +1,26 @@
 # aclnnInplaceUniform
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/random/dsa_random_uniform)
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/9.2.0/random/dsa_random_uniform)
 
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend 950PR/Ascend 950DT</term>：支持
+- <term>Ascend950PR&Ascend950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
-- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+- <term>Atlas A3系列产品</term>：支持
 <!-- end id2 -->
 <!-- npu="910b" id3 -->
-- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+- <term>Atlas A2系列产品</term>：支持
 <!-- end id3 -->
 <!-- npu="310b" id4 -->
-- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+- <term>Atlas 200I/500 A2推理产品</term>：不支持
 <!-- end id4 -->
 <!-- npu="310p" id5 -->
-- <term>Atlas 推理系列产品</term>：支持
+- <term>Atlas推理系列产品</term>：支持
 <!-- end id5 -->
 <!-- npu="910" id6 -->
-- <term>Atlas 训练系列产品</term>：支持
+- <term>Atlas训练系列产品</term>：支持
 <!-- end id6 -->
 
 ## 功能说明
@@ -149,7 +149,7 @@ aclnnStatus aclnnInplaceUniform(
   </tbody></table>
 
   <!-- npu="910" id7 -->
-  - <term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
+  - <term>Atlas训练系列产品</term>：数据类型不支持BFLOAT16。
   <!-- end id7 -->
 
 - **返回值**：
@@ -237,7 +237,7 @@ aclnnStatus aclnnInplaceUniform(
 - 确定性计算：aclnnInplaceUniform默认确定性实现。
 
 <!-- npu="950" id8 -->
-- <term>Ascend 950PR/Ascend 950DT</term>：
+- <term>Ascend950PR&Ascend950DT系列产品</term>：
   - 通过aclnnSetPytorchRandom设置对标PyTorch模式时，offset必须为4的倍数。
   - from和to的值不能超出self数据类型的表示范围。
   - to - from的值不能超出self数据类型的表示范围。

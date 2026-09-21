@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas A2系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -135,7 +135,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
     </tr>
   </tbody></table>
 
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
+  - <term>Atlas A2系列产品</term>：
     - self和out的数据类型不支持BOOL。
 
 - **返回值：**
@@ -282,11 +282,11 @@ aclnnStatus aclnnInplaceClampMinTensor(
     </tr>
   </tbody></table>
 
-  - <term>Atlas 训练系列产品</term>、<term>Atlas 推理系列产品</term>：
+  - <term>Atlas训练系列产品</term>、<term>Atlas推理系列产品</term>：
     - selfRef的数据类型不支持BOOL、BFLOAT16。
     - clipValueMax的数据类型不支持BFLOAT16。
 
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Ascend 950PR/Ascend 950DT</term>：
+  - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>、<term>Ascend950PR&Ascend950DT系列产品</term>：
     - selfRef和clipValueMax数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../../docs/zh/context/deduction_relationship.md)）。
     - selfRef的数据类型不支持BOOL。
 

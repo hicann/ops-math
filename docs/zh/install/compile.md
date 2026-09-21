@@ -56,7 +56,7 @@
     # bash build.sh --pkg --experimental --soc=ascend910b --ops=abs -j16
     ```
 
-    - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2 训练系列产品/Atlas A2 推理系列产品使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"，Ascend 950PR/Ascend 950DT产品使用"ascend950"。
+    - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2系列产品使用"ascend910b"（默认），Atlas A3系列产品使用"ascend910_93"，Ascend950PR&Ascend950DT系列产品使用"ascend950"。
     - --vendor_name（可选）：\$\{vendor\_name\}表示构建的自定义算子包名，默认名为custom。
     - --ops（可选）：\$\{op\_list\}表示待编译算子，不指定时默认编译所有算子。格式形如"abs,add_lora,..."，多算子之间用英文逗号","分隔。
     - --experimental（可选）：表示编译用户保存在experimental贡献目录下的算子。
@@ -104,7 +104,7 @@
     # bash build.sh --pkg --experimental --soc=${soc_version} [-j${n}]
     ```
 
-    - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2 训练系列产品/Atlas A2 推理系列产品使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"，Ascend 950PR/Ascend 950DT产品使用"ascend950"。
+    - --soc：\$\{soc\_version\}表示NPU型号。Atlas A2系列产品使用"ascend910b"（默认），Atlas A3系列产品使用"ascend910_93"，Ascend950PR&Ascend950DT系列产品使用"ascend950"。
     - --experimental（可选）：表示编译用户保存在experimental目录下的算子。
     - -j（可选）：指定编译线程数，加快编译速度。
 
@@ -189,7 +189,7 @@
     # source prepare_cann_env.sh "cann-ops-math@master +pkg +experimental soc=ascend910b ops=abs j=16"
     ```
 
-    - soc：\$\{soc\_version\}表示NPU型号。Atlas A2 训练系列产品/Atlas A2 推理系列产品使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"，Ascend 950PR/Ascend 950DT产品使用"ascend950"。
+    - soc：\$\{soc\_version\}表示NPU型号。Atlas A2系列产品使用"ascend910b"（默认），Atlas A3系列产品使用"ascend910_93"，Ascend950PR&Ascend950DT系列产品使用"ascend950"。
     - vendor_name（可选）：\$\{vendor\_name\}表示构建的自定义算子包名，默认名为custom。
     - ops（可选）：\$\{op\_list\}表示待编译算子，不指定时默认编译所有算子。格式形如"abs,add_lora,..."，多算子之间用英文逗号","分隔。
     - experimental（可选）：表示编译用户保存在experimental贡献目录下的算子。
@@ -234,7 +234,7 @@
     # source prepare_cann_env.sh "cann-ops-math@master +pkg +experimental soc=ascend910b j=16"
     ```
 
-    - soc：\$\{soc\_version\}表示NPU型号。Atlas A2 训练系列产品/Atlas A2 推理系列产品使用"ascend910b"（默认），Atlas A3 训练系列产品/Atlas A3 推理系列产品使用"ascend910_93"，Ascend 950PR/Ascend 950DT产品使用"ascend950"。
+    - soc：\$\{soc\_version\}表示NPU型号。Atlas A2系列产品使用"ascend910b"（默认），Atlas A3系列产品使用"ascend910_93"，Ascend950PR&Ascend950DT系列产品使用"ascend950"。
     - experimental（可选）：表示编译用户保存在experimental目录下的算子。
     - j（可选）：指定编译线程数，加快编译速度。
 

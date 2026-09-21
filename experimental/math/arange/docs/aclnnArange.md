@@ -4,12 +4,12 @@
 
 | 产品 | 是否支持 |
 | :----------------------------------------- | :------:|
-| <term>Ascend 950PR/Ascend 950DT</term> | × |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term> | √ |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> | √ |
-| <term>Atlas 200I/500 A2 推理产品</term> | × |
-| <term>Atlas 推理系列产品</term> | × |
-| <term>Atlas 训练系列产品</term> | × |
+| <term>Ascend950PR&Ascend950DT系列产品</term> | × |
+| <term>Atlas A3系列产品</term> | √ |
+| <term>Atlas A2系列产品</term> | √ |
+| <term>Atlas 200I/500 A2推理产品</term> | × |
+| <term>Atlas推理系列产品</term> | × |
+| <term>Atlas训练系列产品</term> | × |
 
 ## 功能说明
 
@@ -141,7 +141,7 @@ aclnnStatus aclnnArange(
     </tr>
   </tbody></table>
 
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：start、end、step、out 支持 FLOAT、FLOAT16、BFLOAT16、INT8、UINT8、INT16，四者数据类型须保持一致。
+  - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：start、end、step、out 支持 FLOAT、FLOAT16、BFLOAT16、INT8、UINT8、INT16，四者数据类型须保持一致。
   - UINT8 不可表示负值，UINT8 场景下 start、end、step 均需为非负且需满足 step 大于 0、start 小于 end。
 
 - **返回值**

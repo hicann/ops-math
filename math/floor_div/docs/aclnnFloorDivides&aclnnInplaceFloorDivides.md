@@ -1,26 +1,26 @@
 # aclnnFloorDivides&aclnnInplaceFloorDivides
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/floor_div)
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/9.2.0/math/floor_div)
 
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend 950PR/Ascend 950DT</term>：支持
+- <term>Ascend950PR&Ascend950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
-- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+- <term>Atlas A3系列产品</term>：支持
 <!-- end id2 -->
 <!-- npu="910b" id3 -->
-- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+- <term>Atlas A2系列产品</term>：支持
 <!-- end id3 -->
 <!-- npu="310b" id4 -->
-- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+- <term>Atlas 200I/500 A2推理产品</term>：不支持
 <!-- end id4 -->
 <!-- npu="310p" id5 -->
-- <term>Atlas 推理系列产品</term>：不支持
+- <term>Atlas推理系列产品</term>：不支持
 <!-- end id5 -->
 <!-- npu="910" id6 -->
-- <term>Atlas 训练系列产品</term>：支持
+- <term>Atlas训练系列产品</term>：支持
 <!-- end id6 -->
 
 ## 功能说明
@@ -153,10 +153,10 @@ aclnnStatus aclnnInplaceFloorDivides(
   </tbody></table>
 
   <!-- npu="A3,910b" id7 -->
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：self额外支持BFLOAT16，other额外支持BFLOAT16，out额外支持BFLOAT16。
+  - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：self额外支持BFLOAT16，other额外支持BFLOAT16，out额外支持BFLOAT16。
   <!-- end id7 -->
   <!-- npu="950" id8 -->
-  - <term>Ascend 950PR/Ascend 950DT</term>：self额外支持BFLOAT16，other额外支持BFLOAT16，out额外支持BFLOAT16。数据类型需满足TensorScalar互推导关系。
+  - <term>Ascend950PR&Ascend950DT系列产品</term>：self额外支持BFLOAT16，other额外支持BFLOAT16，out额外支持BFLOAT16。数据类型需满足TensorScalar互推导关系。
   <!-- end id8 -->
 
 - **返回值：**
@@ -311,10 +311,10 @@ aclnnStatus aclnnInplaceFloorDivides(
   </tbody></table>
 
   <!-- npu="A3,910b" id9 -->
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：selfRef额外支持BFLOAT16，other额外支持BFLOAT16。
+  - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：selfRef额外支持BFLOAT16，other额外支持BFLOAT16。
   <!-- end id9 -->
   <!-- npu="950" id10 -->
-  - <term>Ascend 950PR/Ascend 950DT</term>：selfRef额外支持BFLOAT16，other额外支持BFLOAT16。数据类型需满足TensorScalar互推导关系。
+  - <term>Ascend950PR&Ascend950DT系列产品</term>：selfRef额外支持BFLOAT16，other额外支持BFLOAT16。数据类型需满足TensorScalar互推导关系。
   <!-- end id10 -->
 
 - **返回值：**
@@ -402,7 +402,7 @@ aclnnStatus aclnnInplaceFloorDivides(
 - 确定性计算：aclnnFloorDivides&aclnnInplaceFloorDivides默认确定性实现。
 
 <!-- npu="A3,910b" id11 -->
-- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：因FLOAT16/BFLOAT16数据类型精度有限，无法表示所有小数，在向下取整时存在一定误差，可以选择更高精度的数据类型如FLOAT32。
+- <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：因FLOAT16/BFLOAT16数据类型精度有限，无法表示所有小数，在向下取整时存在一定误差，可以选择更高精度的数据类型如FLOAT32。
 <!-- end id11 -->
 
 ## 调用示例

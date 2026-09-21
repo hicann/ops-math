@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------- |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> | √        |
+| <term>Atlas A2系列产品</term> | √        |
 
 ## 功能说明
 
@@ -18,7 +18,7 @@
 | perm   | 输入数组       | 整型数组，代表原来tensor的维度，指定新的轴顺序。取值需在[-self的维度数量，self的维度数量-1]范围内。 | INT64,INT32    | -        |
 | out    | 输出           | 维度最大不超过8维，shape由dims和原selfx的shape共同决定，dtype需要与selfx一致。 | 同x   | ND       |
 
-- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、UINT64、INT64、UINT32、INT32、UINT16、INT16、UINT8、INT8、BOOL、BFLOAT16。
+- <term>Atlas A2系列产品</term>：数据类型支持FLOAT、FLOAT16、UINT64、INT64、UINT32、INT32、UINT16、INT16、UINT8、INT8、BOOL、BFLOAT16。
 
 ## 约束说明
 

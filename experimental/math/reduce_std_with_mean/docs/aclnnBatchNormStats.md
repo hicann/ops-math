@@ -1,17 +1,17 @@
 # aclnnBatchNormStats
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/reduce_std_with_mean)
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/9.2.0/math/reduce_std_with_mean)
 
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    ×     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    ×     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                             |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    ×     |
+| <term>Ascend950PR&Ascend950DT系列产品</term>                             |    ×     |
+| <term>Atlas A3系列产品</term>     |    ×     |
+| <term>Atlas A2系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2推理产品</term>                      |    ×     |
+| <term>Atlas推理系列产品</term>                             |    ×     |
+| <term>Atlas训练系列产品</term>                              |    ×     |
 
 ## 功能说明
 
@@ -142,7 +142,7 @@ aclnnStatus aclnnBatchNormStats(
     </tr>
   </tbody></table>
 
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
+  - <term>Atlas A2系列产品</term>：
     - 参数`input`数据类型不支持BFLOAT16。
 
 - **返回值：**

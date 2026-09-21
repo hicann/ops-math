@@ -2,16 +2,16 @@
 
 ## 产品支持情况
 
-> 本实验态（`experimental/math/`）实现仅适配 <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>（ascend910b，DAV_2201）。内建算子 `math/fused_mul_add_n` 另行覆盖 Ascend 950 / Atlas A3 等产品，不在本实验态范围内。
+> 本实验态（`experimental/math/`）实现仅适配 <term>Atlas A2系列产品</term>（ascend910b，DAV_2201）。内建算子 `math/fused_mul_add_n` 另行覆盖 Ascend 950 / Atlas A3 等产品，不在本实验态范围内。
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                       |    ×     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    ×     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>     |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    ×     |
-| <term>Atlas 推理系列产品</term>                              |    ×     |
-| <term>Atlas 训练系列产品</term>                              |    ×     |
+| <term>Ascend950PR&Ascend950DT系列产品</term>                       |    ×     |
+| <term>Atlas A3系列产品</term>     |    ×     |
+| <term>Atlas A2系列产品</term>     |    √     |
+| <term>Atlas 200I/500 A2推理产品</term>                      |    ×     |
+| <term>Atlas推理系列产品</term>                              |    ×     |
+| <term>Atlas训练系列产品</term>                              |    ×     |
 
 ## 功能说明
 
@@ -73,7 +73,7 @@
     </tr>
   </tbody></table>
 
-- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型支持 FLOAT、FLOAT16、BFLOAT16、INT32、INT16（共 5 类）。
+- <term>Atlas A2系列产品</term>：数据类型支持 FLOAT、FLOAT16、BFLOAT16、INT32、INT16（共 5 类）。
 
 ## 约束说明
 

@@ -2,8 +2,8 @@
 
 ## 产品支持情况
 
-- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
-- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+- <term>Atlas A3系列产品</term>：支持
+- <term>Atlas A2系列产品</term>：支持
 
 ## 功能说明
 

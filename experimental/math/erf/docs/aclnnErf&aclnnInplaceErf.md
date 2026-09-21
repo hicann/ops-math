@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas A2系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -30,9 +30,9 @@ $$
 - **参数说明：**
 
   * self(aclTensor*,计算输入)：Device侧的aclTensor，[数据格式](../../../../docs/zh/context/data_format.md)支持ND，shape维度不超过8维，支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型支持FLOAT32、FLOAT16、BFLOAT16。
+    - <term>Atlas A2系列产品</term>：数据类型支持FLOAT32、FLOAT16、BFLOAT16。
   * out(aclTensor *，计算输出)：Device侧的aclTensor，[数据格式](../../../../docs/zh/context/data_format.md)支持ND，shape必须和self一样，维度不超过8维，支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型支持FLOAT32、FLOAT16、BFLOAT16。
+    - <term>Atlas A2系列产品</term>：数据类型支持FLOAT32、FLOAT16、BFLOAT16。
   * workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。
   * executor(aclOpExecutor **, 出参)：返回op执行器，包含了算子计算流程。
 
@@ -67,7 +67,7 @@ $$
 - **参数说明：**
 
   * selfRef(aclTensor *，计算输入)：输入输出Tensor，Device侧的aclTensor，[数据格式](../../../../docs/zh/context/data_format.md)支持ND，支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)。
-    - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型支持FLOAT32、FLOAT16、BFLOAT16。
+    - <term>Atlas A2系列产品</term>：数据类型支持FLOAT32、FLOAT16、BFLOAT16。
   * workspaceSize(uint64_t *, 出参)：返回需要在Device侧申请的workspace大小。
   * executor(aclOpExecutor **, 出参)：返回op执行器，包含了算子计算流程。
 

@@ -4,12 +4,12 @@
 
 | 产品 | 是否支持 |
 | :----------------------------------------- | :------:|
-| <term>Ascend 950PR/Ascend 950DT</term> | × |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term> | × |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> | × |
-| <term>Atlas 200I/500 A2 推理产品</term> | × |
-| <term>Atlas 推理系列产品</term> | × |
-| <term>Atlas 训练系列产品</term> | × |
+| <term>Ascend950PR&Ascend950DT系列产品</term> | × |
+| <term>Atlas A3系列产品</term> | × |
+| <term>Atlas A2系列产品</term> | × |
+| <term>Atlas 200I/500 A2推理产品</term> | × |
+| <term>Atlas推理系列产品</term> | × |
+| <term>Atlas训练系列产品</term> | × |
 
 ## 功能说明
 
@@ -173,7 +173,7 @@ aclnnStatus aclnnAcosh(
 ## 约束说明
 
 - aclnnAcosh默认确定性实现。
-- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：仅支持FLOAT16、FLOAT、BFLOAT16数据类型，不支持其他数据类型。
+- <term>Atlas A2系列产品</term>：仅支持FLOAT16、FLOAT、BFLOAT16数据类型，不支持其他数据类型。
 - 输入值域约束：acosh数学定义域为[1, +∞)，输入元素小于1时结果为NaN，接口层不做拦截，由调用方保证输入合法性。
 - 逐元素算子，不涉及广播，输入输出shape须完全一致。
 
