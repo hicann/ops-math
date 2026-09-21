@@ -96,7 +96,7 @@ uint32_t StridedSliceV2CpuKernel::CheckAxesDataType(const Tensor* begin, const T
 }
 
 uint32_t StridedSliceV2CpuKernel::CheckParam(const Tensor* begin, const Tensor* end, const Tensor* axes,
-                                             const Tensor* strides)
+                                             const Tensor* strides) const
 {
     uint32_t ret = CheckBeginEndDataType(begin, end);
     if (ret != KERNEL_STATUS_OK) {

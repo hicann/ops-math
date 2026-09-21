@@ -39,7 +39,7 @@ private:
     template <int32_t RANK, typename T, int32_t OPTION>
     uint32_t MulCalculate(BCalcInfo& calc_info) const;
 
-    uint32_t MulSameTypeCompute(const CpuKernelContext& ctx);
+    uint32_t MulSameTypeCompute(const CpuKernelContext& ctx) const;
 };
 } // namespace aicpu
 

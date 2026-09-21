@@ -21,7 +21,7 @@ public:
     uint32_t Compute(CpuKernelContext& ctx) override;
 
 private:
-    uint32_t CheckParam(const Tensor* begin, const Tensor* end, const Tensor* axes, const Tensor* strides);
+    uint32_t CheckParam(const Tensor* begin, const Tensor* end, const Tensor* axes, const Tensor* strides) const;
 
     uint32_t CheckBeginEndDataType(const Tensor* begin, const Tensor* end) const;
 

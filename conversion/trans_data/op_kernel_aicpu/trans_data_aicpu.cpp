@@ -373,7 +373,7 @@ uint32_t TransDataCpuKernel::NewCompute(const CpuKernelContext& ctx) const
 
 template <typename T>
 uint32_t TransDataCpuKernel::DealData(const T* input_data, T* output_data, const Tensor* input_tensor,
-                                      Tensor* output_tensor, int64_t group)
+                                      Tensor* output_tensor, int64_t group) const
 {
     (void)output_tensor;
     DealDataCtx c{};
@@ -590,7 +590,7 @@ uint32_t TransDataCpuKernel::PaddingOne(TransArgs& args, std::shared_ptr<uint8_t
     return KERNEL_STATUS_OK;
 }
 
-uint32_t TransDataCpuKernel::PaddingTwo(TransArgs& args, std::shared_ptr<uint8_t>& dst, int64_t c0_cube)
+uint32_t TransDataCpuKernel::PaddingTwo(TransArgs& args, std::shared_ptr<uint8_t>& dst, int64_t c0_cube) const
 {
     DataType data_type = args.src_data_type;
     std::vector<int64_t> dst_shape;

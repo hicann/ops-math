@@ -325,7 +325,7 @@ uint32_t BcastComputeImpl(const CpuKernelContext& ctx, const BcastDivInfo& info)
 
 } // anonymous namespace
 
-uint32_t RealDivKernel::RealDivSameTypeCompute(const CpuKernelContext& ctx, DataType data_type)
+uint32_t RealDivKernel::RealDivSameTypeCompute(const CpuKernelContext& ctx, DataType data_type) const
 {
     switch (data_type) {
         case DT_FLOAT16:

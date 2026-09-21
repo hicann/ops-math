@@ -21,7 +21,7 @@ public:
     uint32_t Compute(CpuKernelContext& ctx) override;
 
 private:
-    uint32_t RealDivSameTypeCompute(const CpuKernelContext& ctx, DataType data_type);
+    uint32_t RealDivSameTypeCompute(const CpuKernelContext& ctx, DataType data_type) const;
     template <typename T>
     bool IsInputHasZero(T* input_data, const int64_t num_of_elems) const;
     template <typename T>

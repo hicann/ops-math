@@ -30,7 +30,7 @@ constexpr int64_t kParallelDataNumSameShape = 7 * 1024;
 } // namespace
 
 namespace aicpu {
-uint32_t MulCpuKernel::MulSameTypeCompute(const CpuKernelContext& ctx)
+uint32_t MulCpuKernel::MulSameTypeCompute(const CpuKernelContext& ctx) const
 {
     auto data_type = static_cast<DataType>(ctx.Input(kFirstInputIndex)->GetDataType());
     switch (data_type) {
