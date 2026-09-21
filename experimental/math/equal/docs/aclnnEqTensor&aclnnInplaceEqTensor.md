@@ -136,7 +136,7 @@ aclnnStatus aclnnInplaceEqTensor(
   </tbody>
   </table>
 
-  - <term>Ascend950PR&Ascend950DT系列产品</term>：
+  - <term>Ascend 950PR&Ascend950DT系列产品</term>：
     - self、other不支持UINT32数据类型。
   - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：
     - self、other不支持UINT32、UINT64数据类型。
@@ -300,7 +300,7 @@ aclnnStatus aclnnInplaceEqTensor(
   </tbody>
   </table>
 
-  - <term>Ascend950PR&Ascend950DT系列产品</term>：
+  - <term>Ascend 950PR&Ascend950DT系列产品</term>：
     - selfRef、other不支持UINT32数据类型。
   - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：
     - selfRef、other不支持UINT32、UINT64数据类型。

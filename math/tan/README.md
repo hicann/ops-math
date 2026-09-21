@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend950PR&Ascend950DT系列产品</term>                       |    √     |
+| <term>Ascend 950PR&Ascend950DT系列产品</term>                       |    √     |
 | <term>Atlas A3系列产品</term>     |    √     |
 | <term>Atlas A2系列产品</term>     |    √     |
 | <term>Atlas 200I/500 A2推理产品</term>                      |    √     |
@@ -59,14 +59,14 @@
   </tbody>
 </table>
 
-- <term>Ascend950PR&Ascend950DT系列产品</term>、<term>Atlas A3系列产品</term>、<term>Atlas A2系列产品</term>：AI Core支持FLOAT16、FLOAT、BFLOAT16、INT32。
+- <term>Ascend 950PR&Ascend950DT系列产品</term>、<term>Atlas A3系列产品</term>、<term>Atlas A2系列产品</term>：AI Core支持FLOAT16、FLOAT、BFLOAT16、INT32。
 - <term>Atlas 200I/500 A2推理产品</term>、<term>Atlas推理系列产品</term>、<term>Atlas训练系列产品</term>：AI Core支持FLOAT16、FLOAT、INT32，不支持BFLOAT16。
 - DOUBLE、COMPLEX64、COMPLEX128通过AICPU路径计算。
 
 ## 约束说明
 
 - 输入与输出的shape必须一致，数据格式为ND。
-- 在<term>Ascend950PR&Ascend950DT系列产品</term>的AI Core实现中，输入为NaN、Inf或绝对值大于等于$10^7$时，输出为NaN。
+- 在<term>Ascend 950PR&Ascend950DT系列产品</term>的AI Core实现中，输入为NaN、Inf或绝对值大于等于$10^7$时，输出为NaN。
 
 ## 调用说明
 

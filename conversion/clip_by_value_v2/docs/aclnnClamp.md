@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -152,7 +152,7 @@ aclnnStatus aclnnClamp(
   - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：self和out的数据类型不支持BOOL。
   <!-- end id8 -->
   <!-- npu="950" id9 -->
-  - <term>Ascend950PR&Ascend950DT系列产品</term>：
+  - <term>Ascend 950PR&Ascend950DT系列产品</term>：
     - self、clipValueMin和clipValueMax数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)）
     - out的数据类型需要是self、clipValueMin、clipValueMax推导之后可转换的数据类型。
     - self、clipValueMin、clipValueMax和out的数据类型不支持BOOL。

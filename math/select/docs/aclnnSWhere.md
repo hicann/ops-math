@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -50,7 +50,7 @@ $$
   - self（aclTensor*，计算输入）：公式中的输入`self`，数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/deduction_relationship.md)），Device侧的aclTensor，shape需要与other和condition满足[broadcast关系](../../../docs/zh/context/broadcast_relationship.md)。支持[非连续的Tensor](../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../docs/zh/context/data_format.md)支持ND，数据维度不支持8维以上。
 
     <!-- npu="950,A3,910b" id7 -->
-    - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>、<term>Ascend950PR&Ascend950DT系列产品</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128、 BFLOAT16。
+    - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>、<term>Ascend 950PR&Ascend950DT系列产品</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128、 BFLOAT16。
     <!-- end id7 -->
     <!-- npu="910,310p" id8 -->
     - <term>Atlas推理系列产品</term>、<term>Atlas训练系列产品</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128。
@@ -59,7 +59,7 @@ $$
   - other（aclTensor*，计算输入）：公式中的输入`other`，数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/deduction_relationship.md)），Device侧的aclTensor，shape需要与self和condition满足[broadcast关系](../../../docs/zh/context/broadcast_relationship.md)。支持[非连续的Tensor](../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../docs/zh/context/data_format.md)支持ND，数据维度不支持8维以上。
 
     <!-- npu="950,A3,910b" id9 -->
-    - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>、<term>Ascend950PR&Ascend950DT系列产品</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128、 BFLOAT16。
+    - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>、<term>Ascend 950PR&Ascend950DT系列产品</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128、 BFLOAT16。
     <!-- end id9 -->
     <!-- npu="910,310p" id10 -->
     - <term>Atlas推理系列产品</term>、<term>Atlas训练系列产品</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128。
@@ -68,7 +68,7 @@ $$
   - out（aclTensor \*，计算输出）：公式中的输出`out`，支持[非连续的Tensor](../../../docs/zh/context/non_contiguous_tensor.md)，Device侧的aclTensor，shape需要是self与other和condition broadcast之后的shape。支持[非连续的Tensor](../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../docs/zh/context/data_format.md)支持ND，数据维度不支持8维以上。
 
     <!-- npu="950,A3,910b" id11 -->
-    - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>、<term>Ascend950PR&Ascend950DT系列产品</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128、 BFLOAT16。
+    - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>、<term>Ascend 950PR&Ascend950DT系列产品</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128、 BFLOAT16。
     <!-- end id11 -->
     <!-- npu="910,310p" id12 -->
     - <term>Atlas推理系列产品</term>、<term>Atlas训练系列产品</term>：数据类型支持FLOAT、 INT32、 UINT64、 INT64、 UINT32、 FLOAT16、 UINT16、 INT16、 INT8、 UINT8、 DOUBLE、 BOOL、 COMPLEX64、 COMPLEX128。

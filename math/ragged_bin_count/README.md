@@ -4,7 +4,7 @@
 
 | 产品 | 是否支持 |
 | :--- | :---: |
-| <term>Ascend950PR&Ascend950DT系列产品</term> | √ |
+| <term>Ascend 950PR&Ascend950DT系列产品</term> | √ |
 | <term>Atlas A3系列产品</term> | √ |
 | <term>Atlas A2系列产品</term> | √ |
 | <term>Atlas 200I/500 A2推理产品</term> | × |
@@ -116,7 +116,7 @@ $$
   </tr></thead>
 <tbody>
   <tr>
-    <td><term>Ascend950PR&Ascend950DT系列产品</term></td>
+    <td><term>Ascend 950PR&Ascend950DT系列产品</term></td>
     <td>1～2</td>
   </tr>
   <tr>

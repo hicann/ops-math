@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -155,7 +155,7 @@ aclnnStatus aclnnInplaceBitwiseOrTensor(
   </tbody></table>
 
   <!-- npu="950" id7 -->
-  - <term>Ascend950PR&Ascend950DT系列产品</term>：out数据类型额外支持FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX64、COMPLEX128。
+  - <term>Ascend 950PR&Ascend950DT系列产品</term>：out数据类型额外支持FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX64、COMPLEX128。
 
   <!-- end id7 -->
 

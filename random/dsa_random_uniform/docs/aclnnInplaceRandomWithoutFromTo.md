@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：不支持
@@ -207,7 +207,7 @@ aclnnStatus aclnnInplaceRandomWithoutFromTo(
   - aclnnInplaceRandomWithoutFromTo默认确定性实现。
 
 <!-- npu="950" id7 -->
-- <term>Ascend950PR&Ascend950DT系列产品</term>：
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：
   - offset必须为4的倍数。
 
 <!-- end id7 -->

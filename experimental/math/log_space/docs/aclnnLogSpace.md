@@ -4,11 +4,11 @@
 
 | 产品 | 是否支持 |
 | :-- | :--: |
-| <term>Ascend950PR&Ascend950DT系列产品</term> | √ |
+| <term>Ascend 950PR&Ascend950DT系列产品</term> | √ |
 | <term>Atlas A3系列产品</term> | √ |
 | <term>Atlas A2系列产品</term> | √ |
 
-> 整型输出（INT8/INT16/INT32/UINT8）仅 <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term> 支持；<term>Ascend950PR&Ascend950DT系列产品</term> 维持原有的 FLOAT/FLOAT16/BFLOAT16 输出。
+> 整型输出（INT8/INT16/INT32/UINT8）仅 <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term> 支持；<term>Ascend 950PR&Ascend950DT系列产品</term> 维持原有的 FLOAT/FLOAT16/BFLOAT16 输出。
 
 ## 功能说明
 
@@ -59,7 +59,7 @@ aclnnStatus aclnnLogSpace(
   | 返回码 | 错误码 | 描述 |
   | -- | -- | -- |
   | ACLNN_ERR_PARAM_NULLPTR | 161001 | 传入的 start、end 或 result 是空指针。 |
-  | ACLNN_ERR_PARAM_INVALID | 161002 | start/end/result 数据类型不在支持范围（含 result 的 dtype 在当前芯片上不支持，如 <term>Ascend950PR&Ascend950DT系列产品</term> 传入整型）；或 steps < 0 / steps > UINT32_MAX；或 base ≤ 0；或 result 非一维 / result.shape[0] ≠ steps。 |
+  | ACLNN_ERR_PARAM_INVALID | 161002 | start/end/result 数据类型不在支持范围（含 result 的 dtype 在当前芯片上不支持，如 <term>Ascend 950PR&Ascend950DT系列产品</term> 传入整型）；或 steps < 0 / steps > UINT32_MAX；或 base ≤ 0；或 result 非一维 / result.shape[0] ≠ steps。 |
 
 ## aclnnLogSpace
 

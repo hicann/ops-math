@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -154,7 +154,7 @@ aclnnStatus aclnnInplaceEqScalar(
   </table>
 
   <!-- npu="950" id7 -->
-  - <term>Ascend950PR&Ascend950DT系列产品</term>：
+  - <term>Ascend 950PR&Ascend950DT系列产品</term>：
     - self与other满足[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)。
     - self、other不支持UINT32数据类型。
   <!-- end id7 -->
@@ -324,7 +324,7 @@ aclnnStatus aclnnInplaceEqScalar(
   </table>
 
   <!-- npu="950" id10 -->
-  - <term>Ascend950PR&Ascend950DT系列产品</term>：
+  - <term>Ascend 950PR&Ascend950DT系列产品</term>：
     - selfRef与other满足[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)。
     - selfRef、other不支持UINT32数据类型。
   <!-- end id10 -->

@@ -7,14 +7,14 @@
 
 | 产品 | 是否支持 |
 | :----------------------------------------- | :------:|
-| <term>Ascend950PR&Ascend950DT系列产品</term> | √ |
+| <term>Ascend 950PR&Ascend950DT系列产品</term> | √ |
 | <term>Atlas A3系列产品</term> | × |
 | <term>Atlas A2系列产品</term> | √ |
 | <term>Atlas 200I/500 A2推理产品</term> | × |
 | <term>Atlas推理系列产品</term> | × |
 | <term>Atlas训练系列产品</term> | × |
 
-> 说明：真值源 `math/sort_with_index` 仅适配 <term>Ascend950PR&Ascend950DT系列产品</term>（arch35 kernel）。本 `experimental` 实现新增 <term>Atlas A2 训练系列产品（Ascend 910B）</term> 原生支持。本文档"是否支持"按 910B 实现交付情况填写，最终以 `op_host/sort_with_index_def.cpp` 的 `AddConfig` 与 kernel 实际能力为准。
+> 说明：真值源 `math/sort_with_index` 仅适配 <term>Ascend 950PR&Ascend950DT系列产品</term>（arch35 kernel）。本 `experimental` 实现新增 <term>Atlas A2 训练系列产品（Ascend 910B）</term> 原生支持。本文档"是否支持"按 910B 实现交付情况填写，最终以 `op_host/sort_with_index_def.cpp` 的 `AddConfig` 与 kernel 实际能力为准。
 
 ## 功能说明
 

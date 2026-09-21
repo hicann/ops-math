@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -28,7 +28,7 @@
 - **接口功能**：
 
   <!-- npu="950" id7 -->
-  - <term>Ascend950PR&Ascend950DT系列产品</term>：
+  - <term>Ascend 950PR&Ascend950DT系列产品</term>：
     - 完成ND[数据格式](../../../docs/zh/context/data_format.md)到指定C0大小的FRACTAL_NZ[数据格式](../../../docs/zh/context/data_format.md)的转换功能，C0是FRACTAL_NZ[数据格式](../../../docs/zh/context/data_format.md)最后一维的大小，C0由`additionalDtype`确定。
     - 完成指定C0大小的FRACTAL_NZ[数据格式](../../../docs/zh/context/data_format.md)到ND[数据格式](../../../docs/zh/context/data_format.md)的转换功能，其中支持的NZ格式包括：FRACTAL_NZ、FRACTAL_NZ_C0_2、FRACTAL_NZ_C0_4、FRACTAL_NZ_C0_16、FRACTAL_NZ_C0_32。
     - 当srcTensor数据类型为FLOAT8_E8M0、srcTensor格式为ND/NCL/NCHW、dstFormat为FRACTAL_NZ时，支持MX scale转换为昇腾亲和存储shape。
@@ -165,7 +165,7 @@ aclnnStatus aclnnNpuFormatCast(
     </table>
 
   <!-- npu="950" id9 -->
-  - <term>Ascend950PR&Ascend950DT系列产品</term>：上表数据类型列中的角标“1”代表该系列不支持的数据类型或数据格式。
+  - <term>Ascend 950PR&Ascend950DT系列产品</term>：上表数据类型列中的角标“1”代表该系列不支持的数据类型或数据格式。
   <!-- end id9 -->
   <!-- npu="A3,910b" id10 -->
   - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：上表数据类型列中的角标“2”代表该系列不支持的数据类型或数据格式。
@@ -288,7 +288,7 @@ aclnnStatus aclnnNpuFormatCast(
     </table>
 
   <!-- npu="950" id11 -->
-  - <term>Ascend950PR&Ascend950DT系列产品</term>：上表数据类型列中的角标“1”代表该系列不支持的数据类型或数据格式。
+  - <term>Ascend 950PR&Ascend950DT系列产品</term>：上表数据类型列中的角标“1”代表该系列不支持的数据类型或数据格式。
   <!-- end id11 -->
   <!-- npu="A3,910b" id12 -->
   - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：上表数据类型列中的角标“2”代表该系列不支持的数据类型或数据格式。
@@ -337,7 +337,7 @@ aclnnStatus aclnnNpuFormatCast(
   </table>
 
   <!-- npu="950" id13 -->
-  - <term>Ascend950PR&Ascend950DT系列产品</term>：上表数据类型列中的角标“1”代表该系列不支持的拦截类型。
+  - <term>Ascend 950PR&Ascend950DT系列产品</term>：上表数据类型列中的角标“1”代表该系列不支持的拦截类型。
   <!-- end id13 -->
   <!-- npu="A3,910b" id14 -->
   - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：上表数据类型列中的角标“2”代表该系列不支持的拦截类型。
@@ -394,7 +394,7 @@ aclnnStatus aclnnNpuFormatCast(
 
   <!-- npu="950" id15 -->
   <details>
-  <summary><term>Ascend950PR&Ascend950DT系列产品</term></summary>
+  <summary><term>Ascend 950PR&Ascend950DT系列产品</term></summary>
 
   - aclnnNpuFormatCastCalculateSizeAndFormat接口：
 
@@ -558,7 +558,7 @@ aclnnStatus aclnnNpuFormatCast(
 ## 调用示例
 
 <!-- npu="950" id17 -->
-- <term>Ascend950PR&Ascend950DT系列产品</term>：
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：
 
   示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 

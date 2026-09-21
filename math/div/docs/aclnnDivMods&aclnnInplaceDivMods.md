@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -168,7 +168,7 @@ aclnnStatus aclnnInplaceDivMods(
   - <term>Atlas训练系列产品</term>：不支持BFLOAT16数据类型。
   <!-- end id7 -->
   <!-- npu="950" id8 -->
-  - <term>Ascend950PR&Ascend950DT系列产品</term>：
+  - <term>Ascend 950PR&Ascend950DT系列产品</term>：
     - 数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)。
     - mode为0时，out数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX128、COMPLEX64，self与other推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT；
     - mode为1或2时，out数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16、COMPLEX128、COMPLEX64。
@@ -345,7 +345,7 @@ aclnnStatus aclnnInplaceDivMods(
   - <term>Atlas训练系列产品</term>：不支持BFLOAT16数据类型。
   <!-- end id9 -->
   <!-- npu="950" id10 -->
-  - <term>Ascend950PR&Ascend950DT系列产品</term>：
+  - <term>Ascend 950PR&Ascend950DT系列产品</term>：
     - 数据类型需满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">TensorScalar互推导关系</a>。
     - 当mode为0时，selfRef与other推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
     - selfRef在mode为0时，支持FLOAT、FLOAT16、DOUBLE、BFLOAT16；mode为1或2时，支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16。other不支持COMPLEX128、COMPLEX64。

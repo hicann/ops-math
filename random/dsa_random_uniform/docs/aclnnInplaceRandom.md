@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -152,7 +152,7 @@ aclnnStatus aclnnInplaceRandom(
   - <term>Atlas训练系列产品</term>：数据类型不支持BFLOAT16。
   <!-- end id7 -->
   <!-- npu="950" id8 -->
-  - <term>Ascend950PR&Ascend950DT系列产品</term>：数据类型不支持COMPLEX64、COMPLEX128。
+  - <term>Ascend 950PR&Ascend950DT系列产品</term>：数据类型不支持COMPLEX64、COMPLEX128。
   <!-- end id8 -->
 
 - **返回值：**
@@ -241,7 +241,7 @@ aclnnStatus aclnnInplaceRandom(
   - aclnnInplaceRandom默认确定性实现。
 
 <!-- npu="950" id9 -->
-- <term>Ascend950PR&Ascend950DT系列产品</term>：
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：
   - 通过aclnnSetPytorchRandom设置对标PyTorch模式时，offset必须为4的倍数。
   - from必须小于to，且from/to-1指定范围不可超出self数据类型的范围。
 

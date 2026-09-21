@@ -4,7 +4,7 @@
 
 | 产品 | 是否支持 |
 | ---- | :----:|
-| <term>Ascend950PR&Ascend950DT系列产品</term>                             |    √     |
+| <term>Ascend 950PR&Ascend950DT系列产品</term>                             |    √     |
 | <term>Atlas A3系列产品</term>     |    √     |
 | <term>Atlas A2系列产品</term> |    √     |
 | <term>Atlas 200I/500 A2推理产品</term>                      |    √     |
@@ -73,7 +73,7 @@
   - 针对数据类型从INT64转换为FLOAT32的场景：
     只能保证输入数据在(-2147483648, 2147483647)范围内精度无误差。
 
-- <term>Ascend950PR&Ascend950DT系列产品</term>：
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：
   - 针对输入、输出类型，涉及COMPLEX32、COMPLEX64、FLOAT4_E2M1、FLOAT4_E1M2、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN的，只支持如下表格中的转换路径：
 
     | `self`数据类型 | `out`数据类型 |

@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend950PR&Ascend950DT系列产品</term>                             |     √      |
+| <term>Ascend 950PR&Ascend950DT系列产品</term>                             |     √      |
 | <term>Atlas A3系列产品</term>     |    √       |
 | <term>Atlas A2系列产品</term> |    √     |
 | <term>Atlas 200I/500 A2推理产品</term>                      |    ×     |
@@ -74,7 +74,7 @@
 
   - <term>Atlas训练系列产品</term>：数据类型支持DOUBLE、FLOAT、FLOAT16、INT16、INT32、INT64、INT8、UINT16、UINT32、UINT64、UINT8、BOOL。
   - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：数据类型支持DOUBLE、FLOAT、FLOAT16、INT16、INT32、INT64、INT8、UINT16、UINT32、UINT64、UINT8、BOOL、BFLOAT16。
-  - <term>Ascend950PR&Ascend950DT系列产品</term>：数据类型支持DOUBLE、FLOAT、FLOAT16、INT16、INT32、INT64、INT8、UINT16、UINT32、UINT64、UINT8、BOOL、BFLOAT16、COMPLEX32、COMPLEX64。
+  - <term>Ascend 950PR&Ascend950DT系列产品</term>：数据类型支持DOUBLE、FLOAT、FLOAT16、INT16、INT32、INT64、INT8、UINT16、UINT32、UINT64、UINT8、BOOL、BFLOAT16、COMPLEX32、COMPLEX64。
 
 ## 约束说明
 

@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -132,7 +132,7 @@ aclnnStatus aclnnComplex(
     </tbody></table>
 
   <!-- npu="950,A3" id7 -->
-  - <term>Atlas A3系列产品</term>、<term>Ascend950PR&Ascend950DT系列产品</term>：out数据类型支持COMPLEX64（输入只能是FLOAT）、COMPLEX32（输入只能是FLOAT16）、COMPLEX128（输入只能是DOUBLE）。
+  - <term>Atlas A3系列产品</term>、<term>Ascend 950PR&Ascend950DT系列产品</term>：out数据类型支持COMPLEX64（输入只能是FLOAT）、COMPLEX32（输入只能是FLOAT16）、COMPLEX128（输入只能是DOUBLE）。
   <!-- end id7 -->
 
 - **返回值：**

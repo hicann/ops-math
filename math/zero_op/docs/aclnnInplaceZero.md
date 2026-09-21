@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -129,7 +129,7 @@ aclnnStatus aclnnInplaceZero(
 - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：数据类型支持INT8、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、INT16、UINT16、COMPLEX128、COMPLEX64、BFLOAT16。
 <!-- end id8 -->
 <!-- npu="950" id9 -->
-- <term>Ascend950PR&Ascend950DT系列产品</term>：数据类型支持INT8、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、INT16、UINT16、COMPLEX128、COMPLEX64、BFLOAT16、FLOAT8_E5M2、FLOAT8_E4M3FN、HIFLOAT8、FLOAT4_E1M2、FLOAT4_E2M1。
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：数据类型支持INT8、INT32、INT64、UINT8、FLOAT16、FLOAT32、BOOL、DOUBLE、INT16、UINT16、COMPLEX128、COMPLEX64、BFLOAT16、FLOAT8_E5M2、FLOAT8_E4M3FN、HIFLOAT8、FLOAT4_E1M2、FLOAT4_E2M1。
 <!-- end id9 -->
 - **返回值**
 

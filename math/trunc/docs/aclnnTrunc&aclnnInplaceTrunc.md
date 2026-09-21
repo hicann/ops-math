@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -142,7 +142,7 @@ aclnnStatus aclnnInplaceTrunc(
   - <term>Atlas训练系列产品</term>：不支持BFLOAT16数据类型。
   <!-- end id7 -->
   <!-- npu="950" id8 -->
-  - <term>Ascend950PR&Ascend950DT系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16、INT32、INT8、UINT8。
+  - <term>Ascend 950PR&Ascend950DT系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16、INT32、INT8、UINT8。
   <!-- end id8 -->
 
 - **返回值：**

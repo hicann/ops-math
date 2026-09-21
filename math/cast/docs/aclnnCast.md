@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -245,7 +245,7 @@ aclnnStatus aclnnCast(
   - 针对数据类型从int64转换为float32的场景：只能保证输入数据在(-2147483648, 2147483647)范围内精度无误差。
 <!-- end id10 -->
 <!-- npu="950" id11 -->
-- <term>Ascend950PR&Ascend950DT系列产品</term>：
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：
   - 针对输出类型为INT4的场景：不支持输入Shape的尾轴为奇数、不支持输入为非连续。
   - 针对输入、输出类型，涉及COMPLEX32、COMPLEX64、FLOAT4_E2M1、FLOAT4_E1M2、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、INT4的，只支持如下表格中的转换路径：
 

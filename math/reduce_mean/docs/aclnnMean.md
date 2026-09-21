@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -260,7 +260,7 @@ aclnnStatus aclnnMean(
   - aclnnMean默认确定性实现。
 <!-- npu="950" id8 -->
 - Batch一致性说明：
-  - <term>Ascend950PR&Ascend950DT系列产品</term>：默认非Batch一致性实现，支持通过aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, 3)开启Batch一致性。开启后，非归约轴的计算结果与所在批次大小、位置无关；归约轴不支持Batch一致性。开启Batch一致性后，性能可能存在劣化。
+  - <term>Ascend 950PR&Ascend950DT系列产品</term>：默认非Batch一致性实现，支持通过aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, 3)开启Batch一致性。开启后，非归约轴的计算结果与所在批次大小、位置无关；归约轴不支持Batch一致性。开启Batch一致性后，性能可能存在劣化。
 <!-- end id8 -->
 
 ## 调用示例

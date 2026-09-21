@@ -65,7 +65,7 @@ aclnnStatus aclnnRealV2(
 
 ## 约束说明
 
-1. 本算子仅支持 Ascend950PR&Ascend950DT系列产品 产品。
+1. 本算子仅支持 Ascend 950PR&Ascend950DT系列产品 产品。
 2. self 的数据类型仅支持 FLOAT、FLOAT16、COMPLEX64、COMPLEX32。
 3. out 的数据类型由 self 推导确定，不可自由指定。
 4. out 的 shape 必须与 self 的 shape 完全一致。

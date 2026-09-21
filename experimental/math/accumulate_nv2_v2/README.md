@@ -4,7 +4,7 @@
 
 | 产品 | 是否支持 |
 | :--- | :------: |
-| Ascend950PR&Ascend950DT系列产品 | Yes |
+| Ascend 950PR&Ascend950DT系列产品 | Yes |
 | Atlas A3系列产品 | No |
 | Atlas A2系列产品 | No |
 | Atlas 200I/500 A2推理产品 | No |

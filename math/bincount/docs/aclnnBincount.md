@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -238,7 +238,7 @@ aclnnStatus aclnnBincount(
   - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>、<term>Atlas推理系列产品</term>、 <term>Atlas训练系列产品</term>：默认确定性实现。
   <!-- end id7 -->
   <!-- npu="950" id8 -->
-  - <term>Ascend950PR&Ascend950DT系列产品</term>：默认非确定性实现，支持通过aclrtCtxSetSysParamOpt开启确定性。
+  - <term>Ascend 950PR&Ascend950DT系列产品</term>：默认非确定性实现，支持通过aclrtCtxSetSysParamOpt开启确定性。
   <!-- end id8 -->
 
 ## 调用示例

@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend950PR&Ascend950DT系列产品</term>                             |    √     |
+| <term>Ascend 950PR&Ascend950DT系列产品</term>                             |    √     |
 | <term>Atlas A3系列产品</term>     |    √     |
 | <term>Atlas A2系列产品</term> |    √     |
 | <term>Atlas 200I/500 A2推理产品</term>                      |    ×     |
@@ -55,7 +55,7 @@
     </tr>
   </tbody></table>
 
-- <term>Ascend950PR&Ascend950DT系列产品</term>：支持FLOAT、FLOAT16、BFLOAT16。
+- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持FLOAT、FLOAT16、BFLOAT16。
 - <term>Atlas推理系列产品</term>、<term>Atlas训练系列产品</term>：不支持BFLOAT16。
 
 ## 约束说明

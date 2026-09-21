@@ -6,7 +6,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend950PR&Ascend950DT系列产品</term>                             |    √     |
+| <term>Ascend 950PR&Ascend950DT系列产品</term>                             |    √     |
 | <term>Atlas A3系列产品</term>     |    √     |
 | <term>Atlas A2系列产品</term> |    √     |
 | <term>Atlas 200I/500 A2推理产品</term>                      |    ×     |
@@ -39,10 +39,10 @@ $$
 
   - self(aclTensor*,计算输入): 公式中的self，Device侧的aclTensor。支持[非连续的Tensor](../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../docs/zh/context/data_format.md)支持ND，shape维度不大于8,且shape需要与out一致，和out的数据满足数据类型推导规则。
     - <term>Atlas推理系列产品</term>、<term>Atlas训练系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE。
-    - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>、<term>Ascend950PR&Ascend950DT系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE、BFLOAT16。
+    - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>、<term>Ascend 950PR&Ascend950DT系列产品</term>：数据类型支持INT8、INT16、INT32、INT64、UINT8、BOOL、FLOAT、FLOAT16、DOUBLE、BFLOAT16。
   - out(aclTensor *，计算输出): 公式中的out，Device侧的aclTensor。支持[非连续的Tensor](../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../docs/zh/context/data_format.md)支持ND，且shape需要与self一致。
     - <term>Atlas推理系列产品</term>、<term>Atlas训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE。
-    - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>、<term>Ascend950PR&Ascend950DT系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16。
+    - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>、<term>Ascend 950PR&Ascend950DT系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16。
   - workspaceSize(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor \**，出参)：返回op执行器，包含了算子计算流程。
 
@@ -77,7 +77,7 @@ $$
 - **参数说明**：
   - selfRef(aclTensor *，计算输入|计算输出): Device侧的aclTensor。支持[非连续的Tensor](../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../docs/zh/context/data_format.md)支持ND，shape维度不大于8。
     - <term>Atlas推理系列产品</term>、<term>Atlas训练系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE。
-    - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>、<term>Ascend950PR&Ascend950DT系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16。
+    - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>、<term>Ascend 950PR&Ascend950DT系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、BFLOAT16。
   - workspaceSize(uint64_t *，出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor \**，出参)：返回op执行器，包含了算子计算流程。
 

@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend950PR&Ascend950DT系列产品</term>                             |    √     |
+| <term>Ascend 950PR&Ascend950DT系列产品</term>                             |    √     |
 | <term>Atlas A3系列产品</term>     |     √     |
 | <term>Atlas A2系列产品</term> |    ×     |
 | <term>Atlas 200I/500 A2推理产品</term>                      |    ×     |
@@ -29,17 +29,17 @@
 - **参数说明：**
 
   - self(计算输入)：公式中的输入`self`，Device侧Tensor。
-    - <term>Ascend950PR&Ascend950DT系列产品</term>：数据类型支持FLOAT16、BFLOAT16、FLOAT，[数据格式](../../../docs/zh/context/data_format.md)支持ND。
+    - <term>Ascend 950PR&Ascend950DT系列产品</term>：数据类型支持FLOAT16、BFLOAT16、FLOAT，[数据格式](../../../docs/zh/context/data_format.md)支持ND。
     - <term>Atlas A3系列产品</term>：数据类型支持FLOAT16、BFLOAT16、FLOAT，[数据格式](../../../docs/zh/context/data_format.md)支持ND。
 
   - mask(计算输入)：公式中的`mask`，Device侧Tensor，shape需要与self一致。
-    - <term>Ascend950PR&Ascend950DT系列产品</term>：数据类型支持UINT8、INT8、FLOAT16、FLOAT，[数据格式](../../../docs/zh/context/data_format.md)支持ND。
+    - <term>Ascend 950PR&Ascend950DT系列产品</term>：数据类型支持UINT8、INT8、FLOAT16、FLOAT，[数据格式](../../../docs/zh/context/data_format.md)支持ND。
     - <term>Atlas A3系列产品</term>：数据类型支持UINT8、INT8、FLOAT16、FLOAT，[数据格式](../../../docs/zh/context/data_format.md)支持ND。
 
   - scale(float, 计算输入)：标量缩放系数，数据类型支持FLOAT（非Tensor）。
 
   - y(计算输出)：公式中的`out`，Device侧Tensor，数据类型和shape需要与self一致。
-    - <term>Ascend950PR&Ascend950DT系列产品</term>：数据类型支持FLOAT16、BFLOAT16、FLOAT，[数据格式](../../../docs/zh/context/data_format.md)支持ND。
+    - <term>Ascend 950PR&Ascend950DT系列产品</term>：数据类型支持FLOAT16、BFLOAT16、FLOAT，[数据格式](../../../docs/zh/context/data_format.md)支持ND。
     - <term>Atlas A3系列产品</term>：数据类型支持FLOAT16、BFLOAT16、FLOAT，[数据格式](../../../docs/zh/context/data_format.md)支持ND。
 
 ## 约束说明
