@@ -34,9 +34,8 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_GE910
 // 判断芯片类型是否大于等于910B
 static inline bool CheckSocVersionGe910B(void)
 {
-    return (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-            GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) ||
-           IsRegBase();
+    return GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+           GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase();
 }
 
 static bool IsAiCoreSupport(const aclTensor* self)

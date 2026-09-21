@@ -52,17 +52,16 @@ static bool CheckNotNull(const aclTensor* self, const aclTensor* out)
 // 判断芯片类型是否大于等于910B
 static inline bool CheckSocVersionGe910B(void)
 {
-    return (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-            GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) ||
-           IsRegBase();
+    return GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+           GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase();
 }
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
     // 获取芯片类型,判断是1971还是1980
     bool is910BSocVersion = CheckSocVersionGe910B();
-    const std::initializer_list<DataType> CURRENT_DTYPE_SUPPORT_LIST =
-        is910BSocVersion ? DTYPE_SUPPORT_GE910B_LIST : DTYPE_SUPPORT_910_LIST;
+    const std::initializer_list<DataType> CURRENT_DTYPE_SUPPORT_LIST = is910BSocVersion ? DTYPE_SUPPORT_GE910B_LIST :
+                                                                                          DTYPE_SUPPORT_910_LIST;
 
     OP_CHECK_DTYPE_NOT_SUPPORT(self, CURRENT_DTYPE_SUPPORT_LIST, return false);
     OP_CHECK_DTYPE_NOT_SUPPORT(out, CURRENT_DTYPE_SUPPORT_LIST, return false);
@@ -101,8 +100,8 @@ aclIntArray* GetMaxDimListForTensor(const aclTensor* self, aclOpExecutor* execut
     return dim;
 }
 
-aclnnStatus aclnnMaxGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnMaxGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                     aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnMax, DFX_IN(self), DFX_OUT(out));
 
@@ -127,8 +126,8 @@ aclnnStatus aclnnMaxGetWorkspaceSize(
     auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    DataType selfCastType =
-        (self->GetDataType() == op::DataType::DT_BOOL) ? op::DataType::DT_FLOAT : self->GetDataType();
+    DataType selfCastType = (self->GetDataType() == op::DataType::DT_BOOL) ? op::DataType::DT_FLOAT :
+                                                                             self->GetDataType();
     auto selfCast = l0op::Cast(selfContiguous, selfCastType, uniqueExecutor.get());
     CHECK_RET(selfCast != nullptr, ACLNN_ERR_INNER_NULLPTR);
 

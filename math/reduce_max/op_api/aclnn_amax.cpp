@@ -98,9 +98,8 @@ static inline bool CheckNotNull(const aclTensor* self, const aclIntArray* dim, c
 
 static inline const std::initializer_list<op::DataType>& GetDtypeSupportList()
 {
-    if ((GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-         GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) ||
-        IsRegBase()) {
+    if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase()) {
         return ASCEND910B_DTYPE_SUPPORT_LIST;
     } else {
         return ASCEND910_DTYPE_SUPPORT_LIST;
