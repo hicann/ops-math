@@ -122,3 +122,19 @@ TEST_F(PopulationCountTilingTest, tiling_very_large_multicore)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, KEY_DOUBLE, expectWorkspaces);
 }
+
+// L2 exception case 001: bfloat16 input must be rejected with EZ0020 (invalid dtype)
+TEST_F(PopulationCountTilingTest, tiling_invalid_dtype_bfloat16_rejected)
+{
+    gert::TilingContextPara tilingContextPara("PopulationCount", {{{{8, 16}, {8, 16}}, ge::DT_BF16, ge::FORMAT_ND}},
+                                              {{{{8, 16}, {8, 16}}, ge::DT_UINT8, ge::FORMAT_ND}}, &g_compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+// L2 exception case 002: bool input must be rejected with EZ0020 (invalid dtype)
+TEST_F(PopulationCountTilingTest, tiling_invalid_dtype_bool_rejected)
+{
+    gert::TilingContextPara tilingContextPara("PopulationCount", {{{{8, 16}, {8, 16}}, ge::DT_BOOL, ge::FORMAT_ND}},
+                                              {{{{8, 16}, {8, 16}}, ge::DT_UINT8, ge::FORMAT_ND}}, &g_compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}

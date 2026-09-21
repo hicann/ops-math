@@ -17,9 +17,44 @@
  */
 
 #include "register/op_impl_registry.h"
+#include <set>
+#include "population_count_proto.h"
+#include "graph/utils/type_utils.h"
+#include "op_common/log/log.h"
 #include "log/log.h"
 
 using namespace ge;
+
+namespace ge {
+
+IMPLEMT_VERIFIER(PopulationCount, VerifyPopulationCount)
+{
+    const auto& inputDesc = op.GetInputDescByName("x");
+    const ge::DataType inputDtype = inputDesc.GetDataType();
+    const std::string inputDtypeStr = ge::TypeUtils::DataTypeToSerialString(inputDtype);
+    OP_LOGI("PopulationCount", "[VerifyPopulationCount] current input dtype of x = %s", inputDtypeStr.c_str());
+    static const std::set<ge::DataType> supportedDtypes = {ge::DT_INT8,  ge::DT_INT16,  ge::DT_INT32,  ge::DT_INT64,
+                                                           ge::DT_UINT8, ge::DT_UINT16, ge::DT_UINT32, ge::DT_UINT64};
+    if (supportedDtypes.count(inputDtype) == 0) {
+        ge::AscendString opName;
+        const char* entityName = "PopulationCount";
+        if (op.GetName(opName) == GRAPH_SUCCESS && opName.GetString() != nullptr) {
+            entityName = opName.GetString();
+        }
+        OP_LOGE(entityName, "PopulationCount: current input dtype of x = %s, which is not supported",
+                inputDtypeStr.c_str());
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            entityName, "x", inputDtypeStr.c_str(),
+            "only integer dtypes are supported; the Ascend950 AICore implementation supports "
+            "DT_INT16/DT_UINT16");
+        return GRAPH_FAILED;
+    }
+    return GRAPH_SUCCESS;
+}
+
+VERIFY_FUNC_REG(PopulationCount, VerifyPopulationCount);
+
+} // namespace ge
 
 namespace ops {
 
