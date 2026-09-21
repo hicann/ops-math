@@ -21,7 +21,7 @@
 namespace {
 constexpr uint32_t kOutputNum = 1;
 constexpr uint32_t kInputNum = 2;
-constexpr char const* kGreaterEqual = "GreaterEqual";
+constexpr const char* kGreaterEqual = "GreaterEqual";
 constexpr int64_t kParallelDataNum = 8 * 1024;
 constexpr int64_t kParallelDataNumSameShape = 32 * 1024;
 

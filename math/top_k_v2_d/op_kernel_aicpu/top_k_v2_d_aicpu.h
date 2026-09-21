@@ -28,7 +28,7 @@ public:
     void TopKForNVector(size_t start, size_t end) const;
     template <typename T>
     void TopKForNVectorImpl(T* in, T* val, int32_t* indice, int64_t start, int64_t end) const;
-    KernelStatus DispatchByDtype(const CpuKernelContext& ctx);
+    KernelStatus DispatchByDtype(const CpuKernelContext& ctx) const;
     KernelStatus ParseShapeAndDim(const CpuKernelContext& ctx);
 
 private:
