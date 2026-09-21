@@ -63,6 +63,27 @@ using std::vector;
         inputs.push_back(placeholder##inputIndex);                                                                  \
     } while (0)
 
+#define ADD_INT_INPUT(inputIndex, inputName, inputDtype, inputShape, value)                                       \
+    do {                                                                                                          \
+        std::string name##inputIndex = "placeholder" + std::to_string(inputIndex);                                \
+        auto placeholder##inputIndex = op::Data(name##inputIndex.c_str()).set_attr_index(0);                      \
+        TensorDesc placeholder##inputIndex##_desc = TensorDesc(ge::Shape(inputShape), FORMAT_ND, inputDtype);     \
+        placeholder##inputIndex##_desc.SetPlacement(ge::kPlacementHost);                                          \
+        placeholder##inputIndex##_desc.SetFormat(FORMAT_ND);                                                      \
+        Tensor tensor_placeholder##inputIndex;                                                                    \
+        ret = GenOnesData(inputShape, tensor_placeholder##inputIndex, placeholder##inputIndex##_desc, inputDtype, \
+                          value);                                                                                 \
+        if (ret != SUCCESS) {                                                                                     \
+            LOG_PRINT("%s - ERROR - [SPLIT_GE_IR]: Generate input data failed\n", GetTime().c_str());             \
+            return FAILED;                                                                                        \
+        }                                                                                                         \
+        placeholder##inputIndex.update_input_desc_x(placeholder##inputIndex##_desc);                              \
+        graph.AddOp(placeholder##inputIndex);                                                                     \
+        input.push_back(tensor_placeholder##inputIndex);                                                          \
+        split1.set_input_##inputName(placeholder##inputIndex);                                                    \
+        inputs.push_back(placeholder##inputIndex);                                                                \
+    } while (0)
+
 #define ADD_OUTPUT(outputIndex, outputName, outputDtype, outputShape)                                           \
     do {                                                                                                        \
         TensorDesc outputName##outputIndex##_desc = TensorDesc(ge::Shape(outputShape), FORMAT_ND, outputDtype); \
@@ -165,9 +186,10 @@ int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor>& input, std::vect
 {
     Status ret = SUCCESS;
     // 自定义代码：添加单算子定义到图中
-    auto split1 = op::Split("split1");
+    auto split1 = op::Split("split1").create_dynamic_output_y(1);
+    std::vector<int64_t> splitDimShape = {1};
     std::vector<int64_t> xShape = {4, 2};
-    ADD_INPUT(1, split_dim, inDtype, xShape);
+    ADD_INT_INPUT(1, split_dim, DT_INT32, splitDimShape, 0);
     ADD_INPUT(2, x, inDtype, xShape);
     ADD_INPUT_ATTR(num_split, 1);
     outputs.push_back(split1);

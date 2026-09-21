@@ -22,7 +22,7 @@
 #include <cstring>
 #include "acl/acl.h"
 #include "aclnn/aclnn_base.h"
-#include "aclnn_sum.h"
+#include "aclnnop/aclnn_sum.h"
 
 #define CHECK_RET(cond, return_expr) \
     do {                             \

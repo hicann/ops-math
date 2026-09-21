@@ -148,7 +148,7 @@ int32_t GenSequenceData(vector<int64_t> shapes, Tensor& input_tensor, TensorDesc
 }
 
 int32_t GenOnesData(vector<int64_t> shapes, Tensor& input_tensor, TensorDesc& input_tensor_desc, DataType data_type,
-                    const vector<int32_t>& value)
+                    const vector<int64_t>& value)
 {
     input_tensor_desc.SetRealDimCnt(shapes.size());
     size_t size = 1;
@@ -156,7 +156,7 @@ int32_t GenOnesData(vector<int64_t> shapes, Tensor& input_tensor, TensorDesc& in
         size *= shapes[i];
     }
     uint32_t data_len = size * GetDataTypeSize(data_type);
-    int32_t* pData = new (std::nothrow) int32_t[data_len];
+    int64_t* pData = new (std::nothrow) int64_t[size];
     for (uint32_t i = 0; i < size; ++i) {
         *(pData + i) = value[i];
     }
@@ -188,7 +188,7 @@ int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor>& input, std::vect
 
     // crops: [2, 2] = [[crop_top, crop_bottom], [crop_left, crop_right]]
     std::vector<int64_t> cropsShape = {2, 2};
-    std::vector<int32_t> cropsValue = {0, 0, 0, 0};
+    std::vector<int64_t> cropsValue = {0, 0, 0, 0};
     ADD_INT_INPUT(2, crops, DT_INT64, cropsShape, cropsValue);
 
     ADD_INPUT_ATTR(block_size, static_cast<int64_t>(2));
@@ -284,8 +284,12 @@ int main(int argc, char* argv[])
         uint32_t data_size = output_shape * GetDataTypeSize(output[i].GetTensorDesc().GetDataType());
         WriteDataToFile((const char*)output_file.c_str(), data_size, output_data_i);
         int32_t* resultData = (int32_t*)output_data_i;
-        for (int64_t j = 0; j < output_shape; j++) {
+        constexpr int64_t maxPrintCount = 64;
+        for (int64_t j = 0; j < output_shape && j < maxPrintCount; j++) {
             LOG_PRINT("result[%ld] is: %u\n", j, resultData[j]);
+        }
+        if (output_shape > maxPrintCount) {
+            LOG_PRINT("... %ld more values are saved in the output file\n", output_shape - maxPrintCount);
         }
     }
 
