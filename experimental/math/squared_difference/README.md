@@ -4,7 +4,7 @@
 
 | 产品 | 是否支持 |
 | :--- | :---: |
-| Atlas A2 训练系列产品（Ascend 910B） | √ |
+| Atlas A2训练系列产品（Ascend 910B） | √ |
 
 本算子当前在 `op_host/squared_difference_def.cpp` 中声明为 `ascend910b`，其它产品暂不在本算子交付范围内。
 

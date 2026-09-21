@@ -4,11 +4,11 @@
 
 | 产品 | 是否支持 |
 | :-- | :--: |
-| Ascend 950PR/Ascend 950DT | √ |
-| Atlas A3 训练系列产品/Atlas A3 推理系列产品 | √ |
-| Atlas A2 训练系列产品/Atlas A2 推理系列产品 | √ |
+| Ascend 950PR&950DT系列产品 | √ |
+| Atlas A3系列产品 | √ |
+| Atlas A2系列产品 | √ |
 
-> 整型输出（INT8/INT16/INT32/UINT8）仅 Atlas A2/A3 支持；Ascend 950PR/Ascend 950DT 维持原有的 FLOAT/FLOAT16/BFLOAT16 输出。
+> 整型输出（INT8/INT16/INT32/UINT8）仅 Atlas A2/A3 支持；Ascend 950PR&950DT系列产品 维持原有的 FLOAT/FLOAT16/BFLOAT16 输出。
 
 ## 功能说明
 
@@ -32,7 +32,7 @@
 ## 约束说明
 
 - `result` 为一维张量，长度 = `steps`。
-- 整型输出（INT8/INT16/INT32/UINT8）仅 Atlas A2/A3 支持，在 Ascend 950PR/Ascend 950DT 上不支持。
+- 整型输出（INT8/INT16/INT32/UINT8）仅 Atlas A2/A3 支持，在 Ascend 950PR&950DT系列产品 上不支持。
 - 整型输出按 `base^x` 向零取整（与 torch `.to(int)` 一致）；溢出按饱和处理，应保证 `base^x` 落在输出 dtype 范围内。
 - UINT8 输出要求 `base^x ≥ 0`（`base > 0` 时恒成立）。
 - `base > 0`，`0 ≤ steps ≤ UINT32_MAX`。

@@ -7,12 +7,12 @@
 
 | 产品 | 是否支持 |
 | :----------------------------------------- | :------:|
-| <term>Ascend 950PR/Ascend 950DT</term> | × |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term> | × |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> | √ |
-| <term>Atlas 200I/500 A2 推理产品</term> | × |
-| <term>Atlas 推理系列产品</term> | × |
-| <term>Atlas 训练系列产品</term> | × |
+| <term>Ascend 950PR&950DT系列产品</term> | × |
+| <term>Atlas A3系列产品</term> | × |
+| <term>Atlas A2系列产品</term> | √ |
+| <term>Atlas 200I/500 A2推理产品</term> | × |
+| <term>Atlas推理系列产品</term> | × |
+| <term>Atlas训练系列产品</term> | × |
 
 > 本实验态实现仅适配 `ascend910b`（Atlas A2 训练/推理系列产品，DAV_2201）。内建算子
 > `math/fused_mul_add_n` 另行覆盖 `ascend950`（arch35），不在本实验态范围内。
@@ -131,7 +131,7 @@ aclnnStatus aclnnFusedMulAddN(
     </tr>
   </tbody></table>
 
-- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：x1/x2/x3/y 数据类型支持 FLOAT、FLOAT16、
+- <term>Atlas A2系列产品</term>：x1/x2/x3/y 数据类型支持 FLOAT、FLOAT16、
   BFLOAT16、INT32、INT16，且四者 dtype 必须完全一致。
 
 - **返回值**：

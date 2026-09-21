@@ -7,14 +7,14 @@
 
 | 产品 | 是否支持 |
 | :----------------------------------------- | :------:|
-| <term>Ascend 950PR/Ascend 950DT</term> | √ |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term> | × |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> | √ |
-| <term>Atlas 200I/500 A2 推理产品</term> | × |
-| <term>Atlas 推理系列产品</term> | × |
-| <term>Atlas 训练系列产品</term> | × |
+| <term>Ascend 950PR&950DT系列产品</term> | √ |
+| <term>Atlas A3系列产品</term> | × |
+| <term>Atlas A2系列产品</term> | √ |
+| <term>Atlas 200I/500 A2推理产品</term> | × |
+| <term>Atlas推理系列产品</term> | × |
+| <term>Atlas训练系列产品</term> | × |
 
-> 说明：真值源 `math/sort_with_index` 仅适配 <term>Ascend 950PR/Ascend 950DT</term>（arch35 kernel）。本 `experimental` 实现新增 <term>Atlas A2 训练系列产品（Ascend 910B）</term> 原生支持。本文档"是否支持"按 910B 实现交付情况填写，最终以 `op_host/sort_with_index_def.cpp` 的 `AddConfig` 与 kernel 实际能力为准。
+> 说明：真值源 `math/sort_with_index` 仅适配 <term>Ascend 950PR&950DT系列产品</term>（arch35 kernel）。本 `experimental` 实现新增 <term>Atlas A2训练系列产品（Ascend 910B）</term> 原生支持。本文档"是否支持"按 910B 实现交付情况填写，最终以 `op_host/sort_with_index_def.cpp` 的 `AddConfig` 与 kernel 实际能力为准。
 
 ## 功能说明
 
@@ -183,7 +183,7 @@ aclnnStatus aclnnSortWithIndex(
     </tr>
   </tbody></table>
 
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：910B 原生实现首版定型支持 **4 组 dtype 组合**：value ∈ {FLOAT16、FLOAT、BFLOAT16、INT32} × index = INT32（sorted_index 跟随 index = INT32）。其中 INT32 value 须满足 `|x| ≤ 2^24`（经浮点排序键的值域限制）。INT64-index 及 INT8/INT16/UINT* 等其余 dtype 首版不支持（以实际交付的 `_def.cpp` 与 kernel 能力为准）。
+  - <term>Atlas A2系列产品</term>：910B 原生实现首版定型支持 **4 组 dtype 组合**：value ∈ {FLOAT16、FLOAT、BFLOAT16、INT32} × index = INT32（sorted_index 跟随 index = INT32）。其中 INT32 value 须满足 `|x| ≤ 2^24`（经浮点排序键的值域限制）。INT64-index 及 INT8/INT16/UINT* 等其余 dtype 首版不支持（以实际交付的 `_def.cpp` 与 kernel 能力为准）。
 
 - **返回值**
 
@@ -254,7 +254,7 @@ aclnnStatus aclnnSortWithIndex(
 - x与index的shape必须一致；y、sortedIndex的shape分别与x、index一致。
 - x的维度数需在[0, 8]范围内。
 - axis当前仅支持沿最后一维排序（取值为-1或rank-1）。
-- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
+- <term>Atlas A2系列产品</term>：
   - 首版支持 4 组 dtype：value ∈ {FLOAT16、FLOAT、BFLOAT16、INT32} × index = INT32。
   - INT32 value 输入须满足 `|x| ≤ 2^24`（经浮点排序键的值域限制），否则排序结果可能不正确。
   - INT64-index 及 UINT*、INT8/INT16 等其余 dtype 当前不支持。

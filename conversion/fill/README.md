@@ -4,12 +4,12 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    √     |
-| <term>Atlas 推理系列产品</term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+| <term>Ascend 950PR&950DT系列产品</term>                             |    √     |
+| <term>Atlas A3系列产品</term>     |    √     |
+| <term>Atlas A2系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2推理产品</term>                      |    √     |
+| <term>Atlas推理系列产品</term>                             |    √     |
+| <term>Atlas训练系列产品</term>                              |    √     |
 
 ## 功能说明
 
@@ -94,7 +94,7 @@
 - 输入张量的数据维度不支持8维以上。
 - InplaceFillTensor的value参数必须是0维张量或size=1的1维张量。
 - 数据类型需要满足互推导关系。
-- FLOAT8_E4M3FN、FLOAT8_E5M2、FLOAT8_E8M0、HIFLOAT8数据类型仅在<term>Ascend 950PR/Ascend 950DT</term>上支持，其余产品不支持。
+- FLOAT8_E4M3FN、FLOAT8_E5M2、FLOAT8_E8M0、HIFLOAT8数据类型仅在<term>Ascend 950PR&950DT系列产品</term>上支持，其余产品不支持。
 - 对于CANN 9.0.0版本，FLOAT8_E4M3FN、FLOAT8_E5M2、FLOAT8_E8M0、HIFLOAT8数据类型不支持。
 
 ## 调用说明

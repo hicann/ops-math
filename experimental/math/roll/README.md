@@ -8,9 +8,9 @@
 
 ## 支持的产品型号
 
-- Atlas A2 训练系列产品
-- Atlas A3 训练系列产品
-- Atlas A5 训练系列产品
+- Atlas A2训练系列产品
+- Atlas A3训练系列产品
+- Ascend 950PR&950DT系列产品
 
 ## 算子描述
 

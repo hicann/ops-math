@@ -4,12 +4,12 @@
 
 | 产品 | 是否支持 |
 | :--- | :---: |
-| <term>Ascend 950PR/Ascend 950DT</term> | √ |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term> | √ |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> | √ |
-| <term>Atlas 200I/500 A2 推理产品</term> | × |
-| <term>Atlas 推理系列产品</term> | × |
-| <term>Atlas 训练系列产品</term> | × |
+| <term>Ascend 950PR&950DT系列产品</term> | √ |
+| <term>Atlas A3系列产品</term> | √ |
+| <term>Atlas A2系列产品</term> | √ |
+| <term>Atlas 200I/500 A2推理产品</term> | × |
+| <term>Atlas推理系列产品</term> | × |
+| <term>Atlas训练系列产品</term> | × |
 
 ## 功能说明
 
@@ -75,7 +75,7 @@ $$
 - 不支持FLOAT64输入、FLOAT64输出或FLOAT64数学运算；所有组合均使用FP32主计算链，FLOAT16输出仅在末端转换一次。
 - `start`、`end`、`base`必须为有限FLOAT值；负底数使用连续余数符号分支，零底数使用`x_i==0 ? 1 : 0`分支，不采用通用Pow特殊值语义。
 - `steps`必须非负并且只决定输出长度；输入长度固定为1。仅支持ND格式，不支持广播、端点Tensor、`axis`或`endpoint=False`。
-- 仅支持Ascend 950PR/Ascend 950DT的独立GEIR调用通路，算法Workspace为0。ACLNN组合通路的 `result` 可能是多维张量，不能据此改写独立GEIR的运行时 assist 约束。
+- 仅支持Ascend 950PR&950DT系列产品的独立GEIR调用通路，算法Workspace为0。ACLNN组合通路的 `result` 可能是多维张量，不能据此改写独立GEIR的运行时 assist 约束。
 
 ## 调用说明
 

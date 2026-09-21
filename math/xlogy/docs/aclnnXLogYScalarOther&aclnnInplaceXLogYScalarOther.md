@@ -3,22 +3,22 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend 950PR/Ascend 950DT</term>：不支持
+- <term>Ascend 950PR&950DT系列产品</term>：不支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
-- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+- <term>Atlas A3系列产品</term>：支持
 <!-- end id2 -->
 <!-- npu="910b" id3 -->
-- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+- <term>Atlas A2系列产品</term>：支持
 <!-- end id3 -->
 <!-- npu="310b" id4 -->
-- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+- <term>Atlas 200I/500 A2推理产品</term>：不支持
 <!-- end id4 -->
 <!-- npu="310p" id5 -->
-- <term>Atlas 推理系列产品</term>：不支持
+- <term>Atlas推理系列产品</term>：不支持
 <!-- end id5 -->
 <!-- npu="910" id6 -->
-- <term>Atlas 训练系列产品</term>：支持
+- <term>Atlas训练系列产品</term>：支持
 <!-- end id6 -->
 
 ## 功能说明
@@ -49,19 +49,19 @@
   - self(aclTensor*，计算输入)：公式中的输入`self`，Device侧的aclTensor，数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/deduction_relationship.md)）。支持[非连续的Tensor](../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../docs/zh/context/data_format.md)支持ND。
 
     <!-- npu="A3" id7 -->
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16。
+    - <term>Atlas A3系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16。
     <!-- end id7 -->
 
   - other(aclScalar*，计算输入)：公式中的输入`other`，Host侧的aclScalar，数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/deduction_relationship.md)）。支持[非连续的Tensor](../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../docs/zh/context/data_format.md)支持ND。
 
     <!-- npu="A3" id8 -->
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16。
+    - <term>Atlas A3系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16。
     <!-- end id8 -->
 
   - out(aclTensor \*，计算输出)：公式中的`out`，Device侧的aclTensor，out与self的shape一致。支持[非连续的Tensor](../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../docs/zh/context/data_format.md)支持ND。
 
     <!-- npu="A3" id9 -->
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
+    - <term>Atlas A3系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
     <!-- end id9 -->
 
   - workspaceSize(uint64_t \*，出参)：返回需要在Device侧申请的workspace大小。
@@ -154,13 +154,13 @@
   - selfRef(aclTensor \*，计算输入|计算输出)：公式中的输入`self/out`，Device侧的aclTensor，数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/deduction_relationship.md)）且为selfRef与other推导之后可转换的数据类型。支持[非连续的Tensor](../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../docs/zh/context/data_format.md)支持ND。
 
     <!-- npu="A3" id10 -->
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
+    - <term>Atlas A3系列产品</term>：数据类型支持FLOAT、FLOAT16、BFLOAT16。
     <!-- end id10 -->
 
   - other(aclScalar*，计算输入)：公式中的输入`other`，Host侧的aclScalar，数据类型与selfRef的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/deduction_relationship.md)）支持[非连续的Tensor](../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../docs/zh/context/data_format.md)支持ND。
 
     <!-- npu="A3" id11 -->
-    - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16。
+    - <term>Atlas A3系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16。
     <!-- end id11 -->
 
   - workspaceSize(uint64_t \*，出参)：返回需要在Device侧申请的workspace大小。

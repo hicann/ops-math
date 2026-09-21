@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas A2系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -131,7 +131,7 @@ aclnnStatus aclnnInplaceGtTensor(
   </tbody>
   </table>
 
-  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
+  - <term>Atlas推理系列产品</term>、<term>Atlas训练系列产品</term>：数据类型不支持BFLOAT16。
 
 - **返回值：**
 
@@ -288,7 +288,7 @@ aclnnStatus aclnnInplaceGtTensor(
   </tbody>
   </table>
 
-  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：数据类型不支持BFLOAT16。
+  - <term>Atlas推理系列产品</term>、<term>Atlas训练系列产品</term>：数据类型不支持BFLOAT16。
 
 - **返回值：**
 
@@ -385,7 +385,7 @@ aclnnStatus aclnnInplaceGtTensor(
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/compile_and_run_sample.md)。
 
-Atlas A2 训练系列产品/Atlas A2 推理系列产品 aclnnGtTensor示例代码：
+Atlas A2系列产品 aclnnGtTensor示例代码：
 
 ```Cpp
 #include <iostream>
@@ -559,7 +559,7 @@ int main() {
 }
 ```
 
-Atlas A2 训练系列产品/Atlas A2 推理系列产品 aclnnInplaceGtTensor示例代码：
+Atlas A2系列产品 aclnnInplaceGtTensor示例代码：
 
 ```Cpp
 #include <iostream>

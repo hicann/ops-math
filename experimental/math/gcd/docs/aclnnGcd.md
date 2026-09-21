@@ -6,8 +6,8 @@
 
 | 产品 | 是否支持 | 说明 |
 |---|:---:|---|
-| Atlas A2 训练系列产品/Atlas A2 推理系列产品 | √ | 统一 Ascend C 实现 |
-| Atlas A3 训练系列产品/Atlas A3 推理系列产品 | √ | 统一 Ascend C 实现 |
+| Atlas A2系列产品 | √ | 统一 Ascend C 实现 |
+| Atlas A3系列产品 | √ | 统一 Ascend C 实现 |
 
 ## 功能说明
 

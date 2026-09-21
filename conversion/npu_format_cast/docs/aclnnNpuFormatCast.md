@@ -5,22 +5,22 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend 950PR/Ascend 950DT</term>：支持
+- <term>Ascend 950PR&950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
-- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+- <term>Atlas A3系列产品</term>：支持
 <!-- end id2 -->
 <!-- npu="910b" id3 -->
-- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+- <term>Atlas A2系列产品</term>：支持
 <!-- end id3 -->
 <!-- npu="310b" id4 -->
-- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+- <term>Atlas 200I/500 A2推理产品</term>：不支持
 <!-- end id4 -->
 <!-- npu="310p" id5 -->
-- <term>Atlas 推理系列产品</term>：不支持
+- <term>Atlas推理系列产品</term>：不支持
 <!-- end id5 -->
 <!-- npu="910" id6 -->
-- <term>Atlas 训练系列产品</term>：不支持
+- <term>Atlas训练系列产品</term>：不支持
 <!-- end id6 -->
 
 ## 功能说明
@@ -28,13 +28,13 @@
 - **接口功能**：
 
   <!-- npu="950" id7 -->
-  - <term>Ascend 950PR/Ascend 950DT</term>：
+  - <term>Ascend 950PR&950DT系列产品</term>：
     - 完成ND[数据格式](../../../docs/zh/context/data_format.md)到指定C0大小的FRACTAL_NZ[数据格式](../../../docs/zh/context/data_format.md)的转换功能，C0是FRACTAL_NZ[数据格式](../../../docs/zh/context/data_format.md)最后一维的大小，C0由`additionalDtype`确定。
     - 完成指定C0大小的FRACTAL_NZ[数据格式](../../../docs/zh/context/data_format.md)到ND[数据格式](../../../docs/zh/context/data_format.md)的转换功能，其中支持的NZ格式包括：FRACTAL_NZ、FRACTAL_NZ_C0_2、FRACTAL_NZ_C0_4、FRACTAL_NZ_C0_16、FRACTAL_NZ_C0_32。
     - 当srcTensor数据类型为FLOAT8_E8M0、srcTensor格式为ND/NCL/NCHW、dstFormat为FRACTAL_NZ时，支持MX scale转换为昇腾亲和存储shape。
   <!-- end id7 -->
   <!-- npu="A3,910b" id8 -->
-  - <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
+  - <term>Atlas A3系列产品</term>、<term>Atlas A2系列产品</term>：
     - 完成ND←→[NZ](../../../docs/zh/context/data_format.md)、NCL←→[NZ](../../../docs/zh/context/data_format.md)、NCHW←→[NZ](../../../docs/zh/context/data_format.md)、NCDHW←→[NZ](../../../docs/zh/context/data_format.md)的转换功能。C0是[NZ](../../../docs/zh/context/data_format.md)数据格式最后一维的大小。计算方法C0 = 32B / `ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype))`。
     - 完成NCDHW←→[NDC1HWC0](../../../docs/zh/context/data_format.md)、NCDHW←→[FRACTAL_Z_3D](../../../docs/zh/context/data_format.md)、NCHW←→[NC1HWC0](../../../docs/zh/context/data_format.md)、NHWC←→[NC1HWC0](../../../docs/zh/context/data_format.md)、NCHW←→[FRACTAL_Z](../../../docs/zh/context/data_format.md)、HWCN←→[FRACTAL_Z](../../../docs/zh/context/data_format.md)、NDHWC←→[NDC1HWC0](../../../docs/zh/context/data_format.md)、DHWCN←→[FRACTAL_Z_3D](../../../docs/zh/context/data_format.md)的转换功能。其中，C0与微架构强相关，该值等于cube单元的size，例如16。C1是将C维度按照C0切分：C1=C/C0，若结果不整除，最后一份数据需要padding到C0。计算方法C0 = 32B / `ge::GetSizeByDataType(static_cast<op::DataType>(additionalDtype))`（例如FP16的additionalDtype枚举值为1，对应的数据FP16为2 Byte）。
   <!-- end id8 -->
@@ -165,10 +165,10 @@ aclnnStatus aclnnNpuFormatCast(
     </table>
 
   <!-- npu="950" id9 -->
-  - <term>Ascend 950PR/Ascend 950DT</term>：上表数据类型列中的角标“1”代表该系列不支持的数据类型或数据格式。
+  - <term>Ascend 950PR&950DT系列产品</term>：上表数据类型列中的角标“1”代表该系列不支持的数据类型或数据格式。
   <!-- end id9 -->
   <!-- npu="A3,910b" id10 -->
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：上表数据类型列中的角标“2”代表该系列不支持的数据类型或数据格式。
+  - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：上表数据类型列中的角标“2”代表该系列不支持的数据类型或数据格式。
   <!-- end id10 -->
 
 - **返回值：**
@@ -288,10 +288,10 @@ aclnnStatus aclnnNpuFormatCast(
     </table>
 
   <!-- npu="950" id11 -->
-  - <term>Ascend 950PR/Ascend 950DT</term>：上表数据类型列中的角标“1”代表该系列不支持的数据类型或数据格式。
+  - <term>Ascend 950PR&950DT系列产品</term>：上表数据类型列中的角标“1”代表该系列不支持的数据类型或数据格式。
   <!-- end id11 -->
   <!-- npu="A3,910b" id12 -->
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：上表数据类型列中的角标“2”代表该系列不支持的数据类型或数据格式。
+  - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：上表数据类型列中的角标“2”代表该系列不支持的数据类型或数据格式。
   <!-- end id12 -->
 
 - **返回值：**
@@ -337,10 +337,10 @@ aclnnStatus aclnnNpuFormatCast(
   </table>
 
   <!-- npu="950" id13 -->
-  - <term>Ascend 950PR/Ascend 950DT</term>：上表数据类型列中的角标“1”代表该系列不支持的拦截类型。
+  - <term>Ascend 950PR&950DT系列产品</term>：上表数据类型列中的角标“1”代表该系列不支持的拦截类型。
   <!-- end id13 -->
   <!-- npu="A3,910b" id14 -->
-  - <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：上表数据类型列中的角标“2”代表该系列不支持的拦截类型。
+  - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：上表数据类型列中的角标“2”代表该系列不支持的拦截类型。
   <!-- end id14 -->
 
 ## aclnnNpuFormatCast
@@ -394,7 +394,7 @@ aclnnStatus aclnnNpuFormatCast(
 
   <!-- npu="950" id15 -->
   <details>
-  <summary><term>Ascend 950PR/Ascend 950DT</term></summary>
+  <summary><term>Ascend 950PR&950DT系列产品</term></summary>
 
   - aclnnNpuFormatCastCalculateSizeAndFormat接口：
 
@@ -494,7 +494,7 @@ aclnnStatus aclnnNpuFormatCast(
 
   <!-- npu="A3,910b" id16 -->
   <details>
-  <summary><term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term></summary>
+  <summary><term>Atlas A3系列产品</term>、<term>Atlas A2系列产品</term></summary>
 
   - aclnnNpuFormatCastCalculateSizeAndFormat接口参数：
 
@@ -558,7 +558,7 @@ aclnnStatus aclnnNpuFormatCast(
 ## 调用示例
 
 <!-- npu="950" id17 -->
-- <term>Ascend 950PR/Ascend 950DT</term>：
+- <term>Ascend 950PR&950DT系列产品</term>：
 
   示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
@@ -755,7 +755,7 @@ aclnnStatus aclnnNpuFormatCast(
 <!-- end id17 -->
 
 <!-- npu="A3,910b" id18 -->
-- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：
+- <term>Atlas A3系列产品</term>、<term>Atlas A2系列产品</term>：
 
   示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 

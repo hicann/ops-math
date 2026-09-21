@@ -6,7 +6,7 @@
 
 | 产品 | 是否支持 |
 | ---- | :----: |
-| Atlas A2 训练系列产品 / Atlas 800I A2 推理产品（Ascend910B） | √ |
+| Atlas A2系列产品（Ascend910B） | √ |
 
 > 本算子为 `experimental/math` 投放区的 Ascend910B 原生 AscendC 贡献实现，当前仅支持 **Ascend910B**。
 
@@ -69,7 +69,7 @@
 
 ### 编译部署
 
-编译运行前，请参考[《CANN 软件安装指南》](https://hiascend.com/document/redirect/CannCommunityInstSoftware)完成开发运行环境部署，并 `source /usr/local/Ascend/ascend-toolkit/set_env.sh`。
+编译运行前，请参考[《CANN软件安装指南》](https://hiascend.com/document/redirect/CannCommunityInstSoftware)完成开发运行环境部署，并 `source /usr/local/Ascend/ascend-toolkit/set_env.sh`。
 
 ```bash
 # 进入仓库根

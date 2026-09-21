@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------- |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> | √        |
+| <term>Atlas A2系列产品</term> | √        |
 
 ## 功能说明
 
@@ -20,7 +20,7 @@ $$ y = x1 / x2 $$
 | x2  | 输入           | 除数张量。                                                   | 见下方   | ND       |
 | y    | 输出           | 除法计算的结果。                                             | 见下方   | ND       |
 
-- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT16、BFLOAT16。
+- <term>Atlas A2系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT16、BFLOAT16。
 
 ## 约束说明
 

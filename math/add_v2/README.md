@@ -4,12 +4,12 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR/Ascend 950DT</term>                       |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>     |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    √     |
-| <term>Atlas 推理系列产品</term>                              |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+| <term>Ascend 950PR&950DT系列产品</term>                       |    √     |
+| <term>Atlas A3系列产品</term>     |    √     |
+| <term>Atlas A2系列产品</term>     |    √     |
+| <term>Atlas 200I/500 A2推理产品</term>                      |    √     |
+| <term>Atlas推理系列产品</term>                              |    √     |
+| <term>Atlas训练系列产品</term>                              |    √     |
 
 ## 功能说明
 
@@ -87,24 +87,24 @@ x1 shape (3, 1), x2 shape (1, 4) -> y shape (3, 4)
   </tr></thead>
 <tbody>
   <tr>
-    <td><term>Ascend 950PR/Ascend 950DT</term></td>
+    <td><term>Ascend 950PR&950DT系列产品</term></td>
     <td>BFLOAT16、FLOAT16、FLOAT、INT32、INT16、UINT8、INT8、INT64、COMPLEX64</td>
     <td>输入ND→输出ND</td>
     <td>输入ND→输出ND；支持固定rank动态shape和dynamic rank</td>
     <td>rank取值范围为[1, 8]；支持空Tensor，输出y的shape仍必须是两路输入的广播结果</td>
   </tr>
   <tr>
-    <td><term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term><br>
-      <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term></td>
+    <td><term>Atlas A3系列产品</term><br>
+      <term>Atlas A2系列产品</term></td>
     <td>BFLOAT16、FLOAT16、FLOAT、INT32、INT64</td>
     <td>输入ND→输出ND</td>
     <td>输入ND→输出ND；支持固定rank动态shape，不支持dynamic rank</td>
     <td>rank取值范围为[0, 8]，rank为0时表示标量；空Tensor仅支持两路输入shape相同，或其中一路输入为单元素张量的广播场景</td>
   </tr>
   <tr>
-    <td><term>Atlas 200I/500 A2 推理产品</term><br>
-      <term>Atlas 推理系列产品</term><br>
-      <term>Atlas 训练系列产品</term></td>
+    <td><term>Atlas 200I/500 A2推理产品</term><br>
+      <term>Atlas推理系列产品</term><br>
+      <term>Atlas训练系列产品</term></td>
     <td>FLOAT16、FLOAT、INT32、INT64</td>
     <td>输入ND→输出ND</td>
     <td>输入ND→输出ND；支持固定rank动态shape，不支持dynamic rank</td>

@@ -4,12 +4,12 @@
 
 | 产品 | 是否支持 |
 | ---- | :----:|
-| <term>Ascend 950PR/Ascend 950DT</term>                             |    √     |
-| <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>     |    √     |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
-| <term>Atlas 200I/500 A2 推理产品</term>                      |    √     |
-| <term>Atlas 推理系列产品</term>                             |    √     |
-| <term>Atlas 训练系列产品</term>                              |    √     |
+| <term>Ascend 950PR&950DT系列产品</term>                             |    √     |
+| <term>Atlas A3系列产品</term>     |    √     |
+| <term>Atlas A2系列产品</term> |    √     |
+| <term>Atlas 200I/500 A2推理产品</term>                      |    √     |
+| <term>Atlas推理系列产品</term>                             |    √     |
+| <term>Atlas训练系列产品</term>                              |    √     |
 
 ## 功能说明
 
@@ -49,8 +49,8 @@
     </tr>
   </tbody></table>
 
-- Atlas 训练系列产品、Atlas 推理系列产品：不支持BFLOAT16。
-- Atlas A2 训练系列产品/Atlas A2 推理系列产品、Atlas A3 训练系列产品/Atlas A3 推理系列产品：不支持COMPLEX32、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT4_E2M1、FLOAT4_E1M2。
+- Atlas训练系列产品、Atlas推理系列产品：不支持BFLOAT16。
+- Atlas A2系列产品、Atlas A3系列产品：不支持COMPLEX32、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT4_E2M1、FLOAT4_E1M2。
 
 ## 约束说明
 
@@ -60,20 +60,20 @@
 - 针对输入数据类型为BOOL、COMPLEX32、COMPLEX64、COMPLEX128、FLOAT4_E2M1、FLOAT4_E1M2的场景：
   不支持输入为非连续。
 
-- <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+- <term>Atlas推理系列产品</term>、<term>Atlas训练系列产品</term>、<term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：
   - 针对数据类型从INT32转换为INT8的场景：
     只能保证输入数据在(-2048, 1920)范围内精度无误差。
   - 针对数据类型从FLOAT64/COMPLEX64/COMPLEX128转换为UINT8的场景：
     只能保证输入数据为非负数精度无误差。
 
-- <term>Atlas 推理系列产品</term>：
+- <term>Atlas推理系列产品</term>：
   - 针对数据类型从FLOAT32转换为INT64和FLOAT32转换为UINT8的场景：
     只能保证输入数据在(-2147483648, 2147483583)范围内精度无误差。
 
   - 针对数据类型从INT64转换为FLOAT32的场景：
     只能保证输入数据在(-2147483648, 2147483647)范围内精度无误差。
 
-- <term>Ascend 950PR/Ascend 950DT</term>：
+- <term>Ascend 950PR&950DT系列产品</term>：
   - 针对输入、输出类型，涉及COMPLEX32、COMPLEX64、FLOAT4_E2M1、FLOAT4_E1M2、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN的，只支持如下表格中的转换路径：
 
     | `self`数据类型 | `out`数据类型 |

@@ -5,22 +5,22 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend 950PR/Ascend 950DT</term>：支持
+- <term>Ascend 950PR&950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
-- <term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：支持
+- <term>Atlas A3系列产品</term>：支持
 <!-- end id2 -->
 <!-- npu="910b" id3 -->
-- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>：支持
+- <term>Atlas A2系列产品</term>：支持
 <!-- end id3 -->
 <!-- npu="310b" id4 -->
-- <term>Atlas 200I/500 A2 推理产品</term>：不支持
+- <term>Atlas 200I/500 A2推理产品</term>：不支持
 <!-- end id4 -->
 <!-- npu="310p" id5 -->
-- <term>Atlas 推理系列产品</term>：支持
+- <term>Atlas推理系列产品</term>：支持
 <!-- end id5 -->
 <!-- npu="910" id6 -->
-- <term>Atlas 训练系列产品</term>：支持
+- <term>Atlas训练系列产品</term>：支持
 <!-- end id6 -->
 
 ## 功能说明
@@ -149,7 +149,7 @@ aclnnStatus aclnnReduceSum(
   </tbody></table>
 
   <!-- npu="910,310p" id7 -->
-  - <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>：`self`、`dtype`、`out`不支持BFLOAT16。
+  - <term>Atlas推理系列产品</term>、<term>Atlas训练系列产品</term>：`self`、`dtype`、`out`不支持BFLOAT16。
   <!-- end id7 -->
 
 - **返回值：**
@@ -247,7 +247,7 @@ aclnnStatus aclnnReduceSum(
   - aclnnReduceSum默认确定性实现。
 <!-- npu="950" id8 -->
 - Batch一致性说明：
-  - <term>Ascend 950PR/Ascend 950DT</term>：默认非Batch一致性实现，支持通过aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, 3)开启Batch一致性。开启后，非归约轴的计算结果与所在批次大小、位置无关；归约轴不支持Batch一致性。开启Batch一致性后，性能可能存在劣化。
+  - <term>Ascend 950PR&950DT系列产品</term>：默认非Batch一致性实现，支持通过aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, 3)开启Batch一致性。开启后，非归约轴的计算结果与所在批次大小、位置无关；归约轴不支持Batch一致性。开启Batch一致性后，性能可能存在劣化。
 <!-- end id8 -->
 
 ## 调用示例

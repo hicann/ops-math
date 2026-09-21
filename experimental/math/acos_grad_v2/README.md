@@ -8,7 +8,7 @@ AcosGrad 算子的 A2（Atlas A2 训练/推理系列产品，Ascend910B / DAV_22
 
 | 产品                                                     | 是否支持 |
 | :------------------------------------------------------- | :------: |
-| <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term> |    √     |
+| <term>Atlas A2系列产品</term> |    √     |
 
 > 本版本（v2）面向 A2（ascend910b）适配；原 `math/acos_grad` 面向 Ascend950（arch35）。
 

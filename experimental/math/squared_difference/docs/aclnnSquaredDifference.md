@@ -4,7 +4,7 @@
 
 | 产品 | 是否支持 |
 | :--- | :---: |
-| Atlas A2 训练系列产品（Ascend 910B） | √ |
+| Atlas A2训练系列产品（Ascend 910B） | √ |
 
 本接口对应 `experimental/math/squared_difference`，当前只注册 `ascend910b`。
 
