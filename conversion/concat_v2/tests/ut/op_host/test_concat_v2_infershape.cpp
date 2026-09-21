@@ -161,3 +161,47 @@ TEST_F(ConcatV2Test, infer_single_input_error)
                                                       {1, 1}, {1});
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED);
 }
+
+TEST_F(ConcatV2Test, infer_axis_value_unavailable)
+{
+    // concat_dim 为数据依赖输入，编译期取值不可得（data-feed 场景），秩已知时输出应保秩、全维置 -1
+    gert::InfershapeContextPara infershapeContextPara("ConcatV2",
+                                                      {
+                                                          {{{2, 100, 4}, {2, 100, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{2, 100, 4}, {2, 100, 4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+                                                      },
+                                                      {2, 1}, {1});
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-1, -1, -1},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+TEST_F(ConcatV2Test, infer_axis_value_unavailable_all_unknown_rank)
+{
+    // concat_dim 编译期不可得且所有输入均为未知秩时，输出应为未知秩
+    gert::InfershapeContextPara infershapeContextPara("ConcatV2",
+                                                      {
+                                                          {{{-2}, {-2}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{-2}, {-2}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+                                                      },
+                                                      {2, 1}, {1});
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {-2},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}

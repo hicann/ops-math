@@ -10,19 +10,29 @@
 
 #include "register/op_impl_registry.h"
 #include "log/log.h"
+#include "op_common/op_host/util/shape_util.h"
 
 using namespace ge;
 namespace ops {
 constexpr size_t INDEX_CONCAT_DIM_FOR_CONCAT_V2 = 1;
 constexpr size_t INPUT_IDX_FOR_CONCAT_V2 = 0;
+
 template <typename T>
-static inline int64_t GetAxisValue(gert::InferShapeContext* context, int64_t dimIdx)
+static inline bool GetAxisValue(gert::InferShapeContext* context, int64_t dimIdx, int64_t& axisValue)
 {
+    // 注意: 此处必须按 IR anchor 索引取 tensor(GetRequiredInputTensor), 不能用扁平索引(GetInputTensor),
+    // 因为 x 为动态输入, concat_dim 的扁平位置随实例数变化
     auto tensor = context->GetRequiredInputTensor(dimIdx);
-    OP_CHECK_NULL_WITH_CONTEXT(context, tensor);
+    if (tensor == nullptr) {
+        return false;
+    }
     auto ptr = tensor->GetData<T>();
-    OP_CHECK_NULL_WITH_CONTEXT(context, ptr);
-    return static_cast<int64_t>(ptr[0]);
+    if (ptr == nullptr) {
+        // 编译期轴值不可得(Data-feed): 由调用方兜底, 不在此处报错
+        return false;
+    }
+    axisValue = static_cast<int64_t>(ptr[0]);
+    return true;
 }
 
 static ge::graphStatus InferShape4ConcatV2(gert::InferShapeContext* context)
@@ -46,13 +56,38 @@ static ge::graphStatus InferShape4ConcatV2(gert::InferShapeContext* context)
 
     auto dtype = concatDimPtr->GetDataType();
     int64_t axis = 0;
+    bool axisAvailable = false;
     if (dtype == ge::DT_INT32) {
-        axis = GetAxisValue<int32_t>(context, INDEX_CONCAT_DIM_FOR_CONCAT_V2);
+        axisAvailable = GetAxisValue<int32_t>(context, INDEX_CONCAT_DIM_FOR_CONCAT_V2, axis);
     } else if (dtype == ge::DT_INT64) {
-        axis = GetAxisValue<int64_t>(context, INDEX_CONCAT_DIM_FOR_CONCAT_V2);
+        axisAvailable = GetAxisValue<int64_t>(context, INDEX_CONCAT_DIM_FOR_CONCAT_V2, axis);
     } else {
         OP_LOGE(context, "ConcatV2: unsupported concat_dim dtype %s", Ops::Base::ToString(dtype).c_str());
         return ge::GRAPH_FAILED;
+    }
+    if (!axisAvailable) {
+        // 轴值编译期不可得(Data-feed): 与V1一致, 秩已知时输出保秩全-1, 否则输出未知秩, 交由运行期携带真实数据重推
+        OP_LOGW(context, "concat_dim value unavailable at compile time, set output to unknown shape.");
+        auto outShape = context->GetOutputShape(0);
+        OP_CHECK_NULL_WITH_CONTEXT(context, outShape);
+        int64_t knownRank = -1;
+        for (int64_t i = 0; i < numInputs; ++i) {
+            auto shapeI = context->GetDynamicInputShape(INPUT_IDX_FOR_CONCAT_V2, i);
+            OP_CHECK_NULL_WITH_CONTEXT(context, shapeI);
+            if (!Ops::Base::IsUnknownRank(*shapeI)) {
+                const int64_t dimNum = static_cast<int64_t>(shapeI->GetDimNum());
+                if (dimNum > knownRank) {
+                    knownRank = dimNum;
+                }
+            }
+        }
+        if (knownRank < 0) {
+            // 所有输入均为未知秩, 输出只能为未知秩
+            Ops::Base::SetUnknownRank(*outShape);
+        } else {
+            Ops::Base::SetUnknownShape(knownRank, *outShape);
+        }
+        return ge::GRAPH_SUCCESS;
     }
 
     auto outShape = context->GetOutputShape(0);
@@ -71,14 +106,24 @@ static ge::graphStatus InferShape4ConcatV2(gert::InferShapeContext* context)
         return ge::GRAPH_FAILED;
     }
 
-    int64_t newDim = outShape->GetDim(axis);
+    constexpr int64_t kUnknownDim = -1;
+    bool dim_unknown = outShape->GetDim(axis) == kUnknownDim;
+    int64_t newDim = 0;
+    if (!dim_unknown) {
+        newDim = outShape->GetDim(axis);
+    }
     for (int64_t i = 1; i < numInputs; ++i) {
         auto shape_i = context->GetDynamicInputShape(INPUT_IDX_FOR_CONCAT_V2, i);
         OP_CHECK_NULL_WITH_CONTEXT(context, shape_i);
-        newDim += shape_i->GetDim(axis);
+        const int64_t dimValue = shape_i->GetDim(axis);
+        if (dimValue == kUnknownDim) {
+            dim_unknown = true;
+        } else {
+            newDim += dimValue;
+        }
     }
 
-    outShape->SetDim(axis, newDim);
+    outShape->SetDim(axis, dim_unknown ? kUnknownDim : newDim);
     return ge::GRAPH_SUCCESS;
 }
 IMPL_OP_INFERSHAPE(ConcatV2).InferShape(InferShape4ConcatV2).InputsDataDependency({INDEX_CONCAT_DIM_FOR_CONCAT_V2});
