@@ -28,7 +28,7 @@ const char* const kTileWithAxis = "TileWithAxis";
 } // namespace
 namespace aicpu {
 template <typename T, int32_t OPTION, int32_t DIMS>
-uint32_t TileWithAxisCpuKernel::TileComputeByAxis(const CpuKernelContext& ctx)
+uint32_t TileWithAxisCpuKernel::TileComputeByAxis(const CpuKernelContext& ctx) const
 {
     Tensor* input = ctx.Input(kFirstInputIndex);
     Tensor* output = ctx.Output(kFirstOutputIndex);
@@ -43,8 +43,8 @@ uint32_t TileWithAxisCpuKernel::TileComputeByAxis(const CpuKernelContext& ctx)
     // tiles == 1, output is identical to input
     int64_t tiles = ctx.GetAttr("tiles")->GetInt();
     if (tiles == 1) {
-        T* input0 = reinterpret_cast<T*>(input->GetData());
-        T* output0 = reinterpret_cast<T*>(output->GetData());
+        T* input0 = static_cast<T*>(input->GetData());
+        T* output0 = static_cast<T*>(output->GetData());
         KERNEL_CHECK_FALSE((memcpy_s(output0, output->GetDataSize(), input0, output->GetDataSize()) == EOK),
                            KERNEL_STATUS_INNER_ERROR, "TileWithAxis memcpy failed, dst len is %ld, src size is %ld.",
                            output->GetDataSize(), output->GetDataSize());
@@ -75,13 +75,13 @@ uint32_t TileWithAxisCpuKernel::TileComputeByAxis(const CpuKernelContext& ctx)
 }
 
 template <typename T, int32_t OPTION>
-uint32_t TileWithAxisCpuKernel::TileComputeInDims(const CpuKernelContext& ctx)
+uint32_t TileWithAxisCpuKernel::TileComputeInDims(const CpuKernelContext& ctx) const
 {
     int32_t dims = ctx.Output(kFirstOutputIndex)->GetTensorShape()->GetDims();
     switch (dims) {
         case 0: {
-            T* input0 = reinterpret_cast<T*>(ctx.Input(kFirstInputIndex)->GetData());
-            T* output0 = reinterpret_cast<T*>(ctx.Output(kFirstOutputIndex)->GetData());
+            T* input0 = static_cast<T*>(ctx.Input(kFirstInputIndex)->GetData());
+            T* output0 = static_cast<T*>(ctx.Output(kFirstOutputIndex)->GetData());
             KERNEL_CHECK_NULLPTR(input0, KERNEL_STATUS_PARAM_INVALID, "input data is null.");
             KERNEL_CHECK_NULLPTR(output0, KERNEL_STATUS_PARAM_INVALID, "output data is null.");
             *output0 = *input0;
@@ -110,7 +110,7 @@ uint32_t TileWithAxisCpuKernel::TileComputeInDims(const CpuKernelContext& ctx)
 }
 
 template <typename T>
-uint32_t TileWithAxisCpuKernel::TileCompute(const CpuKernelContext& ctx)
+uint32_t TileWithAxisCpuKernel::TileCompute(const CpuKernelContext& ctx) const
 {
     bool flag = AddrAlignedCheck(ctx.Input(kFirstInputIndex)->GetData());
     if (flag) {

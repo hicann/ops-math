@@ -24,13 +24,13 @@ private:
     uint32_t TileParaCheck(const CpuKernelContext& ctx) const;
 
     template <typename T, int32_t OPTION, int32_t DIMS>
-    uint32_t TileComputeByAxis(const CpuKernelContext& ctx);
+    uint32_t TileComputeByAxis(const CpuKernelContext& ctx) const;
 
     template <typename T, int32_t OPTION>
-    uint32_t TileComputeInDims(const CpuKernelContext& ctx);
+    uint32_t TileComputeInDims(const CpuKernelContext& ctx) const;
 
     template <typename T>
-    uint32_t TileCompute(const CpuKernelContext& ctx);
+    uint32_t TileCompute(const CpuKernelContext& ctx) const;
 };
 } // namespace aicpu
 #endif // AICPU_KERNELS_DEVICE_TILE_WITH_AXIS_H_

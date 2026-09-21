@@ -130,7 +130,7 @@ struct TransDataTensorInfo {
     aicpu::Format format;
 };
 
-uint32_t ExtractTensorInfo(aicpu::Tensor* tensor, TransDataTensorInfo& info, const char* who)
+uint32_t ExtractTensorInfo(const aicpu::Tensor* tensor, TransDataTensorInfo& info, const char* who)
 {
     KERNEL_CHECK_NULLPTR(tensor, KERNEL_STATUS_PARAM_INVALID, "%s get tensor failed, tensor is nullptr.", who);
     info.data = aicpu::PtrToPtr<void, uint8_t>(tensor->GetData());
@@ -351,7 +351,7 @@ bool TransDataCpuKernel::IsOriginSupportFormatTransfer(Format src_format, Format
     return dst->second.count(dst_format) > 0;
 }
 
-uint32_t TransDataCpuKernel::NewCompute(const CpuKernelContext& ctx)
+uint32_t TransDataCpuKernel::NewCompute(const CpuKernelContext& ctx) const
 {
     TransDataTensorInfo input_info;
     TransDataTensorInfo output_info;
@@ -625,7 +625,7 @@ uint32_t TransDataCpuKernel::PaddingTwo(TransArgs& args, std::shared_ptr<uint8_t
     return KERNEL_STATUS_OK;
 }
 
-uint32_t TransDataCpuKernel::GetPaddingOneShape(const TransArgs& args, std::vector<int64_t>& dst_shape)
+uint32_t TransDataCpuKernel::GetPaddingOneShape(const TransArgs& args, std::vector<int64_t>& dst_shape) const
 {
     int64_t cube = kDimN0;
     auto h = args.src_shape.at(formats::kHwcnH);
