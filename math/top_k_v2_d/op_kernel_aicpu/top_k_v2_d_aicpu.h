@@ -17,7 +17,7 @@
 namespace aicpu {
 class TopkV2DCpuKernel : public CpuKernel {
 public:
-    ~TopkV2DCpuKernel() = default;
+    ~TopkV2DCpuKernel() override = default;
 
     uint32_t Compute(CpuKernelContext& ctx) override;
 
@@ -25,7 +25,7 @@ public:
     template <typename T>
     KernelStatus DoCompute(const CpuKernelContext& ctx) const;
     template <typename T>
-    void TopKForNVector(size_t start, size_t end);
+    void TopKForNVector(size_t start, size_t end) const;
     template <typename T>
     void TopKForNVectorImpl(T* in, T* val, int32_t* indice, int64_t start, int64_t end) const;
     KernelStatus DispatchByDtype(const CpuKernelContext& ctx);

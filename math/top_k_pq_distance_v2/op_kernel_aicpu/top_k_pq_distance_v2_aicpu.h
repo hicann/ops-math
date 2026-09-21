@@ -75,16 +75,16 @@ private:
     void InitGrpExtreme(Item<T> grp_extreme_ptr[], const InputsData<T>& input_data, int32_t size, int32_t& idx) const;
 
     template <typename T>
-    void MakeHeap(Item<T> arr_ptr[], int32_t n) const;
+    void MakeHeap(Item<T> arr_ptr[], const int32_t n) const;
 
     template <typename T>
-    void PopHeap(Item<T> arr_ptr[], int32_t n, Item<T>* res) const;
+    void PopHeap(Item<T> arr_ptr[], const int32_t n, Item<T>* const res) const;
 
     template <typename T>
     void HeapFixdown(Item<T> a[], int32_t index, int32_t n) const;
 
     template <typename T>
-    void SortHeap(Item<T> arr_ptr[], int32_t n) const;
+    void SortHeap(Item<T> arr_ptr[], const int32_t n) const;
 
     template <typename T>
     void ProcessResultWithBlock(Item<T> topk_ptr[], T* topk_distance_ptr, int32_t* topk_index_ptr) const;

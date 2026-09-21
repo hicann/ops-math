@@ -204,7 +204,7 @@ uint32_t TopKPQDistanceV2CpuKernel::DoCompute(const CpuKernelContext& ctx)
     }
 
     // Every parameter the shard needs was validated above, so the shard body itself cannot fail.
-    auto sharder = [&](int64_t start, int64_t end) { ComputeWithBlock<T>(ctx, start, end); };
+    auto sharder = [this, &ctx](int64_t start, int64_t end) { ComputeWithBlock<T>(ctx, start, end); };
     int64_t max_core_num = std::min(batch, static_cast<int64_t>(CpuKernelUtils::GetCPUNum(ctx)));
     if (max_core_num <= 0) {
         max_core_num = 1;

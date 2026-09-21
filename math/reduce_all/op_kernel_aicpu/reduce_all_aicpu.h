@@ -22,35 +22,33 @@ public:
     ReduceAllCpuKernel() = default;
     ~ReduceAllCpuKernel() override = default;
 
-    uint32_t Compute(CpuKernelContext &ctx) override;
+    uint32_t Compute(CpuKernelContext& ctx) override;
 
 private:
     template <typename T, typename T2>
-    uint32_t ReduceAllCompute(const CpuKernelContext &ctx);
+    uint32_t ReduceAllCompute(const CpuKernelContext& ctx);
 
-    uint32_t GenDataNoAxis(const CpuKernelContext &ctx) const;
+    uint32_t GenDataNoAxis(const CpuKernelContext& ctx) const;
 
     template <typename T>
-    uint32_t AxisCal(T axis, const std::vector<int64_t> &data_dims, int64_t &head_dim, int64_t &end_dim) const;
+    uint32_t AxisCal(T axis, const std::vector<int64_t>& data_dims, int64_t& head_dim, int64_t& end_dim) const;
 
     template <typename T, typename T2>
-    uint32_t ReduceAllOneAxes(
-        const T *input_data, std::vector<int64_t> &input_dims, T *output_data, const int64_t &output_num,
-        std::vector<T2> &axes);
+    uint32_t ReduceAllOneAxes(const T* input_data, std::vector<int64_t>& input_dims, T* output_data,
+                              const int64_t& output_num, std::vector<T2>& axes);
 
     template <typename T>
-    std::vector<int64_t> GetOutputShape(const std::vector<int64_t> &input_shape, const T &axis);
+    std::vector<int64_t> GetOutputShape(const std::vector<int64_t>& input_shape, const T& axis) const;
 
     template <typename T>
-    uint32_t AxesRankCheckAndReverse(
-        const CpuKernelContext &ctx, const T *axis_data, const int64_t &axes_num, std::map<T, int64_t> &axis_map,
-        int32_t &rank);
+    uint32_t AxesRankCheckAndReverse(const CpuKernelContext& ctx, const T* axis_data, const int64_t& axes_num,
+                                     std::map<T, int64_t>& axis_map, int32_t& rank) const;
 
-    uint32_t ReduceAllCheck(const CpuKernelContext &ctx) const;
+    uint32_t ReduceAllCheck(const CpuKernelContext& ctx) const;
 
     bool keep_dims_ = false;
     size_t axes_idx_ = 0;
 };
-}  // namespace aicpu
+} // namespace aicpu
 
 #endif

@@ -431,7 +431,7 @@ KernelStatus TopkCpuKernel::DispatchByDtype(const CpuKernelContext& ctx)
 }
 
 template <typename T>
-KernelStatus TopkCpuKernel::DoCompute(const CpuKernelContext& ctx)
+KernelStatus TopkCpuKernel::DoCompute(const CpuKernelContext& ctx) const
 {
     T* in = PtrToPtr<void, T>(input_tensor_->GetData());
     T* val = PtrToPtr<void, T>(output_values_->GetData());

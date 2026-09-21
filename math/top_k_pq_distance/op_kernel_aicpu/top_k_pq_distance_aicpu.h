@@ -26,7 +26,7 @@ class TopKPQDistanceCpuKernel : public CpuKernel {
 public:
     TopKPQDistanceCpuKernel() = default;
 
-    ~TopKPQDistanceCpuKernel() = default;
+    ~TopKPQDistanceCpuKernel() override = default;
 
     uint32_t Compute(CpuKernelContext& ctx) override;
 
@@ -95,7 +95,7 @@ private:
                                         const InputsData<T>& input_data);
 
     template <typename T>
-    void MakeHeap(Item<T> arr_ptr[], const int32_t n);
+    void MakeHeap(Item<T> arr_ptr[], const int32_t n) const;
 
     template <typename T>
     void PopHeap(Item<T> arr_ptr[], const int32_t n, Item<T>* const res) const;
@@ -104,7 +104,7 @@ private:
     inline void HeapFixdown(Item<T> a[], const int32_t index, const int32_t n) const;
 
     template <typename T>
-    void SortHeap(Item<T> arr_ptr[], const int32_t n);
+    void SortHeap(Item<T> arr_ptr[], const int32_t n) const;
 
     template <typename T>
     void InitGrpExtreme(Item<T> grp_extreme_ptr[], const InputsData<T>& input_data, int32_t& grp, int32_t& grpi);

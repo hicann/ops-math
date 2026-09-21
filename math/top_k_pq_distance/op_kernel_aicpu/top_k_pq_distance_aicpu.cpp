@@ -270,7 +270,7 @@ void TopKPQDistanceCpuKernel::InitGrpExtreme(Item<T> grp_extreme_ptr[], const In
 }
 
 template <typename T>
-void TopKPQDistanceCpuKernel::MakeHeap(Item<T> arr_ptr[], const int32_t n)
+void TopKPQDistanceCpuKernel::MakeHeap(Item<T> arr_ptr[], const int32_t n) const
 {
     for (int32_t i = (static_cast<uint32_t>(n) >> 1) - 1; i >= 0; i--) {
         HeapFixdown(arr_ptr, i, n);
@@ -278,7 +278,7 @@ void TopKPQDistanceCpuKernel::MakeHeap(Item<T> arr_ptr[], const int32_t n)
 }
 
 template <typename T>
-void TopKPQDistanceCpuKernel::PopHeap(Item<T> arr_ptr[], const int32_t n, Item<T>* res) const
+void TopKPQDistanceCpuKernel::PopHeap(Item<T> arr_ptr[], const int32_t n, Item<T>* const res) const
 {
     *res = arr_ptr[0];
     arr_ptr[0] = arr_ptr[n - 1];
@@ -292,7 +292,7 @@ inline void TopKPQDistanceCpuKernel::HeapFixdown(Item<T> a[], const int32_t inde
     int32_t i = index;
     Item<T> temp = a[i];
 
-    j = (i << 1) + 1;
+    j = (static_cast<uint32_t>(i) << 1) + 1;
     while (j < n) {
         if (is_min_heap_) {
             if (j + 1 < n && a[j].val > a[j + 1].val) {
@@ -318,7 +318,7 @@ inline void TopKPQDistanceCpuKernel::HeapFixdown(Item<T> a[], const int32_t inde
 }
 
 template <typename T>
-void TopKPQDistanceCpuKernel::SortHeap(Item<T> arr_ptr[], const int32_t n)
+void TopKPQDistanceCpuKernel::SortHeap(Item<T> arr_ptr[], const int32_t n) const
 {
     Item<T> temp;
     for (int i = n - 1; i >= 0; i--) {

@@ -57,7 +57,7 @@ inline uint32_t ComputeZetaKernel(const CpuKernelContext& ctx)
     }
     uint32_t cores = CpuKernelUtils::GetCPUNum(ctx);
     int64_t per_unit_size = total / std::min(std::max(1L, static_cast<long>(cores) - 2L), total);
-    return ParallelForZeta(ctx, total, per_unit_size, [&](int64_t begin, int64_t end) {
+    return ParallelForZeta(ctx, total, per_unit_size, [input0, input1, output](int64_t begin, int64_t end) {
         (void)std::transform(input0 + begin, input0 + end, input1 + begin, output + begin, ScalarZeta<T>);
     });
 }
@@ -128,7 +128,8 @@ inline uint32_t ComputeZeta(const CpuKernelContext& ctx)
 
 uint32_t ZetaCpuKernel::Compute(CpuKernelContext& ctx)
 {
-    return detail::CheckZeta(ctx) ? static_cast<uint32_t>(KERNEL_STATUS_PARAM_INVALID) : detail::ComputeZeta(ctx);
+    return detail::CheckZeta(ctx) != KERNEL_STATUS_OK ? static_cast<uint32_t>(KERNEL_STATUS_PARAM_INVALID) :
+                                                        detail::ComputeZeta(ctx);
 }
 
 OPS_MATH_REGISTER_CPU_KERNELV2(kZeta, ZetaCpuKernel);

@@ -92,8 +92,8 @@ uint32_t CheckAxes(const CpuKernelContext* context, const QuickVector& axes, boo
     return KERNEL_STATUS_OK;
 }
 
-uint32_t ReductionHelper(CpuKernelContext* context, bool& reduce_first_axis, const QuickVector& axes,
-                         QuickVector& input_reshape, QuickVector& out_reshape)
+inline uint32_t ReductionHelper(CpuKernelContext* context, bool& reduce_first_axis, const QuickVector& axes,
+                                QuickVector& input_reshape, QuickVector& out_reshape)
 {
     bool bitmap[kMaxDimNum] = {false};
     auto ret = CheckAxes(context, axes, bitmap);
