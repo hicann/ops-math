@@ -55,6 +55,7 @@ constexpr int64_t MIN_DIM_NZ = 4;
 constexpr int64_t MAX_DIM_NZ = 8;
 constexpr int64_t MIN_DIM_NZ2ND = 2;
 constexpr int64_t MAX_DIM_NZ2ND = 6;
+constexpr uint64_t DEFAULT_WORKSPACE_SIZE = 0;
 
 class ConfusionTransposeDTiling {
 public:

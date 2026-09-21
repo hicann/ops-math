@@ -19,6 +19,8 @@
 #include "op_host/tiling_base_util.h"
 
 namespace optiling {
+
+constexpr size_t DEFAULT_WORKSPACE_SIZE = 0;
 static const std::unordered_map<ge::DataType, uint32_t> INPUT_DATA_TYPE_TO_INT{
     {ge::DataType::DT_FLOAT, 1}, {ge::DataType::DT_INT32, 2}, {ge::DataType::DT_INT8, 3},   {ge::DataType::DT_UINT8, 4},
     {ge::DataType::DT_INT16, 5}, {ge::DataType::DT_INT64, 6}, {ge::DataType::DT_FLOAT16, 7}};
@@ -39,15 +41,11 @@ constexpr int64_t OUTPUT_FP32_KEY_OFFSET = 10;
 constexpr int64_t DETERM_OFFSET = 1000;
 constexpr uint64_t SIMT_DCACHE_SIZE = 32 * 1024;
 
-class HistogramV2SimtTiling : public HistogramV2BaseClass
-{
+class HistogramV2SimtTiling : public HistogramV2BaseClass {
 public:
     explicit HistogramV2SimtTiling(gert::TilingContext* context) : HistogramV2BaseClass(context) {};
     ~HistogramV2SimtTiling() override = default;
-    void Reset(gert::TilingContext* context) override
-    {
-        HistogramV2BaseClass::Reset(context);
-    }
+    void Reset(gert::TilingContext* context) override { HistogramV2BaseClass::Reset(context); }
 
 protected:
     bool IsCapable() override
@@ -118,15 +116,15 @@ ge::graphStatus HistogramV2SimtTiling::GetShapeAttrsInfo()
     auto compileInfo = reinterpret_cast<const HistogramV2CompileInfo*>(context_->GetCompileInfo());
     OP_CHECK_NULL_WITH_CONTEXT(context_, compileInfo);
     coreNum_ = compileInfo->totalCoreNum;
-    OP_CHECK_IF(
-        coreNum_ <= 0, OP_LOGE(context_, "coreNum must be > 0, but got %ld.", coreNum_), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(coreNum_ <= 0, OP_LOGE(context_, "coreNum must be > 0, but got %ld.", coreNum_),
+                return ge::GRAPH_FAILED);
 
     auto attrs = context_->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context_, attrs);
     const int64_t* binsPtr = attrs->GetAttrPointer<int64_t>(BINS_IDX);
     bins_ = (binsPtr == nullptr) ? DEFAULT_BINS : *binsPtr;
     OP_CHECK_IF(
-        bins_ <= 0, 
+        bins_ <= 0,
         OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "bins", std::to_string(bins_).c_str(), "a positive integer"),
         return ge::GRAPH_FAILED);
 
@@ -135,8 +133,8 @@ ge::graphStatus HistogramV2SimtTiling::GetShapeAttrsInfo()
     auto outputDataLength = outputShape->GetStorageShape().GetShapeSize();
     if (outputDataLength != bins_) {
         std::string sizeStr = std::to_string(outputDataLength) + " and " + std::to_string(bins_);
-        OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(context_->GetNodeName(), "y and bins",
-            sizeStr.c_str(), "The shape size of y should be the same as bins");
+        OP_LOGE_FOR_INVALID_SHAPESIZES_WITH_REASON(context_->GetNodeName(), "y and bins", sizeStr.c_str(),
+                                                   "The shape size of y should be the same as bins");
         return ge::GRAPH_FAILED;
     }
 
@@ -152,8 +150,8 @@ ge::graphStatus HistogramV2SimtTiling::GetShapeAttrsInfo()
             std::string dtypesStr = Ops::Base::ToString(dType) + " and " + Ops::Base::ToString(minMaxDtype);
             std::string paramNames = std::string("x and ") + (i == 1 ? "min" : "max");
             std::string reason = std::string("The dtypes of ") + paramNames + " must be the same";
-            OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), paramNames.c_str(),
-                dtypesStr.c_str(), reason.c_str());
+            OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), paramNames.c_str(), dtypesStr.c_str(),
+                                                   reason.c_str());
             return ge::GRAPH_FAILED;
         }
         auto minMaxShape = context_->GetInputShape(i);
@@ -162,17 +160,16 @@ ge::graphStatus HistogramV2SimtTiling::GetShapeAttrsInfo()
         if (minMaxLength != 1) {
             std::string paramName = (i == 1) ? "min" : "max";
             OP_LOGE_FOR_INVALID_SHAPESIZE(context_->GetNodeName(), paramName.c_str(),
-                std::to_string(minMaxLength).c_str(), "1");
+                                          std::to_string(minMaxLength).c_str(), "1");
             return ge::GRAPH_FAILED;
         }
     }
 
     auto iter = INPUT_DATA_TYPE_TO_INT.find(dType);
-    OP_CHECK_IF(
-        (iter == INPUT_DATA_TYPE_TO_INT.end()),
-        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x", Ops::Base::ToString(dType).c_str(),
-            "float, int32, int8, uint8, int16, int64 or float16"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((iter == INPUT_DATA_TYPE_TO_INT.end()),
+                OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x", Ops::Base::ToString(dType).c_str(),
+                                          "float, int32, int8, uint8, int16, int64 or float16"),
+                return ge::GRAPH_FAILED);
     inputDtypeVal_ = iter->second;
 
     auto outputDesc = context_->GetOutputDesc(OUTPUT_IDX);
@@ -190,7 +187,8 @@ ge::graphStatus HistogramV2SimtTiling::GetShapeAttrsInfo()
         }
     } else {
         if (outputDType != ge::DT_INT32) {
-            OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "y", Ops::Base::ToString(outputDType).c_str(), "int32, float");
+            OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "y", Ops::Base::ToString(outputDType).c_str(),
+                                      "int32, float");
             return ge::GRAPH_FAILED;
         }
     }
@@ -201,18 +199,14 @@ ge::graphStatus HistogramV2SimtTiling::GetShapeAttrsInfo()
     return ge::GRAPH_SUCCESS;
 }
 
-uint64_t HistogramV2SimtTiling::GetTilingKey() const
-{
-    return context_->GetTilingKey();
-}
+uint64_t HistogramV2SimtTiling::GetTilingKey() const { return context_->GetTilingKey(); }
 
 ge::graphStatus HistogramV2SimtTiling::Init()
 {
     OP_LOGD(context_, "Tiling initing.");
-    size_t sysWorkspaceSize = 16 * 1024 * 1024;
     size_t* currentWorkSpace = context_->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, currentWorkSpace);
-    currentWorkSpace[0] = sysWorkspaceSize;
+    currentWorkSpace[0] = DEFAULT_WORKSPACE_SIZE;
     // For deterministic fp32 output path
     int64_t ubElemSize = (isFp32Output_ && isDeterministic_ == 1) ? SIZE_OF_FLOAT32 : SIZE_OF_INT32;
     ubNumCanUse_ = aicoreParams_.ubSize / ubElemSize;
@@ -228,7 +222,7 @@ inline void HistogramV2SimtTiling::SetTilingKeyMode(int64_t inputDtypeVal) const
     int64_t outputOffset = isFp32Output_ ? OUTPUT_FP32_KEY_OFFSET : 0;
     // 只有输出为fp32才会走确定性逻辑的tilingKey
     int64_t determOffset = isFp32Output_ ? isDeterministic_ * DETERM_OFFSET : 0;
-    
+
     if (bins_ < ubNumCanUse_) {
         context_->SetLocalMemorySize(aicoreParams_.ubSize);
         context_->SetTilingKey(TILING_KEY_UB_FULL + outputOffset + determOffset + inputDtypeVal);

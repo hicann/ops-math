@@ -19,6 +19,8 @@
 #include "op_host/tiling_base_util.h"
 
 namespace optiling {
+
+constexpr size_t DEFAULT_WORKSPACE_SIZE = 0;
 constexpr int64_t SIZE_OF_FP32 = 4L;
 constexpr int64_t BYTE_BLOCK = 32L;
 
@@ -194,7 +196,7 @@ ge::graphStatus HistogramV2Tiling::Init()
         userWorkspaceSize = coreNum * BYTE_BLOCK + coreNum * (bins + alignNum) * SIZE_OF_FP32;
     }
     size_t* currentWorkSpace = tilingContext->GetWorkspaceSizes(1);
-    currentWorkSpace[0] = compileInfo->sysWorkspaceSize + userWorkspaceSize;
+    currentWorkSpace[0] = is310Soc ? compileInfo->sysWorkspaceSize + userWorkspaceSize : DEFAULT_WORKSPACE_SIZE;
     OP_LOGD(tilingContext, "Tiling inited.");
     return ge::GRAPH_SUCCESS;
 }

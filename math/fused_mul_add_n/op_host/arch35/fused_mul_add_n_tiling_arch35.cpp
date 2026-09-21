@@ -32,7 +32,6 @@ static constexpr uint64_t INDEX_0 = 0;
 static constexpr uint64_t INDEX_1 = 1;
 static constexpr uint64_t INDEX_2 = 2;
 static constexpr uint64_t INDEX_3 = 3;
-static constexpr uint64_t WORKSPACE_SIZE = 32;
 
 ge::graphStatus FusedMulAddNTiling::GetPlatformInfo()
 {
@@ -61,21 +60,18 @@ void FusedMulAddNTiling::SetOpKey()
     opKeys[{DT_BF16, DT_BF16, DT_BF16, DT_BF16}] = OP_KEY_5;
 }
 
-uint64_t FusedMulAddNTiling::GetOpKey(
-    ge::DataType inputX1Dtype, ge::DataType inputX2Dtype, ge::DataType inputX3Dtype, ge::DataType outputYDtype)
+uint64_t FusedMulAddNTiling::GetOpKey(ge::DataType inputX1Dtype, ge::DataType inputX2Dtype, ge::DataType inputX3Dtype,
+                                      ge::DataType outputYDtype)
 {
-    std::tuple<ge::DataType, ge::DataType, ge::DataType, ge::DataType> condition = {
-        inputX1Dtype, inputX2Dtype, inputX3Dtype, outputYDtype};
+    std::tuple<ge::DataType, ge::DataType, ge::DataType, ge::DataType> condition = {inputX1Dtype, inputX2Dtype,
+                                                                                    inputX3Dtype, outputYDtype};
     if (opKeys.find(condition) != opKeys.end()) {
         return opKeys[condition];
     }
     return OP_KEY_INVALID;
 }
 
-uint64_t FusedMulAddNTiling::GenerateTilingKey(uint64_t innerKey)
-{
-    return opKey * OP_KEY_OFFSET + innerKey;
-}
+uint64_t FusedMulAddNTiling::GenerateTilingKey(uint64_t innerKey) { return opKey * OP_KEY_OFFSET + innerKey; }
 
 std::map<uint64_t, ComputeParams> FusedMulAddNTiling::GetComputeMap(uint64_t paramOpKey)
 {
@@ -136,20 +132,16 @@ ge::graphStatus FusedMulAddNTiling::GetShapeAttrsInfo()
     if (opKey == OP_KEY_INVALID) {
         std::string dtypeMsg = Ops::Base::ToString(inputX1Dtype) + ", " + Ops::Base::ToString(inputX2Dtype) + ", " +
                                Ops::Base::ToString(inputX3Dtype) + " and " + Ops::Base::ToString(outputYDtype);
-        std::string reasonMsg =
-            "The dtypes of all input and output parameters x1, x2, x3 and y must be the same, "
-            "and be in the range of FLOAT, FLOAT16, INT32, INT16 and BF16";
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            context_->GetNodeName(), "x1, x2, x3 and y", dtypeMsg.c_str(), reasonMsg.c_str());
+        std::string reasonMsg = "The dtypes of all input and output parameters x1, x2, x3 and y must be the same, "
+                                "and be in the range of FLOAT, FLOAT16, INT32, INT16 and BF16";
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1, x2, x3 and y", dtypeMsg.c_str(),
+                                               reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
     return ge::GRAPH_SUCCESS;
 }
 
-bool FusedMulAddNTiling::IsCapable()
-{
-    return true;
-}
+bool FusedMulAddNTiling::IsCapable() { return true; }
 
 ge::graphStatus FusedMulAddNTiling::DoOpTiling()
 {
@@ -164,14 +156,14 @@ ge::graphStatus FusedMulAddNTiling::DoOpTiling()
     auto shapeX3 = inputX3Shape->GetStorageShape();
     if (shapeX1 != shapeX2) {
         std::string shapeMsg = Ops::Base::ToString(shapeX1) + " and " + Ops::Base::ToString(shapeX2);
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
-            context_->GetNodeName(), "x1 and x2", shapeMsg.c_str(), "The shapes of x1 and x2 must be the same");
+        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context_->GetNodeName(), "x1 and x2", shapeMsg.c_str(),
+                                               "The shapes of x1 and x2 must be the same");
         return ge::GRAPH_FAILED;
     }
 
     if (shapeX3.GetShapeSize() != 1) {
-        OP_LOGE_FOR_INVALID_SHAPESIZE(
-            context_->GetNodeName(), "x3", std::to_string(shapeX3.GetShapeSize()).c_str(), "1D");
+        OP_LOGE_FOR_INVALID_SHAPESIZE(context_->GetNodeName(), "x3", std::to_string(shapeX3.GetShapeSize()).c_str(),
+                                      "1D");
         return ge::GRAPH_FAILED;
     }
     ElewiseTilingParams elewiseTilingParams;
@@ -182,9 +174,8 @@ ge::graphStatus FusedMulAddNTiling::DoOpTiling()
 
     ElewiseTilingData elewiseTilingData;
     auto status = ElewiseTiling(elewiseTilingParams, elewiseTilingData);
-    OP_CHECK_IF(
-        (status == ge::GRAPH_FAILED), OP_LOGE(context_->GetNodeName(), "elewise tiling failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((status == ge::GRAPH_FAILED), OP_LOGE(context_->GetNodeName(), "elewise tiling failed"),
+                return ge::GRAPH_FAILED);
 
     tilingKey_ = GenerateTilingKey(elewiseTilingData.innerKey);
     blockNum = elewiseTilingData.blockNum;
@@ -214,19 +205,13 @@ std::string FusedMulAddNTiling::ToString(FusedMulAddNTilingData& paramTilingData
     return str;
 }
 
-ge::graphStatus FusedMulAddNTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus FusedMulAddNTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t FusedMulAddNTiling::GetTilingKey() const
-{
-    return tilingKey_;
-}
+uint64_t FusedMulAddNTiling::GetTilingKey() const { return tilingKey_; }
 
 ge::graphStatus FusedMulAddNTiling::GetWorkspaceSize()
 {
-    workspaceSize_ = WORKSPACE_SIZE;
+    workspaceSize_ = DEFAULT_WORKSPACE_SIZE;
     return ge::GRAPH_SUCCESS;
 }
 

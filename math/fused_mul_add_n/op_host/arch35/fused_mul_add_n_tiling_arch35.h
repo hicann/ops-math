@@ -38,6 +38,8 @@ END_TILING_DATA_DEF;
 
 REGISTER_TILING_DATA_CLASS(FusedMulAddN, FusedMulAddNTilingData);
 
+constexpr uint64_t DEFAULT_WORKSPACE_SIZE = 0;
+
 struct FusedMulAddNCompileInfo {
     uint64_t coreNum{0};
     uint64_t ubSize{0};
@@ -45,8 +47,7 @@ struct FusedMulAddNCompileInfo {
 
 class FusedMulAddNTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit FusedMulAddNTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit FusedMulAddNTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
 protected:
     bool IsCapable() override;
@@ -61,8 +62,8 @@ protected:
 
 private:
     void SetOpKey();
-    uint64_t GetOpKey(
-        ge::DataType inputX1Dtype, ge::DataType inputX2Dtype, ge::DataType inputX3Dtype, ge::DataType outputYDtype);
+    uint64_t GetOpKey(ge::DataType inputX1Dtype, ge::DataType inputX2Dtype, ge::DataType inputX3Dtype,
+                      ge::DataType outputYDtype);
     uint64_t GenerateTilingKey(uint64_t innerKey);
     std::map<uint64_t, ComputeParams> GetComputeMap(uint64_t opKey);
 

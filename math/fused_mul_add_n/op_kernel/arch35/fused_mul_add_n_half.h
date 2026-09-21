@@ -32,7 +32,7 @@ template <typename T>
 class FusedMulAddNHalf {
 public:
     __aicore__ inline FusedMulAddNHalf(){};
-    __aicore__ inline void Init(GM_ADDR inputX1, GM_ADDR inputX2, GM_ADDR inputX3, GM_ADDR outputY, GM_ADDR workspace,
+    __aicore__ inline void Init(GM_ADDR inputX1, GM_ADDR inputX2, GM_ADDR inputX3, GM_ADDR outputY,
                                 const FusedMulAddNTilingData* tilingDataPtr, TPipe* pipePtr)
     {
         pipePtr_ = pipePtr;

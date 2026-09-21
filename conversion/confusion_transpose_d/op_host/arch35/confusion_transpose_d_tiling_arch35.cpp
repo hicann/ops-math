@@ -308,6 +308,10 @@ ge::graphStatus ConfusionTransposeDTilingForAscendC(gert::TilingContext* context
                                                                  inputShapeInfo) == ge::GRAPH_FAILED),
                 OP_LOGE(context->GetNodeName(), "Transpose Tiling failed"), return ge::GRAPH_FAILED);
 
+    size_t* workspaceSize = context->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context, workspaceSize);
+    workspaceSize[0] = DEFAULT_WORKSPACE_SIZE;
+
     tilingData.SaveToBuffer(context->GetRawTilingData()->GetData(), context->GetRawTilingData()->GetCapacity());
     context->GetRawTilingData()->SetDataSize(tilingData.GetDataSize());
 
