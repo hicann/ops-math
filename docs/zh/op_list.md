@@ -2828,6 +2828,16 @@
   </tr>
   <tr>
     <td>conversion</td>
+    <td><a href="../../conversion/fill_v2/README.md">fill_v2</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>对输入张量填充指定标量值，其中要填充值作为属性传入。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
     <td><a href="../../conversion/flatten/README.md">flatten</a></td>
     <td>×</td>
     <td>×</td>
