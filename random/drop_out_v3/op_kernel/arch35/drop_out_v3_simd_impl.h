@@ -20,8 +20,6 @@ namespace DropOutV3 {
 using namespace AscendC;
 using namespace RandomKernelBase;
 
-constexpr static uint32_t IDX_0 = 0;
-constexpr static uint32_t IDX_1 = 1;
 constexpr static uint32_t NUM_3 = 3;
 constexpr static uint32_t NUM_16 = 16;
 constexpr static int64_t ALIGNMENT_32 = 32;
@@ -89,36 +87,30 @@ static constexpr Reg::CastTrait castTraitB32ToB16 = {Reg::RegLayout::ZERO, Reg::
 static constexpr Reg::CastTrait castTraitI32ToF32 = {Reg::RegLayout::ZERO, Reg::SatMode::UNKNOWN,
                                                      Reg::MaskMergeMode::ZEROING, RoundMode::CAST_RINT};
 
-template <typename T>
-__simd_callee__ inline void PhiloxCtrConvertAndDropout(Reg::RegTensor<uint32_t>& currCtr,
-                                                       Reg::RegTensor<uint32_t>& mask16Reg,
-                                                       Reg::RegTensor<float>& zeroFloatReg,
-                                                       Reg::RegTensor<float>& oneFloatReg, uint32_t currCount,
-                                                       float scale, float prob, __ubuf__ float* randomFloatPtr,
-                                                       __ubuf__ T* inputPtr, __ubuf__ T* outputPtr)
+__simd_callee__ inline void PhiloxCtrConvertUniform(Reg::RegTensor<uint32_t>& currCtr,
+                                                    Reg::RegTensor<uint32_t>& mask16Reg, Reg::RegTensor<float>& cHiReg,
+                                                    Reg::RegTensor<float>& cInvReg, Reg::MaskReg& pg,
+                                                    Reg::RegTensor<float>& randReg)
 {
-    Reg::MaskReg mask = Reg::UpdateMask<float>(currCount);
-
     Reg::RegTensor<uint32_t> highReg, lowReg;
-    Reg::ShiftRights(highReg, currCtr, static_cast<int16_t>(NUM_16), mask);
-    Reg::And(lowReg, currCtr, mask16Reg, mask);
+    Reg::ShiftRights(highReg, currCtr, static_cast<int16_t>(NUM_16), pg);
+    Reg::And(lowReg, currCtr, mask16Reg, pg);
 
     Reg::RegTensor<float> highFloat, lowFloat;
-    Reg::Cast<float, int32_t, castTraitI32ToF32>(highFloat, (Reg::RegTensor<int32_t>&)highReg, mask);
-    Reg::Cast<float, int32_t, castTraitI32ToF32>(lowFloat, (Reg::RegTensor<int32_t>&)lowReg, mask);
+    Reg::Cast<float, int32_t, castTraitI32ToF32>(highFloat, (Reg::RegTensor<int32_t>&)highReg, pg);
+    Reg::Cast<float, int32_t, castTraitI32ToF32>(lowFloat, (Reg::RegTensor<int32_t>&)lowReg, pg);
 
-    Reg::RegTensor<float> combined;
-    Reg::Muls<float>(combined, highFloat, HIFLOAT_MULS, mask);
-    Reg::Add<float>(combined, combined, lowFloat, mask);
+    Reg::MulAddDst<float>(lowFloat, highFloat, cHiReg, pg);
+    Reg::MulAddDst<float>(randReg, lowFloat, cInvReg, pg);
+}
 
-    Reg::RegTensor<float> randReg;
-    Reg::Muls<float>(randReg, combined, RAND_2POW32_INV, mask);
-    Reg::Adds<float>(randReg, randReg, RAND_2POW32_INV_HALF, mask);
-
-    Reg::StoreAlign<float>(randomFloatPtr, randReg, mask);
-
+template <typename T>
+__simd_callee__ inline void PhiloxDropoutApply(Reg::RegTensor<float>& randReg, Reg::RegTensor<float>& zeroFloatReg,
+                                               Reg::RegTensor<float>& oneFloatReg, Reg::MaskReg& pg, float scale,
+                                               float prob, __ubuf__ T* inputPtr, __ubuf__ T* outputPtr)
+{
     Reg::MaskReg dropoutMask;
-    Reg::CompareScalar<float, CMPMODE::LT>(dropoutMask, randReg, prob, mask);
+    Reg::CompareScalar<float, CMPMODE::LT>(dropoutMask, randReg, prob, pg);
     Reg::RegTensor<float> maskBitReg;
     Reg::Select<float>(maskBitReg, oneFloatReg, zeroFloatReg, dropoutMask);
 
@@ -128,83 +120,48 @@ __simd_callee__ inline void PhiloxCtrConvertAndDropout(Reg::RegTensor<uint32_t>&
     } else {
         Reg::RegTensor<T> inputReg;
         Reg::LoadAlign<T, Reg::LoadDist::DIST_UNPACK_B16>(inputReg, inputPtr);
-        Reg::Cast<float, T, castTraitB16ToB32>(inputFloatReg, inputReg, mask);
+        Reg::Cast<float, T, castTraitB16ToB32>(inputFloatReg, inputReg, pg);
     }
 
     Reg::RegTensor<float> outputFloatReg;
-    Reg::Mul<float>(outputFloatReg, inputFloatReg, maskBitReg, mask);
-    Reg::Muls<float>(outputFloatReg, outputFloatReg, scale, mask);
+    Reg::Mul<float>(outputFloatReg, inputFloatReg, maskBitReg, pg);
+    Reg::Muls<float>(outputFloatReg, outputFloatReg, scale, pg);
 
     if constexpr (IsSameType<T, float>::value) {
-        Reg::StoreAlign<float>(outputPtr, outputFloatReg, mask);
+        Reg::StoreAlign<float>(outputPtr, outputFloatReg, pg);
     } else {
         Reg::RegTensor<T> outputReg;
-        Reg::Cast<T, float, castTraitB32ToB16>(outputReg, outputFloatReg, mask);
-        Reg::StoreAlign<T, Reg::StoreDist::DIST_PACK_B32>(outputPtr, outputReg, mask);
+        Reg::Cast<T, float, castTraitB32ToB16>(outputReg, outputFloatReg, pg);
+        Reg::StoreAlign<T, Reg::StoreDist::DIST_PACK_B32>(outputPtr, outputReg, pg);
     }
 }
 
 template <int32_t VEC>
-__simd_callee__ inline void VectorThreadMappingAndSkip(int64_t baseIndex, uint32_t randNumVal, uint32_t magic32,
-                                                       uint32_t shift32, uint32_t totalThreads32,
-                                                       const uint32_t* initCounter, Reg::RegTensor<uint32_t>& ctr0,
-                                                       Reg::RegTensor<uint32_t>& ctr1, Reg::RegTensor<uint32_t>& ctr2,
-                                                       Reg::RegTensor<uint32_t>& ctr3, Reg::MaskReg& pg)
+__simd_callee__ inline void VectorThreadMapping(uint32_t baseRepeat, Reg::RegTensor<uint32_t>& zeroReg,
+                                                Reg::RegTensor<uint32_t>& ctr0, Reg::RegTensor<uint32_t>& ctr1,
+                                                Reg::RegTensor<uint32_t>& ctr2, Reg::MaskReg& pg)
 {
-    Reg::RegTensor<int32_t> idxVecInt;
-    Reg::Arange(idxVecInt, 0);
-    Reg::Muls(idxVecInt, idxVecInt, static_cast<int32_t>(randNumVal), pg);
-    Reg::RegTensor<int32_t> baseReg;
-    Reg::Duplicate(baseReg, static_cast<int32_t>(baseIndex));
-    Reg::Add(idxVecInt, idxVecInt, baseReg, pg);
-
-    Reg::RegTensor<uint32_t>& idxVec = (Reg::RegTensor<uint32_t>&)idxVecInt;
-
-    constexpr int16_t log2Vec = (VEC == VEC_2) ? 1 : (VEC == VEC_4) ? NUM_2 : (VEC == VEC_8) ? NUM_3 : NUM_4;
-    Reg::RegTensor<uint32_t> groupIdxVec;
-    Reg::ShiftRights(groupIdxVec, idxVec, log2Vec, pg);
-
-    Reg::RegTensor<uint32_t> magicReg;
-    Reg::Duplicate(magicReg, magic32);
-    Reg::RegTensor<uint32_t> mullLow, mullHigh, sum, repeat;
-    Reg::Mull(mullLow, mullHigh, groupIdxVec, magicReg, pg);
-    Reg::Add(sum, groupIdxVec, mullHigh, pg);
-    Reg::ShiftRights(repeat, sum, static_cast<int16_t>(shift32), pg);
-
-    Reg::RegTensor<uint32_t> gtiProduct, gtiVec;
-    Reg::Muls(gtiProduct, repeat, totalThreads32, pg);
-    Reg::Sub(gtiVec, groupIdxVec, gtiProduct, pg);
+    Reg::RegTensor<uint32_t> localVec, repeatVec;
+    Reg::Arange((Reg::RegTensor<int32_t>&)localVec, 0);
 
     if constexpr (VEC == NUM_8 || VEC == NUM_16) {
+        constexpr int16_t localShift = VEC / NUM_8;
         constexpr uint32_t vecDiv4 = VEC / NUM_4;
-        Reg::RegTensor<uint32_t> idxDiv4, idxMod, maskModReg;
-        Reg::ShiftRights(idxDiv4, idxVec, static_cast<int16_t>(NUM_2), pg);
+        Reg::RegTensor<uint32_t> idxModVec, maskModReg;
         Reg::Duplicate(maskModReg, vecDiv4 - 1);
-        Reg::And(idxMod, idxDiv4, maskModReg, pg);
-        Reg::Muls(repeat, repeat, vecDiv4, pg);
-        Reg::Add(repeat, repeat, idxMod, pg);
+        Reg::And(idxModVec, localVec, maskModReg, pg);
+        Reg::ShiftRights(localVec, localVec, localShift, pg);
+
+        Reg::Duplicate(repeatVec, baseRepeat * vecDiv4);
+        Reg::Add(repeatVec, repeatVec, idxModVec, pg);
+    } else {
+        Reg::Duplicate(repeatVec, baseRepeat);
     }
 
-    Reg::RegTensor<uint32_t> gtiHi, repeatHi, zeroReg;
-    Reg::Duplicate(gtiHi, 0);
-    Reg::Duplicate(repeatHi, 0);
-    Reg::Duplicate(zeroReg, 0);
-
-    Reg::Duplicate(ctr0, initCounter[IDX_0]);
-    Reg::Duplicate(ctr1, initCounter[IDX_1]);
-    Reg::Duplicate(ctr2, initCounter[IDX_2]);
-    Reg::Duplicate(ctr3, initCounter[IDX_3]);
-
     Reg::MaskReg carry;
-    Reg::AddCarryOut(carry, ctr2, ctr2, gtiVec, pg);
-    Reg::AddCarryOuts(carry, ctr3, ctr3, gtiHi, carry, pg);
-
-    Reg::MaskReg carry2;
-    Reg::AddCarryOut(carry2, ctr0, ctr0, repeat, pg);
-    Reg::AddCarryOuts(carry2, ctr1, ctr1, repeatHi, carry2, pg);
-    Reg::MaskReg carry3;
-    Reg::AddCarryOuts(carry3, ctr2, ctr2, zeroReg, carry2, pg);
-    Reg::AddCarryOuts(carry3, ctr3, ctr3, zeroReg, carry3, pg);
+    Reg::AddCarryOut(carry, ctr0, ctr0, repeatVec, pg);
+    Reg::AddCarryOuts(carry, ctr1, ctr1, zeroReg, carry, pg);
+    Reg::Add(ctr2, ctr2, localVec, pg);
 }
 
 // ==================== Main Implementation ====================
@@ -250,8 +207,6 @@ private:
     uint32_t blockIdx_ = 0;
 
     uint32_t totalThreads_ = 0;
-    uint32_t magic32_ = 0;
-    uint32_t shift32_ = 0;
     uint64_t magic64_ = 0;
     uint64_t shift64_ = 0;
     uint32_t vec_ = 0;
@@ -270,7 +225,6 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::Init(GM_ADDR x, GM_ADDR y, GM_AD
     vec_ = tilingData->vec;
     totalThreads_ = tilingData->totalThreads;
 
-    GetUintDivMagicAndShift<uint32_t>(magic32_, shift32_, totalThreads_);
     GetUintDivMagicAndShift<uint64_t>(magic64_, shift64_, static_cast<uint64_t>(totalThreads_));
     blockIdx_ = GetBlockIdx();
 
@@ -351,9 +305,8 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::ComputeContinuous(int64_t baseLi
             default:
                 break;
         }
-        uint32_t countAlign256 = Ops::Base::CeilAlign(static_cast<uint32_t>(currElements),
-                                                      static_cast<uint32_t>(NUM_256));
-        AscendC::CompareScalar<float, uint8_t>(maskBitUb, randomFloatUb, prob_, CMPMODE::LT, countAlign256);
+
+        CompareScalar<float, uint8_t>(maskBitUb, randomFloatUb, prob_, CMPMODE::LT, currElements);
     } else {
         switch (vec_) {
             case VEC_16:
@@ -407,6 +360,11 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::ComputeContinuousSimd(int64_t ba
     uint32_t totalBatches = Ops::Base::CeilDiv(static_cast<uint32_t>(currElements), elemPerBatch);
     uint32_t fullBatches = (totalBatches > 0) ? (totalBatches - 1) : 0;
 
+    constexpr uint32_t groupsPerBatch = elemPerBatch / VEC;
+    uint64_t baseGroupIdx = static_cast<uint64_t>(baseLinearIndex / static_cast<int64_t>(VEC));
+    uint32_t baseGti = static_cast<uint32_t>(baseGroupIdx % totalThreads_);
+    uint32_t baseRepeat = static_cast<uint32_t>(baseGroupIdx / totalThreads_);
+
     __ubuf__ T* inputPtr = (__ubuf__ T*)inputUb.GetPhyAddr();
     __ubuf__ T* outputPtr = (__ubuf__ T*)outputUb.GetPhyAddr();
     __ubuf__ float* randomFloatPtr = (__ubuf__ float*)randomFloatUb.GetPhyAddr();
@@ -427,40 +385,21 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::ComputeContinuousSimd(int64_t ba
         Reg::Duplicate(cMul0, PhiloxInternal::CONST_MUL_0);
         Reg::Duplicate(cMul1, PhiloxInternal::CONST_MUL_1);
 
-        Reg::RegTensor<float> zeroFloatReg;
-        Reg::Duplicate(zeroFloatReg, 0.0f);
-
-        Reg::RegTensor<float> oneFloatReg;
-        Reg::Duplicate(oneFloatReg, 1.0f);
-
-        Reg::RegTensor<uint32_t> mask16Reg;
-        Reg::Duplicate(mask16Reg, 0xFFFF);
-
-        for (uint16_t batch = 0; batch < static_cast<uint16_t>(fullBatches); batch++) {
-            uint32_t batchStart = batch * elemPerBatch;
-            int64_t baseIndex = baseLinearIndex + static_cast<int64_t>(batchStart);
-
-            Reg::RegTensor<uint32_t> ctr0, ctr1, ctr2, ctr3;
-            VectorThreadMappingAndSkip<VEC>(baseIndex, randNum, magic32_, shift32_, totalThreads_, counter, ctr0, ctr1,
-                                            ctr2, ctr3, pg);
-
-            __ubuf__ uint32_t* storePtr = ctrBufPtr + batch * ctrStride;
-            Reg::StoreAlign<uint32_t>(storePtr, ctr0, pg);
-            Reg::StoreAlign<uint32_t>(storePtr + counterPerBatch, ctr1, pg);
-            Reg::StoreAlign<uint32_t>(storePtr + NUM_2 * counterPerBatch, ctr2, pg);
-            Reg::StoreAlign<uint32_t>(storePtr + NUM_3 * counterPerBatch, ctr3, pg);
-        }
-
-        Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_LOAD>();
+        Reg::RegTensor<uint32_t> zeroReg, initCtr0, initCtr1, initCtr2;
+        Reg::Duplicate(zeroReg, 0);
+        Reg::Duplicate(initCtr0, counter[0]);
+        Reg::Duplicate(initCtr1, counter[1]);
+        Reg::Duplicate(initCtr2, baseGti);
+        VectorThreadMapping<VEC>(baseRepeat, zeroReg, initCtr0, initCtr1, initCtr2, pg);
 
         for (uint16_t batch = 0; batch < static_cast<uint16_t>(fullBatches); batch++) {
             __ubuf__ uint32_t* bufPtr = ctrBufPtr + batch * ctrStride;
 
             Reg::RegTensor<uint32_t> ctr0, ctr1, ctr2, ctr3;
-            Reg::LoadAlign<uint32_t>(ctr0, bufPtr);
-            Reg::LoadAlign<uint32_t>(ctr1, bufPtr + counterPerBatch);
-            Reg::LoadAlign<uint32_t>(ctr2, bufPtr + NUM_2 * counterPerBatch);
-            Reg::LoadAlign<uint32_t>(ctr3, bufPtr + NUM_3 * counterPerBatch);
+            ctr0 = initCtr0;
+            ctr1 = initCtr1;
+            Reg::Adds(ctr2, initCtr2, batch * groupsPerBatch, pg);
+            ctr3 = zeroReg;
 
             Reg::RegTensor<uint32_t> key0, key1;
             Reg::Duplicate(key0, key0Phase2);
@@ -534,42 +473,85 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::ComputeContinuousSimd(int64_t ba
 
         Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_LOAD>();
 
+        Reg::RegTensor<uint32_t> mask16Reg;
+        Reg::Duplicate(mask16Reg, 0xFFFF);
+
+        Reg::RegTensor<float> cHiReg, cInvReg, cInvHalfReg;
+        Reg::Duplicate(cHiReg, HIFLOAT_MULS);
+        Reg::Duplicate(cInvReg, RAND_2POW32_INV);
+        Reg::Duplicate(cInvHalfReg, RAND_2POW32_INV_HALF);
+
         for (uint16_t batch = 0; batch < static_cast<uint16_t>(fullBatches); batch++) {
             uint32_t batchStart = batch * elemPerBatch;
             __ubuf__ uint32_t* bufPtr = ctrBufPtr + batch * ctrStride;
+            __ubuf__ float* batchRandomPtr = randomFloatPtr + batchStart;
 
-            Reg::RegTensor<uint32_t> ctr0, ctr1, ctr2, ctr3;
+            Reg::RegTensor<uint32_t> ctr0, ctr1;
+            Reg::RegTensor<float> rand0, rand1;
+            rand0 = cInvHalfReg;
+            rand1 = cInvHalfReg;
+
             Reg::LoadAlign<uint32_t>(ctr0, bufPtr);
-            Reg::LoadAlign<uint32_t>(ctr1, bufPtr + counterPerBatch);
-            Reg::LoadAlign<uint32_t>(ctr2, bufPtr + NUM_2 * counterPerBatch);
-            Reg::LoadAlign<uint32_t>(ctr3, bufPtr + NUM_3 * counterPerBatch);
+            PhiloxCtrConvertUniform(ctr0, mask16Reg, cHiReg, cInvReg, pg, rand0);
+            Reg::StoreAlign<float>(batchRandomPtr, rand0, pg);
 
+            Reg::LoadAlign<uint32_t>(ctr1, bufPtr + counterPerBatch);
+            PhiloxCtrConvertUniform(ctr1, mask16Reg, cHiReg, cInvReg, pg, rand1);
+            Reg::StoreAlign<float>(batchRandomPtr + counterPerBatch, rand1, pg);
+
+            if constexpr (randNum == NUM_4) {
+                Reg::RegTensor<uint32_t> ctr2, ctr3;
+                Reg::RegTensor<float> rand2, rand3;
+                rand2 = cInvHalfReg;
+                rand3 = cInvHalfReg;
+
+                Reg::LoadAlign<uint32_t>(ctr2, bufPtr + NUM_2 * counterPerBatch);
+                PhiloxCtrConvertUniform(ctr2, mask16Reg, cHiReg, cInvReg, pg, rand2);
+                Reg::StoreAlign<float>(batchRandomPtr + NUM_2 * counterPerBatch, rand2, pg);
+
+                Reg::LoadAlign<uint32_t>(ctr3, bufPtr + NUM_3 * counterPerBatch);
+                PhiloxCtrConvertUniform(ctr3, mask16Reg, cHiReg, cInvReg, pg, rand3);
+                Reg::StoreAlign<float>(batchRandomPtr + NUM_3 * counterPerBatch, rand3, pg);
+            }
+        }
+
+        Reg::LocalMemBar<Reg::MemType::VEC_STORE, Reg::MemType::VEC_LOAD>();
+
+        Reg::RegTensor<float> zeroFloatReg;
+        Reg::Duplicate(zeroFloatReg, 0.0f);
+
+        Reg::RegTensor<float> oneFloatReg;
+        Reg::Duplicate(oneFloatReg, 1.0f);
+
+        for (uint16_t batch = 0; batch < static_cast<uint16_t>(fullBatches); batch++) {
+            uint32_t batchStart = batch * elemPerBatch;
             __ubuf__ T* batchInputPtr = inputPtr + batchStart;
             __ubuf__ T* batchOutputPtr = outputPtr + batchStart;
             __ubuf__ float* batchRandomPtr = randomFloatPtr + batchStart;
 
-            PhiloxCtrConvertAndDropout<T>(ctr0, mask16Reg, zeroFloatReg, oneFloatReg, counterPerBatch, scale, prob_,
-                                          batchRandomPtr, batchInputPtr, batchOutputPtr);
-            PhiloxCtrConvertAndDropout<T>(ctr1, mask16Reg, zeroFloatReg, oneFloatReg, counterPerBatch, scale, prob_,
-                                          batchRandomPtr + counterPerBatch, batchInputPtr + counterPerBatch,
-                                          batchOutputPtr + counterPerBatch);
+            Reg::RegTensor<float> rand0, rand1;
+            Reg::LoadAlign<float>(rand0, batchRandomPtr);
+            PhiloxDropoutApply<T>(rand0, zeroFloatReg, oneFloatReg, pg, scale, prob_, batchInputPtr, batchOutputPtr);
+            Reg::LoadAlign<float>(rand1, batchRandomPtr + counterPerBatch);
+            PhiloxDropoutApply<T>(rand1, zeroFloatReg, oneFloatReg, pg, scale, prob_, batchInputPtr + counterPerBatch,
+                                  batchOutputPtr + counterPerBatch);
 
             if constexpr (randNum == NUM_4) {
-                PhiloxCtrConvertAndDropout<T>(ctr2, mask16Reg, zeroFloatReg, oneFloatReg, counterPerBatch, scale, prob_,
-                                              batchRandomPtr + NUM_2 * counterPerBatch,
-                                              batchInputPtr + NUM_2 * counterPerBatch,
-                                              batchOutputPtr + NUM_2 * counterPerBatch);
-                PhiloxCtrConvertAndDropout<T>(ctr3, mask16Reg, zeroFloatReg, oneFloatReg, counterPerBatch, scale, prob_,
-                                              batchRandomPtr + NUM_3 * counterPerBatch,
-                                              batchInputPtr + NUM_3 * counterPerBatch,
-                                              batchOutputPtr + NUM_3 * counterPerBatch);
+                Reg::RegTensor<float> rand2, rand3;
+                Reg::LoadAlign<float>(rand2, batchRandomPtr + NUM_2 * counterPerBatch);
+                PhiloxDropoutApply<T>(rand2, zeroFloatReg, oneFloatReg, pg, scale, prob_,
+                                      batchInputPtr + NUM_2 * counterPerBatch,
+                                      batchOutputPtr + NUM_2 * counterPerBatch);
+                Reg::LoadAlign<float>(rand3, batchRandomPtr + NUM_3 * counterPerBatch);
+                PhiloxDropoutApply<T>(rand3, zeroFloatReg, oneFloatReg, pg, scale, prob_,
+                                      batchInputPtr + NUM_3 * counterPerBatch,
+                                      batchOutputPtr + NUM_3 * counterPerBatch);
             }
         }
 
         if (totalBatches > 0) {
             uint32_t batchStart = fullBatches * elemPerBatch;
             uint32_t tailElements = static_cast<uint32_t>(currElements) - batchStart;
-            int64_t baseIndex = baseLinearIndex + static_cast<int64_t>(batchStart);
 
             __ubuf__ T* tailInputPtr = inputPtr + batchStart;
             __ubuf__ T* tailOutputPtr = outputPtr + batchStart;
@@ -580,8 +562,10 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::ComputeContinuousSimd(int64_t ba
             Reg::Duplicate(key1, key[1]);
 
             Reg::RegTensor<uint32_t> ctr0, ctr1, ctr2, ctr3;
-            VectorThreadMappingAndSkip<VEC>(baseIndex, randNum, magic32_, shift32_, totalThreads_, counter, ctr0, ctr1,
-                                            ctr2, ctr3, pg);
+            ctr0 = initCtr0;
+            ctr1 = initCtr1;
+            Reg::Adds(ctr2, initCtr2, fullBatches * groupsPerBatch, pg);
+            ctr3 = zeroReg;
 
             Reg::RegTensor<uint32_t> tmpL0, tmpH0, tmpL1, tmpH1;
             SpNetworkKernel<10>(tmpL0, tmpH0, tmpL1, tmpH1, ctr0, ctr1, ctr2, ctr3, key0, key1, cMul0, cMul1, pg);
@@ -596,31 +580,46 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::ComputeContinuousSimd(int64_t ba
             }
 
             uint32_t remaining = tailElements;
-
             uint32_t currCount0 = (remaining < counterPerBatch) ? remaining : counterPerBatch;
-            PhiloxCtrConvertAndDropout<T>(ctr0, mask16Reg, zeroFloatReg, oneFloatReg, currCount0, scale, prob_,
-                                          tailRandomPtr, tailInputPtr, tailOutputPtr);
             remaining -= currCount0;
-
             uint32_t currCount1 = (remaining < counterPerBatch) ? remaining : counterPerBatch;
-            PhiloxCtrConvertAndDropout<T>(ctr1, mask16Reg, zeroFloatReg, oneFloatReg, currCount1, scale, prob_,
-                                          tailRandomPtr + counterPerBatch, tailInputPtr + counterPerBatch,
-                                          tailOutputPtr + counterPerBatch);
             remaining -= currCount1;
+
+            Reg::RegTensor<float> rand0, rand1;
+            rand0 = cInvHalfReg;
+            rand1 = cInvHalfReg;
+
+            pg = Reg::UpdateMask<float>(currCount0);
+            PhiloxCtrConvertUniform(ctr0, mask16Reg, cHiReg, cInvReg, pg, rand0);
+            Reg::StoreAlign<float>(tailRandomPtr, rand0, pg);
+            PhiloxDropoutApply<T>(rand0, zeroFloatReg, oneFloatReg, pg, scale, prob_, tailInputPtr, tailOutputPtr);
+
+            pg = Reg::UpdateMask<float>(currCount1);
+            PhiloxCtrConvertUniform(ctr1, mask16Reg, cHiReg, cInvReg, pg, rand1);
+            Reg::StoreAlign<float>(tailRandomPtr + counterPerBatch, rand1, pg);
+            PhiloxDropoutApply<T>(rand1, zeroFloatReg, oneFloatReg, pg, scale, prob_, tailInputPtr + counterPerBatch,
+                                  tailOutputPtr + counterPerBatch);
 
             if constexpr (randNum == NUM_4) {
                 uint32_t currCount2 = (remaining < counterPerBatch) ? remaining : counterPerBatch;
-                PhiloxCtrConvertAndDropout<T>(ctr2, mask16Reg, zeroFloatReg, oneFloatReg, currCount2, scale, prob_,
-                                              tailRandomPtr + NUM_2 * counterPerBatch,
-                                              tailInputPtr + NUM_2 * counterPerBatch,
-                                              tailOutputPtr + NUM_2 * counterPerBatch);
                 remaining -= currCount2;
-
                 uint32_t currCount3 = (remaining < counterPerBatch) ? remaining : counterPerBatch;
-                PhiloxCtrConvertAndDropout<T>(ctr3, mask16Reg, zeroFloatReg, oneFloatReg, currCount3, scale, prob_,
-                                              tailRandomPtr + NUM_3 * counterPerBatch,
-                                              tailInputPtr + NUM_3 * counterPerBatch,
-                                              tailOutputPtr + NUM_3 * counterPerBatch);
+
+                Reg::RegTensor<float> rand2, rand3;
+                rand2 = cInvHalfReg;
+                rand3 = cInvHalfReg;
+
+                pg = Reg::UpdateMask<float>(currCount2);
+                PhiloxCtrConvertUniform(ctr2, mask16Reg, cHiReg, cInvReg, pg, rand2);
+                Reg::StoreAlign<float>(tailRandomPtr + NUM_2 * counterPerBatch, rand2, pg);
+                PhiloxDropoutApply<T>(rand2, zeroFloatReg, oneFloatReg, pg, scale, prob_,
+                                      tailInputPtr + NUM_2 * counterPerBatch, tailOutputPtr + NUM_2 * counterPerBatch);
+
+                pg = Reg::UpdateMask<float>(currCount3);
+                PhiloxCtrConvertUniform(ctr3, mask16Reg, cHiReg, cInvReg, pg, rand3);
+                Reg::StoreAlign<float>(tailRandomPtr + NUM_3 * counterPerBatch, rand3, pg);
+                PhiloxDropoutApply<T>(rand3, zeroFloatReg, oneFloatReg, pg, scale, prob_,
+                                      tailInputPtr + NUM_3 * counterPerBatch, tailOutputPtr + NUM_3 * counterPerBatch);
             }
         }
 
@@ -654,16 +653,27 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::ProcessContinuous(const DropOutV
 {
     int64_t gmOffset = static_cast<int64_t>(blockIdx_) * tilingData->perCoreElements;
     bool isTailCore = (blockIdx_ == tilingData->usedCoreNum - 1);
-    int64_t loopCount = isTailCore ? tilingData->tailUbLoopCount : tilingData->ubLoopCount;
+    int64_t coreEnd = gmOffset + (isTailCore ? tilingData->tailCoreElements : tilingData->perCoreElements);
+    int64_t ttPeriod = static_cast<int64_t>(totalThreads_) * static_cast<int64_t>(vec_);
+    int64_t ttRemain = ttPeriod - (gmOffset % ttPeriod);
 
-    for (int64_t loop = 0; loop < loopCount; loop++) {
-        bool isTailLoop = (loop == loopCount - 1);
-        int64_t currElements = GetCurrElements(isTailCore, isTailLoop, tilingData);
+    while (gmOffset < coreEnd) {
+        int64_t currElements = static_cast<int64_t>(tilingData->ubFactorElements);
+        if (coreEnd - gmOffset < currElements) {
+            currElements = coreEnd - gmOffset;
+        }
+        if (ttRemain < currElements) {
+            currElements = ttRemain;
+        }
 
         CopyInContinuous(gmOffset, currElements);
         ComputeContinuous(gmOffset, currElements, tilingData);
         CopyOutContinuous(gmOffset, currElements);
         gmOffset += currElements;
+        ttRemain -= currElements;
+        if (ttRemain == 0) {
+            ttRemain = ttPeriod;
+        }
     }
 }
 
