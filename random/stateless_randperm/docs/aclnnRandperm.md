@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -223,7 +223,7 @@ aclnnStatus aclnnRandperm(
 
 - 确定性计算：aclnnRandperm默认确定性实现。
 <!-- npu="950" id8 -->
-- Ascend 950PR&Ascend950DT系列产品：
+- Ascend 950PR&950DT系列产品：
   - INT64、INT32、INT16、UINT8、INT8、FLOAT、FLOAT16、BFLOAT16：n不超过int32的最大值。
   - DOUBLE：当n大于268000000时有运行超时风险，通过aclrtSetOpExecuteTimeOut设置超时时间。
 <!-- end id8 -->

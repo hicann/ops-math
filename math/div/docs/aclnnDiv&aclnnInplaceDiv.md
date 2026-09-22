@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -158,7 +158,7 @@ aclnnStatus aclnnInplaceDiv(
   - <term>Atlas 200I/500 A2推理产品</term>、<term>Atlas训练系列产品</term>：数据类型不支持BFLOAT16。
   <!-- end id7 -->
   <!-- npu="950" id8 -->
-  - <term>Ascend 950PR&Ascend950DT系列产品</term>：
+  - <term>Ascend 950PR&950DT系列产品</term>：
     - self与other推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
     - out不支持INT32、INT64、INT16、INT8、UINT8、BOOL数据类型。
   <!-- end id8 -->
@@ -322,7 +322,7 @@ aclnnStatus aclnnInplaceDiv(
   - <term>Atlas训练系列产品</term>：数据类型不支持BFLOAT16。
   <!-- end id9 -->
   <!-- npu="950" id10 -->
-  - <term>Ascend 950PR&Ascend950DT系列产品</term>：
+  - <term>Ascend 950PR&950DT系列产品</term>：
     - selfRef与other推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
     - selfRef不支持INT32、INT64、INT16、INT8、UINT8、BOOL。
   <!-- end id10 -->

@@ -56,7 +56,7 @@ flowchart TD
 
 ### 相关约束
 
-Atlas A2 训练系列产品(ascend910b) / Atlas A3 训练系列产品(ascend910_93) 双平台支持；input 与 angle dtype 必须一致(float32)；≤8 维；angle 为弧度无范围限制(周期函数)；不支持 fp16/bf16/fp64/complex128（任务范围外，参考亦不支持）。
+Atlas A2训练系列产品(ascend910b)/Atlas A3训练系列产品(ascend910_93) 双平台支持；input 与 angle dtype 必须一致(float32)；≤8 维；angle 为弧度无范围限制(周期函数)；不支持 fp16/bf16/fp64/complex128（任务范围外，参考亦不支持）。
 
 ---
 
@@ -184,8 +184,8 @@ flowchart TD
 
 | 芯片版本 | 勾选 |
 | --- | --- |
-| Atlas A2 训练系列产品 / Atlas A2 推理系列产品 (ascend910b) | √ |
-| Atlas A3 训练系列产品 / Atlas A3 推理系列产品 (ascend910_93) | √ |
+| Atlas A2系列产品 (ascend910b) | √ |
+| Atlas A3系列产品 (ascend910_93) | √ |
 
 ## 启用方式
 

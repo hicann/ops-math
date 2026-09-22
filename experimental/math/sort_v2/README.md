@@ -8,7 +8,7 @@
 
 ## 支持的产品型号
 
-- Atlas A2 训练系列产品（Ascend 910B）
+- Atlas A2训练系列产品（Ascend 910B）
 - Atlas 200I/500 A2推理产品（Ascend 310B）
 - Atlas推理系列产品 AI Core（Ascend 310P）
 - Atlas训练系列产品（Ascend 910）

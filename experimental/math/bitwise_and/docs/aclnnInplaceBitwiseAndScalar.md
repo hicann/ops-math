@@ -4,7 +4,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
+| <term>Atlas A2系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -27,9 +27,9 @@
 - **参数说明：**
 
   - selfRef(aclTensor*, 计算输入)：公式中的```selfRef```，支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND，数据维度不支持8维以上。
-    - <term>Atlas训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>：数据类型支持INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL，且数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/deduction_relationship.md)），且需要是推导之后可转换的数据类型（参见[互转换关系](../../../../docs/zh/context/conversion_relationship.md)）。
+    - <term>Atlas训练系列产品</term>、<term>Atlas A2系列产品</term>：数据类型支持INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL，且数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/deduction_relationship.md)），且需要是推导之后可转换的数据类型（参见[互转换关系](../../../../docs/zh/context/conversion_relationship.md)）。
   - other(aclScalar*, 计算输入)：公式中的```other```。
-    - <term>Atlas训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>：数据类型支持INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL，且数据类型与selfRef的数据类型需满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/deduction_relationship.md)）。
+    - <term>Atlas训练系列产品</term>、<term>Atlas A2系列产品</term>：数据类型支持INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL，且数据类型与selfRef的数据类型需满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/deduction_relationship.md)）。
   - workspaceSize(uint64_t*, 出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor*, 出参)：返回op执行器，包含了算子计算流程。
 

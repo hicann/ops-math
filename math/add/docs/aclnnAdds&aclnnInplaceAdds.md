@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -174,7 +174,7 @@ aclnnStatus aclnnInplaceAdds(
   - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：self与other数据类型满足[互推导关系](../../../docs/zh/context/deduction_relationship.md)。
   <!-- end id8 -->
   <!-- npu="950" id9 -->
-  - <term>Ascend 950PR&Ascend950DT系列产品</term>：other数据类型与self满足[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)。
+  - <term>Ascend 950PR&950DT系列产品</term>：other数据类型与self满足[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)。
   <!-- end id9 -->
 
 - **返回值：**
@@ -355,7 +355,7 @@ aclnnStatus aclnnInplaceAdds(
     - selfRef与other满足[互推导关系](../../../docs/zh/context/deduction_relationship.md)，且需要是推导之后可转换的数据类型（参见[互转换关系](../../../docs/zh/context/conversion_relationship.md)）。
   <!-- end id11 -->
   <!-- npu="950" id12 -->
-  - <term>Ascend 950PR&Ascend950DT系列产品</term>：
+  - <term>Ascend 950PR&950DT系列产品</term>：
     - selfRef与other满足[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)，且需要是推导之后可转换的数据类型（参见[互转换关系](../../../docs/zh/context/conversion_relationship.md)）。
   <!-- end id12 -->
 

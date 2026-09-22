@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -162,7 +162,7 @@ aclnnStatus aclnnInplaceLtScalar(
   - <term>Atlas 200I/500 A2推理产品</term>、<term>Atlas训练系列产品</term>：不支持BFLOAT16数据类型。
   <!-- end id7 -->
   <!-- npu="950" id8 -->
-  - <term>Ascend 950PR&Ascend950DT系列产品</term>：self与other的数据类型需相互满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)）。
+  - <term>Ascend 950PR&950DT系列产品</term>：self与other的数据类型需相互满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)）。
   <!-- end id8 -->
 
 - **返回值：**
@@ -320,7 +320,7 @@ aclnnStatus aclnnInplaceLtScalar(
   - <term>Atlas 200I/500 A2推理产品</term>、<term>Atlas训练系列产品</term>：不支持BFLOAT16数据类型。
   <!-- end id9 -->
   <!-- npu="950" id10 -->
-  - <term>Ascend 950PR&Ascend950DT系列产品</term>：self与other的数据类型需相互满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)）。
+  - <term>Ascend 950PR&950DT系列产品</term>：self与other的数据类型需相互满足数据类型推导规则（参见[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)）。
   <!-- end id10 -->
 
 - **返回值：**

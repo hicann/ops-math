@@ -286,7 +286,7 @@ aclnnStatus aclnnInplaceClampMinTensor(
     - selfRef的数据类型不支持BOOL、BFLOAT16。
     - clipValueMax的数据类型不支持BFLOAT16。
 
-  - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>、<term>Ascend 950PR&Ascend950DT系列产品</term>：
+  - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>、<term>Ascend 950PR&950DT系列产品</term>：
     - selfRef和clipValueMax数据类型需满足数据类型推导规则（参见[TensorScalar互推导关系](../../../../docs/zh/context/deduction_relationship.md)）。
     - selfRef的数据类型不支持BOOL。
 

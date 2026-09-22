@@ -6,7 +6,7 @@
 
 | 产品 | 是否支持 |
 |-----|---------|
-| Atlas A2 训练系列产品/Atlas 800I A2 推理产品（Ascend910B） | √ |
+| Atlas A2训练系列产品/Atlas 800I A2推理服务器（Ascend910B） | √ |
 
 > 本算子为 `experimental/math` 投放区的 Ascend910B 原生 AscendC 贡献实现。当前交付范围仅 **Ascend910B**。
 

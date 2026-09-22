@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -156,7 +156,7 @@ aclnnStatus aclnnInplaceFloorDivides(
   - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：self额外支持BFLOAT16，other额外支持BFLOAT16，out额外支持BFLOAT16。
   <!-- end id7 -->
   <!-- npu="950" id8 -->
-  - <term>Ascend 950PR&Ascend950DT系列产品</term>：self额外支持BFLOAT16，other额外支持BFLOAT16，out额外支持BFLOAT16。数据类型需满足TensorScalar互推导关系。
+  - <term>Ascend 950PR&950DT系列产品</term>：self额外支持BFLOAT16，other额外支持BFLOAT16，out额外支持BFLOAT16。数据类型需满足TensorScalar互推导关系。
   <!-- end id8 -->
 
 - **返回值：**
@@ -314,7 +314,7 @@ aclnnStatus aclnnInplaceFloorDivides(
   - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：selfRef额外支持BFLOAT16，other额外支持BFLOAT16。
   <!-- end id9 -->
   <!-- npu="950" id10 -->
-  - <term>Ascend 950PR&Ascend950DT系列产品</term>：selfRef额外支持BFLOAT16，other额外支持BFLOAT16。数据类型需满足TensorScalar互推导关系。
+  - <term>Ascend 950PR&950DT系列产品</term>：selfRef额外支持BFLOAT16，other额外支持BFLOAT16。数据类型需满足TensorScalar互推导关系。
   <!-- end id10 -->
 
 - **返回值：**

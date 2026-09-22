@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -141,7 +141,7 @@ aclnnStatus aclnnInplaceFloor(
   </tbody></table>
 
   <!-- npu="950,A3,910b" id7 -->
-  - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>、<term>Ascend 950PR&Ascend950DT系列产品</term>：self额外支持BFLOAT16，out额外支持BFLOAT16。
+  - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>、<term>Ascend 950PR&950DT系列产品</term>：self额外支持BFLOAT16，out额外支持BFLOAT16。
   <!-- end id7 -->
 
 - **返回值：**
@@ -286,7 +286,7 @@ aclnnStatus aclnnInplaceFloor(
   </tbody></table>
 
   <!-- npu="950,A3,910b" id8 -->
-  - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>、<term>Ascend 950PR&Ascend950DT系列产品</term>：selfRef额外支持BFLOAT16。
+  - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>、<term>Ascend 950PR&950DT系列产品</term>：selfRef额外支持BFLOAT16。
   <!-- end id8 -->
 
 - **返回值：**

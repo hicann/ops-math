@@ -6,7 +6,7 @@
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term> |    √     |
+| <term>Atlas A2系列产品</term> |    √     |
 
 ## 功能说明
 
@@ -34,7 +34,7 @@
   - self(aclTensor*, 计算输入)：公式中的```self```，数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8、UINT16，且数据类型需要与other满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/deduction_relationship.md)），shape需要与other满足[broadcast关系](../../../../docs/zh/context/broadcast_relationship.md)。支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND，数据维度不支持8维以上。
   - other(aclTensor*, 计算输入)：公式中的```other```，数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8、UINT16，且数据类型需要与self满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/deduction_relationship.md)），shape需要与self满足[broadcast关系](../../../../docs/zh/context/broadcast_relationship.md)。支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND，数据维度不支持8维以上。
   - out(aclTensor\*, 计算输出)：公式中的```out```，数据类型需要是self与other推导之后可转换的数据类型，shape需要是self与other broadcast之后的shape。支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND，数据维度不支持8维以上。
-    - <term>Atlas训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas推理系列产品</term>：数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64。
+    - <term>Atlas训练系列产品</term>、<term>Atlas A2系列产品</term>、<term>Atlas推理系列产品</term>：数据类型支持BOOL、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64。
   - workspaceSize(uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。
   - executor(aclOpExecutor\*\*, 出参)：返回op执行器，包含了算子计算流程。
 

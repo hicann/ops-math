@@ -7,7 +7,7 @@
 | <term>Atlas训练系列产品</term>                              |    ×     |
 | <term>Atlas A2系列产品</term> |    √     |
 | <term>Atlas A3系列产品</term> |    ×     |
-| <term>Ascend 950PR&Ascend950DT系列产品</term>                       |    ×     |
+| <term>Ascend 950PR&950DT系列产品</term>                       |    ×     |
 
 ## 功能说明
 

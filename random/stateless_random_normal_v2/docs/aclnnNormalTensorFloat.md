@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：不支持
@@ -240,7 +240,7 @@ aclnnStatus aclnnNormalTensorFloat(
 - 确定性计算：aclnnNormalTensorFloat默认确定性实现。
 
 <!-- npu="950" id7 -->
-- <term>Ascend 950PR&Ascend950DT系列产品</term>：通过aclnnSetPytorchRandom设置对标PyTorch模式时，offset必须为4的倍数。
+- <term>Ascend 950PR&950DT系列产品</term>：通过aclnnSetPytorchRandom设置对标PyTorch模式时，offset必须为4的倍数。
 
 <!-- end id7 -->
 

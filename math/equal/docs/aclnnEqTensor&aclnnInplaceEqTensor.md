@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -154,7 +154,7 @@ aclnnStatus aclnnInplaceEqTensor(
   </table>
 
   <!-- npu="950" id7 -->
-  - <term>Ascend 950PR&Ascend950DT系列产品</term>：self、other不支持UINT32数据类型。
+  - <term>Ascend 950PR&950DT系列产品</term>：self、other不支持UINT32数据类型。
   <!-- end id7 -->
   <!-- npu="A3,910b" id8 -->
   - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：
@@ -323,7 +323,7 @@ aclnnStatus aclnnInplaceEqTensor(
   </table>
 
   <!-- npu="950" id10 -->
-  - <term>Ascend 950PR&Ascend950DT系列产品</term>：selfRef、other不支持UINT32数据类型。
+  - <term>Ascend 950PR&950DT系列产品</term>：selfRef、other不支持UINT32数据类型。
   <!-- end id10 -->
   <!-- npu="A3,910b" id11 -->
   - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：selfRef、other不支持UINT32、UINT64数据类型。

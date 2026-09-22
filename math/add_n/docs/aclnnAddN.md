@@ -3,7 +3,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -191,7 +191,7 @@ aclnnStatus aclnnAddN(
 - 确定性说明：aclnnAddN默认确定性实现。
 
 <!-- npu="950,A3,910b" id7 -->
-- <term>Ascend 950PR&Ascend950DT系列产品</term>、<term>Atlas A3系列产品</term>、<term>Atlas A2系列产品</term>：
+- <term>Ascend 950PR&950DT系列产品</term>、<term>Atlas A3系列产品</term>、<term>Atlas A2系列产品</term>：
   - 数据类型：支持INT32、INT64、FLOAT16、BFLOAT16、FLOAT32。
   - 数据格式：仅支持ND格式。
   - 参数Shape：输入Tensor维度范围为1~8，需要满足shape一致。

@@ -4,7 +4,7 @@
 
 | 产品                                           | 是否支持 |
 |:---------------------------------------------|:----:|
-| <term>Ascend 950PR&Ascend950DT系列产品</term>       |  ×   |
+| <term>Ascend 950PR&950DT系列产品</term>       |  ×   |
 | <term>Atlas A3系列产品</term> |  ×   |
 | <term>Atlas A2系列产品</term> |  √   |
 | <term>Atlas 200I/500 A2推理产品</term>          |  ×   |
@@ -39,17 +39,17 @@ $$
 
 * **参数说明**：
   - self(aclTensor*, 计算输入)：公式中的`self`，Device侧的aclTensor，数据类型需要与other满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/deduction_relationship.md)），shape需要与other满足[broadcast关系](../../../../docs/zh/context/broadcast_relationship.md)，shape维度不高于8维。支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND。
-    * <term>Ascend 950PR&Ascend950DT系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、
+    * <term>Ascend 950PR&950DT系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、
     UINT64。
-    * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
+    * <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
     * <term>Atlas训练系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
   - other(aclTensor*, 计算输入)：公式中的`other`，Device侧的aclTensor，数据类型需要与self满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/deduction_relationship.md)），shape需要与self的shape满足[broadcast关系](../../../../docs/zh/context/broadcast_relationship.md)，shape维度不高于8维。支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND。
-    * <term>Ascend 950PR&Ascend950DT系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64。
-    * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
+    * <term>Ascend 950PR&950DT系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64。
+    * <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
     * <term>Atlas训练系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
   - out(aclTensor \*, 计算输出)：公式中的`out`，Device侧的aclTensor，数据类型需要是BOOL可转换的数据类型（参见[互转换关系](../../../../docs/zh/context/conversion_relationship.md)），shape与self、other广播之后的shape（参见[broadcast关系](../../../../docs/zh/context/broadcast_relationship.md)）一致，shape维度不高于8维，支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND。
-    * <term>Ascend 950PR&Ascend950DT系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64、UINT32、UINT16。
-    * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
+    * <term>Ascend 950PR&950DT系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64、UINT32、UINT16。
+    * <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
     * <term>Atlas训练系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
   + workspaceSize（uint64\_t\*, 出参）：返回需要在Device侧申请的workspace大小。
   + executor(aclOpExecutor\*\*, 出参)：返回op执行器，包含了算子计算流程。
@@ -80,12 +80,12 @@ $$
 
 * **参数说明**：
   * selfRef（aclTensor*, 计算输入/输出）：公式中的`selfRef`。数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/deduction_relationship.md)），shape需要与other满足[broadcast关系](../../../../docs/zh/context/broadcast_relationship.md)。支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND。
-    * <term>Ascend 950PR&Ascend950DT系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64。
-    * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
+    * <term>Ascend 950PR&950DT系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64。
+    * <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
     * <term>Atlas训练系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
   * other（aclTensor*, 计算输入）：公式中的`other`。数据类型与selfRef的数据类型需满足数据类型推导规则（参见[互推导关系](../../../../docs/zh/context/deduction_relationship.md)），shape需要与selfRef满足[broadcast关系](../../../../docs/zh/context/broadcast_relationship.md)。支持[非连续的Tensor](../../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../../docs/zh/context/data_format.md)支持ND。
-    * <term>Ascend 950PR&Ascend950DT系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64。
-    * <term>Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件</term>、<term>Atlas A3系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
+    * <term>Ascend 950PR&950DT系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128、UINT64。
+    * <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、BFLOAT16、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
     * <term>Atlas训练系列产品</term>：数据类型支持DOUBLE、FLOAT16、FLOAT、INT64、INT32、INT8、UINT8、BOOL、INT16、COMPLEX64、COMPLEX128。
 
   + workspaceSize(uint64_t\*, 出参)：返回需要在Device侧申请的workspace大小。

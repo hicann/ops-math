@@ -3,7 +3,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -240,7 +240,7 @@ aclnnStatus aclnnSimThreadExponential(
   - aclnnSimThreadExponential默认确定性实现。
 
 <!-- npu="950" id7 -->
-- Ascend 950PR&Ascend950DT系列产品：
+- Ascend 950PR&950DT系列产品：
   - offset必须为4的倍数。
   - count必须等于selfRef张量的元素总数。
 

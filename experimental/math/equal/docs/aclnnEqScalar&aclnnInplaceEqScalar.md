@@ -136,7 +136,7 @@ aclnnStatus aclnnInplaceEqScalar(
   </tbody>
   </table>
 
-  - <term>Ascend 950PR&Ascend950DT系列产品</term>：
+  - <term>Ascend 950PR&950DT系列产品</term>：
     - self与other满足[TensorScalar互推导关系](../../../../docs/zh/context/deduction_relationship.md)。
     - self、other不支持UINT32数据类型。
   - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：
@@ -300,7 +300,7 @@ aclnnStatus aclnnInplaceEqScalar(
   </tbody>
   </table>
 
-  - <term>Ascend 950PR&Ascend950DT系列产品</term>：
+  - <term>Ascend 950PR&950DT系列产品</term>：
     - selfRef与other满足[TensorScalar互推导关系](../../../../docs/zh/context/deduction_relationship.md)。
     - selfRef、other不支持UINT32数据类型。
   - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：

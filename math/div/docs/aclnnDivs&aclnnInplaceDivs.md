@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -163,7 +163,7 @@ aclnnStatus aclnnInplaceDivs(
     - self数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/deduction_relationship.md)）。
   <!-- end id8 -->
   <!-- npu="950" id9 -->
-  - <term>Ascend 950PR&Ascend950DT系列产品</term>：
+  - <term>Ascend 950PR&950DT系列产品</term>：
     - out数据类型不支持INT32、INT64、INT16、INT8、UINT8、BOOL。
     - self数据类型与other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)，推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
   <!-- end id9 -->
@@ -330,7 +330,7 @@ aclnnStatus aclnnInplaceDivs(
     - selfRef数据类型与other的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/deduction_relationship.md)）。
   <!-- end id11 -->
   <!-- npu="950" id12 -->
-  - <term>Ascend 950PR&Ascend950DT系列产品</term>：
+  - <term>Ascend 950PR&950DT系列产品</term>：
     - selfRef数据类型不支持INT32、INT64、INT16、INT8、UINT8、BOOL。
     - selfRef数据类型与other的数据类型需满足[TensorScalar互推导关系](../../../docs/zh/context/deduction_relationship.md)，推导之后的数据类型为整数类型或布尔类型时，推导之后的数据类型会转换为FLOAT。
 

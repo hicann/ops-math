@@ -4,8 +4,8 @@
 
 | 产品 | 是否支持 |
 | :-- | :--: |
-| Atlas A2 训练系列产品 / Atlas A2 推理系列产品 | √ |
-| Atlas A3 训练系列产品 / Atlas A3 推理系列产品 | √ |
+| Atlas A2系列产品 | √ |
+| Atlas A3系列产品 | √ |
 
 当前工程按需求仅面向 `Ascend 910B/910C` 路径生成 ACLNN 接口与 AiCore 实现。
 

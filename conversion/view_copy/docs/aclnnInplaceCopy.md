@@ -3,7 +3,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -235,20 +235,20 @@ aclnnStatus aclnnInplaceCopy(
   输入数据中存在nan，则将nan转换为0。
 
 <!-- npu="A3,910b" id7 -->
-- <term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：不支持src或selfRef数据类型为HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN的类型转换。
+- <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：不支持src或selfRef数据类型为HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN的类型转换。
 <!-- end id7 -->
 <!-- npu="A3,910b,910,310p" id8 -->
-- <term>Atlas 推理系列产品</term>、<term>Atlas 训练系列产品</term>、<term>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term>、<term>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term>：
+- <term>Atlas推理系列产品</term>、<term>Atlas训练系列产品</term>、<term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：
   - 针对数据类型从int32转换为int8的场景：只能保证输入数据在(-2048, 1920)范围内精度无误差。
   - 针对数据类型从float64/complex64/complex128转换为uint8的场景：只能保证输入数据为非负数精度无误差。
 <!-- end id8 -->
 <!-- npu="310p" id9 -->
-- <term>Atlas 推理系列产品</term>：
+- <term>Atlas推理系列产品</term>：
   - 针对数据类型从float32转换为int64和float32转换为uint8的场景：只能保证输入数据在(-2147483648, 2147483583)范围内精度无误差。
   - 针对数据类型从int64转换为float32的场景：只能保证输入数据在(-2147483648, 2147483647)范围内精度无误差。
 <!-- end id9 -->
 <!-- npu="950" id10 -->
-- <term>Ascend 950PR/Ascend 950DT</term>：
+- <term>Ascend 950PR&950DT系列产品</term>：
   - 针对src、selfRef数据类型涉及HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN的类型转换场景，只支持如下表格中的转换路径：
 
     | `src`数据类型 | `selfRef`数据类型 |

@@ -378,7 +378,7 @@ aclnnStatus aclnnInplaceGtScalar(
 
 示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../../docs/zh/context/compile_and_run_sample.md)。
 
-- <term>Ascend 950PR&Ascend950DT系列产品</term>、<term>Atlas A3系列产品</term>、<term>Atlas A2系列产品</term>、<term>Atlas推理系列产品</term>、<term>Atlas训练系列产品</term> aclnnGtScalar示例代码：
+- <term>Ascend 950PR&950DT系列产品</term>、<term>Atlas A3系列产品</term>、<term>Atlas A2系列产品</term>、<term>Atlas推理系列产品</term>、<term>Atlas训练系列产品</term> aclnnGtScalar示例代码：
 
 ```Cpp
 #include <iostream>
@@ -528,7 +528,7 @@ int main() {
 }
 ```
 
-- <term>Ascend 950PR&Ascend950DT系列产品</term>、<term>Atlas A3系列产品</term>、<term>Atlas A2系列产品</term>、<term>Atlas推理系列产品</term>、<term>Atlas训练系列产品</term> aclnnInplaceGtScalar示例代码：
+- <term>Ascend 950PR&950DT系列产品</term>、<term>Atlas A3系列产品</term>、<term>Atlas A2系列产品</term>、<term>Atlas推理系列产品</term>、<term>Atlas训练系列产品</term> aclnnInplaceGtScalar示例代码：
 
 ```Cpp
 #include <iostream>

@@ -5,7 +5,7 @@
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
-- <term>Ascend 950PR&Ascend950DT系列产品</term>：支持
+- <term>Ascend 950PR&950DT系列产品</term>：支持
 <!-- end id1 -->
 <!-- npu="A3" id2 -->
 - <term>Atlas A3系列产品</term>：支持
@@ -163,7 +163,7 @@ aclnnStatus aclnnMultinomial(
   - <term>Atlas推理系列产品</term>、<term>Atlas训练系列产品</term>：数据类型不支持BFLOAT16。
   <!-- end id7 -->
   <!-- npu="950" id8 -->
-  - <term>Ascend 950PR&Ascend950DT系列产品</term>：offset的值需要为4的倍数。
+  - <term>Ascend 950PR&950DT系列产品</term>：offset的值需要为4的倍数。
   <!-- end id8 -->
 
 - **返回值：**
