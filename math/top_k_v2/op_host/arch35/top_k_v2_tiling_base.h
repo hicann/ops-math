@@ -15,6 +15,7 @@
 #ifndef TOP_K_V2_TILING_BASE_H
 #define TOP_K_V2_TILING_BASE_H
 
+#include <cstdint>
 #include <functional>
 #include <limits>
 #include <map>
@@ -178,6 +179,37 @@ inline const std::map<ge::DataType, uint32_t> optDataTypeBitMap = {
     {ge::DT_FLOAT, 4}, {ge::DT_FLOAT16, 2}, {ge::DT_BF16, 2}};
 inline const std::map<ge::DataType, uint32_t> b64DataTypeBitMap = {{ge::DT_INT64, 8}, {ge::DT_UINT64, 8}};
 } // namespace topkV2DataInfo
+
+// Small-axis routing used by the TopKV2 insertion and two-stage kernels.
+constexpr uint32_t SMALL_AXIS_THRESHOLD = 512;
+
+enum class SmallAxisRouteKind : uint8_t { NONE = 0, INSERTION, TWO_STAGE };
+
+struct SmallAxisRoutePlan {
+    SmallAxisRouteKind kind = SmallAxisRouteKind::NONE;
+    uint32_t batchSize = 0;
+    uint32_t batchNum = 0;
+    uint32_t blockDim = 0;
+    uint32_t tmpUbSize = 0;
+    bool useRankInverse = false;
+};
+
+struct TopKSmallAxisRouteInfo {
+    uint32_t ubSize = 0;
+    uint32_t blockUbSize = 0;
+    uint32_t dtypeSize = 0;
+    uint32_t y2DtypeSize = 0;
+    uint32_t maxCoreNum = 0;
+    ge::DataType dataType = ge::DT_UINT8;
+    bool isNonLastAxis = false;
+    int64_t lastAxis = 1;
+    int64_t unsortedDim = 1;
+    int64_t outerSize = 1;
+    int64_t innerSize = 1;
+};
+
+bool SelectSmallAxisRoute(const TopKSmallAxisRouteInfo& info, SmallAxisRoutePlan& plan);
+bool SelectNonLastSmallAxisRoute(const TopKSmallAxisRouteInfo& info, SmallAxisRoutePlan& plan);
 
 struct TopkNonLastSmallAxisTileInfo {
     int64_t rank = 0;
