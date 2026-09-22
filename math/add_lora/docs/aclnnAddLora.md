@@ -203,7 +203,7 @@ aclnnStatus aclnnAddLora(
       <td>FLOAT16</td>
       <td>ND</td>
       <td>2</td>
-      <td>√</td>
+      <td>×</td>
     </tr>
       <tr>
       <td>workspaceSize（uint64_t*）</td>

@@ -56,8 +56,8 @@ static ge::graphStatus InferShape4TransformBiasRescaleQkv(gert::InferShapeContex
     auto* num_heads_ptr = attrs->GetAttrPointer<int>(INDEX_ATTR_NUM_HEADS);
     OP_CHECK_NULL_WITH_CONTEXT(context, num_heads_ptr);
     auto num_heads = *num_heads_ptr;
-    if (num_heads == 0) {
-        OP_LOGE("InferShape4TransformBiasRescaleQkv", "num_heads can not be 0, check failed.");
+    if (num_heads <= 0) {
+        OP_LOGE("InferShape4TransformBiasRescaleQkv", "num_heads must be greater than 0, check failed.");
         return GRAPH_FAILED;
     }
 
