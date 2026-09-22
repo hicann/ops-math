@@ -1,0 +1,14 @@
+testcase_name,api_name,tensor_view_shapes,tensor_dtypes,tensor_formats,attributes,output_tensor_indexes,golden_api,input_data_ranges
+bitwise_and_e2e_int8_001,torch.bitwise_and,"((8, 16),(8, 16))","('int8','int8')",,,,,
+bitwise_and_e2e_uint8_001,torch.bitwise_and,"((8, 16),(8, 16))","('uint8','uint8')",,,,,
+bitwise_and_e2e_int16_bcast,torch.bitwise_and,"((2, 3, 4),(4,))","('int16','int16')",,,,,
+bitwise_and_e2e_int32_bcast,torch.bitwise_and,"((64, 64),(1, 64))","('int32','int32')",,,,,
+bitwise_and_e2e_int64_001,torch.bitwise_and,"((128,),(128,))","('int64','int64')",,,,,
+bitwise_and_e2e_uint16_001,torch.bitwise_and,"((8, 16),(8, 16))","('uint16','uint16')",,,,,
+bitwise_and_e2e_int32_scalar,torch.bitwise_and,"((8, 16),)","('int32',)",,{'other': 5},,,
+bitwise_and_e2e_int8_rank6,torch.bitwise_and,"((2, 2, 2, 2, 3, 4),(2, 2, 2, 2, 3, 4))","('int8','int8')",,,,,
+bitwise_and_e2e_uint8_large,torch.bitwise_and,"((256, 512),(256, 512))","('uint8','uint8')",,,,,
+bitwise_and_e2e_int32_rank1,torch.bitwise_and,"((1024,),(1,))","('int32','int32')",,,,,
+bitwise_and_e2e_bool,torch.bitwise_and,"((8, 16),(8, 16))","('bool','bool')",,,,,"((0,1),(0,1))"
+bitwise_and_e2e_mixed_i8_i32,torch.bitwise_and,"((8, 16),(8, 16))","('int8','int32')",,,,,"((-64,63),(-1000,1000))"
+bitwise_and_e2e_scalar_neg1,torch.bitwise_and,"((8, 16),)","('int16',)",,{'other': -1},,,"((-1000,1000),)"

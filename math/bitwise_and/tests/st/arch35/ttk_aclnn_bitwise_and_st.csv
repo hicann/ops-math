@@ -1,0 +1,26 @@
+testcase_name,api_name,tensor_view_shapes,tensor_dtypes,tensor_formats,scalar_dtypes,attributes,output_tensor_indexes,output_inplace_indexes,input_data_ranges,precision_tolerances,absolute_precision
+bitwise_and_aclnn_tensor_int8_001,aclnnBitwiseAndTensor,"((8, 16),(8, 16),(8, 16),)","('int8','int8','int8',)","('ND','ND','ND',)",,,"(2,)",,"((-64,63),(-64,63),)","((0,0),)",1e-08
+bitwise_and_aclnn_tensor_uint8_001,aclnnBitwiseAndTensor,"((8, 16),(8, 16),(8, 16),)","('uint8','uint8','uint8',)","('ND','ND','ND',)",,,"(2,)",,"((0,127),(0,127),)","((0,0),)",1e-08
+bitwise_and_aclnn_tensor_int32_bcast,aclnnBitwiseAndTensor,"((2, 3, 4),(4,),(2, 3, 4),)","('int32','int32','int32',)","('ND','ND','ND',)",,,"(2,)",,"((-1000,1000),(-255,255),)","((0,0),)",1e-08
+bitwise_and_aclnn_tensor_int16_001,aclnnBitwiseAndTensor,"((128, 256),(128, 256),(128, 256),)","('int16','int16','int16',)","('ND','ND','ND',)",,,"(2,)",,"((-1000,1000),(0,255),)","((0,0),)",1e-08
+bitwise_and_aclnn_scalar_int8_001,aclnnBitwiseAndScalar,"((8, 16),(8, 16),)","('int8','int8',)","('ND','ND',)","('int8',)",{'other': 5},"(1,)",,"((-64,63),)","((0,0),)",1e-08
+bitwise_and_aclnn_scalar_uint8_001,aclnnBitwiseAndScalar,"((8, 16),(8, 16),)","('uint8','uint8',)","('ND','ND',)","('uint8',)",{'other': 200},"(1,)",,"((0,255),)","((0,0),)",1e-08
+bitwise_and_aclnn_scalar_int32_001,aclnnBitwiseAndScalar,"((64, 64),(64, 64),)","('int32','int32',)","('ND','ND',)","('int32',)",{'other': 12345},"(1,)",,"((-100000,100000),)","((0,0),)",1e-08
+bitwise_and_aclnn_inplace_tensor_int8_001,aclnnInplaceBitwiseAndTensor,"((8, 16),(8, 16),)","('int8','int8',)","('ND','ND',)",,,"(0,)","(0,)","((-64,63),(-64,63),)","((0,0),)",1e-08
+bitwise_and_aclnn_inplace_tensor_uint16_bcast,aclnnInplaceBitwiseAndTensor,"((32, 32),(1, 32),)","('uint16','uint16',)","('ND','ND',)",,,"(0,)","(0,)","((0,65535),(0,255),)","((0,0),)",1e-08
+bitwise_and_aclnn_inplace_scalar_int32_001,aclnnInplaceBitwiseAndScalar,"((16, 16),)","('int32',)","('ND',)","('int32',)",{'other': 255},"(0,)","(0,)","((-1000,1000),)","((0,0),)",1e-08
+bitwise_and_aclnn_tensor_bool,aclnnBitwiseAndTensor,"((8, 16),(8, 16),(8, 16),)","('bool','bool','bool',)","('ND','ND','ND',)",,,"(2,)",,"((0,1),(0,1),)","((0,0),)",1e-08
+bitwise_and_aclnn_tensor_bool_int8,aclnnBitwiseAndTensor,"((8, 16),(8, 16),(8, 16),)","('bool','int8','int8',)","('ND','ND','ND',)",,,"(2,)",,"((0,1),(-64,63),)","((0,0),)",1e-08
+bitwise_and_aclnn_tensor_i8_i32,aclnnBitwiseAndTensor,"((8, 16),(8, 16),(8, 16),)","('int8','int32','int32',)","('ND','ND','ND',)",,,"(2,)",,"((-64,63),(-1000,1000),)","((0,0),)",1e-08
+bitwise_and_aclnn_tensor_u8_i16,aclnnBitwiseAndTensor,"((8, 16),(8, 16),(8, 16),)","('uint8','int16','int16',)","('ND','ND','ND',)",,,"(2,)",,"((0,255),(-1000,1000),)","((0,0),)",1e-08
+bitwise_and_aclnn_tensor_i32_i64,aclnnBitwiseAndTensor,"((8, 16),(8, 16),(8, 16),)","('int32','int64','int64',)","('ND','ND','ND',)",,,"(2,)",,"((-1000,1000),(-100000,100000),)","((0,0),)",1e-08
+bitwise_and_aclnn_tensor_out_narrow,aclnnBitwiseAndTensor,"((8, 16),(8, 16),(8, 16),)","('int8','int32','int8',)","('ND','ND','ND',)",,,"(2,)",,"((-64,63),(-1000,1000),)","((0,0),)",1e-08
+bitwise_and_aclnn_inplace_i8_i32,aclnnInplaceBitwiseAndTensor,"((8, 16),(8, 16),)","('int8','int32',)","('ND','ND',)",,,"(0,)","(0,)","((-64,63),(-1000,1000),)","((0,0),)",1e-08
+bitwise_and_aclnn_inplace_u8_i64,aclnnInplaceBitwiseAndTensor,"((8, 16),(8, 16),)","('uint8','int64',)","('ND','ND',)",,,"(0,)","(0,)","((0,255),(-100000,100000),)","((0,0),)",1e-08
+bitwise_and_aclnn_scalar_i8_neg1,aclnnBitwiseAndScalar,"((8, 16),(8, 16),)","('int8','int8',)","('ND','ND',)","('int8',)",{'other': -1},"(1,)",,"((-64,63),)","((0,0),)",1e-08
+bitwise_and_aclnn_scalar_u8_255,aclnnBitwiseAndScalar,"((8, 16),(8, 16),)","('uint8','uint8',)","('ND','ND',)","('uint8',)",{'other': 255},"(1,)",,"((0,255),)","((0,0),)",1e-08
+bitwise_and_aclnn_scalar_u16_65535,aclnnBitwiseAndScalar,"((8, 16),(8, 16),)","('uint16','uint16',)","('ND','ND',)","('uint16',)",{'other': 65535},"(1,)",,"((0,65535),)","((0,0),)",1e-08
+bitwise_and_aclnn_scalar_bool_true,aclnnBitwiseAndScalar,"((8, 16),(8, 16),)","('bool','bool',)","('ND','ND',)","('bool',)",{'other': True},"(1,)",,"((0,1),)","((0,0),)",1e-08
+bitwise_and_aclnn_inplace_scalar_u8_0,aclnnInplaceBitwiseAndScalar,"((8, 16),)","('uint8',)","('ND',)","('uint8',)",{'other': 0},"(0,)","(0,)","((0,255),)","((0,0),)",1e-08
+bitwise_and_aclnn_tensor_rank0,aclnnBitwiseAndTensor,"((),(),(),)","('int8','int8','int8',)","('ND','ND','ND',)",,,"(2,)",,"((-64,63),(-64,63),)","((0,0),)",1e-08
+bitwise_and_aclnn_tensor_empty,aclnnBitwiseAndTensor,"((0, 16),(1, 16),(0, 16),)","('int8','int8','int8',)","('ND','ND','ND',)",,,"(2,)",,"((-64,63),(-64,63),)","((0,0),)",1e-08
