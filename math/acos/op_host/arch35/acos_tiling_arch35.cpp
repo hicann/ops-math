@@ -33,6 +33,7 @@ ge::graphStatus AcosTiling::SetTilingData()
 {
     OP_LOGD(tilingContext->GetNodeName(), "AcosTiling SetTilingData enter.");
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
     currentWorkspace[0] = static_cast<size_t>(ACOS_WORKSPACE_RESERVE_BYTE);
     const uint64_t tilingKey = GET_TPL_TILING_KEY((uint64_t)tiling->baseTiling.scheMode, dType);
     OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu", tilingKey);
@@ -78,9 +79,8 @@ ge::graphStatus AcosTiling::CheckShape()
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputStorageShape);
     const gert::Shape& outputZShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
-    OP_CHECK_IF(
-        inputYShape != outputZShape, OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(inputYShape != outputZShape,
+                OP_LOGE(tilingContext->GetNodeName(), "input x and output y shape not same"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -90,9 +90,8 @@ ge::graphStatus AcosTiling::CalcOutputDtype()
     auto outputDesc = tilingContext->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, outputDesc);
     this->outputDtype = outputDesc->GetDataType();
-    OP_CHECK_IF(
-        this->outputDtype != this->inputDtype,
-        OP_LOGE(tilingContext->GetNodeName(), "output y dtype not same as input x"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(this->outputDtype != this->inputDtype,
+                OP_LOGE(tilingContext->GetNodeName(), "output y dtype not same as input x"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -102,14 +101,12 @@ ge::graphStatus AcosTiling::RunTiling()
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
     tiling = tilingContext->GetTilingData<AcosTilingData>();
     OP_CHECK_IF(tiling == nullptr, OP_LOGE(tilingContext, "get tiling failed"), return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get input dtype failed"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get input dtype failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"),
+                return ge::GRAPH_FAILED);
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
     if (this->outputDtype == ge::DT_FLOAT16) {
         dType = TPL_FP16;
@@ -121,15 +118,14 @@ ge::graphStatus AcosTiling::RunTiling()
             tiling->baseTiling, ASCEND_API_BUFFER + DCACHE_SIZE);
     } else if (this->outputDtype == ge::DT_FLOAT) {
         dType = TPL_FP32;
-        baseTilingResult = elewiseBaseTiling.DoTiling<AcosOp::AcosDag<float>::OpDag>(
-            tiling->baseTiling, ASCEND_API_BUFFER + DCACHE_SIZE);
+        baseTilingResult = elewiseBaseTiling.DoTiling<AcosOp::AcosDag<float>::OpDag>(tiling->baseTiling,
+                                                                                     ASCEND_API_BUFFER + DCACHE_SIZE);
     } else {
         OP_LOGE(tilingContext->GetNodeName(), "output dtype not support");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(
-        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"),
+                return ge::GRAPH_FAILED);
     return SetTilingData();
 }
 
