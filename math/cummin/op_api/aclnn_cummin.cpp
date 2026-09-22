@@ -41,8 +41,8 @@ static const std::initializer_list<op::DataType> SELF_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT16, op::DataType::DT_INT32,   op::DataType::DT_INT64,  op::DataType::DT_UINT8,
     op::DataType::DT_BOOL,  op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> INDICES_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_INT32, op::DataType::DT_INT64};
+static const std::initializer_list<op::DataType> INDICES_DTYPE_SUPPORT_LIST = {op::DataType::DT_INT32,
+                                                                               op::DataType::DT_INT64};
 
 static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST = {DataType::DT_FLOAT, DataType::DT_FLOAT16,
                                                                           DataType::DT_INT8,  DataType::DT_UINT8,
@@ -72,16 +72,15 @@ static bool CheckDimValid(const aclTensor* self, const int64_t dim)
         return true;
     }
     if (dim < minimum || dim > maximum) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "dim must be within the range of [%ld, %ld], but it is %ld.", minimum, maximum,
-            dim);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "dim must be within the range of [%ld, %ld], but it is %ld.", minimum, maximum,
+                dim);
         return false;
     }
     return true;
 }
 
-static aclnnStatus CheckParamsCummin(
-    const aclTensor* self, const int64_t dim, const aclTensor* valuesOut, const aclTensor* indicesOut)
+static aclnnStatus CheckParamsCummin(const aclTensor* self, const int64_t dim, const aclTensor* valuesOut,
+                                     const aclTensor* indicesOut)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull3Tensor(self, valuesOut, indicesOut), ACLNN_ERR_PARAM_NULLPTR);
@@ -112,8 +111,8 @@ inline static const aclIntArray* CalculateTranposePerm(const aclTensor* x, int64
     return executor->AllocIntArray(perm.data(), dimSize);
 }
 
-static aclnnStatus ExecCumminRegbase(
-    const aclTensor* self, int64_t dim, aclTensor* valuesOut, aclTensor* indicesOut, aclOpExecutor* executor)
+static aclnnStatus ExecCumminRegbase(const aclTensor* self, int64_t dim, aclTensor* valuesOut, aclTensor* indicesOut,
+                                     aclOpExecutor* executor)
 {
     auto selfCast = self;
     bool needCast = self->GetDataType() == op::DataType::DT_INT8 || self->GetDataType() == op::DataType::DT_UINT8;
@@ -123,12 +122,11 @@ static aclnnStatus ExecCumminRegbase(
     }
 
     std::tuple<aclTensor*, aclTensor*> cumminResult;
-    if (indicesOut->GetDataType() ==  op::DataType::DT_INT32) {
+    if (indicesOut->GetDataType() == op::DataType::DT_INT32) {
         cumminResult = l0op::CumminOutInt32(selfCast, dim, executor);
     } else {
         cumminResult = l0op::CumminOutInt64(selfCast, dim, executor);
     }
-    
 
     const aclTensor* valuesResult = std::get<0>(cumminResult);
     CHECK_RET(valuesResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -149,9 +147,13 @@ static aclnnStatus ExecCumminRegbase(
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus ExecCummin(
-    const aclTensor* self, int64_t dim, aclTensor* valuesOut, aclTensor* indicesOut, aclOpExecutor* executor)
+static aclnnStatus ExecCummin(const aclTensor* self, int64_t dim, aclTensor* valuesOut, aclTensor* indicesOut,
+                              aclOpExecutor* executor)
 {
+    // 归一化负数dim，CheckDimValid已保证dim在[-dimNum, dimNum-1]内
+    if (dim < 0) {
+        dim += static_cast<int64_t>(self->GetViewShape().GetDimNum());
+    }
     const aclIntArray* valuePerm = nullptr;
     int64_t realDim = dim;
     bool needTranspose = (dim != 0 && (IsAiCoreSupport(self) && self->GetViewShape().GetDim(dim) <= INT32_MAX));
@@ -163,7 +165,7 @@ static aclnnStatus ExecCummin(
     }
 
     std::tuple<aclTensor*, aclTensor*> cumminResult;
-    if (self->GetViewShape().GetDim(dim) > INT32_MAX ||
+    if (self->GetViewShape().GetDim(realDim) > INT32_MAX ||
         (!IsAiCoreSupport(self) && indicesOut->GetDataType() == DataType::DT_INT64)) {
         cumminResult = l0op::CumminOutInt64(self, realDim, executor);
     } else {
@@ -217,9 +219,8 @@ static void CheckFormat(const aclTensor* self)
     }
 }
 
-aclnnStatus aclnnCumminGetWorkspaceSize(
-    const aclTensor* self, int64_t dim, aclTensor* valuesOut, aclTensor* indicesOut, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnCumminGetWorkspaceSize(const aclTensor* self, int64_t dim, aclTensor* valuesOut, aclTensor* indicesOut,
+                                        uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
