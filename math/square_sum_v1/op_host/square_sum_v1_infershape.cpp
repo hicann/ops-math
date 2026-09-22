@@ -65,13 +65,5 @@ static ge::graphStatus InferShapeRange4SquareSumV1(gert::InferShapeRangeContext*
     return InferShapeRange4ReduceCommon(context, "InferShapeRange4SquareSumV1");
 }
 
-static ge::graphStatus InferDataType4SquareSumV1(gert::InferDataTypeContext* context)
-{
-    return InferDataType4ReduceCommon(context, "InferDataType4SquareSumV1");
-}
-
-IMPL_OP_INFERSHAPE(SquareSumV1)
-    .InferShape(InferShape4SquareSumV1)
-    .InferShapeRange(InferShapeRange4SquareSumV1)
-    .InferDataType(InferDataType4SquareSumV1);
+IMPL_OP_INFERSHAPE(SquareSumV1).InferShape(InferShape4SquareSumV1).InferShapeRange(InferShapeRange4SquareSumV1);
 } // namespace ops
