@@ -292,11 +292,48 @@ TEST_F(AddV2Tiling, add_v2_tiling_empty_late_zero_after_large_dims)
                     std::vector<size_t>{16777216});
 }
 
-// rank_range=[1, 8]：rank0 标量必须在进入定长 broadcast 结构前拒绝。
-TEST_F(AddV2Tiling, add_v2_tiling_rank0_failed)
+// TensorFlow 标量的原始 shape 为 []，GE 将其规整为单元素 storage shape [1]。
+// 标量位于左输入时，应使用 storage shape 参与广播并完成 tiling。
+TEST_F(AddV2Tiling, add_v2_tiling_scalar_x1_broadcast_success)
+{
+    gert::StorageShape scalar = {{}, {1}};
+    gert::StorageShape tensor = {{2, 3}, {2, 3}};
+    TilingInfo info;
+    EXPECT_TRUE(ExecuteTiling(MakeAddV2TilingPara(scalar, tensor, tensor), info));
+}
+
+// 标量位于右输入是 TF 中 x + 1 的常见场景，origin rank=0 不影响 storage shape 广播。
+TEST_F(AddV2Tiling, add_v2_tiling_scalar_x2_broadcast_success)
+{
+    gert::StorageShape scalar = {{}, {1}};
+    gert::StorageShape tensor = {{2, 3}, {2, 3}};
+    TilingInfo info;
+    EXPECT_TRUE(ExecuteTiling(MakeAddV2TilingPara(tensor, scalar, tensor), info));
+}
+
+// 两个 TF 标量相加时，输入输出均保留 rank-0 origin shape，并以 [1] 作为运行时 storage shape。
+TEST_F(AddV2Tiling, add_v2_tiling_scalar_scalar_success)
+{
+    gert::StorageShape scalar = {{}, {1}};
+    TilingInfo info;
+    EXPECT_TRUE(ExecuteTiling(MakeAddV2TilingPara(scalar, scalar, scalar), info));
+}
+
+// 与同类广播算子一致，rank-0 storage shape 表示单元素标量，由公共模板规整为 [1]。
+TEST_F(AddV2Tiling, add_v2_tiling_storage_rank0_success)
 {
     gert::StorageShape scalar = {{}, {}};
-    ExecuteTestCase(MakeAddV2TilingPara(scalar, scalar, scalar), ge::GRAPH_FAILED);
+    TilingInfo info;
+    EXPECT_TRUE(ExecuteTiling(MakeAddV2TilingPara(scalar, scalar, scalar), info));
+}
+
+// rank-0 storage shape 与普通张量参与广播时，也应作为单元素标量处理。
+TEST_F(AddV2Tiling, add_v2_tiling_storage_rank0_broadcast_success)
+{
+    gert::StorageShape scalar = {{}, {}};
+    gert::StorageShape tensor = {{2, 3}, {2, 3}};
+    TilingInfo info;
+    EXPECT_TRUE(ExecuteTiling(MakeAddV2TilingPara(scalar, tensor, tensor), info));
 }
 
 // rank=8 是支持上界，不能被上界保护误拒绝。
@@ -327,13 +364,14 @@ TEST_F(AddV2Tiling, add_v2_tiling_rank9_failed_before_axis_merge)
     ExecuteTestCase(MakeAddV2TilingPara(shape, shape, shape), ge::GRAPH_FAILED);
 }
 
-// 保护逻辑检查的是原始 rank，而不只是可能已被格式转换压缩的 storage rank。
-TEST_F(AddV2Tiling, add_v2_tiling_origin_rank9_storage_rank1_failed)
+// Tiling 只校验实际参与计算的 storage shape，不因 origin shape 的 rank 单独拒绝。
+TEST_F(AddV2Tiling, add_v2_tiling_origin_rank9_storage_rank1_success)
 {
     gert::StorageShape x1Shape = {{2, 1, 1, 1, 1, 1, 1, 1, 1}, {2}};
     gert::StorageShape x2Shape = {{1}, {1}};
     gert::StorageShape yShape = {{2, 1, 1, 1, 1, 1, 1, 1, 1}, {2}};
-    ExecuteTestCase(MakeAddV2TilingPara(x1Shape, x2Shape, yShape), ge::GRAPH_FAILED);
+    TilingInfo info;
+    EXPECT_TRUE(ExecuteTiling(MakeAddV2TilingPara(x1Shape, x2Shape, yShape), info));
 }
 
 TEST_F(AddV2Tiling, add_v2_tiling_input_dtype_mismatch_failed)

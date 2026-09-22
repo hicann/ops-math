@@ -245,11 +245,13 @@ TEST_F(TensorRedirectTilingTest, tiling_null_context_failed_without_dereference)
     EXPECT_EQ(functionStruct->tiling(nullptr), ge::GRAPH_FAILED);
 }
 
-// rank < 1：0 维标量 → shape_mismatch（spec inputs[0].rank_range = [1,8]）
-TEST_F(TensorRedirectTilingTest, tiling_check_rank_below_min_scalar_failed)
+// rank-0 storage shape 的 numel 为 1，应正常完成切分；origin shape 不参与 Tiling rank 校验。
+TEST_F(TensorRedirectTilingTest, tiling_check_storage_rank_min_0d_success)
 {
-    gert::StorageShape shape = {{}, {}};
-    ExecuteTestCase(MakePara(shape, ge::DT_FLOAT16), ge::GRAPH_FAILED, EXPECT_TILING_KEY, std::vector<size_t>{});
+    gert::StorageShape shape = {{1}, {}};
+    TilingInfo info;
+    ASSERT_TRUE(SafeExecuteTiling(MakePara(shape, ge::DT_FLOAT16), info));
+    CheckCommonInvariants(info, 1, 2);
 }
 
 // rank > 8：9 维 → shape_mismatch
@@ -259,22 +261,26 @@ TEST_F(TensorRedirectTilingTest, tiling_check_rank_above_max_9d_failed)
     ExecuteTestCase(MakePara(shape, ge::DT_FLOAT16), ge::GRAPH_FAILED, EXPECT_TILING_KEY, std::vector<size_t>{});
 }
 
-// 即使 storage shape 已被压缩为 rank1，原始 rank9 仍违反接口契约。
-TEST_F(TensorRedirectTilingTest, tiling_check_origin_rank_above_max_storage_rank1_failed)
+// Tiling 只校验实际参与计算的 storage shape，不因输入 origin rank 单独拒绝。
+TEST_F(TensorRedirectTilingTest, tiling_check_origin_rank_above_max_storage_rank1_success)
 {
     gert::StorageShape shape = {{2, 1, 1, 1, 1, 1, 1, 1, 1}, {2}};
-    ExecuteTestCase(MakePara(shape, ge::DT_FLOAT16), ge::GRAPH_FAILED, EXPECT_TILING_KEY, std::vector<size_t>{});
+    TilingInfo info;
+    ASSERT_TRUE(SafeExecuteTiling(MakePara(shape, ge::DT_FLOAT16), info));
+    CheckCommonInvariants(info, 2, 2);
 }
 
-// 输出的原始 rank 也必须独立校验，不能被合法的 rank1 storage shape 掩盖。
-TEST_F(TensorRedirectTilingTest, tiling_check_output_origin_rank_above_max_storage_rank1_failed)
+// 输出同样只按 storage shape 校验；origin rank 不参与切分与一致性判断。
+TEST_F(TensorRedirectTilingTest, tiling_check_output_origin_rank_above_max_storage_rank1_success)
 {
     gert::StorageShape xShape = {{2}, {2}};
     gert::StorageShape yShape = {{2, 1, 1, 1, 1, 1, 1, 1, 1}, {2}};
     gert::TilingContextPara para("TensorRedirect", {{xShape, ge::DT_FLOAT16, ge::FORMAT_ND}},
                                  {{yShape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &g_compileInfo,
                                  static_cast<uint64_t>(PLAT_CORE_NUM), static_cast<uint64_t>(PLAT_UB_SIZE));
-    ExecuteTestCase(para, ge::GRAPH_FAILED, EXPECT_TILING_KEY, std::vector<size_t>{});
+    TilingInfo info;
+    ASSERT_TRUE(SafeExecuteTiling(para, info));
+    CheckCommonInvariants(info, 2, 2);
 }
 
 // rank == 8 边界内侧：合法，须成功

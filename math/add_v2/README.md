@@ -91,7 +91,7 @@ x1 shape (3, 1), x2 shape (1, 4) -> y shape (3, 4)
     <td>BFLOAT16、FLOAT16、FLOAT、INT32、INT16、UINT8、INT8、INT64、COMPLEX64</td>
     <td>输入ND→输出ND</td>
     <td>输入ND→输出ND；支持固定rank动态shape和dynamic rank</td>
-    <td>rank取值范围为[1, 8]；支持空Tensor，输出y的shape仍必须是两路输入的广播结果</td>
+    <td>rank取值范围为[0, 8]，rank为0时表示标量；支持空Tensor，输出y的shape仍必须是两路输入的广播结果</td>
   </tr>
   <tr>
     <td><term>Atlas A3系列产品</term><br>

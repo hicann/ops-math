@@ -41,7 +41,6 @@ constexpr int64_t UB_FACTOR_MIN_BYTES = 2048; // UB 单块性能下界（字节�
 constexpr int64_t N_BUFFER = 2;               // double buffer
 constexpr int64_t ONE_BLK_BYTE = 32;          // ubblock_size
 constexpr int64_t DATA_COPY_MAX_BLOCK_BYTES = 2097151;
-constexpr size_t MIN_RANK = 1; // spec inputs[0].rank_range
 constexpr size_t MAX_RANK = 8;
 
 static_assert(std::is_trivial<TensorRedirectTilingData>::value,
@@ -98,9 +97,9 @@ static ge::graphStatus CheckRank(const gert::TilingContext* context, const char*
 {
     const size_t rank = shape.GetDimNum();
     OP_CHECK_IF(
-        rank < MIN_RANK || rank > MAX_RANK,
+        rank > MAX_RANK,
         OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), tensorName, std::to_string(rank).c_str(),
-                                                 (std::string(shapeKind) + " rank must be within [1, 8]").c_str()),
+                                                 (std::string(shapeKind) + " rank must be within [0, 8]").c_str()),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -110,17 +109,13 @@ static ge::graphStatus CheckTensorRedirectShape(const gert::TilingContext* conte
 {
     auto xShapePtr = context->GetInputShape(INDEX_INPUT_X);
     OP_CHECK_NULL_WITH_CONTEXT(context, xShapePtr);
-    const gert::Shape& xOriginShape = xShapePtr->GetOriginShape();
     const gert::Shape& xShape = xShapePtr->GetStorageShape();
 
     auto yShapePtr = context->GetOutputShape(INDEX_OUTPUT_X);
     OP_CHECK_NULL_WITH_CONTEXT(context, yShapePtr);
-    const gert::Shape& yOriginShape = yShapePtr->GetOriginShape();
     const gert::Shape& yShape = yShapePtr->GetStorageShape();
 
-    if (CheckRank(context, "x", "origin", xOriginShape) != ge::GRAPH_SUCCESS ||
-        CheckRank(context, "x", "storage", xShape) != ge::GRAPH_SUCCESS ||
-        CheckRank(context, "output_x", "origin", yOriginShape) != ge::GRAPH_SUCCESS ||
+    if (CheckRank(context, "x", "storage", xShape) != ge::GRAPH_SUCCESS ||
         CheckRank(context, "output_x", "storage", yShape) != ge::GRAPH_SUCCESS) {
         return ge::GRAPH_FAILED;
     }

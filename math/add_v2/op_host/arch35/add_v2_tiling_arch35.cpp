@@ -38,7 +38,6 @@ namespace optiling {
 constexpr uint64_t ADD_V2_SCH_MODE_EMPTY = 999;
 constexpr uint64_t ADD_V2_USER_DEF_NORMAL = 0;
 constexpr uint64_t ADD_V2_USER_DEF_EMPTY = 1;
-constexpr size_t ADD_V2_MIN_RANK = 1;
 constexpr size_t ADD_V2_MAX_RANK = 8;
 
 static_assert(std::is_standard_layout<AddV2CompileInfoArch35>::value,
@@ -64,9 +63,9 @@ static ge::graphStatus CheckRank(const gert::TilingContext* context, const char*
 {
     const size_t rank = shape.GetDimNum();
     OP_CHECK_IF(
-        rank < ADD_V2_MIN_RANK || rank > ADD_V2_MAX_RANK,
+        rank > ADD_V2_MAX_RANK,
         OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), tensorName, std::to_string(rank).c_str(),
-                                                 (std::string(shapeKind) + " rank must be within [1, 8]").c_str()),
+                                                 (std::string(shapeKind) + " rank must be within [0, 8]").c_str()),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -216,12 +215,6 @@ ge::graphStatus AddV2TilingArch35::CheckShape() const
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext_, inputX2);
     auto outputY = tilingContext_->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext_, outputY);
-
-    if (CheckRank(tilingContext_, "x1", "origin", inputX1->GetOriginShape()) != ge::GRAPH_SUCCESS ||
-        CheckRank(tilingContext_, "x2", "origin", inputX2->GetOriginShape()) != ge::GRAPH_SUCCESS ||
-        CheckRank(tilingContext_, "y", "origin", outputY->GetOriginShape()) != ge::GRAPH_SUCCESS) {
-        return ge::GRAPH_FAILED;
-    }
 
     const gert::Shape& x1Shape = inputX1->GetStorageShape();
     const gert::Shape& x2Shape = inputX2->GetStorageShape();
