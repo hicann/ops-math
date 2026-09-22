@@ -144,7 +144,7 @@ aclnnStatus aclnnTransformBiasRescaleQkv(
       <td>BFLOAT16、FLOAT16、FLOAT</td>
       <td>ND</td>
       <td>4</td>
-      <td>√</td>
+      <td>×</td>
     </tr>
     <tr>
       <td>kOut（aclTensor*）</td>
@@ -154,7 +154,7 @@ aclnnStatus aclnnTransformBiasRescaleQkv(
       <td>BFLOAT16、FLOAT16、FLOAT</td>
       <td>ND</td>
       <td>4</td>
-      <td>√</td>
+      <td>×</td>
     </tr>
     <tr>
       <td>vOut（aclTensor*）</td>
@@ -164,7 +164,7 @@ aclnnStatus aclnnTransformBiasRescaleQkv(
       <td>BFLOAT16、FLOAT16、FLOAT</td>
       <td>ND</td>
       <td>4</td>
-      <td>√</td>
+      <td>×</td>
     </tr>
       <tr>
       <td>workspaceSize（uint64_t*）</td>
