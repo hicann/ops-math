@@ -145,9 +145,6 @@ aclnnStatus aclnnTransMatmulWeight(
     <tr>
       <td>输入Tensor的Dtype不满足要求。</td>
     </tr>
-    <tr>
-      <td>不支持空Tensor输入。</td>
-    </tr>
   </tbody>
   </table>
 
