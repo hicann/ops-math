@@ -85,4 +85,4 @@
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_arg_max_with_value](./examples/test_aclnn_arg_max_with_value.cpp) | 通过[aclnnMaxDim](./docs/aclnnMaxDim.md)接口方式调用ArgMaxWithValue算子。 |
+| aclnn调用 | [test_aclnn_max_dim](./examples/test_aclnn_max_dim.cpp) | 通过[aclnnMaxDim](./docs/aclnnMaxDim.md)接口方式调用ArgMaxWithValue算子。 |

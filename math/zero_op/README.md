@@ -70,4 +70,4 @@
 
 | 调用方式 | 调用样例                                                                   | 说明                                                             |
 |--------------|------------------------------------------------------------------------|----------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_zero](./examples/test_aclnn_zero.cpp) | 通过[aclnnInplaceZero](./docs/aclnnInplaceZero.md)接口方式调用ZerosLike算子。    |
+| aclnn调用 | [test_aclnn_inplace_zero](./examples/test_aclnn_inplace_zero.cpp) | 通过[aclnnInplaceZero](./docs/aclnnInplaceZero.md)接口方式调用ZerosLike算子。    |

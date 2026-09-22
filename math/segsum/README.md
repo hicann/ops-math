@@ -96,4 +96,4 @@
 
 | 调用方式   | 样例代码           | 说明                                         |
 | ---------------- | --------------------------- | --------------------------------------------------- |
-| aclnn接口  | [test_aclnn_segsum](examples/test_aclnn_segsum.cpp) | 通过[aclnnExpSegsum](docs/aclnnExpSegsum.md)接口方式调用Segsum算子。 |
+| aclnn接口  | [test_aclnn_exp_segsum](examples/test_aclnn_exp_segsum.cpp) | 通过[aclnnExpSegsum](docs/aclnnExpSegsum.md)接口方式调用Segsum算子。 |

@@ -82,4 +82,4 @@
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_arg_min_with_value](./examples/test_aclnn_arg_min_with_value.cpp) | 通过[aclnnMinDim](./docs/aclnnMinDim.md)接口方式调用ArgMinWithValue算子。 |
+| aclnn调用 | [test_aclnn_min_dim](./examples/test_aclnn_min_dim.cpp) | 通过[aclnnMinDim](./docs/aclnnMinDim.md)接口方式调用ArgMinWithValue算子。 |
