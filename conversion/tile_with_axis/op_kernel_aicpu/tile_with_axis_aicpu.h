@@ -17,7 +17,7 @@ namespace aicpu {
 class TileWithAxisCpuKernel : public CpuKernel {
 public:
     TileWithAxisCpuKernel() = default;
-    ~TileWithAxisCpuKernel() = default;
+    ~TileWithAxisCpuKernel() override = default;
     uint32_t Compute(CpuKernelContext& ctx) override;
 
 private:
