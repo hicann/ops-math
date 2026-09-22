@@ -10,15 +10,12 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
+__spec__ = {"pad_v3_grad": "PadV3GradTestSpec"}
+
+__golden__ = {"kernel": {"pad_v3_grad": "pad_v3_grad_golden"}}
+
 import numpy as np
 from collections import deque
-
-
-__golden__ = {
-    "kernel": {
-        "pad_v3_grad": "pad_v3_grad_golden"
-    }
-}
 
 
 def _numpy_bfloat16():
@@ -27,15 +24,19 @@ def _numpy_bfloat16():
     except ModuleNotFoundError:
         try:
             import tensorflow
+
             bfloat16 = tensorflow.bfloat16.as_numpy_dtype
         except ModuleNotFoundError:
-            raise RuntimeError("ml-dtypes or tensorflow is needed to support bfloat16 dtype!!! "
-                                "Please install with `pip3 install ml-dtypes` or `pip3 install tensorflow`")
+            raise RuntimeError(
+                "ml-dtypes or tensorflow is needed to support bfloat16 dtype!!! "
+                "Please install with `pip3 install ml-dtypes` or `pip3 install tensorflow`"
+            )
     return bfloat16
 
 
 def _numpy_to_torch_tensor(np_array):
     import torch
+
     if np_array is None:
         return None
     np_dtype = np_array.dtype.name
@@ -49,6 +50,7 @@ def _numpy_to_torch_tensor(np_array):
 
 def _torch_to_numpy_tensor(torch_tensor):
     import torch
+
     if torch_tensor is None:
         return None
     if not isinstance(torch_tensor, torch.Tensor):
@@ -69,16 +71,18 @@ def _cal_out_shape(in_shape, paddings):
         if i < len(in_shape) - len(paddings):
             out_shape.append(in_shape[i])
         else:
-            out_shape.append(in_shape[i] - paddings[i - offset][0] - paddings[i - offset][1])
+            out_shape.append(
+                in_shape[i] - paddings[i - offset][0] - paddings[i - offset][1]
+            )
     return out_shape
 
 
-def _pad_v3_constant(x, paddings, pad_mode, paddings_contiguous, x_format):
+def _pad_v3_constant(grad_output, paddings, paddings_contiguous):
     import torch
 
     constant_values = 0
     pad_shape = deque()
-    if paddings_contiguous == True:
+    if paddings_contiguous:
         for i in range(len(paddings)):
             pad_shape.append(-paddings[len(paddings) - 1 - i][0])
             pad_shape.append(-paddings[len(paddings) - 1 - i][1])
@@ -87,14 +91,14 @@ def _pad_v3_constant(x, paddings, pad_mode, paddings_contiguous, x_format):
             pad_shape.append(-paddings[0][len(paddings[0]) - 1 - i])
             pad_shape.append(-paddings[1][len(paddings[1]) - 1 - i])
 
-    if x.dtype.name == "bfloat16":
-        x_tensor = _numpy_to_torch_tensor(x).to(torch.float32)
+    if grad_output.dtype.name == "bfloat16":
+        x_tensor = _numpy_to_torch_tensor(grad_output).to(torch.float32)
     else:
-        x_tensor = _numpy_to_torch_tensor(x)
+        x_tensor = _numpy_to_torch_tensor(grad_output)
 
     golden = torch.constant_pad_nd(x_tensor, tuple(pad_shape), constant_values)
 
-    if x.dtype.name == "bfloat16":
+    if grad_output.dtype.name == "bfloat16":
         golden = _torch_to_numpy_tensor(golden.to(torch.bfloat16))
     else:
         golden = golden.numpy()
@@ -161,7 +165,7 @@ def _torch_direct_invoke_circular(grad_output_np, y_shape_list, pad_temp):
 
     golden = x.grad
 
-    golden.squeeze(0)
+    golden = golden.squeeze(0)
     if origin_dtype == "bfloat16":
         golden = _torch_to_numpy_tensor(golden.to(torch.bfloat16))
     else:
@@ -176,9 +180,7 @@ def _numpy_pad_v3_grad_circular(grad_output, input_shape, pad):
     grad_output = np.array(grad_output, dtype=np.float32)
     grad_input = np.zeros(input_shape, dtype=np.float32)
     for idx_out in np.ndindex(grad_output.shape):
-        idx_in = tuple(
-            (idx_out[d] - pad[d][0]) % input_shape[d] for d in range(dim)
-        )
+        idx_in = tuple((idx_out[d] - pad[d][0]) % input_shape[d] for d in range(dim))
         grad_input[idx_in] += grad_output[idx_out]
     grad_input = np.array(grad_input, dtype=true_dtype)
     return grad_input
@@ -187,11 +189,19 @@ def _numpy_pad_v3_grad_circular(grad_output, input_shape, pad):
 def _reflect_pad_backward_tf(grad_output, y_shape, pad_shape, mode):
     import tensorflow as tf
 
-    dtypes = {'bfloat16': 'tf.bfloat16', 'float16': 'tf.float16', 'float32': 'tf.float32'}
+    dtypes = {
+        "bfloat16": "tf.bfloat16",
+        "float16": "tf.float16",
+        "float32": "tf.float32",
+    }
     if grad_output.dtype.name in dtypes.keys():
-        grad_output = tf.constant(grad_output, dtype=eval(dtypes[grad_output.dtype.name]))
+        grad_output = tf.constant(
+            grad_output, dtype=eval(dtypes[grad_output.dtype.name])
+        )
         pad_v3_grad_out = tf.ones(y_shape, dtype=eval(dtypes[grad_output.dtype.name]))
-        pad_v3_grad_out = tf.Variable(pad_v3_grad_out, dtype=eval(dtypes[grad_output.dtype.name]))
+        pad_v3_grad_out = tf.Variable(
+            pad_v3_grad_out, dtype=eval(dtypes[grad_output.dtype.name])
+        )
 
     with tf.GradientTape() as tape:
         padded = tf.pad(pad_v3_grad_out, paddings=pad_shape, mode=mode)
@@ -201,14 +211,14 @@ def _reflect_pad_backward_tf(grad_output, y_shape, pad_shape, mode):
 
 
 def pad_v3_grad_golden(x, paddings, mode="reflect", paddings_contiguous=True, **kwargs):
-    '''
+    """
     Kernel golden for pad_v3_grad.
     All the parameters follow @pad_v3_grad_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
         input_formats, output_formats, input_ori_formats, output_ori_formats,
         input_dtypes, output_dtypes.
-    '''
+    """
     grad_output = x
 
     paddings_arr = np.array(paddings).astype(np.int64)
@@ -216,11 +226,8 @@ def pad_v3_grad_golden(x, paddings, mode="reflect", paddings_contiguous=True, **
         paddings_arr = paddings_arr.reshape(-1, 2)
     paddings_val = paddings_arr.tolist()
 
-    input_formats = kwargs.get('input_formats', ())
-    x_format = input_formats[0] if input_formats and len(input_formats) > 0 else 'ND'
-
     if mode == "constant":
-        return _pad_v3_constant(grad_output, paddings_val, mode, paddings_contiguous, x_format)
+        return _pad_v3_constant(grad_output, paddings_val, paddings_contiguous)
 
     pad_shape = list()
     if paddings_contiguous:
@@ -230,17 +237,28 @@ def pad_v3_grad_golden(x, paddings, mode="reflect", paddings_contiguous=True, **
         pad_shape = np.array(pad_shape).reshape(-1, 2).tolist()
     y_shape = _cal_out_shape(grad_output.shape, pad_shape)
 
-    if mode == 'circular':
+    if mode == "circular":
         if grad_output.ndim <= 3:
             grad = _torch_direct_invoke_circular(grad_output, y_shape, pad_shape)
         else:
             grad = _numpy_pad_v3_grad_circular(grad_output, y_shape, pad_shape)
         return grad
 
-    if mode == 'edge':
-        grad = _numpy_pad_v3_grad_edge(grad_output, y_shape, pad_shape)
-        return grad
+    if mode == "edge":
+        return _numpy_pad_v3_grad_edge(grad_output, y_shape, pad_shape)
 
     if mode == "reflect" or mode == "symmetric":
-        grad = _reflect_pad_backward_tf(grad_output, y_shape, pad_shape, mode)
-        return grad
+        return _reflect_pad_backward_tf(grad_output, y_shape, pad_shape, mode)
+
+    raise RuntimeError(f"pad_v3_grad golden: unsupported mode [{mode}]")
+
+
+class PadV3GradTestSpec:
+    def golden(x, paddings, mode="reflect", paddings_contiguous=True, **kwargs):
+        return [pad_v3_grad_golden(x, paddings, mode, paddings_contiguous, **kwargs)]
+
+    tolerance = {
+        "float32": {"standard": "mix_tolerance"},
+        "float16": {"standard": "mix_tolerance"},
+        "bfloat16": {"standard": "mix_tolerance"},
+    }
