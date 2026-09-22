@@ -52,7 +52,8 @@ inline ge::Tensor Vec2Tensor(std::vector<T>& vals, const std::vector<int64_t>& d
 {
     ge::Shape shape(dims);
     ge::TensorDesc desc(shape, format, dtype);
-    return ge::Tensor(desc, reinterpret_cast<uint8_t*>(vals.data()), vals.size() * sizeof(T));
+    return ge::Tensor(desc, static_cast<const uint8_t*>(static_cast<const void*>(vals.data())),
+                      vals.size() * sizeof(T));
 }
 
 // Build a scalar ge::Tensor from a single value. Moved here from onnx_common.h so that
@@ -64,11 +65,11 @@ inline ge::Tensor CreateScalar(T val, ge::DataType dtype, ge::Format format = ge
     std::vector<int64_t> dims_scalar = {};
     ge::Shape shape(dims_scalar);
     ge::TensorDesc desc(shape, format, dtype);
-    return ge::Tensor(desc, reinterpret_cast<uint8_t*>(&val), sizeof(T));
+    return ge::Tensor(desc, static_cast<const uint8_t*>(static_cast<const void*>(&val)), sizeof(T));
 }
 
 // ONNX attribute dtype enum. Moved here from onnx_common.h (no protobuf dependency).
-enum DataTypeOnnx {
+enum class DataTypeOnnx {
     DTO_FLOAT = 1,       // float type
     DTO_UINT8 = 2,       // uint8 type
     DTO_INT8 = 3,        // int8 type
@@ -88,13 +89,22 @@ enum DataTypeOnnx {
     DTO_UNDEFINED
 };
 
-static std::map<int, ge::DataType> onnx2om_dtype_map = {
-    {DTO_UINT8, ge::DT_UINT8},   {DTO_UINT16, ge::DT_UINT16},       {DTO_UINT32, ge::DT_UINT32},
-    {DTO_UINT64, ge::DT_UINT64}, {DTO_INT8, ge::DT_INT8},           {DTO_INT16, ge::DT_INT16},
-    {DTO_INT32, ge::DT_INT32},   {DTO_INT64, ge::DT_INT64},         {DTO_FLOAT16, ge::DT_FLOAT16},
-    {DTO_FLOAT, ge::DT_FLOAT},   {DTO_DOUBLE, ge::DT_DOUBLE},       {DTO_STRING, ge::DT_STRING},
-    {DTO_BOOL, ge::DT_BOOL},     {DTO_COMPLEX64, ge::DT_COMPLEX64}, {DTO_COMPLEX128, ge::DT_COMPLEX128},
-    {DTO_BF16, ge::DT_BF16}};
+static std::map<DataTypeOnnx, ge::DataType> onnx2om_dtype_map = {{DataTypeOnnx::DTO_UINT8, ge::DT_UINT8},
+                                                                 {DataTypeOnnx::DTO_UINT16, ge::DT_UINT16},
+                                                                 {DataTypeOnnx::DTO_UINT32, ge::DT_UINT32},
+                                                                 {DataTypeOnnx::DTO_UINT64, ge::DT_UINT64},
+                                                                 {DataTypeOnnx::DTO_INT8, ge::DT_INT8},
+                                                                 {DataTypeOnnx::DTO_INT16, ge::DT_INT16},
+                                                                 {DataTypeOnnx::DTO_INT32, ge::DT_INT32},
+                                                                 {DataTypeOnnx::DTO_INT64, ge::DT_INT64},
+                                                                 {DataTypeOnnx::DTO_FLOAT16, ge::DT_FLOAT16},
+                                                                 {DataTypeOnnx::DTO_FLOAT, ge::DT_FLOAT},
+                                                                 {DataTypeOnnx::DTO_DOUBLE, ge::DT_DOUBLE},
+                                                                 {DataTypeOnnx::DTO_STRING, ge::DT_STRING},
+                                                                 {DataTypeOnnx::DTO_BOOL, ge::DT_BOOL},
+                                                                 {DataTypeOnnx::DTO_COMPLEX64, ge::DT_COMPLEX64},
+                                                                 {DataTypeOnnx::DTO_COMPLEX128, ge::DT_COMPLEX128},
+                                                                 {DataTypeOnnx::DTO_BF16, ge::DT_BF16}};
 
 inline ge::DataType GetOmDtypeFromOnnxDtype(int onnx_type)
 {
