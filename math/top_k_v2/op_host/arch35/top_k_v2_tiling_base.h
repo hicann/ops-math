@@ -15,6 +15,7 @@
 #ifndef TOP_K_V2_TILING_BASE_H
 #define TOP_K_V2_TILING_BASE_H
 
+#include <cstdint>
 #include <functional>
 #include <limits>
 #include <map>
@@ -30,7 +31,6 @@ namespace topkV2DataInfo {
 const uint32_t CONST_ZERO = 0;
 const uint32_t CONST_TWO = 2;
 const uint32_t CONST_THREE = 3;
-// TopKV2属性在IR中的索引，顺序与config json中attrs定义一致: sorted/dim/largest/indices_dtype/sort_policy
 const uint32_t SORTED_ATTR_INDEX = 0;
 const uint32_t DIM_ATTR_INDEX = 1;
 const uint32_t LARGEST_ATTR_INDEX = 2;
@@ -62,6 +62,8 @@ const uint32_t FP32_MERGE_INTRA_CORE_MODE = 7;
 const uint32_t NON_LAST_SMALL_AXIS_MODE = 8;
 const uint32_t NON_LAST_SMALL_AXIS_RADIX_SELECT = 0;
 const uint32_t NON_LAST_SMALL_AXIS_MERGE_SORT = 1;
+const uint32_t SMALL_AXIS_INSERTION_MODE = 9;
+const uint32_t SMALL_AXIS_TWO_STAGE_MODE = 10;
 const uint32_t INT64_BYTE = 8;
 const uint32_t INT32_BYTE = 4;
 // SortAndTopk的阈值，排序轴大于该阈值的场景，走sortAndTopK模板
@@ -178,6 +180,37 @@ inline const std::map<ge::DataType, uint32_t> optDataTypeBitMap = {
     {ge::DT_FLOAT, 4}, {ge::DT_FLOAT16, 2}, {ge::DT_BF16, 2}};
 inline const std::map<ge::DataType, uint32_t> b64DataTypeBitMap = {{ge::DT_INT64, 8}, {ge::DT_UINT64, 8}};
 } // namespace topkV2DataInfo
+
+// Small-axis routing used by the TopKV2 insertion and two-stage kernels.
+constexpr uint32_t SMALL_AXIS_THRESHOLD = 512;
+
+enum class SmallAxisRouteKind : uint8_t { NONE = 0, INSERTION, TWO_STAGE };
+
+struct SmallAxisRoutePlan {
+    SmallAxisRouteKind kind = SmallAxisRouteKind::NONE;
+    uint32_t batchSize = 0;
+    uint32_t batchNum = 0;
+    uint32_t blockDim = 0;
+    uint32_t tmpUbSize = 0;
+    bool useRankInverse = false;
+};
+
+struct TopKSmallAxisRouteInfo {
+    uint32_t ubSize = 0;
+    uint32_t blockUbSize = 0;
+    uint32_t dtypeSize = 0;
+    uint32_t y2DtypeSize = 0;
+    uint32_t maxCoreNum = 0;
+    ge::DataType dataType = ge::DT_UINT8;
+    bool isNonLastAxis = false;
+    int64_t lastAxis = 1;
+    int64_t unsortedDim = 1;
+    int64_t outerSize = 1;
+    int64_t innerSize = 1;
+};
+
+bool SelectSmallAxisRoute(const TopKSmallAxisRouteInfo& info, SmallAxisRoutePlan& plan);
+bool SelectNonLastSmallAxisRoute(const TopKSmallAxisRouteInfo& info, SmallAxisRoutePlan& plan);
 
 struct TopkNonLastSmallAxisTileInfo {
     int64_t rank = 0;

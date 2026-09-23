@@ -25,7 +25,11 @@
 
 ## 功能说明
 
-- 算子功能：返回输入Tensor在指定维度上的k个极值及索引。
+- 接口功能：返回输入Tensor在指定维度上的k个极值及索引。
+- 与aclnnTopk的差异：aclnnTopkV2与aclnnTopk功能相同，核心差异是新增sortPolicy输入参数（位于sorted之后、valuesOut之前），用于指定TopK候选结果的排序策略。
+  - sortPolicy=0：使用原有排序行为，与aclnnTopk一致；
+  - sortPolicy=1：在sorted=True且小k值（2≤k≤32）场景下启用Bitonic双调算法对结果进行处理；k≥33时结果与aclnnTopk一致。
+- 其余参数、支持的数据类型与约束均与aclnnTopk一致。
 
 ## 函数原型
 
@@ -133,7 +137,7 @@ aclnnStatus aclnnTopkV2(
       <td>sortPolicy（int64_t）</td>
       <td>输入</td>
       <td>表示TopK候选结果的排序策略。</td>
-      <td>0表示使用原有排序行为，1表示在sorted=True且小k值（2≤k≤32）场景下启用Bitonic Small TopK路径，对相等值的索引按原始顺序排列，对齐GPU行为。</td>
+      <td>0表示使用原有排序行为，sorted=True时结果为稳定排序；1表示在sorted=True且小k值（2≤k≤32）场景下启用Bitonic Small TopK路径，对相等值的索引按原始顺序排列，对齐GPU行为；k≥33时结果与aclnnTopk一致。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>

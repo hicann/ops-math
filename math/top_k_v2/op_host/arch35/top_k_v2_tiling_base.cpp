@@ -15,6 +15,7 @@
 #include "top_k_v2_tiling_base.h"
 
 #include <algorithm>
+#include <cmath>
 #include <string>
 
 #include "log/log.h"
@@ -55,6 +56,480 @@ bool CeilAlignUint32(uint64_t rawSize, uint32_t alignSize, uint32_t& alignedSize
     }
     alignedSize = static_cast<uint32_t>(result);
     return true;
+}
+
+namespace {
+
+constexpr uint32_t SMALL_AXIS_MAX_DATACOPY_BLOCK_COUNT = 4095;
+constexpr uint32_t TWO_STAGE_RANK_INVERSE_MAX_N = 64;
+constexpr uint32_t SMALL_AXIS_TIER_COUNT = 4;
+constexpr uint32_t SMALL_AXIS_TIER_WIDTH = 2;
+constexpr uint32_t TWO_STAGE_VALUE_BUFFER_COUNT = 2;
+constexpr uint32_t TWO_STAGE_RANK_INVERSE_INDEX_BUFFER_COUNT = 2;
+constexpr uint32_t TWO_STAGE_RADIX_INDEX_BUFFER_COUNT = 3;
+
+struct SmallAxisRule {
+    ge::DataType dtype;
+    uint32_t insertionMaxN;
+    uint32_t twoStageMaxN;
+    uint32_t insertionTiers[SMALL_AXIS_TIER_COUNT][SMALL_AXIS_TIER_WIDTH];
+    uint32_t twoStageTiers[SMALL_AXIS_TIER_COUNT][SMALL_AXIS_TIER_WIDTH];
+};
+
+// Each tier is {maximum axis length, minimum segments per core}; the values are empirical route thresholds.
+constexpr SmallAxisRule SMALL_AXIS_RULES[] = {
+    {ge::DT_INT64, 16, 512, {{8, 1}, {16, 4}, {0, 0}}, {{15, 8}, {128, 4}, {512, 8}, {0, 0}}},
+    {ge::DT_UINT64, 16, 512, {{8, 1}, {16, 4}, {0, 0}}, {{15, 8}, {128, 4}, {512, 8}, {0, 0}}},
+    {ge::DT_INT32, 11, 384, {{8, 2}, {11, 4}, {0, 0}}, {{11, 8}, {64, 4}, {384, 8}, {0, 0}}},
+    {ge::DT_UINT32, 11, 384, {{8, 2}, {11, 4}, {0, 0}}, {{11, 8}, {64, 4}, {384, 8}, {0, 0}}},
+    {ge::DT_INT16, 8, 192, {{4, 2}, {8, 4}, {0, 0}}, {{7, 8}, {64, 4}, {192, 12}, {0, 0}}},
+    {ge::DT_UINT16, 8, 192, {{4, 2}, {8, 4}, {0, 0}}, {{7, 8}, {64, 4}, {192, 12}, {0, 0}}},
+    {ge::DT_INT8, 8, 128, {{4, 2}, {8, 7}, {0, 0}}, {{3, 8}, {64, 7}, {128, 16}, {0, 0}}},
+    {ge::DT_UINT8, 8, 128, {{4, 2}, {8, 7}, {0, 0}}, {{3, 8}, {64, 7}, {128, 16}, {0, 0}}},
+    {ge::DT_FLOAT, 8, 24, {{4, 16}, {8, 48}, {0, 0}}, {{24, 64}, {0, 0}}},
+    {ge::DT_BF16, 8, 54, {{4, 16}, {8, 48}, {0, 0}}, {{54, 64}, {0, 0}}},
+    {ge::DT_FLOAT16, 8, 54, {{4, 16}, {8, 48}, {0, 0}}, {{54, 64}, {0, 0}}},
+};
+
+struct TwoStageBatchPlan {
+    uint32_t batchSize = 0;
+    uint32_t batchNum = 0;
+    uint32_t blockDim = 0;
+    uint32_t tmpUbSize = 0;
+};
+
+bool CeilDivUint32(uint64_t value, uint64_t divisor, uint32_t& result)
+{
+    if (divisor == 0U) {
+        return false;
+    }
+    uint64_t quotient = Ops::Base::CeilDiv(value, divisor);
+    if (quotient > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
+        return false;
+    }
+    result = static_cast<uint32_t>(quotient);
+    return true;
+}
+
+uint32_t LookupMinSegs(const uint32_t (*tiers)[SMALL_AXIS_TIER_WIDTH], uint32_t axisNum)
+{
+    for (uint32_t i = 0; i < SMALL_AXIS_TIER_COUNT && tiers[i][0] != 0U; ++i) {
+        if (axisNum <= tiers[i][0]) {
+            return tiers[i][1];
+        }
+    }
+    return std::numeric_limits<uint32_t>::max();
+}
+
+const SmallAxisRule* FindSmallAxisRule(ge::DataType dataType)
+{
+    for (const SmallAxisRule& rule : SMALL_AXIS_RULES) {
+        if (rule.dtype == dataType) {
+            return &rule;
+        }
+    }
+    return nullptr;
+}
+
+bool UseTwoStageRankInverse(uint32_t axisLen) { return axisLen <= TWO_STAGE_RANK_INVERSE_MAX_N; }
+
+static bool ComputeBf16InsertionBytesPerSeg(uint32_t axisLen, uint64_t idxBytes, uint32_t blockUbSize,
+                                            uint64_t& bytesPerSeg)
+{
+    uint64_t castRawBytes = 0U;
+    if (ge::MulOverflow(axisLen, sizeof(int16_t), castRawBytes)) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("ComputeInsertionBytesPerSeg", "axisLen", std::to_string(axisLen).c_str(),
+                                              "The value of axisLen must not cause cast raw byte size overflow.");
+        return false;
+    }
+    uint64_t castBytes = Ops::Base::CeilAlign<uint64_t>(castRawBytes, blockUbSize);
+    if (castBytes == 0U) {
+        return false;
+    }
+    uint64_t castRowElems = castBytes / sizeof(int16_t);
+    uint64_t valueBytes = 0U;
+    if (ge::MulOverflow(castRowElems, sizeof(float), valueBytes) ||
+        ge::AddOverflow(valueBytes, idxBytes, bytesPerSeg) || ge::AddOverflow(bytesPerSeg, castBytes, bytesPerSeg)) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            "ComputeInsertionBytesPerSeg", "bytesPerSeg",
+            (std::to_string(castRowElems) + ", " + std::to_string(idxBytes) + ", " + std::to_string(castBytes)).c_str(),
+            "The value of bf16 bytesPerSeg must not overflow.");
+        return false;
+    }
+    return true;
+}
+
+uint32_t ComputeInsertionBytesPerSeg(ge::DataType dataType, uint32_t axisLen, uint32_t dtypeSize,
+                                     uint32_t indexDtypeSize, uint32_t blockUbSize)
+{
+    uint64_t valueRawBytes = 0U;
+    uint64_t idxRawBytes = 0U;
+    if (ge::MulOverflow(axisLen, dtypeSize, valueRawBytes) || ge::MulOverflow(axisLen, indexDtypeSize, idxRawBytes)) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("ComputeInsertionBytesPerSeg", "axisLen", std::to_string(axisLen).c_str(),
+                                              "The value of axisLen must not cause raw byte size overflow.");
+        return 0U;
+    }
+    uint64_t valueBytes = Ops::Base::CeilAlign<uint64_t>(valueRawBytes, blockUbSize);
+    uint64_t idxBytes = Ops::Base::CeilAlign<uint64_t>(idxRawBytes, blockUbSize);
+    if (valueBytes == 0U || idxBytes == 0U) {
+        return 0U;
+    }
+    uint64_t bytesPerSeg = 0U;
+    if (ge::AddOverflow(valueBytes, idxBytes, bytesPerSeg)) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("ComputeInsertionBytesPerSeg", "bytesPerSeg",
+                                              (std::to_string(valueBytes) + ", " + std::to_string(idxBytes)).c_str(),
+                                              "The value of valueBytes plus idxBytes must not overflow.");
+        return 0U;
+    }
+    if (dataType == ge::DT_BF16 && !ComputeBf16InsertionBytesPerSeg(axisLen, idxBytes, blockUbSize, bytesPerSeg)) {
+        return 0U;
+    }
+    if (bytesPerSeg > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("ComputeInsertionBytesPerSeg", "bytesPerSeg",
+                                              std::to_string(bytesPerSeg).c_str(),
+                                              "The value of bytesPerSeg must be less than or equal to uint32 max.");
+        return 0U;
+    }
+    return static_cast<uint32_t>(bytesPerSeg);
+}
+
+static bool ComputeNonLastBatchNum(int64_t outerSize, int64_t innerSize, uint32_t innerChunk, uint32_t& batchNum)
+{
+    if (outerSize <= 0 || innerSize <= 0 || innerChunk == 0U) {
+        return false;
+    }
+    uint32_t innerLoop = 0U;
+    if (!CeilDivUint32(static_cast<uint64_t>(innerSize), static_cast<uint64_t>(innerChunk), innerLoop)) {
+        return false;
+    }
+    uint64_t batchNum64 = static_cast<uint64_t>(outerSize) * static_cast<uint64_t>(innerLoop);
+    if (batchNum64 == 0U || batchNum64 > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
+        return false;
+    }
+    batchNum = static_cast<uint32_t>(batchNum64);
+    return true;
+}
+
+bool QuerySortTmpSizeRadix(ge::DataType dataType, uint32_t sortAxisNum, uint32_t& tmpUbSize)
+{
+    std::vector<int64_t> shapeVec = {static_cast<int64_t>(sortAxisNum)};
+    ge::Shape srcShape(shapeVec);
+    AscendC::SortConfig config;
+    config.type = AscendC::SortType::RADIX_SORT;
+    config.isDescend = false;
+    config.hasSrcIndex = false;
+    config.hasDstIndex = true;
+    uint32_t maxValue = 0U;
+    uint32_t minValue = 0U;
+    AscendC::GetSortMaxMinTmpSize(srcShape, dataType, ge::DT_UINT32, false, config, maxValue, minValue);
+    tmpUbSize = maxValue;
+    return maxValue > 0U;
+}
+
+uint32_t MaxTwoStageU16SafeBatch(uint32_t axisLen)
+{
+    if (axisLen == 0U || axisLen > static_cast<uint32_t>(std::numeric_limits<uint16_t>::max())) {
+        return 0U;
+    }
+    uint32_t maxBatch = static_cast<uint32_t>(
+        std::sqrt(static_cast<double>(std::numeric_limits<uint16_t>::max()) / axisLen));
+    while (static_cast<uint64_t>(maxBatch) * maxBatch * axisLen >
+           static_cast<uint64_t>(std::numeric_limits<uint16_t>::max())) {
+        --maxBatch;
+    }
+    while (static_cast<uint64_t>(maxBatch + 1U) * (maxBatch + 1U) * axisLen <=
+           static_cast<uint64_t>(std::numeric_limits<uint16_t>::max())) {
+        ++maxBatch;
+    }
+    return maxBatch;
+}
+
+bool ComputeTwoStageSortTmpUb(ge::DataType dataType, uint32_t axisLen, uint32_t totalElems, uint32_t blockUbSize,
+                              uint32_t& tmpUbSize)
+{
+    tmpUbSize = 0U;
+    QuerySortTmpSizeRadix(dataType, totalElems, tmpUbSize);
+    uint32_t aligned = 0U;
+    if (!CeilAlignUint32(tmpUbSize, blockUbSize, aligned)) {
+        return false;
+    }
+    tmpUbSize = aligned;
+    bool useRankInverse = UseTwoStageRankInverse(axisLen);
+    if (!useRankInverse) {
+        uint32_t stage2TmpUbSize = 0U;
+        QuerySortTmpSizeRadix(ge::DT_UINT16, totalElems, stage2TmpUbSize);
+        uint32_t stage2Aligned = 0U;
+        if (!CeilAlignUint32(stage2TmpUbSize, blockUbSize, stage2Aligned)) {
+            return false;
+        }
+        tmpUbSize = std::max(tmpUbSize, stage2Aligned);
+    }
+    return true;
+}
+
+uint64_t EstimateTwoStageUbBytes(const TopKSmallAxisRouteInfo& info, uint32_t totalElems, uint32_t sortTmpUb)
+{
+    uint64_t valueRawBytes = 0U;
+    uint64_t idxRawBytes = 0U;
+    uint64_t finalIdxRawBytes = 0U;
+    if (ge::MulOverflow(totalElems, info.dtypeSize, valueRawBytes) ||
+        ge::MulOverflow(totalElems, sizeof(uint32_t), idxRawBytes) ||
+        ge::MulOverflow(totalElems, info.y2DtypeSize, finalIdxRawBytes)) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("EstimateTwoStageUbBytes", "totalElems",
+                                              std::to_string(totalElems).c_str(),
+                                              "The value of totalElems must not cause raw byte size overflow.");
+        return std::numeric_limits<uint64_t>::max();
+    }
+    uint64_t valueBytes = Ops::Base::CeilAlign<uint64_t>(valueRawBytes, info.blockUbSize);
+    uint64_t idxBytes = Ops::Base::CeilAlign<uint64_t>(idxRawBytes, info.blockUbSize);
+    uint64_t finalIdxBytes = Ops::Base::CeilAlign<uint64_t>(finalIdxRawBytes, info.blockUbSize);
+    if (valueBytes == 0U || idxBytes == 0U || finalIdxBytes == 0U) {
+        return std::numeric_limits<uint64_t>::max();
+    }
+    uint32_t idxBufferCount = UseTwoStageRankInverse(static_cast<uint32_t>(info.lastAxis)) ?
+                                  TWO_STAGE_RANK_INVERSE_INDEX_BUFFER_COUNT :
+                                  TWO_STAGE_RADIX_INDEX_BUFFER_COUNT;
+    uint64_t totalBytes = 0U;
+    uint64_t idxTotalBytes = 0U;
+    if (ge::MulOverflow(valueBytes, TWO_STAGE_VALUE_BUFFER_COUNT, totalBytes) ||
+        ge::MulOverflow(idxBytes, idxBufferCount, idxTotalBytes) ||
+        ge::AddOverflow(totalBytes, idxTotalBytes, totalBytes) ||
+        ge::AddOverflow(totalBytes, finalIdxBytes, totalBytes) || ge::AddOverflow(totalBytes, sortTmpUb, totalBytes)) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            "EstimateTwoStageUbBytes", "totalBytes",
+            (std::to_string(valueBytes) + ", " + std::to_string(idxBytes) + ", " + std::to_string(idxBufferCount) +
+             ", " + std::to_string(finalIdxBytes) + ", " + std::to_string(sortTmpUb))
+                .c_str(),
+            "The value of totalBytes must not overflow.");
+        return std::numeric_limits<uint64_t>::max();
+    }
+    return totalBytes;
+}
+
+bool PrepareTwoStageBatchCandidate(const TopKSmallAxisRouteInfo& info, uint32_t candidate, uint32_t& totalElems,
+                                   uint32_t& tmpUbSize, bool& useRankInverse, uint64_t& totalBytes)
+{
+    uint32_t axisLen = static_cast<uint32_t>(info.lastAxis);
+    uint64_t totalElems64 = static_cast<uint64_t>(candidate) * axisLen;
+    if (totalElems64 > std::numeric_limits<uint32_t>::max()) {
+        return false;
+    }
+    totalElems = static_cast<uint32_t>(totalElems64);
+    tmpUbSize = 0U;
+    if (!ComputeTwoStageSortTmpUb(info.dataType, axisLen, totalElems, info.blockUbSize, tmpUbSize)) {
+        return false;
+    }
+    useRankInverse = UseTwoStageRankInverse(axisLen);
+    totalBytes = EstimateTwoStageUbBytes(info, totalElems, tmpUbSize);
+    return true;
+}
+
+bool SearchTwoStageBatchPlan(uint32_t maxBatch, std::function<bool(uint32_t, TwoStageBatchPlan&)> tryCandidate,
+                             TwoStageBatchPlan& result)
+{
+    if (maxBatch == 0U) {
+        return false;
+    }
+    TwoStageBatchPlan maxPlan;
+    TwoStageBatchPlan bestPlan;
+    bool hasMaxPlan = false;
+    uint32_t maxPlanBatchesPerCore = 0U;
+    uint64_t bestIdleSlots = std::numeric_limits<uint64_t>::max();
+    for (uint32_t candidate = maxBatch; candidate >= 1U; --candidate) {
+        TwoStageBatchPlan candidatePlan;
+        if (!tryCandidate(candidate, candidatePlan)) {
+            continue;
+        }
+        if (!hasMaxPlan) {
+            maxPlan = candidatePlan;
+            hasMaxPlan = true;
+            maxPlanBatchesPerCore = Ops::Base::CeilDiv(maxPlan.batchNum, maxPlan.blockDim);
+            bestPlan = maxPlan;
+            bestIdleSlots = static_cast<uint64_t>(maxPlanBatchesPerCore) * maxPlan.blockDim - maxPlan.batchNum;
+            continue;
+        }
+        uint32_t batchesPerCore = Ops::Base::CeilDiv(candidatePlan.batchNum, candidatePlan.blockDim);
+        if (batchesPerCore != maxPlanBatchesPerCore) {
+            break;
+        }
+        uint64_t idleSlots = static_cast<uint64_t>(batchesPerCore) * candidatePlan.blockDim - candidatePlan.batchNum;
+        if (idleSlots < bestIdleSlots) {
+            bestPlan = candidatePlan;
+            bestIdleSlots = idleSlots;
+        }
+    }
+    if (!hasMaxPlan) {
+        return false;
+    }
+    result = bestPlan;
+    return true;
+}
+
+static bool ComputeSmallAxisInsertionBatchParams(const TopKSmallAxisRouteInfo& info, uint32_t axisLen,
+                                                 uint32_t& bytesPerSeg, uint32_t& usableUb, uint32_t& maxBatchByUb)
+{
+    if (info.ubSize <= topkV2DataInfo::SIMT_UB) {
+        return false;
+    }
+    bytesPerSeg = ComputeInsertionBytesPerSeg(info.dataType, axisLen, info.dtypeSize, info.y2DtypeSize,
+                                              info.blockUbSize);
+    if (bytesPerSeg == 0U) {
+        return false;
+    }
+    usableUb = info.ubSize - topkV2DataInfo::SIMT_UB;
+    maxBatchByUb = usableUb / bytesPerSeg;
+    return true;
+}
+
+template <typename ComputeBatchNumFn>
+static bool EstimateSmallAxisInsertionBatching(const TopKSmallAxisRouteInfo& info, uint32_t batchSizeCap,
+                                               ComputeBatchNumFn computeBatchNum, SmallAxisRoutePlan& plan)
+{
+    uint32_t axisLen = static_cast<uint32_t>(info.lastAxis);
+    uint32_t bytesPerSeg = 0U;
+    uint32_t usableUb = 0U;
+    uint32_t maxBatchByUb = 0U;
+    if (!ComputeSmallAxisInsertionBatchParams(info, axisLen, bytesPerSeg, usableUb, maxBatchByUb) ||
+        maxBatchByUb == 0U) {
+        return false;
+    }
+    uint32_t batchSize = std::min({batchSizeCap, maxBatchByUb, SMALL_AXIS_MAX_DATACOPY_BLOCK_COUNT});
+    if (batchSize == 0U) {
+        return false;
+    }
+    plan.batchSize = batchSize;
+    if (!computeBatchNum(batchSize, plan.batchNum)) {
+        return false;
+    }
+    plan.blockDim = std::min(info.maxCoreNum, plan.batchNum);
+    return plan.batchNum > 0U && plan.blockDim > 0U;
+}
+
+template <typename ComputeBatchNumFn>
+static bool TrySmallAxisTwoStageBatchCandidate(const TopKSmallAxisRouteInfo& info, uint32_t candidate,
+                                               ComputeBatchNumFn computeBatchNum, SmallAxisRoutePlan& plan)
+{
+    // Reject candidates unsupported by the batch mapping before querying Sort temporary UB.
+    plan.batchSize = candidate;
+    if (!computeBatchNum(candidate, plan.batchNum)) {
+        return false;
+    }
+    uint32_t totalElems = 0U;
+    uint32_t tmpUbSize = 0U;
+    bool useRankInverse = false;
+    uint64_t totalBytes = 0U;
+    if (!PrepareTwoStageBatchCandidate(info, candidate, totalElems, tmpUbSize, useRankInverse, totalBytes)) {
+        return false;
+    }
+    if (totalBytes + topkV2DataInfo::SIMT_UB > info.ubSize) {
+        return false;
+    }
+    plan.blockDim = std::min(info.maxCoreNum, plan.batchNum);
+    plan.tmpUbSize = tmpUbSize;
+    plan.useRankInverse = useRankInverse;
+    return plan.batchNum > 0U && plan.blockDim > 0U;
+}
+
+template <typename ComputeBatchNumFn>
+static bool EstimateSmallAxisTwoStageBatching(const TopKSmallAxisRouteInfo& info, uint32_t batchSizeCap,
+                                              ComputeBatchNumFn computeBatchNum, SmallAxisRoutePlan& plan)
+{
+    uint32_t axisLen = static_cast<uint32_t>(info.lastAxis);
+    if (info.ubSize <= topkV2DataInfo::SIMT_UB || axisLen == 0U || batchSizeCap == 0U) {
+        return false;
+    }
+    bool useRankInverse = UseTwoStageRankInverse(axisLen);
+    uint32_t idxBufferCount = useRankInverse ? TWO_STAGE_RANK_INVERSE_INDEX_BUFFER_COUNT :
+                                               TWO_STAGE_RADIX_INDEX_BUFFER_COUNT;
+    uint64_t minBytesPerElem = static_cast<uint64_t>(info.dtypeSize) * TWO_STAGE_VALUE_BUFFER_COUNT +
+                               static_cast<uint64_t>(sizeof(uint32_t)) * idxBufferCount + info.y2DtypeSize;
+    uint64_t maxElemsByUb = (info.ubSize - topkV2DataInfo::SIMT_UB) / minBytesPerElem;
+    uint64_t maxBatchByUb = maxElemsByUb / axisLen;
+    uint32_t maxBatch = static_cast<uint32_t>(std::min<uint64_t>(static_cast<uint64_t>(batchSizeCap), maxBatchByUb));
+    if (!useRankInverse) {
+        maxBatch = std::min(maxBatch, MaxTwoStageU16SafeBatch(axisLen));
+    }
+
+    TwoStageBatchPlan result;
+    auto tryCandidate = [&info, &computeBatchNum](uint32_t candidate, TwoStageBatchPlan& candidatePlan) -> bool {
+        SmallAxisRoutePlan routePlan;
+        if (!TrySmallAxisTwoStageBatchCandidate(info, candidate, computeBatchNum, routePlan)) {
+            return false;
+        }
+        candidatePlan.batchSize = routePlan.batchSize;
+        candidatePlan.batchNum = routePlan.batchNum;
+        candidatePlan.blockDim = routePlan.blockDim;
+        candidatePlan.tmpUbSize = routePlan.tmpUbSize;
+        return true;
+    };
+    if (!SearchTwoStageBatchPlan(maxBatch, tryCandidate, result)) {
+        return false;
+    }
+    plan.batchSize = result.batchSize;
+    plan.batchNum = result.batchNum;
+    plan.blockDim = result.blockDim;
+    plan.tmpUbSize = result.tmpUbSize;
+    plan.useRankInverse = useRankInverse;
+    return true;
+}
+
+static bool SelectSmallAxisRouteImpl(const TopKSmallAxisRouteInfo& info, uint32_t batchSizeCap,
+                                     std::function<bool(uint32_t, uint32_t&)> computeBatchNum, SmallAxisRoutePlan& plan)
+{
+    uint32_t axisLen = static_cast<uint32_t>(info.lastAxis);
+    if (axisLen <= 1U) {
+        return false;
+    }
+    const SmallAxisRule* rule = FindSmallAxisRule(info.dataType);
+    if (rule == nullptr) {
+        return false;
+    }
+    uint32_t fullCoreSegs = 0U;
+    if (!CeilDivUint32(static_cast<uint64_t>(info.unsortedDim), static_cast<uint64_t>(info.maxCoreNum), fullCoreSegs)) {
+        return false;
+    }
+    SmallAxisRoutePlan twoStagePlan;
+    if (rule->twoStageMaxN > 0U && axisLen <= rule->twoStageMaxN && axisLen <= SMALL_AXIS_THRESHOLD &&
+        fullCoreSegs >= LookupMinSegs(rule->twoStageTiers, axisLen) &&
+        EstimateSmallAxisTwoStageBatching(info, batchSizeCap, computeBatchNum, twoStagePlan)) {
+        plan = twoStagePlan;
+        plan.kind = SmallAxisRouteKind::TWO_STAGE;
+        return true;
+    }
+    if (axisLen > rule->insertionMaxN || fullCoreSegs < LookupMinSegs(rule->insertionTiers, axisLen)) {
+        return false;
+    }
+    SmallAxisRoutePlan insertionPlan;
+    if (!EstimateSmallAxisInsertionBatching(info, batchSizeCap, computeBatchNum, insertionPlan)) {
+        return false;
+    }
+    plan = insertionPlan;
+    plan.kind = SmallAxisRouteKind::INSERTION;
+    return true;
+}
+
+} // namespace
+
+bool SelectSmallAxisRoute(const TopKSmallAxisRouteInfo& info, SmallAxisRoutePlan& plan)
+{
+    uint32_t fullCoreSegs = 0U;
+    if (!CeilDivUint32(static_cast<uint64_t>(info.unsortedDim), static_cast<uint64_t>(info.maxCoreNum), fullCoreSegs)) {
+        return false;
+    }
+    auto computeBatchNum = [&info](uint32_t batchSize, uint32_t& batchNum) -> bool {
+        return CeilDivUint32(static_cast<uint64_t>(info.unsortedDim), batchSize, batchNum);
+    };
+    return SelectSmallAxisRouteImpl(info, fullCoreSegs, computeBatchNum, plan);
+}
+
+bool SelectNonLastSmallAxisRoute(const TopKSmallAxisRouteInfo& info, SmallAxisRoutePlan& plan)
+{
+    uint32_t batchSizeCap = static_cast<uint32_t>(
+        std::min<int64_t>(info.innerSize, static_cast<int64_t>(std::numeric_limits<uint32_t>::max())));
+    auto computeBatchNum = [&info](uint32_t batchSize, uint32_t& batchNum) -> bool {
+        return ComputeNonLastBatchNum(info.outerSize, info.innerSize, batchSize, batchNum);
+    };
+    return SelectSmallAxisRouteImpl(info, batchSizeCap, computeBatchNum, plan);
 }
 
 // ==================== FP32 MergeSort Helpers ====================
