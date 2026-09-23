@@ -236,19 +236,23 @@ inline ge::graphStatus InferShape4ReduceCommon(gert::InferShapeContext* context,
     }
 
     bool keepDimsValue = false;
-    const bool* keepDims = attrs->GetAttrPointer<bool>(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, keepDims);
-    if (keepDims != nullptr) {
-        keepDimsValue = *keepDims;
+    if (attrs->GetAttrNum() > 0) {
+        const bool* keepDims = attrs->GetAttrPointer<bool>(0);
+        OP_CHECK_NULL_WITH_CONTEXT(context, keepDims);
+        if (keepDims != nullptr) {
+            keepDimsValue = *keepDims;
+        }
     }
     OP_LOGI(context->GetNodeName(), "keepDims value = %s", keepDimsValue ? "true" : "false");
 
     bool noopWithEmptyAxesValue = true;
     if (hasNoopAttr) {
-        const bool* noopWithEmptyAxes = attrs->GetAttrPointer<bool>(1);
-        OP_CHECK_NULL_WITH_CONTEXT(context, noopWithEmptyAxes);
-        if (noopWithEmptyAxes != nullptr) {
-            noopWithEmptyAxesValue = *noopWithEmptyAxes;
+        if (attrs->GetAttrNum() > 1) {
+            const bool* noopWithEmptyAxes = attrs->GetAttrPointer<bool>(1);
+            OP_CHECK_NULL_WITH_CONTEXT(context, noopWithEmptyAxes);
+            if (noopWithEmptyAxes != nullptr) {
+                noopWithEmptyAxesValue = *noopWithEmptyAxes;
+            }
         }
         OP_LOGI(context->GetNodeName(), "noopWithEmptyAxes value = %s", noopWithEmptyAxesValue ? "true" : "false");
     } else {
