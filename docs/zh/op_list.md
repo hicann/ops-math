@@ -3477,6 +3477,16 @@
       <td>计算深度势能模型中基于SE原子嵌入描述符的A类型位力张量。</td>
   </tr>
   <tr>
+      <td>math</td>
+      <td><a href="../../math/prod_env_mat_a/README.md">prod_env_mat_a</a></td>
+      <td>√</td>
+      <td>√</td>
+      <td>×</td>
+      <td>√</td>
+      <td>AI Core</td>
+      <td>计算DeepMD-kit环境矩阵描述子（SeA），包含邻居列表格式化和环境矩阵计算两阶段。</td>
+  </tr>
+  <tr>
     <td>random</td>
     <td><a href="../../random/stateless_uniform/README.md">stateless_uniform</a></td>
     <td>√</td>
