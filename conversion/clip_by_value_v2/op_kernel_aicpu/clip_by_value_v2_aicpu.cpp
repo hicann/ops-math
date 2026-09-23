@@ -9,12 +9,13 @@
  */
 
 #include "clip_by_value_v2_aicpu.h"
+#include "aicpu/math_aicpu_register.h"
 #include <algorithm>
 #include <cmath>
 #include <complex>
 #include <cstdint>
 #include <type_traits>
-#include <unsupported/Eigen/CXX11/Tensor>   // for Eigen::half / Eigen::bfloat16 type definitions only
+#include <unsupported/Eigen/CXX11/Tensor> // for Eigen::half / Eigen::bfloat16 type definitions only
 #include "cpu_kernel_utils.h"
 #include "cpu_types.h"
 #include "log.h"
@@ -56,8 +57,8 @@ __attribute__((always_inline)) inline T ClampScalar(T x, T mn, T mx) noexcept
 }
 
 template <typename T>
-__attribute__((always_inline)) inline std::complex<T> ClampComplex(
-    std::complex<T> x, std::complex<T> mn, std::complex<T> mx) noexcept
+__attribute__((always_inline)) inline std::complex<T> ClampComplex(std::complex<T> x, std::complex<T> mn,
+                                                                   std::complex<T> mx) noexcept
 {
     const T nx = std::norm(x);
     const T nmn = std::norm(mn);
@@ -68,8 +69,8 @@ __attribute__((always_inline)) inline std::complex<T> ClampComplex(
 }
 
 template <typename T>
-__attribute__((hot)) static void KernelScalarBound(
-    const T* __restrict__ x, T* __restrict__ y, int64_t beg, int64_t end, T mn_v, T mx_v) noexcept
+__attribute__((hot)) static void KernelScalarBound(const T* __restrict__ x, T* __restrict__ y, int64_t beg, int64_t end,
+                                                   T mn_v, T mx_v) noexcept
 {
     for (int64_t i = beg; i < end; ++i) {
         y[i] = ClampScalar<T>(x[i], mn_v, mx_v);
@@ -77,9 +78,9 @@ __attribute__((hot)) static void KernelScalarBound(
 }
 
 template <typename T>
-__attribute__((hot)) static void KernelElemBound(
-    const T* __restrict__ x, const T* __restrict__ mn, const T* __restrict__ mx, T* __restrict__ y, int64_t beg,
-    int64_t end) noexcept
+__attribute__((hot)) static void KernelElemBound(const T* __restrict__ x, const T* __restrict__ mn,
+                                                 const T* __restrict__ mx, T* __restrict__ y, int64_t beg,
+                                                 int64_t end) noexcept
 {
     for (int64_t i = beg; i < end; ++i) {
         y[i] = ClampScalar<T>(x[i], mn[i], mx[i]);
@@ -87,9 +88,9 @@ __attribute__((hot)) static void KernelElemBound(
 }
 
 template <typename T>
-__attribute__((hot)) static void KernelComplexScalar(
-    const std::complex<T>* __restrict__ x, std::complex<T>* __restrict__ y, int64_t beg, int64_t end,
-    std::complex<T> mn_v, std::complex<T> mx_v) noexcept
+__attribute__((hot)) static void KernelComplexScalar(const std::complex<T>* __restrict__ x,
+                                                     std::complex<T>* __restrict__ y, int64_t beg, int64_t end,
+                                                     std::complex<T> mn_v, std::complex<T> mx_v) noexcept
 {
     for (int64_t i = beg; i < end; ++i) {
         y[i] = ClampComplex<T>(x[i], mn_v, mx_v);
@@ -97,9 +98,10 @@ __attribute__((hot)) static void KernelComplexScalar(
 }
 
 template <typename T>
-__attribute__((hot)) static void KernelComplexElem(
-    const std::complex<T>* __restrict__ x, const std::complex<T>* __restrict__ mn,
-    const std::complex<T>* __restrict__ mx, std::complex<T>* __restrict__ y, int64_t beg, int64_t end) noexcept
+__attribute__((hot)) static void KernelComplexElem(const std::complex<T>* __restrict__ x,
+                                                   const std::complex<T>* __restrict__ mn,
+                                                   const std::complex<T>* __restrict__ mx,
+                                                   std::complex<T>* __restrict__ y, int64_t beg, int64_t end) noexcept
 {
     for (int64_t i = beg; i < end; ++i) {
         y[i] = ClampComplex<T>(x[i], mn[i], mx[i]);
@@ -108,15 +110,13 @@ __attribute__((hot)) static void KernelComplexElem(
 
 // parallel dispatch wrapper -- adaptive serial fallback + byte-level grain.
 template <typename Body>
-static uint32_t DispatchParallel(
-    const CpuKernelContext& ctx, const char* branch_tag, int64_t total, int64_t per_unit_bytes,
-    int64_t bytes_thresh, Body&& body)
+static uint32_t DispatchParallel(const CpuKernelContext& ctx, const char* branch_tag, int64_t total,
+                                 int64_t per_unit_bytes, int64_t bytes_thresh, Body&& body)
 {
     const int64_t total_bytes = total * per_unit_bytes;
     if (total_bytes < bytes_thresh) {
-        KERNEL_LOG_INFO(
-            "[%s] branch=%s serial path: total=%ld, total_bytes=%ld < thresh=%ld.",
-            ctx.GetOpType().c_str(), branch_tag, total, total_bytes, bytes_thresh);
+        KERNEL_LOG_INFO("[%s] branch=%s serial path: total=%ld, total_bytes=%ld < thresh=%ld.", ctx.GetOpType().c_str(),
+                        branch_tag, total, total_bytes, bytes_thresh);
         body(static_cast<int64_t>(0), total);
         return KERNEL_STATUS_OK;
     }
@@ -130,14 +130,11 @@ static uint32_t DispatchParallel(
         "[%s] branch=%s parallel path: total=%ld, total_bytes=%ld, cpu_num=%ld, cores=%ld, grain_bytes=%ld.",
         ctx.GetOpType().c_str(), branch_tag, total, total_bytes, cpu_num, max_core_num, grain_bytes);
 
-    auto sharde = [&body](size_t b, size_t e) {
-        body(static_cast<int64_t>(b), static_cast<int64_t>(e));
-    };
+    auto sharde = [&body](size_t b, size_t e) { body(static_cast<int64_t>(b), static_cast<int64_t>(e)); };
     const uint32_t rc = CpuKernelUtils::ParallelFor(ctx, total, grain_bytes, sharde);
     if (rc != KERNEL_STATUS_OK) {
-        KERNEL_LOG_ERROR(
-            "[%s] ParallelFor failed, branch=%s, rc=%u, total=%ld, grain_bytes=%ld, cores=%ld.",
-            ctx.GetOpType().c_str(), branch_tag, rc, total, grain_bytes, max_core_num);
+        KERNEL_LOG_ERROR("[%s] ParallelFor failed, branch=%s, rc=%u, total=%ld, grain_bytes=%ld, cores=%ld.",
+                         ctx.GetOpType().c_str(), branch_tag, rc, total, grain_bytes, max_core_num);
         return rc;
     }
     return KERNEL_STATUS_OK;
@@ -229,9 +226,8 @@ static uint32_t GetInputAndCheck(const CpuKernelContext& ctx)
     }
 
     if (x_tensor->NumElements() != y_tensor->NumElements()) {
-        KERNEL_LOG_ERROR(
-            "[%s] numelements mismatch: x=%ld, y=%ld, expect equal.",
-            ctx.GetOpType().c_str(), x_tensor->NumElements(), y_tensor->NumElements());
+        KERNEL_LOG_ERROR("[%s] numelements mismatch: x=%ld, y=%ld, expect equal.", ctx.GetOpType().c_str(),
+                         x_tensor->NumElements(), y_tensor->NumElements());
         return KERNEL_STATUS_PARAM_INVALID;
     }
 
@@ -308,13 +304,12 @@ uint32_t ClipByValueV2CpuKernel::Compute(CpuKernelContext& ctx)
     const DataType input_dtype = ctx.Input(0)->GetDataType();
     const int64_t total_elems = ctx.Input(0)->NumElements();
     const bool is_scalar_bounds = (ctx.Input(1)->NumElements() == 1);
-    KERNEL_LOG_INFO(
-        "[%s] Compute begin: dtype=%d (%s), total_elems=%ld, is_scalar_bounds=%d.",
-        ctx.GetOpType().c_str(), static_cast<int>(input_dtype), DTypeStr(input_dtype).c_str(),
-        total_elems, static_cast<int>(is_scalar_bounds));
+    KERNEL_LOG_INFO("[%s] Compute begin: dtype=%d (%s), total_elems=%ld, is_scalar_bounds=%d.", ctx.GetOpType().c_str(),
+                    static_cast<int>(input_dtype), DTypeStr(input_dtype).c_str(), total_elems,
+                    static_cast<int>(is_scalar_bounds));
 
     return DispatchByDtype(ctx, input_dtype);
 }
 
-REGISTER_CPU_KERNEL(kClipByValueV2, ClipByValueV2CpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kClipByValueV2, ClipByValueV2CpuKernel);
 } // namespace aicpu

@@ -9,6 +9,7 @@
  */
 
 #include "compare_and_bit_pack_aicpu.h"
+#include "aicpu/math_aicpu_register.h"
 
 #include <iostream>
 
@@ -130,5 +131,5 @@ uint32_t CompareAndBitpackCpuKernel::CompareAndBitpackCompute(const CpuKernelCon
     return KERNEL_STATUS_OK;
 }
 
-REGISTER_CPU_KERNEL(kCompareAndBitpack, CompareAndBitpackCpuKernel);
+OPS_MATH_REGISTER_CPU_KERNELV2(kCompareAndBitpack, CompareAndBitpackCpuKernel);
 } // namespace aicpu
