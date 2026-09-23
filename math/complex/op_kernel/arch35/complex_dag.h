@@ -35,6 +35,18 @@ struct complex32 {
     Ops::Base::half real;
     Ops::Base::half imag;
 };
+
+#else
+#include "kernel_operator.h"
+
+template <AscendC::HardEvent hardEvent>
+__aicore__ inline void PipeSync()
+{
+    int32_t eventID = static_cast<int32_t>(GetTPipePtr()->FetchEventID(hardEvent));
+    AscendC::SetFlag<hardEvent>(eventID);
+    AscendC::WaitFlag<hardEvent>(eventID);
+}
+
 #endif
 
 namespace ComplexOp {
@@ -60,6 +72,7 @@ struct ComplexMerge : public Vec::ElemwiseBinaryOP<C, T, T> {
         for (uint32_t i = alignedCount; i < count; i++) {
             dstT.SetValue(i * 2, real.GetValue(i));
             dstT.SetValue(i * 2 + 1, imag.GetValue(i));
+            PipeSync<HardEvent::S_MTE3>();
         }
 #endif
     }
