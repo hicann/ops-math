@@ -12,7 +12,10 @@
 
 import numpy as np
 
-__spec__ = {"mul_no_nan": "MulNoNanKernelSpec"}
+__spec__ = {
+    "mul_no_nan": "MulNoNanKernelSpec",
+    "tf.raw_ops.MulNoNan": "MulNoNanTensorFlowSpec",
+}
 
 __golden__ = {"kernel": {"mul_no_nan": "mul_no_nan_golden"}}
 
@@ -21,6 +24,12 @@ _KERNEL_TOLERANCE = {
     "float32": {"standard": "cross_check", "level": "L1"},
     "bfloat16": {"standard": "cross_check", "level": "L1"},
     "int32": {"standard": "binary_equal"},
+}
+
+_TENSORFLOW_TOLERANCE = {
+    "float16": {"standard": "cross_check", "level": "L1"},
+    "float32": {"standard": "cross_check", "level": "L1"},
+    "bfloat16": {"standard": "cross_check", "level": "L1"},
 }
 
 
@@ -70,6 +79,22 @@ class _MulNoNanCompose:
         return [torch.where(torch.eq(x2, 0), torch.zeros_like(prod), prod)]
 
 
+class _MulNoNanTfCompose:
+    """TensorFlow reference executed by the isolated third-party provider."""
+
+    def __call__(self, x1, x2, **kwargs):
+        del kwargs
+        import tensorflow as tf
+
+        # TensorFlow's native MulNoNan excludes int32, while the CANN kernel
+        # supports it. Keep the named raw op for its supported floating dtypes
+        # and use the equivalent TensorFlow primitive composition for int32.
+        if x1.dtype.is_integer:
+            product = tf.multiply(x1, x2)
+            return [tf.where(tf.equal(x2, 0), tf.zeros_like(product), product)]
+        return [tf.raw_ops.MulNoNan(x=x1, y=x2)]
+
+
 class MulNoNanKernelSpec:
     """kernel spec: numpy golden + third-party reference + precision standard."""
 
@@ -77,5 +102,46 @@ class MulNoNanKernelSpec:
     def golden(x1, x2, **kwargs):
         return [mul_no_nan_golden(x1, x2, **kwargs)]
 
-    third_party = {"torch": _MulNoNanCompose}
+    # Keep Torch first so existing unfiltered cross-check behavior is unchanged;
+    # TensorFlow can be selected explicitly with ``--provider tf``.
+    third_party = {"torch": _MulNoNanCompose, "tf": _MulNoNanTfCompose}
     tolerance = _KERNEL_TOLERANCE
+
+
+def _to_numpy_array(value):
+    """Convert a NumPy or framework tensor to an independent host array."""
+    if isinstance(value, np.ndarray):
+        return np.array(value, copy=True)
+    if hasattr(value, "numpy"):
+        return np.array(value.numpy(), copy=True)
+    return np.array(value, copy=True)
+
+
+def _promote_reference_array(array):
+    """Promote floating inputs so cross-check uses an independent CPU truth."""
+    target_dtype = {
+        "float16": np.float32,
+        "bfloat16": np.float32,
+        "float32": np.float64,
+    }.get(array.dtype.name)
+    return array.astype(target_dtype) if target_dtype is not None else array
+
+
+def tensorflow_mul_no_nan_golden(x, y, name=None, **kwargs):
+    """CPU golden for ``tf.raw_ops.MulNoNan``."""
+    del name, kwargs
+    x_array = _promote_reference_array(_to_numpy_array(x))
+    y_array = _promote_reference_array(_to_numpy_array(y))
+    with np.errstate(invalid="ignore", over="ignore"):
+        product = np.multiply(x_array, y_array)
+    return [np.where(y_array == 0, np.zeros((), dtype=product.dtype), product)]
+
+
+class MulNoNanTensorFlowSpec:
+    """TensorFlow E2E spec registered by the CSV ``api_name``."""
+
+    golden = staticmethod(tensorflow_mul_no_nan_golden)
+    third_party = {"tf": "tf.raw_ops.MulNoNan"}
+    # tf.raw_ops.MulNoNan itself supports floating/complex tensors, not int32.
+    # This CANN operator exposes only the three floating types from that overlap.
+    tolerance = _TENSORFLOW_TOLERANCE
