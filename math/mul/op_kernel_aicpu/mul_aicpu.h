@@ -14,10 +14,32 @@
 #define EIGEN_USE_THREADS
 #define EIGEN_USE_SIMPLE_THREAD_POOL
 
+#include <cstdint>
+
 #include "cpu_kernel.h"
 #include "utils/bcast.h"
 
 namespace aicpu {
+// Upper bound on the loop levels the stride iterator carries. It matches the rank ceiling
+// the previous implementation enforced, so no shape that used to compute starts failing.
+constexpr int32_t kMulMaxBcastDims = 8;
+
+/**
+ * @brief Pre-computed iteration plan for a broadcast multiply.
+ *
+ * Broadcast dimensions carry a stride of 0, so the operand is re-read instead of being
+ * materialised. Output dimensions of size 1 are dropped and adjacent dimensions that are
+ * already contiguous for both operands are merged. Everything lives in fixed-size arrays,
+ * so building the plan allocates nothing.
+ */
+struct MulBcastPlan {
+    int32_t ndims;
+    int64_t out_shape[kMulMaxBcastDims];
+    int64_t x_strides[kMulMaxBcastDims];
+    int64_t y_strides[kMulMaxBcastDims];
+    int64_t total_elements;
+};
+
 class MulCpuKernel : public CpuKernel {
 public:
     MulCpuKernel() = default;
@@ -28,19 +50,21 @@ private:
     template <typename T>
     uint32_t MulCompute(const CpuKernelContext& ctx) const;
 
+    /**
+     * @brief Same-shape and scalar-operand cases, written straight into the output.
+     */
     template <typename T>
-    uint32_t MulDispatch(BCalcInfo& calc_info) const;
+    uint32_t MulNoBcast(const CpuKernelContext& ctx, int64_t x_num, int64_t y_num, int64_t out_num) const;
 
-    bool AlignedCheck(const BCalcInfo& calc_info) const;
-
-    template <int32_t RANK, typename T>
-    uint32_t MulCalculateWithAlignedCheck(BCalcInfo& calc_info) const;
-
-    template <int32_t RANK, typename T, int32_t OPTION>
-    uint32_t MulCalculate(BCalcInfo& calc_info) const;
+    /**
+     * @brief General broadcast driven by MulBcastPlan, rank-agnostic.
+     */
+    template <typename T>
+    uint32_t MulBcastByStride(const CpuKernelContext& ctx, const MulBcastPlan& plan) const;
 
     uint32_t MulSameTypeCompute(const CpuKernelContext& ctx) const;
 };
+
 } // namespace aicpu
 
 #endif // OPS_MATH_MATH_MUL_OP_KERNEL_AICPU_MUL_AICPU_H_
