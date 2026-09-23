@@ -23,20 +23,11 @@ using namespace std;
 
 class l2_stack_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "l2_stack_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "l2_stack_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "l2_stack_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "l2_stack_test TearDown" << endl; }
 
-    void TearDown() override
-    {
-        op::SetPlatformNpuArch(NpuArch::DAV_2201);
-    }
+    void TearDown() override { op::SetPlatformNpuArch(NpuArch::DAV_2201); }
 };
 
 // 输入为空指针
@@ -86,10 +77,10 @@ TEST_F(l2_stack_test, l2_stack_test_empty_tensors)
 // 正常路径，float16
 TEST_F(l2_stack_test, l2_stack_test_dtype_float16)
 {
-    auto tensor_1_desc =
-        TensorDesc({2, 5}, ACL_FLOAT16, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-    auto tensor_2_desc =
-        TensorDesc({2, 5}, ACL_FLOAT16, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_FLOAT16, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_FLOAT16, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
     auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_FLOAT16, ACL_FORMAT_ND);
     auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
     int64_t dim = 0;
@@ -104,10 +95,10 @@ TEST_F(l2_stack_test, l2_stack_test_dtype_float16)
 // 正常路径，float32
 TEST_F(l2_stack_test, l2_stack_test_dtype_float32)
 {
-    auto tensor_1_desc =
-        TensorDesc({2, 5}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-    auto tensor_2_desc =
-        TensorDesc({2, 5}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_FLOAT, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_FLOAT, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
     auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_FLOAT, ACL_FORMAT_ND);
     auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
     int64_t dim = 0;
@@ -122,10 +113,10 @@ TEST_F(l2_stack_test, l2_stack_test_dtype_float32)
 // 正常路径，double
 TEST_F(l2_stack_test, l2_stack_test_dtype_double)
 {
-    auto tensor_1_desc =
-        TensorDesc({2, 5}, ACL_DOUBLE, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-    auto tensor_2_desc =
-        TensorDesc({2, 5}, ACL_DOUBLE, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_DOUBLE, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_DOUBLE, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
     auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_DOUBLE, ACL_FORMAT_ND);
     auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
     int64_t dim = 0;
@@ -140,10 +131,10 @@ TEST_F(l2_stack_test, l2_stack_test_dtype_double)
 // 正常路径，int8
 TEST_F(l2_stack_test, l2_stack_test_dtype_int8)
 {
-    auto tensor_1_desc =
-        TensorDesc({2, 5}, ACL_INT8, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-    auto tensor_2_desc =
-        TensorDesc({2, 5}, ACL_INT8, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_INT8, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_INT8, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
     auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_INT8, ACL_FORMAT_ND);
     auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
     int64_t dim = 0;
@@ -158,10 +149,10 @@ TEST_F(l2_stack_test, l2_stack_test_dtype_int8)
 // 正常路径，int16
 TEST_F(l2_stack_test, l2_stack_test_dtype_int16)
 {
-    auto tensor_1_desc =
-        TensorDesc({2, 5}, ACL_INT16, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-    auto tensor_2_desc =
-        TensorDesc({2, 5}, ACL_INT16, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_INT16, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_INT16, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
     auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_INT16, ACL_FORMAT_ND);
     auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
     int64_t dim = 0;
@@ -176,10 +167,10 @@ TEST_F(l2_stack_test, l2_stack_test_dtype_int16)
 // 正常路径，int32
 TEST_F(l2_stack_test, l2_stack_test_dtype_int32)
 {
-    auto tensor_1_desc =
-        TensorDesc({2, 5}, ACL_INT32, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-    auto tensor_2_desc =
-        TensorDesc({2, 5}, ACL_INT32, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_INT32, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_INT32, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
     auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_INT32, ACL_FORMAT_ND);
     auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
     int64_t dim = 0;
@@ -194,10 +185,10 @@ TEST_F(l2_stack_test, l2_stack_test_dtype_int32)
 // 正常路径，int64
 TEST_F(l2_stack_test, l2_stack_test_dtype_int64)
 {
-    auto tensor_1_desc =
-        TensorDesc({2, 5}, ACL_INT64, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-    auto tensor_2_desc =
-        TensorDesc({2, 5}, ACL_INT64, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_INT64, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_INT64, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
     auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_INT64, ACL_FORMAT_ND);
     auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
     int64_t dim = 0;
@@ -212,10 +203,10 @@ TEST_F(l2_stack_test, l2_stack_test_dtype_int64)
 // 正常路径，uint8
 TEST_F(l2_stack_test, l2_stack_test_dtype_uint8)
 {
-    auto tensor_1_desc =
-        TensorDesc({2, 5}, ACL_UINT8, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-    auto tensor_2_desc =
-        TensorDesc({2, 5}, ACL_UINT8, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_UINT8, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_UINT8, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
     auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_UINT8, ACL_FORMAT_ND);
     auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
     int64_t dim = 0;
@@ -230,10 +221,10 @@ TEST_F(l2_stack_test, l2_stack_test_dtype_uint8)
 // 正常路径，uint16
 TEST_F(l2_stack_test, l2_stack_test_dtype_uint16)
 {
-    auto tensor_1_desc =
-        TensorDesc({2, 5}, ACL_UINT16, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-    auto tensor_2_desc =
-        TensorDesc({2, 5}, ACL_UINT16, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_UINT16, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_UINT16, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
     auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_UINT16, ACL_FORMAT_ND);
     auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
     int64_t dim = 0;
@@ -248,10 +239,10 @@ TEST_F(l2_stack_test, l2_stack_test_dtype_uint16)
 // 正常路径，uint32
 TEST_F(l2_stack_test, l2_stack_test_dtype_uint32)
 {
-    auto tensor_1_desc =
-        TensorDesc({2, 5}, ACL_UINT32, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-    auto tensor_2_desc =
-        TensorDesc({2, 5}, ACL_UINT32, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_UINT32, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_UINT32, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
     auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_UINT32, ACL_FORMAT_ND);
     auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
     int64_t dim = 0;
@@ -266,10 +257,10 @@ TEST_F(l2_stack_test, l2_stack_test_dtype_uint32)
 // 正常路径，uint64
 TEST_F(l2_stack_test, l2_stack_test_dtype_uint64)
 {
-    auto tensor_1_desc =
-        TensorDesc({2, 5}, ACL_UINT64, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-    auto tensor_2_desc =
-        TensorDesc({2, 5}, ACL_UINT64, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_UINT64, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_UINT64, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
     auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_UINT64, ACL_FORMAT_ND);
     auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
     int64_t dim = 0;
@@ -284,10 +275,10 @@ TEST_F(l2_stack_test, l2_stack_test_dtype_uint64)
 // 正常路径，bool
 TEST_F(l2_stack_test, l2_stack_test_dtype_bool)
 {
-    auto tensor_1_desc =
-        TensorDesc({2, 5}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-    auto tensor_2_desc =
-        TensorDesc({2, 5}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_BOOL, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_BOOL, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
     auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_BOOL, ACL_FORMAT_ND);
     auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
     int64_t dim = 0;
@@ -302,10 +293,10 @@ TEST_F(l2_stack_test, l2_stack_test_dtype_bool)
 // 正常路径，complex64
 TEST_F(l2_stack_test, l2_stack_test_dtype_complex64)
 {
-    auto tensor_1_desc =
-        TensorDesc({2, 5}, ACL_COMPLEX64, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-    auto tensor_2_desc =
-        TensorDesc({2, 5}, ACL_COMPLEX64, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_COMPLEX64, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_COMPLEX64, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
     auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_COMPLEX64, ACL_FORMAT_ND);
     auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
     int64_t dim = 0;
@@ -320,10 +311,10 @@ TEST_F(l2_stack_test, l2_stack_test_dtype_complex64)
 // 正常路径，bfloat16
 TEST_F(l2_stack_test, ascend910B2_l2_stack_test_dtype_bfloat16)
 {
-    auto tensor_1_desc =
-        TensorDesc({2, 5}, ACL_BF16, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-    auto tensor_2_desc =
-        TensorDesc({2, 5}, ACL_BF16, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_BF16, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_BF16, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
     auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_BF16, ACL_FORMAT_ND);
     auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
     int64_t dim = 0;
@@ -332,16 +323,111 @@ TEST_F(l2_stack_test, ascend910B2_l2_stack_test_dtype_bfloat16)
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
-    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+}
+
+// 正常路径，hifloat8（仅950支持）
+TEST_F(l2_stack_test, ascend950_l2_stack_test_dtype_hifloat8)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_HIFLOAT8, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_HIFLOAT8, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_HIFLOAT8, ACL_FORMAT_ND);
+    auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
+    int64_t dim = 0;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+}
+
+// 正常路径，float8_e5m2（仅950支持）
+TEST_F(l2_stack_test, ascend950_l2_stack_test_dtype_float8_e5m2)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_FLOAT8_E5M2, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_FLOAT8_E5M2, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_FLOAT8_E5M2, ACL_FORMAT_ND);
+    auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
+    int64_t dim = 0;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+}
+
+// 正常路径，float8_e4m3fn（仅950支持）
+TEST_F(l2_stack_test, ascend950_l2_stack_test_dtype_float8_e4m3fn)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_FLOAT8_E4M3FN, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_FLOAT8_E4M3FN, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_FLOAT8_E4M3FN, ACL_FORMAT_ND);
+    auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
+    int64_t dim = 0;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+}
+
+// 用例不支持，float8_e8m0不支持
+TEST_F(l2_stack_test, l2_stack_test_dtype_float8_e8m0_not_support)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_FLOAT8_E8M0, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_FLOAT8_E8M0, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_FLOAT8_E8M0, ACL_FORMAT_ND);
+    auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
+    int64_t dim = 0;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
+
+// 用例不支持，float8_e4m3fn在910B不支持
+TEST_F(l2_stack_test, l2_stack_test_dtype_float8_e4m3fn_910b_not_support)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_FLOAT8_E4M3FN, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_FLOAT8_E4M3FN, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_FLOAT8_E4M3FN, ACL_FORMAT_ND);
+    auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
+    int64_t dim = 0;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
 
 // 用例不支持，float32转int8
 TEST_F(l2_stack_test, l2_stack_test_dtype_cast)
 {
-    auto tensor_1_desc =
-        TensorDesc({2, 5}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-    auto tensor_2_desc =
-        TensorDesc({2, 5}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_FLOAT, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_FLOAT, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
     auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_INT8, ACL_FORMAT_ND);
     auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
     int64_t dim = 0;
@@ -356,10 +442,10 @@ TEST_F(l2_stack_test, l2_stack_test_dtype_cast)
 // 输入tensors维度数量不同
 TEST_F(l2_stack_test, l2_stack_test_different_dim_num)
 {
-    auto tensor_1_desc =
-        TensorDesc({2, 5}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-    auto tensor_2_desc =
-        TensorDesc({2, 5, 1}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_FLOAT, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5, 1}, ACL_FLOAT, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
     auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_FLOAT, ACL_FORMAT_ND);
     auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
     int64_t dim = 0;
@@ -374,8 +460,8 @@ TEST_F(l2_stack_test, l2_stack_test_different_dim_num)
 // 输入tensors维度不同
 TEST_F(l2_stack_test, l2_stack_test_different_shape)
 {
-    auto tensor_1_desc =
-        TensorDesc({2, 5}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_FLOAT, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
     auto tensor_2_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16});
     auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_FLOAT, ACL_FORMAT_ND);
     auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
@@ -485,10 +571,10 @@ TEST_F(l2_stack_test, l2_stack_test_one_empty_tensor)
 TEST_F(l2_stack_test, ascend310P_l2_stack_test_dtype_bfloat16)
 {
     op::SetPlatformNpuArch(NpuArch::DAV_2002);
-    auto tensor_1_desc =
-        TensorDesc({2, 5}, ACL_BF16, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-    auto tensor_2_desc =
-        TensorDesc({2, 5}, ACL_BF16, ACL_FORMAT_ND).Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
+    auto tensor_1_desc = TensorDesc({2, 5}, ACL_BF16, ACL_FORMAT_ND)
+                             .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    auto tensor_2_desc = TensorDesc({2, 5}, ACL_BF16, ACL_FORMAT_ND)
+                             .Value(vector<float>{11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
     auto out_tensor_desc = TensorDesc({2, 2, 5}, ACL_BF16, ACL_FORMAT_ND);
     auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
     int64_t dim = 0;

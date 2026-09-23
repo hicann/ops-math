@@ -28,7 +28,8 @@ namespace ge {
 * x: A list of N Tensors. Must be one of the following types: complex128,
 * complex64, double, float32, float16, int16, int32, int64, int8, qint16,
 * qint32, qint8, quint16, quint8, uint16, uint32, uint64, uint8, bfloat16,
-* complex32. It's a dynamic input.
+* complex32, bool, string, hifloat8, float8_e5m2, float8_e4m3fn.
+* It's a dynamic input.
 
 *@par Attributes:
 *@li axis: An optional int, default value is 0.
@@ -42,8 +43,8 @@ namespace ge {
 * Compatible with the TensorFlow operator Pack.
 */
 REG_OP(Pack)
-    .DYNAMIC_INPUT(x, TensorType({BasicType(), DT_BOOL, DT_STRING}))
-    .OUTPUT(y, TensorType({BasicType(), DT_BOOL, DT_STRING}))
+    .DYNAMIC_INPUT(x, TensorType({BasicType(), DT_BOOL, DT_STRING, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN}))
+    .OUTPUT(y, TensorType({BasicType(), DT_BOOL, DT_STRING, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN}))
     .ATTR(axis, Int, 0)
     .ATTR(N, Int, 1)
     .OP_END_FACTORY_REG(Pack)

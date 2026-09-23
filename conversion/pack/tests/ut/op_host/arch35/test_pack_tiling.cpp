@@ -201,3 +201,26 @@ TEST_F(PackTilingTest, Pack_asc_tiling_UT_first_axis_align_same_bitwidth8_08)
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
+
+TEST_F(PackTilingTest, Pack_asc_tiling_UT_first_axis_align_same_bitwidth1_float8_e4m3fn_09)
+{
+    optiling::ConcatDCompileInfo compileInfo;
+    compileInfo.totalCoreNum = 64;
+    compileInfo.ubSize = 253952;
+    gert::TilingContextPara tilingContextPara(
+        "Pack",
+        {
+            {{{12, 1, 8, 128}, {12, 1, 8, 128}}, ge::DT_FLOAT8_E4M3FN, ge::FORMAT_ND},
+            {{{12, 1, 8, 128}, {12, 1, 8, 128}}, ge::DT_FLOAT8_E4M3FN, ge::FORMAT_ND},
+        },
+        {
+            {{{24, 1, 8, 128}, {24, 1, 8, 128}}, ge::DT_FLOAT8_E4M3FN, ge::FORMAT_ND},
+        },
+        {
+            {"axis", Ops::Math::AnyValue::CreateFrom<int64_t>(0)},
+        },
+        {2}, {1}, &compileInfo);
+    uint64_t expectTilingKey = 32111;
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
+}

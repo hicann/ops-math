@@ -78,9 +78,9 @@ aclnnStatus aclnnStack(
     <tr>
       <td>tensors（aclTensorList*）</td>
       <td>输入</td>
-      <td>需要连接的tensor序列。</td>
+      <td>需要连接的tensor序列。数据类型需要列表内部构成满足数据类型推导规则（参见<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>）。</td>
       <td>-</td>
-      <td>FLOAT16、FLOAT、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。</td>
+      <td>FLOAT16、FLOAT、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN。</td>
       <td>ND</td>
       <td>0-7</td>
       <td>√</td>
@@ -98,9 +98,9 @@ aclnnStatus aclnnStack(
     <tr>
       <td>out（aclTensor*）</td>
       <td>输出</td>
-      <td>输出tensor</td>
+      <td>输出tensor，且数据类型需要是tensors内部推导之后可转换的类型（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>）。</td>
       <td>-</td>
-      <td>FLOAT16、FLOAT、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16。</td>
+      <td>FLOAT16、FLOAT、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64、BOOL、DOUBLE、COMPLEX64、COMPLEX128、BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN。</td>
       <td>ND</td>
       <td>1-8</td>
       <td>√</td>
@@ -128,8 +128,12 @@ aclnnStatus aclnnStack(
   </tbody></table>
 
   <!-- npu="910,310p" id7 -->
-  - <term>Atlas推理系列产品</term>、<term>Atlas训练系列产品</term>：数据类型不支持BFLOAT16。
+  - <term>Atlas推理系列产品</term>、<term>Atlas训练系列产品</term>：数据类型不支持BFLOAT16、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN。
   <!-- end id7 -->
+
+  <!-- npu="A3,910b" id8 -->
+  - <term>Atlas A2系列产品</term>、<term>Atlas A3系列产品</term>：数据类型不支持HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN。
+  <!-- end id8 -->
 
 - **返回值**
 

@@ -43,6 +43,13 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_
     op::DataType::DT_FLOAT16,   op::DataType::DT_FLOAT,      op::DataType::DT_BOOL,   op::DataType::DT_DOUBLE,
     op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128, op::DataType::DT_BF16};
 
+static const std::initializer_list<op::DataType> REGBASE_DTYPE_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_INT8,        op::DataType::DT_INT16,        op::DataType::DT_INT32,  op::DataType::DT_INT64,
+    op::DataType::DT_UINT8,       op::DataType::DT_UINT16,       op::DataType::DT_UINT32, op::DataType::DT_UINT64,
+    op::DataType::DT_FLOAT16,     op::DataType::DT_FLOAT,        op::DataType::DT_BOOL,   op::DataType::DT_DOUBLE,
+    op::DataType::DT_COMPLEX64,   op::DataType::DT_COMPLEX128,   op::DataType::DT_BF16,   op::DataType::DT_HIFLOAT8,
+    op::DataType::DT_FLOAT8_E5M2, op::DataType::DT_FLOAT8_E4M3FN};
+
 static bool CheckNotNull(const aclTensorList* tensors, const int64_t* realDim, const aclTensor* out)
 {
     if (tensors == nullptr || realDim == nullptr) {
@@ -52,12 +59,13 @@ static bool CheckNotNull(const aclTensorList* tensors, const int64_t* realDim, c
     OP_CHECK_NULL(out, return false);
     return true;
 }
-
 static const std::initializer_list<DataType>& GetDtypeSupportList()
 {
     auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
-    if (curArch == NpuArch::DAV_2201 || IsRegBase(curArch)) {
+    if (curArch == NpuArch::DAV_2201) {
         return ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST;
+    } else if (IsRegBase(curArch)) {
+        return REGBASE_DTYPE_DTYPE_SUPPORT_LIST;
     } else {
         return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;
     }

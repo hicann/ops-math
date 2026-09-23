@@ -1242,10 +1242,10 @@ inline static ge::graphStatus IsPackDimValid(gert::TilingContext* context, int64
 
 bool IsInvalidTypeForPack(const DataType dtype)
 {
-    std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT,  ge::DT_FLOAT16,   ge::DT_BF16,     ge::DT_UINT8,
-                                             ge::DT_INT8,   ge::DT_UINT16,    ge::DT_INT16,    ge::DT_UINT32,
-                                             ge::DT_INT32,  ge::DT_UINT64,    ge::DT_INT64,    ge::DT_BOOL,
-                                             ge::DT_DOUBLE, ge::DT_COMPLEX64, ge::DT_COMPLEX32};
+    std::set<ge::DataType> supportedDtype = {
+        ge::DT_FLOAT,  ge::DT_FLOAT16,   ge::DT_BF16,      ge::DT_UINT8,    ge::DT_INT8,        ge::DT_UINT16,
+        ge::DT_INT16,  ge::DT_UINT32,    ge::DT_INT32,     ge::DT_UINT64,   ge::DT_INT64,       ge::DT_BOOL,
+        ge::DT_DOUBLE, ge::DT_COMPLEX64, ge::DT_COMPLEX32, ge::DT_HIFLOAT8, ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E4M3FN};
     bool isInvalidType = (supportedDtype.count(dtype) == 0);
 
     return isInvalidType;
@@ -1321,7 +1321,8 @@ ge::graphStatus Tiling4PackToConcatForAscendC(gert::TilingContext* context)
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
             context->GetNodeName(), "input", Ops::Base::ToString(inputDataType).c_str(),
             "The dtype of input must be within the range [DT_UINT8, DT_INT8, DT_BOOL, DT_FLOAT, DT_INT32, DT_UINT32, "
-            "DT_INT16, DT_FLOAT16, DT_BF16, DT_UINT16, DT_INT64, DT_UINT64, DT_DOUBLE, DT_COMPLEX32, DT_COMPLEX64]."),
+            "DT_INT16, DT_FLOAT16, DT_BF16, DT_UINT16, DT_INT64, DT_UINT64, DT_DOUBLE, DT_COMPLEX32, DT_COMPLEX64, "
+            "DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN]."),
         return ge::GRAPH_FAILED);
     OP_CHECK_IF(GetDtypeSize(context, param, PACK_INPUT_IDX) != ge::GRAPH_SUCCESS,
                 OP_LOGE(context->GetNodeName(), "GetDtypeSize failed."), return ge::GRAPH_FAILED);
