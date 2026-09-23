@@ -130,6 +130,10 @@ namespace AscendC {
     {
         uint16_t blockLen = totalCol * sizeof(T);
         DataCopyExtParams copyParams{(uint16_t)row, blockLen, 0, 0, 0};
+        // localTensor 由 V 写出，且经 VECIN 队列传递（EnQue/DeQue 只带 MTE2->V），MTE3 搬出前补 V->MTE3 同步
+        event_t eventIdVMte3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
+        SetFlag<HardEvent::V_MTE3>(eventIdVMte3);
+        WaitFlag<HardEvent::V_MTE3>(eventIdVMte3);
         DataCopyPad(pG, localTensor, copyParams);
     }
 
@@ -314,6 +318,10 @@ namespace AscendC {
         }
 
         if (hasTail) {
+            // level0 先前由 PIPE_V(Duplicate) 写入，尾部回载 DataCopyPad(PIPE_MTE2) 写同一 UB 区域，补 V->MTE2 同步
+            event_t eventIdVMte2 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE2));
+            SetFlag<HardEvent::V_MTE2>(eventIdVMte2);
+            WaitFlag<HardEvent::V_MTE2>(eventIdVMte2);
             DataCopyPad(level0, d1BlockInWS[fullGroups * totalCol], copyParams, padParams);
             event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
             SetFlag<HardEvent::MTE2_V>(eventId);

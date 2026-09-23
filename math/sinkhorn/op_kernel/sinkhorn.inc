@@ -114,7 +114,10 @@ namespace AscendC {
         pipe.InitBuffer(costInQueue, COST_BUFFER_NUM, tileRow * totalColAligned * sizeof(T));
         pipe.InitBuffer(costOutQueue, COST_BUFFER_NUM, tileRow * totalColAligned * sizeof(T));
 
-        pipe.InitBuffer(d0InQueue, 1, tileRow * sizeof(T));
+        // ComputeD1CpuPartials 按 CPU_SUM_GROUP_SIZE 个元素一组回载 d0InQueue，MTE2 写 UB 按 32B 块粒度，
+        // buffer 需容纳该回载的对齐写入量，大 shape 下 tileRow 较小，取 max 保证不越界
+        uint32_t d0BufferSize = (tileRow > CPU_SUM_GROUP_SIZE) ? static_cast<uint32_t>(tileRow) : CPU_SUM_GROUP_SIZE;
+        pipe.InitBuffer(d0InQueue, 1, d0BufferSize * sizeof(T));
         pipe.InitBuffer(d0OutQueue, 1, tileRow * sizeof(T));
         pipe.InitBuffer(d0OutQueue2, 1, tileRow * sizeof(T));
         pipe.InitBuffer(d0OutQueue3, 1, tileRow * sizeof(T));

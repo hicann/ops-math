@@ -89,7 +89,11 @@
             d1OldInQueue.EnQue(d1OldLocal);
 
             // 写新值（MTE3）：同一 d1GlobalInWS 区，旧 d1 的 MTE2 读须先完成，补 MTE2->MTE3 同步（报错9）
+            // d1InLocal 由 V 写出，而 d1InQueue 是 VECIN 队列（EnQue/DeQue 只带 MTE2->V），故还需补 V->MTE3 同步
             {
+                event_t eventIdVMte3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
+                SetFlag<HardEvent::V_MTE3>(eventIdVMte3);
+                WaitFlag<HardEvent::V_MTE3>(eventIdVMte3);
                 event_t eventIdMte2Mte3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_MTE3));
                 SetFlag<HardEvent::MTE2_MTE3>(eventIdMte2Mte3);
                 WaitFlag<HardEvent::MTE2_MTE3>(eventIdMte2Mte3);
