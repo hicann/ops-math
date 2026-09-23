@@ -25,8 +25,7 @@
 #include <iostream>
 
 namespace optiling {
-const int64_t ACOS_WORKSPACE_RESERVE_BYTE = 16777216; // 16MB
-const int64_t ASCEND_API_BUFFER = 122880;             // 120K
+const int64_t ASCEND_API_BUFFER = 122880; // 120K
 const int64_t DCACHE_SIZE = 32768;
 
 ge::graphStatus AcosTiling::SetTilingData()
@@ -34,7 +33,6 @@ ge::graphStatus AcosTiling::SetTilingData()
     OP_LOGD(tilingContext->GetNodeName(), "AcosTiling SetTilingData enter.");
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
-    currentWorkspace[0] = static_cast<size_t>(ACOS_WORKSPACE_RESERVE_BYTE);
     const uint64_t tilingKey = GET_TPL_TILING_KEY((uint64_t)tiling->baseTiling.scheMode, dType);
     OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu", tilingKey);
     tilingContext->SetTilingKey(tilingKey);
@@ -53,6 +51,8 @@ ge::graphStatus AcosTiling::SetTilingData()
         ubSize = ubSizePlatForm;
     }
     tilingContext->SetLocalMemorySize(static_cast<uint32_t>(ubSize - DCACHE_SIZE));
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    currentWorkspace[0] = ascendcPlatform.GetLibApiWorkSpaceSize();
     return ge::GRAPH_SUCCESS;
 }
 

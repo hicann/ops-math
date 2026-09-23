@@ -23,7 +23,6 @@ using namespace ge;
 using namespace Ops::Base;
 
 namespace optiling {
-const uint64_t LOGICAL_NOT_SYS_WORKSPACE = 16777216; // 16M
 
 class LogicalNotTiling {
 public:
@@ -52,7 +51,10 @@ ge::graphStatus LogicalNotTiling::RunTiling()
     // set workspace/tilingkey/blockdim
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
-    currentWorkspace[0] = LOGICAL_NOT_SYS_WORKSPACE;
+    auto platformInfo = tilingContext->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, platformInfo);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    currentWorkspace[0] = ascendcPlatform.GetLibApiWorkSpaceSize();
 
     tilingContext->SetTilingKey(101UL);
     tilingContext->SetBlockDim(elewiseBaseTiling.GetBlockDim());
