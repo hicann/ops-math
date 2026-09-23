@@ -71,6 +71,7 @@
 - y和dy的数据类型必须一致，z的数据类型与y/dy一致，仅支持FLOAT、FLOAT16、BFLOAT16。
 - y和dy的shape必须完全相同，不支持广播。
 - 支持0-8维tensor，支持空tensor（0元素）。
+- 仅支持ND数据格式。输入输出配置了自动连续化（AutoContiguous），非连续Tensor由框架转换为连续Tensor后进入Kernel。
 - y的值域应在 [-1, 1] 范围内。当 |y| = 1时，计算结果为inf；当 |y| > 1时，计算结果为NaN。
 - FLOAT16、BFLOAT16均转换为FLOAT32进行中间计算，计算结果再转换回输入数据类型；FLOAT32直接进行FLOAT32计算。
 

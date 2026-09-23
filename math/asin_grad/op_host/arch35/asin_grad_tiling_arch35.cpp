@@ -87,7 +87,9 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
 
     totalNum = yShape.GetShapeSize();
 
-    // Dtype validation
+    // Dtype validation: y must be in the supported set and dy must share the
+    // same dtype. The kernel reads y/dy/z with a single StorageT derived from
+    // y, so a mixed-dtype pair would silently misread the dy buffer.
     const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16};
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
@@ -96,6 +98,19 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
         OP_LOGE(context, "AsinGrad: unsupported dtype %d", static_cast<int>(dataType));
         return ge::GRAPH_FAILED;
     }
+    auto dyDesc = context->GetInputDesc(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context, dyDesc);
+    OP_CHECK_IF(dyDesc->GetDataType() != dataType,
+                OP_LOGE(context, "AsinGrad: dy dtype %d mismatch with y dtype %d",
+                        static_cast<int>(dyDesc->GetDataType()), static_cast<int>(dataType)),
+                return ge::GRAPH_FAILED);
+    // README: z 的数据类型与 y/dy 一致（kernel 以单一 StorageT 读写 z）
+    auto zDesc = context->GetOutputDesc(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, zDesc);
+    OP_CHECK_IF(zDesc->GetDataType() != dataType,
+                OP_LOGE(context, "AsinGrad: z dtype %d mismatch with y dtype %d",
+                        static_cast<int>(zDesc->GetDataType()), static_cast<int>(dataType)),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -109,24 +124,27 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 
 static int64_t CalcUbFactor(ge::DataType dataType, uint64_t ubSize, int64_t ubBlockSize, uint64_t useDoubleBuffer)
 {
+    // Buffer budget per element, built from named components:
+    constexpr int64_t LOW_PREC_BYTES = 2;  // sizeof(fp16 / bf16)
+    constexpr int64_t FP32_BYTES = 4;      // sizeof(float)
+    constexpr int64_t NUM_IO_QUEUES = 3;   // y / dy input queues + z output queue
+    constexpr int64_t NUM_F32_TBUFS = 4;   // yF32 / dyF32 / tmpF32 / zF32 compute buffers
+    constexpr int64_t NUM_F32_BUFFERS = 4; // fp32 path: y / dy / tmp / z buffers
+    const int64_t bufferNum = useDoubleBuffer ? 2 : 1;
     if (dataType == ge::DT_BF16 || dataType == ge::DT_FLOAT16) {
-        // fp16 / bf16 path: TQue for low-precision I/O + TBuf<VECCALC> for float intermediate compute
-        // (Cast low-precision -> fp32 to keep precision when 1 - y^2 approaches 0 near |y|=1)
-        // TQue: (2 low-precision input + 1 low-precision output) queues, each with BUFFER_NUM slots
-        //   = 3 * sizeof(low_prec) * BUFFER_NUM = 3 * 2 * BUFFER_NUM
-        // TBuf: 4 float buffers (yF32, dyF32, tmpF32, zF32), no double-buffer
-        //   = 4 * sizeof(float) = 4 * 4 = 16
-        // Total per element:
-        //   single buffer: 3*2*1 + 16 = 22 bytes
-        //   double buffer: 3*2*2 + 16 = 28 bytes
-        int64_t bytesPerElement = useDoubleBuffer ? 28 : 22;
+        // fp16 / bf16 path: TQue for low-precision I/O + TBuf<VECCALC> for
+        // float intermediate compute (Cast low-precision -> fp32 keeps
+        // precision when 1 - y^2 approaches 0 near |y| = 1).
+        //   TQue: NUM_IO_QUEUES * LOW_PREC_BYTES * BUFFER_NUM
+        //   TBuf: NUM_F32_TBUFS * FP32_BYTES (never double-buffered)
+        // single buffer: 3*2*1 + 16 = 22 bytes; double buffer: 3*2*2 + 16 = 28 bytes
+        int64_t bytesPerElement = NUM_IO_QUEUES * LOW_PREC_BYTES * bufferNum + NUM_F32_TBUFS * FP32_BYTES;
         return FloorAlign(FloorDiv(static_cast<int64_t>(ubSize), bytesPerElement), ubBlockSize);
-    } else {
-        // fp32 path: 4 buffers (y, dy, tmp, z), all in float
-        int64_t typeSize = 4;
-        int64_t bufferNum = useDoubleBuffer ? 8 : 4;
-        return FloorAlign(FloorDiv(static_cast<int64_t>(ubSize) / typeSize, bufferNum), ubBlockSize);
     }
+    // fp32 path: NUM_F32_BUFFERS float buffers, each with BUFFER_NUM slots.
+    // single buffer: 4*4*1 = 16 bytes; double buffer: 4*4*2 = 32 bytes
+    int64_t bytesPerElement = NUM_F32_BUFFERS * FP32_BYTES * bufferNum;
+    return FloorAlign(FloorDiv(static_cast<int64_t>(ubSize), bytesPerElement), ubBlockSize);
 }
 
 static ge::graphStatus AsinGradTilingFunc(gert::TilingContext* context)
@@ -153,7 +171,8 @@ static ge::graphStatus AsinGradTilingFunc(gert::TilingContext* context)
         context->SetBlockDim(1);
         AsinGradTilingData* tiling = context->GetTilingData<AsinGradTilingData>();
         OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
-        memset_s(tiling, sizeof(AsinGradTilingData), 0, sizeof(AsinGradTilingData));
+        OP_CHECK_IF(memset_s(tiling, sizeof(AsinGradTilingData), 0, sizeof(AsinGradTilingData)) != EOK,
+                    OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
         tiling->ubFactor = 1;
         // Still need to set TilingKey for empty case
         uint64_t useDoubleBuffer = 0;
@@ -167,6 +186,8 @@ static ge::graphStatus AsinGradTilingFunc(gert::TilingContext* context)
                 OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
     int64_t ubBlockSize = GetUbBlockSize(context);
+    OP_CHECK_IF(ubBlockSize <= 0, OP_LOGE(context, "AsinGrad: ubBlockSize is %ld", ubBlockSize),
+                return ge::GRAPH_FAILED);
     tiling->totalNum = totalNum;
     tiling->blockFactor = CeilAlign(CeilDiv(totalNum, coreNum), ubBlockSize);
     int64_t usedCoreNum = CeilDiv(totalNum, tiling->blockFactor);

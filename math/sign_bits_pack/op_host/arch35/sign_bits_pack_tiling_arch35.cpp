@@ -97,6 +97,15 @@ static ge::graphStatus TilingFuncSignBitsPack(gert::TilingContext* context)
     }
 
     if (n <= 0) {
+        SignBitsPackTilingData* td = context->GetTilingData<SignBitsPackTilingData>();
+        if (td == nullptr) {
+            OP_LOGE(kOpName, "GetTilingData returned null");
+            return ge::GRAPH_FAILED;
+        }
+        if (memset_s(td, sizeof(SignBitsPackTilingData), 0, sizeof(SignBitsPackTilingData)) != EOK) {
+            OP_LOGE(kOpName, "memset_s failed");
+            return ge::GRAPH_FAILED;
+        }
         context->SetTilingKey(0);
         context->SetBlockDim(1);
         return ge::GRAPH_SUCCESS;

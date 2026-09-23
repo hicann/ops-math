@@ -35,11 +35,6 @@ enum class SignBitsPackTilingStatus : int {
 
 SignBitsPackTilingStatus ComputeTilingSignBitsPack(const SignBitsPackTilingInputs& in, SignBitsPackTilingData& out);
 
-int32_t GetTilingKeyForSignBitsPack(SignBitsPackTilingStatus status);
-
-SignBitsPackTilingStatus ComputeBranch1TilingSignBitsPack(const SignBitsPackTilingInputs& in,
-                                                          SignBitsPackTilingData& out);
-
 } // namespace optiling
 
 #endif // SIGN_BITS_PACK_TILING_COMPUTE_H_

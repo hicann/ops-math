@@ -40,6 +40,11 @@ namespace NsAdaCast {
 
 using namespace AscendC;
 
+// 无符号修正链与饱和裁剪常量（禁止裸用字面量）
+constexpr float HUGE_SENTINEL = -1.0e30f;      // 二值化放大哨兵：fp<0 → 巨大正值，fp>=0 → 0
+constexpr float UINT16_MOD_CORRECT = 65536.0f; // uint16 无符号模 65536 修正值
+constexpr float FP16_MAX_VALUE = 65504.0f;     // fp16 值域上界（饱和裁剪界）
+
 template <int BUFFER_MODE>
 class AdaCast {
     static constexpr int32_t BUFFER_NUM = BUFFER_MODE ? 2 : 1;
@@ -163,9 +168,9 @@ __aicore__ inline void AdaCast<BUFFER_MODE>::Compute(int64_t currentNum)
     //     d) fp += shift
     AscendC::Mins<float>(shiftedLocal, fpLocal, 0.0f, dataCount);
     AscendC::PipeBarrier<PIPE_V>();
-    AscendC::Muls<float>(shiftedLocal, shiftedLocal, -1.0e30f, dataCount);
+    AscendC::Muls<float>(shiftedLocal, shiftedLocal, HUGE_SENTINEL, dataCount);
     AscendC::PipeBarrier<PIPE_V>();
-    AscendC::Mins<float>(shiftedLocal, shiftedLocal, 65536.0f, dataCount);
+    AscendC::Mins<float>(shiftedLocal, shiftedLocal, UINT16_MOD_CORRECT, dataCount);
     AscendC::PipeBarrier<PIPE_V>();
     AscendC::Add<float>(fpLocal, fpLocal, shiftedLocal, dataCount);
     AscendC::PipeBarrier<PIPE_V>();
@@ -176,9 +181,9 @@ __aicore__ inline void AdaCast<BUFFER_MODE>::Compute(int64_t currentNum)
 
     // Step 4a: 饱和裁剪到 [-65504, 65504]（fp16 max），避免 Cast<half> overflow → inf
     //   spec math_semantics.formula 要求 np.clip(scaled, -65504, 65504)
-    AscendC::Mins<float>(fpLocal, fpLocal, 65504.0f, dataCount);
+    AscendC::Mins<float>(fpLocal, fpLocal, FP16_MAX_VALUE, dataCount);
     AscendC::PipeBarrier<PIPE_V>();
-    AscendC::Maxs<float>(fpLocal, fpLocal, -65504.0f, dataCount);
+    AscendC::Maxs<float>(fpLocal, fpLocal, -FP16_MAX_VALUE, dataCount);
     AscendC::PipeBarrier<PIPE_V>();
 
     // Step 4b: fp32 → half（CAST_ROUND，spec 要求 round-half-away-from-zero）

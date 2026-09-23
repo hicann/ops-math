@@ -39,7 +39,7 @@ static const std::initializer_list<op::DataType> SELF_DTYPE_SUPPORT_LIST = {op::
 
 static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_LIST = {op::DataType::DT_UINT8};
 
-static bool CheckNotNullPtr(const aclTensor* self, aclTensor* out)
+static bool CheckNotNullPtr(const aclTensor* self, const aclTensor* out)
 {
     OP_CHECK_NULL(self, return false);
     OP_CHECK_NULL(out, return false);
@@ -89,7 +89,7 @@ static bool CheckFormat(const aclTensor* self, const aclTensor* out)
 
     // 如果输入格式是私有格式，记录日志，直接报错
     if (op::IsPrivateFormat(self->GetStorageFormat())) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Not support format [%s].",
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format [%s] is not supported.",
                 op::ToString(self->GetStorageFormat()).GetString());
         return false;
     }
@@ -116,7 +116,7 @@ static bool CheckShape(const aclTensor* self, const aclTensor* out)
 static bool CheckValue(const aclTensor* self, int64_t size, const aclTensor* out)
 {
     if (size <= 0) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "size value must bigger than zero.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "size value must be greater than 0, got %ld.", static_cast<long>(size));
         return false;
     }
 
@@ -125,7 +125,7 @@ static bool CheckValue(const aclTensor* self, int64_t size, const aclTensor* out
         return true;
     }
 
-    int64_t ysize = (selfDim + 7) / 8;
+    int64_t ysize = (selfDim + PACK_SIZE - 1) / PACK_SIZE;
     if (ysize % size != 0) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The number of packed bytes %ld cannot be divided by size %ld.", ysize, size);
         return false;
@@ -153,7 +153,7 @@ static bool CheckValue(const aclTensor* self, int64_t size, const aclTensor* out
     return true;
 }
 
-static aclnnStatus CheckParams(const aclTensor* self, int64_t size, aclTensor* out)
+static aclnnStatus CheckParams(const aclTensor* self, int64_t size, const aclTensor* out)
 {
     // 检查参数是否为空指针
     CHECK_RET(CheckNotNullPtr(self, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -176,6 +176,7 @@ static aclnnStatus CheckParams(const aclTensor* self, int64_t size, aclTensor* o
 aclnnStatus aclnnSignBitsPackGetWorkspaceSize(const aclTensor* self, int64_t size, aclTensor* out,
                                               uint64_t* workspaceSize, aclOpExecutor** executor)
 {
+    OP_CHECK_COMM_INPUT(workspaceSize, executor);
     L2_DFX_PHASE_1(aclnnSignBitsPack, DFX_IN(self, size), DFX_OUT(out));
 
     auto uniqueExecutor = CREATE_EXECUTOR();

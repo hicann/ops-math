@@ -85,6 +85,7 @@
 - 输入张量个数范围为 [1, 32]。
 - 输出dtype和shape必须与输入完全一致。
 - 仅支持ND数据格式，shape维度范围：0~8。
+- 输入输出配置了自动连续化（AutoContiguous），非连续Tensor由框架转换为连续Tensor后进入Kernel。
 - mode仅支持0（PRODUCT）、1（SUM）、2（MAX）三个取值。
 - mode=1时，若提供coeff，其长度必须等于输入张量个数；若不提供（传空指针），默认系数为1.0。
 - 空Tensor（0元素）：正常接受，返回空out，不进行计算。

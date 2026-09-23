@@ -11,6 +11,12 @@
 #ifndef ADD_MAT_MAT_ELEMENTS_H_
 #define ADD_MAT_MAT_ELEMENTS_H_
 
+/*!
+ * \file add_mat_mat_elements.h
+ * \brief AddMatMatElements kernel: c_out = beta*c + alpha*(a*b) with directed
+ *        broadcast of a/b onto c.shape (arch35, Ascend950, RegBase route)
+ */
+
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
 #include "add_mat_mat_elements_tiling_data.h"
@@ -44,8 +50,26 @@ __aicore__ inline void GetCoreRange(int64_t coreId, int64_t tilesMain, int64_t c
     }
 }
 
+// A broadcast compact source only depends on the tile through GM offsets
+// picked up along the tiled axis and the outer axes (inner-axis coords are 0
+// at every tile start). It is tile-invariant when the input broadcasts
+// (stride 0) along all of those axes, so its compact copy can be kept in B3
+// and reused by every tile.
+static __aicore__ inline bool IsTileInvariantSource(const int64_t* strides, int64_t tiledAxis)
+{
+    for (int64_t d = 0; d <= tiledAxis; d++) {
+        if (strides[d] != 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
 template <typename T, int64_t RANK>
 class AddMatMatElementsKernel {
+    // [RegBase-native] NDDMA dimension limit: the SDK MultiCopyLoopInfo
+    // static_asserts dim <= 5, so at most the 5 innermost axes ride a single
+    // ND DataCopy and the remaining outer axes iterate in the caller.
     static constexpr int64_t ND = (RANK <= 5) ? RANK : 5;
     static constexpr uint32_t VL_T = AscendC::GetVecLen() / sizeof(T);
 
@@ -60,6 +84,14 @@ class AddMatMatElementsKernel {
     AscendC::TBuf<AscendC::TPosition::VECCALC> buf_[kPhysNodes];
     AscendC::MultiCopyParams<T, ND> nddmaParams_[kMaxInputSlots];
     int64_t nddmaDims_;
+    // Broadcast compact-source cache state (see ProcessUnifiedBroadcastTile):
+    // cached{A,B}Seg_ records the aISeg a cached source in B3 was built with
+    // (-1 = nothing cached). Sources are only cached while the other input
+    // does not broadcast, because both share B3 as scratch.
+    bool aSrcTileInvariant_ = false;
+    bool bSrcTileInvariant_ = false;
+    int64_t cachedASeg_ = -1;
+    int64_t cachedBSeg_ = -1;
 
 public:
     __aicore__ inline AddMatMatElementsKernel() {}
@@ -97,6 +129,12 @@ __aicore__ inline void AddMatMatElementsKernel<T, RANK>::Init(GM_ADDR c, GM_ADDR
     gmOut_[0].SetGlobalBuffer(reinterpret_cast<__gm__ T*>(cOut));
     gmBeta_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(beta), 1);
     gmAlpha_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(alpha), 1);
+    // beta/alpha are 1-element scalar tensors fetched once per kernel launch.
+    // GlobalTensor::GetValue is the ecosystem-standard way to read such GM
+    // scalars (see amp_update_scale / fused_mul_add_n in this repo): the
+    // API-1 perf blacklist targets per-element loops, not a single scalar
+    // load, and red-line RL-10 requires GM scalar access to go through
+    // GetValue rather than direct GM addressing.
     betaVal_ = gmBeta_.GetValue(0);
     alphaVal_ = gmAlpha_.GetValue(0);
     for (int i = 0; i < kPhysNodes; i++) {
@@ -104,6 +142,8 @@ __aicore__ inline void AddMatMatElementsKernel<T, RANK>::Init(GM_ADDR c, GM_ADDR
     }
     int64_t k = TiledAxis();
     nddmaDims_ = (RANK - k <= ND) ? (RANK - k) : ND;
+    aSrcTileInvariant_ = IsTileInvariantSource(td_->input_strides[1], k);
+    bSrcTileInvariant_ = IsTileInvariantSource(td_->input_strides[2], k);
     const int64_t* dstShape = td_->max_bro_shape;
     for (int inp = 0; inp < kMaxInputSlots; inp++) {
         int64_t inner = 1;
@@ -234,7 +274,9 @@ __aicore__ inline void AddMatMatElementsKernel<T, RANK>::Process()
 
 // Copy the unique values needed by one broadcast tile into a compact UB
 // tensor. Broadcast dimensions have srcShape[d] == 1, so NDDMA never relies
-// on the unsupported loopSize > 1 plus loopSrcStride == 0 combination.
+// on the unsupported loopSize > 1 plus loopSrcStride == 0 combination
+// ([RegBase-native] Ascend950 NDDMA spec, see also the dstShape/srcShape
+// construction in ProcessUnifiedBroadcastTile).
 template <typename T, int64_t RANK>
 __aicore__ inline void AddMatMatElementsKernel<T, RANK>::CopyBroadcastSource(const int64_t* coord, int64_t inputIdx,
                                                                              int64_t slot, const uint32_t* srcShape)
@@ -322,7 +364,16 @@ __aicore__ inline void AddMatMatElementsKernel<T, RANK>::ProcessUnifiedBroadcast
     // path; only expanded inputs pass through the compact B3 workspace.
     CopyInBrc(tileCoord, 0, B2, aISeg);
     if (expandA) {
-        CopyBroadcastSource(tileCoord, 1, B3, aSrcShape);
+        // Reuse the compact source cached in B3 when it is tile-invariant and
+        // was built with the same aISeg (tail tiles change the source shape,
+        // forcing a re-copy). The VF chain computes in place on B0, so B3
+        // stays free between tiles unless b also broadcasts and reuses it.
+        const bool aCacheHit = aSrcTileInvariant_ && !expandB && (cachedASeg_ == aISeg);
+        if (!aCacheHit) {
+            CopyBroadcastSource(tileCoord, 1, B3, aSrcShape);
+            cachedBSeg_ = -1; // B3 rewritten: any cached b source is gone
+            cachedASeg_ = (aSrcTileInvariant_ && !expandB) ? aISeg : -1;
+        }
     } else {
         CopyInBrc(tileCoord, 1, B0, aISeg);
     }
@@ -345,7 +396,14 @@ __aicore__ inline void AddMatMatElementsKernel<T, RANK>::ProcessUnifiedBroadcast
             AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(evVMte2);
             AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(evVMte2);
         }
-        CopyBroadcastSource(tileCoord, 2, B3, bSrcShape);
+        // Mirror of the a-side cache: b's compact source can only be cached
+        // while a does not broadcast (a's source occupies B3 otherwise).
+        const bool bCacheHit = bSrcTileInvariant_ && !expandA && (cachedBSeg_ == aISeg);
+        if (!bCacheHit) {
+            CopyBroadcastSource(tileCoord, 2, B3, bSrcShape);
+            cachedASeg_ = -1; // B3 rewritten: any cached a source is gone
+            cachedBSeg_ = (bSrcTileInvariant_ && !expandA) ? aISeg : -1;
+        }
         AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(evMte2V);
         AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(evMte2V);
 
@@ -402,19 +460,33 @@ __aicore__ inline void AddMatMatElementsKernel<T, RANK>::CopyInBrc(const int64_t
     }
 }
 
-// Compute — VF chains (non-broadcast fast path)
+// Compute — VF chains (shared by the broadcast and non-broadcast paths).
+// Both VFs compute in place on B0: within each repeat the LoadAligns precede
+// the StoreAlign and repeats cover disjoint element ranges, so dst == src is
+// safe. Computing in place keeps B3 free to cache a tile-invariant broadcast
+// source across tiles (see ProcessUnifiedBroadcastTile).
+//
+// Pipeline note (PERF-3 tradeoff): the four UB buffers are single buffered
+// and tiles run CopyIn -> Compute -> CopyOut strictly in series, chained by
+// MTE3_MTE2 events. All four buffers are fully utilized by each tile
+// (B0/B1/B2 hold a/b/c, B3 is broadcast scratch), so ping-ponging would
+// halve per_buf_bytes and double the NDDMA call count. Whether the
+// copy/compute overlap wins back that cost needs a performance measurement
+// on real shapes; revisit before enabling double buffering.
 template <typename T, int64_t RANK>
 __aicore__ inline void AddMatMatElementsKernel<T, RANK>::Compute(int64_t count)
 {
-    constexpr int B0 = 0, B1 = 1, B2 = 2, B3 = 3;
+    constexpr int B0 = 0, B1 = 1, B2 = 2;
     uint32_t cnt = static_cast<uint32_t>(count);
     uint16_t rep = AscendC::CeilDivision(cnt, VL_T);
-    asc_vf_call<MulAlphaVF<T>>((__ubuf__ T*)buf_[B3].template Get<T>().GetPhyAddr(),
+    // B0 = alpha * (B0 * B1)
+    asc_vf_call<MulAlphaVF<T>>((__ubuf__ T*)buf_[B0].template Get<T>().GetPhyAddr(),
                                (__ubuf__ T*)buf_[B0].template Get<T>().GetPhyAddr(),
                                (__ubuf__ T*)buf_[B1].template Get<T>().GetPhyAddr(), alphaVal_, cnt, VL_T, rep);
+    // B0 = beta * B2 + B0
     asc_vf_call<BetaAddVF<T>>((__ubuf__ T*)buf_[B0].template Get<T>().GetPhyAddr(),
                               (__ubuf__ T*)buf_[B2].template Get<T>().GetPhyAddr(),
-                              (__ubuf__ T*)buf_[B3].template Get<T>().GetPhyAddr(), betaVal_, cnt, VL_T, rep);
+                              (__ubuf__ T*)buf_[B0].template Get<T>().GetPhyAddr(), betaVal_, cnt, VL_T, rep);
 }
 
 template <typename T, int64_t RANK>

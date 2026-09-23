@@ -1,10 +1,10 @@
 /**
  * Copyright (c) 2026 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * This program is free software: you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -13,10 +13,14 @@
 #include "kernel_operator.h"
 #include "sign_bits_pack_tiling_data.h"
 
-constexpr int kPhysNodes = 3;
 constexpr int kDB = 2;
+// GM 搬运块粒度（与 tiling 的 kAlignUnit 一致，单次 DataCopyPad 输入 16KB@fp32 / 8KB@fp16）
+constexpr int kDmaElems = static_cast<int>(kAlignUnit);
+// 向量计算子块粒度（Compare/VF 单次处理的元素数，保持已验证的 256 粒度）
 constexpr int kSlotElems = 256;
-constexpr int kOutSlotBytes = 32;
+constexpr int kSubChunksPerBlock = kDmaElems / kSlotElems;
+constexpr int kOutSlotBytes = kSlotElems / static_cast<int>(kPackRate);
+constexpr int kDmaOutBytes = kDmaElems / static_cast<int>(kPackRate);
 
 __simd_vf__ inline void SignBitsPackBitReverseVF(__ubuf__ uint16_t* addr, uint32_t count, uint32_t oneRepeatSize,
                                                  uint16_t repeatTimes)
@@ -76,14 +80,15 @@ public:
         gmIn_.SetGlobalBuffer((__gm__ T*)x, td->n);
         gmOut_.SetGlobalBuffer((__gm__ uint8_t*)y, td->packedLen);
 
-        const uint32_t inSlotBytes = static_cast<uint32_t>(kSlotElems * sizeof(T));
-        const uint32_t outSlotBytes = static_cast<uint32_t>(kOutSlotBytes);
+        const uint32_t inSlotBytes = static_cast<uint32_t>(kDmaElems * sizeof(T));
+        const uint32_t outSlotBytes = static_cast<uint32_t>(kDmaOutBytes);
         pipe_.InitBuffer(inputTBuf_, kDB * inSlotBytes);
-        pipe_.InitBuffer(zeroCmpTBuf_, kDB * inSlotBytes);
+        pipe_.InitBuffer(zeroCmpTBuf_, kDB * kSlotElems * sizeof(T));
         pipe_.InitBuffer(outTBuf_, kDB * outSlotBytes);
 
         for (int s = 0; s < kDB; s++) {
-            auto zeroLocal = zeroCmpTBuf_.template GetWithOffset<T>(kSlotElems, static_cast<uint32_t>(s) * inSlotBytes);
+            auto zeroLocal = zeroCmpTBuf_.template GetWithOffset<T>(kSlotElems,
+                                                                    static_cast<uint32_t>(s) * kSlotElems * sizeof(T));
             AscendC::Duplicate<T>(zeroLocal, static_cast<T>(0), kSlotElems);
         }
     }
@@ -106,8 +111,10 @@ public:
             const uint32_t ubSlot = static_cast<uint32_t>(bi % kDB);
             const uint64_t localIdx = bi - coreStart;
             const bool isTail = (bi == td_->totalCount - 1) && (td_->tailElemCount > 0);
+            const uint32_t elemCount = isTail ? static_cast<uint32_t>(td_->tailElemCount) :
+                                                static_cast<uint32_t>(kDmaElems);
 
-            if (localIdx >= 2) {
+            if (localIdx >= static_cast<uint64_t>(kDB)) {
                 AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(ubSlot);
             }
 
@@ -116,14 +123,14 @@ public:
             AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(ubSlot);
             AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(ubSlot);
 
-            Compute(ubSlot);
+            Compute(ubSlot, elemCount);
 
             AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(ubSlot);
             AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(ubSlot);
 
             CopyOut(ubSlot, bi, isTail);
 
-            if (localIdx + 2 < localCount) {
+            if (localIdx + static_cast<uint64_t>(kDB) < localCount) {
                 AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(ubSlot);
             }
         }
@@ -134,8 +141,8 @@ public:
 private:
     __aicore__ inline AscendC::LocalTensor<T> GetInputSlot(uint32_t slot)
     {
-        const uint32_t slotBytes = static_cast<uint32_t>(kSlotElems * sizeof(T));
-        return inputTBuf_.template GetWithOffset<T>(kSlotElems, slot * slotBytes);
+        const uint32_t slotBytes = static_cast<uint32_t>(kDmaElems * sizeof(T));
+        return inputTBuf_.template GetWithOffset<T>(kDmaElems, slot * slotBytes);
     }
     __aicore__ inline AscendC::LocalTensor<T> GetZeroCmpSlot(uint32_t slot)
     {
@@ -144,14 +151,14 @@ private:
     }
     __aicore__ inline AscendC::LocalTensor<uint8_t> GetOutSlot(uint32_t slot)
     {
-        return outTBuf_.template GetWithOffset<uint8_t>(kOutSlotBytes, slot * kOutSlotBytes);
+        return outTBuf_.template GetWithOffset<uint8_t>(kDmaOutBytes, slot * kDmaOutBytes);
     }
 
-    __aicore__ inline void CopyIn(uint32_t slot, uint64_t blockIdx, bool isTail)
+    __aicore__ inline void CopyIn(uint32_t slot, uint64_t blockId, bool isTail)
     {
-        const uint64_t inElemBase = blockIdx * kSlotElems;
+        const uint64_t inElemBase = blockId * kDmaElems;
         const uint32_t realElemCount = isTail ? static_cast<uint32_t>(td_->tailElemCount) :
-                                                static_cast<uint32_t>(kSlotElems);
+                                                static_cast<uint32_t>(kDmaElems);
         const uint32_t blockLen = realElemCount * static_cast<uint32_t>(sizeof(T));
 
         AscendC::DataCopyExtParams extParams;
@@ -170,28 +177,31 @@ private:
 
     // CMPMODE::LT: bit = (x < 0). +0/-0 均视为非负（IEEE 754 -0 == +0），
     // nan 视为非负（nan < 0 == false）。符号位语义为"是否为负数"而非 IEEE 754 sign bit。
-    __aicore__ inline void Compute(uint32_t slot)
+    __aicore__ inline void Compute(uint32_t slot, uint32_t elemCount)
     {
         auto outLocal = GetOutSlot(slot);
         auto xLocal = GetInputSlot(slot);
         auto zeroLocal = GetZeroCmpSlot(slot);
 
-        AscendC::Compare<T, uint8_t>(outLocal, xLocal, zeroLocal, AscendC::CMPMODE::LT,
-                                     static_cast<uint32_t>(kSlotElems));
+        const uint32_t subChunks = (elemCount + kSlotElems - 1) / kSlotElems;
+        for (uint32_t s = 0; s < subChunks; ++s) {
+            AscendC::Compare<T, uint8_t>(outLocal[s * kOutSlotBytes], xLocal[s * kSlotElems], zeroLocal,
+                                         AscendC::CMPMODE::LT, static_cast<uint32_t>(kSlotElems));
 
-        if constexpr (kEnableBitReverse) {
-            __ubuf__ uint16_t* outAddr = (__ubuf__ uint16_t*)outLocal.GetPhyAddr();
-            const uint32_t count = static_cast<uint32_t>(kOutSlotBytes / sizeof(uint16_t));
-            const uint16_t repeatTimes = static_cast<uint16_t>((count + kVecLenU16 - 1) / kVecLenU16);
-            asc_vf_call<SignBitsPackBitReverseVF>(outAddr, count, kVecLenU16, repeatTimes);
+            if constexpr (kEnableBitReverse) {
+                __ubuf__ uint16_t* outAddr = (__ubuf__ uint16_t*)outLocal[s * kOutSlotBytes].GetPhyAddr();
+                const uint32_t count = static_cast<uint32_t>(kOutSlotBytes / sizeof(uint16_t));
+                const uint16_t repeatTimes = static_cast<uint16_t>((count + kVecLenU16 - 1) / kVecLenU16);
+                asc_vf_call<SignBitsPackBitReverseVF>(outAddr, count, kVecLenU16, repeatTimes);
+            }
         }
     }
 
-    __aicore__ inline void CopyOut(uint32_t slot, uint64_t blockIdx, bool isTail)
+    __aicore__ inline void CopyOut(uint32_t slot, uint64_t blockId, bool isTail)
     {
-        const uint64_t outByteBase = blockIdx * kOutSlotBytes;
+        const uint64_t outByteBase = blockId * kDmaOutBytes;
         const uint32_t byteCount = isTail ? static_cast<uint32_t>(td_->tailByteCount) :
-                                            static_cast<uint32_t>(kOutSlotBytes);
+                                            static_cast<uint32_t>(kDmaOutBytes);
 
         AscendC::DataCopyExtParams extParams;
         extParams.blockCount = 1;

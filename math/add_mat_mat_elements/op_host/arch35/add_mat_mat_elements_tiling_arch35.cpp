@@ -21,7 +21,6 @@
 #include "add_mat_mat_elements_tiling_arch35.h"
 
 #include <algorithm>
-#include <cinttypes>
 #include <set>
 
 namespace optiling {
@@ -33,6 +32,13 @@ constexpr int64_t RANK_8 = ADD_MAT_MAT_ELEMENTS_RANK_8;
 constexpr int64_t MIN_RANK = 1;
 constexpr int64_t MAX_RANK = 8;
 constexpr size_t WS_SIZE = 0U;
+// Total operator inputs: c, a, b, beta, alpha (beta/alpha are 1-element scalars)
+constexpr size_t NUM_INPUTS = 5;
+// Dtype sizes in bytes
+constexpr int64_t FP16_BYTES = 2;
+constexpr int64_t FP32_BYTES = 4;
+// NDDMA / UB 32-byte alignment granularity
+constexpr uint64_t UB_ALIGN_BYTES = 32;
 
 // Right-align pad leading 1s to effectiveRANK, write to inputShapes[slot][RANK_MAX]
 // max_bro_shape = c.shape (output anchor, c does not participate in broadcast)
@@ -45,9 +51,9 @@ static void PadAndSqueeze(const int64_t* cShape, int64_t cRank, const int64_t* a
             inputShapes[s][d] = 1;
         }
     }
-    const int64_t* shapes[3] = {cShape, aShape, bShape};
-    int64_t ranks[3] = {cRank, aRank, bRank};
-    for (int64_t s = 0; s < 3; s++) {
+    const int64_t* shapes[ADD_MAT_MAT_ELEMENTS_MAX_INPUT_SLOTS] = {cShape, aShape, bShape};
+    int64_t ranks[ADD_MAT_MAT_ELEMENTS_MAX_INPUT_SLOTS] = {cRank, aRank, bRank};
+    for (int64_t s = 0; s < ADD_MAT_MAT_ELEMENTS_MAX_INPUT_SLOTS; s++) {
         for (int64_t d = 0; d < ranks[s]; d++) {
             inputShapes[s][effectiveRANK - ranks[s] + d] = shapes[s][d];
         }
@@ -59,7 +65,7 @@ static void PadAndSqueeze(const int64_t* cShape, int64_t cRank, const int64_t* a
 
 static ge::graphStatus CheckBroadcastShape(const int64_t inShapes[][RANK_MAX], int64_t effectiveRANK)
 {
-    for (int64_t slot = 1; slot <= 2; slot++) {
+    for (int64_t slot = 1; slot < ADD_MAT_MAT_ELEMENTS_MAX_INPUT_SLOTS; slot++) {
         for (int64_t d = 0; d < effectiveRANK; d++) {
             int64_t cd = inShapes[0][d];
             int64_t sd = inShapes[slot][d];
@@ -128,10 +134,12 @@ static void MultiCoreSplit(int64_t totalTiles, int64_t coreNum, AddMatMatElement
     mc.cores_tail = totalTiles % mc.num_cores;
 }
 
-static void FillAndLogTilingData(AddMatMatElementsTilingData* td, const AddMatMatElementsSplitResult& split,
-                                 const AddMatMatElementsMultiCoreResult& mc, int64_t perBufBytes, int64_t effectiveRank,
-                                 const int64_t inShapes[][RANK_MAX], const int64_t inStrides[][RANK_MAX],
-                                 const int64_t outStrides[][RANK_MAX], const int64_t* maxBroShape)
+// Fill the tiling data from the computed split/multicore results (td is the
+// output parameter, kept last to match the file's in-params-first style).
+static void FillAndLogTilingData(const AddMatMatElementsSplitResult& split, const AddMatMatElementsMultiCoreResult& mc,
+                                 int64_t perBufBytes, int64_t effectiveRank, const int64_t inShapes[][RANK_MAX],
+                                 const int64_t inStrides[][RANK_MAX], const int64_t outStrides[][RANK_MAX],
+                                 const int64_t* maxBroShape, AddMatMatElementsTilingData* td)
 {
     td->split = split;
     td->multicore = mc;
@@ -158,7 +166,7 @@ static ge::graphStatus ValidateInputDtypes(gert::TilingContext* context)
 {
     const std::set<ge::DataType> supportedDtypes = {ge::DT_FLOAT16, ge::DT_FLOAT};
     ge::DataType refDtype = ge::DT_UNDEFINED;
-    for (size_t i = 0; i < 5; i++) {
+    for (size_t i = 0; i < NUM_INPUTS; i++) {
         auto desc = context->GetInputDesc(i);
         OP_CHECK_NULL_WITH_CONTEXT(context, desc);
         auto dtype = desc->GetDataType();
@@ -186,6 +194,22 @@ static ge::graphStatus ValidateInputShapes(gert::TilingContext* context)
     if (cRank < MIN_RANK || cRank > MAX_RANK) {
         OP_LOGE(context, "AddMatMatElements: rank(c)=%ld out of range [1,8]", cRank);
         return ge::GRAPH_FAILED;
+    }
+
+    // cOut must equal the unified broadcast shape. c is the broadcast anchor
+    // (a/b only broadcast towards c.shape, see CheckBroadcastShape), so the
+    // unified shape is exactly c.shape.
+    auto cOutShape = context->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, cOutShape);
+    int64_t cOutRank = cOutShape->GetStorageShape().GetDimNum();
+    OP_CHECK_IF(cOutRank != cRank,
+                OP_LOGE(context, "AddMatMatElements: rank(cOut)=%ld != rank(c)=%ld", cOutRank, cRank),
+                return ge::GRAPH_FAILED);
+    for (int64_t d = 0; d < cRank; d++) {
+        OP_CHECK_IF(cOutShape->GetStorageShape().GetDim(d) != cShape->GetStorageShape().GetDim(d),
+                    OP_LOGE(context, "AddMatMatElements: cOut dim %ld=%ld != c dim=%ld", d,
+                            cOutShape->GetStorageShape().GetDim(d), cShape->GetStorageShape().GetDim(d)),
+                    return ge::GRAPH_FAILED);
     }
 
     auto aShape = context->GetInputShape(1);
@@ -345,7 +369,7 @@ ge::graphStatus AddMatMatElementsTilingFunc(gert::TilingContext* context)
     auto cDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, cDesc);
     ge::DataType dtype = cDesc->GetDataType();
-    int64_t dtypeSize = (dtype == ge::DT_FLOAT16) ? 2 : 4;
+    int64_t dtypeSize = (dtype == ge::DT_FLOAT16) ? FP16_BYTES : FP32_BYTES;
 
     if (totalElems == 0) {
         // A zero block dimension is rejected as INVALID_TILING by the runtime.
@@ -357,7 +381,7 @@ ge::graphStatus AddMatMatElementsTilingFunc(gert::TilingContext* context)
     int64_t outStrides[ADD_MAT_MAT_ELEMENTS_MAX_OUTPUT_SLOTS][RANK_MAX];
     CalcBroadcastStrides(inShapes, effectiveRank, inStrides, outStrides);
 
-    int64_t perBufBytes = static_cast<int64_t>((ubSize / P) & ~31UL);
+    int64_t perBufBytes = static_cast<int64_t>((ubSize / P) & ~(UB_ALIGN_BYTES - 1));
     int64_t perBufElems = perBufBytes / dtypeSize;
     AddMatMatElementsSplitResult split;
     FindSplitAxis(perBufElems, maxBroShape, effectiveRank, split);
@@ -369,7 +393,7 @@ ge::graphStatus AddMatMatElementsTilingFunc(gert::TilingContext* context)
     auto* td = context->GetTilingData<AddMatMatElementsTilingData>();
     OP_CHECK_IF(ResetTilingData(context, td) != ge::GRAPH_SUCCESS,
                 OP_LOGE(context, "AddMatMatElements: reset tiling data failed"), return ge::GRAPH_FAILED);
-    FillAndLogTilingData(td, split, mc, perBufBytes, effectiveRank, inShapes, inStrides, outStrides, maxBroShape);
+    FillAndLogTilingData(split, mc, perBufBytes, effectiveRank, inShapes, inStrides, outStrides, maxBroShape, td);
 
     SetWorkspaceSize(context);
 

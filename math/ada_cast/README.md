@@ -50,9 +50,9 @@ $$
     <tr>
       <td>pixel</td>
       <td>可选属性</td>
-      <td><ul><li>白电平归一化基数，缩放系数为 1/pixel。</li><li>默认值为 65535。</li><li>取值必须为正整数（pixel &gt; 0）。</li></ul></td>
+      <td><ul><li>白电平归一化基数，缩放系数为 1/pixel。</li><li>默认值为 65535。</li><li>取值必须为正整数（pixel &gt; 0），非正数时算子编译报错。</li></ul></td>
       <td>INT64</td>
-      <td>ND</td>
+      <td>-</td>
     </tr>
     <tr>
       <td>y</td>
@@ -66,9 +66,10 @@ $$
 ## 约束说明
 
 - 数据格式仅支持 ND。
-- 输入 x 的 rank 范围为 [1, 4]，输出 y 的 shape 必须与 x 完全一致（element-wise 语义，不支持广播）。
+- 输入 x 的 rank 范围为 [1, 4]（0-D 标量与 rank>4 均拒绝），输出 y 的 shape 必须与 x 完全一致（element-wise 语义，不支持广播）。
 - 类型组合固定为 UINT16 → FLOAT16，不支持其他 dtype 组合。
-- 支持空 Tensor（0 元素），直接返回。
+- pixel 为可选属性，未传入时使用默认值 65535；取值必须为正整数（pixel > 0），非正数时算子编译报错。
+- 支持空 Tensor（0 元素），host 侧提前返回，不下发 kernel。
 - 默认确定性实现，相同输入始终产生相同输出。
 
 ## 调用说明

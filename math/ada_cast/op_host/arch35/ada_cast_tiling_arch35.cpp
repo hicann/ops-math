@@ -17,6 +17,7 @@
  * - 多核切分：blockFormer（512 元素对齐），每核至少 4KB（MIN_TILING_BITS=32768 bits）
  * - UB 切分：ubFormer（256B 对齐），bufferDivisor=12 B/elem（保守上界）
  * - 首/尾 block 区分：ubLoopOfFormerBlock/ubTailOfFormerBlock vs ubLoopOfTailBlock/ubTailOfTailBlock
+ * - rank 校验：x rank 必须为 1~4（0-D 与 rank>4 拒绝，spec rank_range）
  * - 预计算 pixelQuotient = float32(1.0) / float32(pixel)
  * - 空 tensor（dim0==0）：SetBlockDim(1)，提前 return
  * - 核数动态获取（GetCoreNumAiv），禁止硬编码
@@ -46,18 +47,8 @@ constexpr int64_t ALIGN_256 = 256;         // UB 对齐字节数
 constexpr int64_t MIN_DTYPE_BITS = 16;     // uint16 输入位宽
 constexpr int64_t ELEM_BYTES = 2;          // uint16 单元素字节数
 constexpr int64_t BUFFER_DIVISOR = 12;     // 保守上界：uint16(2)+int32(4)+float32(4)+half(2) B/elem
-constexpr size_t MAX_DIM_NUM = 8;
-constexpr size_t MAX_PROTO_RANK = 4;
-
-static const gert::Shape g_vec_1_shape = {1};
-
-static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape)
-{
-    if (in_shape.GetDimNum() == 0) {
-        return g_vec_1_shape;
-    }
-    return in_shape;
-}
+constexpr size_t MAX_PROTO_RANK = 4;       // spec rank_range: [1, 4]
+constexpr int64_t DEFAULT_PIXEL = 65535; // 可选属性 pixel 缺省值（白电平，spec attributes.pixel.default）
 
 // 获取平台信息（ubSize, coreNum），核数动态获取，禁止硬编码
 static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t* ubSize, int64_t* coreNum)
@@ -77,31 +68,27 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t* 
 {
     auto inputX = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
-    auto inputShapeX = EnsureNotScalar(inputX->GetStorageShape());
+    // rank 校验（spec shape_constraints.rank_range: [1, 4]）：0-D 标量与 rank>4 均拒绝
+    const size_t inputRank = inputX->GetStorageShape().GetDimNum();
+    OP_CHECK_IF(inputRank < 1 || inputRank > MAX_PROTO_RANK,
+                OP_LOGE(context, "AdaCast: x rank must be 1~4, got %zu", inputRank), return ge::GRAPH_FAILED);
+    auto inputShapeX = inputX->GetStorageShape();
     *dim0 = inputShapeX.GetShapeSize();
     OP_CHECK_IF(*dim0 < 0, OP_LOGE(context, "dim0 < 0, invalid shape"), return ge::GRAPH_FAILED);
-
-    OP_CHECK_IF(inputShapeX.GetDimNum() > MAX_PROTO_RANK,
-                OP_LOGE(context, "AdaCast: x rank must be 1~4, got %zu", inputShapeX.GetDimNum()),
-                return ge::GRAPH_FAILED);
-
-    OP_CHECK_IF(inputShapeX.GetDimNum() > MAX_DIM_NUM,
-                OP_LOGE(context, "AdaCast: x dim num must be <= 8, got %zu", inputShapeX.GetDimNum()),
-                return ge::GRAPH_FAILED);
 
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
     ge::DataType dataType = inputDesc->GetDataType();
     const std::set<ge::DataType> supportedDtypes = {ge::DT_UINT16};
     OP_CHECK_IF(supportedDtypes.count(dataType) == 0,
-                OP_LOGE(context, "AdaCast: x only support DT_UINT16, got %d", static_cast<int32_t>(dataType)),
+                OP_LOGE(context, "AdaCast: x only supports DT_UINT16, got %d", static_cast<int32_t>(dataType)),
                 return ge::GRAPH_FAILED);
 
     // 读取属性 pixel（int64，index 0；OPTIONAL Attr，为空时使用 op_def 声明的默认值 65535）
     auto attrs = context->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
     const int64_t* pixelPtr = attrs->GetAttrPointer<int64_t>(0);
-    *pixel = (pixelPtr != nullptr) ? *pixelPtr : 65535;
+    *pixel = (pixelPtr != nullptr) ? *pixelPtr : DEFAULT_PIXEL;
     return ge::GRAPH_SUCCESS;
 }
 
@@ -171,7 +158,7 @@ static ge::graphStatus AdaCastTilingFunc(gert::TilingContext* context)
     int64_t maxElemNum = static_cast<int64_t>(ubSize) / BUFFER_DIVISOR;
     int64_t alignFactor = ALIGN_256 / ELEM_BYTES; // = 128（uint16）
     int64_t ubFormer = FloorAlign(maxElemNum, alignFactor);
-    OP_CHECK_IF(ubFormer <= 0, OP_LOGE(context, "ubFormer <= 0, ubSize too small"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(ubFormer <= 0, OP_LOGE(context, "ubFormer <= 0, ubSize is too small"), return ge::GRAPH_FAILED);
     tiling->ubFormer = ubFormer;
 
     // 8、循环次数与尾部（首/尾 block 区分）
