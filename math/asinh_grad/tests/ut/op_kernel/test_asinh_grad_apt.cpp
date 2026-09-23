@@ -20,8 +20,7 @@
 
 using namespace std;
 
-extern "C" __global__ __aicore__ void asinh_grad(
-    GM_ADDR y, GM_ADDR dy, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling);
+extern "C" __global__ __aicore__ void asinh_grad(GM_ADDR y, GM_ADDR dy, GM_ADDR z, GM_ADDR workspace, GM_ADDR tiling);
 
 class AsinhGradKernelTest : public testing::Test {
 protected:
@@ -41,6 +40,15 @@ TEST_F(AsinhGradKernelTest, test_fp32_basic)
     uint8_t* z = (uint8_t*)AscendC::GmAlloc(dataSize);
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(1024 * 1024);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingSize);
+
+    // Keep the kernel test deterministic.  GmAlloc does not guarantee initialized
+    // storage, and the extreme-value-safe implementation exercises Exp/Div on
+    // every input element.
+    std::memset(y, 0, dataSize);
+    std::memset(dy, 0, dataSize);
+    std::memset(z, 0, dataSize);
+    std::memset(workspace, 0, 1024 * 1024);
+    std::memset(tiling, 0, tilingSize);
 
     AsinhGradTilingData* tilingData = reinterpret_cast<AsinhGradTilingData*>(tiling);
     tilingData->totalNum = numElements;
@@ -69,6 +77,12 @@ TEST_F(AsinhGradKernelTest, test_fp32_large)
     uint8_t* z = (uint8_t*)AscendC::GmAlloc(dataSize);
     uint8_t* workspace = (uint8_t*)AscendC::GmAlloc(1024 * 1024);
     uint8_t* tiling = (uint8_t*)AscendC::GmAlloc(tilingSize);
+
+    std::memset(y, 0, dataSize);
+    std::memset(dy, 0, dataSize);
+    std::memset(z, 0, dataSize);
+    std::memset(workspace, 0, 1024 * 1024);
+    std::memset(tiling, 0, tilingSize);
 
     AsinhGradTilingData* tilingData = reinterpret_cast<AsinhGradTilingData*>(tiling);
     tilingData->totalNum = numElements;

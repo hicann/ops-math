@@ -14,7 +14,7 @@
  * \file asinh_grad.h
  * \brief AsinhGrad kernel class definition (arch35)
  *
- * Computes: z = 2 * dy * exp(y) / (exp(2y) + 1)
+ * Computes: z = 2 * dy * exp(-abs(y)) / (1 + exp(-2 * abs(y)))
  * Equivalent to: z = dy / cosh(y)
  *
  * Template parameters:
@@ -39,12 +39,13 @@ template <typename T, int BUFFER_MODE>
 class AsinhGrad {
     static constexpr int32_t BUFFER_NUM = BUFFER_MODE ? 2 : 1;
     static constexpr bool NEED_CAST = !std::is_same_v<T, float>;
+    constexpr static ExpConfig EXP_CONFIG = {ExpAlgo::PRECISION_1ULP_FTZ_FALSE};
+    constexpr static DivConfig DIV_CONFIG = {DivAlgo::PRECISION_0ULP_FTZ_FALSE};
 
 public:
     __aicore__ inline AsinhGrad() {}
 
-    __aicore__ inline void Init(GM_ADDR y, GM_ADDR dy, GM_ADDR z,
-                                const AsinhGradTilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR y, GM_ADDR dy, GM_ADDR z, const AsinhGradTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -73,9 +74,8 @@ private:
 };
 
 template <typename T, int BUFFER_MODE>
-__aicore__ inline void AsinhGrad<T, BUFFER_MODE>::Init(
-    GM_ADDR y, GM_ADDR dy, GM_ADDR z,
-    const AsinhGradTilingData* tilingData)
+__aicore__ inline void AsinhGrad<T, BUFFER_MODE>::Init(GM_ADDR y, GM_ADDR dy, GM_ADDR z,
+                                                       const AsinhGradTilingData* tilingData)
 {
     int64_t remainder = tilingData->totalNum - tilingData->blockFactor * GetBlockIdx();
     blockLength_ = (remainder > tilingData->blockFactor) ? tilingData->blockFactor : remainder;
@@ -98,15 +98,14 @@ __aicore__ inline void AsinhGrad<T, BUFFER_MODE>::Init(
         pipe.InitBuffer(tmpExp2Y_, ubLength_ * sizeof(float));
         pipe.InitBuffer(tmpZFp32_, ubLength_ * sizeof(float));
     } else {
-        // FP32 path: only 2 temporary buffers (expY, exp2Y); zL from outQueZ is reused
+        // FP32 path: only 2 temporary buffers (decay, denominator); zL from outQueZ is reused
         pipe.InitBuffer(tmpExpY_, ubLength_ * sizeof(float));
         pipe.InitBuffer(tmpExp2Y_, ubLength_ * sizeof(float));
     }
 }
 
 template <typename T, int BUFFER_MODE>
-__aicore__ inline void AsinhGrad<T, BUFFER_MODE>::CopyIn(
-    int64_t progress, int64_t currentNum)
+__aicore__ inline void AsinhGrad<T, BUFFER_MODE>::CopyIn(int64_t progress, int64_t currentNum)
 {
     LocalTensor<T> yL = inQueY.template AllocTensor<T>();
     LocalTensor<T> dyL = inQueDy.template AllocTensor<T>();
@@ -135,35 +134,39 @@ __aicore__ inline void AsinhGrad<T, BUFFER_MODE>::Compute(int64_t currentNum)
         // FP16/BF16 path: cast up to FP32, compute, cast back
         LocalTensor<float> yFp32 = tmpYFp32_.Get<float>();
         LocalTensor<float> dyFp32 = tmpDyFp32_.Get<float>();
-        LocalTensor<float> expY = tmpExpY_.Get<float>();
-        LocalTensor<float> exp2Y = tmpExp2Y_.Get<float>();
+        LocalTensor<float> decay = tmpExpY_.Get<float>();
+        LocalTensor<float> denominator = tmpExp2Y_.Get<float>();
         LocalTensor<float> zFp32 = tmpZFp32_.Get<float>();
 
         // Step 1: Cast input dtype -> FP32
         Cast(yFp32, yL, RoundMode::CAST_NONE, currentNum);
         Cast(dyFp32, dyL, RoundMode::CAST_NONE, currentNum);
 
-        // Step 2: z = 2 * dy * exp(y) / (exp(2y) + 1) in FP32 domain
-        Exp(expY, yFp32, currentNum);                    // expY = e^y
-        Mul(exp2Y, expY, expY, currentNum);              // exp2Y = e^{2y} = (e^y)^2
-        Adds(exp2Y, exp2Y, 1.0f, currentNum);            // exp2Y = e^{2y} + 1
-        Mul(zFp32, dyFp32, expY, currentNum);            // zFp32 = dy * e^y
-        Div(zFp32, zFp32, exp2Y, currentNum);            // zFp32 = (dy * e^y) / (e^{2y} + 1)
-        Muls(zFp32, zFp32, 2.0f, currentNum);            // zFp32 = 2 * (...)
+        // Step 2: z = 2 * dy * t / (1 + t^2), t = exp(-abs(y)), in FP32 domain
+        Abs(decay, yFp32, currentNum);
+        Muls(decay, decay, -1.0f, currentNum);
+        Exp<float, EXP_CONFIG>(decay, decay, currentNum);
+        Mul(denominator, decay, decay, currentNum);
+        Adds(denominator, denominator, 1.0f, currentNum);
+        Muls(zFp32, dyFp32, 2.0f, currentNum);
+        Mul(zFp32, zFp32, decay, currentNum);
+        Div<float, DIV_CONFIG>(zFp32, zFp32, denominator, currentNum);
 
         // Step 3: Cast FP32 -> target dtype (CAST_RINT = banker's rounding)
         Cast(zL, zFp32, RoundMode::CAST_RINT, currentNum);
     } else {
         // FP32 main path: compute directly without cast
-        LocalTensor<float> expY = tmpExpY_.Get<float>();
-        LocalTensor<float> exp2Y = tmpExp2Y_.Get<float>();
+        LocalTensor<float> decay = tmpExpY_.Get<float>();
+        LocalTensor<float> denominator = tmpExp2Y_.Get<float>();
 
-        Exp(expY, yL, currentNum);                       // expY = e^y
-        Mul(exp2Y, expY, expY, currentNum);              // exp2Y = e^{2y} = (e^y)^2
-        Adds(exp2Y, exp2Y, 1.0f, currentNum);            // exp2Y = e^{2y} + 1
-        Mul(zL, dyL, expY, currentNum);                  // zL = dy * e^y
-        Div(zL, zL, exp2Y, currentNum);                  // zL = (dy * e^y) / (e^{2y} + 1)
-        Muls(zL, zL, 2.0f, currentNum);                  // zL = 2 * (...)
+        Abs(decay, yL, currentNum);
+        Muls(decay, decay, -1.0f, currentNum);
+        Exp<float, EXP_CONFIG>(decay, decay, currentNum);
+        Mul(denominator, decay, decay, currentNum);
+        Adds(denominator, denominator, 1.0f, currentNum);
+        Muls(zL, dyL, 2.0f, currentNum);
+        Mul(zL, zL, decay, currentNum);
+        Div<float, DIV_CONFIG>(zL, zL, denominator, currentNum);
     }
 
     outQueZ.template EnQue<T>(zL);
@@ -172,8 +175,7 @@ __aicore__ inline void AsinhGrad<T, BUFFER_MODE>::Compute(int64_t currentNum)
 }
 
 template <typename T, int BUFFER_MODE>
-__aicore__ inline void AsinhGrad<T, BUFFER_MODE>::CopyOut(
-    int64_t progress, int64_t currentNum)
+__aicore__ inline void AsinhGrad<T, BUFFER_MODE>::CopyOut(int64_t progress, int64_t currentNum)
 {
     LocalTensor<T> zL = outQueZ.template DeQue<T>();
 
