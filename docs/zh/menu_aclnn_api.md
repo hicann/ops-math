@@ -88,6 +88,7 @@
 - [aclnnDropoutGenMaskV2](../../random/dsa_gen_bit_mask/docs/aclnnDropoutGenMaskV2.md)
 - [aclnnDropoutGenMaskV2Tensor](../../random/dsa_gen_bit_mask/docs/aclnnDropoutGenMaskV2Tensor.md)
 - [aclnnDropoutV3](../../random/drop_out_v3/docs/aclnnDropoutV3.md)
+- [aclnnDropoutV3Grad](../../random/drop_out_v3_grad/docs/aclnnDropoutV3Grad.md)
 - [aclnnEqScalar&aclnnInplaceEqScalar](../../math/equal/docs/aclnnEqScalar&aclnnInplaceEqScalar.md)
 - [aclnnEqTensor&aclnnInplaceEqTensor](../../math/equal/docs/aclnnEqTensor&aclnnInplaceEqTensor.md)
 - [aclnnEqual](../../math/tensor_equal/docs/aclnnEqual.md)
