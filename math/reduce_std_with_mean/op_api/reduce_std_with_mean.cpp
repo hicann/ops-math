@@ -51,9 +51,8 @@ static bool IsAiCoreSupport(const aclTensor* self)
     return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
 }
 
-// 依 self shape + dim + keepdim 推导归约后输出 shape，语义与
-// op_host/reduce_std_with_mean_infershape.cpp 一致：
-//   dim 为空 → 全轴归约；负数轴归一化到 [0, rank)；keepdim=true 归约轴置 1，否则删除。
+// 依 self shape + dim + keepdim 推导归约后输出 shape，语义与 op_host/reduce_std_with_mean_infershape.cpp 一致。
+// dim 为空时按全轴归约；负数轴归一化到 [0, rank)；keepdim=true 时归约轴置 1，否则删除该轴。
 // dim 的越界/重复由 L2 CheckParams 前置拦截，此处仅做归一化。
 static op::Shape GetReduceOutputShape(const op::Shape& xShape, const aclIntArray* dim, bool keepdim)
 {

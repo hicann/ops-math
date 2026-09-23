@@ -43,6 +43,7 @@ using namespace AscendC;
 #define HIST_SIMD_TILE 4096
 #endif
 constexpr int32_t HIST_SIMD_TILE_ELEMS = HIST_SIMD_TILE;
+constexpr int32_t HIST_SIMD_X_QUE_DEPTH = 2;
 constexpr int32_t HIST_SIMD_VL_F32 = 64;
 constexpr int32_t HIST_SIMD_KEYS_PER_HIST = 256;
 // BIN0 of dhistv2 covers keys [0, 127]; key 127 is reserved as the out-of-range sink.
@@ -166,7 +167,7 @@ private:
     GlobalTensor<int32_t> wsGm_;
 
     TPipe* pipe_;
-    TQue<TPosition::VECIN, 2> xQue_;
+    TQue<TPosition::VECIN, HIST_SIMD_X_QUE_DEPTH> xQue_;
     TBuf<TPosition::VECCALC> keyBuf_;
     TBuf<TPosition::VECCALC> histBuf_;
     TBuf<TPosition::VECCALC> accBuf_;
@@ -211,7 +212,7 @@ __aicore__ inline void HistogramV2SimdFullLoadDetFp32Out<X_TYPE, COMPUTE_TYPE>::
     this->yGmFloat_.SetGlobalBuffer(reinterpret_cast<__gm__ float*>(y));
     this->wsGm_.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(workspace));
 
-    this->pipe_->InitBuffer(this->xQue_, 2, HIST_SIMD_TILE_ELEMS * sizeof(X_TYPE));
+    this->pipe_->InitBuffer(this->xQue_, HIST_SIMD_X_QUE_DEPTH, HIST_SIMD_TILE_ELEMS * sizeof(X_TYPE));
     this->pipe_->InitBuffer(this->keyBuf_, HIST_SIMD_TILE_ELEMS * sizeof(uint8_t));
     this->pipe_->InitBuffer(this->histBuf_, HIST_SIMD_BIN_SLOTS * sizeof(int16_t));
     this->pipe_->InitBuffer(this->accBuf_, HIST_SIMD_BIN_SLOTS * sizeof(int32_t));
