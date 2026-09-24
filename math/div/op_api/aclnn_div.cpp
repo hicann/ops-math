@@ -769,7 +769,12 @@ aclnnStatus aclnnDivsGetWorkspaceSize(const aclTensor* self, const aclScalar* ot
         } else {
             auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
             CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-            auto selfCasted = l0op::Cast(selfContiguous, promoteType, uniqueExecutor.get());
+            // out 与 self 同 dtype 且走倒数乘(Muls)时:Muls 内核内部即 bf16/fp16->fp32->回写(CAST_RINT),
+            // 与 Cast(self->fp32)+Muls(fp32) 逐位等价,可省去该次 cast(3 kernel -> 1 kernel)。
+            // out 与 self 不同 dtype 时不可省,否则会引入二次舍入,或提前丢范围/精度。
+            const bool canSkipCast = canUseMuls && out->GetDataType() == self->GetDataType();
+            auto selfCasted = canSkipCast ? selfContiguous :
+                                            l0op::Cast(selfContiguous, promoteType, uniqueExecutor.get());
             CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
             if (canUseMuls) {
                 // 倒数在 double 下计算后单次舍入到 float,对齐 CUDA 标量除法精度

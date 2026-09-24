@@ -25,15 +25,9 @@ using namespace std;
 
 class l2_div_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "div_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "div_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "div_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "div_test TearDown" << endl; }
 };
 
 // 测试aicore:FLOAT,FLOAT32类型支持
@@ -507,6 +501,81 @@ TEST_F(l2_div_test, ascend950_case_divs_bf16_double_scalar_opmath_float)
     auto self_tensor_desc = TensorDesc({4, 5}, ACL_BF16, ACL_FORMAT_ND).ValueRange(10, 100);
     auto other_tensor_desc = ScalarDesc(static_cast<double>(3.0));
     auto out_tensor_desc = TensorDesc({4, 5}, ACL_BF16, ACL_FORMAT_ND).Precision(0.01, 0.01);
+
+    auto ut = OP_API_UT(aclnnDivs, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+}
+
+// out 与 self 同 dtype(bf16):跳过 host 侧 bf16->fp32 cast,Muls 内核内部已完成该提升(逐位等价)。
+TEST_F(l2_div_test, ascend950_case_divs_bf16_scalar_out_same_skipcast)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    auto self_tensor_desc = TensorDesc({4, 5}, ACL_BF16, ACL_FORMAT_ND).ValueRange(10, 100);
+    auto other_tensor_desc = ScalarDesc(static_cast<double>(3.0));
+    auto out_tensor_desc = TensorDesc({4, 5}, ACL_BF16, ACL_FORMAT_ND).Precision(0.01, 0.01);
+
+    auto ut = OP_API_UT(aclnnDivs, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+}
+
+// out 与 self 同 dtype(fp16):同上。
+TEST_F(l2_div_test, ascend950_case_divs_fp16_scalar_out_same_skipcast)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    auto self_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(10, 100);
+    auto other_tensor_desc = ScalarDesc(static_cast<double>(3.0));
+    auto out_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT16, ACL_FORMAT_ND).Precision(0.001, 0.001);
+
+    auto ut = OP_API_UT(aclnnDivs, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+}
+
+// out 与 self 不同 dtype(bf16 self + fp32 out):不可跳过 cast,否则乘积会先被舍入到 bf16。
+TEST_F(l2_div_test, ascend950_case_divs_bf16_scalar_out_fp32_no_skipcast)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    auto self_tensor_desc = TensorDesc({4, 5}, ACL_BF16, ACL_FORMAT_ND).ValueRange(10, 100);
+    auto other_tensor_desc = ScalarDesc(static_cast<double>(3.0));
+    auto out_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
+
+    auto ut = OP_API_UT(aclnnDivs, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+}
+
+// out 与 self 不同 dtype(fp16 self + fp32 out):同上,保留 cast。
+TEST_F(l2_div_test, ascend950_case_divs_fp16_scalar_out_fp32_no_skipcast)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    auto self_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(10, 100);
+    auto other_tensor_desc = ScalarDesc(static_cast<double>(3.0));
+    auto out_tensor_desc = TensorDesc({4, 5}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
+
+    auto ut = OP_API_UT(aclnnDivs, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND910B);
+}
+
+// 非连续 bf16 self + double 标量:CanUseMuls=false,走 RealDiv 路径,不受 skip-cast 影响。
+TEST_F(l2_div_test, ascend950_case_divs_bf16_scalar_noncontiguous_realdiv)
+{
+    op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
+    auto self_tensor_desc = TensorDesc({5, 4}, ACL_BF16, ACL_FORMAT_ND, {1, 5}, 0, {4, 5}).ValueRange(10, 100);
+    auto other_tensor_desc = ScalarDesc(static_cast<double>(3.0));
+    auto out_tensor_desc = TensorDesc({5, 4}, ACL_BF16, ACL_FORMAT_ND).Precision(0.01, 0.01);
 
     auto ut = OP_API_UT(aclnnDivs, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
     uint64_t workspace_size = 0;
