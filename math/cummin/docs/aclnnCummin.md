@@ -102,7 +102,7 @@ aclnnStatus aclnnCummin(
         <td>dim (int64_t)</td>
         <td>输入</td>
         <td>进行操作的维度。</td>
-        <td>取值范围在[-self.dim(), self.dim()-1)内。</td>
+        <td>取值范围在[-self.dim(), self.dim()-1]内。</td>
         <td>INT64</td>
         <td>-</td>
         <td>-</td>

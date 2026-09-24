@@ -43,8 +43,6 @@ aclnnStatus aclnnSqrt(
 
 - **参数说明：**
 
-- **参数说明：**
-
   <table style="table-layout: fixed; width: 1494px"><colgroup>
   <col style="width: 146px">
   <col style="width: 110px">
