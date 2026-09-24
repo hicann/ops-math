@@ -56,6 +56,20 @@ TEST_F(l2_sum_test, l2_sum_test_nullptr_out)
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_NULLPTR);
 }
 
+// 输入tensor列表为空
+TEST_F(l2_sum_test, l2_sum_test_empty_tensor_list)
+{
+    const aclTensor* empty_tensors[] = {nullptr};
+    auto tensor_list = aclCreateTensorList(empty_tensors, 0);
+    ASSERT_NE(tensor_list, nullptr);
+
+    auto out_tensor_desc = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnSum, INPUT(tensor_list), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
+
 // 空tensors
 TEST_F(l2_sum_test, l2_sum_test_empty_tensors)
 {

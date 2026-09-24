@@ -74,6 +74,11 @@ static bool GetTensorsBroadcastShape(const aclTensorList* tensors, op::Shape& br
 
 static bool CheckShape(const aclTensorList* tensors, const aclTensor* out)
 {
+    if (tensors->Size() == 0) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The input tensor list should not be empty.");
+        return false;
+    }
+
     for (uint64_t i = 0; i < tensors->Size(); ++i) {
         auto dimNum = (*tensors)[i]->GetViewShape().GetDimNum();
         if (dimNum > MAX_SUPPORT_DIMS_NUMS) {
