@@ -27,14 +27,14 @@ static const int64_t NUMBER_TWO = 2;
 
 OP_TYPE_REGISTER(CdistGrad);
 
-static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
+static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT,
+                                                                          op::DataType::DT_FLOAT16};
 
 static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST_950 = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 
-static inline bool IsAiCoreSupport(
-    const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist)
+static inline bool IsAiCoreSupport(const aclTensor* grad, const aclTensor* x1, const aclTensor* x2,
+                                   const aclTensor* cdist)
 {
     if (grad->GetDataType() != x1->GetDataType() || grad->GetDataType() != x2->GetDataType() ||
         grad->GetDataType() != cdist->GetDataType()) {
@@ -42,30 +42,24 @@ static inline bool IsAiCoreSupport(
     }
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     auto dtypeList = IsRegBase(npuArch) ? AICORE_DTYPE_SUPPORT_LIST_950 : AICORE_DTYPE_SUPPORT_LIST;
-    return op::CheckType(grad->GetDataType(), dtypeList) &&
-           op::CheckType(x1->GetDataType(), dtypeList) &&
-           op::CheckType(x2->GetDataType(), dtypeList) &&
-           op::CheckType(cdist->GetDataType(), dtypeList);
+    return op::CheckType(grad->GetDataType(), dtypeList) && op::CheckType(x1->GetDataType(), dtypeList) &&
+           op::CheckType(x2->GetDataType(), dtypeList) && op::CheckType(cdist->GetDataType(), dtypeList);
 }
 
 // AICORE算子kernel
-static inline const aclTensor* CdistGradAiCore(
-    const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist, float p,
-    aclTensor* out, aclOpExecutor* executor)
+static inline const aclTensor* CdistGradAiCore(const aclTensor* grad, const aclTensor* x1, const aclTensor* x2,
+                                               const aclTensor* cdist, float p, aclTensor* out, aclOpExecutor* executor)
 {
     L0_DFX(CdistGradAiCore, x1, x2, out);
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore CdistGrad算子加入任务队列
-    auto ret =
-        ADD_TO_LAUNCHER_LIST_AICORE(CdistGrad, OP_INPUT(grad, x1, x2, cdist), OP_OUTPUT(out), OP_ATTR(p));
-    OP_CHECK(
-        ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "CdistGradAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-        return nullptr);
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(CdistGrad, OP_INPUT(grad, x1, x2, cdist), OP_OUTPUT(out), OP_ATTR(p));
+    OP_CHECK(ret == ACL_SUCCESS,
+             OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "CdistGradAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."), return nullptr);
     return out;
 }
 
-const aclTensor* CdistGrad(
-    const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist, float p,
-    aclOpExecutor* executor)
+const aclTensor* CdistGrad(const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist,
+                           float p, aclOpExecutor* executor)
 {
     L0_DFX(CdistGrad, grad, x1, x2, cdist);
     aclTensor* yOut = nullptr;
@@ -98,7 +92,7 @@ const aclTensor* CdistGrad(
     if (IsAiCoreSupport(grad, x1, x2, cdist)) {
         return CdistGradAiCore(grad, x1, x2, cdist, p, yOut, executor);
     } else {
-        OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "Datatype not supported.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "CdistGrad datatype not supported.");
         return nullptr;
     }
 }

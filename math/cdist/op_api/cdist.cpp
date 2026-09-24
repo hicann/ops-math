@@ -22,8 +22,8 @@ using namespace op;
 
 namespace l0op {
 constexpr size_t MIN_DIM_LEN = 2;
-static const std::initializer_list<DataType> ASCEND910B_AICORE_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT, DataType::DT_FLOAT16};
+static const std::initializer_list<DataType> ASCEND910B_AICORE_DTYPE_SUPPORT_LIST = {DataType::DT_FLOAT,
+                                                                                     DataType::DT_FLOAT16};
 static const std::initializer_list<DataType> ASCEND950_AICORE_DTYPE_SUPPORT_LIST = {
     DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16};
 
@@ -44,7 +44,7 @@ const Shape InferShapeForA5(const aclTensor* x1, const aclTensor* x2)
     op::Shape outShape;
     int64_t x1DimNum = x1->GetViewShape().GetDimNum();
     int64_t x2DimNum = x2->GetViewShape().GetDimNum();
-    for(int64_t i = 0; i < x1DimNum - 1; i++) {
+    for (int64_t i = 0; i < x1DimNum - 1; i++) {
         int64_t dim = x1->GetViewShape().GetDim(i);
         outShape.AppendDim(dim);
     }
@@ -53,32 +53,29 @@ const Shape InferShapeForA5(const aclTensor* x1, const aclTensor* x2)
 }
 
 // A2A3的AICORE算子kernel
-static inline const aclTensor* CdistAiCore(
-    const aclTensor* x1, const aclTensor* x2, float p, aclTensor* output, aclOpExecutor* executor)
+static inline const aclTensor* CdistAiCore(const aclTensor* x1, const aclTensor* x2, float p, aclTensor* output,
+                                           aclOpExecutor* executor)
 {
     L0_DFX(CdistAiCore, x1, x2, p, output);
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore Cdist算子加入任务队列
     auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Cdist, OP_INPUT(x1, x2), OP_OUTPUT(output), OP_ATTR(p));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "CdistAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-        return nullptr);
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "CdistAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
+             return nullptr);
     return output;
 }
 // David的AICORE算子kernel
-static inline const aclTensor* CdistAiCore(
-    const aclTensor* x1, const aclTensor* x2, float p, int64_t compute_mode, aclTensor* output, aclOpExecutor* executor)
+static inline const aclTensor* CdistAiCore(const aclTensor* x1, const aclTensor* x2, float p, int64_t compute_mode,
+                                           aclTensor* output, aclOpExecutor* executor)
 {
     L0_DFX(CdistAiCore, x1, x2, p, compute_mode, output);
     auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Cdist, OP_INPUT(x1, x2), OP_ATTR(p, compute_mode), OP_OUTPUT(output));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "CdistAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-        return nullptr);
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "CdistAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
+             return nullptr);
     return output;
 }
 
-
-const aclTensor* Cdist(const aclTensor *x1, const aclTensor *x2, float p, int64_t compute_mode, 
-                       aclOpExecutor *executor) {
+const aclTensor* Cdist(const aclTensor* x1, const aclTensor* x2, float p, int64_t compute_mode, aclOpExecutor* executor)
+{
     SocVersion socVersion = GetCurrentPlatformInfo().GetSocVersion();
     Shape outShape;
     if (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93) {
@@ -94,16 +91,23 @@ const aclTensor* Cdist(const aclTensor *x1, const aclTensor *x2, float p, int64_
             CheckType(x2->GetDataType(), ASCEND910B_AICORE_DTYPE_SUPPORT_LIST)) {
             return CdistAiCore(x1, x2, p, out, executor);
         }
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Cdist datatype not supported on ASCEND910B/ASCEND910_93.");
+        return nullptr;
     } else if (IsRegBase()) {
         if (CheckType(x1->GetDataType(), ASCEND950_AICORE_DTYPE_SUPPORT_LIST) &&
             CheckType(x2->GetDataType(), ASCEND950_AICORE_DTYPE_SUPPORT_LIST)) {
-            INFER_SHAPE(Cdist, OP_INPUT(x1, x2), OP_OUTPUT(out), OP_ATTR(p, compute_mode));
+            auto ret = INFER_SHAPE(Cdist, OP_INPUT(x1, x2), OP_OUTPUT(out), OP_ATTR(p, compute_mode));
+            if (ret != ACLNN_SUCCESS) {
+                OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Cdist InferShape failed.");
+                return nullptr;
+            }
             return CdistAiCore(x1, x2, p, compute_mode, out, executor);
         }
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Cdist datatype not supported on RegBase platform.");
+        return nullptr;
     } else {
-        OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "Data type not supported.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Cdist is not supported on this platform.");
         return nullptr;
     }
-    return nullptr;
 }
-}   // namespace l0op
+} // namespace l0op
