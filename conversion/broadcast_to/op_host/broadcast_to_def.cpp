@@ -53,6 +53,7 @@ public:
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .ExtendCfgInfo("opFile.value", "broadcast_to_apt");
+        this->AICore().AddConfig("ascend950", aicoreConfig);
     }
 };
 

@@ -59,6 +59,7 @@ public:
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true)
             .ExtendCfgInfo("opFile.value", "pad_v3_apt");
+        this->AICore().AddConfig("ascend950", aicore_config);
     }
 };
 

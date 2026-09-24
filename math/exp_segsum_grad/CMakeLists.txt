@@ -19,4 +19,9 @@ foreach(SUB_DIR ${CURRENT_DIRS})
 endforeach()
 
 if(NOT NEED_COMPILE_OPS OR "exp_segsum_grad" IN_LIST NEED_COMPILE_OPS)
+    add_kernel_sources(
+        KERNEL_SRC arch35/exp_segsum_grad.cpp
+        COMPUTE_UNITS ascend950
+        AUTO_SYNC false
+    )
 endif()

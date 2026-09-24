@@ -57,14 +57,7 @@ target_link_libraries(${OPHOST_NAME}_ut PRIVATE
         rt2_registry_static
     -Wl,--no-whole-archive
     tiling_api
-    -Wl,--no-as-needed
-        graph
-        metadef
-    -Wl,--as-needed
 )
-target_link_directories(${OPHOST_NAME}_ut PRIVATE
-    ${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64
-    )
 
 ## add ophost ut exe:  math_op_host_ut
 add_executable(${OP_HOST_UT_EXE}

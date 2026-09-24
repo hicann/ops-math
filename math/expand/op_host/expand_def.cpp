@@ -18,15 +18,20 @@
 
 namespace ops {
 static const std::vector<ge::DataType> xDType = {
-    ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT32, ge::DT_UINT8, ge::DT_INT8, ge::DT_BOOL, ge::DT_BF16, ge::DT_INT64,
-    ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT32, ge::DT_UINT8, ge::DT_INT8, ge::DT_BOOL, ge::DT_BF16, ge::DT_INT64};
-static const std::vector<ge::Format> xFormat = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+    ge::DT_FLOAT,         ge::DT_FLOAT16,      ge::DT_INT32,     ge::DT_UINT8,
+    ge::DT_INT8,          ge::DT_BOOL,         ge::DT_BF16,      ge::DT_INT64,
+    ge::DT_FLOAT,         ge::DT_FLOAT16,      ge::DT_INT32,     ge::DT_UINT8,
+    ge::DT_INT8,          ge::DT_BOOL,         ge::DT_BF16,      ge::DT_INT64};
+static const std::vector<ge::Format> xFormat = {
+    ge::FORMAT_ND,        ge::FORMAT_ND,       ge::FORMAT_ND,    ge::FORMAT_ND,
+    ge::FORMAT_ND,        ge::FORMAT_ND,       ge::FORMAT_ND,    ge::FORMAT_ND,
+    ge::FORMAT_ND,        ge::FORMAT_ND,       ge::FORMAT_ND,    ge::FORMAT_ND,
+    ge::FORMAT_ND,        ge::FORMAT_ND,       ge::FORMAT_ND,    ge::FORMAT_ND};
 static const std::vector<ge::DataType> constDType = {
-    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
+    ge::DT_INT32,         ge::DT_INT32,        ge::DT_INT32,     ge::DT_INT32,
+    ge::DT_INT32,         ge::DT_INT32,        ge::DT_INT32,     ge::DT_INT32,
+    ge::DT_INT64,         ge::DT_INT64,        ge::DT_INT64,     ge::DT_INT64, 
+    ge::DT_INT64,         ge::DT_INT64,        ge::DT_INT64,     ge::DT_INT64};
 
 class Expand : public OpDef {
 public:
@@ -48,6 +53,7 @@ public:
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .ExtendCfgInfo("opFile.value", "expand_apt");
+        this->AICore().AddConfig("ascend950", aicoreConfig);
     }
 };
 

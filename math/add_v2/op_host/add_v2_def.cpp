@@ -49,6 +49,16 @@ public:
             .Format(ADD_V2_FORMAT_LIST)
             .UnknownShapeFormat(ADD_V2_FORMAT_LIST)
             .AutoContiguous();
+
+        OpAICoreConfig aicoreConfig;
+        aicoreConfig.DynamicCompileStaticFlag(true);
+        aicoreConfig.DynamicFormatFlag(false);
+        aicoreConfig.DynamicRankSupportFlag(true);
+        aicoreConfig.DynamicShapeSupportFlag(true);
+        aicoreConfig.NeedCheckSupportFlag(false);
+        aicoreConfig.PrecisionReduceFlag(true);
+        aicoreConfig.ExtendCfgInfo("opFile.value", "add_v2");
+        this->AICore().AddConfig("ascend950", aicoreConfig);
     }
 };
 
