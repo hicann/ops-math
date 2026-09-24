@@ -9,15 +9,15 @@ GetDynamicDims算子用于根据`shape_info`中标记的未知维度，从动态
 | 参数名 | 输入/输出 | 参数类型 | 数据类型 | 说明 |
 | - | - | - | - | - |
 | input | 输入 | Tensor动态输入 | int32、int64 | 输入张量，每个输入表示一个shape向量。 |
-| dims | 输出 | Tensor | int32、int64 | 输出未知维度的实际取值。 |
+| dims | 输出 | Tensor | int32、int64 | 输出未知维度的实际取值，数据类型与`input`一致。 |
 | shape_info | 属性 | ListInt | int64 | 各输入的shape信息，按`rank, dim0, dim1, ...`编码，`-1`表示未知维度。 |
 | N | 属性 | Int | int64 | 动态输入个数。 |
 
 ## 约束说明
 
 - 输入`input`数量必须与属性`N`一致。
+- 所有输入`input`的数据类型必须一致。
 - `shape_info`中描述的输入个数和每个输入rank必须与实际输入一致。
-- 输出`dims`的数据类型支持int32和int64。
 
 ## 调用说明
 

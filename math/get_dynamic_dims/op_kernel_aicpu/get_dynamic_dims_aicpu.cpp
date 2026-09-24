@@ -38,6 +38,15 @@ uint32_t GetDynamicDimsCpuKernel::Compute(CpuKernelContext& ctx)
     Tensor* output_tensor = ctx.Output(0);
     KERNEL_CHECK_NULLPTR(output_tensor, KERNEL_STATUS_PARAM_INVALID, "[%s] get output[0] failed.", kGetDynamicDims);
     DataType data_type = output_tensor->GetDataType();
+    for (uint32_t i = 0; i < ctx.GetInputsSize(); ++i) {
+        Tensor* input_tensor = ctx.Input(i);
+        KERNEL_CHECK_NULLPTR(input_tensor, KERNEL_STATUS_PARAM_INVALID, "[%s] get input[%u] failed.", kGetDynamicDims,
+                             i);
+        KERNEL_CHECK_FALSE((input_tensor->GetDataType() == data_type), KERNEL_STATUS_PARAM_INVALID,
+                           "[%s] input[%u] data_type [%s] must be the same as output[0] data_type [%s].",
+                           kGetDynamicDims, i, DTypeStr(input_tensor->GetDataType()).c_str(),
+                           DTypeStr(data_type).c_str());
+    }
     switch (data_type) {
         case DT_INT32:
             return DoCompute<int32_t>(ctx);

@@ -139,6 +139,72 @@ TEST_F(GetDynamicDimsAicpuTest, OutputDtypeFail)
     EXPECT_EQ(RunGetDynamicDims(inputs, dims, DT_INT32, kShapeInfo, 3, DT_FLOAT), KERNEL_STATUS_PARAM_INVALID);
 }
 
+TEST_F(GetDynamicDimsAicpuTest, InputAndOutputDtypeMismatchFail)
+{
+    auto node_def = CpuKernelUtils::CreateNodeDef();
+    node_def->SetOpType("GetDynamicDims");
+    vector<int32_t> input = {3, 2, 4, 1, 0, 0, 0, 0};
+    auto input_tensor = node_def->AddInputs();
+    ASSERT_NE(input_tensor, nullptr);
+    input_tensor->GetTensorShape()->SetDimSizes({4});
+    input_tensor->SetDataType(DT_INT32);
+    input_tensor->SetData(input.data());
+    input_tensor->SetDataSize(4 * sizeof(int32_t));
+
+    auto n_attr = CpuKernelUtils::CreateAttrValue();
+    n_attr->SetInt(1);
+    node_def->AddAttrs("N", n_attr.get());
+    auto shape_attr = CpuKernelUtils::CreateAttrValue();
+    shape_attr->SetListInt({4, 3, 2, -1, 1});
+    node_def->AddAttrs("shape_info", shape_attr.get());
+
+    vector<int64_t> dims(1);
+    auto output_tensor = node_def->AddOutputs();
+    ASSERT_NE(output_tensor, nullptr);
+    output_tensor->GetTensorShape()->SetDimSizes({1});
+    output_tensor->SetDataType(DT_INT64);
+    output_tensor->SetData(dims.data());
+    output_tensor->SetDataSize(dims.size() * sizeof(int64_t));
+
+    CpuKernelContext ctx(DEVICE);
+    ASSERT_EQ(ctx.Init(node_def.get()), KERNEL_STATUS_OK);
+    EXPECT_EQ(CpuKernelRegister::Instance().RunCpuKernel(ctx), KERNEL_STATUS_PARAM_INVALID);
+}
+
+TEST_F(GetDynamicDimsAicpuTest, DynamicInputDtypeMismatchFail)
+{
+    auto node_def = CpuKernelUtils::CreateNodeDef();
+    node_def->SetOpType("GetDynamicDims");
+    vector<int64_t> input0 = {3, 2, 4, 1};
+    vector<int32_t> input1 = {1, 2, 1, 0, 0, 0};
+    AddInput(node_def.get(), input0, DT_INT64);
+    auto input_tensor = node_def->AddInputs();
+    ASSERT_NE(input_tensor, nullptr);
+    input_tensor->GetTensorShape()->SetDimSizes({3});
+    input_tensor->SetDataType(DT_INT32);
+    input_tensor->SetData(input1.data());
+    input_tensor->SetDataSize(3 * sizeof(int32_t));
+
+    auto n_attr = CpuKernelUtils::CreateAttrValue();
+    n_attr->SetInt(2);
+    node_def->AddAttrs("N", n_attr.get());
+    auto shape_attr = CpuKernelUtils::CreateAttrValue();
+    shape_attr->SetListInt({4, 3, 2, -1, 1, 3, 1, -1, 1});
+    node_def->AddAttrs("shape_info", shape_attr.get());
+
+    vector<int64_t> dims(2);
+    auto output_tensor = node_def->AddOutputs();
+    ASSERT_NE(output_tensor, nullptr);
+    output_tensor->GetTensorShape()->SetDimSizes({2});
+    output_tensor->SetDataType(DT_INT64);
+    output_tensor->SetData(dims.data());
+    output_tensor->SetDataSize(dims.size() * sizeof(int64_t));
+
+    CpuKernelContext ctx(DEVICE);
+    ASSERT_EQ(ctx.Init(node_def.get()), KERNEL_STATUS_OK);
+    EXPECT_EQ(CpuKernelRegister::Instance().RunCpuKernel(ctx), KERNEL_STATUS_PARAM_INVALID);
+}
+
 TEST_F(GetDynamicDimsAicpuTest, InputNumNotMatchNFail)
 {
     vector<vector<int32_t>> inputs = {{3, 2, 4, 1}, {1, 2, 1}, {16, 112, 112, 3, 4}};

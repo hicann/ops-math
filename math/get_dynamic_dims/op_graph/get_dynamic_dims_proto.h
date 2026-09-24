@@ -22,7 +22,8 @@ namespace ge {
 *@brief Get dynamic dims after GetNext. \n
 
 *@par Inputs:
-*input: A nested structure of Tensor objects, from GetNext's output. Must be one of the following types: int32, int64.
+*input: A nested structure of Tensor objects, from GetNext's output. All tensors must have the same dtype, which must
+* be one of the following types: int32, int64.
 \n
 
 *@par Attributes:
@@ -30,7 +31,7 @@ namespace ge {
 *@li N: A int that indicates the inputs number. \n
 
 *@par Outputs:
-*dims: GE unknown dims, a vector of int32 or int64. \n
+*dims: GE unknown dims. Has the same dtype as "input". \n
 */
 #ifndef OPS_PROTO_DEF_GETDYNAMICDIMS
 #define OPS_PROTO_DEF_GETDYNAMICDIMS
