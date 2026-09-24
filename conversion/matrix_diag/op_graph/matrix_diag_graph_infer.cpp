@@ -21,7 +21,7 @@ namespace ops {
 static graphStatus InferDataType4MatrixDiag(gert::InferDataTypeContext* context)
 {
     OP_LOGD(context->GetNodeName(), "InferDataType4MatrixDiag start");
-    auto inputXDtype = context->GetInputDataType(1);
+    auto inputXDtype = context->GetInputDataType(0);
     context->SetOutputDataType(0, inputXDtype);
     OP_LOGD(context->GetNodeName(), "InferDataType4MatrixDiag end");
     return GRAPH_SUCCESS;
