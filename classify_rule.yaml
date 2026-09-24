@@ -155,6 +155,9 @@ math@ops-math:
         - ops/ops-math/math/mod/op_api/
         - ops/ops-math/math/mul/op_api/
         - ops/ops-math/math/muls/op_api/
+        - ops/ops-math/math/mul_addn/op_host/mul_addn_tiling.cpp
+        - ops/ops-math/math/mul_addn/op_host/mul_addn_infershape.cpp
+        - ops/ops-math/math/mul_addn/op_kernel/mul_addn_apt.cpp
         - ops/ops-math/math/nan_to_num/op_api/
         - ops/ops-math/math/neg/op_api/
         - ops/ops-math/math/non_finite_check/op_host/
@@ -352,6 +355,7 @@ math@ops-math:
         - ops/ops-math/math/mul/tests/
         - ops/ops-math/math/muls/examples/
         - ops/ops-math/math/muls/tests/
+        - ops/ops-math/math/mul_addn/tests
         - ops/ops-math/math/nan_to_num/examples/
         - ops/ops-math/math/nan_to_num/tests/
         - ops/ops-math/math/neg/examples/
