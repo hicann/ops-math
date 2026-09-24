@@ -158,7 +158,15 @@ inline const aclTensor* PadV3AiCpu(const aclTensor* self, const aclTensor* paddi
 const aclTensor* PadV3(const aclTensor* self, const aclTensor* paddings, const aclTensor* constant_values,
                        const std::string& mode, const bool paddingsContiguous, aclOpExecutor* executor)
 {
-    auto out = executor->AllocTensor(self->GetDataType(), self->GetViewFormat(), self->GetViewFormat());
+    auto storageFormat = self->GetViewFormat();
+    if (self->GetViewShape().GetDimNum() == AI_CORE_REPLICATION_PAD_DIM_BOUND &&
+        storageFormat == op::Format::FORMAT_NCHW) {
+        // A 4D no-batch input is expanded to 5D by the level-2 API while retaining NCHW as its view format.
+        // Using NCHW as the storage format for the inferred 5D output truncates its last dimension during
+        // format-based shape conversion, so keep the external view format and use ND for the storage shape.
+        storageFormat = op::Format::FORMAT_ND;
+    }
+    auto out = executor->AllocTensor(self->GetDataType(), storageFormat, self->GetViewFormat());
     auto ret = INFER_SHAPE(PadV3, OP_INPUT(self, paddings), OP_OUTPUT(out), OP_ATTR(mode, paddingsContiguous));
     if (ret != ACLNN_SUCCESS) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "PadV3 InferShape failed.");

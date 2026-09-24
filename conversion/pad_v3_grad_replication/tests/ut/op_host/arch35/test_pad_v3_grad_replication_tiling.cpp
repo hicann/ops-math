@@ -28,8 +28,7 @@ protected:
 // 1D float32 basic case, tail axis fallback (1D has no non-tail axis)
 TEST_F(PadV3GradReplicationTilingTest, test_1d_float32_basic)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{70}, {70}};
     gert::StorageShape paddingsShape = {{2}, {2}};
@@ -47,7 +46,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_1d_float32_basic)
         &compileInfo);
 
     uint64_t expectedTilingKey = (0ULL << 4) | (1 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -55,8 +54,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_1d_float32_basic)
 // 2D float16 with single-axis padding, split on axis=0
 TEST_F(PadV3GradReplicationTilingTest, test_2d_float16_large)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{522, 64}, {522, 64}};
     gert::StorageShape paddingsShape = {{4}, {4}};
@@ -74,7 +72,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_float16_large)
         &compileInfo);
 
     uint64_t expectedTilingKey = (0ULL << 4) | (2 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -82,8 +80,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_float16_large)
 // 3D bfloat16 with all dims padded, split on axis=1
 TEST_F(PadV3GradReplicationTilingTest, test_3d_bfloat16_all_padding)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{15, 522, 74}, {15, 522, 74}};
     gert::StorageShape paddingsShape = {{6}, {6}};
@@ -101,7 +98,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_3d_bfloat16_all_padding)
         &compileInfo);
 
     uint64_t expectedTilingKey = (1ULL << 4) | (3 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -109,8 +106,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_3d_bfloat16_all_padding)
 // 4D float32 NCHW with only H/W padded, split on axis=2
 TEST_F(PadV3GradReplicationTilingTest, test_4d_float32_nchw)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{10, 3, 522, 74}, {10, 3, 522, 74}};
     gert::StorageShape paddingsShape = {{8}, {8}};
@@ -128,7 +124,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_4d_float32_nchw)
         &compileInfo);
 
     uint64_t expectedTilingKey = (2ULL << 4) | (4 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -136,8 +132,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_4d_float32_nchw)
 // 6D float32, only last 5 dims have padding (first dim padding=0)
 TEST_F(PadV3GradReplicationTilingTest, test_6d_float32_last5_padding)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{100, 10, 20, 522, 74, 110}, {100, 10, 20, 522, 74, 110}};
     gert::StorageShape paddingsShape = {{12}, {12}};
@@ -155,7 +150,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_6d_float32_last5_padding)
         &compileInfo);
 
     uint64_t expectedTilingKey = (3ULL << 4) | (6 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -163,8 +158,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_6d_float32_last5_padding)
 // 8D float16, only last 5 dims have padding
 TEST_F(PadV3GradReplicationTilingTest, test_8d_float16_last5_padding)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{2, 3, 4, 100, 10, 20, 522, 110}, {2, 3, 4, 100, 10, 20, 522, 110}};
     gert::StorageShape paddingsShape = {{16}, {16}};
@@ -182,7 +176,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_8d_float16_last5_padding)
         &compileInfo);
 
     uint64_t expectedTilingKey = (6ULL << 4) | (8 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -190,8 +184,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_8d_float16_last5_padding)
 // 3D float32 with int64 paddings (non-contiguous), covers GetPaddingsToShape<int64_t>
 TEST_F(PadV3GradReplicationTilingTest, test_3d_float32_int64_paddings)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{15, 522, 74}, {15, 522, 74}};
     gert::StorageShape paddingsShape = {{6}, {6}};
@@ -209,7 +202,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_3d_float32_int64_paddings)
         &compileInfo);
 
     uint64_t expectedTilingKey = (1ULL << 4) | (3 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -217,8 +210,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_3d_float32_int64_paddings)
 // INT8 dtype, triggers dataSize=1 branch and uint16_t index limit with forced multi-tile
 TEST_F(PadV3GradReplicationTilingTest, test_2d_int8_uint16_limit_forced_multitile)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     // Single-tile dataBuf elements exceed INT16_MAX → uint16_t limit forces multi-tile
     gert::StorageShape xShape = {{520, 64}, {520, 64}};
@@ -237,7 +229,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_int8_uint16_limit_forced_multitil
         &compileInfo);
 
     uint64_t expectedTilingKey = (0ULL << 4) | (2 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -245,8 +237,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_int8_uint16_limit_forced_multitil
 // UINT8 dtype, covers dataSize=1 branch
 TEST_F(PadV3GradReplicationTilingTest, test_2d_uint8_basic)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{522, 64}, {522, 64}};
     gert::StorageShape paddingsShape = {{4}, {4}};
@@ -264,7 +255,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_uint8_basic)
         &compileInfo);
 
     uint64_t expectedTilingKey = (0ULL << 4) | (2 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -272,8 +263,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_uint8_basic)
 // INT16 dtype, covers dataSize=2 branch and uint16_t index limit
 TEST_F(PadV3GradReplicationTilingTest, test_2d_int16_uint16_limit)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{520, 64}, {520, 64}};
     gert::StorageShape paddingsShape = {{4}, {4}};
@@ -291,7 +281,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_int16_uint16_limit)
         &compileInfo);
 
     uint64_t expectedTilingKey = (0ULL << 4) | (2 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -299,8 +289,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_int16_uint16_limit)
 // UINT16 dtype, covers dataSize=2 branch
 TEST_F(PadV3GradReplicationTilingTest, test_2d_uint16_basic)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{522, 64}, {522, 64}};
     gert::StorageShape paddingsShape = {{4}, {4}};
@@ -318,7 +307,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_uint16_basic)
         &compileInfo);
 
     uint64_t expectedTilingKey = (0ULL << 4) | (2 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -326,8 +315,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_uint16_basic)
 // INT32 dtype, covers dataSize=4 branch
 TEST_F(PadV3GradReplicationTilingTest, test_2d_int32_basic)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{522, 64}, {522, 64}};
     gert::StorageShape paddingsShape = {{4}, {4}};
@@ -345,7 +333,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_int32_basic)
         &compileInfo);
 
     uint64_t expectedTilingKey = (0ULL << 4) | (2 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -353,8 +341,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_int32_basic)
 // UINT32 dtype, covers dataSize=4 branch
 TEST_F(PadV3GradReplicationTilingTest, test_2d_uint32_basic)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{522, 64}, {522, 64}};
     gert::StorageShape paddingsShape = {{4}, {4}};
@@ -372,7 +359,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_uint32_basic)
         &compileInfo);
 
     uint64_t expectedTilingKey = (0ULL << 4) | (2 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -380,8 +367,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_uint32_basic)
 // INT64 dtype, covers dataSize=8 branch
 TEST_F(PadV3GradReplicationTilingTest, test_2d_int64_basic)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{522, 64}, {522, 64}};
     gert::StorageShape paddingsShape = {{4}, {4}};
@@ -399,7 +385,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_int64_basic)
         &compileInfo);
 
     uint64_t expectedTilingKey = (0ULL << 4) | (2 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -407,8 +393,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_int64_basic)
 // UINT64 dtype, covers dataSize=8 branch
 TEST_F(PadV3GradReplicationTilingTest, test_2d_uint64_basic)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{522, 64}, {522, 64}};
     gert::StorageShape paddingsShape = {{4}, {4}};
@@ -426,7 +411,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_uint64_basic)
         &compileInfo);
 
     uint64_t expectedTilingKey = (0ULL << 4) | (2 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -434,8 +419,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_uint64_basic)
 // Unsupported dtype (DT_BOOL), should return GRAPH_FAILED
 TEST_F(PadV3GradReplicationTilingTest, test_invalid_dtype_bool)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{522, 64}, {522, 64}};
     gert::StorageShape paddingsShape = {{4}, {4}};
@@ -458,8 +442,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_invalid_dtype_bool)
 // Paddings with wrong dtype (DT_FLOAT), should return GRAPH_FAILED
 TEST_F(PadV3GradReplicationTilingTest, test_paddings_invalid_dtype_float)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{522, 64}, {522, 64}};
     gert::StorageShape paddingsShape = {{4}, {4}};
@@ -482,8 +465,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_paddings_invalid_dtype_float)
 // 2D case forcing tail-axis fallback: huge padding on axis=0 exceeds UB → edge_simt kernel
 TEST_F(PadV3GradReplicationTilingTest, test_2d_float32_tail_axis_fallback)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{100020, 64}, {100020, 64}};
     gert::StorageShape paddingsShape = {{4}, {4}};
@@ -501,7 +483,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_float32_tail_axis_fallback)
         &compileInfo);
 
     uint64_t expectedTilingKey = (1ULL << 4) | (2 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -509,8 +491,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_float32_tail_axis_fallback)
 // 3D INT8 with all non-tail axes failing, forcing tail axis (edge_simt)
 TEST_F(PadV3GradReplicationTilingTest, test_3d_int8_tail_axis_fallback)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{10, 10, 100020}, {10, 10, 100020}};
     gert::StorageShape paddingsShape = {{6}, {6}};
@@ -528,7 +509,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_3d_int8_tail_axis_fallback)
         &compileInfo);
 
     uint64_t expectedTilingKey = (2ULL << 4) | (3 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -536,8 +517,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_3d_int8_tail_axis_fallback)
 // FP16 dtype, single-tile both pads exceed UB budget → force multi-tile (no uint16_t limit since cast type)
 TEST_F(PadV3GradReplicationTilingTest, test_2d_float16_single_tile_both_pads_exceed_ub)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     // FP16 (cast type): dataBufSz=4, no uint16_t index limit
     // strideAligned=64, pL=508, pR=508 → bothFixedBytes=1*64*1016*4=260096 ≥ ubAvailable=260096
@@ -559,7 +539,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_float16_single_tile_both_pads_exc
 
     // After force multi-tile: splitSize=2, splitAxis=0, dimNum=2
     uint64_t expectedTilingKey = (0ULL << 4) | (2 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -567,8 +547,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_float16_single_tile_both_pads_exc
 // INT8 dtype, single-tile both pads exceed UB AND shape=1 → TrySplitAxis fails, falls to tail axis
 TEST_F(PadV3GradReplicationTilingTest, test_2d_int8_single_tile_exceed_ub_shape1)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     // INT8 dataSize=1, strideAligned=640 (outputShape[1]=640)
     // pL=1, pR=1: bothFixedBytes=1*640*2*1=1280
@@ -622,7 +601,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_int8_single_tile_exceed_ub_shape1
 
     // Falls to tail axis: splitAxis=1, dimNum=2 → tilingKey=(1<<4)|(2-1)=17
     uint64_t expectedTilingKey = (1ULL << 4) | (2 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -630,8 +609,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_int8_single_tile_exceed_ub_shape1
 // FP16 dtype, single-tile pads fit UB but no room for data (unitsBoth=0), force multi-tile
 TEST_F(PadV3GradReplicationTilingTest, test_2d_float16_single_tile_pads_fit_no_room)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     // FP16 (cast type, no uint16_t limit): dataBufSz=4, dataSize=2
     // outputShape[1]=64 → strideAligned=64
@@ -657,7 +635,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_float16_single_tile_pads_fit_no_r
         &compileInfo);
 
     uint64_t expectedTilingKey = (0ULL << 4) | (2 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -667,8 +645,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_float16_single_tile_pads_fit_no_r
 // (since strideAligned is small enough)
 TEST_F(PadV3GradReplicationTilingTest, test_2d_int8_single_tile_both_pads_reduce_split)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     // INT8 dataSize=1, outputShape[1]=5000 → strideAligned=5024
     // pL=1, pR=1: bothFixedBytes=1*5024*2*1=10048
@@ -692,7 +669,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_int8_single_tile_both_pads_reduce
         &compileInfo);
 
     uint64_t expectedTilingKey = (0ULL << 4) | (2 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -700,8 +677,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_int8_single_tile_both_pads_reduce
 // FP16 dtype, single-tile both pads reduce splitSize (no uint16_t limit since cast type)
 TEST_F(PadV3GradReplicationTilingTest, test_2d_float16_both_pads_reduce_split)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     // FP16: dataBufSz=4, dataSize=2, strideAligned=256 (outputShape[1]=256)
     // pL=1, pR=1: maxSinglePad=1, fixedBytes=1*256*1*4=1024
@@ -726,7 +702,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_float16_both_pads_reduce_split)
         &compileInfo);
 
     uint64_t expectedTilingKey = (0ULL << 4) | (2 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -734,8 +710,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_float16_both_pads_reduce_split)
 // FP16 dtype, single-tile pads fit UB but no room for data with shape=1 → TrySplitAxis fails, tail axis fallback
 TEST_F(PadV3GradReplicationTilingTest, test_2d_float16_pads_fit_no_room_shape1)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     // FP16: dataBufSz=4, dataSize=2, strideAligned=64
     // pL=507, pR=508: bothFixedBytes=1*64*1015*4=259840, 259840+64=259904 < 260096 → pads fit
@@ -758,7 +733,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_float16_pads_fit_no_room_shape1)
 
     // Falls to tail axis: splitAxis=1, dimNum=2 → tilingKey=(1<<4)|(2-1)=17
     uint64_t expectedTilingKey = (1ULL << 4) | (2 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -766,8 +741,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_float16_pads_fit_no_room_shape1)
 // INT8 dtype, uint16_t index limit: pad overhead exceeds limit → axis fails, tail axis fallback
 TEST_F(PadV3GradReplicationTilingTest, test_2d_int8_uint16_pad_overhead_exceeds_limit)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{30, 4096}, {30, 4096}};
     gert::StorageShape paddingsShape = {{4}, {4}};
@@ -785,7 +759,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_int8_uint16_pad_overhead_exceeds_
         &compileInfo);
 
     uint64_t expectedTilingKey = (1ULL << 4) | (2 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -793,8 +767,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_int8_uint16_pad_overhead_exceeds_
 // INT8 dtype, uint16_t index limit: allowedSlice ≤ effectivePad → axis fails, tail axis fallback
 TEST_F(PadV3GradReplicationTilingTest, test_2d_int8_uint16_allowed_slice_le_effective_pad)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{20, 3264}, {20, 3264}};
     gert::StorageShape paddingsShape = {{4}, {4}};
@@ -812,7 +785,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_int8_uint16_allowed_slice_le_effe
         &compileInfo);
 
     uint64_t expectedTilingKey = (1ULL << 4) | (2 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -820,8 +793,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_int8_uint16_allowed_slice_le_effe
 // INT8 dtype, uint16_t index limit: general reduction path reduces splitSize
 TEST_F(PadV3GradReplicationTilingTest, test_2d_int8_uint16_general_reduce_split)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 32, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{1010, 64}, {1010, 64}};
     gert::StorageShape paddingsShape = {{4}, {4}};
@@ -839,7 +811,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_int8_uint16_general_reduce_split)
         &compileInfo);
 
     uint64_t expectedTilingKey = (0ULL << 4) | (2 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
@@ -847,8 +819,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_2d_int8_uint16_general_reduce_split)
 // Multi-tile per core: splitCount > coreNum, triggers CalcUsedCore multi-tile branch
 TEST_F(PadV3GradReplicationTilingTest, test_5d_float32_multi_tile_outer_combos)
 {
-    PadV3GradReplicationCompileInfo compileInfo = {
-        .core_num = 2, .ub_size = 128 * 1024, .sysWorkspaceSize = 16 * 1024 * 1024};
+    PadV3GradReplicationCompileInfo compileInfo = {.core_num = 2, .ub_size = 128 * 1024, .sysWorkspaceSize = 0};
 
     gert::StorageShape xShape = {{10, 10, 10, 522, 74}, {10, 10, 10, 522, 74}};
     gert::StorageShape paddingsShape = {{10}, {10}};
@@ -866,7 +837,7 @@ TEST_F(PadV3GradReplicationTilingTest, test_5d_float32_multi_tile_outer_combos)
         &compileInfo);
 
     uint64_t expectedTilingKey = (3ULL << 4) | (5 - 1);
-    std::vector<size_t> expectedWorkspaces = {16 * 1024 * 1024};
+    std::vector<size_t> expectedWorkspaces = {0};
 
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
