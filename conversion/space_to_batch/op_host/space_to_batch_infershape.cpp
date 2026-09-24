@@ -84,6 +84,9 @@ ge::graphStatus SpaceToBatchInferShapeHelper::Inference()
         return ge::GRAPH_SUCCESS;
     }
 
+    OP_CHECK_IF(xShape_->GetDimNum() != 4, OP_LOGE(context_, "x must be 4D, got %zu", xShape_->GetDimNum()),
+                return ge::GRAPH_FAILED);
+
     yShape_->SetDimNum(0);
 
     int64_t batch = xShape_->GetDim(0);
