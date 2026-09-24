@@ -48,7 +48,7 @@ aclnnStatus aclRfft1DGetWorkspaceSize(const aclTensor* self, int64_t n, int64_t 
  * @param [in] workspace: start address of the workspace memory allocated on the NPU device.
  * @param [in] workspace_size: size of the workspace applied on the NPU device, which is obtained by calling the first
  * segment interface aclRfft1DGetWorkspaceSize.
- * @param [in] exector: op executor, including the operator calculation process.
+ * @param [in] executor: op executor, including the operator calculation process.
  * @param [in] stream: acl stream.
  * @return aclnnStatus: returned status code
  */

@@ -44,14 +44,14 @@ extern "C" {
  * @param [out] executor: 返回op执行器，包括算子计算流程
  * @return aclnnStatus: 返回状态码
  */
-ACLNN_API aclnnStatus
-aclnnRealGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnRealGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                                aclOpExecutor** executor);
 
 /**
  * @brief aclnnReal的第二段接口，用于执行计算。
  * @param [in] workspace: 在npu device侧申请的workspace内存起址。
  * @param [in] workspace_size: 在npu device侧申请的workspace大小，由第一段接口aclnnRealGetWorkspaceSize获取。
- * @param [in] exector: op执行器，包含了算子计算流程。
+ * @param [in] executor: op执行器，包含了算子计算流程。
  * @param [in] stream: acl stream流。
  * @return aclnnStatus: 返回状态码
  */
