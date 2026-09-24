@@ -40,11 +40,11 @@ static const int64_t MIN_SUPPORT_DIM = 2;
 static const int64_t NUMBER_TWO = 2;
 
 // 根据API定义，需要列出所能支持的所有dtype
-static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
+static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16,
+                                                                       op::DataType::DT_BF16};
 
-static inline bool CheckNotNull(
-    const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist, aclTensor* out)
+static inline bool CheckNotNull(const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist,
+                                aclTensor* out)
 {
     OP_CHECK_NULL(grad, return false);
     OP_CHECK_NULL(x1, return false);
@@ -54,8 +54,8 @@ static inline bool CheckNotNull(
     return true;
 }
 
-static bool CheckDtypeValid(
-    const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist, aclTensor* out)
+static bool CheckDtypeValid(const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist,
+                            aclTensor* out)
 {
     OP_CHECK_DTYPE_NOT_SUPPORT(grad, DTYPE_SUPPORT_LIST, return false);
     OP_CHECK_DTYPE_NOT_SUPPORT(x1, DTYPE_SUPPORT_LIST, return false);
@@ -72,8 +72,8 @@ static bool CheckDtypeValid(
     return true;
 }
 
-static bool CheckDims(
-    const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist, aclTensor* out)
+static bool CheckDims(const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist,
+                      aclTensor* out)
 {
     OP_CHECK_MAX_DIM(grad, MAX_SUPPORT_DIM, return false);
     OP_CHECK_MIN_DIM(grad, MIN_SUPPORT_DIM, return false);
@@ -107,23 +107,23 @@ static bool getBroadcastShape(const aclTensor* x1, const aclTensor* x2, op::Shap
     return true;
 }
 
-static bool CheckShape(
-    const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist, aclTensor* out)
+static bool CheckShape(const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist,
+                       aclTensor* out)
 {
     size_t dimNum = grad->GetViewShape().GetDimNum();
     auto cdistShape = cdist->GetViewShape();
 
     op::Shape broadcastShape;
     if (!getBroadcastShape(x1, x2, broadcastShape)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(x2->GetViewShape()).GetString(),
-            op::ToString(x1->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(x2->GetViewShape()).GetString(),
+                op::ToString(x1->GetViewShape()).GetString());
         return false;
     }
 
     for (size_t i = 0; i < dimNum; i++) {
         if (cdistShape[i] != broadcastShape[i]) {
-            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "cdist[%lu] : %ld should be equal to %ld .", i, cdistShape[i], broadcastShape[i]);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "cdist[%lu] : %ld should be equal to %ld .", i, cdistShape[i],
+                    broadcastShape[i]);
             return false;
         }
     }
@@ -132,8 +132,8 @@ static bool CheckShape(
     return true;
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist, float p, aclTensor* out)
+static aclnnStatus CheckParams(const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist,
+                               float p, aclTensor* out)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(grad, x1, x2, cdist, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -147,16 +147,16 @@ static aclnnStatus CheckParams(
     // 4. 检查输入形状是否满足
     CHECK_RET(CheckShape(grad, x1, x2, cdist, out), ACLNN_ERR_PARAM_INVALID);
 
-    if (p != -1.0f && p < 0.0f) {
+    if (std::isnan(p) || (p != -1.0f && p < 0.0f)) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "aclnnCdistBackward only supports non-negative p values.");
         return ACLNN_ERR_PARAM_INVALID;
     }
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnCdistBackwardGetWorkspaceSize(
-    const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist, float p,
-    aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnCdistBackwardGetWorkspaceSize(const aclTensor* grad, const aclTensor* x1, const aclTensor* x2,
+                                               const aclTensor* cdist, float p, aclTensor* out, uint64_t* workspaceSize,
+                                               aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
     L2_DFX_PHASE_1(aclnnCdistBackward, DFX_IN(grad, x1, x2, cdist, p), DFX_OUT(out));
@@ -181,22 +181,21 @@ aclnnStatus aclnnCdistBackwardGetWorkspaceSize(
     auto x2Contiguous = l0op::Contiguous(x2, uniqueExecutor.get());
     auto cdistContiguous = l0op::Contiguous(cdist, uniqueExecutor.get());
     CHECK_RET(
-        gradContiguous != nullptr && x1Contiguous != nullptr && x2Contiguous != nullptr &&
-            cdistContiguous != nullptr,
+        gradContiguous != nullptr && x1Contiguous != nullptr && x2Contiguous != nullptr && cdistContiguous != nullptr,
         ACLNN_ERR_INNER_NULLPTR);
-    
+
     SocVersion socVersion = GetCurrentPlatformInfo().GetSocVersion();
-    bool needCast = x1 -> GetDataType() == op::DataType::DT_BF16 && (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93);
+    bool needCast = x1->GetDataType() == op::DataType::DT_BF16 &&
+                    (socVersion == SocVersion::ASCEND910B || socVersion == SocVersion::ASCEND910_93);
 
     if (needCast) {
         gradContiguous = l0op::Cast(gradContiguous, op::DataType::DT_FLOAT, uniqueExecutor.get());
         x1Contiguous = l0op::Cast(x1Contiguous, op::DataType::DT_FLOAT, uniqueExecutor.get());
         x2Contiguous = l0op::Cast(x2Contiguous, op::DataType::DT_FLOAT, uniqueExecutor.get());
         cdistContiguous = l0op::Cast(cdistContiguous, op::DataType::DT_FLOAT, uniqueExecutor.get());
-        CHECK_RET(
-            gradContiguous != nullptr && x1Contiguous != nullptr && x2Contiguous != nullptr &&
-                cdistContiguous != nullptr,
-            ACLNN_ERR_INNER_NULLPTR);
+        CHECK_RET(gradContiguous != nullptr && x1Contiguous != nullptr && x2Contiguous != nullptr &&
+                      cdistContiguous != nullptr,
+                  ACLNN_ERR_INNER_NULLPTR);
     }
 
     auto gradUnsqueezeNd = l0op::UnsqueezeNd(gradContiguous, dimNum, uniqueExecutor.get());
@@ -214,8 +213,7 @@ aclnnStatus aclnnCdistBackwardGetWorkspaceSize(
     auto x1Broadcast = l0op::BroadcastTo(x1UnsqueezeNd, broadcastShapeArray, uniqueExecutor.get());
     auto x2Broadcast = l0op::BroadcastTo(x2UnsqueezeNd, broadcastShapeArray, uniqueExecutor.get());
     auto cdistBroadcast = l0op::BroadcastTo(cdistUnsqueezeNd, broadcastShapeArray, uniqueExecutor.get());
-    auto result =
-        l0op::CdistGrad(gradBroadcast, x1Broadcast, x2Broadcast, cdistBroadcast, p, uniqueExecutor.get());
+    auto result = l0op::CdistGrad(gradBroadcast, x1Broadcast, x2Broadcast, cdistBroadcast, p, uniqueExecutor.get());
     CHECK_RET(result != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     if (needCast) {
