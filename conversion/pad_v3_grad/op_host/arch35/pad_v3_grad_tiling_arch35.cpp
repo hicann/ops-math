@@ -24,7 +24,7 @@ using namespace AscendC;
 
 namespace optiling {
 
-static constexpr uint64_t SYS_WORK_SPACE_SIZE = 16 * 1024 * 1024;
+static constexpr uint64_t SYS_WORK_SPACE_SIZE = 0;
 static constexpr size_t PADDINGS_IDX = 1;
 static constexpr size_t PAIR = 2;
 static constexpr uint8_t MAX_DIM_NUM = 8;

@@ -56,7 +56,7 @@ static constexpr uint64_t CIRCULAR_CUT_LAST_DIM_BRANCH = 34000;
 static constexpr uint64_t CIRCULAR_BIG_LAST_DIM_BRANCH = 34001;
 static constexpr uint64_t CIRCULAR_SMALL_LAST_DIM_GATHER_BRANCH = 34002;
 
-static constexpr uint64_t SYS_WORK_SPACE_SIZE = 16 * 1024 * 1024;
+static constexpr uint64_t SYS_WORK_SPACE_SIZE = 0;
 static constexpr size_t PADDINGS_IDX = 1;
 static constexpr size_t PAIR = 2;
 static constexpr uint64_t SIMT_BRANCH_SIZE = 4 * 1024;

@@ -44,7 +44,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_1)
     uint64_t expectTilingKey = 18;
     string expectTilingData = "1 0 0 60 0 0 0 0 0 0 0 50 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 6 0 0 0 0 0 0 0 "
                               "4 0 0 0 0 0 0 0 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
@@ -65,7 +65,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_symmetric_2)
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
     uint64_t expectedTilingKey = 35;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -87,7 +87,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_circular_3)
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(false))},
         &compileInfo);
     uint64_t expectedTilingKey = 20;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -108,7 +108,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_edge_4)
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
     uint64_t expectedTilingKey = 17;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -129,7 +129,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_const_5)
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
     uint64_t expectedTilingKey = 16;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -150,7 +150,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_simt_3d)
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
     uint64_t expectTilingKey = 18;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -171,7 +171,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_big_1d)
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
     uint64_t expectTilingKey = 2;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -192,7 +192,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_normal_4d)
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
     uint64_t expectTilingKey = 34;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -213,7 +213,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_small_2d)
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
     uint64_t expectTilingKey = 66;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -234,7 +234,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_symmetric_simt_4d)
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
     uint64_t expectTilingKey = 19;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -255,7 +255,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_symmetric_big_3d)
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
     uint64_t expectTilingKey = 3;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -276,7 +276,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_symmetric_normal_2d)
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
     uint64_t expectTilingKey = 35;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -297,7 +297,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_symmetric_small_5d)
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
     uint64_t expectTilingKey = 67;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -321,7 +321,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_invalid_pad_too_larg
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("reflect")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, 0, expectWorkspaces);
 }
 
@@ -341,7 +341,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_symmetric_invalid_pad_too_la
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("symmetric")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, 0, expectWorkspaces);
 }
 
@@ -366,7 +366,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_dim_exceeds_max)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("constant")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, 0, expectWorkspaces);
 }
 
@@ -387,7 +387,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_dim_exceeds_non_cons
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("reflect")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, 0, expectWorkspaces);
 }
 
@@ -408,7 +408,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_invalid_paddings_dtype)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("reflect")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, 0, expectWorkspaces);
 }
 
@@ -429,7 +429,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_circular_invalid_pad_too_lar
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("circular")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, 0, expectWorkspaces);
 }
 
@@ -450,7 +450,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_edge_zero_output_with_pad)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("edge")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, 0, expectWorkspaces);
 }
 
@@ -471,7 +471,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_negative_output_dim)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("constant")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, 0, expectWorkspaces);
 }
 
@@ -496,7 +496,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_edge_empty_tensor)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("edge")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 17, expectWorkspaces);
 }
 
@@ -517,7 +517,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_empty_tensor)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("reflect")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, 0, expectWorkspaces);
 }
 
@@ -538,7 +538,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_circular_empty_tensor)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("circular")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 20, expectWorkspaces);
 }
 
@@ -559,7 +559,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_constant_empty_tensor)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("constant")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 16, expectWorkspaces);
 }
 
@@ -584,7 +584,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_big_shape_simt)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("reflect")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 10, expectWorkspaces);
 }
 
@@ -605,7 +605,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_edge_big_shape_simt)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("edge")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 25, expectWorkspaces);
 }
 
@@ -626,7 +626,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_circular_big_shape_simt)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("circular")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 4, expectWorkspaces);
 }
 
@@ -647,7 +647,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_constant_big_shape_simt)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("constant")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 24, expectWorkspaces);
 }
 
@@ -672,7 +672,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_all_one_shape)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("reflect")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 18, expectWorkspaces);
 }
 
@@ -693,7 +693,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_constant_consecutive_zero_pa
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("constant")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 16, expectWorkspaces);
 }
 
@@ -714,7 +714,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_one_axis_elimination
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("reflect")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 18, expectWorkspaces);
 }
 
@@ -739,7 +739,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_int64_paddings)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("reflect")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 18, expectWorkspaces);
 }
 
@@ -764,7 +764,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_1d_big_last_dim)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("reflect")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 2, expectWorkspaces);
 }
 
@@ -789,7 +789,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_non_contiguous)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("reflect")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(false))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 18, expectWorkspaces);
 }
 
@@ -814,7 +814,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_circular_simt_small)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("circular")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 20, expectWorkspaces);
 }
 
@@ -839,7 +839,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_bf16)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("reflect")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 18, expectWorkspaces);
 }
 
@@ -864,7 +864,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_circular_large_shape)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("circular")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 20, expectWorkspaces);
 }
 
@@ -889,7 +889,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_all_zero_pad)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("reflect")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 18, expectWorkspaces);
 }
 
@@ -914,7 +914,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_mixed_pad)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("reflect")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 18, expectWorkspaces);
 }
 
@@ -939,7 +939,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_circular_all_zero_pad)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("circular")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 20, expectWorkspaces);
 }
 
@@ -960,7 +960,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_circular_mixed_pad)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("circular")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 20, expectWorkspaces);
 }
 
@@ -985,7 +985,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_symmetric_empty_tensor)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("symmetric")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 19, expectWorkspaces);
 }
 
@@ -1010,7 +1010,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_constant_6d_shape)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("constant")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 16, expectWorkspaces);
 }
 
@@ -1031,7 +1031,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_constant_7d_shape)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("constant")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 16, expectWorkspaces);
 }
 
@@ -1056,7 +1056,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_negative_pad)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("reflect")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 18, expectWorkspaces);
 }
 
@@ -1077,7 +1077,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_mixed_positive_negat
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("reflect")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 18, expectWorkspaces);
 }
 
@@ -1102,7 +1102,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_circular_negative_pad)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("circular")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 20, expectWorkspaces);
 }
 
@@ -1123,7 +1123,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_circular_mixed_positive_nega
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("circular")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 20, expectWorkspaces);
 }
 
@@ -1148,7 +1148,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_simd_large_last_dim)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("reflect")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 34, expectWorkspaces);
 }
 
@@ -1169,7 +1169,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_simd_small_last_dim)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("reflect")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 18, expectWorkspaces);
 }
 
@@ -1194,7 +1194,7 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_constant_8d_shape)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("constant")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 16, expectWorkspaces);
 }
 
@@ -1219,6 +1219,6 @@ TEST_F(PadV3GradTilingTest, pad_v3_grad_tiling_test_reflect_simd_fp16_large)
         {gert::TilingContextPara::OpAttr("mode", Ops::Math::AnyValue::CreateFrom<std::string>("reflect")),
          gert::TilingContextPara::OpAttr("paddings_contiguous", Ops::Math::AnyValue::CreateFrom<bool>(true))},
         &compileInfo);
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 34, expectWorkspaces);
 }
