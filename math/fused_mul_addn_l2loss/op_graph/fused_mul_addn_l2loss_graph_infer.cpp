@@ -21,6 +21,23 @@ static ge::graphStatus InferDataTypeForFusedMulAddNL2loss(gert::InferDataTypeCon
 {
     OP_LOGI("Begin InferDataTypeForFusedMulAddNL2loss");
     const ge::DataType x1DataType = context->GetInputDataType(0);
+    const ge::DataType x2DataType = context->GetInputDataType(1);
+    const ge::DataType x3DataType = context->GetInputDataType(2);
+
+    // README 约束：x1/x2/x3/y1/y2 dtype 必须一致，且仅支持 FLOAT/FLOAT16
+    OP_CHECK_IF(x1DataType != ge::DT_FLOAT && x1DataType != ge::DT_FLOAT16,
+                OP_LOGE(context->GetNodeName(), "unsupported x1 dtype %d: only FLOAT and FLOAT16 are supported",
+                        static_cast<int>(x1DataType)),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(x2DataType != x1DataType,
+                OP_LOGE(context->GetNodeName(), "x2 dtype %d must equal x1 dtype %d", static_cast<int>(x2DataType),
+                        static_cast<int>(x1DataType)),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(x3DataType != x1DataType,
+                OP_LOGE(context->GetNodeName(), "x3 dtype %d must equal x1 dtype %d", static_cast<int>(x3DataType),
+                        static_cast<int>(x1DataType)),
+                return ge::GRAPH_FAILED);
+
     context->SetOutputDataType(0, x1DataType); // y1 = x1 * x3 + x2，dtype 同 x1
     context->SetOutputDataType(1, x1DataType); // y2 = sum(x1^2 / 2)，dtype 同 x1
     return ge::GRAPH_SUCCESS;

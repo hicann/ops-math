@@ -11,7 +11,7 @@
 /*!
  * \file test_fused_mul_addn_l2loss_infershape.cpp
  * \brief FusedMulAddNL2loss infershape UT（infershape 无芯片依赖，放 op_host 根目录）
- *        y1 shape = x1 shape；y2 = 0 维标量（空 dims）
+ *        y1 shape = x1 shape；y2 = 单元素标量（shape (1,)）
  */
 
 #include <gtest/gtest.h>
@@ -28,7 +28,7 @@ protected:
     static void TearDownTestCase() { std::cout << "FusedMulAddNL2lossInfershape TearDown" << std::endl; }
 };
 
-// 2D fp32：y1 同 x1 shape，y2 为 0 维标量
+// 2D fp32：y1 同 x1 shape，y2 为单元素标量 (1,)
 TEST_F(FusedMulAddNL2lossInfershape, shape_2d_fp32)
 {
     gert::InfershapeContextPara para("FusedMulAddNL2loss",
@@ -41,7 +41,7 @@ TEST_F(FusedMulAddNL2lossInfershape, shape_2d_fp32)
                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                      });
-    std::vector<std::vector<int64_t>> expectOutputShape = {{16, 16}, {}};
+    std::vector<std::vector<int64_t>> expectOutputShape = {{16, 16}, {1}};
     ExecuteTestCase(para, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
@@ -58,7 +58,7 @@ TEST_F(FusedMulAddNL2lossInfershape, shape_1d_fp16)
                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
                                      });
-    std::vector<std::vector<int64_t>> expectOutputShape = {{1024}, {}};
+    std::vector<std::vector<int64_t>> expectOutputShape = {{1024}, {1}};
     ExecuteTestCase(para, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
@@ -75,7 +75,7 @@ TEST_F(FusedMulAddNL2lossInfershape, shape_single_element)
                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                      });
-    std::vector<std::vector<int64_t>> expectOutputShape = {{1}, {}};
+    std::vector<std::vector<int64_t>> expectOutputShape = {{1}, {1}};
     ExecuteTestCase(para, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
@@ -92,7 +92,7 @@ TEST_F(FusedMulAddNL2lossInfershape, shape_3d_fp32)
                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                      });
-    std::vector<std::vector<int64_t>> expectOutputShape = {{2, 4, 4}, {}};
+    std::vector<std::vector<int64_t>> expectOutputShape = {{2, 4, 4}, {1}};
     ExecuteTestCase(para, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
@@ -110,11 +110,11 @@ TEST_F(FusedMulAddNL2lossInfershape, shape_8d_fp16)
             {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
             {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
         });
-    std::vector<std::vector<int64_t>> expectOutputShape = {{2, 3, 2, 3, 2, 3, 2, 3}, {}};
+    std::vector<std::vector<int64_t>> expectOutputShape = {{2, 3, 2, 3, 2, 3, 2, 3}, {1}};
     ExecuteTestCase(para, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-// 动态 shape（-1）：y1 透传 -1，y2 仍为 0 维标量
+// 动态 shape（-1）：y1 透传 -1，y2 仍为单元素标量 (1,)
 TEST_F(FusedMulAddNL2lossInfershape, dynamic_shape)
 {
     gert::InfershapeContextPara para("FusedMulAddNL2loss",
@@ -127,11 +127,11 @@ TEST_F(FusedMulAddNL2lossInfershape, dynamic_shape)
                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                      });
-    std::vector<std::vector<int64_t>> expectOutputShape = {{-1, -1}, {}};
+    std::vector<std::vector<int64_t>> expectOutputShape = {{-1, -1}, {1}};
     ExecuteTestCase(para, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
-// 动态 rank（-2）：y1 透传 -2，y2 仍为 0 维标量
+// 动态 rank（-2）：y1 透传 -2，y2 仍为单元素标量 (1,)
 TEST_F(FusedMulAddNL2lossInfershape, dynamic_rank)
 {
     gert::InfershapeContextPara para("FusedMulAddNL2loss",
@@ -144,6 +144,6 @@ TEST_F(FusedMulAddNL2lossInfershape, dynamic_rank)
                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                      });
-    std::vector<std::vector<int64_t>> expectOutputShape = {{-2}, {}};
+    std::vector<std::vector<int64_t>> expectOutputShape = {{-2}, {1}};
     ExecuteTestCase(para, ge::GRAPH_SUCCESS, expectOutputShape);
 }

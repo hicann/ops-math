@@ -69,6 +69,29 @@ ge::graphStatus FusedMulAddNL2lossTiling::DoTiling()
         return ge::GRAPH_FAILED;
     }
 
+    // README 约束：x1/x2/x3 dtype 必须一致且仅支持 FLOAT/FLOAT16（kernel 路径不经过 GE InferDataType，须在此校验）
+    auto inputX1Desc = context_->GetInputDesc(0);
+    auto inputX2Desc = context_->GetInputDesc(1);
+    auto inputX3Desc = context_->GetInputDesc(2);
+    OP_CHECK_NULL_WITH_CONTEXT(context_, inputX1Desc);
+    OP_CHECK_NULL_WITH_CONTEXT(context_, inputX2Desc);
+    OP_CHECK_NULL_WITH_CONTEXT(context_, inputX3Desc);
+    ge::DataType x1Dtype = inputX1Desc->GetDataType();
+    ge::DataType x2Dtype = inputX2Desc->GetDataType();
+    ge::DataType x3Dtype = inputX3Desc->GetDataType();
+    OP_CHECK_IF(
+        x1Dtype != ge::DT_FLOAT && x1Dtype != ge::DT_FLOAT16,
+        OP_LOGE(context_, "unsupported x1 dtype %d: only FLOAT and FLOAT16 are supported", static_cast<int>(x1Dtype)),
+        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        x2Dtype != x1Dtype,
+        OP_LOGE(context_, "x2 dtype %d must equal x1 dtype %d", static_cast<int>(x2Dtype), static_cast<int>(x1Dtype)),
+        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        x3Dtype != x1Dtype,
+        OP_LOGE(context_, "x3 dtype %d must equal x1 dtype %d", static_cast<int>(x3Dtype), static_cast<int>(x1Dtype)),
+        return ge::GRAPH_FAILED);
+
     // 取 x1 shape，展平为 N
     auto inputX1Shape = context_->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, inputX1Shape);
@@ -87,6 +110,17 @@ ge::graphStatus FusedMulAddNL2lossTiling::DoTiling()
     OP_CHECK_IF(totalX2 != totalN,
                 OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context_->GetNodeName(), "x2",
                                                           std::to_string(totalX2).c_str(), x2Reason.c_str()),
+                return ge::GRAPH_FAILED);
+
+    // README 约束：x3 为单元素张量（kernel 按 x3[0] 标量广播）；未知维跳过元素数校验
+    auto inputX3Shape = context_->GetInputShape(2);
+    OP_CHECK_NULL_WITH_CONTEXT(context_, inputX3Shape);
+    auto shapeX3 = inputX3Shape->GetStorageShape();
+    int64_t totalX3 = shapeX3.GetShapeSize();
+    OP_CHECK_IF(totalX3 < 0, OP_LOGE(context_, "invalid x3 storage shape size %ld", totalX3), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(totalX3 > 0 && totalX3 != 1,
+                OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(
+                    context_->GetNodeName(), "x3", std::to_string(totalX3).c_str(), "must be a single-element tensor"),
                 return ge::GRAPH_FAILED);
 
     // UB tile 宽度：fp32 路径 3 队列×双缓冲×4B + reduceTmp 4B = 28B/elem；

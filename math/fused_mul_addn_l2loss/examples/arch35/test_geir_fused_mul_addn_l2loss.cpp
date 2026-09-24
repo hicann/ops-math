@@ -12,7 +12,7 @@
  * @file test_geir_fused_mul_addn_l2loss.cpp
  * @brief FusedMulAddNL2loss 图模式（GE IR）构图调用示例（ascend950 真机）
  *
- * 算子功能：y1 = x1 * x3[0] + x2；y2 = sum(x1^2 / 2)（0 维标量）
+ * 算子功能：y1 = x1 * x3[0] + x2；y2 = sum(x1^2 / 2)（单元素标量 shape (1,)）
  *
  * 本示例构造一张仅含 op::FusedMulAddNL2loss 节点的计算图并在 ascend950 上执行：
  *   x1 = x2 = x3 = 2（shape {2,2} / {2,2} / {1}）
@@ -101,7 +101,7 @@ int main()
     vector<int64_t> x2Shape = {2, 2};
     vector<int64_t> x3Shape = {1};
     vector<int64_t> y1Shape = {2, 2};
-    vector<int64_t> y2Shape = {}; // 0 维标量（与 infershape 一致）
+    vector<int64_t> y2Shape = {1}; // 单元素标量（与 infershape 一致）
 
     // x1/x2/x3：Data 占位 + 常量数据 + 接入算子输入
     vector<vector<int64_t>*> inShapes = {&x1Shape, &x2Shape, &x3Shape};
@@ -188,9 +188,9 @@ int main()
         }
         float* y2Data = reinterpret_cast<float*>(output[1].GetData());
         int64_t y2Size = output[1].GetTensorDesc().GetShape().GetShapeSize();
-        // 0 维标量在 GE 中 GetShapeSize() 返回 0，数据区仍为 1 个元素
-        LOG_PRINT("y2 (0-dim scalar, shapeSize=%ld) = %f\n", y2Size, y2Data[0]);
-        if (y2Size > 1 || fabsf(y2Data[0] - 8.0f) > 1e-6f) {
+        // 单元素标量（shape (1,)），数据区 1 个元素
+        LOG_PRINT("y2 (single-element scalar, shapeSize=%ld) = %f\n", y2Size, y2Data[0]);
+        if (y2Size != 1 || fabsf(y2Data[0] - 8.0f) > 1e-6f) {
             failCnt++;
         }
     }
