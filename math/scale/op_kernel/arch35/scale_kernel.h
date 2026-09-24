@@ -25,16 +25,15 @@
 // (DESIGN.md §3.6, Reg::MulAddDst 包装；FP32 直算, FP16/BF16 以 float 实例化)
 // ============================================================
 template <typename T>
-__simd_vf__ inline void ScaleMulAddVF(
-    __ubuf__ T* dstAddr, __ubuf__ T* src0Addr, __ubuf__ T* src1Addr,
-    uint32_t count, uint32_t oneRepeatSize, uint16_t repeatTimes);
+__simd_vf__ inline void ScaleMulAddVF(__ubuf__ T* dstAddr, __ubuf__ T* src0Addr, __ubuf__ T* src1Addr, uint32_t count,
+                                      uint32_t oneRepeatSize, uint16_t repeatTimes);
 
 // ============================================================
 // Kernel 侧辅助函数 (int64_t* 版本, 无 std::vector)
 // ============================================================
 
-__aicore__ inline void GetCoreRange(int64_t core_id, int64_t tiles_main, int64_t cores_tail,
-    int64_t& start, int64_t& end)
+__aicore__ inline void GetCoreRange(int64_t core_id, int64_t tiles_main, int64_t cores_tail, int64_t& start,
+                                    int64_t& end)
 {
     if (core_id < cores_tail) {
         start = core_id * (tiles_main + 1);
@@ -45,18 +44,18 @@ __aicore__ inline void GetCoreRange(int64_t core_id, int64_t tiles_main, int64_t
     }
 }
 
-__aicore__ inline int64_t GetUBSplitRange(
-    int64_t a_o_off, int64_t a_o, int64_t a_i, int64_t a_i_tail)
+__aicore__ inline int64_t GetUBSplitRange(int64_t a_o_off, int64_t a_o, int64_t a_i, int64_t a_i_tail)
 {
     return (a_o_off == a_o - 1) ? a_i_tail : a_i;
 }
 
-__aicore__ inline bool FlatToEffectiveCoord(int64_t flat, const int64_t* max_bro_shape,
-    int64_t rank, int64_t split_axis, int64_t a_i, int64_t a_o, int64_t* eff_coord)
+__aicore__ inline bool FlatToEffectiveCoord(int64_t flat, const int64_t* max_bro_shape, int64_t rank,
+                                            int64_t split_axis, int64_t a_i, int64_t a_o, int64_t* eff_coord)
 {
     for (int64_t d = 0; d < rank; d++)
         eff_coord[d] = 0;
-    if (a_o <= 0) return false;  // 除 0 保护：a_o 由 Tiling 保证 ≥1，异常时安全退出
+    if (a_o <= 0)
+        return false; // 除 0 保护：a_o 由 Tiling 保证 ≥1，异常时安全退出
     int64_t a_o_off = flat % a_o;
     int64_t outer = flat / a_o;
     for (int64_t d = split_axis - 1; d >= 0; d--) {
@@ -67,8 +66,7 @@ __aicore__ inline bool FlatToEffectiveCoord(int64_t flat, const int64_t* max_bro
     return true;
 }
 
-__aicore__ inline int64_t CalcInputOffset(
-    const int64_t* eff_coord, const int64_t* strides, int64_t rank)
+__aicore__ inline int64_t CalcInputOffset(const int64_t* eff_coord, const int64_t* strides, int64_t rank)
 {
     int64_t offset = 0;
     for (int64_t d = 0; d < rank; d++)
@@ -76,8 +74,7 @@ __aicore__ inline int64_t CalcInputOffset(
     return offset;
 }
 
-__aicore__ inline int64_t CalcOutputOffset(
-    const int64_t* eff_coord, const int64_t* strides, int64_t rank)
+__aicore__ inline int64_t CalcOutputOffset(const int64_t* eff_coord, const int64_t* strides, int64_t rank)
 {
     int64_t offset = 0;
     for (int64_t d = 0; d < rank; d++)
@@ -103,8 +100,10 @@ class ScaleKernel {
     AscendC::GlobalTensor<T> gmOut_[kMaxOutputSlots];
     AscendC::TBuf<AscendC::TPosition::VECCALC> buf_[kPhysNodes];
     AscendC::MultiCopyParams<T, ND> nddmaParams_[kMaxInputSlots];
-    int64_t nddmaOuterIters_[kMaxInputSlots];
-    int64_t nddma_dims_;
+    int64_t nddmaDims_[kMaxInputSlots];      // NDDMA 窗口覆盖的维度数（窗口 = [RANK-nddmaDims_, RANK)）
+    int64_t nddmaOuterBase_[kMaxInputSlots]; // outer loop 各维连乘（不含 split 轴）
+    int64_t splitRunNd_[kMaxInputSlots];     // split 轴所在 run 的 NDDMA slot；-1 = split 轴在 outer loop 区
+    int64_t splitRunStatic_[kMaxInputSlots]; // split 轴所在 run 的 loopSize 静态部分（不含 a_i_seg）
 
 public:
     __aicore__ inline void Init(GM_ADDR inputs[kMaxInputSlots], GM_ADDR outputs[kMaxOutputSlots],
@@ -118,32 +117,76 @@ public:
         for (int i = 0; i < kPhysNodes; i++)
             pipe_.InitBuffer(buf_[i], td_->per_buf_bytes);
 
-        // NDDMA 参数预计算
+        // NDDMA 参数预计算 — 维度按 run 合并后填充
+        // 相邻维 e(外) 与 e+1(内) 满足 strides[e] == dstShape[e+1] * strides[e+1] 时可合并为
+        // 一个 NDDMA 维（broadcast 段 stride=0 自然可并；稠密连续段同理，run 斜率 = 最内维 stride）。
+        // x 为稠密输入，[k, RANK) 全部合并为 1 个 run → 每 tile 单次 DataCopy 整块搬运，
+        // 消除 split 轴落在 NDDMA 5 维窗口外时 outer loop 逐段小拷贝导致的 DataCopy 次数爆炸。
         const int64_t* dstShape = td_->max_bro_shape;
         int64_t k = td_->split.axis;
-        nddma_dims_ = (RANK - k <= ND) ? (RANK - k) : ND;
         for (int inp = 0; inp < kMaxInputSlots; inp++) {
-            int64_t inner = 1;
+            // 1) run 划分：runTop[d] 记录 d 所在 run 的最外维；从最内维向外贪心合并
+            int64_t runTop[RANK];
+            int64_t d = RANK - 1;
+            while (d >= k) {
+                int64_t top = d;
+                while (top > k && td_->input_strides[inp][top - 1] == dstShape[top] * td_->input_strides[inp][top]) {
+                    top--;
+                }
+                for (int64_t t = top; t <= d; t++) {
+                    runTop[t] = top;
+                }
+                d = top - 1;
+            }
+            // 2) run 计数（外→内序）；超过 ND 时丢弃最外 (topCnt-ND) 个 run 走 outer loop
+            int64_t tops[RANK];
+            int64_t topCnt = 0;
+            for (int64_t t = k; t < RANK; t++) {
+                if (runTop[t] == t) {
+                    tops[topCnt++] = t;
+                }
+            }
+            int64_t keptRuns = (topCnt < ND) ? topCnt : ND;
+            int64_t keptLo = (topCnt > ND) ? tops[topCnt - ND] : k;
+            // 3) 从最内 run 向外填 NDDMA 五字段；run 的 loopSize = 成员维连乘
+            //    （split 轴所在 run 的 loopSize 静态只存非 split 部分，CopyInBrc 运行期乘 a_i_seg）
             int64_t nd = 0;
-            for (int64_t d = RANK - 1; d >= k && nd < ND; d--) {
-                nddmaParams_[inp].loopInfo.loopSize[nd]      = (d == k) ? 0 : dstShape[d];
-                nddmaParams_[inp].loopInfo.loopSrcStride[nd] = td_->input_strides[inp][d];
+            int64_t inner = 1;
+            splitRunNd_[inp] = -1;
+            splitRunStatic_[inp] = 1;
+            for (int64_t ri = topCnt - 1; ri >= topCnt - keptRuns; ri--) {
+                int64_t top = tops[ri];
+                int64_t bot = (ri + 1 < topCnt) ? (tops[ri + 1] - 1) : (RANK - 1); // run 覆盖 [top, bot]
+                // run 的静态 loopSize：split 轴（必为所在 run 的 top）不计入，运行期乘 a_i_seg
+                int64_t sz = (top == k) ? 1 : dstShape[top];
+                for (int64_t t = top + 1; t <= bot; t++) {
+                    sz *= dstShape[t];
+                }
+                nddmaParams_[inp].loopInfo.loopSize[nd] = sz;
+                nddmaParams_[inp].loopInfo.loopSrcStride[nd] = td_->input_strides[inp][bot];
                 nddmaParams_[inp].loopInfo.loopDstStride[nd] = inner;
-                nddmaParams_[inp].loopInfo.loopLpSize[nd]     = 0;
-                nddmaParams_[inp].loopInfo.loopRpSize[nd]     = 0;
-                inner *= (d == k) ? td_->split.a_i : dstShape[d];
+                nddmaParams_[inp].loopInfo.loopLpSize[nd] = 0;
+                nddmaParams_[inp].loopInfo.loopRpSize[nd] = 0;
+                if (top == k) {
+                    splitRunNd_[inp] = nd;
+                    splitRunStatic_[inp] = sz;
+                }
+                inner *= sz;
                 nd++;
             }
             for (; nd < ND; nd++) {
-                nddmaParams_[inp].loopInfo.loopSize[nd]      = 1;
+                nddmaParams_[inp].loopInfo.loopSize[nd] = 1;
                 nddmaParams_[inp].loopInfo.loopSrcStride[nd] = 0;
                 nddmaParams_[inp].loopInfo.loopDstStride[nd] = inner;
-                nddmaParams_[inp].loopInfo.loopLpSize[nd]     = 0;
-                nddmaParams_[inp].loopInfo.loopRpSize[nd]     = 0;
+                nddmaParams_[inp].loopInfo.loopLpSize[nd] = 0;
+                nddmaParams_[inp].loopInfo.loopRpSize[nd] = 0;
             }
-            nddmaOuterIters_[inp] = 1;
-            for (int64_t d = k; d < RANK - nddma_dims_; d++)
-                nddmaOuterIters_[inp] *= (d == k) ? td_->split.a_i : dstShape[d];
+            // 4) outer loop 只覆盖被丢弃的 run（维度区间 [k, keptLo)）
+            nddmaDims_[inp] = RANK - keptLo;
+            nddmaOuterBase_[inp] = 1;
+            for (int64_t t = k + 1; t < keptLo; t++) {
+                nddmaOuterBase_[inp] *= dstShape[t];
+            }
         }
     }
 
@@ -157,7 +200,12 @@ public:
     }
 
 private:
-    struct PipeEvents { int32_t mte2toV; int32_t vtoMte2; int32_t vtoMte3; int32_t mte3toMte2; };
+    struct PipeEvents {
+        int32_t mte2toV;
+        int32_t vtoMte2;
+        int32_t vtoMte3;
+        int32_t mte3toMte2;
+    };
 
     __aicore__ inline PipeEvents FetchEvents()
     {
@@ -172,7 +220,8 @@ private:
     __aicore__ inline int64_t ComputeInnerCount()
     {
         int64_t inner_count = 1;
-        for (int64_t d = td_->split.axis + 1; d < RANK; d++) inner_count *= td_->max_bro_shape[d];
+        for (int64_t d = td_->split.axis + 1; d < RANK; d++)
+            inner_count *= td_->max_bro_shape[d];
         return inner_count;
     }
 
@@ -183,24 +232,24 @@ private:
     {
         PipeEvents ev = FetchEvents();
         int64_t start, end;
-        GetCoreRange(AscendC::GetBlockIdx(), td_->multicore.tiles_main,
-                     td_->multicore.cores_tail, start, end);
+        GetCoreRange(AscendC::GetBlockIdx(), td_->multicore.tiles_main, td_->multicore.cores_tail, start, end);
         int64_t inner_count = ComputeInnerCount();
         int64_t coord[8] = {};
         for (int64_t flat = start; flat < end; flat++) {
-            int64_t a_i_seg = GetUBSplitRange(flat % td_->split.a_o, td_->split.a_o,
-                                              td_->split.a_i, td_->split.a_i_tail);
+            int64_t a_i_seg = GetUBSplitRange(flat % td_->split.a_o, td_->split.a_o, td_->split.a_i,
+                                              td_->split.a_i_tail);
             int64_t count = a_i_seg * inner_count;
-            FlatToEffectiveCoord(flat, td_->max_bro_shape, RANK,
-                                 td_->split.axis, td_->split.a_i, td_->split.a_o, coord);
+            FlatToEffectiveCoord(flat, td_->max_bro_shape, RANK, td_->split.axis, td_->split.a_i, td_->split.a_o,
+                                 coord);
             // 上轮 CopyOut(MTE3) 结束 → 本轮 CopyIn(MTE2) 可以开始
-            if (flat != start) AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(ev.mte3toMte2);
+            if (flat != start)
+                AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(ev.mte3toMte2);
             TileFP32(coord, count, a_i_seg, ev, flat != end - 1);
         }
     }
 
-    __aicore__ inline void TileFP32(const int64_t* coord, int64_t count, int64_t a_i_seg,
-                                    const PipeEvents& ev, bool not_last)
+    __aicore__ inline void TileFP32(const int64_t* coord, int64_t count, int64_t a_i_seg, const PipeEvents& ev,
+                                    bool not_last)
     {
         constexpr int B0 = 0, B1 = 1, B2 = 2, B3 = 3;
         constexpr int IN_X = 0, IN_SCALE = 1, IN_BIAS = 2, OUT_Y = 0;
@@ -219,11 +268,9 @@ private:
             AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(ev.mte2toV);
             AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(ev.mte2toV);
             uint16_t rep = AscendC::CeilDivision(count, VL_F32);
-            asc_vf_call<ScaleMulAddVF<float>>(
-                (__ubuf__ float*)buf_[B2].Get<float>().GetPhyAddr(),
-                (__ubuf__ float*)buf_[B0].Get<float>().GetPhyAddr(),
-                (__ubuf__ float*)buf_[B1].Get<float>().GetPhyAddr(),
-                count, VL_F32, rep);
+            asc_vf_call<ScaleMulAddVF<float>>((__ubuf__ float*)buf_[B2].Get<float>().GetPhyAddr(),
+                                              (__ubuf__ float*)buf_[B0].Get<float>().GetPhyAddr(),
+                                              (__ubuf__ float*)buf_[B1].Get<float>().GetPhyAddr(), count, VL_F32, rep);
             outBuf = B2;
         } else {
             // S1c: Mul(B0, B1 → B3) 峰值 P_FP32=3
@@ -233,7 +280,8 @@ private:
         AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(ev.vtoMte3);
         AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(ev.vtoMte3);
         CopyOutOne(coord, OUT_Y, outBuf, a_i_seg);
-        if (not_last) AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(ev.mte3toMte2);
+        if (not_last)
+            AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(ev.mte3toMte2);
     }
 
     // ============================================================
@@ -243,23 +291,23 @@ private:
     {
         PipeEvents ev = FetchEvents();
         int64_t start, end;
-        GetCoreRange(AscendC::GetBlockIdx(), td_->multicore.tiles_main,
-                     td_->multicore.cores_tail, start, end);
+        GetCoreRange(AscendC::GetBlockIdx(), td_->multicore.tiles_main, td_->multicore.cores_tail, start, end);
         int64_t inner_count = ComputeInnerCount();
         int64_t coord[8] = {};
         for (int64_t flat = start; flat < end; flat++) {
-            int64_t a_i_seg = GetUBSplitRange(flat % td_->split.a_o, td_->split.a_o,
-                                              td_->split.a_i, td_->split.a_i_tail);
+            int64_t a_i_seg = GetUBSplitRange(flat % td_->split.a_o, td_->split.a_o, td_->split.a_i,
+                                              td_->split.a_i_tail);
             int64_t count = a_i_seg * inner_count;
-            FlatToEffectiveCoord(flat, td_->max_bro_shape, RANK,
-                                 td_->split.axis, td_->split.a_i, td_->split.a_o, coord);
-            if (flat != start) AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(ev.mte3toMte2);
+            FlatToEffectiveCoord(flat, td_->max_bro_shape, RANK, td_->split.axis, td_->split.a_i, td_->split.a_o,
+                                 coord);
+            if (flat != start)
+                AscendC::WaitFlag<AscendC::HardEvent::MTE3_MTE2>(ev.mte3toMte2);
             TileCast(coord, count, a_i_seg, ev, flat != end - 1);
         }
     }
 
-    __aicore__ inline void TileCast(const int64_t* coord, int64_t count, int64_t a_i_seg,
-                                    const PipeEvents& ev, bool not_last)
+    __aicore__ inline void TileCast(const int64_t* coord, int64_t count, int64_t a_i_seg, const PipeEvents& ev,
+                                    bool not_last)
     {
         constexpr int B0 = 0, B1 = 1, B2 = 2, B3 = 3;
         constexpr int IN_X = 0, IN_SCALE = 1, IN_BIAS = 2, OUT_Y = 0;
@@ -267,16 +315,14 @@ private:
         CopyInBrc(coord, IN_X, B0, a_i_seg);
         AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(ev.mte2toV);
         AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(ev.mte2toV);
-        AscendC::Cast(buf_[B1].template Get<float>(), buf_[B0].template Get<T>(),
-                      AscendC::RoundMode::CAST_NONE, count);
+        AscendC::Cast(buf_[B1].template Get<float>(), buf_[B0].template Get<T>(), AscendC::RoundMode::CAST_NONE, count);
         // WAR: 等 Cast 读完 B0 再让 MTE2 覆写 B0(scale)；S1c CopyIn scale→B0; S1d Cast B0→B2
         AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(ev.vtoMte2);
         AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(ev.vtoMte2);
         CopyInBrc(coord, IN_SCALE, B0, a_i_seg);
         AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(ev.mte2toV);
         AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(ev.mte2toV);
-        AscendC::Cast(buf_[B2].template Get<float>(), buf_[B0].template Get<T>(),
-                      AscendC::RoundMode::CAST_NONE, count);
+        AscendC::Cast(buf_[B2].template Get<float>(), buf_[B0].template Get<T>(), AscendC::RoundMode::CAST_NONE, count);
         if (td_->has_bias) {
             // WAR 后 S2a CopyIn bias→B0; S2b Cast B0→B3(累加器); S2c MulAddDst(B3 ← B1·B2 + B3)
             AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(ev.vtoMte2);
@@ -284,65 +330,67 @@ private:
             CopyInBrc(coord, IN_BIAS, B0, a_i_seg);
             AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(ev.mte2toV);
             AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(ev.mte2toV);
-            AscendC::Cast(buf_[B3].template Get<float>(), buf_[B0].template Get<T>(),
-                          AscendC::RoundMode::CAST_NONE, count);
+            AscendC::Cast(buf_[B3].template Get<float>(), buf_[B0].template Get<T>(), AscendC::RoundMode::CAST_NONE,
+                          count);
             uint16_t rep = AscendC::CeilDivision(count, VL_F32);
-            asc_vf_call<ScaleMulAddVF<float>>(
-                (__ubuf__ float*)buf_[B3].template Get<float>().GetPhyAddr(),
-                (__ubuf__ float*)buf_[B1].template Get<float>().GetPhyAddr(),
-                (__ubuf__ float*)buf_[B2].template Get<float>().GetPhyAddr(),
-                count, VL_F32, rep);
+            asc_vf_call<ScaleMulAddVF<float>>((__ubuf__ float*)buf_[B3].template Get<float>().GetPhyAddr(),
+                                              (__ubuf__ float*)buf_[B1].template Get<float>().GetPhyAddr(),
+                                              (__ubuf__ float*)buf_[B2].template Get<float>().GetPhyAddr(), count,
+                                              VL_F32, rep);
         } else {
             // S1e: Mul(B1, B2 → B3) 峰值 P=3
-            AscendC::Mul(buf_[B3].template Get<float>(), buf_[B1].template Get<float>(),
-                         buf_[B2].template Get<float>(), count);
+            AscendC::Mul(buf_[B3].template Get<float>(), buf_[B1].template Get<float>(), buf_[B2].template Get<float>(),
+                         count);
         }
         // S3a: Cast(B3→B0) float→T (CAST_RINT)；V→MTE3 后 CopyOut B0→GM
-        AscendC::Cast(buf_[B0].template Get<T>(), buf_[B3].template Get<float>(),
-                      AscendC::RoundMode::CAST_RINT, count);
+        AscendC::Cast(buf_[B0].template Get<T>(), buf_[B3].template Get<float>(), AscendC::RoundMode::CAST_RINT, count);
         AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(ev.vtoMte3);
         AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(ev.vtoMte3);
         CopyOutOne(coord, OUT_Y, B0, a_i_seg);
-        if (not_last) AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(ev.mte3toMte2);
+        if (not_last)
+            AscendC::SetFlag<AscendC::HardEvent::MTE3_MTE2>(ev.mte3toMte2);
     }
 
     // ============================================================
     // CopyInBrc — NDDMA 多维搬运，利用 stride 实现随路 broadcast
+    // 维度已按 run 合并（见 Init）：[k, RANK) 内 run 数 ≤ ND 时单次 DataCopy
+    // 整块搬运；仅当输入存在超过 ND 段稠密/广播交替时走 outer loop 逐段兜底
     // ============================================================
-    __aicore__ inline void CopyInBrc(
-        const int64_t* coord, int inputIdx, int slot, int64_t a_i_seg)
+    __aicore__ inline void CopyInBrc(const int64_t* coord, int inputIdx, int slot, int64_t a_i_seg)
     {
-        int64_t k = td_->split.axis;
         int64_t off = CalcInputOffset(coord, td_->input_strides[inputIdx], RANK);
-        const int64_t* dstShape = td_->max_bro_shape;
 
         auto params = nddmaParams_[inputIdx];
-        int64_t k_nd = RANK - 1 - k;
-        int64_t inner = 1;
-        for (int64_t nd = 0; nd < ND; nd++) {
-            if (nd == k_nd) params.loopInfo.loopSize[nd] = a_i_seg;
-            params.loopInfo.loopDstStride[nd] = inner;
-            inner *= params.loopInfo.loopSize[nd];
+        if (splitRunNd_[inputIdx] >= 0) {
+            // split 轴在 NDDMA 窗口内：按本段实际大小更新所在 run 的 loopSize
+            params.loopInfo.loopSize[splitRunNd_[inputIdx]] = splitRunStatic_[inputIdx] * a_i_seg;
         }
 
-        static constexpr AscendC::NdDmaConfig cfg = { false, AscendC::NdDmaConfig::unsetPad,
-                                                       AscendC::NdDmaConfig::unsetPad, false };
+        static constexpr AscendC::NdDmaConfig cfg = {false, AscendC::NdDmaConfig::unsetPad,
+                                                     AscendC::NdDmaConfig::unsetPad, false};
 
-        if constexpr (RANK <= 5) {
-            AscendC::DataCopy<T, ND, cfg>(
-                buf_[slot].template Get<T>(), gmIn_[inputIdx][off], params);
+        if (nddmaDims_[inputIdx] >= RANK - td_->split.axis) {
+            // [k, RANK) 全部 run 均在 NDDMA 5 维内：单次 DataCopy
+            AscendC::DataCopy<T, ND, cfg>(buf_[slot].template Get<T>(), gmIn_[inputIdx][off], params);
         } else {
+            // 兜底：run 数超 NDDMA 上限，被丢弃的外层 run 逐段搬运；
+            // 外层次数按 a_i_seg 计算（非整段 a_i），避免尾段多余搬运
             AscendC::LocalTensor<T> buf = buf_[slot].template Get<T>();
+            int64_t inner = 1;
+            for (int64_t nd = 0; nd < ND; nd++) {
+                inner *= params.loopInfo.loopSize[nd];
+            }
+            const int64_t* dstShape = td_->max_bro_shape;
+            int64_t outerCnt = nddmaOuterBase_[inputIdx] * a_i_seg;
             int64_t elem_base = off;
-            for (int64_t oi = 0; oi < nddmaOuterIters_[inputIdx]; oi++) {
+            for (int64_t oi = 0; oi < outerCnt; oi++) {
                 int64_t elem_adj = 0, tmp = oi;
-                for (int64_t d = RANK - nddma_dims_ - 1; d >= k; d--) {
-                    int64_t sz = (d == k) ? a_i_seg : dstShape[d];
+                for (int64_t d = RANK - nddmaDims_[inputIdx] - 1; d >= td_->split.axis; d--) {
+                    int64_t sz = (d == td_->split.axis) ? a_i_seg : dstShape[d];
                     elem_adj += (tmp % sz) * td_->input_strides[inputIdx][d];
                     tmp /= sz;
                 }
-                AscendC::DataCopy<T, ND, cfg>(
-                    buf[oi * inner], gmIn_[inputIdx][elem_base + elem_adj], params);
+                AscendC::DataCopy<T, ND, cfg>(buf[oi * inner], gmIn_[inputIdx][elem_base + elem_adj], params);
             }
         }
     }
@@ -350,8 +398,7 @@ private:
     // ============================================================
     // CopyOutOne — DataCopyPad 将结果从 UB 写回 GM
     // ============================================================
-    __aicore__ inline void CopyOutOne(
-        const int64_t* coord, int outputIdx, int slot, int64_t a_i_seg)
+    __aicore__ inline void CopyOutOne(const int64_t* coord, int outputIdx, int slot, int64_t a_i_seg)
     {
         int64_t off = CalcOutputOffset(coord, td_->output_strides[outputIdx], RANK);
         // 输出 transfer count: split 轴上 a_i_seg（y.shape = x.shape，无 broadcast）
@@ -363,9 +410,9 @@ private:
 
         AscendC::DataCopyExtParams extParams;
         extParams.blockCount = 1;
-        extParams.blockLen   = cnt * sizeof(T);  // DataCopyPad 不要求 32B 对齐
-        extParams.srcStride  = 0;
-        extParams.dstStride  = 0;
+        extParams.blockLen = cnt * sizeof(T); // DataCopyPad 不要求 32B 对齐
+        extParams.srcStride = 0;
+        extParams.dstStride = 0;
         AscendC::DataCopyPad(gmOut_[outputIdx][off], buf_[slot].template Get<T>(), extParams);
     }
 };
@@ -375,9 +422,8 @@ private:
 // DESIGN.md §3.6; FP32 直算 / FP16·BF16 Cast 后均以 float 实例化
 // ============================================================
 template <typename T>
-__simd_vf__ inline void ScaleMulAddVF(
-    __ubuf__ T* dstAddr, __ubuf__ T* src0Addr, __ubuf__ T* src1Addr,
-    uint32_t count, uint32_t oneRepeatSize, uint16_t repeatTimes)
+__simd_vf__ inline void ScaleMulAddVF(__ubuf__ T* dstAddr, __ubuf__ T* src0Addr, __ubuf__ T* src1Addr, uint32_t count,
+                                      uint32_t oneRepeatSize, uint16_t repeatTimes)
 {
     AscendC::Reg::RegTensor<T> srcReg0, srcReg1, dstReg;
     AscendC::Reg::MaskReg mask;
