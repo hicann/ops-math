@@ -83,37 +83,37 @@ void AngleV2Tiling::GetUsedBytesPerDataInKernel(ge::DataType dType)
         case ge::DT_COMPLEX64:
             // double buffer for input(complex64) and output(float32)
             bytesPerData = bytesI64 * coefficentTwo + bytesI32 * coefficentTwo;
-            // two masks(uint8) and ten localTensor(float32) are used for calculate the ouput
+            // two masks(uint8) and ten localTensor(float32) are used for calculate the output
             bytesPerData += bytesI8 * coefficentTwo + bytesI32 * coefficentTen;
             break;
         case ge::DT_FLOAT:
             // double buffer for input(float32) and output(float32)
             bytesPerData = bytesI32 * coefficentTwo + bytesI32 * coefficentTwo;
-            // one masks(uint8) and three localTensor(float32) are used for calculate the ouput
+            // one masks(uint8) and three localTensor(float32) are used for calculate the output
             bytesPerData += bytesI8 + bytesI32 * coefficentThree;
             break;
         case ge::DT_INT8:
             // double buffer for input(int8) and output(float32)
             bytesPerData = bytesI8 * coefficentTwo + bytesI32 * coefficentTwo;
-            // one masks(uint8) ,two localTensor(float32) and one castTensor(float16) are used for calculate the ouput
+            // one masks(uint8) ,two localTensor(float32) and one castTensor(float16) are used for calculate the output
             bytesPerData += bytesI8 + bytesI32 * coefficentTwo + bytesI16;
             break;
         case ge::DT_INT16:
             // double buffer for input(int16) and output(float32)
             bytesPerData = bytesI16 * coefficentTwo + bytesI32 * coefficentTwo;
-            // one masks(uint8) and two localTensor(float32) are used for calculate the ouput
+            // one masks(uint8) and two localTensor(float32) are used for calculate the output
             bytesPerData += bytesI8 + bytesI32 * coefficentTwo;
             break;
         case ge::DT_INT32:
             // double buffer for input(int32) and output(float32)
             bytesPerData = bytesI32 * coefficentTwo + bytesI32 * coefficentTwo;
-            // one masks(uint8) and two localTensor(float32) are used for calculate the ouput
+            // one masks(uint8) and two localTensor(float32) are used for calculate the output
             bytesPerData += bytesI8 + bytesI32 * coefficentTwo;
             break;
         case ge::DT_INT64:
             // double buffer for input(int64) and output(float32)
             bytesPerData = bytesI64 * coefficentTwo + bytesI32 * coefficentTwo;
-            // one masks(uint8) and two localTensor(float32) are used for calculate the ouput
+            // one masks(uint8) and two localTensor(float32) are used for calculate the output
             bytesPerData += bytesI8 + bytesI32 * coefficentTwo;
             break;
         case ge::DT_BF16:
@@ -131,7 +131,7 @@ void AngleV2Tiling::GetUsedBytesPerDataInKernel(ge::DataType dType)
         default:
             // double buffer for input(float16) and output(float16)
             bytesPerData = bytesI16 * coefficentTwo + bytesI16 * coefficentTwo;
-            // one masks(uint8) and three localTensor(float16) are used for calculate the ouput
+            // one masks(uint8) and three localTensor(float16) are used for calculate the output
             bytesPerData += bytesI8 + bytesI16 * coefficentThree;
             break;
     }

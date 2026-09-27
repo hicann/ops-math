@@ -28,9 +28,10 @@ namespace BincountSimt {
 using namespace AscendC;
 
 template <typename WEIGHT_TYPE>
-__simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void UbSimtCompute(
-    __gm__ int32_t* arrayGmAddr, __ubuf__ WEIGHT_TYPE* yLocalAddr, const int64_t arrayAicoreOffset,
-    const int64_t arrayDataLength)
+__simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void UbSimtCompute(__gm__ int32_t* arrayGmAddr,
+                                                                          __ubuf__ WEIGHT_TYPE* yLocalAddr,
+                                                                          const int64_t arrayAicoreOffset,
+                                                                          const int64_t arrayDataLength)
 {
     // threadIdx.x is commonly used as an index for data, use different threads to process data with gm at
     // different addresses Due to this aicore has 'arrayDataLength' number, loop calculate the count of array value.
@@ -44,9 +45,11 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void UbSimtCompute(
 }
 
 template <typename WEIGHT_TYPE>
-__simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void UbSimtComputeWithWeight(
-    __gm__ int32_t* arrayGmAddr, __gm__ WEIGHT_TYPE* weightGmAddr, __ubuf__ WEIGHT_TYPE* yLocalAddr,
-    const int64_t arrayAicoreOffset, const int64_t arrayDataLength)
+__simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void UbSimtComputeWithWeight(__gm__ int32_t* arrayGmAddr,
+                                                                                    __gm__ WEIGHT_TYPE* weightGmAddr,
+                                                                                    __ubuf__ WEIGHT_TYPE* yLocalAddr,
+                                                                                    const int64_t arrayAicoreOffset,
+                                                                                    const int64_t arrayDataLength)
 {
     // threadIdx.x is commonly used as an index for data, use different threads to process data with gm at
     // different addresses Due to this aicore has 'arrayDataLength' number, loop calculate the weight of array value.
@@ -63,13 +66,12 @@ template <typename WEIGHT_TYPE>
 class BincountSimtFullLoad : public BincountSimtBase<WEIGHT_TYPE> {
 public:
     __aicore__ inline BincountSimtFullLoad(){};
-    __aicore__ inline void Init(
-        GM_ADDR array, GM_ADDR size, GM_ADDR weights, GM_ADDR bins, const BincountTilingData* __restrict tilingData,
-        TPipe* tPipe, bool isWeightEmpty);
+    __aicore__ inline void Init(GM_ADDR array, GM_ADDR size, GM_ADDR weights, GM_ADDR bins,
+                                const BincountTilingData* __restrict tilingData, TPipe* tPipe, bool isWeightEmpty);
     __aicore__ inline void Process();
 
 private:
-    // Zero clearing of ouput in gm.
+    // Zero clearing of output in gm.
     __aicore__ inline void ResetBins();
     // Calculate the result of bincount.
     __aicore__ inline void Compute();
@@ -85,9 +87,10 @@ private:
 };
 
 template <typename WEIGHT_TYPE>
-__aicore__ inline void BincountSimtFullLoad<WEIGHT_TYPE>::Init(
-    GM_ADDR array, GM_ADDR size, GM_ADDR weights, GM_ADDR bins, const BincountTilingData* __restrict tilingData,
-    TPipe* tPipe, bool isWeightEmpty)
+__aicore__ inline void BincountSimtFullLoad<WEIGHT_TYPE>::Init(GM_ADDR array, GM_ADDR size, GM_ADDR weights,
+                                                               GM_ADDR bins,
+                                                               const BincountTilingData* __restrict tilingData,
+                                                               TPipe* tPipe, bool isWeightEmpty)
 {
     this->BaseInit(array, size, weights, bins, tilingData, tPipe, isWeightEmpty);
     tPipe_ = tPipe;
@@ -118,8 +121,8 @@ __aicore__ inline void BincountSimtFullLoad<WEIGHT_TYPE>::ResetBins()
     binsQue_.EnQue(binsLocal_);
     binsLocal_ = binsQue_.template DeQue<WEIGHT_TYPE>();
 
-    int64_t resetBinsDataLength =
-        this->blockIdx_ == this->resetBinsCoreNum_ - 1 ? this->resetBinsTailLength_ : this->resetBinsLength_;
+    int64_t resetBinsDataLength = this->blockIdx_ == this->resetBinsCoreNum_ - 1 ? this->resetBinsTailLength_ :
+                                                                                   this->resetBinsLength_;
     uint32_t resetBinsDataByteSize = static_cast<uint32_t>(resetBinsDataLength * sizeof(WEIGHT_TYPE));
     DataCopyExtParams dataCopyExtParams{DATA_COPY_PAD_BLOCK_COUNT, resetBinsDataByteSize, 0, 0, 0};
     DataCopyPad(this->binsGm_[this->blockIdx_ * this->resetBinsLength_], binsLocal_, dataCopyExtParams);
@@ -142,12 +145,12 @@ __aicore__ inline void BincountSimtFullLoad<WEIGHT_TYPE>::Compute()
     __ubuf__ WEIGHT_TYPE* yLocalAddr = (__ubuf__ WEIGHT_TYPE*)binsLocal_.GetPhyAddr();
 
     if (this->isWeightEmpty_) {
-        asc_vf_call<UbSimtCompute<WEIGHT_TYPE>>(
-            dim3{THREAD_NUM}, arrayGmAddr, yLocalAddr, arrayAicoreOffset, arrayDataLength);
+        asc_vf_call<UbSimtCompute<WEIGHT_TYPE>>(dim3{THREAD_NUM}, arrayGmAddr, yLocalAddr, arrayAicoreOffset,
+                                                arrayDataLength);
     } else {
         __gm__ WEIGHT_TYPE* weightGmAddr = (__gm__ WEIGHT_TYPE*)this->weightsGm_.GetPhyAddr();
-        asc_vf_call<UbSimtComputeWithWeight<WEIGHT_TYPE>>(
-            dim3{THREAD_NUM}, arrayGmAddr, weightGmAddr, yLocalAddr, arrayAicoreOffset, arrayDataLength);
+        asc_vf_call<UbSimtComputeWithWeight<WEIGHT_TYPE>>(dim3{THREAD_NUM}, arrayGmAddr, weightGmAddr, yLocalAddr,
+                                                          arrayAicoreOffset, arrayDataLength);
     }
 
     // Datacopy from UB to GM.

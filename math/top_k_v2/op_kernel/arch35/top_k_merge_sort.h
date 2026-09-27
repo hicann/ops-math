@@ -31,7 +31,7 @@ struct MergeSort {
     __aicore__ inline void ProcessSingleBlockSort(GlobalTensor<T> inputX);
     __aicore__ inline void CopyDataIn(GlobalTensor<T> inputX, uint64_t tileOffset, uint32_t currTileSize,
                                       uint32_t oneCoreRowNum);
-    __aicore__ inline void CopyValue2Gm(uint64_t gmOffset, uint64_t tileOffset, uint32_t ouputLastDimValue,
+    __aicore__ inline void CopyValue2Gm(uint64_t gmOffset, uint64_t tileOffset, uint32_t outputLastDimValue,
                                         uint32_t oneCoreRowNum);
     __aicore__ inline void CastIndexToInt64(AscendC::LocalTensor<int64_t> indexInt64Local,
                                             AscendC::LocalTensor<int32_t> indexInt32Local, uint32_t nowCoreRealRowNum);

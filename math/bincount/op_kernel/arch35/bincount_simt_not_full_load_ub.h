@@ -77,14 +77,13 @@ public:
     // constructor fuction
     __aicore__ inline BincountSimtNotFullLoadUb(){};
     // Init common global tensor and tiling data
-    __aicore__ inline void Init(
-        GM_ADDR array, GM_ADDR size, GM_ADDR weights, GM_ADDR bins, const BincountTilingData* __restrict tilingData,
-        TPipe* tPipe, bool isWeightEmpty);
+    __aicore__ inline void Init(GM_ADDR array, GM_ADDR size, GM_ADDR weights, GM_ADDR bins,
+                                const BincountTilingData* __restrict tilingData, TPipe* tPipe, bool isWeightEmpty);
     // The calculate process of bincount
     __aicore__ inline void Process();
 
 private:
-    // Zero clearing of ouput in gm.
+    // Zero clearing of output in gm.
     __aicore__ inline void ResetBins();
     // Calculate the result of bincount.
     __aicore__ inline void Compute();
@@ -105,9 +104,10 @@ private:
 };
 
 template <typename WEIGHT_TYPE>
-__aicore__ inline void BincountSimtNotFullLoadUb<WEIGHT_TYPE>::Init(
-    GM_ADDR array, GM_ADDR size, GM_ADDR weights, GM_ADDR bins, const BincountTilingData* __restrict tilingData,
-    TPipe* tPipe, bool isWeightEmpty)
+__aicore__ inline void BincountSimtNotFullLoadUb<WEIGHT_TYPE>::Init(GM_ADDR array, GM_ADDR size, GM_ADDR weights,
+                                                                    GM_ADDR bins,
+                                                                    const BincountTilingData* __restrict tilingData,
+                                                                    TPipe* tPipe, bool isWeightEmpty)
 {
     this->BaseInit(array, size, weights, bins, tilingData, tPipe, isWeightEmpty);
 
@@ -134,8 +134,8 @@ template <typename WEIGHT_TYPE>
 __aicore__ inline void BincountSimtNotFullLoadUb<WEIGHT_TYPE>::ResetBins()
 {
     int64_t resetBinsHeadIndex = this->blockIdx_ * this->resetBinsLength_;
-    int64_t resetBinsDataLength =
-        (this->blockIdx_ == this->resetBinsCoreNum_ - 1) ? this->resetBinsTailLength_ : this->resetBinsLength_;
+    int64_t resetBinsDataLength = (this->blockIdx_ == this->resetBinsCoreNum_ - 1) ? this->resetBinsTailLength_ :
+                                                                                     this->resetBinsLength_;
 
     InitOutput<WEIGHT_TYPE>(this->binsGm_[resetBinsHeadIndex], resetBinsDataLength, static_cast<WEIGHT_TYPE>(0));
 }
@@ -163,17 +163,16 @@ __aicore__ inline void BincountSimtNotFullLoadUb<WEIGHT_TYPE>::Compute()
         __ubuf__ WEIGHT_TYPE* binsLocalAddr = (__ubuf__ WEIGHT_TYPE*)binsLocal_.GetPhyAddr();
         // calculation of bincount by AtomicAdd in simt.
         if (this->isWeightEmpty_) {
-            asc_vf_call<UbSimtComputeLoop<WEIGHT_TYPE>>(
-                dim3{THREAD_NUM}, arrayGmAddr, binsLocalAddr, arrayHeadIndex, arrayDataLength, index,
-                this->availableUbSize_);
+            asc_vf_call<UbSimtComputeLoop<WEIGHT_TYPE>>(dim3{THREAD_NUM}, arrayGmAddr, binsLocalAddr, arrayHeadIndex,
+                                                        arrayDataLength, index, this->availableUbSize_);
         } else {
             __gm__ WEIGHT_TYPE* weightsGmAddr = (__gm__ WEIGHT_TYPE*)this->weightsGm_.GetPhyAddr();
-            asc_vf_call<UbSimtComputeWithWeightLoop<WEIGHT_TYPE>>(
-                dim3{THREAD_NUM}, arrayGmAddr, weightsGmAddr, binsLocalAddr, arrayHeadIndex, arrayDataLength,
-                index, this->availableUbSize_);
+            asc_vf_call<UbSimtComputeWithWeightLoop<WEIGHT_TYPE>>(dim3{THREAD_NUM}, arrayGmAddr, weightsGmAddr,
+                                                                  binsLocalAddr, arrayHeadIndex, arrayDataLength, index,
+                                                                  this->availableUbSize_);
         }
 
-        // transfer ouput from ub to gm.
+        // transfer output from ub to gm.
         CopyOut(index * this->availableUbSize_, static_cast<uint32_t>(binsLength * sizeof(WEIGHT_TYPE)));
         binsQue_.template FreeTensor<WEIGHT_TYPE>(binsLocal_);
     }
