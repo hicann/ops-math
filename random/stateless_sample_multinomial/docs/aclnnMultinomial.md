@@ -268,6 +268,7 @@ aclnnStatus aclnnMultinomial(
 
 - 确定性计算：
   - aclnnMultinomial默认确定性实现。
+- 当输入Tensor的size数量较大时，超过12000000个元素时，aclnnMultinomial算子的精度会下降。
 
 ## 调用示例
 

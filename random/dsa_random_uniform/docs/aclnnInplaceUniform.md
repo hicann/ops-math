@@ -47,7 +47,7 @@ aclnnStatus aclnnInplaceUniform(
   void*                 workspace,
   uint64_t              workspaceSize,
   aclOpExecutor*        executor,
-  const aclrtStream     stream)
+  aclrtStream           stream)
 ```
 
 ## aclnnInplaceUniformGetWorkspaceSize
