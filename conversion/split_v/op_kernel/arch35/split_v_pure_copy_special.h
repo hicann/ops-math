@@ -15,14 +15,15 @@
 namespace SplitV {
 using namespace AscendC;
 
-template <typename T> class SplitVPureCopySpecialMode {
+template <typename T>
+class SplitVPureCopySpecialMode {
 public:
-    __aicore__ inline SplitVPureCopySpecialMode(TPipe &pipe) : pipe_(pipe){};
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const SplitVTilingData *tilingData);
+    __aicore__ inline SplitVPureCopySpecialMode(TPipe& pipe) : pipe_(pipe){};
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const SplitVTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
-    __aicore__ inline __gm__ T *GetTensorAddr(int64_t index);
+    __aicore__ inline __gm__ T* GetTensorAddr(int64_t index);
     __aicore__ inline int64_t SplitPrefix(int64_t index);
     __aicore__ inline int64_t CurSplitSize(int64_t index);
     __aicore__ inline void ProcessSpecialCopy();
@@ -31,12 +32,12 @@ private:
 
 private:
     constexpr static int32_t bufferNum = 1;
-    TPipe &pipe_;
+    TPipe& pipe_;
     TQueBind<QuePosition::VECIN, QuePosition::VECOUT, bufferNum> inQueueX_;
     ListTensorDesc inputList_;
     GlobalTensor<T> xGm_;
     GlobalTensor<T> yGm_;
-    const SplitVTilingData *tilingData_;
+    const SplitVTilingData* tilingData_;
     int64_t ubSize_ = 0;
     int32_t blockIdx_ = 0;
     int64_t splitDim_ = 0;          // split的轴
@@ -64,16 +65,16 @@ private:
     int64_t curSrcOffset_ = 0;
     int64_t pureOutIdx_ = 0;
 
-    DataCopyExtParams copyInParam_{ 0, 0, 0, 0, 0 };
-    DataCopyPadExtParams<T> padParam_{ false, 0, 0, 0 };
-    DataCopyExtParams copyOutParam_{ 0, 0, 0, 0, 0 };
+    DataCopyExtParams copyInParam_{0, 0, 0, 0, 0};
+    DataCopyPadExtParams<T> padParam_{false, 0, 0, 0};
+    DataCopyExtParams copyOutParam_{0, 0, 0, 0, 0};
 
     int32_t isNBlockMain_ = 0;
     int32_t nIdx_ = 0;
 };
 
 template <typename T>
-__aicore__ inline void SplitVPureCopySpecialMode<T>::Init(GM_ADDR x, GM_ADDR y, const SplitVTilingData *tilingData)
+__aicore__ inline void SplitVPureCopySpecialMode<T>::Init(GM_ADDR x, GM_ADDR y, const SplitVTilingData* tilingData)
 {
     blockIdx_ = GetBlockIdx();
     tilingData_ = tilingData;
@@ -88,8 +89,8 @@ __aicore__ inline void SplitVPureCopySpecialMode<T>::Init(GM_ADDR x, GM_ADDR y, 
     realCoreNum_ = tilingData_->realCoreNum;             // 真实使用的核数
     ubSizeNum_ = ubSize_ / dtypeSize_;
     pipe_.InitBuffer(inQueueX_, bufferNum, ubSize_);
-    xGm_.SetGlobalBuffer((__gm__ T *)x);
-    inputList_ = ListTensorDesc(reinterpret_cast<__gm__ void *>(y));
+    xGm_.SetGlobalBuffer((__gm__ T*)x);
+    inputList_ = ListTensorDesc(reinterpret_cast<__gm__ void*>(y));
 
     nIdx_ = blockIdx_ % nBlockCount_;
     isNBlockMain_ = (nIdx_ < nBlockFactorNum_) ? 1 : 0;
@@ -147,7 +148,7 @@ __aicore__ inline void SplitVPureCopySpecialMode<T>::CopyInToUb(int64_t blockCou
 
 template <typename T>
 __aicore__ inline void SplitVPureCopySpecialMode<T>::CopyOutToGm(int64_t blockCount, int64_t blockLen,
-                                            int64_t dstOffset)
+                                                                 int64_t dstOffset)
 {
     LocalTensor<T> xLocal = inQueueX_.DeQue<T>();
     copyOutParam_.blockCount = blockCount;
@@ -159,7 +160,7 @@ __aicore__ inline void SplitVPureCopySpecialMode<T>::CopyOutToGm(int64_t blockCo
 }
 
 template <typename T>
-__aicore__ inline __gm__ T *SplitVPureCopySpecialMode<T>::GetTensorAddr(int64_t index)
+__aicore__ inline __gm__ T* SplitVPureCopySpecialMode<T>::GetTensorAddr(int64_t index)
 {
     return inputList_.GetDataPtr<T>(index);
 }
@@ -189,5 +190,5 @@ __aicore__ inline int64_t SplitVPureCopySpecialMode<T>::CurSplitSize(int64_t ind
     return tensorSize;
 }
 
-} // namespace Split V
+} // namespace SplitV
 #endif

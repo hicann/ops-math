@@ -16,28 +16,29 @@
 
 namespace SplitV {
 using namespace AscendC;
-template <typename T> class SplitVPureCopyModeSameLen {
+template <typename T>
+class SplitVPureCopyModeSameLen {
 public:
-    __aicore__ inline SplitVPureCopyModeSameLen(TPipe &pipe) : pipe_(pipe){};
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const SplitVTilingData *tilingData);
+    __aicore__ inline SplitVPureCopyModeSameLen(TPipe& pipe) : pipe_(pipe){};
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const SplitVTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
-    __aicore__ inline __gm__ T *GetTensorAddr(int64_t index);
+    __aicore__ inline __gm__ T* GetTensorAddr(int64_t index);
     __aicore__ inline void ProcessWithCutN();
     __aicore__ inline void ProcessWithCutMG();
-    __aicore__ inline void CopyIn(int64_t blockCount, int64_t blockLen, int64_t srcOffset,
-                                  int64_t ubOffset, int64_t srcStride, int64_t dstStride);
+    __aicore__ inline void CopyIn(int64_t blockCount, int64_t blockLen, int64_t srcOffset, int64_t ubOffset,
+                                  int64_t srcStride, int64_t dstStride);
     __aicore__ inline void CopyOut(int64_t yGMIdx, int64_t blockCount, int64_t blockLen, int64_t dstOffset,
                                    int64_t ubOffset, int64_t srcStride, int64_t dstStride);
     __aicore__ inline int64_t CalcGMOffset();
 
 private:
-    TPipe &pipe_;
+    TPipe& pipe_;
     constexpr static uint32_t BUFFER_NUM = 2;
     constexpr static uint32_t BLOCK_SIZE = Ops::Base::GetUbBlockSize();
     constexpr static int64_t BLOCK_NUM = BLOCK_SIZE / sizeof(T);
-    const SplitVTilingData *tilingData_;
+    const SplitVTilingData* tilingData_;
     TQueBind<QuePosition::VECIN, QuePosition::VECOUT, BUFFER_NUM> inQueueX_;
     GlobalTensor<T> xGm_;
     GlobalTensor<T> yGm_;
@@ -75,7 +76,8 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void SplitVPureCopyModeSameLen<T>::Init(GM_ADDR x, GM_ADDR y, const SplitVTilingData *tilingData) {
+__aicore__ inline void SplitVPureCopyModeSameLen<T>::Init(GM_ADDR x, GM_ADDR y, const SplitVTilingData* tilingData)
+{
     blockIdx_ = GetBlockIdx();
     tilingData_ = tilingData;
     mSize_ = tilingData_->mBlockFactorNum;
@@ -94,8 +96,8 @@ __aicore__ inline void SplitVPureCopyModeSameLen<T>::Init(GM_ADDR x, GM_ADDR y, 
     blockFactorTail_ = tilingData_->blockFactorTail;
 
     pipe_.InitBuffer(inQueueX_, BUFFER_NUM, tilingData_->ubSize / BUFFER_NUM);
-    xGm_.SetGlobalBuffer((__gm__ T *)x);
-    inputList_ = ListTensorDesc(reinterpret_cast<__gm__ void *>(y));
+    xGm_.SetGlobalBuffer((__gm__ T*)x);
+    inputList_ = ListTensorDesc(reinterpret_cast<__gm__ void*>(y));
 
     // Calc start idx per core
     blkProcessNum_ = blockFactor_;
@@ -109,20 +111,22 @@ __aicore__ inline void SplitVPureCopyModeSameLen<T>::Init(GM_ADDR x, GM_ADDR y, 
 }
 
 template <typename T>
-__aicore__ inline void SplitVPureCopyModeSameLen<T>::Process() {
+__aicore__ inline void SplitVPureCopyModeSameLen<T>::Process()
+{
     if (blockIdx_ >= tilingData_->realCoreNum) {
         return;
     }
 
     if (nUBCount_ > 1) {
-        ProcessWithCutN();   // UB only cut axisN
+        ProcessWithCutN(); // UB only cut axisN
     } else {
-        ProcessWithCutMG();  // UB cut axisM and axisG
+        ProcessWithCutMG(); // UB cut axisM and axisG
     }
 }
 
 template <typename T>
-__aicore__ inline void SplitVPureCopyModeSameLen<T>::ProcessWithCutN() {
+__aicore__ inline void SplitVPureCopyModeSameLen<T>::ProcessWithCutN()
+{
     int64_t processNNum = 0;
     int64_t yGMIdx = 0;
     int64_t mgIdx = 0;
@@ -146,7 +150,8 @@ __aicore__ inline void SplitVPureCopyModeSameLen<T>::ProcessWithCutN() {
 }
 
 template <typename T>
-__aicore__ inline void SplitVPureCopyModeSameLen<T>::ProcessWithCutMG() {
+__aicore__ inline void SplitVPureCopyModeSameLen<T>::ProcessWithCutMG()
+{
     int64_t processMNum = 0;
     int64_t processGNum = 0;
     int64_t yGMIdx = 0;
@@ -203,7 +208,8 @@ __aicore__ inline void SplitVPureCopyModeSameLen<T>::ProcessWithCutMG() {
 }
 
 template <typename T>
-__aicore__ inline int64_t SplitVPureCopyModeSameLen<T>::CalcGMOffset() {
+__aicore__ inline int64_t SplitVPureCopyModeSameLen<T>::CalcGMOffset()
+{
     int64_t offset = 0;
     // UBouter: [Mo, Go, No], UBinner: [Mi, Gi, Ni]
     int64_t gRSize = nUBCount_;
@@ -211,15 +217,15 @@ __aicore__ inline int64_t SplitVPureCopyModeSameLen<T>::CalcGMOffset() {
     // Src:[M, G, N] ==> Dst:[G, M, N]
     int64_t gASize = nSize_;
     int64_t mASize = gSize_ * nSize_;
-    offset = curIdx_ % nUBCount_ * nUBFactor_ + 
-             curIdx_ / gRSize % gUBCount_ * gUBFactor_ * gASize + 
+    offset = curIdx_ % nUBCount_ * nUBFactor_ + curIdx_ / gRSize % gUBCount_ * gUBFactor_ * gASize +
              curIdx_ / mRSize * mUBFactor_ * mASize;
     return offset;
 }
 
 template <typename T>
 __aicore__ inline void SplitVPureCopyModeSameLen<T>::CopyIn(int64_t blockCount, int64_t blockLen, int64_t srcOffset,
-                                                            int64_t ubOffset, int64_t srcStride, int64_t dstStride) {
+                                                            int64_t ubOffset, int64_t srcStride, int64_t dstStride)
+{
     LocalTensor<T> srcLocal = inQueueX_.AllocTensor<T>();
     SetLoopModePara(loopMode_, DataCopyMVType::OUT_TO_UB);
     copyInParam_.blockCount = blockCount;
@@ -234,7 +240,8 @@ __aicore__ inline void SplitVPureCopyModeSameLen<T>::CopyIn(int64_t blockCount, 
 template <typename T>
 __aicore__ inline void SplitVPureCopyModeSameLen<T>::CopyOut(int64_t yGMIdx, int64_t blockCount, int64_t blockLen,
                                                              int64_t dstOffset, int64_t ubOffset, int64_t srcStride,
-                                                             int64_t dstStride) {
+                                                             int64_t dstStride)
+{
     yGm_.SetGlobalBuffer(GetTensorAddr(yGMIdx));
     copyOutParam_.blockCount = blockCount;
     copyOutParam_.blockLen = blockLen * dtypeSize_;
@@ -244,9 +251,10 @@ __aicore__ inline void SplitVPureCopyModeSameLen<T>::CopyOut(int64_t yGMIdx, int
 }
 
 template <typename T>
-__aicore__ inline __gm__ T *SplitVPureCopyModeSameLen<T>::GetTensorAddr(int64_t index) {
+__aicore__ inline __gm__ T* SplitVPureCopyModeSameLen<T>::GetTensorAddr(int64_t index)
+{
     return inputList_.GetDataPtr<T>(index);
 }
 
-} // namespace Split V
+} // namespace SplitV
 #endif

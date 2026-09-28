@@ -22,15 +22,13 @@ constexpr int32_t THREAD_DIM_SIT = 512;
 constexpr int32_t THREAD_DIM_SIT = 2048;
 #endif
 
-namespace SplitV
-{
+namespace SplitV {
 using namespace AscendC;
 
-template <typename T>  // T原始数据类型  U做sizeSplits的数据类型
-class SplitVSIMTInTensor
-{  // 每个核处理的数据小于128K，才会有这个模版，所以数据类型都可以降级
+template <typename T>      // T原始数据类型  U做sizeSplits的数据类型
+class SplitVSIMTInTensor { // 每个核处理的数据小于128K，才会有这个模版，所以数据类型都可以降级
 public:
-    __aicore__ inline SplitVSIMTInTensor() {};
+    __aicore__ inline SplitVSIMTInTensor(){};
 
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const SplitVSIMTTilingData* tilingData);
     __aicore__ inline void Process();
@@ -94,8 +92,8 @@ __aicore__ inline void SplitVSIMTInTensor<T>::Process()
     int32_t colOffset = blockIdx_ == 0 ? 0 : tilingData_->colOffset[blockIdx_ - 1];
     uint32_t nCurLen = tilingData_->colOffset[blockIdx_] - colOffset;
 
-    int32_t partLen = tensorIdx == 0 ? tilingData_->colOffset[coreNumPerTensor - 1]
-                                     : tilingData_->colOffset[(tensorIdx + 1) * coreNumPerTensor - 1] -
+    int32_t partLen = tensorIdx == 0 ? tilingData_->colOffset[coreNumPerTensor - 1] :
+                                       tilingData_->colOffset[(tensorIdx + 1) * coreNumPerTensor - 1] -
                                            tilingData_->colOffset[tensorIdx * coreNumPerTensor - 1];
     int32_t prePartOffest = tensorIdx == 0 ? 0 : tilingData_->colOffset[tensorIdx * coreNumPerTensor - 1];
     int32_t partOffset = tilingData_->colOffset[blockIdx_] - nCurLen - prePartOffest;
@@ -110,8 +108,8 @@ __aicore__ inline void SplitVSIMTInTensor<T>::Process()
     yGm_.SetGlobalBuffer(GetTensorAddr(blockIdx_ / coreNumPerTensor));
 
     asc_vf_call<ProcessSplitTensor<T>>(dim3(THREAD_DIM_SIT), (__gm__ T*)(xGm_.GetPhyAddr()),
-                                         (__gm__ volatile T*)(yGm_.GetPhyAddr()), outputSize, nCurLen, nLen_, colOffset,
-                                         partLen, partOffset, shift, m);
+                                       (__gm__ volatile T*)(yGm_.GetPhyAddr()), outputSize, nCurLen, nLen_, colOffset,
+                                       partLen, partOffset, shift, m);
 }
 
 template <typename T>
@@ -120,5 +118,5 @@ __aicore__ inline __gm__ T* SplitVSIMTInTensor<T>::GetTensorAddr(uint32_t index)
     return outputList_.GetDataPtr<T>(index);
 }
 
-}  // namespace SplitV
-#endif  // namespace SplitV
+} // namespace SplitV
+#endif // namespace SplitV

@@ -22,13 +22,11 @@ constexpr int32_t THREAD_DIM_SLSIT = 512;
 constexpr int32_t THREAD_DIM_SLSIT = 2048;
 #endif
 
-namespace SplitV
-{
+namespace SplitV {
 using namespace AscendC;
 
-template <typename T>  // T原始数据类型  U做sizeSplits的数据类型
-class SplitVSIMTSameLenSplitTensor
-{  // 每个核处理的数据小于128K，才会有这个模版，所以数据类型都可以降级
+template <typename T>                // T原始数据类型  U做sizeSplits的数据类型
+class SplitVSIMTSameLenSplitTensor { // 每个核处理的数据小于128K，才会有这个模版，所以数据类型都可以降级
 public:
     __aicore__ inline SplitVSIMTSameLenSplitTensor(){};
 
@@ -116,8 +114,8 @@ __aicore__ inline void SplitVSIMTSameLenSplitTensor<T>::Process()
     uint32_t outputSize = mLen_ * nCurLen;
     yGm_.SetGlobalBuffer(GetTensorAddr(tensorIdx));
     asc_vf_call<ProcessSplitSameLenTensor<T>>(dim3(THREAD_DIM_SLSIT), (__gm__ T*)(xGm_.GetPhyAddr()),
-                                                (__gm__ volatile T*)(yGm_.GetPhyAddr()), outputSize, nCurLen, nLen_,
-                                                colOffset, partLen, partOffset, shift, m);
+                                              (__gm__ volatile T*)(yGm_.GetPhyAddr()), outputSize, nCurLen, nLen_,
+                                              colOffset, partLen, partOffset, shift, m);
 }
 
 template <typename T>
@@ -126,5 +124,5 @@ __aicore__ inline __gm__ T* SplitVSIMTSameLenSplitTensor<T>::GetTensorAddr(uint3
     return outputList_.GetDataPtr<T>(index);
 }
 
-}  // namespace SplitV
-#endif  // namespace SplitV
+} // namespace SplitV
+#endif // namespace SplitV
