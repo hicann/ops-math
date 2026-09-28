@@ -33,7 +33,7 @@ namespace ge {
 * @attention Constraints:
 * @li x2: The input data does not support 0
 * @li When value of tensor exceeds 2048 , the accuracy of operator cannot guarantee the
-* requirement of double thousandths in Atlas 200/300/500 Inference Product.
+* requirement of double thousandths in Ascend 950PR&950DT products.
 * @li Due to different architectures, the calculation results of this operator
 * on NPU and CPU may be inconsistent
 * @li If shape is expressed as (D1,D2... ,Dn), then D1*D2... *DN<=1000000,n<=8

@@ -28,9 +28,8 @@ namespace ge {
 * @par Inputs:
 * Three inputs, including:
 * @li x: A mutable Tensor. A ND tensor. Support 1D ~ 8D. Must be one of the following types:
-*     float16, float32, bfloat16 (bfloat16 only supported on Atlas A2 Training Series Product/Atlas 800I A2 Inference
-Product/A200I A2 Box Heterogeneous Component
-* and Atlas A3 Training Series Product/Atlas A3 Inference Series Product).
+*     float16, float32, bfloat16 (bfloat16 only supported on Atlas A2 products
+* and Atlas A3 training Products/Atlas A3 inference products).
 * @li mask: A mutable Tensor. A ND tensor. Must met all of the following rules:
 *     dtype of mask should be uint8 or uint1.
 *     if data type of mask is uint8, shape of mask should be 1D. value of shape should met the following algorithm:

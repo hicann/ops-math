@@ -35,7 +35,8 @@ namespace ge {
 * y: A ND Tensor. The promoted Gcd result may be cast to the requested output dtype. \n
 
 * @par Third-party framework compatibility
-* The Atlas A2/A3 Ascend C path supports float, float16, bfloat16, uint8, int8, int16, int32 and int64.
+* The Atlas A2 products and Atlas A3 products Ascend C path supports float, float16, bfloat16, uint8, int8, int16, int32
+and int64.
 * Floating finite inputs are truncated toward zero before integer Gcd semantics; mixed dtype inputs retain the
 * ACLNN Gcd promote/cast behavior. The existing Ascend 950 path is retained for uint8, int8, int16, int32 and int64.
 */
