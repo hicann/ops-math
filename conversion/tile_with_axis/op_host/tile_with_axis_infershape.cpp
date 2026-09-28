@@ -43,6 +43,8 @@ static ge::graphStatus InferShape4TileWithAxis(gert::InferShapeContext* context)
     int64_t axis = (axis_ptr != nullptr) ? *axis_ptr : 0;
     int64_t tiles = (tiles_ptr != nullptr) ? *tiles_ptr : 1;
 
+    OP_CHECK_IF(tiles <= 0, OP_LOGE(context, "tiles must be > 0, got %ld", tiles), return ge::GRAPH_FAILED);
+
     // 获取输入 rank
     int64_t rank = input_shape->GetDimNum();
 
@@ -66,6 +68,8 @@ static ge::graphStatus InferShape4TileWithAxis(gert::InferShapeContext* context)
     if (axis < 0) {
         axis = axis + rank;
     }
+
+    OP_CHECK_IF(axis < 0 || axis >= rank, OP_LOGE(context, "axis is out of range"), return ge::GRAPH_FAILED);
 
     // 复制 input shape 到 output shape
     output_shape->SetDimNum(rank);

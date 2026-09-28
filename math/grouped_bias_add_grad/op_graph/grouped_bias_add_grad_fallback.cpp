@@ -38,6 +38,8 @@ static graphStatus GroupedBiasAddGradHostExecFunc(OpExecuteContext* host_api_ctx
     const int64_t* groupIdxType = attrs->GetAttrPointer<int64_t>(0);
     OP_CHECK_IF(groupIdxType == nullptr, OP_LOGE("aclnnfallback", "groupIdxType is null"), return GRAPH_FAILED);
 
+    OP_CHECK_IF(groupIdxType == nullptr, OP_LOGE("aclnnfallback", "groupIdxType is null"), return GRAPH_FAILED);
+
     auto api_ret = CANN_OPS_OPB_SYN_EXEC_ACLNN(host_api_ctx, aclnnGroupedBiasAddGradV2, grad_y, group_idx,
                                                *groupIdxType, output);
 
