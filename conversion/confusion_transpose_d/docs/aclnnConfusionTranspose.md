@@ -49,7 +49,7 @@ aclnnStatus aclnnConfusionTransposeGetWorkspaceSize(
     const aclTensor    *x,
     const aclIntArray  *perm,
     const aclIntArray  *shape,
-    bool                transposeFirst,
+    bool                transpose_first,
     aclTensor          *out,
     uint64_t           *workspaceSize,
     aclOpExecutor      **executor)
@@ -103,7 +103,7 @@ aclnnStatus aclnnConfusionTranspose(
       <td class="tg-0pky">perm（aclIntArray*）</td>
       <td class="tg-0pky">输入</td>
       <td class="tg-0pky">转置后每根轴对应的转置前轴索引，对应公式中的perm。</td>
-      <td class="tg-0pky">1、该输入中元素必须唯一，并在[0,perm的维度数量-1]范围内。<br>2、当transposeFirst为True时，perm的长度必须与x的shape的长度相同，即len(perm)=len(x_shape)。 <br>3、当transposeFirst为False时，perm长度必须与属性输入shape的长度相同，即len(perm)=len(shape)。</td>
+      <td class="tg-0pky">1、该输入中元素必须唯一，并在[0,perm的维度数量-1]范围内。<br>2、当transpose_first为True时，perm的长度必须与x的shape的长度相同，即len(perm)=len(x_shape)。 <br>3、当transpose_first为False时，perm长度必须与属性输入shape的长度相同，即len(perm)=len(shape)。</td>
       <td class="tg-0pky">INT64</td>
       <td class="tg-0pky">-</td>
       <td class="tg-0pky">-</td>
@@ -120,7 +120,7 @@ aclnnStatus aclnnConfusionTranspose(
       <td class="tg-0lax">-</td>
     </tr>
     <tr>
-      <td class="tg-0lax">transposeFirst（bool）</td>
+      <td class="tg-0lax">transpose_first（bool）</td>
       <td class="tg-0lax">输入</td>
       <td class="tg-0lax">判断是否先执行transpose操作。</td>
       <td class="tg-0lax">如果值为True，首先执行transpose，否则先执行reshape。</td>
