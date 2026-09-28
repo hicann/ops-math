@@ -33,17 +33,18 @@ using namespace AscendC;
  */
 template <typename T, typename OUT_IDX_T>
 __simt_vf__ LAUNCH_BOUND(SmallAxisCommon::TWO_STAGE_THREAD_NUM) __aicore__
-    void SimtStoreTopKTwoStageBatch(uint32_t validSegs, uint32_t segmentLen, uint32_t kValue, uint64_t outputStart,
+    void SimtStoreTopKTwoStageBatch(uint32_t validSegCount, uint32_t segLen, uint32_t kValue, uint64_t outputStart,
                                     __ubuf__ T* finalValues, __ubuf__ uint32_t* finalIdx,
                                     __gm__ volatile T* outputValue, __gm__ volatile OUT_IDX_T* outputIndex)
 {
-    uint32_t total = validSegs * kValue;
-    for (uint32_t idx = static_cast<uint32_t>(threadIdx.x); idx < total; idx += SmallAxisCommon::TWO_STAGE_THREAD_NUM) {
-        uint32_t seg = idx / kValue;
-        uint32_t rank = idx - seg * kValue;
-        uint32_t srcOffset = seg * segmentLen + rank;
-        outputValue[outputStart + idx] = finalValues[srcOffset];
-        outputIndex[outputStart + idx] = static_cast<OUT_IDX_T>(finalIdx[srcOffset]);
+    uint32_t total = validSegCount * kValue;
+    for (uint32_t itemId = static_cast<uint32_t>(threadIdx.x); itemId < total;
+         itemId += SmallAxisCommon::TWO_STAGE_THREAD_NUM) {
+        uint32_t segIndex = itemId / kValue;
+        uint32_t rankInSeg = itemId - segIndex * kValue;
+        uint32_t srcOffset = segIndex * segLen + rankInSeg;
+        outputValue[outputStart + itemId] = finalValues[srcOffset];
+        outputIndex[outputStart + itemId] = static_cast<OUT_IDX_T>(finalIdx[srcOffset]);
     }
 }
 
@@ -52,17 +53,19 @@ __simt_vf__ LAUNCH_BOUND(SmallAxisCommon::TWO_STAGE_THREAD_NUM) __aicore__
  */
 template <typename T, typename OUT_IDX_T>
 __simt_vf__ LAUNCH_BOUND(SmallAxisCommon::TWO_STAGE_THREAD_NUM) __aicore__
-    void SimtStoreTopKNonLastTwoStageBatch(uint32_t validSegs, uint32_t segmentLen, uint32_t kValue,
-                                           uint64_t outerBaseOffset, uint64_t innerStart, uint64_t innerSize,
+    void SimtStoreTopKNonLastTwoStageBatch(uint32_t validSegCount, uint32_t segLen, uint32_t kValue,
+                                           uint64_t outerSliceOffset, uint64_t innerTileStart, uint64_t innerDimSize,
                                            __ubuf__ T* finalValues, __ubuf__ uint32_t* finalIdx,
                                            __gm__ volatile T* outputValue, __gm__ volatile OUT_IDX_T* outputIndex)
 {
-    uint32_t total = validSegs * kValue;
-    for (uint32_t idx = static_cast<uint32_t>(threadIdx.x); idx < total; idx += SmallAxisCommon::TWO_STAGE_THREAD_NUM) {
-        uint32_t rank = idx / validSegs;
-        uint32_t seg = idx - rank * validSegs;
-        uint32_t srcOffset = seg * segmentLen + rank;
-        uint64_t gmOffset = outerBaseOffset + static_cast<uint64_t>(rank) * innerSize + innerStart + seg;
+    uint32_t total = validSegCount * kValue;
+    for (uint32_t itemId = static_cast<uint32_t>(threadIdx.x); itemId < total;
+         itemId += SmallAxisCommon::TWO_STAGE_THREAD_NUM) {
+        uint32_t rankInSeg = itemId / validSegCount;
+        uint32_t segIndex = itemId - rankInSeg * validSegCount;
+        uint32_t srcOffset = segIndex * segLen + rankInSeg;
+        uint64_t gmOffset = outerSliceOffset + static_cast<uint64_t>(rankInSeg) * innerDimSize + innerTileStart +
+                            segIndex;
         outputValue[gmOffset] = finalValues[srcOffset];
         outputIndex[gmOffset] = static_cast<OUT_IDX_T>(finalIdx[srcOffset]);
     }
@@ -78,7 +81,7 @@ class TopKSmallAxisTwoStage
 public:
     __aicore__ inline TopKSmallAxisTwoStage() {}
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR values, GM_ADDR indices, const TopKV2TilingDataSimd* tilingData,
-                                TPipe* pipe);
+                                TPipe* pipePtr);
     __aicore__ inline void Process() { Base::Process(); }
 
     friend Base;
@@ -96,11 +99,11 @@ private:
 
     // Main pipeline functions (in call order)
     __aicore__ inline bool IsProcessInvalid() const;
-    __aicore__ inline uint32_t ComputeValidSegs(uint32_t batchId) const;
-    __aicore__ inline void ProcessBatch(uint32_t batchId, uint32_t validSegs);
-    __aicore__ inline void RunBitonicFinalize(uint32_t validSegs);
-    __aicore__ inline void StoreTopK(int64_t segStart, uint32_t validSegs);
-    __aicore__ inline void StoreNonLastTopK(uint64_t outerId, uint64_t innerStart, uint32_t validSegs);
+    __aicore__ inline uint32_t ComputeValidSegs(uint32_t batchIdx) const;
+    __aicore__ inline void ProcessBatch(uint32_t batchIdx, uint32_t validSegCount);
+    __aicore__ inline void RunBitonicFinalize(uint32_t validSegCount);
+    __aicore__ inline void StoreTopK(int64_t segStart, uint32_t validSegCount);
+    __aicore__ inline void StoreNonLastTopK(uint64_t outerId, uint64_t innerTileStart, uint32_t validSegCount);
 
     GlobalTensor<T> inputGm_;
     GlobalTensor<T> outValueGm_;
@@ -118,12 +121,12 @@ private:
 template <typename T, typename OUT_IDX_T, bool IsDescend>
 __aicore__ inline void TopKSmallAxisTwoStage<T, OUT_IDX_T, IsDescend>::Init(GM_ADDR x, GM_ADDR values, GM_ADDR indices,
                                                                             const TopKV2TilingDataSimd* tilingData,
-                                                                            TPipe* pipe)
+                                                                            TPipe* pipePtr)
 {
-    if (tilingData == nullptr || pipe == nullptr) {
+    if (tilingData == nullptr || pipePtr == nullptr) {
         return;
     }
-    pipe_ = pipe;
+    pipe_ = pipePtr;
     blockIdx_ = GetBlockIdx();
     blockDim_ = GetBlockNum();
     batchSize_ = tilingData->keyParams0;
@@ -151,7 +154,7 @@ __aicore__ inline void TopKSmallAxisTwoStage<T, OUT_IDX_T, IsDescend>::Init(GM_A
     }
 
     constexpr uint32_t kAliasElemBytes = static_cast<uint32_t>(sizeof(uint32_t));
-    Base::InitSortBuffers(pipe, maxFlatElems_, tilingData->tmpUbSize, tilingData->keyParams2 != 0U, kAliasElemBytes);
+    Base::InitSortBuffers(pipePtr, maxFlatElems_, tilingData->tmpUbSize, tilingData->keyParams2 != 0U, kAliasElemBytes);
 }
 
 template <typename T, typename OUT_IDX_T, bool IsDescend>
@@ -162,12 +165,12 @@ __aicore__ inline bool TopKSmallAxisTwoStage<T, OUT_IDX_T, IsDescend>::IsProcess
 }
 
 template <typename T, typename OUT_IDX_T, bool IsDescend>
-__aicore__ inline uint32_t TopKSmallAxisTwoStage<T, OUT_IDX_T, IsDescend>::ComputeValidSegs(uint32_t batchId) const
+__aicore__ inline uint32_t TopKSmallAxisTwoStage<T, OUT_IDX_T, IsDescend>::ComputeValidSegs(uint32_t batchIdx) const
 {
     if (isNonLastAxis_) {
         // Non-last batches are grouped by outer slice, then by inner tile.
         // The last inner tile can be shorter than batchSize_.
-        uint32_t tileInOuter = batchId % innerLoopNum_;
+        uint32_t tileInOuter = batchIdx % innerLoopNum_;
         int64_t tileStart = static_cast<int64_t>(tileInOuter) * static_cast<int64_t>(batchSize_);
         int64_t remainingInTile = innerSize_ - tileStart;
         if (remainingInTile <= 0) {
@@ -176,7 +179,7 @@ __aicore__ inline uint32_t TopKSmallAxisTwoStage<T, OUT_IDX_T, IsDescend>::Compu
         return remainingInTile >= static_cast<int64_t>(batchSize_) ? batchSize_ :
                                                                      static_cast<uint32_t>(remainingInTile);
     }
-    int64_t batchStart = static_cast<int64_t>(batchId) * static_cast<int64_t>(batchSize_);
+    int64_t batchStart = static_cast<int64_t>(batchIdx) * static_cast<int64_t>(batchSize_);
     int64_t remainingSegs = totalSegs_ - batchStart;
     if (remainingSegs <= 0) {
         return 0;
@@ -188,48 +191,49 @@ __aicore__ inline uint32_t TopKSmallAxisTwoStage<T, OUT_IDX_T, IsDescend>::Compu
 }
 
 template <typename T, typename OUT_IDX_T, bool IsDescend>
-__aicore__ inline void TopKSmallAxisTwoStage<T, OUT_IDX_T, IsDescend>::ProcessBatch(uint32_t batchId,
-                                                                                    uint32_t validSegs)
+__aicore__ inline void TopKSmallAxisTwoStage<T, OUT_IDX_T, IsDescend>::ProcessBatch(uint32_t batchIdx,
+                                                                                    uint32_t validSegCount)
 {
-    uint32_t totalElems = validSegs * segmentLen_;
-    int64_t segStart = static_cast<int64_t>(batchId) * static_cast<int64_t>(batchSize_);
+    uint32_t batchElemTotal = validSegCount * segmentLen_;
+    int64_t segStart = static_cast<int64_t>(batchIdx) * static_cast<int64_t>(batchSize_);
     // Pipeline: load -> two-stage sort (Stage1 flat sort + Stage2 per-segment restore) -> topk store.
     uint64_t outerId = 0;
-    uint64_t innerStart = 0;
+    uint64_t innerTileStart = 0;
     if (isNonLastAxis_) {
-        // batchId is linearized as outerId * innerLoopNum_ + innerTileId.
-        outerId = static_cast<uint64_t>(batchId / innerLoopNum_);
-        uint32_t innerTileId = batchId % innerLoopNum_;
-        innerStart = static_cast<uint64_t>(innerTileId) * static_cast<uint64_t>(batchSize_);
-        uint64_t outerBaseOffset = outerId * static_cast<uint64_t>(segmentLen_) * static_cast<uint64_t>(innerSize_);
-        Base::LoadNonLastBatch(inputGm_, outerBaseOffset, innerStart, static_cast<uint64_t>(innerSize_), validSegs,
-                               totalElems);
+        // batchIdx is linearized as outerId * innerLoopNum_ + innerTileId.
+        outerId = static_cast<uint64_t>(batchIdx / innerLoopNum_);
+        uint32_t innerTileId = batchIdx % innerLoopNum_;
+        innerTileStart = static_cast<uint64_t>(innerTileId) * static_cast<uint64_t>(batchSize_);
+        uint64_t outerSliceOffset = outerId * static_cast<uint64_t>(segmentLen_) * static_cast<uint64_t>(innerSize_);
+        Base::LoadNonLastBatch(inputGm_, outerSliceOffset, innerTileStart, static_cast<uint64_t>(innerSize_),
+                               validSegCount, batchElemTotal);
     } else {
-        Base::LoadContiguousBatch(inputGm_, segStart * static_cast<int64_t>(segmentLen_), totalElems);
+        Base::LoadContiguousBatch(inputGm_, segStart * static_cast<int64_t>(segmentLen_), batchElemTotal);
     }
-    Base::RunTwoStageSort(totalElems);
-    RunBitonicFinalize(validSegs);
+    Base::RunTwoStageSort(batchElemTotal);
+    RunBitonicFinalize(validSegCount);
     if (isNonLastAxis_) {
-        StoreNonLastTopK(outerId, innerStart, validSegs);
+        StoreNonLastTopK(outerId, innerTileStart, validSegCount);
     } else {
-        StoreTopK(segStart, validSegs);
+        StoreTopK(segStart, validSegCount);
     }
 }
 
 template <typename T, typename OUT_IDX_T, bool IsDescend>
-__aicore__ inline void TopKSmallAxisTwoStage<T, OUT_IDX_T, IsDescend>::RunBitonicFinalize(uint32_t validSegs)
+__aicore__ inline void TopKSmallAxisTwoStage<T, OUT_IDX_T, IsDescend>::RunBitonicFinalize(uint32_t validSegCount)
 {
-    if (!useBitonicFinalize_ || validSegs == 0U) {
+    if (!useBitonicFinalize_ || validSegCount == 0U) {
         return;
     }
-    RunBitonicFinalizeSelectionRows<T, uint32_t, IsDescend>(finalValues_, finalIdx_, kValue_, validSegs, segmentLen_,
-                                                            segmentLen_);
+    RunBitonicFinalizeSelectionRows<T, uint32_t, IsDescend>(finalValues_, finalIdx_, kValue_, validSegCount,
+                                                            segmentLen_, segmentLen_);
 }
 
 template <typename T, typename OUT_IDX_T, bool IsDescend>
-__aicore__ inline void TopKSmallAxisTwoStage<T, OUT_IDX_T, IsDescend>::StoreTopK(int64_t segStart, uint32_t validSegs)
+__aicore__ inline void TopKSmallAxisTwoStage<T, OUT_IDX_T, IsDescend>::StoreTopK(int64_t segStart,
+                                                                                 uint32_t validSegCount)
 {
-    if (validSegs == 0U) {
+    if (validSegCount == 0U) {
         return;
     }
     // Rank-inverse writes final buffers via SIMT VF; BuildOutputs writes them via vector APIs.
@@ -241,7 +245,7 @@ __aicore__ inline void TopKSmallAxisTwoStage<T, OUT_IDX_T, IsDescend>::StoreTopK
     // Output layout is [totalSegs, k]; each sorted segment contributes its first k elements.
     uint64_t outputStart = static_cast<uint64_t>(segStart) * static_cast<uint64_t>(kValue_);
     asc_vf_call<SimtStoreTopKTwoStageBatch<T, OUT_IDX_T>>(
-        dim3(SmallAxisCommon::TWO_STAGE_THREAD_NUM), validSegs, segmentLen_, kValue_, outputStart,
+        dim3(SmallAxisCommon::TWO_STAGE_THREAD_NUM), validSegCount, segmentLen_, kValue_, outputStart,
         (__ubuf__ T*)finalValues_.GetPhyAddr(), (__ubuf__ uint32_t*)finalIdx_.GetPhyAddr(),
         (__gm__ volatile T*)outValueGm_.GetPhyAddr(), (__gm__ volatile OUT_IDX_T*)outIdxGm_.GetPhyAddr());
     eventIdVToS = static_cast<event_t>(pipe_->FetchEventID(HardEvent::V_S));
@@ -251,8 +255,8 @@ __aicore__ inline void TopKSmallAxisTwoStage<T, OUT_IDX_T, IsDescend>::StoreTopK
 
 template <typename T, typename OUT_IDX_T, bool IsDescend>
 __aicore__ inline void TopKSmallAxisTwoStage<T, OUT_IDX_T, IsDescend>::StoreNonLastTopK(uint64_t outerId,
-                                                                                        uint64_t innerStart,
-                                                                                        uint32_t validSegs)
+                                                                                        uint64_t innerTileStart,
+                                                                                        uint32_t validSegCount)
 {
     // Output layout is [outer, k, inner]; the topk axis replaces segmentLen with kValue_.
     uint64_t outputBase = outerId * static_cast<uint64_t>(kValue_) * static_cast<uint64_t>(innerSize_);
@@ -260,7 +264,7 @@ __aicore__ inline void TopKSmallAxisTwoStage<T, OUT_IDX_T, IsDescend>::StoreNonL
     SetFlag<HardEvent::V_S>(eventIdVToS);
     WaitFlag<HardEvent::V_S>(eventIdVToS);
     asc_vf_call<SimtStoreTopKNonLastTwoStageBatch<T, OUT_IDX_T>>(
-        dim3(SmallAxisCommon::TWO_STAGE_THREAD_NUM), validSegs, segmentLen_, kValue_, outputBase, innerStart,
+        dim3(SmallAxisCommon::TWO_STAGE_THREAD_NUM), validSegCount, segmentLen_, kValue_, outputBase, innerTileStart,
         static_cast<uint64_t>(innerSize_), (__ubuf__ T*)finalValues_.GetPhyAddr(),
         (__ubuf__ uint32_t*)finalIdx_.GetPhyAddr(), (__gm__ volatile T*)outValueGm_.GetPhyAddr(),
         (__gm__ volatile OUT_IDX_T*)outIdxGm_.GetPhyAddr());

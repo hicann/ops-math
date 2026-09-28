@@ -57,9 +57,9 @@ struct SortTileInfo {
     uint32_t dtypeSize = 0;
     uint32_t y2DtypeSize = 0;
     uint32_t maxCoreNum = 0;
+    uint32_t lastDimNeedCore = 0;
     uint32_t numTileDataSize = 0;
     uint32_t sortLoopTimes = 0;
-    uint32_t lastDimNeedCore = 0;
     uint32_t keyParams0 = 0;
     uint32_t keyParams1 = 0;
     uint32_t keyParams2 = 0;
@@ -69,8 +69,8 @@ struct SortTileInfo {
     uint32_t tmpUbSize = 0;
     bool isDescend = false;
     ge::DataType dataType = ge::DT_UINT8;
-    uint32_t isInt32 = 0;
     int32_t xDimNum = 0;
+    uint32_t isInt32 = 0;
     int64_t sortAxisNum = 1;
     int64_t unSortDimNum = 1;
 };

@@ -130,14 +130,14 @@ struct SortTileInfo {
     uint32_t maxCoreNum = 0;
     uint32_t numTileDataSize = 0;
     uint64_t sortLoopTimes = 0;
-    uint32_t lastDimNeedCore = 0;
+    uint32_t tmpUbSize = 0;
     uint32_t keyParams0 = 0;
     uint32_t keyParams1 = 0;
     uint32_t keyParams2 = 0;
     uint32_t keyParams3 = 0;
     uint32_t keyParams4 = 0;
     uint32_t keyParams5 = 0;
-    uint32_t tmpUbSize = 0;
+    uint32_t lastDimNeedCore = 0;
     bool isDescend = false;
     ge::DataType dataType = ge::DT_UINT8;
     uint32_t isInt32 = 0;
@@ -209,8 +209,8 @@ struct TopKSmallAxisRouteInfo {
     int64_t innerSize = 1;
 };
 
-bool SelectSmallAxisRoute(const TopKSmallAxisRouteInfo& info, SmallAxisRoutePlan& plan);
-bool SelectNonLastSmallAxisRoute(const TopKSmallAxisRouteInfo& info, SmallAxisRoutePlan& plan);
+bool PickTopkSmallAxisRoute(const TopKSmallAxisRouteInfo& info, SmallAxisRoutePlan& routePlan);
+bool PickTopkNonLastSmallAxisRoute(const TopKSmallAxisRouteInfo& info, SmallAxisRoutePlan& routePlan);
 
 struct TopkNonLastSmallAxisTileInfo {
     int64_t rank = 0;
@@ -253,7 +253,7 @@ uint32_t GetSingleCoreModelDefaultTileDataSize(ge::DataType dataType);
 
 // ==================== Common Align Helpers ====================
 
-bool CeilAlignUint32(uint64_t rawSize, uint32_t alignSize, uint32_t& alignedSize);
+bool TopkCeilAlignUint32(uint64_t sizeToAlign, uint32_t alignment, uint32_t& alignedOut);
 
 // ==================== FP32 MergeSort Helpers ====================
 
