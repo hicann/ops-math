@@ -100,7 +100,7 @@ jobs:
       -
         name: verify_package
         uses: cann/.gitcode/actions/verify-package@master
-        if: ${{ inputs.task_name != 'Compile_Ascend_single_ubuntu24' && inputs.task_name != 'Compile_Ascend_single' }}
+        if: ${{ inputs.task_name != 'Compile_Ascend_single_ubuntu24' && inputs.task_name != 'Compile_Ascend_single' && env.TARGET_BRANCH == 'master' }}
         with:
           workspace: ${{ steps.process_checkout.outputs.path }}
       - name: upload

@@ -95,7 +95,11 @@ fi
 
 if [ "${ge_st_rt2}X" != "kirinx90X" ];then
     whoami
-    su - jenkins -c "sh /home/jenkins/Ascend/cann/share/info/ops_math/script/uninstall.sh"
+    if [ -f /home/jenkins/Ascend/cann/share/info/ops_math/script/uninstall.sh ]; then
+        su - jenkins -c "sh /home/jenkins/Ascend/cann/share/info/ops_math/script/uninstall.sh"
+    else
+        echo "[WARN] uninstall.sh not found, skip"
+    fi
 fi
 
 if [ -f /home/jenkins/Ascend/cann/bin/setenv.bash ]; then
