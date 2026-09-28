@@ -88,6 +88,7 @@ jobs:
       -
         name: api-check
         identifier: api-check
+        if: ${{ env.TARGET_BRANCH == 'master' }}
         uses: cann/.gitcode/actions/api-check@master
         with:
           org_name: ${{ env.org_name }}
@@ -100,7 +101,7 @@ jobs:
       -
         name: verify_package
         uses: cann/.gitcode/actions/verify-package@master
-        if: ${{ inputs.task_name != 'Compile_Ascend_single_ubuntu24' && inputs.task_name != 'Compile_Ascend_single' && env.TARGET_BRANCH == 'master' }}
+        if: ${{ inputs.task_name != 'Compile_Ascend_single_ubuntu24' && inputs.task_name != 'Compile_Ascend_single' }}
         with:
           workspace: ${{ steps.process_checkout.outputs.path }}
       - name: upload
