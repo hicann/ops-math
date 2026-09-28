@@ -15,9 +15,9 @@
 #ifndef CIRCULAR_PAD_GRAD_H
 #define CIRCULAR_PAD_GRAD_H
 #ifdef __CCE_KT_TEST__
-#include "../../../circular_pad/op_kernel/circular_pad_common.h"
+#include "../../../circular_pad/op_kernel/circular_pad_util.h"
 #else
-#include "../../circular_pad/circular_pad_common.h"
+#include "../../circular_pad/circular_pad_util.h"
 #endif
 using namespace AscendC;
 

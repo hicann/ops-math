@@ -9,11 +9,11 @@
  */
 
 /*!
- * \file circular_pad_common.h
+ * \file circular_pad_util.h
  * \brief
  */
-#ifndef CIRCULAR_PAD_COMMON_H
-#define CIRCULAR_PAD_COMMON_H
+#ifndef CIRCULAR_PAD_UTIL_H
+#define CIRCULAR_PAD_UTIL_H
 #include "kernel_operator.h"
 using namespace AscendC;
 
@@ -88,15 +88,9 @@ public:
         return (len * size + BLOCK_SIZE - 1) / BLOCK_SIZE * BLOCK_SIZE / size;
     }
 
-    __aicore__ inline int64_t GetPositive(int64_t len)
-    {
-        return len > 0 ? len : 0;
-    }
+    __aicore__ inline int64_t GetPositive(int64_t len) { return len > 0 ? len : 0; }
 
-    __aicore__ inline int64_t GetNegtive(int64_t len)
-    {
-        return len < 0 ? len : 0;
-    }
+    __aicore__ inline int64_t GetNegtive(int64_t len) { return len < 0 ? len : 0; }
 
     __aicore__ inline void MTE3ToMTE2Sync()
     {

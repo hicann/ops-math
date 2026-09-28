@@ -14,7 +14,7 @@
  */
 #ifndef CIRCULAR_PAD_H
 #define CIRCULAR_PAD_H
-#include "circular_pad_common.h"
+#include "circular_pad_util.h"
 using namespace AscendC;
 
 struct LoopParams {
@@ -93,8 +93,8 @@ public:
         }
     }
 
-    __aicore__ inline void CopyToOutSmallShapeOnePage(
-        GlobalTensor<T>& srcGM, int64_t pageIdxOut, CopyParams& copyParamsIn, CopyParams& copyParamsOut)
+    __aicore__ inline void CopyToOutSmallShapeOnePage(GlobalTensor<T>& srcGM, int64_t pageIdxOut,
+                                                      CopyParams& copyParamsIn, CopyParams& copyParamsOut)
     {
         auto inLocal = queBind_.AllocTensor<T>();
         DataCopyPad(inLocal, srcGM[copyParamsIn.offset], copyParamsIn.dcParams, padParms);
@@ -104,13 +104,13 @@ public:
 
         if (top_ > 0) {
             copyParamsOut.dcParams.blockCount = static_cast<uint16_t>(top_);
-            DataCopyPad(
-                yGM_[pageIdxOut * outputLen_], inLocal[(inOutputH_ - top_) * outputWAlign_], copyParamsOut.dcParams);
+            DataCopyPad(yGM_[pageIdxOut * outputLen_], inLocal[(inOutputH_ - top_) * outputWAlign_],
+                        copyParamsOut.dcParams);
         }
         if (bottom_ > 0) {
             copyParamsOut.dcParams.blockCount = static_cast<uint16_t>(bottom_);
-            DataCopyPad(
-                yGM_[pageIdxOut * outputLen_ + (outputH_ - bottom_) * outputW_], inLocal, copyParamsOut.dcParams);
+            DataCopyPad(yGM_[pageIdxOut * outputLen_ + (outputH_ - bottom_) * outputW_], inLocal,
+                        copyParamsOut.dcParams);
         }
         queBind_.FreeTensor(inLocal);
     }
@@ -174,8 +174,8 @@ public:
     }
 
     /************************************辅助函数***************************************************/
-    __aicore__ inline void CalculateLeftAndRightParams(
-        DataCopyExtParams& paramsIn, DataCopyExtParams& paramsOut, DataCopyExtParams& paramsRight)
+    __aicore__ inline void CalculateLeftAndRightParams(DataCopyExtParams& paramsIn, DataCopyExtParams& paramsOut,
+                                                       DataCopyExtParams& paramsRight)
     {
         uint16_t blockCount = static_cast<uint16_t>(inOutputH_);
         uint32_t blockLenIn = static_cast<uint32_t>(inOutputW_ * TSize_);
@@ -190,9 +190,8 @@ public:
         paramsRight = {blockCount, blockLen, srcStride, dstStride, 0};
     }
 
-    __aicore__ inline void CopyLines(
-        GlobalTensor<T>& srcGM, GlobalTensor<T>& dstGM, LoopParams& loopParams, CopyParams& copyParamsIn,
-        CopyParams& copyParamsOut)
+    __aicore__ inline void CopyLines(GlobalTensor<T>& srcGM, GlobalTensor<T>& dstGM, LoopParams& loopParams,
+                                     CopyParams& copyParamsIn, CopyParams& copyParamsOut)
     {
         uint16_t rowsNum = UB_SIZE / BUFFER_NUM / GetAlign(loopParams.loopW, TSize_) / TSize_;
         uint32_t loop = loopParams.loopH / rowsNum;
@@ -225,9 +224,8 @@ public:
         }
     }
 
-    __aicore__ inline void CopyWSToOutOnce(
-        int64_t pageIdxIn, int64_t pageIdxOut, LoopParams& loopParams, CopyParams& copyParamsIn,
-        CopyParams& copyParamsOut)
+    __aicore__ inline void CopyWSToOutOnce(int64_t pageIdxIn, int64_t pageIdxOut, LoopParams& loopParams,
+                                           CopyParams& copyParamsIn, CopyParams& copyParamsOut)
     {
         leftAlign_ = left_ > 0 ? leftAlign_ : Align_;
         rightAlign_ = right_ > 0 ? rightAlign_ : Align_;
@@ -262,9 +260,8 @@ public:
         }
     }
 
-    __aicore__ inline void CopyInToOutOnce(
-        int64_t pageIdxIn, int64_t pageIdxOut, LoopParams& loopParams, CopyParams& copyParamsIn,
-        CopyParams& copyParamsOut)
+    __aicore__ inline void CopyInToOutOnce(int64_t pageIdxIn, int64_t pageIdxOut, LoopParams& loopParams,
+                                           CopyParams& copyParamsIn, CopyParams& copyParamsOut)
     {
         leftAlign_ = left_ > 0 ? leftAlign_ : 0;
         rightAlign_ = right_ > 0 ? rightAlign_ : 0;
@@ -283,9 +280,8 @@ public:
         }
     }
 
-    __aicore__ inline void PadTopAndBottomOnce(
-        int64_t pageIdxIn, int64_t pageIdxOut, LoopParams& loopParams, CopyParams& copyParamsIn,
-        CopyParams& copyParamsOut)
+    __aicore__ inline void PadTopAndBottomOnce(int64_t pageIdxIn, int64_t pageIdxOut, LoopParams& loopParams,
+                                               CopyParams& copyParamsIn, CopyParams& copyParamsOut)
     {
         loopParams.loopW = outputWAlign_;
         copyParamsIn.strideLoop = outputW_;
@@ -312,9 +308,8 @@ public:
         }
     }
 
-    __aicore__ inline void CopyOnePage(
-        GlobalTensor<T>& srcGM, GlobalTensor<T>& dstGM, LoopParams loopParams, CopyParams& copyParamsIn,
-        CopyParams& copyParamsOut)
+    __aicore__ inline void CopyOnePage(GlobalTensor<T>& srcGM, GlobalTensor<T>& dstGM, LoopParams loopParams,
+                                       CopyParams& copyParamsIn, CopyParams& copyParamsOut)
     {
         uint16_t rowsNum = UB_SIZE / BUFFER_NUM / GetAlign(loopParams.loopW, TSize_) / TSize_;
         uint32_t loop = loopParams.loopH / rowsNum;
@@ -343,8 +338,8 @@ public:
         }
     }
 
-    __aicore__ inline void CopyGmToGm(
-        int64_t pages, int64_t taskNum, int64_t offsetIn, int64_t offsetOut, int64_t stride)
+    __aicore__ inline void CopyGmToGm(int64_t pages, int64_t taskNum, int64_t offsetIn, int64_t offsetOut,
+                                      int64_t stride)
     {
         int64_t loop = (outputLen_ * pages * TSize_) / (UB_SIZE / BUFFER_NUM);
         uint32_t tail = (outputLen_ * pages * TSize_) % (UB_SIZE / BUFFER_NUM);
