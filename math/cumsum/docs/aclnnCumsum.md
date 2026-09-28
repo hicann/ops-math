@@ -240,6 +240,10 @@ aclnnStatus aclnnCumsum(
 ## 约束说明
 
 - 确定性计算：aclnnCumsum默认确定性实现。
+<!-- npu="950" id8 -->
+- Batch一致性说明：
+  - <term>Ascend 950PR/Ascend 950DT</term>：默认非Batch一致性实现，支持通过aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, 3)开启Batch一致性。开启后，累积轴为最后一维且输入连续时，输出与所在批次大小、所在行位置无关（bitwise一致），支持float32/float16/bfloat16；累积轴非最后一维或输入非连续时不支持Batch一致性，保持默认路径行为。开启Batch一致性后，性能可能存在劣化。
+<!-- end id8 -->
 
 - 由于aclnnCumsum遇到输入数据与输出数据类型不一致的情况时，会在计算前调用Cast将输入数据类型转换为输出数据类型，因此在这种情况下，需要遵循Cast算子约束，具体参见[aclnnCast](../../../math/cast/docs/aclnnCast.md)。
 

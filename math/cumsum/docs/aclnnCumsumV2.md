@@ -246,6 +246,10 @@ aclnnStatus aclnnCumsumV2(
 
 - 确定性计算：
   - aclnnCumsumV2默认确定性实现。
+<!-- npu="950" id8 -->
+- Batch一致性说明：
+  - <term>Ascend 950PR/Ascend 950DT</term>：默认非Batch一致性实现，支持通过aclrtSetSysParamOpt(ACL_OPT_DETERMINISTIC, 3)开启Batch一致性。开启后，累积轴为最后一维且输入连续时，输出与所在批次大小、所在行位置无关（bitwise一致），支持float32/float16/bfloat16；累积轴非最后一维或输入非连续时不支持Batch一致性，保持默认路径行为。开启Batch一致性后，性能可能存在劣化。
+<!-- end id8 -->
 
 ## 调用示例
 

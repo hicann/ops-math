@@ -57,6 +57,12 @@ constexpr uint64_t TILING_KEY_CORE_SS_ONEWAY = 1101;
 constexpr uint64_t TILING_KEY_CORE_SS_TWOWAY = 1102;
 constexpr uint64_t TILING_KEY_CORE_SS_UB_SS_ONEWAY = 1111;
 constexpr uint64_t TILING_KEY_CORE_SS_UB_SS_TWOWAY = 1112;
+// batch 一致性（deterministic_level==3，AR/lenN==1）：UB_SS ONEWAY 可达（小 R），
+// CORE_SS ONEWAY 不可达（大 R 恒 TWOWAY）：
+constexpr uint64_t TILING_KEY_BI_UB_SS_ONEWAY = 3011;   // BI_UB_SS = R 不分核的串行执行器（小 R）
+constexpr uint64_t TILING_KEY_BI_UB_SS_TWOWAY = 3012;   // BI_UB_SS = R 不分核的串行执行器
+constexpr uint64_t TILING_KEY_BI_CORE_SS_TWOWAY = 3112; // BI_CORE_SS fp32（yGm 直读，零 cast）
+constexpr int32_t BATCH_INVARIANT_LEVEL = 3;
 
 struct BlockPara {
     int32_t blockCount = 0;
@@ -161,6 +167,9 @@ public:
 
 private:
     void TilingStrategy();
+
+    // batch 一致性（AR/lenN==1）：固定 chunk 规范树的独立 tiling 策略，旁路全部借轴启发式
+    void TilingStrategyBatchInvariant();
 
     void NGreaterCl();
 
@@ -273,6 +282,10 @@ private:
     int32_t borrowRCount_ = 1;
     int32_t borrowNCount_ = 1;
     int32_t borrowMCount_ = 1;
+    bool biMode_ = false;     // batch 一致性模式（deterministic_level==3 且连续 且 lenN==1）
+    int64_t biChunkSize_ = 0; // BI chunk = B << s（2^s 个 UB 块），f(lenR, 硬件)
+    int64_t biTailChunk_ = 0; // BI 尾 chunk 长度
+    int32_t biChunkCnt_ = 1;  // BI chunk 数 K <= coreNum
     uint64_t tilingKey_ = 0;
 
     CumsumTilingData td_;
@@ -338,6 +351,30 @@ ge::graphStatus CumsumAscendcTilingImpl::Init(const CumsumCompileInfo* compileIn
     td_.innerTd.reverse = *reverse;
 
     td_.innerTd.ubSklanskyBufSize = UB_SS_BUFFER_SIZE;
+
+    // batch 一致性模式判定：deterministic_level==3 且输入连续且 AR（lenN==1）
+    // 与 reduce_sum 的 batchInvariant 使能口径一致；非 BI 场景回退默认策略，行为零变化。
+    // stride 信息缺失时按连续处理（与存量 tiling 的隐含连续假设一致）
+    biMode_ = false;
+    if (context_->GetDeterministicLevel() == BATCH_INVARIANT_LEVEL && td_.innerTd.lenN == 1) {
+        auto xStride = context_->GetInputStride(INPUT_X_INDEX);
+        bool isContiguous = true;
+        if (xStride != nullptr && xStride->GetDimNum() == xDimNum) {
+            for (size_t i = 0; i < xDimNum; i++) {
+                if (i != xDimNum - 1) {
+                    isContiguous = (xStride->GetStride(i) == xStride->GetStride(i + 1) * xShape[i + 1]);
+                } else {
+                    isContiguous = (xStride->GetStride(i) == 1);
+                }
+                if (!isContiguous) {
+                    break;
+                }
+            }
+        }
+        biMode_ = isContiguous;
+    }
+    OP_LOGD(context_->GetNodeName(), "biMode=%d, deterministic_level=%d", biMode_ ? 1 : 0,
+            context_->GetDeterministicLevel());
     return ge::GRAPH_SUCCESS;
 }
 
@@ -345,7 +382,11 @@ ge::graphStatus CumsumAscendcTilingImpl::DoTiling()
 {
     OP_LOGD(context_->GetNodeName(), "Enter CumsumAscendcTilingImpl DoTiling");
 
-    TilingStrategy();
+    if (biMode_) {
+        TilingStrategyBatchInvariant();
+    } else {
+        TilingStrategy();
+    }
 
     FillTilingData();
 
@@ -357,7 +398,8 @@ ge::graphStatus CumsumAscendcTilingImpl::DoTiling()
             std::max(td_.innerTd.realCoreNum, td_.outerTd.coreGroupCount * td_.outerTd.coreGroupCoreNum));
     context_->SetTilingKey(tilingKey_);
     if (tilingKey_ == TILING_KEY_CORE_SS_ONEWAY || tilingKey_ == TILING_KEY_CORE_SS_TWOWAY ||
-        tilingKey_ == TILING_KEY_CORE_SS_UB_SS_ONEWAY || tilingKey_ == TILING_KEY_CORE_SS_UB_SS_TWOWAY) {
+        tilingKey_ == TILING_KEY_CORE_SS_UB_SS_ONEWAY || tilingKey_ == TILING_KEY_CORE_SS_UB_SS_TWOWAY ||
+        tilingKey_ == TILING_KEY_BI_CORE_SS_TWOWAY) {
         OP_CHECK_IF(context_->SetScheduleMode(1) != ge::GRAPH_SUCCESS,
                     OP_LOGE(context_->GetNodeName(), "Failed to set ScheduleMode!"), return ge::GRAPH_FAILED);
     }
@@ -389,6 +431,171 @@ void CumsumAscendcTilingImpl::TilingStrategy()
     CalcBufferSize();
 
     TilingStrategyOuterTd();
+}
+
+void CumsumAscendcTilingImpl::TilingStrategyBatchInvariant()
+{
+    // 空 tensor 早返（范式 T5）
+    if (td_.innerTd.lenM == 0 || td_.innerTd.lenR == 0 || td_.innerTd.lenN == 0) {
+        td_.innerTd.realCoreNum = 0;
+        return;
+    }
+
+    // 规范树参数（全 f(lenR, 硬件常数)）：
+    //   bLen   = UB 叶块长（2 幂，与现有 UB_SS 路径同源的预留公式）
+    //   s      = 使 chunk 数 K = ceil(ubCnt / 2^s) <= coreNum 的最小幂
+    //   chunk  = bLen << s；尾 chunk = lenR - (K-1)*chunk
+    // chunk 边界只依赖 lenR，M 不进任何树参数（Fenwick 分解定理保证任意 chunk 形态等价）
+    int32_t ubReserve = UB_SS_BUFFER_SIZE + UB_SS_BR_BUFF_SIZE + UB_SS_BR_IDX_BUFF_SIZE;
+    int64_t bMax = MaxForFullUb(ubSize_ - ubReserve, clSize_);
+    int64_t bLen = LastPow2(bMax);
+    if (bLen < 1) {
+        bLen = 1;
+    }
+    int64_t ubCnt = Ops::Base::CeilDiv(td_.innerTd.lenR, bLen);
+    /* chunk 数预算按行分摊：一核一 unit（M 行 × K chunk），K 上限为每行可分核数 coreNum/lenM；
+     * K==1（预算不足）由 useCoreSS 的 K>1 判定退 3012。 */
+    int64_t kBudget = Ops::Base::FloorDiv(static_cast<int64_t>(coreNum_), td_.innerTd.lenM);
+    if (kBudget < 1) {
+        /* lenM>coreNum：一核一 unit 不可行，压至 K=1，由 useCoreSS 的 M·K<=coreNum 判定退 3012 */
+        kBudget = 1;
+    }
+    /* bLen<<s 的正 int64 安全上限：int64 内最大 2 的幂为 2^62（63 触符号位 UB），
+     * bLen=2^k 时 s 上限 = 62-k */
+    constexpr int32_t INT64_MAX_POW2_EXP = 62;
+    const int32_t maxChunkShift = INT64_MAX_POW2_EXP -
+                                  static_cast<int32_t>(std::floor(std::log2(static_cast<double>(bLen))));
+    int32_t s = 0;
+    while (Ops::Base::CeilDiv(ubCnt, static_cast<int64_t>(1LL << s)) > kBudget && s < maxChunkShift) {
+        s++;
+    }
+    biChunkSize_ = bLen << s;
+    biChunkCnt_ = static_cast<int32_t>(Ops::Base::CeilDiv(td_.innerTd.lenR, biChunkSize_));
+    biTailChunk_ = td_.innerTd.lenR - (biChunkCnt_ - 1) * biChunkSize_;
+
+    // ONEWAY/TWOWAY 判定：与现有路径同构（全行 lenR + foldN），判定结果 f(lenR, dtype)
+    int64_t foldN = Ops::Base::CeilAlign(td_.innerTd.lenN * dtSizeCast_, static_cast<int64_t>(blockSize_));
+    JudgeSklanskyPatten(td_.innerTd.lenR, foldN);
+
+    // 路由条件：纯结构判定，无性能阈值。
+    //   K>1        —— R 超出单核全载，必须分核；
+    //   M·K<=coreNum —— 一核一 unit 的核数预算（CORE_SS 类结构上界）。
+    // 不设 R_EQ 拐点：执行器间 bitwise 等价（附录 B），且 K>1 时分核恒优于全行串行，
+    //   3012 仅在 K==1（结构不可分）时被选中。
+    /* dtCast 恒走 3012（同树同精度）；fp32 保留 kBudget（M·K<=coreNum 走 3112）；
+     * reverse 档禁用 CORE_SS（与紧凑 3012 有跨路径 1ulp 残差，全 M 走紧凑消除）。 */
+    bool isReverseAttr = td_.innerTd.reverse != 0;
+    bool useCoreSS = (biChunkCnt_ > 1) && (td_.innerTd.lenM * biChunkCnt_ <= static_cast<int64_t>(coreNum_)) &&
+                     !dtCast_ && !isReverseAttr;
+
+    borrowNCount_ = 1;
+    borrowMCount_ = 1;
+
+    // N=1 平凡切分
+    DoBlockSplit(td_.innerTd.lenN, 1, td_.innerTd.nBlockPara);
+    UbFullLoad(td_.innerTd.nBlockPara.blockTailFactor, td_.innerTd.nUbPara.mainCoreUbPara);
+    UbFullLoad(td_.innerTd.nBlockPara.blockTailFactor, td_.innerTd.nUbPara.tailCoreUbPara);
+
+    if (!useCoreSS) {
+        // BI_UB_SS：R 不分核，全行切 UB；M 行均匀分核。TWOWAY 的 ubFactor 取 UB 缓冲可容纳的
+        // 折叠后 R 段（2 幂，与存量 1012 的 rFactor 同式），非叶块 bLen；Fenwick 等价性对任意 2 幂成立。
+        int64_t ubFactorR = bLen;
+        if (ssPatten_ == SklanskyPattern::SS_TWOWAY) {
+            /* N=1（biMode 判定保证）紧凑窗口预算：双缓冲常驻 perElem = dt+4B
+             * （oriFold=dt/elem + fold 桥=4B/elem），紧凑 kernel 接管 3012。
+             * fp16 U=32768 / fp32 U=16384。 */
+            int64_t perElemBytes = dtSize_ + sizeof(float);
+            int64_t totalBuffSize = static_cast<int64_t>(ubSize_) - UB_SS_BUFFER_SIZE - UB_SS_BR_IDX_BUFF_SIZE -
+                                    UB_SS_BR_BUFF_SIZE - vRegSize_ - blockSize_ - TWOWAY_BUFF_SIZE -
+                                    TWOWAY_IDX_BUFF_SIZE;
+            ubFactorR = LastPow2(Ops::Base::FloorDiv(totalBuffSize, perElemBytes));
+        }
+        DoBlockSplit(td_.innerTd.lenR, 1, td_.innerTd.rBlockPara);
+        DoUbSplit(td_.innerTd.rBlockPara.blockTailFactor, ubFactorR, td_.innerTd.rUbPara.mainCoreUbPara);
+        DoUbSplit(td_.innerTd.rBlockPara.blockTailFactor, ubFactorR, td_.innerTd.rUbPara.tailCoreUbPara);
+        DoBlockSplit(td_.innerTd.lenM, coreNum_, td_.innerTd.mBlockPara);
+        if (td_.innerTd.mBlockPara.blockCount > 1) {
+            DoUbSplit(td_.innerTd.mBlockPara.blockFactor, 1, td_.innerTd.mUbPara.mainCoreUbPara);
+            DoUbSplit(td_.innerTd.mBlockPara.blockTailFactor, 1, td_.innerTd.mUbPara.tailCoreUbPara);
+        } else {
+            UbFullLoad(td_.innerTd.mBlockPara.blockFactor, td_.innerTd.mUbPara.mainCoreUbPara);
+            UbFullLoad(td_.innerTd.mBlockPara.blockTailFactor, td_.innerTd.mUbPara.tailCoreUbPara);
+        }
+        borrowRCount_ = 1;
+        tilingKey_ = (ssPatten_ == SklanskyPattern::SS_ONEWAY) ? TILING_KEY_BI_UB_SS_ONEWAY :
+                                                                 TILING_KEY_BI_UB_SS_TWOWAY;
+        td_.innerTd.realCoreNum = td_.innerTd.mBlockPara.blockCount;
+    } else {
+        // BI_CORE_SS：均匀 chunk 分核（一核一行一 chunk），chunk 内切 UB；
+        // TWOWAY 的 ubFactor 取缓冲派生 rFactor（2 幂），chunk 小于单块时自然退化为分核不切 UB。
+        td_.innerTd.rBlockPara.blockCount = biChunkCnt_;
+        td_.innerTd.rBlockPara.blockFactor = biChunkSize_;
+        td_.innerTd.rBlockPara.blockTailFactor = biTailChunk_;
+        int64_t coreUbFactorR = bLen;
+        if (ssPatten_ == SklanskyPattern::SS_TWOWAY) {
+            int64_t alignN = vRegSize_; /* dtCast 已被 useCoreSS 条件锁出本分支，恒 fp32 直读 */
+            alignN += td_.innerTd.lenN * foldCount_ * dtSizeCast_;
+            int64_t totalBuffSize = static_cast<int64_t>(ubSize_ - UB_SS_BUFFER_SIZE - UB_SS_BR_IDX_BUFF_SIZE -
+                                                         UB_SS_BR_BUFF_SIZE - vRegSize_ - blockSize_ -
+                                                         TWOWAY_BUFF_SIZE - TWOWAY_IDX_BUFF_SIZE);
+            int64_t rMaxForFullUb = Ops::Base::FloorDiv(totalBuffSize, alignN);
+            rMaxForFullUb *= foldCount_;
+            coreUbFactorR = LastPow2(rMaxForFullUb);
+        }
+        DoUbSplit(biChunkSize_, coreUbFactorR, td_.innerTd.rUbPara.mainCoreUbPara);
+        DoUbSplit(biTailChunk_, coreUbFactorR, td_.innerTd.rUbPara.tailCoreUbPara);
+        td_.innerTd.mBlockPara.blockCount = static_cast<int32_t>(td_.innerTd.lenM);
+        td_.innerTd.mBlockPara.blockFactor = 1;
+        td_.innerTd.mBlockPara.blockTailFactor = 1;
+        UbFullLoad(1, td_.innerTd.mUbPara.mainCoreUbPara);
+        UbFullLoad(1, td_.innerTd.mUbPara.tailCoreUbPara);
+        borrowRCount_ = biChunkCnt_;
+        // AR 下 ONEWAY 不可达（JudgeSklanskyPatten 恒 TWOWAY）。dtCast 已被锁出本
+        // 分支（恒 3012），此处仅 fp32 到达，固定 3112（yGm 直读零 cast）。
+        tilingKey_ = TILING_KEY_BI_CORE_SS_TWOWAY;
+        td_.innerTd.realCoreNum = static_cast<int32_t>(td_.innerTd.lenM) * biChunkCnt_;
+    }
+
+    // TWOWAY 折叠参数：按各核实际 ubFactor DoFold（ubFactor 为缓冲派生 2 幂，
+    // foldCount≥1 与 kernel 期望一致，块布局只依赖 lenR 与硬件）
+    if (ssPatten_ == SklanskyPattern::SS_TWOWAY) {
+        FoldPara& mainMain = td_.innerTd.mainCoreMainUbFoldPara;
+        FoldPara& mainTail = td_.innerTd.mainCoreTailUbFoldPara;
+        FoldPara& tailMain = td_.innerTd.tailCoreMainUbFoldPara;
+        FoldPara& tailTail = td_.innerTd.tailCoreTailUbFoldPara;
+        // DoUbSplit 在 ubCount==1 时置 ubFactor=0，fold 输入取 max(ubFactor, ubTailFactor)
+        int64_t mainUbForFold = td_.innerTd.rUbPara.mainCoreUbPara.ubFactor > 0 ?
+                                    td_.innerTd.rUbPara.mainCoreUbPara.ubFactor :
+                                    td_.innerTd.rUbPara.mainCoreUbPara.ubTailFactor;
+        int64_t tailUbForFold = td_.innerTd.rUbPara.tailCoreUbPara.ubFactor > 0 ?
+                                    td_.innerTd.rUbPara.tailCoreUbPara.ubFactor :
+                                    td_.innerTd.rUbPara.tailCoreUbPara.ubTailFactor;
+        DoFold(mainUbForFold, foldN, mainMain.foldCount, mainMain.foldLen);
+        mainMain.sklanskyIter = std::log2(mainMain.foldLen);
+        tailMain = mainMain;
+        DoFold(td_.innerTd.rUbPara.mainCoreUbPara.ubTailFactor, foldN, mainTail.foldCount, mainTail.foldLen);
+        mainTail.sklanskyIter = std::log2(mainTail.foldLen);
+        DoFold(tailUbForFold, foldN, tailTail.foldCount, tailTail.foldLen);
+        tailTail.sklanskyIter = std::log2(tailTail.foldLen);
+        if (mainTail.foldLen == 0) {
+            mainTail = mainMain;
+        }
+        if (tailTail.foldLen == 0) {
+            tailTail = tailMain;
+        }
+    }
+
+    CalcBufferSize();
+    if (useCoreSS) {
+        // stage-2（核间 Sklansky 传播）参数派生：输入 borrowRCount_(=K) 与 rBlockPara(=chunk)，
+        // 公式与现有 TilingStrategyOuterTd 相同，输出只依赖 lenR；
+        // BI 分支内部使用 coreGroupCount=lenM / coreGroupCoreNum=K 的一核一 unit 映射
+        TilingStrategyOuterTd();
+    }
+    OP_LOGI(context_->GetNodeName(),
+            "BI tiling: lenM:%ld, lenR:%ld, bLen:%ld, chunk:%ld, K:%d, tailChunk:%ld, useCoreSS:%d, key:%lu",
+            td_.innerTd.lenM, td_.innerTd.lenR, bLen, biChunkSize_, biChunkCnt_, biTailChunk_, useCoreSS ? 1 : 0,
+            tilingKey_);
 }
 
 void CumsumAscendcTilingImpl::NGreaterCl()
@@ -883,19 +1090,31 @@ void CumsumAscendcTilingImpl::CalcBufferSize()
             break;
         }
         case TILING_KEY_UB_SS_ONEWAY:
-        case TILING_KEY_CORE_SS_UB_SS_ONEWAY: {
+        case TILING_KEY_CORE_SS_UB_SS_ONEWAY:
+        case TILING_KEY_BI_UB_SS_ONEWAY: {
             td_.innerTd.ubSklanskyBufSize = UB_SS_BUFFER_SIZE;
             td_.innerTd.xBufSize = CalcXBufSize(ubSize_ - td_.innerTd.ubSklanskyBufSize - UB_SS_BR_IDX_BUFF_SIZE -
                                                 UB_SS_BR_BUFF_SIZE);
             break;
         }
         case TILING_KEY_UB_SS_TWOWAY:
-        case TILING_KEY_CORE_SS_UB_SS_TWOWAY: {
+        case TILING_KEY_CORE_SS_UB_SS_TWOWAY:
+        case TILING_KEY_BI_UB_SS_TWOWAY:
+        case TILING_KEY_BI_CORE_SS_TWOWAY: {
             td_.innerTd.ubSklanskyBufSize = UB_SS_BUFFER_SIZE;
             td_.innerTd.xUnfoldBufSize = CalcXUnfoldBufSize();
-            td_.innerTd.xBufSize = CalcXBufSize(ubSize_ - td_.innerTd.ubSklanskyBufSize - UB_SS_BR_IDX_BUFF_SIZE -
-                                                UB_SS_BR_BUFF_SIZE - td_.innerTd.xUnfoldBufSize - vRegSize_ -
-                                                TWOWAY_BUFF_SIZE - TWOWAY_IDX_BUFF_SIZE);
+            if (biMode_ && tilingKey_ == TILING_KEY_BI_UB_SS_TWOWAY && td_.innerTd.lenN == 1) {
+                /* N=1 紧凑布局：xBuf 必须装下最大 UB 窗口整段原始数据
+                 * max(ubFactor, ubTailFactor)×dt。 */
+                int64_t maxUb = std::max(
+                    {td_.innerTd.rUbPara.mainCoreUbPara.ubFactor, td_.innerTd.rUbPara.mainCoreUbPara.ubTailFactor,
+                     td_.innerTd.rUbPara.tailCoreUbPara.ubFactor, td_.innerTd.rUbPara.tailCoreUbPara.ubTailFactor});
+                td_.innerTd.xBufSize = Ops::Base::CeilAlign(static_cast<int32_t>(maxUb * dtSize_), blockSize_);
+            } else {
+                td_.innerTd.xBufSize = CalcXBufSize(ubSize_ - td_.innerTd.ubSklanskyBufSize - UB_SS_BR_IDX_BUFF_SIZE -
+                                                    UB_SS_BR_BUFF_SIZE - td_.innerTd.xUnfoldBufSize - vRegSize_ -
+                                                    TWOWAY_BUFF_SIZE - TWOWAY_IDX_BUFF_SIZE);
+            }
             break;
         }
         default: {
@@ -953,7 +1172,8 @@ int32_t CumsumAscendcTilingImpl::CalcUnfoldN(UbPara& ubPara)
 void CumsumAscendcTilingImpl::TilingStrategyOuterTd()
 {
     if (tilingKey_ != TILING_KEY_CORE_SS_ONEWAY && tilingKey_ != TILING_KEY_CORE_SS_TWOWAY &&
-        tilingKey_ != TILING_KEY_CORE_SS_UB_SS_ONEWAY && tilingKey_ != TILING_KEY_CORE_SS_UB_SS_TWOWAY) {
+        tilingKey_ != TILING_KEY_CORE_SS_UB_SS_ONEWAY && tilingKey_ != TILING_KEY_CORE_SS_UB_SS_TWOWAY &&
+        tilingKey_ != TILING_KEY_BI_CORE_SS_TWOWAY) {
         return;
     }
 
@@ -966,8 +1186,15 @@ void CumsumAscendcTilingImpl::TilingStrategyOuterTd()
                                                0 :
                                                Ops::Base::FloorDiv(vRegSize_ * CONST_3 / dtSizeCast_,
                                                                    td_.innerTd.nUbPara.tailCoreUbPara.ubTailFactor);
-    td_.outerTd.coreGroupCount = static_cast<int32_t>(td_.innerTd.lenM) * borrowNCount_;
-    td_.outerTd.coreGroupCoreNum = Ops::Base::FloorDiv(coreNum_, td_.outerTd.coreGroupCount);
+    if (tilingKey_ == TILING_KEY_BI_CORE_SS_TWOWAY) {
+        // BI 一核一 unit 映射：blockIdx = m*K + k（M·K<=coreNum 由路由保证），
+        // stage-2 的核分解（mCoreOffset=blockIdx/coreGroupCoreNum）依赖 coreGroupCoreNum==K
+        td_.outerTd.coreGroupCount = static_cast<int32_t>(td_.innerTd.lenM);
+        td_.outerTd.coreGroupCoreNum = biChunkCnt_;
+    } else {
+        td_.outerTd.coreGroupCount = static_cast<int32_t>(td_.innerTd.lenM) * borrowNCount_;
+        td_.outerTd.coreGroupCoreNum = Ops::Base::FloorDiv(coreNum_, td_.outerTd.coreGroupCount);
+    }
     td_.outerTd.addFactorBufferSize = vRegSize_ * CONST_3;
     td_.outerTd.addFactorOffsetBufferSize = ADD_FACTOR_OFFSET_MAX;
     if (dtCast_) {

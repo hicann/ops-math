@@ -23,6 +23,17 @@
 #include "cumsum_oneway_sklansky.h"
 
 namespace Cumsum {
+
+/* TWOWAY 型 inner 判定 trait：通用 CumsumTwowaySklansky 与 3012 紧凑特化
+ * CumsumBiTwowayArSklansky（cumsum_bi_twoway_ar.h，N=1 AR）都走 TWOWAY 装配
+ * （SetTwowaySklanskyParam/SkalanskyBetweenUb/VfBetweenUbAddTwoway 家族）。
+ * 紧凑 inner 在其头文件内对本 trait 加特化（含头顺序无环）。 */
+template <typename T>
+struct IsTwowayInner : std::false_type {};
+
+template <typename DataType, typename PromoteDataType>
+struct IsTwowayInner<CumsumTwowaySklansky<DataType, PromoteDataType>> : std::true_type {};
+
 using namespace AscendC;
 
 struct UbSklanskyInitData {
@@ -128,7 +139,7 @@ __aicore__ inline void CumsumUbSklansky<DataType, PromoteDataType, UbInner>::Bas
 {
     CumsumBase<DataType>::Init(x, y);
     initData_ = initData;
-    if constexpr (IsSameType<UbInner, CumsumTwowaySklansky<DataType, PromoteDataType>>::value) {
+    if constexpr (IsTwowayInner<UbInner>::value) {
         TwowaySklanskyInitData twowaySklanskyInitData;
         twowaySklanskyInitData.lenM = initData_.lenM;
         twowaySklanskyInitData.lenR = initData_.lenR;
@@ -253,7 +264,7 @@ __aicore__ inline void CumsumUbSklansky<DataType, PromoteDataType, UbInner>::Bas
 {
     Duplicate<PromoteDataType>(memoBuffer_, 0, initData_.memoLen * initData_.perMemoSize);
     for (int32_t i = 0; i < initData_.ubCountR; i++) {
-        if constexpr (IsSameType<UbInner, CumsumTwowaySklansky<DataType, PromoteDataType>>::value) {
+        if constexpr (IsTwowayInner<UbInner>::value) {
             TwowaySklanskyProcessData twowaySklanskyProcessData;
             SetTwowaySklanskyParam(i, twowaySklanskyProcessData);
             ubInner_.BaseProcessPre(twowaySklanskyProcessData);
@@ -448,7 +459,7 @@ __aicore__ inline void CumsumUbSklansky<DataType, PromoteDataType, UbInner>::Ska
     __ubuf__ PromoteDataType* srcPtr = (__ubuf__ PromoteDataType*)computeBuffer.GetPhyAddr();
 
     uint32_t cacheStartInRes = 0;
-    if constexpr (IsSameType<UbInner, CumsumTwowaySklansky<DataType, PromoteDataType>>::value) {
+    if constexpr (IsTwowayInner<UbInner>::value) {
         uint32_t nLen = initData_.ubFactorN;
         cacheStartInRes = (initData_.ubFactorR - 1) * nLen; // compact之后的最后一行第一个元素的index
         if (initData_.reverse) {
@@ -461,7 +472,7 @@ __aicore__ inline void CumsumUbSklansky<DataType, PromoteDataType, UbInner>::Ska
         }
     }
     for (uint16_t j = 0; j < initData_.memoLen; ++j) {
-        if constexpr (IsSameType<UbInner, CumsumTwowaySklansky<DataType, PromoteDataType>>::value) {
+        if constexpr (IsTwowayInner<UbInner>::value) {
             VfBetweenUbAddTwoway(dstPtr, srcPtr, cacheStartInRes, j);
         } else {
             VfBetweenUbAddOneway(dstPtr, srcPtr, cacheStartInRes, j);
@@ -472,7 +483,7 @@ __aicore__ inline void CumsumUbSklansky<DataType, PromoteDataType, UbInner>::Ska
         }
 
         if (j == cacheID) {
-            if constexpr (IsSameType<UbInner, CumsumTwowaySklansky<DataType, PromoteDataType>>::value) {
+            if constexpr (IsTwowayInner<UbInner>::value) {
                 VfBetweenUbWriteMemTwoway(dstPtr, srcPtr, cacheStartInRes, j);
             } else {
                 VfBetweenUbWriteMemOneway(dstPtr, srcPtr, cacheStartInRes, j);
