@@ -41,7 +41,7 @@ aclnnStatus aclnnMaskedScaleGetWorkspaceSize(
   const aclTensor*     self,
   const aclTensor*     mask,
   float                scale,
-  aclTensor*           y,
+  aclTensor*           out,
   uint64_t*            workspaceSize,
   aclOpExecutor**      executor)
 ```
@@ -111,7 +111,7 @@ aclnnStatus aclnnMaskedScale(
       <td>-</td>
     </tr>
     <tr>
-      <td>y</td>
+      <td>out</td>
       <td>输出</td>
       <td>公式中的out。</td>
       <td>数据类型和shape需要与self一致。</td>
