@@ -36,7 +36,6 @@ static graphStatus GroupedBiasAddGradHostExecFunc(OpExecuteContext* host_api_ctx
     OP_CHECK_IF(attrs == nullptr, OP_LOGE("aclnnfallback", "attrs is null"), return ge::GRAPH_FAILED);
 
     const int64_t* groupIdxType = attrs->GetAttrPointer<int64_t>(0);
-    OP_CHECK_IF(groupIdxType == nullptr, OP_LOGE("aclnnfallback", "groupIdxType is null"), return GRAPH_FAILED);
 
     OP_CHECK_IF(groupIdxType == nullptr, OP_LOGE("aclnnfallback", "groupIdxType is null"), return GRAPH_FAILED);
 
