@@ -48,7 +48,7 @@ aclnnStatus aclnnInplaceUniformTensor(
   void*             workspace,
   uint64_t          workspace_size,
   aclOpExecutor*    executor,
-  const aclrtStream stream)
+  aclrtStream       stream)
 ```
 
 ## aclnnInplaceUniformTensorGetWorkspaceSize
