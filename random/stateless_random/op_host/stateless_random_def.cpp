@@ -20,8 +20,9 @@ namespace ops {
 class StatelessRandom : public OpDef {
 public:
     const std::vector<ge::DataType> int64Type = {ge::DT_INT64};
-    const std::vector<ge::DataType> outputTypes = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16, ge::DT_INT32,
-        ge::DT_INT64, ge::DT_INT16, ge::DT_INT8, ge::DT_UINT8, ge::DT_BOOL};
+    const std::vector<ge::DataType> outputTypes = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16,
+                                                   ge::DT_INT32, ge::DT_INT64,   ge::DT_INT16,
+                                                   ge::DT_INT8,  ge::DT_UINT8,   ge::DT_BOOL};
     const std::vector<ge::Format> baseFormat = {ge::FORMAT_ND};
 
     explicit StatelessRandom(const char* name) : OpDef(name)
@@ -68,6 +69,7 @@ public:
 
         this->Attr("dtype").AttrType(OPTIONAL).Int(0);
         this->AICore().AddConfig("ascend950");
+        this->AICore().AddConfig("ascend350");
     }
 };
 

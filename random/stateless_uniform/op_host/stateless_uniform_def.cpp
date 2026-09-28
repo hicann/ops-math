@@ -29,10 +29,13 @@ public:
 
     explicit StatelessUniform(const char* name) : OpDef(name)
     {
-        randomdef::RandomDtypeFmtGen gen({
-            {"seedType", seedType}, {"fromType", fromType}, {"shapeType", shapeType},
-            {"offsetType", offsetType}, {"toType", toType}, {"outType", outType},
-            {"baseFormat", baseFormat}});
+        randomdef::RandomDtypeFmtGen gen({{"seedType", seedType},
+                                          {"fromType", fromType},
+                                          {"shapeType", shapeType},
+                                          {"offsetType", offsetType},
+                                          {"toType", toType},
+                                          {"outType", outType},
+                                          {"baseFormat", baseFormat}});
         const auto baseFormatSeq = gen.GetSequence<ge::Format>("baseFormat");
 
         this->Input("shape")
@@ -80,6 +83,7 @@ public:
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true);
         this->AICore().AddConfig("ascend950");
+        this->AICore().AddConfig("ascend350");
     }
 };
 

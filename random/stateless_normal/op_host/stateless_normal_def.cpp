@@ -28,10 +28,13 @@ public:
 
     explicit StatelessNormal(const char* name) : OpDef(name)
     {
-        randomdef::RandomDtypeFmtGen gen({
-            {"seedType", seedType}, {"meanType", meanType}, {"shapeType", shapeType},
-            {"offsetType", offsetType}, {"stdevType", stdevType}, {"outType", outType},
-            {"baseFormat", baseFormat}});
+        randomdef::RandomDtypeFmtGen gen({{"seedType", seedType},
+                                          {"meanType", meanType},
+                                          {"shapeType", shapeType},
+                                          {"offsetType", offsetType},
+                                          {"stdevType", stdevType},
+                                          {"outType", outType},
+                                          {"baseFormat", baseFormat}});
         const auto baseFormatSeq = gen.GetSequence<ge::Format>("baseFormat");
 
         this->Input("shape")
@@ -71,6 +74,7 @@ public:
 
         this->Attr("dtype").AttrType(OPTIONAL).Int(0);
         this->AICore().AddConfig("ascend950");
+        this->AICore().AddConfig("ascend350");
     }
 };
 
