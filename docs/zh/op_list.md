@@ -3247,6 +3247,16 @@
     <td>将输入张量input_value的内容赋值给目标张量var中由begin、end、strides指定的切片位置，切片以外的区域保持var原值不变（in-place语义）。</td>
   </tr>
   <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/parallel_concat/README.md">parallel_concat</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>沿第一维拼接N个首维大小为1的同形张量，输出shape为[N, d_1..d_k]，数据逐比特搬运。</td>
+  </tr>
+  <tr>
     <td>random</td>
     <td><a href="../../random/drop_out_do_mask/README.md">drop_out_do_mask</a></td>
     <td>√</td>
