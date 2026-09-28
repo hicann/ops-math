@@ -42,7 +42,7 @@ git clone -b 9.0.0 https://gitcode.com/cann/ops-math.git
 
 ## 📖Learning Tutorials
 
-- [Quick Start](docs/QUICKSTART_en.md): Quickly experience the project's core basic capabilities from scratch, covering source code compilation, operator invocation, development, and debugging operations.
+- [Quick Start](QUICKSTART_en.md): Quickly experience the project's core basic capabilities from scratch, covering source code compilation, operator invocation, development, and debugging operations.
 - [Advanced Tutorials](docs/README_en.md#advanced-tutorials): For in-depth understanding of project compilation deployment, operator invocation, development, debugging, and tuning capabilities, refer to the documentation center for detailed guidance.
 
 ## 💬Related Information

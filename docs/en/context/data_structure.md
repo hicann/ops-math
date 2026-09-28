@@ -2,7 +2,7 @@
 
 This chapter provides basic data structures that CANN operator API invocation depends on. **Developers do not need to focus on their internal implementation, just use them directly**.
 
-Note that this basic data structure can be created through "Public Interface" in opbase library, such as aclCreateTensor, etc. For details, please refer to [Public Interface](https://gitcode.com/cann/opbase/blob/master/docs/zh/api/nnopbase/aclnn/00_aclnn_api_list.md).
+Note that this basic data structure can be created through "Public Interface" in opbase library, such as aclCreateTensor, etc.
 
 - **aclTensor**
 

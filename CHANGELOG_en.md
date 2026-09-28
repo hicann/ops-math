@@ -9,7 +9,7 @@ Release date: 2025-12-30
 The first Beta version of ops-math, v8.5.0-beta.1, has been released.
 This version introduces multiple new features, bug fixes, and performance improvements, and is currently in the testing phase.
 We welcome community feedback to further improve the stability and functionality of ops-math.
-For usage instructions, refer to the [official documentation](https://gitcode.com/cann/ops-math/blob/master/README_en.md).
+For usage instructions, refer to the [official documentation](README_en.md).
 
 ### 🔗 Version Address
 

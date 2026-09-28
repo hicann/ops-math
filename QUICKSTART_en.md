@@ -4,7 +4,7 @@
 
 This guide aims to help you quickly get started with CANN and the `ops-math` operator repository. To help you quickly understand the entire operator development process, the **AddExample** operator is used as the practice object. The operator source code is located in `ops-math/examples/add_example`. The operation process is as follows:
 
-1. **[Prerequisites](../README_en.md)**: Refer to the project README to complete environment preparation and source code download. This section will not be repeated here. For quick start scenarios, **CANNLab or Docker deployment is recommended** for simple operation.
+1. **[Prerequisites](./README_en.md)**: Refer to the project README to complete environment preparation and source code download. This section will not be repeated here. For quick start scenarios, **CANNLab or Docker deployment is recommended** for simple operation.
 
    > **Note**: CANNLab or Docker environments provide the latest CANN package by default. If you need to experience the latest capabilities of the master branch, you can manually set up the environment.
 
@@ -47,7 +47,7 @@ The purpose of this stage is to **quickly experience the project standard proces
 
 This guide defaults to **single operator compilation**: only build the target operator, with short compilation time, suitable for quick start and daily development. General command format: `bash build.sh --pkg --soc=<chip version> --ops=<operator name>`.
 
-> If you need to compile the entire operator library (omit `--ops`), refer to [Source Code Build Guide · Full Compilation (ops-math package)](zh/install/compile.md#ops-math包).
+> If you need to compile the entire operator library (omit `--ops`), refer to [Source Code Build Guide · Full Compilation (ops-math package)](docs/en/install/compile.md#ops-math-package).
 > **Note**: Before compiling, ensure that the CANN environment variables are configured. Otherwise, compilation may fail due to not finding `ASCEND_HOME_PATH`. For default path installation, execute:
 >
 > ```bash
@@ -262,4 +262,4 @@ int main() {
 
 ## Conclusion
 
-After experiencing the above process, you have basically completed the operator development process. If you want to further contribute new operators or learn more advanced development, debugging, and other skills, visit this project's README to learn [Advanced Tutorials](../README_en.md#learning-tutorials) and [Contribution Guide](../README_en.md#related-information).
+After experiencing the above process, you have basically completed the operator development process. If you want to further contribute new operators or learn more advanced development, debugging, and other skills, visit this project's README to learn [Advanced Tutorials](./README_en.md#learning-tutorials) and [Contribution Guide](./README_en.md#related-information).
