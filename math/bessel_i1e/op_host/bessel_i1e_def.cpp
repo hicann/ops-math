@@ -37,7 +37,7 @@ public:
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true)
-            .ExtendCfgInfo("opFile.value", "bessel_i1e_apt");
+            .ExtendCfgInfo("opFile.value", "bessel_i1e");
         this->AICore().AddConfig("ascend910b", aiCoreConfig);
         this->AICore().AddConfig("ascend910_93", aiCoreConfig);
         this->AICore().AddConfig("ascend950", aiCoreConfig);

@@ -13,19 +13,17 @@ Copyright (c) 2026 Huawei Technologies Co., Ltd.
 | <term>Ascend 950PR&950DT系列产品</term>          |    √     |
 | <term>Atlas A3系列产品</term>    |    √     |
 | <term>Atlas A2系列产品</term>    |    √     |
-| <term>Atlas 200I/500 A2推理产品</term>             |    ×     |
-| <term>Atlas推理系列产品</term>                       |    ×     |
-| <term>Atlas训练系列产品</term>                       |    ×     |
+| <term>Atlas 200I/500 A2推理产品</term>             |    √     |
+| <term>Atlas推理系列产品</term>                       |    √     |
+| <term>Atlas训练系列产品</term>                       |    √     |
 
 ## 功能说明
 
-- 算子功能：计算指数缩放的第一阶修正贝塞尔函数。
-
-- 计算公式：
+- 算子功能：计算指数缩放的第一阶修正贝塞尔函数，计算公式为：
 
 $$out_i = e^{-|input_i|} \cdot I_1(input_i)$$
 
-其中 $I_1(x)$ 是第一阶修正贝塞尔函数。指数缩放因子 $e^{-|x|}$ 使得函数在大参数值时数值稳定。
+其中$I_1(x)$是第一阶修正贝塞尔函数。指数缩放因子$e^{-|x|}$使得函数在大参数值时数值稳定。
 
 ## 参数说明
 
@@ -63,7 +61,10 @@ $$out_i = e^{-|input_i|} \cdot I_1(input_i)$$
 
 ## 约束说明
 
-无
+- 输出的数据类型和Shape由框架根据输入推导，数据格式为ND。
+- 支持0维标量、空Tensor和动态Shape，Tensor维度范围为0～8维。
+- 非连续Tensor输入由框架自动转换为连续Tensor后执行。
+- 输入为FLOAT16或BF16时，算子内部提升为FLOAT计算，输出再转换回输入数据类型。
 
 ## 调用说明
 

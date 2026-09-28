@@ -6,14 +6,6 @@
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
- *
- * Optimized bessel_i1e kernel - exp(-|x|) Taylor 9 terms -> 13 terms
- *
- * Key change: exp(-|x|/4) Taylor series from 9 terms to 13 terms
- * Expected improvement: max error from 2.6e-6 to 6.1e-10 (4000x)
- *
- * Uses loop-based Horner evaluation to avoid deep nesting that
- * the Ascend C compiler cannot handle.
  */
 
 #ifndef BESSEL_I1E_H
@@ -22,7 +14,7 @@
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
 #include "bessel_i1e_tiling_data.h"
-#include "bessel_i1e_tiling_key.h"
+#include <type_traits>
 
 namespace NsBesselI1e {
 
@@ -30,11 +22,6 @@ using namespace AscendC;
 
 constexpr float SEGMENT_POINT = 3.75f;
 constexpr float INV_SEGMENT = 0.26666666666666666f;
-constexpr float QUARTER = 0.25f;
-
-constexpr float EXP_COEFF[13] = {1.0f,        1.0f,        0.5f,        0.16666667f, 0.04166667f,
-                                 0.00833333f, 0.00138889f, 0.00019841f, 0.00002480f, 2.75573e-6f,
-                                 2.75573e-7f, 2.50521e-8f, 2.08768e-9f};
 
 constexpr float itrBefore[7] = {0.5000000008f, 0.8789061535f, 0.5149860539f, 0.1508606731f,
                                 0.0265652742f, 0.0030351394f, 0.0003173337f};
@@ -44,190 +31,260 @@ constexpr float itrAfter[9] = {0.3989422302f, -0.0398905760f, -0.0034090932f, 0.
 
 template <typename T>
 class BesselI1e {
-    static constexpr int32_t BUFFER_NUM = 2;
+    static constexpr int BUFFER_NUM = 2;
+    static constexpr bool NEED_CAST = !std::is_same_v<T, float>;
+    static constexpr int64_t CMP_ALIGN = 64;
+    static constexpr int64_t MASK_ELEM_PER_FLOAT = 8;
+    static constexpr int64_t MASK_ALIGN = 32;
 
 public:
-    __aicore__ inline BesselI1e(){};
+    __aicore__ inline BesselI1e() {}
 
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const BesselI1eTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
     __aicore__ inline void CopyIn(int64_t progress, int64_t currentNum);
+    __aicore__ inline void Compute(LocalTensor<float> xInput, LocalTensor<float> yLocal, int64_t count);
     __aicore__ inline void CopyOut(int64_t progress, int64_t currentNum);
-    __aicore__ inline void Compute(int64_t currentNum);
+    __aicore__ inline void ProcessFp32(int64_t loopCount);
+    __aicore__ inline void ProcessFp16Bf16(int64_t loopCount);
 
-private:
-    TPipe pipe;
-    TQue<QuePosition::VECIN, BUFFER_NUM> inputQueueX;
-    TQue<QuePosition::VECOUT, BUFFER_NUM> outputQueueY;
-    TQue<QuePosition::VECOUT, BUFFER_NUM> tmpQueue1;
+    TPipe pipe_;
+    TQue<TPosition::VECIN, BUFFER_NUM> inputQueue_;
+    TQue<TPosition::VECOUT, BUFFER_NUM> outputQueue_;
 
-    GlobalTensor<T> inputGMX;
-    GlobalTensor<T> outputGMY;
+    GlobalTensor<T> inputGM_;
+    GlobalTensor<T> outputGM_;
+
+    TBuf<TPosition::VECCALC> absBuf_;
+    TBuf<TPosition::VECCALC> tBuf_;
+    TBuf<TPosition::VECCALC> t2Buf_;
+    TBuf<TPosition::VECCALC> polyBuf_;
+    TBuf<TPosition::VECCALC> scratchBuf_;
+    TBuf<TPosition::VECCALC> smallBuf_;
+    TBuf<TPosition::VECCALC> largeBuf_;
+    TBuf<TPosition::VECCALC> tmpBuf_;
+    TBuf<TPosition::VECCALC> maskBuf_;
+
+    TBuf<TPosition::VECCALC> initBuf_;
+    TBuf<TPosition::VECCALC> castInBuf_;
+    TBuf<TPosition::VECCALC> resultFp32Buf_;
 
     int64_t blockLength_ = 0;
     int64_t ubLength_ = 0;
+    int64_t alignedUbLength_ = 0;
 };
 
 template <typename T>
 __aicore__ inline void BesselI1e<T>::Init(GM_ADDR x, GM_ADDR y, const BesselI1eTilingData* tilingData)
 {
-    int64_t remainderLength = tilingData->totalNum - tilingData->blockFactor * AscendC::GetBlockIdx();
-    blockLength_ = (remainderLength > tilingData->blockFactor) ? tilingData->blockFactor : remainderLength;
+    int64_t remainder = tilingData->totalNum - tilingData->blockFactor * GetBlockIdx();
+    blockLength_ = (remainder > tilingData->blockFactor) ? tilingData->blockFactor : remainder;
     ubLength_ = tilingData->ubFactor;
 
-    inputGMX.SetGlobalBuffer((__gm__ T*)x + tilingData->blockFactor * AscendC::GetBlockIdx(), blockLength_);
-    outputGMY.SetGlobalBuffer((__gm__ T*)y + tilingData->blockFactor * AscendC::GetBlockIdx(), blockLength_);
+    alignedUbLength_ = ((ubLength_ + CMP_ALIGN - 1) / CMP_ALIGN) * CMP_ALIGN;
 
-    pipe.InitBuffer(inputQueueX, BUFFER_NUM, ubLength_ * sizeof(float));
-    pipe.InitBuffer(outputQueueY, BUFFER_NUM, ubLength_ * sizeof(float));
-    pipe.InitBuffer(tmpQueue1, BUFFER_NUM, ubLength_ * sizeof(float));
+    inputGM_.SetGlobalBuffer((__gm__ T*)x + tilingData->blockFactor * GetBlockIdx(), blockLength_);
+    outputGM_.SetGlobalBuffer((__gm__ T*)y + tilingData->blockFactor * GetBlockIdx(), blockLength_);
+
+    if constexpr (NEED_CAST) {
+        // The double-buffered input queue is only used by the FP16/BF16 path
+        // (ProcessFp16Bf16); the FP32 path streams via initBuf_ instead.
+        pipe_.InitBuffer(inputQueue_, BUFFER_NUM, alignedUbLength_ * sizeof(T));
+    }
+    pipe_.InitBuffer(outputQueue_, BUFFER_NUM, alignedUbLength_ * sizeof(T));
+
+    pipe_.InitBuffer(absBuf_, alignedUbLength_ * sizeof(float));
+    pipe_.InitBuffer(tBuf_, alignedUbLength_ * sizeof(float));
+    pipe_.InitBuffer(t2Buf_, alignedUbLength_ * sizeof(float));
+    pipe_.InitBuffer(polyBuf_, alignedUbLength_ * sizeof(float));
+    pipe_.InitBuffer(scratchBuf_, alignedUbLength_ * sizeof(float));
+    pipe_.InitBuffer(smallBuf_, alignedUbLength_ * sizeof(float));
+    pipe_.InitBuffer(largeBuf_, alignedUbLength_ * sizeof(float));
+    pipe_.InitBuffer(tmpBuf_, alignedUbLength_ * sizeof(float));
+    pipe_.InitBuffer(maskBuf_, ((alignedUbLength_ / MASK_ELEM_PER_FLOAT + MASK_ALIGN - 1) / MASK_ALIGN) * MASK_ALIGN);
+
+    if constexpr (std::is_same_v<T, float>) {
+        pipe_.InitBuffer(initBuf_, alignedUbLength_ * sizeof(float));
+    }
+
+    if constexpr (NEED_CAST) {
+        pipe_.InitBuffer(castInBuf_, alignedUbLength_ * sizeof(float));
+        pipe_.InitBuffer(resultFp32Buf_, alignedUbLength_ * sizeof(float));
+    }
 }
 
 template <typename T>
 __aicore__ inline void BesselI1e<T>::CopyIn(int64_t progress, int64_t currentNum)
 {
-    AscendC::LocalTensor<float> xLocal = inputQueueX.template AllocTensor<float>();
-    if constexpr (std::is_same_v<T, half>) {
-        AscendC::LocalTensor<half> tmpHalf = tmpQueue1.template AllocTensor<half>();
-        AscendC::DataCopyExtParams copyParams;
-        copyParams.blockCount = 1;
-        copyParams.blockLen = currentNum * sizeof(half);
-        copyParams.srcStride = 0;
-        copyParams.dstStride = 0;
-        copyParams.rsv = 0;
-        AscendC::DataCopyPad(tmpHalf, inputGMX[progress * ubLength_], copyParams, {false, 0, 0, 0});
-        for (int64_t i = 0; i < currentNum; i++) {
-            xLocal.SetValue(i, static_cast<float>(tmpHalf.GetValue(i)));
-        }
-        tmpQueue1.FreeTensor(tmpHalf);
-    } else if constexpr (std::is_same_v<T, bfloat16_t>) {
-        AscendC::LocalTensor<bfloat16_t> tmpBf16 = tmpQueue1.template AllocTensor<bfloat16_t>();
-        AscendC::DataCopyExtParams copyParams;
-        copyParams.blockCount = 1;
-        copyParams.blockLen = currentNum * sizeof(bfloat16_t);
-        copyParams.srcStride = 0;
-        copyParams.dstStride = 0;
-        copyParams.rsv = 0;
-        AscendC::DataCopyPad(tmpBf16, inputGMX[progress * ubLength_], copyParams, {false, 0, 0, 0});
-        AscendC::Cast(xLocal, tmpBf16, AscendC::RoundMode::CAST_NONE, currentNum);
-        tmpQueue1.FreeTensor(tmpBf16);
-    } else {
-        AscendC::DataCopyExtParams copyParams;
-        copyParams.blockCount = 1;
-        copyParams.blockLen = currentNum * sizeof(float);
-        copyParams.srcStride = 0;
-        copyParams.dstStride = 0;
-        copyParams.rsv = 0;
-        AscendC::DataCopyPad(xLocal, inputGMX[progress * ubLength_], copyParams, {false, 0, 0, 0});
-    }
-    inputQueueX.EnQue(xLocal);
+    LocalTensor<T> xLocal = inputQueue_.template AllocTensor<T>();
+    DataCopyParams copyParams;
+    copyParams.blockCount = 1;
+    copyParams.blockLen = currentNum * sizeof(T);
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
+    DataCopyPad(xLocal, inputGM_[progress * ubLength_], copyParams, {false, 0, 0, 0});
+    inputQueue_.EnQue(xLocal);
 }
 
 template <typename T>
 __aicore__ inline void BesselI1e<T>::CopyOut(int64_t progress, int64_t currentNum)
 {
-    AscendC::LocalTensor<float> yLocal = outputQueueY.template DeQue<float>();
-    if constexpr (std::is_same_v<T, half>) {
-        AscendC::LocalTensor<half> tmpHalf = tmpQueue1.template AllocTensor<half>();
-        for (int64_t i = 0; i < currentNum; i++) {
-            tmpHalf.SetValue(i, static_cast<half>(yLocal.GetValue(i)));
-        }
-        AscendC::DataCopyExtParams copyParams;
-        copyParams.blockCount = 1;
-        copyParams.blockLen = currentNum * sizeof(half);
-        copyParams.srcStride = 0;
-        copyParams.dstStride = 0;
-        copyParams.rsv = 0;
-        AscendC::DataCopyPad(outputGMY[progress * ubLength_], tmpHalf, copyParams);
-        tmpQueue1.FreeTensor(tmpHalf);
-    } else if constexpr (std::is_same_v<T, bfloat16_t>) {
-        AscendC::LocalTensor<bfloat16_t> tmpBf16 = tmpQueue1.template AllocTensor<bfloat16_t>();
-        AscendC::Cast(tmpBf16, yLocal, AscendC::RoundMode::CAST_RINT, currentNum);
-        AscendC::DataCopyExtParams copyParams;
-        copyParams.blockCount = 1;
-        copyParams.blockLen = currentNum * sizeof(bfloat16_t);
-        copyParams.srcStride = 0;
-        copyParams.dstStride = 0;
-        copyParams.rsv = 0;
-        AscendC::DataCopyPad(outputGMY[progress * ubLength_], tmpBf16, copyParams);
-        tmpQueue1.FreeTensor(tmpBf16);
-    } else {
-        AscendC::DataCopyExtParams copyParams;
+    LocalTensor<T> yLocal = outputQueue_.template DeQue<T>();
+    DataCopyParams copyParams;
+    copyParams.blockCount = 1;
+    copyParams.blockLen = currentNum * sizeof(T);
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
+    DataCopyPad(outputGM_[progress * ubLength_], yLocal, copyParams);
+    outputQueue_.FreeTensor(yLocal);
+}
+
+template <typename T>
+__aicore__ inline void BesselI1e<T>::Compute(LocalTensor<float> xInput, LocalTensor<float> yLocal, int64_t count)
+{
+    LocalTensor<float> absX = absBuf_.Get<float>();
+    LocalTensor<float> t = tBuf_.Get<float>();
+    LocalTensor<float> t2 = t2Buf_.Get<float>();
+    LocalTensor<float> poly = polyBuf_.Get<float>();
+    LocalTensor<float> scratch = scratchBuf_.Get<float>();
+    LocalTensor<float> smallResult = smallBuf_.Get<float>();
+    LocalTensor<float> largeResult = largeBuf_.Get<float>();
+    LocalTensor<float> tmp = tmpBuf_.Get<float>();
+    LocalTensor<uint8_t> mask = maskBuf_.Get<uint8_t>();
+
+    int64_t n = ((count + CMP_ALIGN - 1) / CMP_ALIGN) * CMP_ALIGN;
+
+    LocalTensor<float>& result = yLocal;
+
+    Abs(absX, xInput, n);
+
+    Duplicate(t, INV_SEGMENT, n);
+    Mul(t, absX, t, n);
+    Mul(t2, t, t, n);
+
+    Duplicate(poly, itrBefore[6], n);
+    Mul(scratch, poly, t2, n);
+    Adds(poly, scratch, itrBefore[5], n);
+    Mul(scratch, poly, t2, n);
+    Adds(poly, scratch, itrBefore[4], n);
+    Mul(scratch, poly, t2, n);
+    Adds(poly, scratch, itrBefore[3], n);
+    Mul(scratch, poly, t2, n);
+    Adds(poly, scratch, itrBefore[2], n);
+    Mul(scratch, poly, t2, n);
+    Adds(poly, scratch, itrBefore[1], n);
+    Mul(scratch, poly, t2, n);
+    Adds(poly, scratch, itrBefore[0], n);
+
+    Muls(tmp, absX, -1.0f, n);
+    Exp(tmp, tmp, n);
+
+    Mul(smallResult, absX, poly, n);
+    Mul(smallResult, smallResult, tmp, n);
+
+    Duplicate(scratch, SEGMENT_POINT, n);
+    Div(t, scratch, absX, n);
+
+    Duplicate(poly, itrAfter[8], n);
+    Mul(scratch, poly, t, n);
+    Adds(poly, scratch, itrAfter[7], n);
+    Mul(scratch, poly, t, n);
+    Adds(poly, scratch, itrAfter[6], n);
+    Mul(scratch, poly, t, n);
+    Adds(poly, scratch, itrAfter[5], n);
+    Mul(scratch, poly, t, n);
+    Adds(poly, scratch, itrAfter[4], n);
+    Mul(scratch, poly, t, n);
+    Adds(poly, scratch, itrAfter[3], n);
+    Mul(scratch, poly, t, n);
+    Adds(poly, scratch, itrAfter[2], n);
+    Mul(scratch, poly, t, n);
+    Adds(poly, scratch, itrAfter[1], n);
+    Mul(scratch, poly, t, n);
+    Adds(poly, scratch, itrAfter[0], n);
+
+    Sqrt(tmp, absX, n);
+    Div(largeResult, poly, tmp, n);
+
+    Duplicate(scratch, SEGMENT_POINT, n);
+    Compare(mask, absX, scratch, CMPMODE::LT, n);
+    Select(result, mask, smallResult, largeResult, SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
+
+    Duplicate(scratch, 0.0f, n);
+    Compare(mask, xInput, scratch, CMPMODE::LT, n);
+    Muls(tmp, result, -1.0f, n);
+    Select(result, mask, tmp, result, SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
+}
+
+template <typename T>
+__aicore__ inline void BesselI1e<T>::ProcessFp32(int64_t loopCount)
+{
+    for (int64_t i = 0; i < loopCount; i++) {
+        int64_t currentNum = (i == (loopCount - 1)) ? (blockLength_ - ubLength_ * i) : ubLength_;
+        int64_t alignedCount = ((currentNum + CMP_ALIGN - 1) / CMP_ALIGN) * CMP_ALIGN;
+
+        LocalTensor<float> xFp32 = initBuf_.Get<float>();
+        Duplicate(xFp32, 0.0f, alignedCount);
+        SetFlag<HardEvent::V_MTE2>(0);
+        WaitFlag<HardEvent::V_MTE2>(0);
+        DataCopyParams copyParams;
         copyParams.blockCount = 1;
         copyParams.blockLen = currentNum * sizeof(float);
         copyParams.srcStride = 0;
         copyParams.dstStride = 0;
-        copyParams.rsv = 0;
-        AscendC::DataCopyPad(outputGMY[progress * ubLength_], yLocal, copyParams);
+        DataCopyPad(xFp32, inputGM_[i * ubLength_], copyParams, {false, 0, 0, 0});
+        SetFlag<HardEvent::MTE2_V>(0);
+        WaitFlag<HardEvent::MTE2_V>(0);
+
+        LocalTensor<float> yLocal = outputQueue_.template AllocTensor<float>();
+        Compute(xFp32, yLocal, currentNum);
+        outputQueue_.template EnQue<float>(yLocal);
+
+        CopyOut(i, currentNum);
     }
-    outputQueueY.FreeTensor(yLocal);
 }
 
 template <typename T>
-__aicore__ inline void BesselI1e<T>::Compute(int64_t currentNum)
+__aicore__ inline void BesselI1e<T>::ProcessFp16Bf16(int64_t loopCount)
 {
-    AscendC::LocalTensor<float> xLocal = inputQueueX.template DeQue<float>();
-    AscendC::LocalTensor<float> yLocal = outputQueueY.template AllocTensor<float>();
+    for (int64_t i = 0; i < loopCount; i++) {
+        int64_t currentNum = (i == (loopCount - 1)) ? (blockLength_ - ubLength_ * i) : ubLength_;
+        CopyIn(i, currentNum);
 
-    for (int64_t i = 0; i < currentNum; i++) {
-        float x = xLocal.GetValue(i);
-        float absX = (x >= 0.0f) ? x : -x;
-        float sign = (x >= 0.0f) ? 1.0f : -1.0f;
-        float result;
+        LocalTensor<T> xInput = inputQueue_.template DeQue<T>();
 
-        if (absX < SEGMENT_POINT) {
-            float t = absX * INV_SEGMENT;
-            float t2 = t * t;
-            float poly = itrBefore[6];
-            for (int k = 5; k >= 0; k--) {
-                poly = poly * t2 + itrBefore[k];
-            }
-            float q = absX * QUARTER;
-            float q2 = q * q;
-            float q4 = q2 * q2;
-            float q7 = q4 * q2 * q;
-            float e_lo = EXP_COEFF[6];
-            for (int k = 5; k >= 0; k--) {
-                e_lo = EXP_COEFF[k] - q * e_lo;
-            }
-            float e_hi = EXP_COEFF[12];
-            for (int k = 11; k >= 7; k--) {
-                e_hi = EXP_COEFF[k] - q * e_hi;
-            }
-            float e = e_lo - q7 * e_hi;
-            e = e * e;
-            e = e * e;
-            result = e * absX * poly;
-        } else {
-            float t = SEGMENT_POINT / absX;
-            float poly = itrAfter[8];
-            for (int k = 7; k >= 0; k--) {
-                poly = poly * t + itrAfter[k];
-            }
-            float sqrtX = sqrt(absX);
-            result = poly / sqrtX;
-        }
-        yLocal.SetValue(i, sign * result);
+        LocalTensor<float> xFp32 = castInBuf_.Get<float>();
+        int64_t alignedCount = ((currentNum + CMP_ALIGN - 1) / CMP_ALIGN) * CMP_ALIGN;
+        Duplicate(xFp32, 0.0f, alignedCount);
+        Cast<float, T>(xFp32, xInput, RoundMode::CAST_NONE, currentNum);
+
+        LocalTensor<float> resultFp32 = resultFp32Buf_.Get<float>();
+        Compute(xFp32, resultFp32, currentNum);
+
+        LocalTensor<T> yOutput = outputQueue_.template AllocTensor<T>();
+        Cast<T, float>(yOutput, resultFp32, RoundMode::CAST_ROUND, currentNum);
+        outputQueue_.template EnQue<T>(yOutput);
+
+        inputQueue_.FreeTensor(xInput);
+        CopyOut(i, currentNum);
     }
-
-    outputQueueY.template EnQue<float>(yLocal);
-    inputQueueX.FreeTensor(xLocal);
 }
 
 template <typename T>
 __aicore__ inline void BesselI1e<T>::Process()
 {
-    if (blockLength_ <= 0) {
+    if (ubLength_ == 0 || blockLength_ <= 0) {
         return;
     }
+
     int64_t loopCount = (blockLength_ + ubLength_ - 1) / ubLength_;
-    for (int64_t i = 0; i < loopCount; i++) {
-        int64_t currentNum = (i == (loopCount - 1)) ? (blockLength_ - ubLength_ * i) : ubLength_;
-        CopyIn(i, currentNum);
-        Compute(currentNum);
-        CopyOut(i, currentNum);
+
+    if constexpr (std::is_same_v<T, float>) {
+        ProcessFp32(loopCount);
+    } else {
+        ProcessFp16Bf16(loopCount);
     }
 }
 

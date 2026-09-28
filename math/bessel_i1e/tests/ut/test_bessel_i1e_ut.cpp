@@ -12,17 +12,27 @@
 
 #include <iostream>
 #include <cmath>
-#include <vector>
-#include <cassert>
 #include <cstdint>
 
-static const float kItrBefore[7] = {0.5f, 0.87890594f, 0.51498869f, 0.15084934f, 0.02658773f, 0.00301532f, 0.00032411f};
+// Test platform reference parameters (Ascend950 AIV/UB, matches tiling budget)
+constexpr int64_t UT_UB_SIZE = 248 * 1024;
+constexpr int64_t UT_CORE_NUM = 28;
+// Unit conversion and alignment constants
+constexpr int64_t BITS_PER_BYTE = 8;
+constexpr int64_t UB_BLOCK_BYTES = 256;
+constexpr int64_t FP16_TYPE_SIZE = 2;
+// Assertion tolerances per magnitude
+constexpr float UT_TOL_TIGHT = 1.0e-6f;
+constexpr float UT_TOL_NORMAL = 1.0e-4f;
+constexpr float UT_TOL_LOOSE = 1.0e-3f;
 
-static const float kItrAfter[9] = {0.39894228f, -0.03988024f, -0.00362018f, 0.00163801f, -0.01031555f,
-                                   0.02282967f, -0.02895312f, 0.01787654f,  -0.00420059f};
+static const float itrBefore[7] = {0.5f, 0.87890594f, 0.51498869f, 0.15084934f, 0.02658773f, 0.00301532f, 0.00032411f};
 
-static const float kConstLimit = 3.75f;
-static const float kInvSegment = 0.26666666666666666f;
+static const float itrAfter[9] = {0.39894228f, -0.03988024f, -0.00362018f, 0.00163801f, -0.01031555f,
+                                  0.02282967f, -0.02895312f, 0.01787654f,  -0.00420059f};
+
+static const float CONST_LIMIT = 3.75f;
+static const float INV_SEGMENT = 0.26666666666666666f;
 
 float ComputeI1eScalar(float x)
 {
@@ -30,27 +40,29 @@ float ComputeI1eScalar(float x)
     float sign = (x >= 0.0f) ? 1.0f : -1.0f;
     float result;
 
-    if (absX < kConstLimit) {
-        float t = absX * kInvSegment;
+    if (absX < CONST_LIMIT) {
+        float t = absX * INV_SEGMENT;
         float t2 = t * t;
-        float poly = kItrBefore[6];
+        float poly = itrBefore[6];
         for (int k = 5; k >= 0; k--) {
-            poly = poly * t2 + kItrBefore[k];
+            poly = poly * t2 + itrBefore[k];
         }
+        // exp(-q) Taylor series coefficients 1/n! (n = 0..7)
+        constexpr float kExpSeries[8] = {1.0f,        -1.0f,        0.5f,        -0.16666667f,
+                                         0.04166667f, -0.00833333f, 0.00138889f, -0.00019841f};
         float q = absX * 0.25f;
-        float e = 1.0f -
-                  q * (1.0f - q * (0.5f - q * (0.16666667f -
-                                               q * (0.04166667f -
-                                                    q * (0.00833333f -
-                                                         q * (0.00138889f - q * (0.00019841f - q * 0.00002480f)))))));
+        float e = kExpSeries[7];
+        for (int k = 6; k >= 0; k--) {
+            e = e * q + kExpSeries[k];
+        }
         e = e * e;
         e = e * e;
         result = e * absX * poly;
     } else {
-        float t = kConstLimit / absX;
-        float poly = kItrAfter[8];
+        float t = CONST_LIMIT / absX;
+        float poly = itrAfter[8];
         for (int k = 7; k >= 0; k--) {
-            poly = poly * t + kItrAfter[k];
+            poly = poly * t + itrAfter[k];
         }
         float sqrtX = sqrtf(absX);
         result = poly / sqrtX;
@@ -66,10 +78,10 @@ struct TilingData {
 
 void ComputeTiling(int64_t dim0, int32_t typeSize, int64_t ubSize, int64_t coreNum, TilingData& tiling)
 {
-    constexpr int64_t MIN_TILING_BITS = 32768;
-    constexpr int64_t ELEM_ALIGN = 512;
-    constexpr int64_t SINGLE_BUF_COUNT = 5;
-    constexpr int64_t DOUBLE_BUF_COUNT = 10;
+    constexpr int64_t minTilingBits = 32768;
+    constexpr int64_t elemAlign = 512;
+    constexpr int64_t singleBufCount = 5;
+    constexpr int64_t doubleBufCount = 10;
 
     tiling.totalNum = dim0;
 
@@ -79,114 +91,118 @@ void ComputeTiling(int64_t dim0, int32_t typeSize, int64_t ubSize, int64_t coreN
         return;
     }
 
-    int64_t minDtypeBits = typeSize * 8;
-    int64_t computedCoreNum = (dim0 * minDtypeBits + MIN_TILING_BITS - 1) / MIN_TILING_BITS;
-    if (computedCoreNum > coreNum)
+    int64_t minDtypeBits = typeSize * BITS_PER_BYTE;
+    int64_t computedCoreNum = (dim0 * minDtypeBits + minTilingBits - 1) / minTilingBits;
+    if (computedCoreNum > coreNum) {
         computedCoreNum = coreNum;
+    }
 
-    tiling.blockFactor = ((dim0 + computedCoreNum - 1) / computedCoreNum + ELEM_ALIGN - 1) / ELEM_ALIGN * ELEM_ALIGN;
+    tiling.blockFactor = ((dim0 + computedCoreNum - 1) / computedCoreNum + elemAlign - 1) / elemAlign * elemAlign;
 
-    int64_t useDoubleBuffer = (typeSize == 2) ? 1 : ((dim0 > 1024) ? 1 : 0);
-    int64_t bufferNum = useDoubleBuffer ? DOUBLE_BUF_COUNT : SINGLE_BUF_COUNT;
+    constexpr int64_t doubleBufThreshold = 1024;
+    int64_t useDoubleBuffer = (typeSize == FP16_TYPE_SIZE) ? 1 : ((dim0 > doubleBufThreshold) ? 1 : 0);
+    int64_t bufferNum = useDoubleBuffer ? doubleBufCount : singleBufCount;
     int64_t bufferDivisor = bufferNum * typeSize;
-    int64_t maxElemNum = (ubSize * 8) / bufferDivisor;
-    int64_t alignFactor = 256 * 8 / minDtypeBits;
+    int64_t maxElemNum = (ubSize * BITS_PER_BYTE) / bufferDivisor;
+    int64_t alignFactor = UB_BLOCK_BYTES * BITS_PER_BYTE / minDtypeBits;
     tiling.ubFactor = (maxElemNum / alignFactor) * alignFactor;
 }
 
-int passed = 0;
-int failed = 0;
+struct TestResult {
+    int passed = 0;
+    int failed = 0;
+};
 
-void Check(bool cond, const char* name)
+void Check(bool cond, const char* name, TestResult& result)
 {
     if (cond) {
         std::cout << "  [PASS] " << name << std::endl;
-        passed++;
+        result.passed++;
     } else {
         std::cout << "  [FAIL] " << name << std::endl;
-        failed++;
+        result.failed++;
     }
 }
 
-void TestGoldenFunction()
+void TestGoldenFunction(TestResult& result)
 {
     std::cout << "\n=== Golden Function Tests ===" << std::endl;
 
-    Check(fabsf(ComputeI1eScalar(0.0f)) < 1e-6f, "i1e(0) = 0");
-    Check(fabsf(ComputeI1eScalar(1.0f) - 0.2079104f) < 1e-4f, "i1e(1.0) ≈ 0.2079");
-    Check(fabsf(ComputeI1eScalar(-1.0f) + 0.2079104f) < 1e-4f, "i1e(-1.0) ≈ -0.2079 (odd)");
-    Check(fabsf(ComputeI1eScalar(2.0f) - 0.2152693f) < 1e-4f, "i1e(2.0) ≈ 0.2153");
-    Check(fabsf(ComputeI1eScalar(5.0f) - 0.1639723f) < 1e-4f, "i1e(5.0) ≈ 0.1640");
-    Check(fabsf(ComputeI1eScalar(10.0f) - 0.1212627f) < 1e-3f, "i1e(10.0) ≈ 0.1213");
-    Check(fabsf(ComputeI1eScalar(100.0f) - 0.0397442f) < 1e-3f, "i1e(100.0) ≈ 0.0397");
-    Check(fabsf(ComputeI1eScalar(-5.0f) + 0.1639723f) < 1e-4f, "i1e(-5.0) ≈ -0.1640 (odd)");
+    Check(fabsf(ComputeI1eScalar(0.0f)) < UT_TOL_TIGHT, "i1e(0) = 0", result);
+    Check(fabsf(ComputeI1eScalar(1.0f) - 0.2079104f) < UT_TOL_NORMAL, "i1e(1.0) ≈ 0.2079", result);
+    Check(fabsf(ComputeI1eScalar(-1.0f) + 0.2079104f) < UT_TOL_NORMAL, "i1e(-1.0) ≈ -0.2079 (odd)", result);
+    Check(fabsf(ComputeI1eScalar(2.0f) - 0.2152693f) < UT_TOL_NORMAL, "i1e(2.0) ≈ 0.2153", result);
+    Check(fabsf(ComputeI1eScalar(5.0f) - 0.1639723f) < UT_TOL_NORMAL, "i1e(5.0) ≈ 0.1640", result);
+    Check(fabsf(ComputeI1eScalar(10.0f) - 0.1212627f) < UT_TOL_LOOSE, "i1e(10.0) ≈ 0.1213", result);
+    Check(fabsf(ComputeI1eScalar(100.0f) - 0.0397442f) < UT_TOL_LOOSE, "i1e(100.0) ≈ 0.0397", result);
+    Check(fabsf(ComputeI1eScalar(-5.0f) + 0.1639723f) < UT_TOL_NORMAL, "i1e(-5.0) ≈ -0.1640 (odd)", result);
 
     float seg1 = ComputeI1eScalar(3.74f);
     float seg2 = ComputeI1eScalar(3.76f);
-    Check(fabsf(seg1 - seg2) < 0.01f, "segment continuity at |x|=3.75");
+    Check(fabsf(seg1 - seg2) < 0.01f, "segment continuity at |x|=3.75", result);
 
-    Check(ComputeI1eScalar(1000.0f) > 0.0f, "i1e(1000) > 0 (no overflow)");
-    Check(ComputeI1eScalar(1000.0f) < 0.1f, "i1e(1000) < 0.1 (asymptotic decay)");
+    Check(ComputeI1eScalar(1000.0f) > 0.0f, "i1e(1000) > 0 (no overflow)", result);
+    Check(ComputeI1eScalar(1000.0f) < 0.1f, "i1e(1000) < 0.1 (asymptotic decay)", result);
 }
 
-void TestTilingComputation()
+void TestTilingComputation(TestResult& result)
 {
     std::cout << "\n=== Tiling Computation Tests ===" << std::endl;
 
     {
         TilingData t;
-        ComputeTiling(1024, 4, 248 * 1024, 28, t);
-        Check(t.totalNum == 1024, "FP32 small: totalNum=1024");
-        Check(t.blockFactor >= 1024, "FP32 small: blockFactor >= totalNum");
-        Check(t.ubFactor > 0, "FP32 small: ubFactor > 0");
-        Check(t.ubFactor % 64 == 0, "FP32 small: ubFactor aligned to 64 (256B/4B)");
+        ComputeTiling(1024, 4, UT_UB_SIZE, UT_CORE_NUM, t);
+        Check(t.totalNum == 1024, "FP32 small: totalNum=1024", result);
+        Check(t.blockFactor >= 1024, "FP32 small: blockFactor >= totalNum", result);
+        Check(t.ubFactor > 0, "FP32 small: ubFactor > 0", result);
+        Check(t.ubFactor % 64 == 0, "FP32 small: ubFactor aligned to 64 (256B/4B)", result);
     }
 
     {
         TilingData t;
-        ComputeTiling(100000, 4, 248 * 1024, 28, t);
-        Check(t.totalNum == 100000, "FP32 large: totalNum=100000");
-        Check(t.blockFactor % 512 == 0, "FP32 large: blockFactor aligned to 512");
-        Check(t.ubFactor > 0, "FP32 large: ubFactor > 0");
+        ComputeTiling(100000, 4, UT_UB_SIZE, UT_CORE_NUM, t);
+        Check(t.totalNum == 100000, "FP32 large: totalNum=100000", result);
+        Check(t.blockFactor % 512 == 0, "FP32 large: blockFactor aligned to 512", result);
+        Check(t.ubFactor > 0, "FP32 large: ubFactor > 0", result);
     }
 
     {
         TilingData t;
-        ComputeTiling(512, 2, 248 * 1024, 28, t);
-        Check(t.totalNum == 512, "FP16 small: totalNum=512");
-        Check(t.ubFactor > 0, "FP16 small: ubFactor > 0");
-        Check(t.ubFactor % 128 == 0, "FP16 small: ubFactor aligned to 128 (256B/2B)");
+        ComputeTiling(512, 2, UT_UB_SIZE, UT_CORE_NUM, t);
+        Check(t.totalNum == 512, "FP16 small: totalNum=512", result);
+        Check(t.ubFactor > 0, "FP16 small: ubFactor > 0", result);
+        Check(t.ubFactor % 128 == 0, "FP16 small: ubFactor aligned to 128 (256B/2B)", result);
     }
 
     {
         TilingData t;
-        ComputeTiling(1, 4, 248 * 1024, 28, t);
-        Check(t.totalNum == 1, "FP32 scalar: totalNum=1");
-        Check(t.blockFactor == 512, "FP32 scalar: blockFactor=512 (min aligned)");
+        ComputeTiling(1, 4, UT_UB_SIZE, UT_CORE_NUM, t);
+        Check(t.totalNum == 1, "FP32 scalar: totalNum=1", result);
+        Check(t.blockFactor == 512, "FP32 scalar: blockFactor=512 (min aligned)", result);
     }
 
     {
         TilingData t;
-        ComputeTiling(0, 4, 248 * 1024, 28, t);
-        Check(t.totalNum == 0, "Empty tensor: totalNum=0");
+        ComputeTiling(0, 4, UT_UB_SIZE, UT_CORE_NUM, t);
+        Check(t.totalNum == 0, "Empty tensor: totalNum=0", result);
     }
 }
 
-void TestEdgeCases()
+void TestEdgeCases(TestResult& result)
 {
     std::cout << "\n=== Edge Case Tests ===" << std::endl;
 
-    float nan_result = ComputeI1eScalar(std::nanf(""));
-    Check(std::isnan(nan_result), "i1e(NaN) = NaN");
+    float nanResult = ComputeI1eScalar(std::nanf(""));
+    Check(std::isnan(nanResult), "i1e(NaN) = NaN", result);
 
-    float inf_result = ComputeI1eScalar(INFINITY);
-    Check(inf_result >= 0.0f && inf_result < 0.01f, "i1e(+Inf) ≈ 0");
+    float infResult = ComputeI1eScalar(INFINITY);
+    Check(infResult >= 0.0f && infResult < 0.01f, "i1e(+Inf) ≈ 0", result);
 
-    float neg_inf_result = ComputeI1eScalar(-INFINITY);
-    Check(neg_inf_result <= 0.0f && neg_inf_result > -0.01f, "i1e(-Inf) ≈ 0");
+    float negInfResult = ComputeI1eScalar(-INFINITY);
+    Check(negInfResult <= 0.0f && negInfResult > -0.01f, "i1e(-Inf) ≈ 0", result);
 
     float small = ComputeI1eScalar(0.001f);
-    Check(fabsf(small - 0.0005f) < 0.001f, "i1e(0.001) ≈ 0.0005 (linear region)");
+    Check(fabsf(small - 0.0005f) < 0.001f, "i1e(0.001) ≈ 0.0005 (linear region)", result);
 }
 
 int main()
@@ -195,13 +211,14 @@ int main()
     std::cout << "BesselI1e Unit Tests" << std::endl;
     std::cout << "========================================" << std::endl;
 
-    TestGoldenFunction();
-    TestTilingComputation();
-    TestEdgeCases();
+    TestResult result;
+    TestGoldenFunction(result);
+    TestTilingComputation(result);
+    TestEdgeCases(result);
 
     std::cout << "\n========================================" << std::endl;
-    std::cout << "Results: " << passed << " passed, " << failed << " failed" << std::endl;
+    std::cout << "Results: " << result.passed << " passed, " << result.failed << " failed" << std::endl;
     std::cout << "========================================" << std::endl;
 
-    return failed == 0 ? 0 : 1;
+    return result.failed == 0 ? 0 : 1;
 }
