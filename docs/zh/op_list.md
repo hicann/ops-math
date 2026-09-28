@@ -2938,6 +2938,16 @@
   </tr>
   <tr>
     <td>conversion</td>
+    <td><a href="../../conversion/prevent_gradient/README.md">prevent_gradient</a></td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>Host CPU</td>
+    <td>该算子前向原样返回输入张量；反向传播时梯度不可流经，一旦流经立即报错，用于显式阻断梯度回传。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
     <td><a href="../../conversion/reshape/README.md">reshape</a></td>
     <td>√</td>
     <td>√</td>
@@ -2965,6 +2975,16 @@
     <td>√</td>
     <td>AI Core</td>
     <td>根据给定的范围和步长，从输入张量中提取子张量。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/snapshot/README.md">snapshot</a></td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>Host CPU</td>
+    <td>该算子用于返回输入张量的一个副本，输出与输入具有相同的形状、数据类型和内容。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -3025,6 +3045,16 @@
     <td>√</td>
     <td>AI Core</td>
     <td>移除输入张量中大小为1的维度。</td>
+  </tr>
+  <tr>
+    <td>conversion</td>
+    <td><a href="../../conversion/stop_gradient/README.md">stop_gradient</a></td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>Host CPU</td>
+    <td>该算子用于将输入张量原样传递到输出，同时阻止反向传播计算经过该节点。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -3153,8 +3183,8 @@
     <td>√</td>
     <td>×</td>
     <td>√</td>
-    <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>AI Core/Host CPU</td>
+    <td>该算子用于返回与输入张量具有相同形状和内容的张量。</td>
   </tr>
   <tr>
     <td>conversion</td>
@@ -3163,8 +3193,8 @@
     <td>√</td>
     <td>×</td>
     <td>√</td>
-    <td>AI Core</td>
-    <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
+    <td>AI Core/Host CPU</td>
+    <td>该算子用于返回一组输入张量的副本，输出与输入具有相同的数量、形状、数据类型和内容。</td>
   </tr>
   <tr>
     <td>conversion</td>

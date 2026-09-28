@@ -14,25 +14,25 @@
 #include "op_infer_datatype_context_builder.h"
 #include "base/registry/op_impl_space_registry_v2.h"
 
-class IdentityRTTest : public testing::Test {
+class SnapshotRTTest : public testing::Test {
 protected:
-    static void SetUpTestCase() { std::cout << "Identity SetUp" << std::endl; }
+    static void SetUpTestCase() { std::cout << "Snapshot SetUp" << std::endl; }
 
-    static void TearDownTestCase() { std::cout << "Identity TearDown" << std::endl; }
+    static void TearDownTestCase() { std::cout << "Snapshot TearDown" << std::endl; }
 };
 
-TEST_F(IdentityRTTest, infer_shape_known_success)
+TEST_F(SnapshotRTTest, infer_shape_known_success)
 {
-    ASSERT_NE(gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry()->GetOpImpl("Identity"), nullptr);
+    ASSERT_NE(gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry()->GetOpImpl("Snapshot"), nullptr);
     auto infer_shape_func = gert::DefaultOpImplSpaceRegistryV2::GetInstance()
                                 .GetSpaceRegistry()
-                                ->GetOpImpl("Identity")
+                                ->GetOpImpl("Snapshot")
                                 ->infer_shape;
     gert::StorageShape input_shape = {{1, 3, 4, 5}, {1, 3, 4, 5}};
     gert::StorageShape output_shape = {{}, {}};
 
     auto holder = gert::InferShapeContextFaker()
-                      .SetOpType("Identity")
+                      .SetOpType("Snapshot")
                       .NodeIoNum(1, 1)
                       .InputTensors({(gert::Tensor*)&input_shape})
                       .OutputShapes({&output_shape})
@@ -42,16 +42,16 @@ TEST_F(IdentityRTTest, infer_shape_known_success)
     EXPECT_EQ(*(holder.GetContext()->GetOutputShape(0)), gert::Shape({1, 3, 4, 5}));
 }
 
-TEST_F(IdentityRTTest, infer_data_type_success)
+TEST_F(SnapshotRTTest, infer_data_type_success)
 {
     auto space_registry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
     ASSERT_NE(space_registry, nullptr);
-    auto op_impl = space_registry->GetOpImpl("Identity");
+    auto op_impl = space_registry->GetOpImpl("Snapshot");
     ASSERT_NE(op_impl, nullptr);
     ASSERT_NE(op_impl->infer_datatype, nullptr);
 
     gert::OpInferDataTypeContextBuilder builder;
-    builder.OpType("Identity").OpName("Identity");
+    builder.OpType("Snapshot").OpName("Snapshot");
     builder.IONum(1, 1);
     builder.InputTensorDesc(0, ge::DT_FLOAT, ge::FORMAT_ND, ge::FORMAT_ND);
     builder.OutputTensorDesc(0, ge::FORMAT_ND, ge::FORMAT_ND);
@@ -64,19 +64,19 @@ TEST_F(IdentityRTTest, infer_data_type_success)
     EXPECT_EQ(context->GetOutputDataType(0), ge::DT_FLOAT);
 }
 
-TEST_F(IdentityRTTest, infer_shape_mismatch_io_num_fail)
+TEST_F(SnapshotRTTest, infer_shape_mismatch_io_num_fail)
 {
-    ASSERT_NE(gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry()->GetOpImpl("Identity"), nullptr);
+    ASSERT_NE(gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry()->GetOpImpl("Snapshot"), nullptr);
     auto infer_shape_func = gert::DefaultOpImplSpaceRegistryV2::GetInstance()
                                 .GetSpaceRegistry()
-                                ->GetOpImpl("Identity")
+                                ->GetOpImpl("Snapshot")
                                 ->infer_shape;
     gert::StorageShape input_shape = {{1, 3, 4, 5}, {1, 3, 4, 5}};
     gert::StorageShape output_shape_0 = {{}, {}};
     gert::StorageShape output_shape_1 = {{}, {}};
 
     auto holder = gert::InferShapeContextFaker()
-                      .SetOpType("Identity")
+                      .SetOpType("Snapshot")
                       .NodeIoNum(1, 2)
                       .InputTensors({(gert::Tensor*)&input_shape})
                       .OutputShapes({&output_shape_0, &output_shape_1})

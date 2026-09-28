@@ -15,21 +15,56 @@
 #include "register/op_impl_registry.h"
 #include "runtime/infer_shape_context.h"
 #include "runtime/storage_shape.h"
+#include "log/log.h"
 
 using namespace gert;
 namespace ops {
-static ge::graphStatus InferShapeForIdentityN(InferShapeContext *context) {
-  auto input_num = context->GetComputeNodeInputNum();
-  for (size_t num = 0U; num < input_num; ++num) {
-    auto x_shape = context->GetInputShape(num);
-    auto y_shape = context->GetOutputShape(num);
-    if ((x_shape == nullptr) || (y_shape == nullptr)) {
-      return ge::GRAPH_FAILED;
+const std::string OP_NAME = "IdentityN";
+static ge::graphStatus InferShapeForIdentityN(InferShapeContext* context)
+{
+    if (context == nullptr) {
+        OP_LOGE(OP_NAME, "InferShape context is nullptr.");
+        return ge::GRAPH_FAILED;
     }
-    *y_shape = *x_shape;
-  }
-  return ge::GRAPH_SUCCESS;
+    auto input_num = context->GetComputeNodeInputNum();
+    if (input_num != context->GetComputeNodeOutputNum()) {
+        OP_LOGE(OP_NAME, "Input num must be equal to output num, but got input num %zu, output num %zu.", input_num,
+                context->GetComputeNodeOutputNum());
+        return ge::GRAPH_FAILED;
+    }
+    for (size_t num = 0U; num < input_num; ++num) {
+        auto x_shape = context->GetInputShape(num);
+        auto y_shape = context->GetOutputShape(num);
+        if ((x_shape == nullptr) || (y_shape == nullptr)) {
+            OP_LOGE(OP_NAME, "Input shape or output shape is nullptr, index %zu.", num);
+            return ge::GRAPH_FAILED;
+        }
+        *y_shape = *x_shape;
+    }
+    return ge::GRAPH_SUCCESS;
 }
-IMPL_OP_INFERSHAPE(IdentityN).InferShape(InferShapeForIdentityN);
-}  // namespace ops
 
+static ge::graphStatus InferDataTypeForIdentityN(InferDataTypeContext* context)
+{
+    if (context == nullptr) {
+        OP_LOGE(OP_NAME, "InferDataType context is nullptr.");
+        return ge::GRAPH_FAILED;
+    }
+    const auto input_num = context->GetComputeNodeInputNum();
+    if (input_num != context->GetComputeNodeOutputNum()) {
+        OP_LOGE(OP_NAME, "Input num must be equal to output num, but got input num %zu, output num %zu.", input_num,
+                context->GetComputeNodeOutputNum());
+        return ge::GRAPH_FAILED;
+    }
+    for (size_t num = 0U; num < input_num; ++num) {
+        const auto dtype = context->GetDynamicInputDataType(0U, num);
+        if (context->SetOutputDataType(num, dtype) != ge::GRAPH_SUCCESS) {
+            OP_LOGE(OP_NAME, "Failed to set output dtype, index %zu.", num);
+            return ge::GRAPH_FAILED;
+        }
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
+IMPL_OP_INFERSHAPE(IdentityN).InferShape(InferShapeForIdentityN).InferDataType(InferDataTypeForIdentityN);
+} // namespace ops

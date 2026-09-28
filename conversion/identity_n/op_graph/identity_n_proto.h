@@ -18,14 +18,13 @@
 #include "graph/operator_reg.h"
 #include "graph/operator.h"
 
-namespace ge
-{
+namespace ge {
 /**
 *@brief Returns a list of tensors with the same shapes and contents as the input tensors. \n
 
 *@par Inputs:
-*x: A list of input tensors. It's a dynamic input. Must be one of the following types:
-float32, float16, int8, int16, uint16, uint8, int32, int64, uint32, uint64, bool, double, string.
+ *x: A list of input tensors. It's a dynamic input. Must be one of the following types:
+float32、float16、int8、int16、uint16、uint8、int32、int64、uint32、uint64、bool、double、string.
 
 *@par Outputs:
 *y: A list of Tensor objects, with the same length, shape, data type and contents as the input tensor list.
@@ -35,10 +34,10 @@ It's a dynamic output. \n
 *Compatible with the TensorFlow operator IdentityN.
 */
 REG_OP(IdentityN)
-    .DYNAMIC_INPUT(x, TensorType({DT_FLOAT, DT_FLOAT16, DT_INT8, DT_INT16, DT_UINT16, DT_UINT8,
-        DT_INT32, DT_INT64, DT_UINT32, DT_UINT64, DT_BOOL, DT_DOUBLE, DT_STRING}))
-    .DYNAMIC_OUTPUT(y, TensorType({DT_FLOAT, DT_FLOAT16, DT_INT8, DT_INT16, DT_UINT16, DT_UINT8,
-        DT_INT32, DT_INT64, DT_UINT32, DT_UINT64, DT_BOOL, DT_DOUBLE, DT_STRING}))
+    .DYNAMIC_INPUT(x, TensorType({DT_FLOAT, DT_FLOAT16, DT_INT8, DT_INT16, DT_UINT16, DT_UINT8, DT_INT32, DT_INT64,
+                                  DT_UINT32, DT_UINT64, DT_BOOL, DT_DOUBLE, DT_STRING}))
+    .DYNAMIC_OUTPUT(y, TensorType({DT_FLOAT, DT_FLOAT16, DT_INT8, DT_INT16, DT_UINT16, DT_UINT8, DT_INT32, DT_INT64,
+                                   DT_UINT32, DT_UINT64, DT_BOOL, DT_DOUBLE, DT_STRING}))
     .OP_END_FACTORY_REG(IdentityN)
 } // namespace ge
 #endif // SHAPE_N_PROTO_H_

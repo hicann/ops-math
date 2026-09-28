@@ -9,42 +9,37 @@
  */
 
 /*!
- * \file identity_infershape.cpp
- * \brief
+ * \file snapshot_infershape.cpp
+ * \brief Runtime shape and data-type inference for Snapshot.
  */
 #include "register/op_impl_registry.h"
 #include "runtime/infer_shape_context.h"
-#include "runtime/storage_shape.h"
 #include "log/log.h"
 
-using namespace gert;
 namespace ops {
-const std::string OP_NAME = "Identity";
-static ge::graphStatus InferShapeForIdentity(InferShapeContext* context)
+const std::string OP_NAME = "Snapshot";
+static ge::graphStatus InferShapeForSnapshot(gert::InferShapeContext* context)
 {
     if (context == nullptr) {
         OP_LOGE(OP_NAME, "InferShape context is nullptr.");
         return ge::GRAPH_FAILED;
     }
-    auto input_num = context->GetComputeNodeInputNum();
-    if (input_num != context->GetComputeNodeOutputNum()) {
-        OP_LOGE(OP_NAME, "Input num must be equal to output num, but got input num %zu, output num %zu.", input_num,
-                context->GetComputeNodeOutputNum());
+    if (context->GetComputeNodeInputNum() != 1U || context->GetComputeNodeOutputNum() != 1U) {
+        OP_LOGE(OP_NAME, "Only support 1 input and 1 output, but got input num %zu, output num %zu.",
+                context->GetComputeNodeInputNum(), context->GetComputeNodeOutputNum());
         return ge::GRAPH_FAILED;
     }
-    for (size_t i = 0U; i < input_num; ++i) {
-        auto xshape = context->GetInputShape(i);
-        auto yshape = context->GetOutputShape(i);
-        if ((xshape == nullptr) || (yshape == nullptr)) {
-            OP_LOGE(OP_NAME, "Input shape or output shape is nullptr, index %zu.", i);
-            return ge::GRAPH_FAILED;
-        }
-        *yshape = *xshape;
+    const auto* input_shape = context->GetInputShape(0U);
+    auto* output_shape = context->GetOutputShape(0U);
+    if (input_shape == nullptr || output_shape == nullptr) {
+        OP_LOGE(OP_NAME, "Input shape or output shape is nullptr.");
+        return ge::GRAPH_FAILED;
     }
+    *output_shape = *input_shape;
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus InferDataTypeForIdentity(InferDataTypeContext* context)
+static ge::graphStatus InferDataTypeForSnapshot(gert::InferDataTypeContext* context)
 {
     if (context == nullptr) {
         OP_LOGE(OP_NAME, "InferDataType context is nullptr.");
@@ -53,5 +48,5 @@ static ge::graphStatus InferDataTypeForIdentity(InferDataTypeContext* context)
     return context->SetOutputDataType(0U, context->GetInputDataType(0U));
 }
 
-IMPL_OP_INFERSHAPE(Identity).InferShape(InferShapeForIdentity).InferDataType(InferDataTypeForIdentity);
+IMPL_OP_INFERSHAPE(Snapshot).InferShape(InferShapeForSnapshot).InferDataType(InferDataTypeForSnapshot);
 } // namespace ops
