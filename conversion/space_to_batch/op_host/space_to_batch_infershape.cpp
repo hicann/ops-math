@@ -58,6 +58,13 @@ ge::graphStatus SpaceToBatchInferShapeHelper::Init()
 
     isConstPaddings_ = Ops::Base::GetConstIntToShape<gert::InferShapeContext>(context_, INPUT_IDX_PADDINGS,
                                                                               paddingsVec_);
+    if (isConstPaddings_) {
+        for (size_t i = 0; i < PADDINGS_ROWS * PADDINGS_COLS; ++i) {
+            OP_CHECK_IF(paddingsVec_.GetDim(i) < 0,
+                        OP_LOGE(context_, "paddings[%zu] must be non-negative, got %ld", i, paddingsVec_.GetDim(i)),
+                        return ge::GRAPH_FAILED);
+        }
+    }
 
     return ge::GRAPH_SUCCESS;
 }

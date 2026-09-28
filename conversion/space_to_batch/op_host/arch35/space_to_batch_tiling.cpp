@@ -117,6 +117,9 @@ ge::graphStatus SpaceToBatchTiling::ParamCheck()
     for (size_t i = 0; i < PADDINGS_ROWS; ++i) {
         for (size_t j = 0; j < PADDINGS_COLS; ++j) {
             paddings_[i][j] = paddings[i * PADDINGS_COLS + j];
+            OP_CHECK_IF(paddings_[i][j] < 0,
+                        OP_LOGE(context_, "paddings[%zu][%zu] must be non-negative, got %ld", i, j, paddings_[i][j]),
+                        return ge::GRAPH_FAILED);
         }
     }
 
