@@ -132,7 +132,7 @@ static uint32_t PValueToMode(float pValue)
             return entry.pMode;
         }
     }
-    return std::isinf(pValue) ? P_MODE_PINF : P_MODE_PGENERAL;
+    return (std::isinf(pValue) || pValue == -1.0f) ? P_MODE_PINF : P_MODE_PGENERAL;
 }
 
 static ge::graphStatus GetPValueAttr(gert::TilingContext* context, float& pValue)
