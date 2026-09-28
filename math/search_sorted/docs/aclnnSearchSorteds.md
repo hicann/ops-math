@@ -49,8 +49,8 @@
 aclnnStatus aclnnSearchSortedsGetWorkspaceSize(
   const aclTensor* sortedSequence,
   const aclScalar* self,
-  bool             outInt32,
-  bool             right,
+  const bool       outInt32,
+  const bool       right,
   const aclTensor* sorter,
   aclTensor*       out,
   uint64_t*        workspaceSize,
