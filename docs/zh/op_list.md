@@ -3576,5 +3576,175 @@
     <td> </td>
     <td> </td>
   </tr>
+  <tr>
+    <td>ge</td>
+    <td><a href="../../ge/const/README.md">const</a></td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>Host CPU</td>
+    <td>从tensor-like对象创建常量张量，用于推理场景。Const算子与Constant算子定义相同，根据value属性中保存的Tensor值和类型，推导输出张量y的形状和数据类型。输出形状和数据类型与value属性中的Tensor一致。</td>
+  </tr>
+  <tr>
+    <td>ge</td>
+    <td><a href="../../ge/const_place_holder/README.md">const_place_holder</a></td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>Host CPU</td>
+    <td>创建常量占位张量。该算子用于处理地址不变但值不确定的输入，将输入转换为此类型有助于提升图的执行性能（避免输入地址被反复刷新）。根据origin_shape和dtype属性推导输出张量y的形状和数据类型。输出形状与origin_shape属性一致，输出数据类型与dtype属性一致。</td>
+  </tr>
+  <tr>
+    <td>ge</td>
+    <td><a href="../../ge/constant/README.md">constant</a></td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>Host CPU</td>
+    <td>创建一个常量张量用于训练。Constant算子根据value属性中保存的Tensor值和类型，推导输出张量y的形状和数据类型。输出形状和数据类型与value属性中的Tensor一致。</td>
+  </tr>
+  <tr>
+    <td>ge</td>
+    <td><a href="../../ge/data/README.md">data</a></td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>Host CPU</td>
+    <td>为其他算子提供输入数据。Data算子作为图中的数据输入节点，将输入张量x直接传递给输出张量y，同时通过index属性标识该数据节点在网络中的序号。</td>
+  </tr>
+  <tr>
+    <td>ge</td>
+    <td><a href="../../ge/destroy_temporary_variable/README.md">destroy_temporary_variable</a></td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>Host CPU</td>
+    <td>销毁临时变量并返回其最终值。临时变量的所有其他使用必须在本算子之前执行完毕。本算子与TemporaryVariable算子配对使用：通过var_name属性与TemporaryVariable匹配，读取该临时变量的最终值并触发销毁。输出张量y的形状和数据类型与输入张量x一致。</td>
+  </tr>
+  <tr>
+    <td>ge</td>
+    <td><a href="../../ge/file_constant/README.md">file_constant</a></td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>Host CPU</td>
+    <td>创建文件常量张量，用于处理存储在文件中的超大权重数据。根据shape和dtype属性推导输出张量y的形状和数据类型。输出形状与shape属性一致，输出数据类型与dtype属性一致。</td>
+  </tr>
+  <tr>
+    <td>ge</td>
+    <td><a href="../../ge/guarantee_const/README.md">guarantee_const</a></td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>Host CPU</td>
+    <td>向运行时保证输入张量是一个常量。本算子为直通（pass-through）算子：输出张量y即输入张量x，不改变任何形状、数据类型和数值，仅在图中传递"输入是常量"的语义信息，供图优化决策使用。输出张量y的形状和数据类型与输入张量x一致。</td>
+  </tr>
+  <tr>
+    <td>ge</td>
+    <td><a href="../../ge/is_variable_initialized/README.md">is_variable_initialized</a></td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>Host CPU</td>
+    <td>检查张量是否已初始化。IsVariableInitialized算子接收输入张量x，输出标量布尔值y，表示输入张量是否已初始化。InferShape将输出shape设置为标量（0维），InferDataType将输出数据类型设置为DT_BOOL。</td>
+  </tr>
+  <tr>
+    <td>ge</td>
+    <td><a href="../../ge/placeholder/README.md">placeholder</a></td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>Host CPU</td>
+    <td>为一个将始终被喂入的张量插入占位符。PlaceHolder算子接收输入张量x，输出y的形状和数据类型与输入x一致，由InferShape将输入shape复制到输出，InferDataType将输入dtype复制到输出。</td>
+  </tr>
+  <tr>
+    <td>ge</td>
+    <td><a href="../../ge/placeholder_withdefault/README.md">placeholder_withdefault</a></td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>Host CPU</td>
+    <td>为一个张量插入带默认值的占位符。PlaceholderWithDefault算子接收输入张量x，输出y的形状和数据类型与输入x一致，由InferShape将输入shape复制到输出，InferDataType将输入dtype复制到输出。shape属性用于指定张量的形状信息。</td>
+  </tr>
+  <tr>
+    <td>ge</td>
+    <td><a href="../../ge/queue_data/README.md">queue_data</a></td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>Host CPU</td>
+    <td>为其他算子提供队列数据。QueueData算子作为图中的队列数据输入节点，根据output_types和output_shapes属性计算输出张量的长度（每项含64字节信息头、维度描述及数据字节），输出为DT_UINT8类型的一维张量。</td>
+  </tr>
+  <tr>
+    <td>ge</td>
+    <td><a href="../../ge/read_variable_op/README.md">read_variable_op</a></td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>Host CPU</td>
+    <td>读取并返回输入变量张量的值。输出张量y的形状和数据类型与输入张量x一致。</td>
+  </tr>
+  <tr>
+    <td>ge</td>
+    <td><a href="../../ge/ref_data/README.md">ref_data</a></td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>Host CPU</td>
+    <td>为其他算子提供可被引用覆盖的输入数据。RefData算子作为图中的数据输入节点，将输入张量x直接传递给输出张量y，同时通过index属性标识该数据节点在网络中的序号。与Data算子不同，RefData可被ref类算子覆盖，起到变量的作用。</td>
+  </tr>
+  <tr>
+    <td>ge</td>
+    <td><a href="../../ge/temporary_variable/README.md">temporary_variable</a></td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>Host CPU</td>
+    <td>创建一个临时变量张量。TemporaryVariable 使用完毕后，需将变量张量的引用传递给配对的 DestroyTemporaryVariable 算子进行销毁。根据shape和dtype属性推导输出张量y的形状和数据类型：输出形状与shape属性一致，输出数据类型与dtype属性一致。</td>
+  </tr>
+  <tr>
+    <td>ge</td>
+    <td><a href="../../ge/var_handle_op/README.md">var_handle_op</a></td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>Host CPU</td>
+    <td>创建一个指向变量资源的句柄。输出张量y为标量资源句柄（DT_RESOURCE类型），shape和dtype属性描述句柄所指向变量的形状和数据类型（而非输出本身的形状），供下游资源类算子（如ReadVariableOp、AssignVariableOp）使用。container和shared_name属性用于指定变量的容器和共享名称。</td>
+  </tr>
+  <tr>
+    <td>ge</td>
+    <td><a href="../../ge/var_is_initialized_op/README.md">var_is_initialized_op</a></td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>Host CPU</td>
+    <td>检查张量（变量）是否已被初始化。输出为bool标量，指示输入变量是否已初始化：输入需为Variable节点，图引擎在编译期通过VarIsInitializedOpPass查询Variable的初始化状态并将本算子节点改写为常量输出。</td>
+  </tr>
+  <tr>
+    <td>ge</td>
+    <td><a href="../../ge/variable/README.md">variable</a></td>
+    <td>×</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>Host CPU</td>
+    <td>创建一个变量张量。Variable算子通过输入x赋值，在内部记录变量张量的值，输出y为创建的变量张量。InferShape函数返回成功但不显式设置输出描述，由框架默认推导（output跟随input）。</td>
+  </tr>
 </tbody>
 </table>

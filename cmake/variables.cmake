@@ -100,7 +100,7 @@ else()
   set(COMMON_INC_INSTALL_DIR          ${CMAKE_SYSTEM_PROCESSOR}-linux/include)
   set(COMMON_LIB_INSTALL_DIR          ops_math/lib)
   set(VERSION_INFO_INSTALL_DIR        ${CMAKE_SYSTEM_PROCESSOR}-linux)
-  set(WHL_INSTALL_DIR                 ops_math) 
+  set(WHL_INSTALL_DIR                 ops_math)
 endif()
 
 if(ENABLE_STATIC)
@@ -234,6 +234,7 @@ set(OPS_CATEGORY_LIST
   "math"
   "conversion"
   "random"
+  "ge"
 )
 
 # mapping of soc full name and short name
