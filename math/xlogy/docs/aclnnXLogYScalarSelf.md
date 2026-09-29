@@ -51,7 +51,7 @@
   - other（aclTensor*，计算输入）：公式中的输入`other`，Device侧的aclTensor，数据类型与self的数据类型需满足数据类型推导规则（参见[互推导关系](../../../docs/zh/context/deduction_relationship.md)）。支持[非连续的Tensor](../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../docs/zh/context/data_format.md)支持ND。
 
     <!-- npu="A3" id8 -->
-    - <term>Atlas A3系列产品</term>：数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16。
+    - <term>Atlas A3系列产品</term>：数据类型支持FLOAT、FLOAT16、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16。
     <!-- end id8 -->
 
   - out（aclTensor \*，计算输出）：公式中的`out`，Device侧的aclTensor，out与other的shape一致。支持[非连续的Tensor](../../../docs/zh/context/non_contiguous_tensor.md)，[数据格式](../../../docs/zh/context/data_format.md)支持ND。
