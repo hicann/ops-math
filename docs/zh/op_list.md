@@ -98,16 +98,6 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/add_v2/README.md">add_v2</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>√</td>
-    <td>AI Core</td>
-    <td>对两个输入张量执行逐元素加法，兼容TensorFlow AddV2语义，支持广播与空Tensor。</td>
-  </tr>
-  <tr>
-    <td>math</td>
     <td><a href="../../math/add_lora/README.md">add_lora</a></td>
     <td>√</td>
     <td>√</td>
@@ -358,16 +348,6 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/bias/README.md">bias</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>√</td>
-    <td>AI Core</td>
-    <td>按照axis、num_axes和bias_from_blob推导bias的广播形状，计算y = x + broadcast(bias)。</td>
-  </tr>
-  <tr>
-    <td>math</td>
     <td><a href="../../math/bias_add/README.md">bias_add</a></td>
     <td>√</td>
     <td>√</td>
@@ -585,16 +565,6 @@
     <td>×</td>
     <td>AI Core</td>
     <td>该算子暂无Ascend C代码实现，欢迎开发者补充贡献，贡献方式参考<a href="../../CONTRIBUTING.md">贡献指南</a>。</td>
-  </tr>
-  <tr>
-    <td>math</td>
-    <td><a href="../../math/cumulative_logsumexp/README.md">cumulative_logsumexp</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>√</td>
-    <td>√</td>
-    <td>AI Core</td>
-    <td>对输入张量沿指定维度计算累积log-sum-exp。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -845,16 +815,6 @@
     <td>√</td>
     <td>AI Core</td>
     <td>将mul和addn算子进行融合，要求addn的n为2，mul的其中一个输入必须是scalar或者只包含一个数的tensor。</td>
-  </tr>
-  <tr>
-    <td>math</td>
-    <td><a href="../../math/fused_mul_addn_l2loss/README.md">fused_mul_addn_l2loss</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>√</td>
-    <td>AI Core</td>
-    <td>图融合内部算子，将Mul+AddN+L2Loss子图合并，逐元素计算y1=x1*x3[0]+x2，同时对x1全量平方归约得到标量y2=Σx1²/2。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -1458,16 +1418,6 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/ragged_bin_count/README.md">ragged_bin_count</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>√</td>
-    <td>AI Core</td>
-    <td>按splits划分的ragged row，统计每个bin的出现次数或权重和。</td>
-  </tr>
-  <tr>
-    <td>math</td>
     <td><a href="../../math/range/README.md">range</a></td>
     <td>√</td>
     <td>√</td>
@@ -1955,16 +1905,6 @@
     <td>√</td>
     <td>AI CPU</td>
     <td>该算子对输入Tensor逐元素计算平方值。</td>
-  </tr>
-  <tr>
-    <td>math</td>
-    <td><a href="../../math/square_sum_all/README.md">square_sum_all</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>√</td>
-    <td>AI Core</td>
-    <td>分别计算两个同Shape输入Tensor的全元素平方和，输出两个独立标量。</td>
   </tr>
   <tr>
     <td>math</td>
@@ -2905,16 +2845,6 @@
     <td>√</td>
     <td>AI Core</td>
     <td>将输入tensor的值搬运到输出tensor中。</td>
-  </tr>
-  <tr>
-    <td>conversion</td>
-    <td><a href="../../conversion/tensor_redirect/README.md">tensor_redirect</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>√</td>
-    <td>AI Core</td>
-    <td>将输入张量的数据逐bit拷贝到输出张量，恒等映射。</td>
   </tr>
   <tr>
     <td>conversion</td>
