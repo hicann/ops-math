@@ -16,8 +16,8 @@
 
 ```Cpp
 aclnnStatus aclnnIsInScalarTensorGetWorkspaceSize(
-  const aclTensor*  self,
   const aclScalar*  element,
+  const aclTensor*  testElements,
   bool              assumeUnique,
   bool              invert,
   aclTensor*        out,

@@ -20,7 +20,7 @@ aclnnStatus aclnnIsInTensorScalarGetWorkspaceSize(
   const aclScalar*  element,
   bool              assumeUnique,
   bool              invert,
-  aclScalar*        out,
+  aclTensor*        out,
   uint64_t*         workspaceSize,
   aclOpExecutor**   executor)
 ```
