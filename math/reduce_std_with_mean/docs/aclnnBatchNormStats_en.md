@@ -1,0 +1,235 @@
+# aclnnBatchNormStats
+
+[📄 View source code](https://gitcode.com/cann/ops-math/tree/master/math/reduce_std_with_mean)
+
+## Supported Products
+
+| Product                                                        | Supported|
+| :----------------------------------------------------------- | :------: |
+| <term>Atlas A3 training products/Atlas A3 inference products</term>    |    √     |
+| <term>Atlas A2 training products/Atlas A2 inference products</term>|    √     |
+| <term>Atlas 200I/500 A2 inference products</term>                     |    ×     |
+| <term>Atlas inference products</term>                            |    ×     |
+| <term>Atlas training products</term>                             |    √     |
+
+## Function Description
+
+- Description:
+Computes the mean value and the reciprocal of the standard deviation for the input data of a single card.
+
+- Formulas:
+
+  Mean value:
+
+  $$
+  \bar{x} = \frac{\sum_{i=1}^{n} x_i}{n}
+  $$
+
+  Reciprocal of standard deviation:
+
+  $$
+  \frac{1}\sigma = \frac{1}{\sqrt{\frac{1}{n}\sum_{i=1}^{n}(x_i- \bar{x})^2 + eps}}
+  $$
+
+## Prototype
+
+Each operator has [two-phase API](../../../docs/en/context/two_phase_api.md) calls. First, `aclnnBatchNormStatsGetWorkspaceSize` is called to obtain the input parameters and compute the required workspace size based on the process. Then, `aclnnBatchNormStats` is called to perform computation.
+
+- `aclnnStatus aclnnBatchNormStatsGetWorkspaceSize(const aclTensor* input, double eps, aclTensor* mean, aclTensor* invstd, uint64_t* workspaceSize, aclOpExecutor** executor)`
+- `aclnnStatus aclnnBatchNormStats(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)`
+
+## aclnnBatchNormStatsGetWorkspaceSize
+
+- **Parameters:**
+  - `input` (aclTensor \*, computation input): input tensor, which is an aclTensor on the device. It supports [non-contiguous tensor](../../../docs/en/context/non_contiguous_tensor.md). Supported shapes and data formats include: 2D (NC), 3D (NCL), 4D (NCHW), 5D (NCDHW), and 6D to 8D (ND, where the second dimension must be the channel axis).
+    - <term>Atlas training products</term>, <term>Atlas A2 training products/Atlas A2 inference products</term>, and <term>Atlas A3 training products/Atlas A3 inference products</term>: The data type can be FLOAT or FLOAT16.
+  - `eps`(double, computation input): value added to the denominator for numeric stability, which is of the DOUBLE type.
+  - `mean` (aclTensor \*, computation output): output mean, which is an aclTensor on the device. The data type can be FLOAT. When the input type is FLOAT16 or BFLOAT16, the data type is cast to FLOAT for processing. The [data format](../../../docs/en/context/data_format.md) can be ND.
+  - `invstd` (aclTensor \*, computation output): output inverse standard deviation, which is an aclTensor on the device. The data type can be FLOAT. When the input type is FLOAT16 or BFLOAT16, the data type is cast to FLOAT for processing. The [data format](../../../docs/en/context/data_format.md) can be ND.
+  - `workspaceSize` (uint64_t*, output): size of the workspace to be allocated on the device.
+  - `executor` (aclOpExecutor**, output): operator executor, covering the operator computation process.
+  
+- **Returns:**
+
+  `aclnnStatus`: status code. For details, see [aclnn Return Code](../../../docs/en/context/aclnn_return_code.md).
+
+```text
+The first-phase API implements input parameter verification. The following errors may be thrown:
+161001 (ACLNN_ERR_PARAM_NULLPTR): 1. The input, mean, or invstd pointer is a null pointer.
+161002 (ACLNN_ERR_PARAM_INVALID): 1. The data types and formats of input, mean, and invstd are not supported.
+                                      2. The dimensionality of input is less than 2 or greater than 8, or mean and invstd are not 1-dimensional.
+                                      3. The shape of mean or invstd does not match the channel axis of input.
+                                      4. The value of the second dimension of input is 0.
+```
+
+## aclnnBatchNormStats
+
+- **Parameters:**
+  - `workspace` (void \*, input): address of the workspace to be allocated on the device.
+  - `workspaceSize` (uint64_t, input): size of the workspace to be allocated on the device, which is obtained by calling the first-phase API `aclnnBatchNormStatsGetWorkspaceSize`.
+  - `executor` (aclOpExecutor \*, input): operator executor, covering the operator computation process.
+  - `stream` (aclrtStream, input): stream for executing the task.
+
+- **Returns:**
+
+  `aclnnStatus`: status code. For details, see [aclnn Return Code](../../../docs/en/context/aclnn_return_code.md).
+
+## Constraints
+
+- Deterministic computation:
+  - `aclnnBatchNormStats` defaults to a deterministic implementation.
+
+## Example
+
+The following example is for reference only. For details, see [Compile and Run Sample](../../../docs/en/context/compile_and_run_sample.md).
+
+```Cpp
+#include <iostream>
+#include <vector>
+#include "acl/acl.h"
+#include "aclnnop/aclnn_batch_norm_stats.h"
+
+#define CHECK_RET(cond, return_expr) \
+  do {                               \
+    if (!(cond)) {                   \
+      return_expr;                   \
+    }                                \
+  } while (0)
+
+#define LOG_PRINT(message, ...)     \
+  do {                              \
+    printf(message, ##__VA_ARGS__); \
+  } while (0)
+
+int64_t GetShapeSize(const std::vector<int64_t>& shape) {
+  int64_t shapeSize = 1;
+  for (auto i : shape) {
+    shapeSize *= i;
+  }
+  return shapeSize;
+}
+
+int Init(int32_t deviceId, aclrtStream* stream) {
+  // Boilerplate code for resource initialization.
+  auto ret = aclInit(nullptr);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclInit failed. ERROR: %d\n", ret); return ret);
+  ret = aclrtSetDevice(deviceId);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSetDevice failed. ERROR: %d\n", ret); return ret);
+  ret = aclrtCreateStream(stream);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtCreateStream failed. ERROR: %d\n", ret); return ret);
+  return 0;
+}
+
+template <typename T>
+int CreateAclTensor(const std::vector<T>& hostData, const std::vector<int64_t>& shape, void** deviceAddr,
+                    aclDataType dataType, aclTensor** tensor) {
+  auto size = GetShapeSize(shape) * sizeof(T);
+  // Call aclrtMalloc to allocate memory on the device.
+  auto ret = aclrtMalloc(deviceAddr, size, ACL_MEM_MALLOC_HUGE_FIRST);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMalloc failed. ERROR: %d\n", ret); return ret);
+
+  // Call aclrtMemcpy to copy the data from the host to the device.
+  ret = aclrtMemcpy(*deviceAddr, size, hostData.data(), size, ACL_MEMCPY_HOST_TO_DEVICE);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtMemcpy failed. ERROR: %d\n", ret); return ret);
+
+  // Compute the strides of the contiguous tensor.
+  std::vector<int64_t> strides(shape.size(), 1);
+  for (int64_t i = shape.size() - 2; i >= 0; i--) {
+    strides[i] = shape[i + 1] * strides[i + 1];
+  }
+
+  // Call aclCreateTensor to create an aclTensor.
+  *tensor = aclCreateTensor(shape.data(), shape.size(), dataType, strides.data(), 0, aclFormat::ACL_FORMAT_ND,
+                            shape.data(), shape.size(), *deviceAddr);
+  return 0;
+}
+
+int main() {
+  // 1. Boilerplate code for device/stream initialization. For details, see the ACL API manual.
+  // Set the device ID in use.
+  int32_t deviceId = 0;
+  aclrtStream stream;
+  auto ret = Init(deviceId, &stream);
+  // Customize the error handling as needed.
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("Init acl failed. ERROR: %d\n", ret); return ret);
+
+  // 2. Construct the inputs and outputs based on the API definition.
+  std::vector<int64_t> inputShape = {2, 3};
+  std::vector<int64_t> outShape = {3,};
+  void* inputDeviceAddr = nullptr;
+  void* meanDeviceAddr = nullptr;
+  void* invstdDeviceAddr = nullptr;
+  aclTensor* input = nullptr;
+  aclTensor* mean = nullptr;
+  aclTensor* invstd = nullptr;
+  std::vector<float> inputHostData = {1, 2, 3, 4, 5, 6};
+  std::vector<float> meanHostData = {0, 0, 0};
+  std::vector<float> invstdHostData = {0, 0, 0};
+  double eps = 1e-5;
+
+  // Create a self aclTensor.
+  ret = CreateAclTensor(inputHostData, inputShape, &inputDeviceAddr, aclDataType::ACL_FLOAT, &input);
+  CHECK_RET(ret == ACL_SUCCESS, return ret);
+  // Create a mean aclTensor.
+  ret = CreateAclTensor(meanHostData, outShape, &meanDeviceAddr, aclDataType::ACL_FLOAT, &mean);
+  CHECK_RET(ret == ACL_SUCCESS, return ret);
+  // Create an invstd aclTensor.
+  ret = CreateAclTensor(invstdHostData, outShape, &invstdDeviceAddr, aclDataType::ACL_FLOAT, &invstd);
+  CHECK_RET(ret == ACL_SUCCESS, return ret);
+
+  uint64_t workspaceSize = 0;
+  aclOpExecutor* executor;
+  // aclnnBatchNormStats API call example
+  // 3. Call the CANN operator library API, which needs to be replaced with the actual one.
+  // Call the first-phase API of aclnnBatchNormStats.
+  ret = aclnnBatchNormStatsGetWorkspaceSize(input, eps, mean, invstd, &workspaceSize, &executor);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnBatchNormStatsGetWorkspaceSize failed. ERROR: %d\n", ret); return ret);
+  // Allocate device memory based on the workspaceSize calculated by the first-phase API.
+  void* workspaceAddr = nullptr;
+  if (workspaceSize > 0) {
+    ret = aclrtMalloc(&workspaceAddr, workspaceSize, ACL_MEM_MALLOC_HUGE_FIRST);
+    CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("allocate workspace failed. ERROR: %d\n", ret); return ret);
+  }
+  // Call the second-phase API of aclnnBatchNormStats.
+  ret = aclnnBatchNormStats(workspaceAddr, workspaceSize, executor, stream);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnBatchNormStats failed. ERROR: %d\n", ret); return ret);
+
+  // 4. (Boilerplate code) Wait until the task execution is complete.
+  ret = aclrtSynchronizeStream(stream);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclrtSynchronizeStream failed. ERROR: %d\n", ret); return ret);
+
+  // 5. Obtain the output value and copy the result from the device to the host. Modify the code based on the API definition.
+  auto size = GetShapeSize(outShape);
+  std::vector<float> meanData(size, 0);
+  ret = aclrtMemcpy(meanData.data(), meanData.size() * sizeof(meanData[0]), meanDeviceAddr,
+                    size * sizeof(meanData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
+  for (int64_t i = 0; i < size; i++) {
+    LOG_PRINT("mean result[%ld] is: %f\n", i, meanData[i]);
+  }
+  std::vector<float> invstdData(size, 0);
+  ret = aclrtMemcpy(invstdData.data(), invstdData.size() * sizeof(invstdData[0]), invstdDeviceAddr,
+                    size * sizeof(invstdData[0]), ACL_MEMCPY_DEVICE_TO_HOST);
+  CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("copy result from device to host failed. ERROR: %d\n", ret); return ret);
+  for (int64_t i = 0; i < size; i++) {
+    LOG_PRINT("mean result[%ld] is: %f\n", i, invstdData[i]);
+  }
+
+  // 6. Destroy aclTensor and aclScalar. Modify the code based on the API definition.
+  aclDestroyTensor(input);
+  aclDestroyTensor(mean);
+  aclDestroyTensor(invstd);
+
+  // 7. Free device resources. Modify the code based on the API definition.
+  aclrtFree(inputDeviceAddr);
+  aclrtFree(meanDeviceAddr);
+  aclrtFree(invstdDeviceAddr);
+  if (workspaceSize > 0) {
+    aclrtFree(workspaceAddr);
+  }
+  aclrtDestroyStream(stream);
+  aclrtResetDevice(deviceId);
+  aclFinalize();
+  return 0;
+}
+```
