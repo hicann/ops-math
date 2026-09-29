@@ -13,18 +13,19 @@
 /*!
  * \file spence_apt.cpp
  * \brief Spence 算子 kernel 入口（arch35 架构）
+ *
+ * dtype 由 _def.cpp 的 DataType profile 驱动展开：构建系统按输入 x 的
+ * dtype 列表生成 DTYPE_X 编译宏，kernel 直接以 DTYPE_X 实例化模板。
  */
 
 #include "arch35/spence_regbase.h"
-#include "arch35/spence_tiling_key.h"
 
-template <typename D_T_X>
-__global__ __aicore__ void spence(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+extern "C" __global__ __aicore__ void spence(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(SpenceTilingData);
     GET_TILING_DATA_WITH_STRUCT(SpenceTilingData, tilingData, tiling);
     AscendC::TPipe pipe;
-    KernelSpence<D_T_X> op(&pipe);
+    KernelSpence<DTYPE_X> op(&pipe);
     op.Init(x, y, &tilingData);
     op.Process();
 }

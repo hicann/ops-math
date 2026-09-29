@@ -20,7 +20,6 @@
 #include "op_common/op_host/util/math_util.h"
 #include "op_common/op_host/util/platform_util.h"
 #include "../../op_kernel/arch35/spence_tiling_data.h"
-#include "../../op_kernel/arch35/spence_tiling_key.h"
 
 using Ops::Base::ToString;
 
@@ -34,7 +33,6 @@ using Ops::Base::GetUbBlockSize;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
 constexpr size_t WORKSPACE_NUM = 1;
-constexpr int64_t ELEM_ALIGN = 512;
 constexpr int64_t FP32_ELEM_BYTES = 4;
 constexpr int64_t FP16_ELEM_BYTES = 2;
 constexpr int64_t BITS_PER_BYTE = 8;
@@ -52,37 +50,65 @@ static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape)
     return in_shape;
 }
 
-static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t* ubSize, int64_t* coreNum)
+static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t& ubSize, int64_t& coreNum)
 {
     fe::PlatFormInfos* platformInfoPtr = context->GetPlatformInfo();
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfoPtr);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfoPtr);
-    *coreNum = ascendcPlatform.GetCoreNumAiv();
-    OP_CHECK_IF(*coreNum == 0, OP_LOGE(context, "coreNum is 0"), return ge::GRAPH_FAILED);
-    ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, *ubSize);
-    OP_CHECK_IF(*ubSize == 0, OP_LOGE(context, "ubSize is 0"), return ge::GRAPH_FAILED);
+    coreNum = ascendcPlatform.GetCoreNumAiv();
+    OP_CHECK_IF(coreNum == 0, OP_LOGE(context, "coreNum is 0"), return ge::GRAPH_FAILED);
+    ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
+    OP_CHECK_IF(ubSize == 0, OP_LOGE(context, "ubSize is 0"), return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t* dim0, ge::DataType* dataType)
+static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& dim0, ge::DataType& dataType)
 {
     auto inputX = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
     auto inputShapeX = EnsureNotScalar(inputX->GetStorageShape());
-    *dim0 = inputShapeX.GetShapeSize();
+    dim0 = inputShapeX.GetShapeSize();
+    OP_CHECK_IF(dim0 < 0,
+                OP_LOGE_FOR_INVALID_SHAPESIZE_WITH_REASON(context->GetNodeName(), "x", std::to_string(dim0).c_str(),
+                                                          "shape size is negative (non-concrete dim or overflow)"),
+                return ge::GRAPH_FAILED);
 
     OP_CHECK_IF(inputShapeX.GetDimNum() > MAX_DIM_NUM,
-                OP_LOGE(context, "Spence: x dim num %zu must be less than or equal to 8.", inputShapeX.GetDimNum()),
+                OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), "x",
+                                                         std::to_string(inputShapeX.GetDimNum()).c_str(),
+                                                         "The dim num of x must be less than or equal to 8"),
                 return ge::GRAPH_FAILED);
 
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
-    *dataType = inputDesc->GetDataType();
+    dataType = inputDesc->GetDataType();
 
     const std::set<ge::DataType> supportedDtypes = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
-    OP_CHECK_IF(supportedDtypes.count(*dataType) == 0,
-                OP_LOGE(context, "Spence: x has incorrect dtype %s. It should be DT_FLOAT, DT_FLOAT16, DT_BF16.",
-                        ToString(*dataType).c_str()),
+    OP_CHECK_IF(supportedDtypes.count(dataType) == 0,
+                OP_LOGE_WITH_INVALID_INPUT_DTYPE(context->GetNodeName(), "x", ToString(dataType).c_str(),
+                                                 "DT_FLOAT, DT_FLOAT16, DT_BFLOAT16"),
+                return ge::GRAPH_FAILED);
+
+    const ge::Format inputOriginFormat = inputDesc->GetOriginFormat();
+    const ge::Format inputStorageFormat = inputDesc->GetStorageFormat();
+    OP_CHECK_IF(inputOriginFormat != ge::FORMAT_ND || inputStorageFormat != ge::FORMAT_ND,
+                OP_LOGE_WITH_INVALID_INPUT_FORMAT(context->GetNodeName(), "x",
+                                                  (std::string(ge::GetFormatName(inputOriginFormat)) + " (origin), " +
+                                                   ge::GetFormatName(inputStorageFormat) + " (storage)")
+                                                      .c_str(),
+                                                  "ND"),
+                return ge::GRAPH_FAILED);
+
+    auto outputDesc = context->GetOutputDesc(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, outputDesc);
+    const ge::Format outputOriginFormat = outputDesc->GetOriginFormat();
+    const ge::Format outputStorageFormat = outputDesc->GetStorageFormat();
+    OP_CHECK_IF(outputOriginFormat != ge::FORMAT_ND || outputStorageFormat != ge::FORMAT_ND,
+                OP_LOGE_WITH_INVALID_INPUT_FORMAT(context->GetNodeName(), "y",
+                                                  (std::string(ge::GetFormatName(outputOriginFormat)) + " (origin), " +
+                                                   ge::GetFormatName(outputStorageFormat) + " (storage)")
+                                                      .c_str(),
+                                                  "ND"),
                 return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
@@ -109,13 +135,13 @@ static ge::graphStatus SpenceTilingFunc(gert::TilingContext* context)
     // 1. Get platform info
     uint64_t ubSize;
     int64_t coreNum;
-    OP_CHECK_IF(GetPlatformInfo(context, &ubSize, &coreNum) != ge::GRAPH_SUCCESS,
+    OP_CHECK_IF(GetPlatformInfo(context, ubSize, coreNum) != ge::GRAPH_SUCCESS,
                 OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
     // 2. Get shape/dtype info
     int64_t dim0;
     ge::DataType dataType = ge::DT_FLOAT;
-    OP_CHECK_IF(GetShapeAttrsInfo(context, &dim0, &dataType) != ge::GRAPH_SUCCESS,
+    OP_CHECK_IF(GetShapeAttrsInfo(context, dim0, dataType) != ge::GRAPH_SUCCESS,
                 OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
     // 3. Workspace
@@ -144,8 +170,8 @@ static ge::graphStatus SpenceTilingFunc(gert::TilingContext* context)
     ComputeBlockDetails(dim0, blockFormer, blockNum, tiling);
 
     context->SetBlockDim(usedCoreNum);
-    uint32_t dTypeX = static_cast<uint32_t>(dataType);
-    ASCENDC_TPL_SEL_PARAM(context, dTypeX);
+    // dtype 由 _def.cpp DataType profile 驱动展开，kernel 无算法分支，tiling key 恒为 0
+    context->SetTilingKey(0);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -158,7 +184,7 @@ static ge::graphStatus InitTilingDataAndEmptyCheck(gert::TilingContext* context,
     tiling->dtype = static_cast<int32_t>(dataType);
     if (dim0 == 0) {
         context->SetBlockDim(1);
-        ASCENDC_TPL_SEL_PARAM(context, static_cast<uint32_t>(dataType));
+        context->SetTilingKey(0);
         isEmpty = true;
     }
     return ge::GRAPH_SUCCESS;
@@ -175,8 +201,11 @@ static void ComputeCoreTiling(gert::TilingContext* context, int64_t dim0, int64_
     if (calcCoreNum < 1) {
         calcCoreNum = 1;
     }
-    int64_t ubBlockSize = GetUbBlockSize(context);
-    blockFormer = CeilAlign(CeilDiv(dim0, calcCoreNum), ubBlockSize);
+    int64_t blockAlignElems = static_cast<int64_t>(GetUbBlockSize(context)) / elemBytes; // 32B 块对齐换算为元素粒度
+    if (blockAlignElems < 1) {
+        blockAlignElems = 1;
+    }
+    blockFormer = CeilAlign(CeilDiv(dim0, calcCoreNum), blockAlignElems);
     blockNum = CeilDiv(dim0, blockFormer);
     usedCoreNum = blockNum;
     tiling->coreNum = static_cast<int32_t>(usedCoreNum);
@@ -188,7 +217,7 @@ static void ComputeUbTiling(uint64_t ubSize, ge::DataType dataType, int64_t elem
 {
     int64_t bufferDivisor = (dataType == ge::DT_FLOAT) ? (2 * FP32_ELEM_BYTES) :
                                                          (2 * FP16_ELEM_BYTES + 2 * FP32_ELEM_BYTES);
-    int64_t maxElemNum = (static_cast<int64_t>(ubSize) * BITS_PER_BYTE) / bufferDivisor;
+    int64_t maxElemNum = static_cast<int64_t>(ubSize) / bufferDivisor; // 字节 ÷ 字节/元素 = 元素
     int64_t alignFactor = UB_ALIGN_BYTES * BITS_PER_BYTE / elemBits;
     int64_t ubFormer = FloorAlign(maxElemNum, alignFactor);
     if (ubFormer < 1) {

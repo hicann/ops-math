@@ -32,7 +32,9 @@
  *   Step 5: if x > 1.5: result = -0.5*ln²(y) - spence_1
  *           else:        result = spence_1
  *
- *   特殊值：x=1→0, x=0→π²/6, x<0→NaN, x=+inf→-inf
+ *   特殊值：x=1→0, x=0→π²/6, x<0→NaN, x=+inf→NaN
+ *   （x=+inf 经反射恒等式 y=1/x=+0, ln(y)=-inf, (-inf)·ln(1-y)=(-inf)·0=NaN，
+ *    与竞品 TF Eigen spence_op 及 oracle scipy.special.spence 的实际行为一致）
  *
  * 参考：Cephes math library (dilog.c), scipy.special.spence, TF spence_op
  */
@@ -47,12 +49,12 @@
 
 using namespace AscendC;
 
-constexpr uint32_t SPENCE_CHUNK = 256;  // elements per chunk
+constexpr uint32_t SPENCE_CHUNK = 8192; // elements per chunk（单次 GM 搬运量：FP32 32KB / FP16·BF16 16KB）
 constexpr float PI2_OVER_6 = 1.6449340668482264f;
-constexpr float POS_INF_F = INFINITY;
 constexpr float SAFE_EPS_F = 1.0e-30f;
 constexpr float HALF_F = 0.5f;
 constexpr float ONE_AND_HALF_F = 1.5f;
+constexpr float TWO_F = 2.0f;
 constexpr float NEG_HALF_F = -0.5f;
 
 // Cephes rational polynomial coefficients (from dilog.c / golden.py)
@@ -80,28 +82,28 @@ constexpr float CEPHES_B7 = 9.99999999999999998740E-1f;
 template <typename T>
 class KernelSpence {
 public:
-    __aicore__ inline KernelSpence(AscendC::TPipe* pipe) { pipe_ = pipe; }
+    __aicore__ inline explicit KernelSpence(AscendC::TPipe* pipe) { pipe_ = pipe; }
 
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y,
-                                 const SpenceTilingData* tiling);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const SpenceTilingData* tiling);
     __aicore__ inline void Process();
 
 private:
     __aicore__ inline void ProcessChunk(uint32_t chunkIdx, uint32_t count);
-    __aicore__ inline void SpenceVFBody(__ubuf__ float* xAddr, __ubuf__ float* yAddr,
-                                         uint32_t count);
+    __aicore__ inline void SpenceVFBody(__ubuf__ float* xAddr, __ubuf__ float* yAddr, uint32_t count);
     __aicore__ inline void EvaluateSpenceHorner(AscendC::Reg::RegTensor<float>& wReg,
-        AscendC::Reg::RegTensor<float>& spencePolReg, AscendC::Reg::MaskReg& mask);
+                                                AscendC::Reg::RegTensor<float>& spencePolReg,
+                                                AscendC::Reg::MaskReg& mask);
     __aicore__ inline void HandleSpenceSpecialValues(AscendC::Reg::RegTensor<float>& xReg,
-        AscendC::Reg::RegTensor<float>& xsReg, AscendC::Reg::RegTensor<float>& resultReg,
-        AscendC::Reg::RegTensor<float>& constReg, AscendC::Reg::RegTensor<float>& zeroReg,
-        AscendC::Reg::MaskReg& mask, AscendC::Reg::MaskReg& cmpMask1);
+                                                     AscendC::Reg::RegTensor<float>& xsReg,
+                                                     AscendC::Reg::RegTensor<float>& resultReg,
+                                                     AscendC::Reg::RegTensor<float>& constReg,
+                                                     AscendC::Reg::RegTensor<float>& zeroReg,
+                                                     AscendC::Reg::MaskReg& mask, AscendC::Reg::MaskReg& cmpMask1);
     __aicore__ inline void ComputeSpenceCorrections(
         AscendC::Reg::RegTensor<float>& yReg, AscendC::Reg::RegTensor<float>& spencePolReg,
         AscendC::Reg::RegTensor<float>& resultReg, AscendC::Reg::RegTensor<float>& t1Reg,
-        AscendC::Reg::RegTensor<float>& constReg, AscendC::Reg::MaskReg& mask,
-        AscendC::Reg::MaskReg& cmpMask2, AscendC::Reg::MaskReg& cmpMaskYlo,
-        AscendC::Reg::MaskReg& cmpMaskXgt);
+        AscendC::Reg::RegTensor<float>& constReg, AscendC::Reg::MaskReg& mask, AscendC::Reg::MaskReg& cmpMask2,
+        AscendC::Reg::MaskReg& cmpMaskYlo, AscendC::Reg::MaskReg& cmpMaskXgt);
 
     AscendC::TPipe* pipe_;
     const SpenceTilingData* tiling_;
@@ -114,23 +116,22 @@ private:
     AscendC::TQue<AscendC::TPosition::VECCALC, 1> xFp32Que_;
     AscendC::TQue<AscendC::TPosition::VECCALC, 1> yFp32Que_;
 
-    uint32_t total_;
+    int64_t total_;
 };
 
 template <typename T>
-__aicore__ inline void KernelSpence<T>::Init(GM_ADDR x, GM_ADDR y,
-                                               const SpenceTilingData* tiling)
+__aicore__ inline void KernelSpence<T>::Init(GM_ADDR x, GM_ADDR y, const SpenceTilingData* tiling)
 {
     tiling_ = tiling;
     uint32_t blockIdx = AscendC::GetBlockIdx();
-    uint32_t globalTotal = static_cast<uint32_t>(tiling->dim0);
+    int64_t globalTotal = tiling->dim0;
     int64_t offset = static_cast<int64_t>(blockIdx) * tiling->blockFormer;
 
     uint32_t numBlocks = static_cast<uint32_t>(tiling->blockNum);
-    if (blockIdx < numBlocks - 1) {
-        total_ = static_cast<uint32_t>(tiling->blockFormer);
+    if (blockIdx + 1 < numBlocks) {
+        total_ = tiling->blockFormer;
     } else {
-        total_ = globalTotal - static_cast<uint32_t>(offset);
+        total_ = globalTotal - offset;
     }
 
     xGm_.SetGlobalBuffer((__gm__ T*)x + offset, total_);
@@ -148,10 +149,10 @@ __aicore__ inline void KernelSpence<T>::Init(GM_ADDR x, GM_ADDR y,
 template <typename T>
 __aicore__ inline void KernelSpence<T>::Process()
 {
-    uint32_t chunks = (total_ + SPENCE_CHUNK - 1) / SPENCE_CHUNK;
-    for (uint32_t c = 0; c < chunks; c++) {
-        uint32_t count = (c == chunks - 1) ? (total_ - c * SPENCE_CHUNK) : SPENCE_CHUNK;
-        ProcessChunk(c, count);
+    int64_t chunks = (total_ + SPENCE_CHUNK - 1) / SPENCE_CHUNK;
+    for (int64_t c = 0; c < chunks; c++) {
+        uint32_t count = static_cast<uint32_t>((c == chunks - 1) ? (total_ - c * SPENCE_CHUNK) : SPENCE_CHUNK);
+        ProcessChunk(static_cast<uint32_t>(c), count);
     }
 }
 
@@ -164,8 +165,7 @@ __aicore__ inline void KernelSpence<T>::Process()
  * 对 FP16/BF16 路径，传入 Cast 后的 FP32 中间 buffer 地址。
  */
 template <typename T>
-__aicore__ inline void KernelSpence<T>::SpenceVFBody(
-    __ubuf__ float* xAddr, __ubuf__ float* yAddr, uint32_t count)
+__aicore__ inline void KernelSpence<T>::SpenceVFBody(__ubuf__ float* xAddr, __ubuf__ float* yAddr, uint32_t count)
 {
     uint32_t vl = AscendC::GetVecLen() / sizeof(float);
 
@@ -204,7 +204,7 @@ __aicore__ inline void KernelSpence<T>::SpenceVFBody(
             // ============================================================
             // Step 1: y = xs if xs < 2, else 1/xs
             // ============================================================
-            Duplicate(constReg, 2.0f, mask);
+            Duplicate(constReg, TWO_F, mask);
             Compare<float, CMPMODE::LT>(cmpMask1, xsReg, constReg, mask);
             // t2 = 1/xs
             Duplicate(t2Reg, 1.0f, mask);
@@ -232,15 +232,15 @@ __aicore__ inline void KernelSpence<T>::SpenceVFBody(
 
             Duplicate(constReg, ONE_AND_HALF_F, mask);
             Compare<float, CMPMODE::GT>(cmpMask2, yReg, constReg, mask);
-            Select<float>(wReg, t1Reg, wGeReg, cmpMask2);  // w = w_gt or w_ge
+            Select<float>(wReg, t1Reg, wGeReg, cmpMask2); // w = w_gt or w_ge
 
             Duplicate(constReg, HALF_F, mask);
             Compare<float, CMPMODE::LT>(cmpMaskYlo, yReg, constReg, mask);
-            Select<float>(wReg, t2Reg, wReg, cmpMaskYlo);  // w = w_lt or previous
+            Select<float>(wReg, t2Reg, wReg, cmpMaskYlo); // w = w_lt or previous
 
             EvaluateSpenceHorner(wReg, spencePolReg, mask);
-            ComputeSpenceCorrections(yReg, spencePolReg, resultReg, t1Reg,
-                constReg, mask, cmpMask2, cmpMaskYlo, cmpMaskXgt);
+            ComputeSpenceCorrections(yReg, spencePolReg, resultReg, t1Reg, constReg, mask, cmpMask2, cmpMaskYlo,
+                                     cmpMaskXgt);
             HandleSpenceSpecialValues(xReg, xsReg, resultReg, constReg, zeroReg, mask, cmpMask1);
 
             // ============================================================
@@ -252,28 +252,42 @@ __aicore__ inline void KernelSpence<T>::SpenceVFBody(
 }
 
 template <typename T>
-__aicore__ inline void KernelSpence<T>::EvaluateSpenceHorner(
-    AscendC::Reg::RegTensor<float>& wReg, AscendC::Reg::RegTensor<float>& spencePolReg,
-    AscendC::Reg::MaskReg& mask)
+__aicore__ inline void KernelSpence<T>::EvaluateSpenceHorner(AscendC::Reg::RegTensor<float>& wReg,
+                                                             AscendC::Reg::RegTensor<float>& spencePolReg,
+                                                             AscendC::Reg::MaskReg& mask)
 {
     using namespace AscendC::Reg;
     RegTensor<float> aReg, bReg;
     Duplicate(aReg, CEPHES_A0, mask);
-    Mul(aReg, aReg, wReg, mask); Adds(aReg, aReg, CEPHES_A1, mask);
-    Mul(aReg, aReg, wReg, mask); Adds(aReg, aReg, CEPHES_A2, mask);
-    Mul(aReg, aReg, wReg, mask); Adds(aReg, aReg, CEPHES_A3, mask);
-    Mul(aReg, aReg, wReg, mask); Adds(aReg, aReg, CEPHES_A4, mask);
-    Mul(aReg, aReg, wReg, mask); Adds(aReg, aReg, CEPHES_A5, mask);
-    Mul(aReg, aReg, wReg, mask); Adds(aReg, aReg, CEPHES_A6, mask);
-    Mul(aReg, aReg, wReg, mask); Adds(aReg, aReg, CEPHES_A7, mask);
+    Mul(aReg, aReg, wReg, mask);
+    Adds(aReg, aReg, CEPHES_A1, mask);
+    Mul(aReg, aReg, wReg, mask);
+    Adds(aReg, aReg, CEPHES_A2, mask);
+    Mul(aReg, aReg, wReg, mask);
+    Adds(aReg, aReg, CEPHES_A3, mask);
+    Mul(aReg, aReg, wReg, mask);
+    Adds(aReg, aReg, CEPHES_A4, mask);
+    Mul(aReg, aReg, wReg, mask);
+    Adds(aReg, aReg, CEPHES_A5, mask);
+    Mul(aReg, aReg, wReg, mask);
+    Adds(aReg, aReg, CEPHES_A6, mask);
+    Mul(aReg, aReg, wReg, mask);
+    Adds(aReg, aReg, CEPHES_A7, mask);
     Duplicate(bReg, CEPHES_B0, mask);
-    Mul(bReg, bReg, wReg, mask); Adds(bReg, bReg, CEPHES_B1, mask);
-    Mul(bReg, bReg, wReg, mask); Adds(bReg, bReg, CEPHES_B2, mask);
-    Mul(bReg, bReg, wReg, mask); Adds(bReg, bReg, CEPHES_B3, mask);
-    Mul(bReg, bReg, wReg, mask); Adds(bReg, bReg, CEPHES_B4, mask);
-    Mul(bReg, bReg, wReg, mask); Adds(bReg, bReg, CEPHES_B5, mask);
-    Mul(bReg, bReg, wReg, mask); Adds(bReg, bReg, CEPHES_B6, mask);
-    Mul(bReg, bReg, wReg, mask); Adds(bReg, bReg, CEPHES_B7, mask);
+    Mul(bReg, bReg, wReg, mask);
+    Adds(bReg, bReg, CEPHES_B1, mask);
+    Mul(bReg, bReg, wReg, mask);
+    Adds(bReg, bReg, CEPHES_B2, mask);
+    Mul(bReg, bReg, wReg, mask);
+    Adds(bReg, bReg, CEPHES_B3, mask);
+    Mul(bReg, bReg, wReg, mask);
+    Adds(bReg, bReg, CEPHES_B4, mask);
+    Mul(bReg, bReg, wReg, mask);
+    Adds(bReg, bReg, CEPHES_B5, mask);
+    Mul(bReg, bReg, wReg, mask);
+    Adds(bReg, bReg, CEPHES_B6, mask);
+    Mul(bReg, bReg, wReg, mask);
+    Adds(bReg, bReg, CEPHES_B7, mask);
     Mul(spencePolReg, wReg, aReg, mask);
     Div(spencePolReg, spencePolReg, bReg, mask);
     Neg(spencePolReg, spencePolReg, mask);
@@ -283,8 +297,7 @@ template <typename T>
 __aicore__ inline void KernelSpence<T>::HandleSpenceSpecialValues(
     AscendC::Reg::RegTensor<float>& xReg, AscendC::Reg::RegTensor<float>& xsReg,
     AscendC::Reg::RegTensor<float>& resultReg, AscendC::Reg::RegTensor<float>& constReg,
-    AscendC::Reg::RegTensor<float>& zeroReg, AscendC::Reg::MaskReg& mask,
-    AscendC::Reg::MaskReg& cmpMask1)
+    AscendC::Reg::RegTensor<float>& zeroReg, AscendC::Reg::MaskReg& mask, AscendC::Reg::MaskReg& cmpMask1)
 {
     using namespace AscendC::Reg;
     Duplicate(zeroReg, 0.0f, mask);
@@ -297,16 +310,15 @@ __aicore__ inline void KernelSpence<T>::HandleSpenceSpecialValues(
     Compare<float, CMPMODE::LT>(cmpMask1, xReg, zeroReg, mask);
     RegTensor<float> nanReg;
     Div(nanReg, zeroReg, zeroReg, mask);
-    Select<float>(resultReg, nanReg, resultReg, cmpMask1);
+    Select<float>(resultReg, nanReg, resultReg, cmpMask1); // x<0 → NaN
 }
 
 template <typename T>
 __aicore__ inline void KernelSpence<T>::ComputeSpenceCorrections(
     AscendC::Reg::RegTensor<float>& yReg, AscendC::Reg::RegTensor<float>& spencePolReg,
     AscendC::Reg::RegTensor<float>& resultReg, AscendC::Reg::RegTensor<float>& t1Reg,
-    AscendC::Reg::RegTensor<float>& constReg, AscendC::Reg::MaskReg& mask,
-    AscendC::Reg::MaskReg& cmpMask2, AscendC::Reg::MaskReg& cmpMaskYlo,
-    AscendC::Reg::MaskReg& cmpMaskXgt)
+    AscendC::Reg::RegTensor<float>& constReg, AscendC::Reg::MaskReg& mask, AscendC::Reg::MaskReg& cmpMask2,
+    AscendC::Reg::MaskReg& cmpMaskYlo, AscendC::Reg::MaskReg& cmpMaskXgt)
 {
     using namespace AscendC::Reg;
     RegTensor<float> lnYReg, oneMinusYReg, lnOneMinusYReg, spence1Reg, corrXgtReg;
@@ -337,9 +349,8 @@ __aicore__ inline void KernelSpence<T>::ProcessChunk(uint32_t chunkIdx, uint32_t
         // ============================================================
         // CopyIn: GM(float) -> UB(float)
         AscendC::LocalTensor<float> xLocal = inQue_.AllocTensor<float>();
-        AscendC::DataCopyPad(xLocal, xGm_[chunkIdx * SPENCE_CHUNK],
-            {1, static_cast<uint16_t>(count * sizeof(float)), 0, 0},
-            {false, 0, 0, 0});
+        AscendC::DataCopyPad(xLocal, xGm_[static_cast<int64_t>(chunkIdx) * SPENCE_CHUNK],
+                             {1, static_cast<uint16_t>(count * sizeof(float)), 0, 0}, {false, 0, 0, 0});
         inQue_.EnQue(xLocal);
 
         // Compute
@@ -356,8 +367,8 @@ __aicore__ inline void KernelSpence<T>::ProcessChunk(uint32_t chunkIdx, uint32_t
 
         // CopyOut: UB(float) -> GM(float)
         AscendC::LocalTensor<float> yOut = outQue_.DeQue<float>();
-        AscendC::DataCopyPad(yGm_[chunkIdx * SPENCE_CHUNK], yOut,
-            {1, static_cast<uint16_t>(count * sizeof(float)), 0, 0});
+        AscendC::DataCopyPad(yGm_[static_cast<int64_t>(chunkIdx) * SPENCE_CHUNK], yOut,
+                             {1, static_cast<uint16_t>(count * sizeof(float)), 0, 0});
         outQue_.FreeTensor(yOut);
     } else {
         // ============================================================
@@ -365,9 +376,8 @@ __aicore__ inline void KernelSpence<T>::ProcessChunk(uint32_t chunkIdx, uint32_t
         // ============================================================
         // CopyIn: GM(T) -> UB(T)
         AscendC::LocalTensor<T> xLocal = inQue_.AllocTensor<T>();
-        AscendC::DataCopyPad(xLocal, xGm_[chunkIdx * SPENCE_CHUNK],
-            {1, static_cast<uint16_t>(count * sizeof(T)), 0, 0},
-            {false, 0, 0, 0});
+        AscendC::DataCopyPad(xLocal, xGm_[static_cast<int64_t>(chunkIdx) * SPENCE_CHUNK],
+                             {1, static_cast<uint16_t>(count * sizeof(T)), 0, 0}, {false, 0, 0, 0});
         inQue_.EnQue(xLocal);
 
         // Dequeue input, allocate intermediate FP32 buffers and output
@@ -394,8 +404,8 @@ __aicore__ inline void KernelSpence<T>::ProcessChunk(uint32_t chunkIdx, uint32_t
 
         // CopyOut: UB(T) -> GM(T)
         AscendC::LocalTensor<T> yOut = outQue_.DeQue<T>();
-        AscendC::DataCopyPad(yGm_[chunkIdx * SPENCE_CHUNK], yOut,
-            {1, static_cast<uint16_t>(count * sizeof(T)), 0, 0});
+        AscendC::DataCopyPad(yGm_[static_cast<int64_t>(chunkIdx) * SPENCE_CHUNK], yOut,
+                             {1, static_cast<uint16_t>(count * sizeof(T)), 0, 0});
         outQue_.FreeTensor(yOut);
     }
 }

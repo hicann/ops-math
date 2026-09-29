@@ -42,169 +42,342 @@ struct SpenceTestParam {
 static SpenceTestParam testCases[] = {
     // === FP32 ===
     {"spence_tiling_0_fp32_1024",
-     {1024}, ge::DT_FLOAT, ge::FORMAT_ND,
-     {1024}, ge::DT_FLOAT, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {1024},
+     ge::DT_FLOAT,
+     ge::FORMAT_ND,
+     {1024},
+     ge::DT_FLOAT,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     {"spence_tiling_1_fp32_scalar",
-     {1}, ge::DT_FLOAT, ge::FORMAT_ND,
-     {1}, ge::DT_FLOAT, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {1},
+     ge::DT_FLOAT,
+     ge::FORMAT_ND,
+     {1},
+     ge::DT_FLOAT,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     {"spence_tiling_2_fp32_empty",
-     {0, 4}, ge::DT_FLOAT, ge::FORMAT_ND,
-     {0, 4}, ge::DT_FLOAT, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {0, 4},
+     ge::DT_FLOAT,
+     ge::FORMAT_ND,
+     {0, 4},
+     ge::DT_FLOAT,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     {"spence_tiling_3_fp32_4d",
-     {8, 16, 32, 64}, ge::DT_FLOAT, ge::FORMAT_ND,
-     {8, 16, 32, 64}, ge::DT_FLOAT, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {8, 16, 32, 64},
+     ge::DT_FLOAT,
+     ge::FORMAT_ND,
+     {8, 16, 32, 64},
+     ge::DT_FLOAT,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     {"spence_tiling_4_fp32_8d",
-     {1, 2, 3, 4, 1, 2, 3, 4}, ge::DT_FLOAT, ge::FORMAT_ND,
-     {1, 2, 3, 4, 1, 2, 3, 4}, ge::DT_FLOAT, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {1, 2, 3, 4, 1, 2, 3, 4},
+     ge::DT_FLOAT,
+     ge::FORMAT_ND,
+     {1, 2, 3, 4, 1, 2, 3, 4},
+     ge::DT_FLOAT,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     {"spence_tiling_5_fp32_2d",
-     {16, 64}, ge::DT_FLOAT, ge::FORMAT_ND,
-     {16, 64}, ge::DT_FLOAT, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {16, 64},
+     ge::DT_FLOAT,
+     ge::FORMAT_ND,
+     {16, 64},
+     ge::DT_FLOAT,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     {"spence_tiling_6_fp32_3d",
-     {4, 8, 32}, ge::DT_FLOAT, ge::FORMAT_ND,
-     {4, 8, 32}, ge::DT_FLOAT, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {4, 8, 32},
+     ge::DT_FLOAT,
+     ge::FORMAT_ND,
+     {4, 8, 32},
+     ge::DT_FLOAT,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     {"spence_tiling_7_fp32_5d",
-     {2, 4, 8, 2, 4}, ge::DT_FLOAT, ge::FORMAT_ND,
-     {2, 4, 8, 2, 4}, ge::DT_FLOAT, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {2, 4, 8, 2, 4},
+     ge::DT_FLOAT,
+     ge::FORMAT_ND,
+     {2, 4, 8, 2, 4},
+     ge::DT_FLOAT,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     {"spence_tiling_8_fp32_6d",
-     {2, 2, 2, 2, 2, 2}, ge::DT_FLOAT, ge::FORMAT_ND,
-     {2, 2, 2, 2, 2, 2}, ge::DT_FLOAT, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {2, 2, 2, 2, 2, 2},
+     ge::DT_FLOAT,
+     ge::FORMAT_ND,
+     {2, 2, 2, 2, 2, 2},
+     ge::DT_FLOAT,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     {"spence_tiling_9_fp32_7d",
-     {2, 2, 2, 2, 2, 2, 2}, ge::DT_FLOAT, ge::FORMAT_ND,
-     {2, 2, 2, 2, 2, 2, 2}, ge::DT_FLOAT, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {2, 2, 2, 2, 2, 2, 2},
+     ge::DT_FLOAT,
+     ge::FORMAT_ND,
+     {2, 2, 2, 2, 2, 2, 2},
+     ge::DT_FLOAT,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     // === FP16 ===
     {"spence_tiling_10_fp16_1024",
-     {1024}, ge::DT_FLOAT16, ge::FORMAT_ND,
-     {1024}, ge::DT_FLOAT16, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {1024},
+     ge::DT_FLOAT16,
+     ge::FORMAT_ND,
+     {1024},
+     ge::DT_FLOAT16,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     {"spence_tiling_11_fp16_scalar",
-     {1}, ge::DT_FLOAT16, ge::FORMAT_ND,
-     {1}, ge::DT_FLOAT16, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {1},
+     ge::DT_FLOAT16,
+     ge::FORMAT_ND,
+     {1},
+     ge::DT_FLOAT16,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     {"spence_tiling_12_fp16_empty",
-     {0, 4}, ge::DT_FLOAT16, ge::FORMAT_ND,
-     {0, 4}, ge::DT_FLOAT16, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {0, 4},
+     ge::DT_FLOAT16,
+     ge::FORMAT_ND,
+     {0, 4},
+     ge::DT_FLOAT16,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     {"spence_tiling_13_fp16_4d",
-     {8, 16, 32, 64}, ge::DT_FLOAT16, ge::FORMAT_ND,
-     {8, 16, 32, 64}, ge::DT_FLOAT16, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {8, 16, 32, 64},
+     ge::DT_FLOAT16,
+     ge::FORMAT_ND,
+     {8, 16, 32, 64},
+     ge::DT_FLOAT16,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     {"spence_tiling_14_fp16_8d",
-     {1, 2, 3, 4, 1, 2, 3, 4}, ge::DT_FLOAT16, ge::FORMAT_ND,
-     {1, 2, 3, 4, 1, 2, 3, 4}, ge::DT_FLOAT16, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {1, 2, 3, 4, 1, 2, 3, 4},
+     ge::DT_FLOAT16,
+     ge::FORMAT_ND,
+     {1, 2, 3, 4, 1, 2, 3, 4},
+     ge::DT_FLOAT16,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     {"spence_tiling_15_fp16_2d",
-     {32, 64}, ge::DT_FLOAT16, ge::FORMAT_ND,
-     {32, 64}, ge::DT_FLOAT16, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {32, 64},
+     ge::DT_FLOAT16,
+     ge::FORMAT_ND,
+     {32, 64},
+     ge::DT_FLOAT16,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     // === BF16 ===
     {"spence_tiling_16_bf16_1024",
-     {1024}, ge::DT_BF16, ge::FORMAT_ND,
-     {1024}, ge::DT_BF16, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {1024},
+     ge::DT_BF16,
+     ge::FORMAT_ND,
+     {1024},
+     ge::DT_BF16,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     {"spence_tiling_17_bf16_scalar",
-     {1}, ge::DT_BF16, ge::FORMAT_ND,
-     {1}, ge::DT_BF16, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {1},
+     ge::DT_BF16,
+     ge::FORMAT_ND,
+     {1},
+     ge::DT_BF16,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     {"spence_tiling_18_bf16_empty",
-     {0, 4}, ge::DT_BF16, ge::FORMAT_ND,
-     {0, 4}, ge::DT_BF16, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {0, 4},
+     ge::DT_BF16,
+     ge::FORMAT_ND,
+     {0, 4},
+     ge::DT_BF16,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     {"spence_tiling_19_bf16_4d",
-     {8, 16, 32, 64}, ge::DT_BF16, ge::FORMAT_ND,
-     {8, 16, 32, 64}, ge::DT_BF16, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {8, 16, 32, 64},
+     ge::DT_BF16,
+     ge::FORMAT_ND,
+     {8, 16, 32, 64},
+     ge::DT_BF16,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     {"spence_tiling_20_bf16_8d",
-     {1, 2, 3, 4, 1, 2, 3, 4}, ge::DT_BF16, ge::FORMAT_ND,
-     {1, 2, 3, 4, 1, 2, 3, 4}, ge::DT_BF16, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {1, 2, 3, 4, 1, 2, 3, 4},
+     ge::DT_BF16,
+     ge::FORMAT_ND,
+     {1, 2, 3, 4, 1, 2, 3, 4},
+     ge::DT_BF16,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     {"spence_tiling_21_bf16_2d",
-     {32, 64}, ge::DT_BF16, ge::FORMAT_ND,
-     {32, 64}, ge::DT_BF16, ge::FORMAT_ND,
-     ge::GRAPH_SUCCESS, {0}, 48, 253952, 4096},
+     {32, 64},
+     ge::DT_BF16,
+     ge::FORMAT_ND,
+     {32, 64},
+     ge::DT_BF16,
+     ge::FORMAT_ND,
+     ge::GRAPH_SUCCESS,
+     {0},
+     48,
+     253952,
+     4096},
 
     // === Unsupported dtype ===
     {"spence_tiling_22_unsupport_int32",
-     {1024}, ge::DT_INT32, ge::FORMAT_ND,
-     {1024}, ge::DT_INT32, ge::FORMAT_ND,
-     ge::GRAPH_FAILED, {0}, 48, 253952, 4096},
+     {1024},
+     ge::DT_INT32,
+     ge::FORMAT_ND,
+     {1024},
+     ge::DT_INT32,
+     ge::FORMAT_ND,
+     ge::GRAPH_FAILED,
+     {0},
+     48,
+     253952,
+     4096},
 
     {"spence_tiling_23_unsupport_double",
-     {2, 3}, ge::DT_DOUBLE, ge::FORMAT_ND,
-     {2, 3}, ge::DT_DOUBLE, ge::FORMAT_ND,
-     ge::GRAPH_FAILED, {0}, 48, 253952, 4096},
+     {2, 3},
+     ge::DT_DOUBLE,
+     ge::FORMAT_ND,
+     {2, 3},
+     ge::DT_DOUBLE,
+     ge::FORMAT_ND,
+     ge::GRAPH_FAILED,
+     {0},
+     48,
+     253952,
+     4096},
 };
 
 class SpenceTilingTest : public testing::TestWithParam<SpenceTestParam> {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "SpenceTilingTest SetUp." << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "SpenceTilingTest SetUp." << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "SpenceTilingTest TearDown." << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "SpenceTilingTest TearDown." << std::endl; }
 };
 
 static SpenceCompileInfo compileInfo;
 
-static uint64_t GetExpectedTilingKey(ge::DataType dtype)
-{
-    return static_cast<uint64_t>(dtype);
-}
-
-static void TestOneParamCase(const SpenceTestParam &param)
+static void TestOneParamCase(const SpenceTestParam& param)
 {
     std::cout << "[TEST_CASE] " << param.caseName << std::endl;
     gert::StorageShape xShape = {param.xShape, param.xShape};
     gert::StorageShape yShape = {param.yShape, param.yShape};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc_(
-        {{xShape, param.xDtype, param.xFormat}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc_(
-        {{yShape, param.yDtype, param.yFormat}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME,
-        inputTensorDesc_,
-        outputTensorDesc_,
-        &compileInfo,
-        param.maxAIVNum,
-        param.ubSize,
-        param.tilingDataMaxSize);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc_({{xShape, param.xDtype, param.xFormat}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc_({{yShape, param.yDtype, param.yFormat}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc_, outputTensorDesc_, &compileInfo,
+                                              param.maxAIVNum, param.ubSize, param.tilingDataMaxSize);
     if (param.status == ge::GRAPH_SUCCESS) {
-        uint64_t expectedKey = GetExpectedTilingKey(param.xDtype);
-        ExecuteTestCase(tilingContextPara, param.status, expectedKey, EMPTY_EXPECT_TILING_DATA, param.expectWorkspaces);
+        // dtype 由 _def.cpp DataType profile 驱动展开，TilingKey 不再编码 dtype
+        ExecuteTestCase(tilingContextPara, param.status, 0, EMPTY_EXPECT_TILING_DATA, param.expectWorkspaces);
     } else {
         ExecuteTestCase(tilingContextPara, param.status, 0, "", {});
     }
@@ -212,14 +385,11 @@ static void TestOneParamCase(const SpenceTestParam &param)
 
 TEST_P(SpenceTilingTest, tiling_test)
 {
-    const SpenceTestParam &param = GetParam();
+    const SpenceTestParam& param = GetParam();
     TestOneParamCase(param);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    SpenceTilingTests,
-    SpenceTilingTest,
-    testing::ValuesIn(testCases));
+INSTANTIATE_TEST_SUITE_P(SpenceTilingTests, SpenceTilingTest, testing::ValuesIn(testCases));
 
 // ============================================================================
 // Tiling Data Validation Tests
@@ -227,27 +397,18 @@ INSTANTIATE_TEST_SUITE_P(
 
 class SpenceTilingDataTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "SpenceTilingDataTest SetUp." << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "SpenceTilingDataTest TearDown." << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "SpenceTilingDataTest SetUp." << std::endl; }
+    static void TearDownTestCase() { std::cout << "SpenceTilingDataTest TearDown." << std::endl; }
 };
 
 TEST_F(SpenceTilingDataTest, tiling_data_fp32_validation)
 {
     gert::StorageShape xShape = {{2048}, {2048}};
     gert::StorageShape yShape = {{2048}, {2048}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_FLOAT, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_FLOAT, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_FLOAT, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_FLOAT, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -270,13 +431,10 @@ TEST_F(SpenceTilingDataTest, tiling_data_fp16_validation)
 {
     gert::StorageShape xShape = {{2048}, {2048}};
     gert::StorageShape yShape = {{2048}, {2048}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -294,13 +452,10 @@ TEST_F(SpenceTilingDataTest, tiling_data_bf16_validation)
 {
     gert::StorageShape xShape = {{2048}, {2048}};
     gert::StorageShape yShape = {{2048}, {2048}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_BF16, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_BF16, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_BF16, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_BF16, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -319,23 +474,17 @@ TEST_F(SpenceTilingDataTest, tiling_data_fp32_vs_fp16_ubformer)
     gert::StorageShape xShape = {{4096}, {4096}};
     gert::StorageShape yShape = {{4096}, {4096}};
 
-    std::vector<gert::TilingContextPara::TensorDescription> fp32Input(
-        {{xShape, ge::DT_FLOAT, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> fp32Output(
-        {{yShape, ge::DT_FLOAT, ge::FORMAT_ND}});
-    gert::TilingContextPara fp32Para(
-        OP_NAME, fp32Input, fp32Output, &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> fp32Input({{xShape, ge::DT_FLOAT, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> fp32Output({{yShape, ge::DT_FLOAT, ge::FORMAT_ND}});
+    gert::TilingContextPara fp32Para(OP_NAME, fp32Input, fp32Output, &compileInfo, 48, 253952, 4096);
 
     TilingInfo fp32Info;
     ASSERT_TRUE(ExecuteTiling(fp32Para, fp32Info));
     const SpenceTilingData* fp32Td = reinterpret_cast<const SpenceTilingData*>(fp32Info.tilingData.get());
 
-    std::vector<gert::TilingContextPara::TensorDescription> fp16Input(
-        {{xShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> fp16Output(
-        {{yShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
-    gert::TilingContextPara fp16Para(
-        OP_NAME, fp16Input, fp16Output, &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> fp16Input({{xShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> fp16Output({{yShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
+    gert::TilingContextPara fp16Para(OP_NAME, fp16Input, fp16Output, &compileInfo, 48, 253952, 4096);
 
     TilingInfo fp16Info;
     ASSERT_TRUE(ExecuteTiling(fp16Para, fp16Info));
@@ -348,13 +497,10 @@ TEST_F(SpenceTilingDataTest, tiling_data_fp32_empty)
 {
     gert::StorageShape xShape = {{0, 4}, {0, 4}};
     gert::StorageShape yShape = {{0, 4}, {0, 4}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_FLOAT, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_FLOAT, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_FLOAT, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_FLOAT, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -370,13 +516,10 @@ TEST_F(SpenceTilingDataTest, tiling_data_fp16_empty)
 {
     gert::StorageShape xShape = {{0, 4}, {0, 4}};
     gert::StorageShape yShape = {{0, 4}, {0, 4}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -392,13 +535,10 @@ TEST_F(SpenceTilingDataTest, tiling_data_bf16_empty)
 {
     gert::StorageShape xShape = {{0, 4}, {0, 4}};
     gert::StorageShape yShape = {{0, 4}, {0, 4}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_BF16, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_BF16, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_BF16, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_BF16, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -414,13 +554,10 @@ TEST_F(SpenceTilingDataTest, tiling_data_fp32_scalar)
 {
     gert::StorageShape xShape = {{}, {}};
     gert::StorageShape yShape = {{}, {}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_FLOAT, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_FLOAT, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_FLOAT, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_FLOAT, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -436,13 +573,10 @@ TEST_F(SpenceTilingDataTest, tiling_data_fp16_scalar)
 {
     gert::StorageShape xShape = {{}, {}};
     gert::StorageShape yShape = {{}, {}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -458,13 +592,10 @@ TEST_F(SpenceTilingDataTest, tiling_data_bf16_scalar)
 {
     gert::StorageShape xShape = {{}, {}};
     gert::StorageShape yShape = {{}, {}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_BF16, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_BF16, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_BF16, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_BF16, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -480,13 +611,10 @@ TEST_F(SpenceTilingDataTest, tiling_data_fp32_large_multicore)
 {
     gert::StorageShape xShape = {{8, 16, 32, 64}, {8, 16, 32, 64}};
     gert::StorageShape yShape = {{8, 16, 32, 64}, {8, 16, 32, 64}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_FLOAT, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_FLOAT, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_FLOAT, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_FLOAT, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -502,13 +630,10 @@ TEST_F(SpenceTilingDataTest, tiling_data_fp16_large_multicore)
 {
     gert::StorageShape xShape = {{8, 16, 32, 64}, {8, 16, 32, 64}};
     gert::StorageShape yShape = {{8, 16, 32, 64}, {8, 16, 32, 64}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -524,13 +649,10 @@ TEST_F(SpenceTilingDataTest, tiling_data_bf16_large_multicore)
 {
     gert::StorageShape xShape = {{8, 16, 32, 64}, {8, 16, 32, 64}};
     gert::StorageShape yShape = {{8, 16, 32, 64}, {8, 16, 32, 64}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_BF16, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_BF16, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_BF16, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_BF16, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -546,13 +668,10 @@ TEST_F(SpenceTilingDataTest, tiling_data_fp32_small_nonaligned)
 {
     gert::StorageShape xShape = {{100}, {100}};
     gert::StorageShape yShape = {{100}, {100}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_FLOAT, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_FLOAT, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_FLOAT, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_FLOAT, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -570,13 +689,10 @@ TEST_F(SpenceTilingDataTest, tiling_data_fp16_small_nonaligned)
 {
     gert::StorageShape xShape = {{77}, {77}};
     gert::StorageShape yShape = {{77}, {77}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -594,13 +710,10 @@ TEST_F(SpenceTilingDataTest, tiling_data_bf16_small_nonaligned)
 {
     gert::StorageShape xShape = {{33}, {33}};
     gert::StorageShape yShape = {{33}, {33}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_BF16, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_BF16, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_BF16, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_BF16, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -618,13 +731,10 @@ TEST_F(SpenceTilingDataTest, tiling_data_fp32_very_large)
 {
     gert::StorageShape xShape = {{1024, 1024, 64}, {1024, 1024, 64}};
     gert::StorageShape yShape = {{1024, 1024, 64}, {1024, 1024, 64}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_FLOAT, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_FLOAT, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_FLOAT, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_FLOAT, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -641,13 +751,10 @@ TEST_F(SpenceTilingDataTest, tiling_data_fp16_very_large)
 {
     gert::StorageShape xShape = {{1024, 1024, 64}, {1024, 1024, 64}};
     gert::StorageShape yShape = {{1024, 1024, 64}, {1024, 1024, 64}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_FLOAT16, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -663,13 +770,10 @@ TEST_F(SpenceTilingDataTest, tiling_data_bf16_very_large)
 {
     gert::StorageShape xShape = {{1024, 1024, 64}, {1024, 1024, 64}};
     gert::StorageShape yShape = {{1024, 1024, 64}, {1024, 1024, 64}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_BF16, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_BF16, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_BF16, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_BF16, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -685,13 +789,10 @@ TEST_F(SpenceTilingDataTest, tiling_data_fp32_8d)
 {
     gert::StorageShape xShape = {{1, 2, 3, 4, 1, 2, 3, 4}, {1, 2, 3, 4, 1, 2, 3, 4}};
     gert::StorageShape yShape = {{1, 2, 3, 4, 1, 2, 3, 4}, {1, 2, 3, 4, 1, 2, 3, 4}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_FLOAT, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_FLOAT, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_FLOAT, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_FLOAT, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -708,13 +809,10 @@ TEST_F(SpenceTilingDataTest, tiling_data_fp32_2d)
 {
     gert::StorageShape xShape = {{32, 64}, {32, 64}};
     gert::StorageShape yShape = {{32, 64}, {32, 64}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_FLOAT, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_FLOAT, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_FLOAT, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_FLOAT, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
@@ -732,13 +830,10 @@ TEST_F(SpenceTilingDataTest, tiling_data_fp32_exact_align)
 {
     gert::StorageShape xShape = {{512}, {512}};
     gert::StorageShape yShape = {{512}, {512}};
-    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc(
-        {{xShape, ge::DT_FLOAT, ge::FORMAT_ND}});
-    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc(
-        {{yShape, ge::DT_FLOAT, ge::FORMAT_ND}});
-    gert::TilingContextPara tilingContextPara(
-        OP_NAME, inputTensorDesc, outputTensorDesc,
-        &compileInfo, 48, 253952, 4096);
+    std::vector<gert::TilingContextPara::TensorDescription> inputTensorDesc({{xShape, ge::DT_FLOAT, ge::FORMAT_ND}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputTensorDesc({{yShape, ge::DT_FLOAT, ge::FORMAT_ND}});
+    gert::TilingContextPara tilingContextPara(OP_NAME, inputTensorDesc, outputTensorDesc, &compileInfo, 48, 253952,
+                                              4096);
 
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingContextPara, tilingInfo));
