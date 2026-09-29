@@ -36,8 +36,8 @@ template <typename T, typename U>
 class DropOutV3Impl {
 public:
     __aicore__ inline DropOutV3Impl(){};
-    __aicore__ inline void Init(GM_ADDR p, GM_ADDR mask, GM_ADDR workspace, const DropOutV3TilingDataStruct* tilingData,
-                                TPipe* pipe);
+    __aicore__ inline void Init(GM_ADDR p, GM_ADDR mask, GM_ADDR seed, GM_ADDR offset, GM_ADDR workspace,
+                                const DropOutV3TilingDataStruct* tilingData, TPipe* pipe);
     __aicore__ inline void Process(GM_ADDR x, GM_ADDR y, GM_ADDR mask, const DropOutV3TilingDataStruct* tilingData);
     __aicore__ inline void CopyInMask(const int64_t offset, const uint32_t count);
     __aicore__ inline void CompareMask(uint32_t count);
@@ -56,11 +56,14 @@ private:
     float prob_ = 0.0f;
     uint32_t blockIdx_ = 0;
     int64_t queSize_ = 0;
+    int64_t realSeed_ = 0;
+    int64_t realOffset_ = 0;
 };
 
 template <typename T, typename U>
-__aicore__ inline void DropOutV3Impl<T, U>::Init(GM_ADDR p, GM_ADDR mask, GM_ADDR workspace,
-                                                 const DropOutV3TilingDataStruct* tilingData, TPipe* pipe)
+__aicore__ inline void DropOutV3Impl<T, U>::Init(GM_ADDR p, GM_ADDR mask, GM_ADDR seed, GM_ADDR offset,
+                                                 GM_ADDR workspace, const DropOutV3TilingDataStruct* tilingData,
+                                                 TPipe* pipe)
 {
     pipe_ = pipe;
     prob_ = tilingData->prob;
@@ -70,6 +73,8 @@ __aicore__ inline void DropOutV3Impl<T, U>::Init(GM_ADDR p, GM_ADDR mask, GM_ADD
     queSize_ = Ops::Base::FloorAlign((tilingData->ubSize / NUM_4), static_cast<int64_t>(NUM_256));
     pipe_->InitBuffer(maskInQueue_, NUM_2, queSize_);
     pipe_->InitBuffer(maskOutQueue_, NUM_2, queSize_);
+    realSeed_ = *(reinterpret_cast<__gm__ int64_t*>(seed));
+    realOffset_ = *(reinterpret_cast<__gm__ int64_t*>(offset) + 1);
 }
 
 template <typename T, int32_t VEC>
@@ -297,31 +302,28 @@ __aicore__ inline void DropOutV3Impl<T, U>::Process(GM_ADDR x, GM_ADDR y, GM_ADD
         case VEC_16:
             asc_vf_call<SimtDropOutVec<T, VEC_16>>(dim3(CORE_THREAD_NUM), (__gm__ volatile T*)x, (__gm__ volatile T*)y,
                                                    (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()),
-                                                   totalThreads, magic, shift, tilingData->outputSize, tilingData->seed,
-                                                   tilingData->offset, prob_);
+                                                   totalThreads, magic, shift, tilingData->outputSize, realSeed_,
+                                                   realOffset_, prob_);
             break;
         case VEC_8:
             asc_vf_call<SimtDropOutVec<T, VEC_8>>(dim3(CORE_THREAD_NUM), (__gm__ volatile T*)x, (__gm__ volatile T*)y,
                                                   (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()), totalThreads,
-                                                  magic, shift, tilingData->outputSize, tilingData->seed,
-                                                  tilingData->offset, prob_);
+                                                  magic, shift, tilingData->outputSize, realSeed_, realOffset_, prob_);
             break;
         case VEC_4:
             asc_vf_call<SimtDropOutVec<T, VEC_4>>(dim3(CORE_THREAD_NUM), (__gm__ volatile T*)x, (__gm__ volatile T*)y,
                                                   (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()), totalThreads,
-                                                  magic, shift, tilingData->outputSize, tilingData->seed,
-                                                  tilingData->offset, prob_);
+                                                  magic, shift, tilingData->outputSize, realSeed_, realOffset_, prob_);
             break;
         case VEC_2:
             asc_vf_call<SimtDropOutVec<T, VEC_2>>(dim3(CORE_THREAD_NUM), (__gm__ volatile T*)x, (__gm__ volatile T*)y,
                                                   (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()), totalThreads,
-                                                  magic, shift, tilingData->outputSize, tilingData->seed,
-                                                  tilingData->offset, prob_);
+                                                  magic, shift, tilingData->outputSize, realSeed_, realOffset_, prob_);
             break;
         default:
             asc_vf_call<SimtDropOut<T>>(dim3(CORE_THREAD_NUM), (__gm__ volatile T*)x, (__gm__ volatile T*)y,
                                         (__gm__ volatile uint8_t*)(maskWorkspace_.GetPhyAddr()), totalThreads, magic,
-                                        shift, tilingData->outputSize, tilingData->seed, tilingData->offset, prob_);
+                                        shift, tilingData->outputSize, realSeed_, realOffset_, prob_);
             break;
     }
     SyncAll();

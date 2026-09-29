@@ -170,8 +170,8 @@ template <typename T, typename U>
 class DropOutV3SimdImpl {
 public:
     __aicore__ inline DropOutV3SimdImpl(){};
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR mask, const DropOutV3TilingDataStruct* tilingData,
-                                TPipe* pipe);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR seed, GM_ADDR offset, GM_ADDR mask,
+                                const DropOutV3TilingDataStruct* tilingData, TPipe* pipe);
     __aicore__ inline void Process(const DropOutV3TilingDataStruct* tilingData);
     __aicore__ inline bool IsProbEqual(float a, float b);
 
@@ -210,10 +210,12 @@ private:
     uint64_t magic64_ = 0;
     uint64_t shift64_ = 0;
     uint32_t vec_ = 0;
+    int64_t realSeed_ = 0;
+    int64_t realOffset_ = 0;
 };
 
 template <typename T, typename U>
-__aicore__ inline void DropOutV3SimdImpl<T, U>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR mask,
+__aicore__ inline void DropOutV3SimdImpl<T, U>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR seed, GM_ADDR offset, GM_ADDR mask,
                                                      const DropOutV3TilingDataStruct* tilingData, TPipe* pipe)
 {
     xGm_.SetGlobalBuffer((__gm__ T*)x);
@@ -224,6 +226,8 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::Init(GM_ADDR x, GM_ADDR y, GM_AD
     prob_ = tilingData->prob;
     vec_ = tilingData->vec;
     totalThreads_ = tilingData->totalThreads;
+    realSeed_ = *(reinterpret_cast<__gm__ int64_t*>(seed));
+    realOffset_ = *(reinterpret_cast<__gm__ int64_t*>(offset) + 1);
 
     GetUintDivMagicAndShift<uint64_t>(magic64_, shift64_, static_cast<uint64_t>(totalThreads_));
     blockIdx_ = GetBlockIdx();
@@ -282,25 +286,25 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::ComputeContinuous(int64_t baseLi
                 asc_vf_call<SimtDropOutComputeContinuous<T, static_cast<int32_t>(VEC_16)>>(
                     dim3(CORE_THREAD_NUMBER), (__ubuf__ volatile T*)inputUb.GetPhyAddr(),
                     (__ubuf__ volatile T*)outputUb.GetPhyAddr(), randomFloatPtr, totalThreads_, magic64_, shift64_,
-                    currElements, baseLinearIndex, tilingData->seed, tilingData->offset, prob_);
+                    currElements, baseLinearIndex, realSeed_, realOffset_, prob_);
                 break;
             case VEC_8:
                 asc_vf_call<SimtDropOutComputeContinuous<T, static_cast<int32_t>(VEC_8)>>(
                     dim3(CORE_THREAD_NUMBER), (__ubuf__ volatile T*)inputUb.GetPhyAddr(),
                     (__ubuf__ volatile T*)outputUb.GetPhyAddr(), randomFloatPtr, totalThreads_, magic64_, shift64_,
-                    currElements, baseLinearIndex, tilingData->seed, tilingData->offset, prob_);
+                    currElements, baseLinearIndex, realSeed_, realOffset_, prob_);
                 break;
             case VEC_4:
                 asc_vf_call<SimtDropOutComputeContinuous<T, static_cast<int32_t>(VEC_4)>>(
                     dim3(CORE_THREAD_NUMBER), (__ubuf__ volatile T*)inputUb.GetPhyAddr(),
                     (__ubuf__ volatile T*)outputUb.GetPhyAddr(), randomFloatPtr, totalThreads_, magic64_, shift64_,
-                    currElements, baseLinearIndex, tilingData->seed, tilingData->offset, prob_);
+                    currElements, baseLinearIndex, realSeed_, realOffset_, prob_);
                 break;
             case VEC_2:
                 asc_vf_call<SimtDropOutComputeContinuous<T, static_cast<int32_t>(VEC_2)>>(
                     dim3(CORE_THREAD_NUMBER), (__ubuf__ volatile T*)inputUb.GetPhyAddr(),
                     (__ubuf__ volatile T*)outputUb.GetPhyAddr(), randomFloatPtr, totalThreads_, magic64_, shift64_,
-                    currElements, baseLinearIndex, tilingData->seed, tilingData->offset, prob_);
+                    currElements, baseLinearIndex, realSeed_, realOffset_, prob_);
                 break;
             default:
                 break;
@@ -349,9 +353,9 @@ __aicore__ inline void DropOutV3SimdImpl<T, U>::ComputeContinuousSimd(int64_t ba
 
     uint32_t key[ALG_KEY_SIZE] = {0, 0};
     uint32_t counter[ALG_COUNTER_SIZE] = {0, 0, 0, 0};
-    key[0] = static_cast<uint32_t>(tilingData->seed);
-    key[1] = static_cast<uint32_t>(static_cast<uint64_t>(tilingData->seed) >> RIGHT_SHIFT);
-    uint64_t skipOffset = Ops::Base::CeilDiv(tilingData->offset, static_cast<int64_t>(VEC_4));
+    key[0] = static_cast<uint32_t>(realSeed_);
+    key[1] = static_cast<uint32_t>(static_cast<uint64_t>(realSeed_) >> RIGHT_SHIFT);
+    uint64_t skipOffset = Ops::Base::CeilDiv(realOffset_, static_cast<int64_t>(VEC_4));
     counter[0] = static_cast<uint32_t>(skipOffset);
     counter[1] = static_cast<uint32_t>(skipOffset >> RIGHT_SHIFT);
 

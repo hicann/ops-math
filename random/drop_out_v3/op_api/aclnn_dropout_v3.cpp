@@ -30,6 +30,8 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
+#include "conversion/concat_d/op_api/concat_d.h"
+#include "math/add/op_api/add.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -40,6 +42,7 @@ static constexpr size_t MAX_DIM_LEN = 8;
 static const int64_t BIT_NUMBER = 128;
 static const int64_t UINT8_BIT_NUMBER = 8;
 static const int8_t MAX_MASK_NUM = -1;
+static const int64_t ONE = 1;
 
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT,
@@ -49,10 +52,22 @@ static const std::initializer_list<op::DataType> ARCH3510_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 
 static const std::initializer_list<op::DataType> MASK_DTYPE_SUPPORT_LIST = {op::DataType::DT_UINT8};
+static const std::initializer_list<op::DataType> SEED_AND_OFFSET_DTYPE_SUPPORT_LIST = {op::DataType::DT_INT64};
 
 static inline bool CheckNotNull(const aclTensor* input, const aclTensor* out, const aclTensor* maskOut)
 {
     OP_CHECK_NULL(input, return false);
+    OP_CHECK_NULL(out, return false);
+    OP_CHECK_NULL(maskOut, return false);
+    return true;
+}
+
+static inline bool CheckNotNullWithTensor(const aclTensor* input, const aclTensor* seedTensor,
+                                          const aclTensor* offsetTensor, const aclTensor* out, const aclTensor* maskOut)
+{
+    OP_CHECK_NULL(input, return false);
+    OP_CHECK_NULL(seedTensor, return false);
+    OP_CHECK_NULL(offsetTensor, return false);
     OP_CHECK_NULL(out, return false);
     OP_CHECK_NULL(maskOut, return false);
     return true;
@@ -85,7 +100,8 @@ static inline const std::initializer_list<op::DataType>& GetDtypeSupportListBySo
     }
 }
 
-static bool CheckDtypeValid(const aclTensor* input, const aclTensor* out, const aclTensor* maskOut)
+static bool CheckDtypeValid(const aclTensor* input, const aclTensor* out, const aclTensor* maskOut,
+                            const aclTensor* seedTensor = nullptr, const aclTensor* offsetTensor = nullptr)
 {
     OP_CHECK_RESULT_DTYPE_CAST_FAILED(input->GetDataType(), out->GetDataType(), return false);
 
@@ -96,6 +112,14 @@ static bool CheckDtypeValid(const aclTensor* input, const aclTensor* out, const 
 
     // 检查mask的数据类型是否在支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(maskOut, MASK_DTYPE_SUPPORT_LIST, return false);
+
+    if (seedTensor) {
+        OP_CHECK_DTYPE_NOT_SUPPORT(seedTensor, SEED_AND_OFFSET_DTYPE_SUPPORT_LIST, return false);
+    }
+
+    if (offsetTensor) {
+        OP_CHECK_DTYPE_NOT_SUPPORT(offsetTensor, SEED_AND_OFFSET_DTYPE_SUPPORT_LIST, return false);
+    }
     return true;
 }
 
@@ -138,7 +162,7 @@ static inline aclnnStatus CheckParams(const aclTensor* input, const aclTensor* o
     // 4. 检查p是否符合规则
     CHECK_RET(CheckProbability(p), ACLNN_ERR_PARAM_INVALID);
 
-    // 5. 检查输出输出shape
+    // 5. 检查输入输出shape
     CHECK_RET(CheckShape(input, out, maskOut), ACLNN_ERR_PARAM_INVALID);
     return ACLNN_SUCCESS;
 }
@@ -244,9 +268,135 @@ aclnnStatus aclnnDropoutV3GetWorkspaceSize(const aclTensor* input, const aclTens
     return ACLNN_SUCCESS;
 }
 
+static inline bool CheckDim(const aclTensor* seedTensor, const aclTensor* offsetTensor, const aclTensor* maskOut)
+{
+    auto seedShape = seedTensor->GetViewShape();
+    auto offsetShape = offsetTensor->GetViewShape();
+    auto maskOutShape = maskOut->GetViewShape();
+
+    if (seedShape.GetDimNum() != ONE) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The dimensions of seedTensor must be 1.");
+        return false;
+    }
+    if (offsetShape.GetDimNum() != ONE) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The dimensions of offsetTensor must be 1.");
+        return false;
+    }
+    if (maskOutShape.GetDimNum() != ONE) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The dimensions of maskOut must be 1.");
+        return false;
+    }
+    return true;
+}
+
+static inline aclnnStatus CheckParamsWithTensor(const aclTensor* input, const aclTensor* optionalNoiseShape, double p,
+                                                const aclTensor* seedTensor, const aclTensor* offsetTensor,
+                                                const aclTensor* out, const aclTensor* maskOut)
+{
+    // 1. 检查参数是否为空指针
+    CHECK_RET(CheckNotNullWithTensor(input, seedTensor, offsetTensor, out, maskOut), ACLNN_ERR_PARAM_NULLPTR);
+
+    // 2. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
+    CHECK_RET(CheckDtypeValid(input, out, maskOut, seedTensor, offsetTensor), ACLNN_ERR_PARAM_INVALID);
+
+    // 3. 检查输入的optionNoiseShape是否为要求的空
+    CHECK_RET(CheckIsNullptr(optionalNoiseShape), ACLNN_ERR_PARAM_INVALID);
+
+    // 4. 检查p是否符合规则
+    CHECK_RET(CheckProbability(p), ACLNN_ERR_PARAM_INVALID);
+
+    // 5. 检查输入输出shape
+    CHECK_RET(CheckShape(input, out, maskOut), ACLNN_ERR_PARAM_INVALID);
+
+    // 6. 检查维度信息
+    CHECK_RET(CheckDim(seedTensor, offsetTensor, maskOut), ACLNN_ERR_PARAM_INVALID);
+    return ACLNN_SUCCESS;
+}
+
+ACLNN_API aclnnStatus aclnnDropoutV3TensorGetWorkspaceSize(const aclTensor* input, const aclTensor* optionalNoiseShape,
+                                                           double p, const aclTensor* seedTensor,
+                                                           const aclTensor* offsetTensor, int64_t offset,
+                                                           aclTensor* out, aclTensor* maskOut, uint64_t* workspaceSize,
+                                                           aclOpExecutor** executor)
+{
+    L2_DFX_PHASE_1(aclnnDropoutV3Tensor, DFX_IN(input, optionalNoiseShape, p, seedTensor, offsetTensor, offset),
+                   DFX_OUT(out, maskOut));
+    // 固定写法，创建OpExecutor
+    auto uniqueExecutor = CREATE_EXECUTOR();
+    CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
+
+    // 固定写法，参数检查
+    auto ret = CheckParamsWithTensor(input, optionalNoiseShape, p, seedTensor, offsetTensor, out, maskOut);
+    CHECK_RET(ret == ACLNN_SUCCESS, ret);
+
+    if (input->IsEmpty()) {
+        *workspaceSize = 0;
+        uniqueExecutor.ReleaseTo(executor);
+        return ACLNN_SUCCESS;
+    }
+
+    // 固定写法，将输入input转换成连续的tensor
+    auto inputContiguous = l0op::Contiguous(input, uniqueExecutor.get());
+    CHECK_RET(inputContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    // 进行dropoutv3计算
+    const aclTensor* outResult = nullptr;
+    const aclTensor* maskResult = nullptr;
+
+    if (p == 0) {
+        outResult = inputContiguous;
+        maskResult = FillScalar(maskOut, MAX_MASK_NUM, uniqueExecutor.get());
+    } else if (p == 1) {
+        outResult = l0op::ZerosLike(inputContiguous, uniqueExecutor.get());
+        maskResult = FillScalar(maskOut, 0, uniqueExecutor.get());
+    } else {
+        FVector<double> probVector = {p};
+        auto probTensor = uniqueExecutor.get()->ConvertToTensor(probVector.data(), probVector.size(),
+                                                                op::DataType::DT_DOUBLE);
+
+        FVector<int64_t> offsetVector{0, static_cast<int64_t>(offset)};
+        aclIntArray* offsetList = uniqueExecutor.get()->AllocIntArray(offsetVector.data(), 2);
+        auto tmpTensor = uniqueExecutor.get()->ConvertToTensor(offsetList, op::DataType::DT_INT64);
+        auto offset1Tensor = l0op::Add(offsetTensor, tmpTensor, uniqueExecutor.get());
+        CHECK_RET(offset1Tensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+        auto dropOutResult = l0op::DropoutV3(inputContiguous, optionalNoiseShape, probTensor, seedTensor, offset1Tensor,
+                                             maskOut, uniqueExecutor.get());
+        CHECK_RET(CheckTupleNullptr(dropOutResult), ACLNN_ERR_INNER_NULLPTR);
+        outResult = std::get<0>(dropOutResult);
+        maskResult = std::get<1>(dropOutResult);
+    }
+    CHECK_RET(outResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    CHECK_RET(maskResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    // 固定写法，将计算结果转换成输出out的数据类型
+    auto castOut = l0op::Cast(outResult, out->GetDataType(), uniqueExecutor.get());
+    CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    // 固定写法，将计算结果拷贝到输出out上，out可能是非连续的tensor
+    auto outViewCopyResult = l0op::ViewCopy(castOut, out, uniqueExecutor.get());
+    CHECK_RET(outViewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    auto maskViewCopyResult = l0op::ViewCopy(maskResult, maskOut, uniqueExecutor.get());
+    CHECK_RET(maskViewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+    // 固定写法，获取计算过程中需要使用的workspace大小
+    *workspaceSize = uniqueExecutor->GetWorkspaceSize();
+    // 需要把 uniqueExecutor持有executor转移给executor
+    uniqueExecutor.ReleaseTo(executor);
+    return ACLNN_SUCCESS;
+}
+
 aclnnStatus aclnnDropoutV3(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnDropoutV3);
+    // 固定写法，调用框架能力，完成计算
+    return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
+}
+
+ACLNN_API aclnnStatus aclnnDropoutV3Tensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                           aclrtStream stream)
+{
+    L2_DFX_PHASE_2(aclnnDropoutV3Tensor);
     // 固定写法，调用框架能力，完成计算
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }

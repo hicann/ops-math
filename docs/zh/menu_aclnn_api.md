@@ -297,6 +297,8 @@
 - [aclnnXLogYScalarOther&aclnnInplaceXLogYScalarOther](../../math/xlogy/docs/aclnnXLogYScalarOther&aclnnInplaceXLogYScalarOther.md)
 - [aclnnXLogYScalarSelf](../../math/xlogy/docs/aclnnXLogYScalarSelf.md)
 - [aclnnXLogYTensor&aclnnInplaceXLogYTensor](../../math/xlogy/docs/aclnnXLogYTensor&aclnnInplaceXLogYTensor.md)
+- [aclnnStatelessExponentialTensor](../../random/stateless_exponential/docs/aclnnStatelessExponentialTensor.md)
+- [aclnnDropoutV3Tenosr](../../random/drop_out_v3/docs/aclnnDropoutV3Tensor.md)
 - [aclRfft1D](../../math/rfft1_d/docs/aclRfft1D.md)
 - [aclStft](../../math/stft/docs/aclStft.md)
 - [编译与运行样例](context/compile_and_run_sample.md)

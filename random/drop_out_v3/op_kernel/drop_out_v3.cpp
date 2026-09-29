@@ -31,11 +31,11 @@ __global__ __aicore__ void drop_out_v3(GM_ADDR x, GM_ADDR noiseShape, GM_ADDR p,
     if (TILING_KEY_IS(DROP_OUT_V3_DEFAULT_TILING_KEY)) {
         if (tilingData.vec == 1) {
             DropOutV3::DropOutV3Impl<DTYPE_X, DTYPE_P> op;
-            op.Init(p, mask, workspace, &tilingData, &pipe);
+            op.Init(p, mask, seed, offset, workspace, &tilingData, &pipe);
             op.Process(x, y, mask, &tilingData);
         } else {
             DropOutV3::DropOutV3SimdImpl<DTYPE_X, DTYPE_P> op;
-            op.Init(x, y, mask, &tilingData, &pipe);
+            op.Init(x, y, seed, offset, mask, &tilingData, &pipe);
             op.Process(&tilingData);
         }
     }

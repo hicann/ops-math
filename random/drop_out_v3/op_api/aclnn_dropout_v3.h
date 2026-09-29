@@ -48,9 +48,10 @@ extern "C" {
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnDropoutV3GetWorkspaceSize(
-    const aclTensor* input, const aclTensor* optionalNoiseShape, double p, int64_t seed, int64_t offset, aclTensor* out,
-    aclTensor* maskOut, uint64_t* workspaceSize, aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnDropoutV3GetWorkspaceSize(const aclTensor* input, const aclTensor* optionalNoiseShape,
+                                                     double p, int64_t seed, int64_t offset, aclTensor* out,
+                                                     aclTensor* maskOut, uint64_t* workspaceSize,
+                                                     aclOpExecutor** executor);
 
 /**
  * @brief aclnnDropoutV3的第二段接口，用于执行计算。
@@ -60,8 +61,41 @@ ACLNN_API aclnnStatus aclnnDropoutV3GetWorkspaceSize(
  * @param [in] executor: op执行器，包含了算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus
-aclnnDropoutV3(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
+ACLNN_API aclnnStatus aclnnDropoutV3(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                     aclrtStream stream);
+/*
+ * @param [in] input: npu device侧的aclTensor。
+ * 数据类型支持FLOAT16、FLOAT32、BFLOAT16，且数据类型必须和out一样，数据格式支持ND，shape必须和out一样，支持非连续的Tensor。
+ * @param [in] optionalNoiseShape: npu device侧的aclTensor。
+ * 数据类型支持INT64，数据格式支持ND，shape为1D，用来控制生成随机数的个数，元素个数会进行128个数对齐。
+ * @param [in] p: 丢弃的概率，数据类型支持DOUBLE。
+ * @param [in] seedTenso: npu device侧的aclTensor。生成随机数的种子，数据类型支持INT64。
+ * @param [in] offsetTensor: npu device侧的aclTensor。生成随机数的偏移，数据类型支持INT64。
+ * @param [in] offset: host侧的整型，随机数生成器的偏移量，它影响生成的随机数序列的位置。输入为INT64_T数据类型。
+ * @param [in] out: npu
+ * device侧的aclTensor，数据类型支持FLOAT16、FLOAT32、BFLOAT16，且数据类型必须和self一样，数据格式支持ND，shape必须和self一样。
+ * @param [in] maskOut: 需要丢弃的输入数据的mask, npu
+ * device侧的aclTensor，数据类型支持UINT8，数据格式支持ND，shape为1D。
+ * @param [out] workspace_size: 返回用户需要在npu device侧申请的workspace大小。
+ * @param [out] executor: 返回op执行器，包含算子计算流程。
+ * @return aclnnStatus: 返回状态码。
+ */
+ACLNN_API aclnnStatus aclnnDropoutV3TensorGetWorkspaceSize(const aclTensor* input, const aclTensor* optionalNoiseShape,
+                                                           double p, const aclTensor* seedTensor,
+                                                           const aclTensor* offsetTensor, int64_t offset,
+                                                           aclTensor* out, aclTensor* maskOut, uint64_t* workspaceSize,
+                                                           aclOpExecutor** executor);
+
+/**
+ * @brief aclnnDropoutV3的第二段接口，用于执行计算。
+ * @param [in] workspace: 在npu device侧申请的workspace内存起址。
+ * @param [in] workspace_size: 在npu device侧申请的workspace大小，由第一段接口aclnnDropoutV3GetWorkspaceSize获取。
+ * @param [in] stream: acl stream流。
+ * @param [in] executor: op执行器，包含了算子计算流程。
+ * @return aclnnStatus: 返回状态码。
+ */
+ACLNN_API aclnnStatus aclnnDropoutV3Tensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                           aclrtStream stream);
 
 #ifdef __cplusplus
 }

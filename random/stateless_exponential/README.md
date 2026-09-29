@@ -82,3 +82,4 @@
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | aclnn接口 | [test_aclnn_multinomial_tensor](../stateless_sample_multinomial/examples/test_aclnn_multinomial_tensor.cpp) | 通过[aclnnMultinomialTensor](../stateless_sample_multinomial/docs/aclnnMultinomialTensor.md)接口构建计算流程时，内部调用StatelessExponential服务算子。 |
+| aclnn接口 | [test_aclnn_stateless_exponential](./examples/arch35/test_aclnn_stateless_exponential.cpp) | 通过[aclnnStatelessExponentialTensor](docs/aclnnStatelessExponentialTensor.md)接口方式调用StatelessExponential算子。 |

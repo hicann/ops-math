@@ -75,26 +75,10 @@ OpTilingConfig DropOutV3Tiling::BuildOpConfig(gert::TilingContext* context)
         return ge::GRAPH_SUCCESS;
     };
 
-    config.getSeedAndOffset = [](gert::TilingContext* ctx, int64_t& seed, int64_t& offset) {
-        gert::Shape seedShape;
-        auto ret = ExtractTensorValue(ctx, INPUT_IDX_SEED, seedShape);
-        OP_CHECK_IF(ret != ge::GRAPH_SUCCESS,
-                    OP_LOGE(ctx->GetNodeName(), "get seed value failed, ret = %d", static_cast<int32_t>(ret)),
-                    return ge::GRAPH_FAILED);
-        seed = static_cast<int64_t>(seedShape.GetDim(0));
-        gert::Shape offsetShape;
-        ret = ExtractTensorValue(ctx, INPUT_IDX_OFFSET, offsetShape);
-        OP_CHECK_IF(ret != ge::GRAPH_SUCCESS,
-                    OP_LOGE(ctx->GetNodeName(), "get offset value failed, ret = %d", static_cast<int32_t>(ret)),
-                    return ge::GRAPH_FAILED);
-        offset = static_cast<int64_t>(offsetShape.GetDim(1));
-        if (offset % OFFSET_LIMIT != 0) {
-            std::string valueStr = std::to_string(offset);
-            std::string reasonMsg = "The offset must be a multiple of 4";
-            OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(ctx->GetNodeName(), "input offset", valueStr.c_str(),
-                                                  reasonMsg.c_str());
-            return ge::GRAPH_FAILED;
-        }
+    // 修改为kernel获取
+    config.getSeedAndOffset = [](gert::TilingContext* /*ctx*/, int64_t& seed, int64_t& offset) {
+        seed = 0;
+        offset = 0;
         return ge::GRAPH_SUCCESS;
     };
 

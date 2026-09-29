@@ -43,7 +43,8 @@ TEST_F(DropOutV3TilingTest, drop_out_v3_tiling_ascendc_float_01)
          {{{15376}, {15376}}, ge::DT_UINT8, ge::FORMAT_ND}},
         &compileInfo);
     uint64_t expectTilingKey = 100;
-    string expectTilingData = "64 122980 8 4 229376 18236833792 159744 1952 4 1 1 11296 1952 4 ";
+    // Capture模式: seed/offset 由 kernel 从 GM 读取, tiling 不再提取(恒为0), 见 getSeedAndOffset 桩
+    string expectTilingData = "64 122980 0 0 229376 18236833792 159744 1952 4 1 1 11296 1952 4 ";
     std::vector<size_t> expectWorkspaces = {16900224};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
