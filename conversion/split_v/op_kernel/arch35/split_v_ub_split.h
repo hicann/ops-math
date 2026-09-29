@@ -139,6 +139,7 @@ __aicore__ inline void DataCopyGatherScope(int32_t vfLenU, int32_t ubSizeNum, in
     {
         AscendC::Reg::MaskReg p0;
         AscendC::Reg::MaskReg p1;
+        AscendC::Reg::MaskReg p2 = AscendC::Reg::CreateMask<T1, AscendC::Reg::MaskPattern::ALL>();
         AscendC::Reg::RegTensor<T2> indexReg;
         AscendC::Reg::RegTensor<T1> tmp;
         AscendC::Reg::RegTensor<T1> addReg;
@@ -150,7 +151,7 @@ __aicore__ inline void DataCopyGatherScope(int32_t vfLenU, int32_t ubSizeNum, in
         AscendC::Reg::RegTensor<T1> niReg;
         AscendC::Reg::UnalignRegForStore u0;
         p0 = AscendC::Reg::UpdateMask<T1>(mask1);
-        AscendC::Reg::Duplicate(niReg, (T1)niSize, p0);
+        AscendC::Reg::Duplicate(niReg, (T1)niSize, p2);
         AscendC::Reg::Arange(indexReg, 0);
         AscendC::Reg::Div(tmp, (AscendC::Reg::RegTensor<T1>&)indexReg, niReg, p0);
         AscendC::Reg::Muls(tmp1, tmp, (T1)nUbFactor, p0);
@@ -206,6 +207,7 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::DataCopyGatherVf(int64_t mFactor,
         {
             AscendC::Reg::MaskReg p0;
             AscendC::Reg::MaskReg p1;
+            AscendC::Reg::MaskReg p2 = AscendC::Reg::CreateMask<U, AscendC::Reg::MaskPattern::ALL>();
             AscendC::Reg::RegTensor<Y> indexReg;
             AscendC::Reg::RegTensor<U> tmp;
             AscendC::Reg::RegTensor<U> addReg;
@@ -218,7 +220,7 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::DataCopyGatherVf(int64_t mFactor,
             AscendC::Reg::RegTensor<T> dstRegO;
             AscendC::Reg::UnalignRegForStore u0;
             p0 = AscendC::Reg::UpdateMask<U>(mask1);
-            AscendC::Reg::Duplicate(niReg, (U)niSize, p0);
+            AscendC::Reg::Duplicate(niReg, (U)niSize, p2);
             AscendC::Reg::Arange(indexReg, 0);
             AscendC::Reg::Div(tmp, (AscendC::Reg::RegTensor<U>&)indexReg, niReg, p0);
             AscendC::Reg::Muls(tmp1, tmp, (U)nUbFactor, p0);
@@ -445,8 +447,13 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::DataCopyIn(int64_t mOffset, int64
     copyParams.blockLen = curNFactor * sizeof(T);
     copyParams.srcStride = (tilingData_->nSize - curNFactor) * sizeof(T);
     copyParams.dstStride = 0;
+#if defined(__DAV_920R1__)
+    DataCopyPad(xUb, xGm[(mBlockOffset_ + mOffset) * tilingData_->nSize + nBlockOffset_ + nOffset], copyParams,
+                padParams, true);
+#else
     DataCopyPad(xUb, xGm[(mBlockOffset_ + mOffset) * tilingData_->nSize + nBlockOffset_ + nOffset], copyParams,
                 padParams);
+#endif
 }
 
 template <typename T, typename U, typename Y>
@@ -622,7 +629,11 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::Process()
         copyParams.blockLen = numSplit_ * sizeof(int32_t);
         copyParams.srcStride = 0;
         copyParams.dstStride = 0;
+#if defined(__DAV_920R1__)
+        DataCopyPad(splitOffsetLocalInt32_, sizeSplitsGmInt32_, copyParams, padParamsIdx, true);
+#else
         DataCopyPad(splitOffsetLocalInt32_, sizeSplitsGmInt32_, copyParams, padParamsIdx);
+#endif
         event_t eventID = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
         SetFlag<HardEvent::MTE2_V>(eventID);
         WaitFlag<HardEvent::MTE2_V>(eventID);
@@ -636,7 +647,11 @@ __aicore__ inline void SplitVUbSplit<T, U, Y>::Process()
         copyParams.blockLen = numSplit_ * sizeof(int64_t);
         copyParams.srcStride = 0;
         copyParams.dstStride = 0;
+#if defined(__DAV_920R1__)
+        DataCopyPad(splitOffsetLocal_, sizeSplitsGm_, copyParams, padParamsIdx, true);
+#else
         DataCopyPad(splitOffsetLocal_, sizeSplitsGm_, copyParams, padParamsIdx);
+#endif
         event_t eventID = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
         SetFlag<HardEvent::MTE2_V>(eventID);
         WaitFlag<HardEvent::MTE2_V>(eventID);

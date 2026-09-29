@@ -204,7 +204,11 @@ __aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::CopyIn(int64_t blockCount,
     copyInParam_.blockLen = blockLen * dtypeSize_;
     copyInParam_.srcStride = srcStride * dtypeSize_;
     copyInParam_.dstStride = dstStride / BLOCK_ELENUM;
+#if defined(__DAV_920R1__)
+    DataCopyPad<T, PaddingMode::Compact>(xUb, xGm_[srcOffset], copyInParam_, padParam_, true);
+#else
     DataCopyPad<T, PaddingMode::Compact>(xUb, xGm_[srcOffset], copyInParam_, padParam_);
+#endif
     inQueueX_.EnQue(xUb);
 }
 
@@ -256,12 +260,13 @@ __aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::ComputeIdx(int64_t process
             AscendC::Reg::RegTensor<U> niRegB64;
             AscendC::Reg::RegTensor<U> subRegB64;
             AscendC::Reg::MaskReg maskB64;
+            AscendC::Reg::MaskReg p2 = AscendC::Reg::CreateMask<U, AscendC::Reg::MaskPattern::ALL>();
 
             maskB64 = AscendC::Reg::UpdateMask<U>(processNum);
 
             Y startIdx = (Y)0;
             AscendC::Reg::Arange(indexRegB64, startIdx);
-            AscendC::Reg::Duplicate(niRegB64, (U)nSizeInt64, maskB64);
+            AscendC::Reg::Duplicate(niRegB64, (U)nSizeInt64, p2);
             AscendC::Reg::Div(tmpB64, (AscendC::Reg::RegTensor<U>&)indexRegB64, niRegB64, maskB64);
             AscendC::Reg::Muls(tmp1B64, tmpB64, (U)gnAlignSize, maskB64);
             AscendC::Reg::Mul(subRegB64, tmpB64, niRegB64, maskB64);
@@ -283,11 +288,12 @@ __aicore__ inline void SplitVUbSplitSameLen<T, U, Y>::ComputeIdx(int64_t process
             AscendC::Reg::RegTensor<U> niReg;
             AscendC::Reg::RegTensor<U> subReg;
             AscendC::Reg::MaskReg mask;
+            AscendC::Reg::MaskReg p2 = AscendC::Reg::CreateMask<U, AscendC::Reg::MaskPattern::ALL>();
 
             mask = AscendC::Reg::UpdateMask<U>(processNum);
             Y startIdx = (Y)0;
             AscendC::Reg::Arange(indexReg, startIdx);
-            AscendC::Reg::Duplicate(niReg, (U)nSize, mask);
+            AscendC::Reg::Duplicate(niReg, (U)nSize, p2);
             AscendC::Reg::Div(tmp, (AscendC::Reg::RegTensor<U>&)indexReg, niReg, mask);
             AscendC::Reg::Muls(tmp1, tmp, (U)gnAlignSize, mask);
             AscendC::Reg::Mul(subReg, tmp, niReg, mask);

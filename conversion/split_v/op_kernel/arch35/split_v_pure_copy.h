@@ -279,7 +279,11 @@ __aicore__ inline void SplitVPureCopyMode<T, S>::CopyInToUb(int64_t blockCount, 
     copyInParam_.blockLen = blockLen * dtypeSize_;
     copyInParam_.srcStride = srcStride * dtypeSize_;
     copyInParam_.dstStride = 0;
+#if defined(__DAV_920R1__)
+    DataCopyPad(inTensorX_[(pingPong_ & 1) * ubSizeNum_], xGm_[srcOffset_], copyInParam_, padParam_, true);
+#else
     DataCopyPad(inTensorX_[(pingPong_ & 1) * ubSizeNum_], xGm_[srcOffset_], copyInParam_, padParam_);
+#endif
 }
 
 template <typename T, typename S>

@@ -142,7 +142,11 @@ __aicore__ inline void SplitVPureCopySpecialMode<T>::CopyInToUb(int64_t blockCou
     copyInParam_.blockLen = blockLen * dtypeSize_;
     copyInParam_.srcStride = 0;
     copyInParam_.dstStride = 0;
+#if defined(__DAV_920R1__)
+    DataCopyPad(srcLocal, xGm_[srcOffset], copyInParam_, padParam_, true);
+#else
     DataCopyPad(srcLocal, xGm_[srcOffset], copyInParam_, padParam_);
+#endif
     inQueueX_.EnQue(srcLocal);
 }
 
