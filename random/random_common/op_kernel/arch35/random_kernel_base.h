@@ -214,7 +214,8 @@ __aicore__ inline void Float32Conversion(LocalTensor<T> yOutput, LocalTensor<flo
                                          const uint32_t calCount)
 {
     if constexpr (AscendC::IsSameType<T, float>::value) {
-        DataCopy(yOutput, normalFloatResult, Ops::Base::CeilAlign(calCount, static_cast<uint32_t>(BLOCK_SIZE)));
+        DataCopy(yOutput, normalFloatResult,
+                 Ops::Base::CeilAlign(calCount, static_cast<uint32_t>(BLOCK_SIZE / sizeof(T))));
     } else if constexpr (AscendC::IsSameType<T, half>::value) {
         Cast(yOutput, normalFloatResult, RoundMode::CAST_NONE, calCount);
     } else {
