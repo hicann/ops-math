@@ -17,6 +17,8 @@
 #include <iostream>
 #include "infershape_context_faker.h"
 #include "infershape_case_executor.h"
+#include "op_infer_datatype_context_builder.h"
+#include "base/registry/op_impl_space_registry_v2.h"
 #include <vector>
 
 using namespace std;
@@ -205,4 +207,95 @@ TEST_F(SplitVInfershape, split_v_infershape_dynamic_dim_with_sum)
         });
     std::vector<std::vector<int64_t>> expectOutputShape = {{3, 8}, {5, 8}, {2, 8}};
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test: size_splits is not const, only the dim on split_dim is unknown (legacy degrade path)
+TEST_F(SplitVInfershape, split_v_infershape_size_splits_not_const)
+{
+    int64_t splitDimValue = 1;
+    gert::InfershapeContextPara infershapeContextPara(
+        "SplitV",
+        {
+            {{{8, 8}, {8, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &splitDimValue},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {"num_split", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{8, -1}, {8, -1}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test: size_splits and split_dim are both not const, all dims are unknown
+TEST_F(SplitVInfershape, split_v_infershape_size_splits_and_split_dim_not_const)
+{
+    gert::InfershapeContextPara infershapeContextPara("SplitV",
+                                                      {
+                                                          {{{8, 8}, {8, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                          {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                          {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {"num_split", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{-1, -1}, {-1, -1}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test: size_splits is not const with unknown-rank x, outputs keep unknown rank
+TEST_F(SplitVInfershape, split_v_infershape_size_splits_not_const_unknown_rank)
+{
+    int64_t splitDimValue = 1;
+    gert::InfershapeContextPara infershapeContextPara(
+        "SplitV",
+        {
+            {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND},
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, &splitDimValue},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        {
+            {"num_split", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+        });
+    std::vector<std::vector<int64_t>> expectOutputShape = {{-2}, {-2}};
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// InferDataType: x is bfloat16, all dynamic outputs (num_split=2) must be bfloat16
+TEST_F(SplitVInfershape, split_v_infer_datatype_bf16_multi_output)
+{
+    auto spaceRegistry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+    ASSERT_NE(spaceRegistry, nullptr);
+    auto opImpl = spaceRegistry->GetOpImpl("SplitV");
+    ASSERT_NE(opImpl, nullptr);
+    ASSERT_NE(opImpl->infer_datatype, nullptr);
+
+    gert::OpInferDataTypeContextBuilder builder;
+    builder.OpType("SplitV").OpName("SplitV");
+    builder.IONum(3, 2);
+    builder.InputTensorDesc(0, ge::DT_BF16, ge::FORMAT_ND, ge::FORMAT_ND);
+    builder.InputTensorDesc(1, ge::DT_INT64, ge::FORMAT_ND, ge::FORMAT_ND);
+    builder.InputTensorDesc(2, ge::DT_INT32, ge::FORMAT_ND, ge::FORMAT_ND);
+    builder.OutputTensorDesc(0, ge::FORMAT_ND, ge::FORMAT_ND);
+    builder.OutputTensorDesc(1, ge::FORMAT_ND, ge::FORMAT_ND);
+    auto contextHolder = builder.Build();
+    auto* context = contextHolder.GetContext();
+    ASSERT_NE(context, nullptr);
+
+    auto ret = opImpl->infer_datatype(context);
+    EXPECT_EQ(ret, ge::GRAPH_SUCCESS);
+    EXPECT_EQ(context->GetOutputDataType(0), ge::DT_BF16);
+    EXPECT_EQ(context->GetOutputDataType(1), ge::DT_BF16);
 }

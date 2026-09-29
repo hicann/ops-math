@@ -19,6 +19,11 @@ using namespace ge;
 using namespace Ops::Base;
 
 namespace ops {
+static constexpr int32_t SPLIT_V_IDX_IN_X = 0;
+static constexpr int32_t SPLIT_V_IDX_IN_SIZE_SPLITS = 1;
+static constexpr int32_t SPLIT_V_IDX_IN_SPLIT_DIM = 2;
+static constexpr int32_t SPLIT_V_ATTR_NUM_SPLIT = 0;
+
 static graphStatus UpdateDynamicShape(gert::InferShapeContext* context, const gert::Shape* x_shape,
                                       const int64_t num_split)
 {
@@ -40,60 +45,68 @@ static graphStatus UpdatetAllUnknownDim(gert::InferShapeContext* context, const 
     return GRAPH_SUCCESS;
 }
 
-static graphStatus CheckSplitVParams(const gert::InferShapeContext* context, const gert::Shape*& x_shape,
-                                     const int64_t split_dim, const int64_t num_split, const int64_t size_splits_size)
+static graphStatus UpdateSplitDimUnknown(gert::InferShapeContext* context, const gert::Shape* x_shape,
+                                         const int64_t num_split, const int64_t split_dim)
 {
-    OP_CHECK_IF(num_split <= 0,
-                OP_LOGE(context->GetNodeName(), "%s",
-                        ConcatString("num_split must be greater than 0, but it's ", num_split).c_str()),
-                return GRAPH_FAILED);
-
-    int64_t x_dim_num = x_shape->GetDimNum();
-    OP_CHECK_IF(!IsDimValid(x_dim_num, split_dim),
-                OP_LOGE(context->GetNodeName(), "%s", GenInvalidDimMsg("split_dim", x_dim_num, split_dim).c_str()),
-                return GRAPH_FAILED);
-
-    OP_CHECK_IF(size_splits_size != num_split,
-                OP_LOGE(context->GetNodeName(), "%s",
-                        ConcatString("the size of size_splits must be equal to num_split. ", "size_splits_size is ",
-                                     size_splits_size, " num_split is ", num_split)
-                            .c_str()),
-                return GRAPH_FAILED);
-
+    for (int64_t i = 0; i < num_split; i++) {
+        gert::Shape* out_shape = context->GetOutputShape(i);
+        OP_CHECK_NULL_WITH_CONTEXT(context, out_shape);
+        *out_shape = *x_shape;
+        out_shape->SetDim(split_dim, -1);
+    }
     return GRAPH_SUCCESS;
 }
 
 template <typename T>
 graphStatus CalcSplitVOut(gert::InferShapeContext* context, const gert::Tensor* size_splits_vec)
 {
-    const gert::Shape* x_shape = context->GetInputShape(0);
+    const gert::Shape* x_shape = context->GetInputShape(SPLIT_V_IDX_IN_X);
     OP_CHECK_NULL_WITH_CONTEXT(context, x_shape);
 
     auto attrs = context->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
 
-    const int64_t* numSplit = attrs->GetAttrPointer<int64_t>(0);
+    const int64_t* numSplit = attrs->GetAttrPointer<int64_t>(SPLIT_V_ATTR_NUM_SPLIT);
     OP_CHECK_NULL_WITH_CONTEXT(context, numSplit);
     int64_t num_split = *numSplit;
+
+    OP_CHECK_IF(num_split <= 0,
+                OP_LOGE_WITH_INVALID_ATTR(context->GetNodeName(), "num_split", std::to_string(num_split).c_str(),
+                                          "greater than 0"),
+                return GRAPH_FAILED);
 
     OP_CHECK_IF(IsUnknownRank(*x_shape),
                 OP_LOGD(context->GetNodeName(), "input x is unknown rank, will set all output the same as input."),
                 return UpdateDynamicShape(context, x_shape, num_split));
 
     int64_t split_dim = 0;
-    static constexpr int64_t input_split_num_idx = 2;
-    if (!GetConstInt(context, input_split_num_idx, split_dim)) {
+    if (!GetConstInt(context, SPLIT_V_IDX_IN_SPLIT_DIM, split_dim)) {
         OP_LOGD(context->GetNodeName(), "get split_dim unsuccessful, will set output to -1.");
         const int64_t input_rank = x_shape->GetDimNum();
         return UpdatetAllUnknownDim(context, num_split, input_rank);
     }
 
-    int64_t size_splits_size = static_cast<int64_t>(size_splits_vec->GetShapeSize());
-    OP_CHECK_IF(CheckSplitVParams(context, x_shape, split_dim, num_split, size_splits_size) == GRAPH_FAILED,
-                OP_LOGE(context->GetNodeName(), "check split params failed"), return GRAPH_FAILED);
+    int64_t x_dim_num = x_shape->GetDimNum();
+    OP_CHECK_IF(!IsDimValid(x_dim_num, split_dim),
+                OP_LOGE_WITH_INVALID_ATTR(context->GetNodeName(), "split_dim", std::to_string(split_dim).c_str(),
+                                          ConcatString("[-", x_dim_num, ", ", x_dim_num, ")").c_str()),
+                return GRAPH_FAILED);
+    split_dim = split_dim < 0 ? split_dim + x_dim_num : split_dim;
 
-    split_dim = split_dim < 0 ? split_dim + x_shape->GetDimNum() : split_dim;
-    const T* split_size_value = size_splits_vec->GetData<T>();
+    // size_splits is not const: only the dim on split_dim is unknown
+    const T* split_size_value = (size_splits_vec == nullptr) ? nullptr : size_splits_vec->GetData<T>();
+    if (split_size_value == nullptr) {
+        OP_LOGD(context->GetNodeName(), "get size_splits value unsuccessful, will set dim on split_dim to -1.");
+        return UpdateSplitDimUnknown(context, x_shape, num_split, split_dim);
+    }
+
+    int64_t size_splits_size = static_cast<int64_t>(size_splits_vec->GetShapeSize());
+    OP_CHECK_IF(size_splits_size != num_split,
+                OP_LOGE_WITH_INVALID_INPUT_SHAPESIZE(context->GetNodeName(), SPLIT_V_IDX_IN_SIZE_SPLITS,
+                                                     std::to_string(size_splits_size).c_str(),
+                                                     std::to_string(num_split).c_str()),
+                return GRAPH_FAILED);
+
     int64_t dynamic_value_idx = -1;
     int64_t split_size_value_sum = 0;
     int64_t dynamic_value_num = 0;
@@ -133,9 +146,15 @@ graphStatus CalcSplitVOut(gert::InferShapeContext* context, const gert::Tensor* 
 
 static graphStatus InferShape4SplitV(gert::InferShapeContext* context)
 {
-    const gert::Tensor* size_splits_desc = context->GetInputTensor(1);
-    OP_CHECK_NULL_WITH_CONTEXT(context, size_splits_desc);
-
+    const gert::Tensor* size_splits_desc = context->GetInputTensor(SPLIT_V_IDX_IN_SIZE_SPLITS);
+    if (size_splits_desc == nullptr) {
+        // size_splits is not const, degrade the dim on split_dim to -1
+        OP_CHECK_IF(
+            CalcSplitVOut<int64_t>(context, nullptr) == GRAPH_FAILED,
+            OP_LOGE(context->GetNodeName(), "Failed to calculate the output of split_v (size_splits not const)"),
+            return GRAPH_FAILED);
+        return GRAPH_SUCCESS;
+    }
     DataType size_splits_dtype = size_splits_desc->GetDataType();
     if (size_splits_dtype == DT_INT32) {
         OP_CHECK_IF(CalcSplitVOut<int32_t>(context, size_splits_desc) == GRAPH_FAILED,
@@ -149,6 +168,21 @@ static graphStatus InferShape4SplitV(gert::InferShapeContext* context)
 
     return GRAPH_SUCCESS;
 }
-IMPL_OP_INFERSHAPE(SplitV).InferShape(InferShape4SplitV).InputsDataDependency({1, 2});
+static graphStatus InferDataType4SplitV(gert::InferDataTypeContext* context)
+{
+    OP_LOGD(context->GetNodeName(), "InferDataType4SplitV start");
+    auto input_x_dtype = context->GetInputDataType(SPLIT_V_IDX_IN_X);
+    const auto output_num = context->GetComputeNodeOutputNum();
+    for (size_t i = 0; i < output_num; i++) {
+        context->SetOutputDataType(i, input_x_dtype);
+    }
+    OP_LOGD(context->GetNodeName(), "InferDataType4SplitV end");
+    return GRAPH_SUCCESS;
+}
+
+IMPL_OP_INFERSHAPE(SplitV)
+    .InferShape(InferShape4SplitV)
+    .InferDataType(InferDataType4SplitV)
+    .InputsDataDependency({SPLIT_V_IDX_IN_SIZE_SPLITS, SPLIT_V_IDX_IN_SPLIT_DIM});
 
 } // namespace ops

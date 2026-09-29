@@ -96,8 +96,12 @@ static graphStatus InferShape4Split(gert::InferShapeContext* context)
     int64_t split_dim = 0;
     if (!GetConstInt(context, 0, split_dim)) {
         OP_LOGD(context->GetNodeName(), "get split_dim unsuccessful, will set output to -1.");
-        const int64_t input_rank = x_shape->GetDimNum();
-        return UpdatetAllUnknownDim(context, num_split, input_rank);
+        if (num_split > 1) {
+            const int64_t input_rank = x_shape->GetDimNum();
+            return UpdatetAllUnknownDim(context, num_split, input_rank);
+        }
+        // num_split is 1: output equals input on any axis, keep x shape
+        return UpdateDynamicShape(context, x_shape, num_split);
     }
 
     OP_CHECK_IF(CheckSplitParams(context, x_shape, split_dim, num_split) == GRAPH_FAILED,
@@ -123,17 +127,41 @@ static graphStatus InferShape4Split(gert::InferShapeContext* context)
     return GRAPH_SUCCESS;
 }
 
+static bool GetSplitDimValue(gert::InferShapeRangeContext* context, int64_t& split_dim)
+{
+    const gert::TensorRange* split_dim_tensor_range = context->GetInputTensorRange(0);
+    if (split_dim_tensor_range == nullptr) {
+        return false;
+    }
+    const gert::Tensor* split_dim_tensor = split_dim_tensor_range->GetMax();
+    if (split_dim_tensor == nullptr) {
+        return false;
+    }
+    switch (split_dim_tensor->GetDataType()) {
+        case DT_INT32: {
+            const int32_t* split_dim_data = split_dim_tensor->GetData<int32_t>();
+            if (split_dim_data == nullptr) {
+                return false;
+            }
+            split_dim = static_cast<int64_t>(*split_dim_data);
+            return true;
+        }
+        case DT_INT64: {
+            const int64_t* split_dim_data = split_dim_tensor->GetData<int64_t>();
+            if (split_dim_data == nullptr) {
+                return false;
+            }
+            split_dim = *split_dim_data;
+            return true;
+        }
+        default:
+            return false;
+    }
+}
+
 static graphStatus InferShapeRange4Split(gert::InferShapeRangeContext* context)
 {
     OP_LOGD(context->GetNodeName(), "InferShapeRange4Split start");
-
-    int64_t SPLIT_DIM_DATA_LEN = 3;
-    auto split_dim_range = context->GetInputShapeRange(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, split_dim_range);
-    auto x_range = context->GetInputShapeRange(1);
-    OP_CHECK_NULL_WITH_CONTEXT(context, x_range);
-    auto y_range = context->GetOutputShapeRange(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, y_range);
 
     auto attrs = context->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
@@ -141,55 +169,68 @@ static graphStatus InferShapeRange4Split(gert::InferShapeRangeContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, numSplit);
     int64_t num_split = *numSplit;
 
-    OP_CHECK_NULL_WITH_CONTEXT(context, x_range->GetMax());
-    int64_t x_dim = x_range->GetMax()->GetDimNum();
-    int64_t split_dim_data_len = strlen(ToString(*split_dim_range->GetMax()).c_str());
-    if (split_dim_data_len != SPLIT_DIM_DATA_LEN) {
-        OP_LOGD(context->GetNodeName(), "Get constValue unsuccessful of [split_dim_data]");
-        if (x_range->GetMax()->GetDimNum() == 1) {
-            if (x_range->GetMax()->GetDim(0) == -1) {
-                y_range->GetMax()->SetDimNum(1);
-                y_range->GetMax()->SetDim(0, -1);
-                y_range->GetMin()->SetDim(0, 0);
-            } else {
-                y_range->GetMax()->SetDimNum(1);
-                y_range->GetMax()->SetDim(0, Ops::Base::CeilDiv(x_range->GetMax()->GetDim(0), num_split));
-                y_range->GetMin()->SetDim(0, Ops::Base::CeilDiv(x_range->GetMax()->GetDim(0), num_split));
-            }
-        } else {
-            for (size_t i = 0; i < x_range->GetMax()->GetDimNum(); ++i) {
-                y_range->GetMax()->SetDimNum(x_range->GetMax()->GetDimNum());
-                y_range->GetMax()->SetDim(i, x_range->GetMax()->GetDim(i));
-                y_range->GetMin()->SetDim(i, 0);
-            }
-        }
-        OP_LOGD(context->GetNodeName(), "InferShapeRange4Split end");
-        return GRAPH_SUCCESS;
-    }
+    auto x_range = context->GetInputShapeRange(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context, x_range);
+    auto x_range_max = x_range->GetMax();
+    OP_CHECK_NULL_WITH_CONTEXT(context, x_range_max);
+    auto x_range_min = x_range->GetMin();
+    OP_CHECK_NULL_WITH_CONTEXT(context, x_range_min);
 
-    auto split_dim_num = split_dim_range->GetMin()->GetDimNum();
-    int64_t split_dim = 1;
-    if (split_dim_num > 0) {
-        split_dim = split_dim_range->GetMin()->GetDim(0);
-    }
+    int64_t x_dim = static_cast<int64_t>(x_range_max->GetDimNum());
 
-    if (split_dim < 0) {
+    int64_t split_dim = 0;
+    bool split_dim_const = GetSplitDimValue(context, split_dim);
+    if (split_dim_const && !IsDimValid(x_dim, split_dim)) {
+        // invalid split_dim, fall back to the loose range
+        split_dim_const = false;
+    }
+    if (split_dim_const && split_dim < 0) {
         split_dim += x_dim;
     }
 
-    for (int64_t i = 0; i < x_dim; ++i) {
-        if (split_dim == static_cast<int>(i)) {
-            x_range->GetMin()->GetDim(i) == 1 ?
-                y_range->GetMin()->SetDim(i, 1) :
-                y_range->GetMin()->SetDim(
-                    i, floor(static_cast<float>(x_range->GetMin()->GetDim(i)) / static_cast<float>(num_split)));
+    for (int64_t out_idx = 0; out_idx < num_split; ++out_idx) {
+        auto y_range = context->GetOutputShapeRange(static_cast<size_t>(out_idx));
+        OP_CHECK_NULL_WITH_CONTEXT(context, y_range);
+        auto y_range_max = y_range->GetMax();
+        OP_CHECK_NULL_WITH_CONTEXT(context, y_range_max);
+        auto y_range_min = y_range->GetMin();
+        OP_CHECK_NULL_WITH_CONTEXT(context, y_range_min);
+        y_range_max->SetDimNum(static_cast<size_t>(x_dim));
+        y_range_min->SetDimNum(static_cast<size_t>(x_dim));
 
-            x_range->GetMax()->GetDim(i) == -1 ?
-                y_range->GetMax()->SetDim(i, -1) :
-                y_range->GetMax()->SetDim(i, Ops::Base::CeilDiv(x_range->GetMax()->GetDim(i), num_split));
-        } else {
-            y_range->GetMax()->SetDim(i, x_range->GetMax()->GetDim(i));
-            y_range->GetMin()->SetDim(i, x_range->GetMin()->GetDim(i));
+        if (!split_dim_const) {
+            // split_dim is not const: the output may be split on any axis, min is 0 and max keeps x range,
+            // except that 1-D x shrinks its max to ceil(x_max / num_split)
+            for (int64_t i = 0; i < x_dim; ++i) {
+                y_range_min->SetDim(static_cast<size_t>(i), 0);
+                if (x_dim == 1 && x_range_max->GetDim(0) != -1) {
+                    y_range_max->SetDim(0, Ops::Base::CeilDiv(x_range_max->GetDim(0), num_split));
+                } else {
+                    y_range_max->SetDim(static_cast<size_t>(i), x_range_max->GetDim(static_cast<size_t>(i)));
+                }
+            }
+            continue;
+        }
+
+        for (int64_t i = 0; i < x_dim; ++i) {
+            if (split_dim == i) {
+                if (x_range_min->GetDim(static_cast<size_t>(i)) == 1 ||
+                    x_range_min->GetDim(static_cast<size_t>(i)) < 0) {
+                    y_range_min->SetDim(static_cast<size_t>(i), x_range_min->GetDim(static_cast<size_t>(i)));
+                } else {
+                    y_range_min->SetDim(static_cast<size_t>(i),
+                                        x_range_min->GetDim(static_cast<size_t>(i)) / num_split);
+                }
+                if (x_range_max->GetDim(static_cast<size_t>(i)) == -1) {
+                    y_range_max->SetDim(static_cast<size_t>(i), -1);
+                } else {
+                    y_range_max->SetDim(static_cast<size_t>(i),
+                                        Ops::Base::CeilDiv(x_range_max->GetDim(static_cast<size_t>(i)), num_split));
+                }
+            } else {
+                y_range_max->SetDim(static_cast<size_t>(i), x_range_max->GetDim(static_cast<size_t>(i)));
+                y_range_min->SetDim(static_cast<size_t>(i), x_range_min->GetDim(static_cast<size_t>(i)));
+            }
         }
     }
     OP_LOGD(context->GetNodeName(), "InferShapeRange4Split end");
@@ -200,7 +241,10 @@ static graphStatus InferDataType4Split(gert::InferDataTypeContext* context)
 {
     OP_LOGD(context->GetNodeName(), "InferDataType4Split start");
     auto input_x_dtype = context->GetInputDataType(1);
-    context->SetOutputDataType(0, input_x_dtype);
+    const auto output_num = context->GetComputeNodeOutputNum();
+    for (size_t i = 0; i < output_num; i++) {
+        context->SetOutputDataType(i, input_x_dtype);
+    }
     OP_LOGD(context->GetNodeName(), "InferDataType4Split end");
     return GRAPH_SUCCESS;
 }
