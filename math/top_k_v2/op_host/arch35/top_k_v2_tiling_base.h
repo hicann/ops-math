@@ -264,13 +264,13 @@ uint32_t ComputeTopkMergeIntraCoreExtractChunkSize(uint64_t ubSizePlatForm, ge::
 
 // ==================== NonLastSmallAxis Helpers ====================
 
-uint32_t GetTopkPreferredInnerChunk(ge::DataType dataType, uint32_t index);
-bool UseTopkNonLastMergeSort(ge::DataType dataType, uint32_t axisLen);
-ge::DataType GetTopkNonLastSortDtype(ge::DataType dataType, bool useMergeSort);
-uint32_t GetTopkNonLastSortDtypeSize(uint32_t dtypeSize, bool useMergeSort, ge::DataType dataType);
-bool GetTopkNonLastSortTmpSize(ge::DataType dataType, uint32_t sortCount, bool useMergeSort, bool isDescend,
-                               uint32_t& tmpUbSize);
-void ComputeTopkAxisDimProducts(const gert::Shape& shape, int64_t axis, TopkNonLastSmallAxisTileInfo& info);
+uint32_t GetTopkPreferredInnerChunk(ge::DataType dtype, uint32_t candidateIdx);
+bool UseTopkNonLastMergeSort(ge::DataType dtype, uint32_t axisLength);
+ge::DataType GetTopkNonLastSortDtype(ge::DataType dtype, bool mergeSortOn);
+uint32_t GetTopkNonLastSortDtypeSize(uint32_t elemSize, bool mergeSortOn, ge::DataType dtype);
+bool GetTopkNonLastSortTmpSize(ge::DataType dtype, uint32_t sortElemCount, bool mergeSortOn, bool descendOn,
+                               uint32_t& tempUbSize);
+void ComputeTopkAxisDimProducts(const gert::Shape& shape, int64_t sortAxisIdx, TopkNonLastSmallAxisTileInfo& info);
 
 // ==================== TopK API Buffer Calculation ====================
 
@@ -307,9 +307,10 @@ bool IsBitonicSmallTopkMode(int64_t kValue, int64_t sortPolicy, bool isSort = tr
 // ==================== NonLastSmallAxis Calculation Helpers ====================
 
 bool SearchTopkNonLastSmallAxisPlan(
-    const TopkNonLastSmallAxisTileInfo& info, uint64_t usableUb,
-    std::function<bool(TopkNonLastSmallAxisTileInfo&, uint32_t, uint64_t&, TopkNonLastSmallAxisCandidate&)> estimateUb,
-    TopkNonLastSmallAxisCandidate& best, TopkNonLastSmallAxisTileInfo* selectedInfo = nullptr);
+    const TopkNonLastSmallAxisTileInfo& info, uint64_t availableUb,
+    std::function<bool(TopkNonLastSmallAxisTileInfo&, uint32_t, uint64_t&, TopkNonLastSmallAxisCandidate&)>
+        estimateUbFn,
+    TopkNonLastSmallAxisCandidate& bestCand, TopkNonLastSmallAxisTileInfo* chosenInfo = nullptr);
 bool ComputeTopkNonLastLayout(const TopkNonLastSmallAxisTileInfo& info, uint32_t kValue, uint32_t innerChunk,
                               bool useMergeSort, topkV2DataInfo::NonLastSmallAxisTopkLayout& layout);
 bool EstimateTopkNonLastSmallAxisUb(TopkNonLastSmallAxisTileInfo& info, uint32_t kValue, uint32_t innerChunk,
