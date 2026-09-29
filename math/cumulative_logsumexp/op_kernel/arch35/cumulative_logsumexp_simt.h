@@ -63,37 +63,35 @@ __simt_vf__ __aicore__ LAUNCH_BOUND(THREAD_NUM) inline void CumulativeLogsumexpK
     __gm__ T* x, __gm__ T* y, int64_t totalNum, int64_t outerNum, int64_t axisNum, int64_t innerNum, int64_t exclusive,
     int64_t reverse)
 {
+    (void)totalNum;
     uint64_t threadNum = static_cast<uint64_t>(Simt::GetThreadNum());
     uint64_t blockNum = static_cast<uint64_t>(Simt::GetBlockNum());
-    uint64_t total = static_cast<uint64_t>(totalNum);
     uint64_t stride = threadNum * blockNum;
     float negInf = -__builtin_inff();
+    int64_t axisVectorNum = outerNum * innerNum;
 
-    for (uint64_t linear =
-             static_cast<uint64_t>(Simt::GetBlockIdx()) * threadNum + static_cast<uint64_t>(Simt::GetThreadIdx());
-         linear < total; linear += stride) {
-        int64_t innerIdx = static_cast<int64_t>(linear % static_cast<uint64_t>(innerNum));
-        int64_t axisIdx = static_cast<int64_t>((linear / static_cast<uint64_t>(innerNum)) %
-                                               static_cast<uint64_t>(axisNum));
-        int64_t outerIdx = static_cast<int64_t>(linear /
-                                                (static_cast<uint64_t>(innerNum) * static_cast<uint64_t>(axisNum)));
-        int64_t base = (outerIdx * axisNum * innerNum) + innerIdx;
-        int64_t count = exclusive != 0 ? axisIdx : axisIdx + 1;
-        int64_t start = 0;
-        int64_t step = 1;
-        if (reverse != 0) {
-            start = axisNum - 1;
-            step = -1;
-            count = exclusive != 0 ? (axisNum - 1 - axisIdx) : (axisNum - axisIdx);
-        }
-
+    // O(N) single-pass scan: each thread owns whole axis vectors and keeps a
+    // running accumulator along the axis, so every element is touched once.
+    for (int64_t vecId = static_cast<int64_t>(Simt::GetBlockIdx()) * static_cast<int64_t>(threadNum) +
+                         static_cast<int64_t>(Simt::GetThreadIdx());
+         vecId < axisVectorNum; vecId += static_cast<int64_t>(stride)) {
+        int64_t outerIdx = vecId / innerNum;
+        int64_t innerIdx = vecId % innerNum;
+        int64_t base = outerIdx * axisNum * innerNum + innerIdx;
         float acc = negInf;
-        for (int64_t i = 0; i < count; ++i) {
-            int64_t scanAxisIdx = start + step * i;
-            float cur = LoadAsFloat<T>(x, base + scanAxisIdx * innerNum);
-            acc = LogAddExp(acc, cur);
+        if (reverse != 0) {
+            for (int64_t i = axisNum - 1; i >= 0; --i) {
+                float prev = acc;
+                acc = LogAddExp(acc, LoadAsFloat<T>(x, base + i * innerNum));
+                StoreFromFloat<T>(y, base + i * innerNum, exclusive != 0 ? prev : acc);
+            }
+        } else {
+            for (int64_t i = 0; i < axisNum; ++i) {
+                float prev = acc;
+                acc = LogAddExp(acc, LoadAsFloat<T>(x, base + i * innerNum));
+                StoreFromFloat<T>(y, base + i * innerNum, exclusive != 0 ? prev : acc);
+            }
         }
-        StoreFromFloat<T>(y, static_cast<int64_t>(linear), acc);
     }
 }
 
