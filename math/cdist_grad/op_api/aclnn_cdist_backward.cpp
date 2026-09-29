@@ -55,7 +55,7 @@ static inline bool CheckNotNull(const aclTensor* grad, const aclTensor* x1, cons
 }
 
 static bool CheckDtypeValid(const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist,
-                            aclTensor* out)
+                            const aclTensor* out)
 {
     OP_CHECK_DTYPE_NOT_SUPPORT(grad, DTYPE_SUPPORT_LIST, return false);
     OP_CHECK_DTYPE_NOT_SUPPORT(x1, DTYPE_SUPPORT_LIST, return false);
@@ -73,7 +73,7 @@ static bool CheckDtypeValid(const aclTensor* grad, const aclTensor* x1, const ac
 }
 
 static bool CheckDims(const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist,
-                      aclTensor* out)
+                      const aclTensor* out)
 {
     OP_CHECK_MAX_DIM(grad, MAX_SUPPORT_DIM, return false);
     OP_CHECK_MIN_DIM(grad, MIN_SUPPORT_DIM, return false);
@@ -108,7 +108,7 @@ static bool getBroadcastShape(const aclTensor* x1, const aclTensor* x2, op::Shap
 }
 
 static bool CheckShape(const aclTensor* grad, const aclTensor* x1, const aclTensor* x2, const aclTensor* cdist,
-                       aclTensor* out)
+                       const aclTensor* out)
 {
     size_t dimNum = grad->GetViewShape().GetDimNum();
     auto cdistShape = cdist->GetViewShape();
@@ -147,7 +147,9 @@ static aclnnStatus CheckParams(const aclTensor* grad, const aclTensor* x1, const
     // 4. 检查输入形状是否满足
     CHECK_RET(CheckShape(grad, x1, x2, cdist, out), ACLNN_ERR_PARAM_INVALID);
 
-    if (std::isnan(p) || (p != -1.0f && p < 0.0f)) {
+    const float eps = 1e-6f;
+    bool is_p_minus1 = (std::fabs(p + 1.0f) < eps);
+    if (std::isnan(p) || (!is_p_minus1 && p < 0.0f)) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "aclnnCdistBackward only supports non-negative p values.");
         return ACLNN_ERR_PARAM_INVALID;
     }
