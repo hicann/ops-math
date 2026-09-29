@@ -12,6 +12,7 @@ import torch
 
 __spec__ = {
     "dense_bincount": "DenseBincountKernelSpec",
+    "DenseBincount": "DenseBincountKernelSpec",
     "tf.raw_ops.DenseBincount": "DenseBincountTfSpec",
 }
 

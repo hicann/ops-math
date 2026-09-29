@@ -18,6 +18,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <new>
 #include "assert.h"
 
 #include "graph.h"
@@ -131,10 +132,8 @@ int32_t GenScalarData(vector<int64_t> shapes, Tensor& input_tensor, TensorDesc& 
         size *= shapes[i];
     }
     size_t data_len = size * GetDataTypeSize(data_type);
-    uint8_t* pData = new (std::nothrow) uint8_t[data_len];
-    if (pData == nullptr) {
-        return FAILED;
-    }
+    std::vector<uint8_t> data(data_len);
+    uint8_t* pData = data.data();
     if (data_type == ge::DT_INT32) {
         std::fill_n(reinterpret_cast<int32_t*>(pData), size, static_cast<int32_t>(value));
     } else if (data_type == ge::DT_INT64) {
@@ -142,22 +141,21 @@ int32_t GenScalarData(vector<int64_t> shapes, Tensor& input_tensor, TensorDesc& 
     } else if (data_type == ge::DT_FLOAT) {
         std::fill_n(reinterpret_cast<float*>(pData), size, static_cast<float>(value));
     } else {
-        delete[] pData;
         return FAILED;
     }
-    input_tensor = Tensor(input_tensor_desc, pData, data_len);
+    input_tensor = Tensor(input_tensor_desc, data);
     return SUCCESS;
 }
 
 int32_t WriteDataToFile(string bin_file, uint64_t data_size, uint8_t* inputData)
 {
-    FILE* fp = fopen(bin_file.c_str(), "w");
+    FILE* fp = fopen(bin_file.c_str(), "wb");
     if (fp == nullptr) {
         return FAILED;
     }
-    fwrite(inputData, sizeof(uint8_t), data_size, fp);
-    fclose(fp);
-    return SUCCESS;
+    const size_t written = fwrite(inputData, sizeof(uint8_t), data_size, fp);
+    const int close_status = fclose(fp);
+    return written == data_size && close_status == 0 ? SUCCESS : FAILED;
 }
 
 int CreateOppInGraph(std::vector<ge::Tensor>& input, std::vector<Operator>& inputs, std::vector<Operator>& outputs,
@@ -207,6 +205,7 @@ int main(int argc, char* argv[])
     ret = CreateOppInGraph(input, inputs, outputs, graph);
     if (ret != SUCCESS) {
         printf("%s - ERROR - [XIR]: Create ir session using build options failed\n", GetTime().c_str());
+        GEFinalize();
         return FAILED;
     }
 
@@ -216,10 +215,11 @@ int main(int argc, char* argv[])
 
     std::map<AscendString, AscendString> build_options = {};
     printf("%s - INFO - [XIR]: Start to create ir session using build options\n", GetTime().c_str());
-    ge::Session* session = new Session(build_options);
+    ge::Session* session = new (std::nothrow) Session(build_options);
 
     if (session == nullptr) {
         printf("%s - ERROR - [XIR]: Create ir session using build options failed\n", GetTime().c_str());
+        GEFinalize();
         return FAILED;
     }
     printf("%s - INFO - [XIR]: Create ir session using build options success\n", GetTime().c_str());
@@ -254,7 +254,12 @@ int main(int argc, char* argv[])
         uint8_t* input_data_i = input[i].GetData();
         int64_t input_shape = input[i].GetTensorDesc().GetShape().GetShapeSize();
         uint32_t data_size = input_shape * GetDataTypeSize(input[i].GetTensorDesc().GetDataType());
-        WriteDataToFile((const char*)input_file.c_str(), data_size, input_data_i);
+        if (WriteDataToFile(input_file, data_size, input_data_i) != SUCCESS) {
+            printf("%s - ERROR - [XIR]: Write input data failed\n", GetTime().c_str());
+            delete session;
+            GEFinalize();
+            return FAILED;
+        }
     }
 
     int output_num = output.size();
@@ -271,7 +276,12 @@ int main(int argc, char* argv[])
         uint8_t* output_data_i = output[i].GetData();
         int64_t output_shape = output[i].GetTensorDesc().GetShape().GetShapeSize();
         uint32_t data_size = output_shape * GetDataTypeSize(output[i].GetTensorDesc().GetDataType());
-        WriteDataToFile((const char*)output_file.c_str(), data_size, output_data_i);
+        if (WriteDataToFile(output_file, data_size, output_data_i) != SUCCESS) {
+            printf("%s - ERROR - [XIR]: Write output data failed\n", GetTime().c_str());
+            delete session;
+            GEFinalize();
+            return FAILED;
+        }
     }
 
     printf("%s - INFO - [XIR]: Precision is ok\n", GetTime().c_str());
