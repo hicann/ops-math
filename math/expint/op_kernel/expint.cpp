@@ -12,12 +12,13 @@
 
 #include "expint_kernel.h"
 
-template <typename D_T_X>
-__global__ __aicore__ void expint(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+extern "C" __global__ __aicore__ void expint(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
+    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     REGISTER_TILING_DEFAULT(ExpintTilingData);
     GET_TILING_DATA_WITH_STRUCT(ExpintTilingData, tilingData, tiling);
-    NsExpint::ExpintKernel<D_T_X> op;
-    op.Init(x, y, &tilingData);
+    AscendC::TPipe pipe;
+    NsExpint::ExpintKernel<DTYPE_X> op;
+    op.Init(x, y, &tilingData, &pipe);
     op.Process();
 }

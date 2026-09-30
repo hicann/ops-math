@@ -16,9 +16,7 @@
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
 #include "arch35/expint_tiling_data.h"
-#include "arch35/expint_tiling_key.h"
 #include <type_traits>
-#include <cmath>
 #include <limits>
 
 namespace NsExpint {
@@ -26,9 +24,6 @@ namespace NsExpint {
 using namespace AscendC;
 
 constexpr float EULER_GAMMA = 0.5772156649015329f;
-constexpr float FP16_MAX_VALUE = 65504.0f;
-constexpr float BF16_MAX_VALUE = 3.38953138927157e+38f;
-
 static constexpr float A1[6] = {
     -5.350447357812542947283E0f, 2.185049168816613393830E2f,  -4.176572384826693777058E3f,
     5.541176756393557601232E4f,  -3.313381331178144034309E5f, 1.592627163384945414220E6f,
@@ -145,25 +140,27 @@ static constexpr float B7[10] = {
 
 template <typename T>
 class ExpintKernel {
-    static constexpr int BUFFER_NUM = 1;
+    static constexpr int BUFFER_NUM = 2;
     static constexpr bool NEED_CAST = !std::is_same_v<T, float>;
-    static constexpr int64_t CMP_ALIGN = 64;          // 256 bytes / 4 bytes per float
-    static constexpr int64_t MASK_ELEM_PER_FLOAT = 8; // sizeof(float) / sizeof(uint8_t)
-    static constexpr int64_t MASK_ALIGN = 32;         // mask buffer alignment in bytes
-    static constexpr float EXP_CLAMP = 88.0f;         // exp(88) < FLT_MAX, exp(89) > FLT_MAX
-    static constexpr float ONE = 1.0f;                // multiplicative identity / reciprocal numerator
-    static constexpr float ZERO = 0.0f;               // additive identity / zero boundary
-    static constexpr float INTERVAL_BOUND_2 = 2.0f;   // Interval 1/2 boundary
-    static constexpr float INTERVAL_BOUND_4 = 4.0f;   // Interval 2/3 boundary
-    static constexpr float INTERVAL_BOUND_8 = 8.0f;   // Interval 3/4 boundary
-    static constexpr float INTERVAL_BOUND_16 = 16.0f; // Interval 4/5 boundary
-    static constexpr float INTERVAL_BOUND_32 = 32.0f; // Interval 5/6 boundary
-    static constexpr float INTERVAL_BOUND_64 = 64.0f; // Interval 6/7 boundary
+    static constexpr int64_t CMP_ALIGN = 64;                     // 256 bytes / 4 bytes per float
+    static constexpr int64_t MASK_ELEM_PER_FLOAT = 8;            // Compare bit-packed mask: 8 element bits per byte
+    static constexpr int64_t MASK_ALIGN = 32;                    // mask buffer alignment in bytes
+    static constexpr float EXP_CLAMP = 88.0f;                    // exp(88) < FLT_MAX, exp(89) > FLT_MAX
+    static constexpr float EXP_CLAMP_E = 1.6516362549940018e38f; // exp(EXP_CLAMP), fp32-representable
+    static constexpr float ONE = 1.0f;                           // multiplicative identity / reciprocal numerator
+    static constexpr float ZERO = 0.0f;                          // additive identity / zero boundary
+    static constexpr float TAIL_PAD_VALUE = 1.0f;                // Ei(1) finite: safe fill for alignment tail lanes
+    static constexpr float INTERVAL_BOUND_2 = 2.0f;              // Interval 1/2 boundary
+    static constexpr float INTERVAL_BOUND_4 = 4.0f;              // Interval 2/3 boundary
+    static constexpr float INTERVAL_BOUND_8 = 8.0f;              // Interval 3/4 boundary
+    static constexpr float INTERVAL_BOUND_16 = 16.0f;            // Interval 4/5 boundary
+    static constexpr float INTERVAL_BOUND_32 = 32.0f;            // Interval 5/6 boundary
+    static constexpr float INTERVAL_BOUND_64 = 64.0f;            // Interval 6/7 boundary
 
 public:
     __aicore__ inline ExpintKernel() {}
 
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const ExpintTilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, const ExpintTilingData* tilingData, TPipe* pipe);
     __aicore__ inline void Process();
 
 private:
@@ -176,23 +173,23 @@ private:
     __aicore__ inline void ProcessFp32(int64_t loopCount);
     __aicore__ inline void ProcessFp16Bf16(int64_t loopCount);
 
-    TPipe pipe;
-    TQue<TPosition::VECIN, BUFFER_NUM> inputQueue;
-    TQue<TPosition::VECOUT, BUFFER_NUM> outputQueue;
+    TPipe* pipe_ = nullptr;
+    TQue<TPosition::VECIN, BUFFER_NUM> inputQueue_;
+    TQue<TPosition::VECOUT, BUFFER_NUM> outputQueue_;
 
-    GlobalTensor<T> inputGM;
-    GlobalTensor<T> outputGM;
+    GlobalTensor<T> inputGM_;
+    GlobalTensor<T> outputGM_;
 
-    TBuf<TPosition::VECCALC> tmpBuf1;
-    TBuf<TPosition::VECCALC> tmpBuf2;
-    TBuf<TPosition::VECCALC> oldResultBuf;
-    TBuf<TPosition::VECCALC> scratchBuf;
-    TBuf<TPosition::VECCALC> maskBuf;
-    TBuf<TPosition::VECCALC> initBuf;
-    TBuf<TPosition::VECCALC> xClampedBuf;
+    TBuf<TPosition::VECCALC> tmpBuf1_;
+    TBuf<TPosition::VECCALC> tmpBuf2_;
+    TBuf<TPosition::VECCALC> oldResultBuf_;
+    TBuf<TPosition::VECCALC> scratchBuf_;
+    TBuf<TPosition::VECCALC> maskBuf_;
+    TBuf<TPosition::VECCALC> initBuf_;
+    TBuf<TPosition::VECCALC> xClampedBuf_;
 
-    TBuf<TPosition::VECCALC> castInBuf;
-    TBuf<TPosition::VECCALC> resultFp32Buf;
+    TBuf<TPosition::VECCALC> castInBuf_;
+    TBuf<TPosition::VECCALC> resultFp32Buf_;
 
     int64_t blockLength_ = 0;
     int64_t ubLength_ = 0;
@@ -200,61 +197,64 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void ExpintKernel<T>::Init(GM_ADDR x, GM_ADDR y, const ExpintTilingData* tilingData)
+__aicore__ inline void ExpintKernel<T>::Init(GM_ADDR x, GM_ADDR y, const ExpintTilingData* tilingData, TPipe* pipe)
 {
+    pipe_ = pipe;
     int64_t remainder = tilingData->totalNum - tilingData->blockFactor * GetBlockIdx();
     blockLength_ = (remainder > tilingData->blockFactor) ? tilingData->blockFactor : remainder;
     ubLength_ = tilingData->ubFactor;
 
     alignedUbLength_ = ((ubLength_ + CMP_ALIGN - 1) / CMP_ALIGN) * CMP_ALIGN;
 
-    inputGM.SetGlobalBuffer((__gm__ T*)x + tilingData->blockFactor * GetBlockIdx(), blockLength_);
-    outputGM.SetGlobalBuffer((__gm__ T*)y + tilingData->blockFactor * GetBlockIdx(), blockLength_);
-
-    pipe.InitBuffer(inputQueue, BUFFER_NUM, alignedUbLength_ * sizeof(T));
-    pipe.InitBuffer(outputQueue, BUFFER_NUM, alignedUbLength_ * sizeof(T));
-
-    pipe.InitBuffer(tmpBuf1, alignedUbLength_ * sizeof(float));
-    pipe.InitBuffer(tmpBuf2, alignedUbLength_ * sizeof(float));
-    pipe.InitBuffer(oldResultBuf, alignedUbLength_ * sizeof(float));
-    pipe.InitBuffer(scratchBuf, alignedUbLength_ * sizeof(float));
-    pipe.InitBuffer(xClampedBuf, alignedUbLength_ * sizeof(float));
-    pipe.InitBuffer(maskBuf, ((alignedUbLength_ / MASK_ELEM_PER_FLOAT + MASK_ALIGN - 1) / MASK_ALIGN) * MASK_ALIGN);
-
-    if constexpr (std::is_same_v<T, float>) {
-        pipe.InitBuffer(initBuf, alignedUbLength_ * sizeof(float));
-    }
+    inputGM_.SetGlobalBuffer((__gm__ T*)x + tilingData->blockFactor * GetBlockIdx(), blockLength_);
+    outputGM_.SetGlobalBuffer((__gm__ T*)y + tilingData->blockFactor * GetBlockIdx(), blockLength_);
 
     if constexpr (NEED_CAST) {
-        pipe.InitBuffer(castInBuf, alignedUbLength_ * sizeof(float));
-        pipe.InitBuffer(resultFp32Buf, alignedUbLength_ * sizeof(float));
+        // The input queue is only used by the FP16/BF16 path (ProcessFp16Bf16);
+        // the FP32 path streams via initBuf_ instead.
+        pipe_->InitBuffer(inputQueue_, BUFFER_NUM, alignedUbLength_ * sizeof(T));
+    }
+    pipe_->InitBuffer(outputQueue_, BUFFER_NUM, alignedUbLength_ * sizeof(T));
+
+    pipe_->InitBuffer(tmpBuf1_, alignedUbLength_ * sizeof(float));
+    pipe_->InitBuffer(tmpBuf2_, alignedUbLength_ * sizeof(float));
+    pipe_->InitBuffer(oldResultBuf_, alignedUbLength_ * sizeof(float));
+    pipe_->InitBuffer(scratchBuf_, alignedUbLength_ * sizeof(float));
+    pipe_->InitBuffer(xClampedBuf_, alignedUbLength_ * sizeof(float));
+    pipe_->InitBuffer(maskBuf_, ((alignedUbLength_ / MASK_ELEM_PER_FLOAT + MASK_ALIGN - 1) / MASK_ALIGN) * MASK_ALIGN);
+
+    if constexpr (NEED_CAST) {
+        pipe_->InitBuffer(castInBuf_, alignedUbLength_ * sizeof(float));
+        pipe_->InitBuffer(resultFp32Buf_, alignedUbLength_ * sizeof(float));
+    } else {
+        pipe_->InitBuffer(initBuf_, alignedUbLength_ * sizeof(float));
     }
 }
 
 template <typename T>
 __aicore__ inline void ExpintKernel<T>::CopyIn(int64_t progress, int64_t currentNum)
 {
-    LocalTensor<T> xLocal = inputQueue.template AllocTensor<T>();
+    LocalTensor<T> xLocal = inputQueue_.template AllocTensor<T>();
     DataCopyParams copyParams;
     copyParams.blockCount = 1;
     copyParams.blockLen = currentNum * sizeof(T);
     copyParams.srcStride = 0;
     copyParams.dstStride = 0;
-    DataCopyPad(xLocal, inputGM[progress * ubLength_], copyParams, {false, 0, 0, 0});
-    inputQueue.EnQue(xLocal);
+    DataCopyPad(xLocal, inputGM_[progress * ubLength_], copyParams, {false, 0, 0, 0});
+    inputQueue_.EnQue(xLocal);
 }
 
 template <typename T>
 __aicore__ inline void ExpintKernel<T>::CopyOut(int64_t progress, int64_t currentNum)
 {
-    LocalTensor<T> yLocal = outputQueue.template DeQue<T>();
+    LocalTensor<T> yLocal = outputQueue_.template DeQue<T>();
     DataCopyParams copyParams;
     copyParams.blockCount = 1;
     copyParams.blockLen = currentNum * sizeof(T);
     copyParams.srcStride = 0;
     copyParams.dstStride = 0;
-    DataCopyPad(outputGM[progress * ubLength_], yLocal, copyParams);
-    outputQueue.FreeTensor(yLocal);
+    DataCopyPad(outputGM_[progress * ubLength_], yLocal, copyParams);
+    outputQueue_.FreeTensor(yLocal);
 }
 
 template <typename T>
@@ -272,19 +272,20 @@ __aicore__ inline void ExpintKernel<T>::HornerEval(LocalTensor<float> acc, Local
 template <typename T>
 __aicore__ inline void ExpintKernel<T>::Compute(LocalTensor<float> xInput, LocalTensor<float> yLocal, int64_t count)
 {
-    LocalTensor<float> tmp1 = tmpBuf1.Get<float>();
-    LocalTensor<float> tmp2 = tmpBuf2.Get<float>();
-    LocalTensor<float> scratch = scratchBuf.Get<float>();
+    LocalTensor<float> tmp1 = tmpBuf1_.Get<float>();
+    LocalTensor<float> tmp2 = tmpBuf2_.Get<float>();
+    LocalTensor<float> scratch = scratchBuf_.Get<float>();
 
     int64_t n = ((count + CMP_ALIGN - 1) / CMP_ALIGN) * CMP_ALIGN;
 
     // Use yLocal directly as result buffer (separate result TBuf has issues on Ascend950)
     LocalTensor<float>& result = yLocal;
-    LocalTensor<float> oldResult = oldResultBuf.Get<float>();
-    LocalTensor<uint8_t> mask = maskBuf.Get<uint8_t>();
+    LocalTensor<float> oldResult = oldResultBuf_.Get<float>();
+    LocalTensor<uint8_t> mask = maskBuf_.Get<uint8_t>();
 
-    // Clamp x to EXP_CLAMP to prevent exp(x) overflow in float32
-    LocalTensor<float> xFp32 = xClampedBuf.Get<float>();
+    // Clamp x to EXP_CLAMP to prevent exp(x) overflow in float32;
+    // lanes with x > EXP_CLAMP are recomputed after the interval merge (see below)
+    LocalTensor<float> xFp32 = xClampedBuf_.Get<float>();
     Duplicate(tmp1, EXP_CLAMP, n);
     Compare(mask, xInput, tmp1, CMPMODE::GT, n);
     Select(xFp32, mask, tmp1, xInput, SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
@@ -395,19 +396,42 @@ __aicore__ inline void ExpintKernel<T>::Compute(LocalTensor<float> xInput, Local
     Compare(mask, xFp32, tmp1, CMPMODE::LT, n);
     Select(result, mask, oldResult, scratch, SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
 
-    // ApplyBoundaries
+    // Large-x overflow-safe correction (x > EXP_CLAMP): the clamped computation
+    // above saturates those lanes at Ei(EXP_CLAMP). Recompute with the original
+    // x via Ei(x) = exp(x - EXP_CLAMP) * (exp(EXP_CLAMP) / x) * S(x), where
+    // S(x) = 1 + w * P7(w) / Q7(w) and w = 1 / x. Every factor stays finite
+    // for x <= ~93.2 and the final multiply overflows to +inf beyond, which
+    // matches the IEEE fp32 rounding of the true Ei(x).
+    Duplicate(tmp1, EXP_CLAMP, n);
+    Compare(mask, xInput, tmp1, CMPMODE::GT, n);
+    Adds(tmp2, xInput, -EXP_CLAMP, n);
+    Exp(tmp2, tmp2, n); // exp(x - EXP_CLAMP)
+    Duplicate(scratch, ONE, n);
+    Div(scratch, scratch, xInput, n);             // w = 1/x (original x)
+    HornerEval(tmp1, oldResult, scratch, A7, n);  // P7(w)
+    HornerEval(oldResult, xFp32, scratch, B7, n); // Q7(w), clamped-x buffer reused as Horner temp
+    Div(oldResult, tmp1, oldResult, n);           // P7/Q7
+    Mul(oldResult, oldResult, scratch, n);        // w * P7/Q7
+    Adds(oldResult, oldResult, ONE, n);           // S = 1 + w * P7/Q7
+    Mul(oldResult, oldResult, tmp2, n);           // S * exp(x - EXP_CLAMP)
+    Duplicate(tmp1, EXP_CLAMP_E, n);
+    Div(tmp1, tmp1, xInput, n);    // exp(EXP_CLAMP) / x
+    Mul(tmp1, tmp1, oldResult, n); // corrected Ei(x)
+    Select(result, mask, tmp1, result, SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
+
+    // x < 0 -> NaN
     Duplicate(tmp1, ZERO, n);
-    Compare(mask, xFp32, tmp1, CMPMODE::LT, n);
+    Compare(mask, xInput, tmp1, CMPMODE::LT, n);
     Duplicate(tmp1, std::numeric_limits<float>::quiet_NaN(), n);
     Select(result, mask, tmp1, result, SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
 
     Duplicate(tmp1, std::numeric_limits<float>::infinity(), n);
-    Compare(mask, xFp32, tmp1, CMPMODE::EQ, n);
+    Compare(mask, xInput, tmp1, CMPMODE::EQ, n);
     Select(result, mask, tmp1, result, SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
 
     // x == 0 -> -inf (exact comparison)
     Duplicate(tmp1, ZERO, n);
-    Compare(mask, xFp32, tmp1, CMPMODE::EQ, n);
+    Compare(mask, xInput, tmp1, CMPMODE::EQ, n);
     Duplicate(tmp1, -std::numeric_limits<float>::infinity(), n);
     Select(result, mask, tmp1, result, SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
 }
@@ -419,8 +443,8 @@ __aicore__ inline void ExpintKernel<T>::ProcessFp32(int64_t loopCount)
         int64_t currentNum = (i == (loopCount - 1)) ? (blockLength_ - ubLength_ * i) : ubLength_;
         int64_t alignedCount = ((currentNum + CMP_ALIGN - 1) / CMP_ALIGN) * CMP_ALIGN;
 
-        LocalTensor<float> xFp32 = initBuf.Get<float>();
-        Duplicate(xFp32, ONE, alignedCount);
+        LocalTensor<float> xFp32 = initBuf_.Get<float>();
+        Duplicate(xFp32, TAIL_PAD_VALUE, alignedCount); // safe fill for alignment tail lanes
         SetFlag<HardEvent::V_MTE2>(0);
         WaitFlag<HardEvent::V_MTE2>(0);
         DataCopyParams copyParams;
@@ -428,13 +452,13 @@ __aicore__ inline void ExpintKernel<T>::ProcessFp32(int64_t loopCount)
         copyParams.blockLen = currentNum * sizeof(float);
         copyParams.srcStride = 0;
         copyParams.dstStride = 0;
-        DataCopyPad(xFp32, inputGM[i * ubLength_], copyParams, {false, 0, 0, 0});
+        DataCopyPad(xFp32, inputGM_[i * ubLength_], copyParams, {false, 0, 0, 0});
         SetFlag<HardEvent::MTE2_V>(0);
         WaitFlag<HardEvent::MTE2_V>(0);
 
-        LocalTensor<float> yLocal = outputQueue.template AllocTensor<float>();
+        LocalTensor<float> yLocal = outputQueue_.template AllocTensor<float>();
         Compute(xFp32, yLocal, currentNum);
-        outputQueue.template EnQue<float>(yLocal);
+        outputQueue_.template EnQue<float>(yLocal);
 
         CopyOut(i, currentNum);
     }
@@ -447,36 +471,21 @@ __aicore__ inline void ExpintKernel<T>::ProcessFp16Bf16(int64_t loopCount)
         int64_t currentNum = (i == (loopCount - 1)) ? (blockLength_ - ubLength_ * i) : ubLength_;
         CopyIn(i, currentNum);
 
-        LocalTensor<T> xInput = inputQueue.template DeQue<T>();
+        LocalTensor<T> xInput = inputQueue_.template DeQue<T>();
 
-        LocalTensor<float> xFp32 = castInBuf.Get<float>();
+        LocalTensor<float> xFp32 = castInBuf_.Get<float>();
         int64_t alignedCount = ((currentNum + CMP_ALIGN - 1) / CMP_ALIGN) * CMP_ALIGN;
-        Duplicate(xFp32, ONE, alignedCount);
+        Duplicate(xFp32, TAIL_PAD_VALUE, alignedCount); // safe fill for alignment tail lanes
         Cast<float, T>(xFp32, xInput, RoundMode::CAST_NONE, currentNum);
 
-        LocalTensor<float> resultFp32 = resultFp32Buf.Get<float>();
+        LocalTensor<float> resultFp32 = resultFp32Buf_.Get<float>();
         Compute(xFp32, resultFp32, currentNum);
 
-        // Clamp float32 result to target dtype range to prevent Cast overflow to inf
-        LocalTensor<float> clampVal = castInBuf.Get<float>();
-        LocalTensor<uint8_t> clampMask = maskBuf.Get<uint8_t>();
-        float maxVal;
-        if constexpr (std::is_same_v<T, half>) {
-            maxVal = FP16_MAX_VALUE;
-        } else {
-            maxVal = BF16_MAX_VALUE;
-        }
-        Duplicate(clampVal, maxVal, alignedCount);
-        Compare(clampMask, resultFp32, clampVal, CMPMODE::GT, alignedCount);
-        LocalTensor<float> clampTmp = oldResultBuf.Get<float>();
-        Select(clampTmp, clampMask, clampVal, resultFp32, SELMODE::VSEL_TENSOR_TENSOR_MODE, alignedCount);
-        Adds(resultFp32, clampTmp, ZERO, alignedCount);
-
-        LocalTensor<T> yOutput = outputQueue.template AllocTensor<T>();
+        LocalTensor<T> yOutput = outputQueue_.template AllocTensor<T>();
         Cast<T, float>(yOutput, resultFp32, RoundMode::CAST_ROUND, currentNum);
-        outputQueue.template EnQue<T>(yOutput);
+        outputQueue_.template EnQue<T>(yOutput);
 
-        inputQueue.FreeTensor(xInput);
+        inputQueue_.FreeTensor(xInput);
         CopyOut(i, currentNum);
     }
 }
@@ -490,10 +499,10 @@ __aicore__ inline void ExpintKernel<T>::Process()
 
     int64_t loopCount = (blockLength_ + ubLength_ - 1) / ubLength_;
 
-    if constexpr (std::is_same_v<T, float>) {
-        ProcessFp32(loopCount);
-    } else {
+    if constexpr (NEED_CAST) {
         ProcessFp16Bf16(loopCount);
+    } else {
+        ProcessFp32(loopCount);
     }
 }
 

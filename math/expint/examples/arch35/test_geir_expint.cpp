@@ -4,27 +4,28 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include <iostream>
-#include <fstream>
-#include <string.h>
 #include <stdint.h>
+#include <cstdio>
+#include <ctime>
+#include <array>
+#include <memory>
 #include <vector>
 #include <string>
 #include <map>
-#include "assert.h"
+#include <cmath>
+#include <limits>
 
 #include "graph.h"
 #include "types.h"
 #include "tensor.h"
-#include "ge_error_codes.h"
 #include "ge_api_types.h"
 #include "ge_api.h"
 #include "array_ops.h"
-#include "ge_ir_build.h"
 #include "../../op_graph/expint_proto.h"
 
 #define FAILED -1
@@ -34,6 +35,29 @@ using namespace ge;
 using std::map;
 using std::string;
 using std::vector;
+
+// IEEE 754 bit layout constants for the fp32 -> fp16/bf16 test data encoding
+constexpr uint32_t FP16_SIGN_MASK = 0x8000U;
+constexpr uint32_t FP32_EXP_MASK = 0xFFU;
+constexpr uint32_t FP16_MANT_MASK = 0x3FFU;
+constexpr uint32_t FP16_INF_BITS = 0x7C00U;
+constexpr int32_t FP16_MANT_BITS = 10;
+constexpr int32_t FP32_SIGN_SHIFT = 16;
+constexpr int32_t FP32_EXP_SHIFT = 23;
+constexpr int32_t FP32_MANT_SHIFT = 13;
+constexpr int32_t FP32_EXP_BIAS = 127;
+constexpr int32_t FP16_EXP_BIAS = 15;
+constexpr int32_t FP16_EXP_MAX = 31;
+// Test fixture parameters: 14-value coverage (all intervals + special values +
+// x>88 overflow-safe correction path, aligned with expint_geir_v2_common.h MakeInput)
+constexpr int32_t INPUT_FILL_VALUE = 2;
+constexpr std::array<float, 14> INPUT_VALUES = {-1.0f, -0.0f, 0.0f,  0.25f, 1.0f,  2.0f,  4.0f,
+                                                8.0f,  16.0f, 32.0f, 64.0f, 88.5f, 93.0f, 100.0f};
+constexpr int64_t EXPECTED_OUTPUT_ELEMS = 16; // 4x4 input shape
+constexpr float ATOL = 1.0e-4f;
+constexpr float RTOL = 2.0e-4f;
+
+static float InputValueAt(size_t idx) { return INPUT_VALUES[idx % INPUT_VALUES.size()]; }
 
 #define ADD_INPUT(inputIndex, inputName, inputDtype, inputShape)                                                       \
     vector<int64_t> placeholder##inputIndex##_shape = inputShape;                                                      \
@@ -45,7 +69,7 @@ using std::vector;
     placeholder##inputIndex##_desc.SetFormat(FORMAT_ND);                                                               \
     Tensor tensor_placeholder##inputIndex;                                                                             \
     ret = GenOnesData(placeholder##inputIndex##_shape, tensor_placeholder##inputIndex, placeholder##inputIndex##_desc, \
-                      inputDtype, 2);                                                                                  \
+                      inputDtype, INPUT_FILL_VALUE);                                                                   \
     if (ret != SUCCESS) {                                                                                              \
         printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());                                 \
         return FAILED;                                                                                                 \
@@ -69,88 +93,67 @@ string GetTime()
     return tmp;
 }
 
-uint32_t GetDataTypeSize(DataType dt)
+int32_t GenOnesData(const vector<int64_t>& shapes, Tensor& inputTensor, TensorDesc& inputTensorDesc, DataType dataType,
+                    int32_t value)
 {
-    uint32_t dilation = 1;
-    if (dt == ge::DT_FLOAT) {
-        dilation = 4;
-    } else if (dt == ge::DT_FLOAT16) {
-        dilation = 2;
-    } else if (dt == ge::DT_BF16) {
-        dilation = 2;
-    } else if (dt == ge::DT_INT32) {
-        dilation = 4;
-    } else if (dt == ge::DT_INT64) {
-        dilation = 8;
-    }
-    return dilation;
-}
-
-int32_t GenOnesData(vector<int64_t> shapes, Tensor& input_tensor, TensorDesc& input_tensor_desc, DataType data_type,
-                    int value)
-{
-    input_tensor_desc.SetRealDimCnt(shapes.size());
+    inputTensorDesc.SetRealDimCnt(shapes.size());
     size_t size = 1;
-    for (uint32_t i = 0; i < shapes.size(); i++) {
-        size *= shapes[i];
+    for (int64_t dim : shapes) {
+        size *= static_cast<size_t>(dim);
     }
-    size_t data_len = size * GetDataTypeSize(data_type);
-    uint8_t* pData = new (std::nothrow) uint8_t[data_len];
-    if (pData == nullptr) {
-        return FAILED;
-    }
-    if (data_type == DT_FLOAT) {
-        float* fData = reinterpret_cast<float*>(pData);
-        for (uint32_t i = 0; i < size; ++i) {
-            fData[i] = static_cast<float>(value);
+    size_t dataLen = size * static_cast<size_t>(ge::GetSizeByDataType(dataType));
+    std::vector<uint8_t> data(dataLen);
+    if (dataType == DT_FLOAT) {
+        std::vector<float> fData(size);
+        for (size_t i = 0; i < size; ++i) {
+            fData[i] = InputValueAt(i);
         }
-    } else if (data_type == DT_FLOAT16) {
-        uint16_t* hData = reinterpret_cast<uint16_t*>(pData);
-        for (uint32_t i = 0; i < size; ++i) {
-            float fval = static_cast<float>(value);
+        std::copy(fData.begin(), fData.end(), reinterpret_cast<float*>(data.data()));
+    } else if (dataType == DT_FLOAT16) {
+        std::vector<uint16_t> hData(size);
+        for (size_t i = 0; i < size; ++i) {
+            const float fval = InputValueAt(i);
+            const uint32_t fbits = __builtin_bit_cast(uint32_t, fval);
+            const uint32_t sign = (fbits >> FP32_SIGN_SHIFT) & FP16_SIGN_MASK;
+            const int32_t rawExp = static_cast<int32_t>((fbits >> FP32_EXP_SHIFT) & FP32_EXP_MASK);
+            const int32_t exp = rawExp - FP32_EXP_BIAS + FP16_EXP_BIAS;
+            const uint32_t mant = (fbits >> FP32_MANT_SHIFT) & FP16_MANT_MASK;
             uint16_t hval;
-            uint32_t fbits;
-            memcpy(&fbits, &fval, sizeof(fbits));
-            uint32_t sign = (fbits >> 16) & 0x8000;
-            int32_t exp = ((fbits >> 23) & 0xFF) - 127 + 15;
-            uint32_t mant = (fbits >> 13) & 0x3FF;
             if (exp <= 0) {
-                hval = sign;
-            } else if (exp >= 31) {
-                hval = sign | 0x7C00;
+                hval = static_cast<uint16_t>(sign);
+            } else if (exp >= FP16_EXP_MAX) {
+                hval = static_cast<uint16_t>(sign | FP16_INF_BITS);
             } else {
-                hval = sign | (exp << 10) | mant;
+                hval = static_cast<uint16_t>(sign | (static_cast<uint32_t>(exp) << FP16_MANT_BITS) | mant);
             }
             hData[i] = hval;
         }
-    } else if (data_type == DT_BF16) {
-        uint16_t* bData = reinterpret_cast<uint16_t*>(pData);
-        for (uint32_t i = 0; i < size; ++i) {
-            float fval = static_cast<float>(value);
-            uint32_t fbits;
-            memcpy(&fbits, &fval, sizeof(fbits));
-            bData[i] = static_cast<uint16_t>(fbits >> 16);
+        std::copy(hData.begin(), hData.end(), reinterpret_cast<uint16_t*>(data.data()));
+    } else if (dataType == DT_BF16) {
+        std::vector<uint16_t> bData(size);
+        for (size_t i = 0; i < size; ++i) {
+            const float fval = InputValueAt(i);
+            const uint32_t fbits = __builtin_bit_cast(uint32_t, fval);
+            bData[i] = static_cast<uint16_t>(fbits >> FP32_SIGN_SHIFT);
         }
+        std::copy(bData.begin(), bData.end(), reinterpret_cast<uint16_t*>(data.data()));
     } else {
-        int32_t* iData = reinterpret_cast<int32_t*>(pData);
-        for (uint32_t i = 0; i < size; ++i) {
-            iData[i] = value;
-        }
+        const std::vector<int32_t> iData(size, value);
+        std::copy(iData.begin(), iData.end(), reinterpret_cast<int32_t*>(data.data()));
     }
-    input_tensor = Tensor(input_tensor_desc, pData, data_len);
-    delete[] pData;
+    inputTensor = Tensor(inputTensorDesc, data.data(), dataLen);
     return SUCCESS;
 }
 
-int32_t WriteDataToFile(string bin_file, uint64_t data_size, uint8_t* inputData)
+int32_t WriteDataToFile(const string& binFile, uint64_t dataSize, const uint8_t* inputData)
 {
-    FILE* fp = fopen(bin_file.c_str(), "w");
+    FILE* fp = fopen(binFile.c_str(), "w");
     if (fp == nullptr) {
         return FAILED;
     }
-    size_t written = fwrite(inputData, sizeof(uint8_t), data_size, fp);
+    size_t written = fwrite(inputData, sizeof(uint8_t), dataSize, fp);
     fclose(fp);
-    if (written != data_size) {
+    if (written != dataSize) {
         return FAILED;
     }
     return SUCCESS;
@@ -172,13 +175,13 @@ int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor>& input, std::vect
 
 int main(int argc, char* argv[])
 {
-    const char* graph_name = "tc_ge_irrun_test_expint";
-    Graph graph(graph_name);
+    const char* graphName = "tc_ge_irrun_test_expint";
+    Graph graph(graphName);
     std::vector<ge::Tensor> input;
 
     printf("%s - INFO - [XIR]: Start to initialize ge using ge global options\n", GetTime().c_str());
-    std::map<AscendString, AscendString> global_options = {{"ge.exec.deviceId", "0"}, {"ge.graphRunMode", "1"}};
-    Status ret = ge::GEInitialize(global_options);
+    std::map<AscendString, AscendString> globalOptions = {{"ge.exec.deviceId", "0"}, {"ge.graphRunMode", "1"}};
+    Status ret = ge::GEInitialize(globalOptions);
     if (ret != SUCCESS) {
         printf("%s - INFO - [XIR]: Initialize ge using ge global options failed\n", GetTime().c_str());
         return FAILED;
@@ -193,6 +196,7 @@ int main(int argc, char* argv[])
     ret = CreateOppInGraph(inDtype, input, inputs, outputs, graph);
     if (ret != SUCCESS) {
         printf("%s - ERROR - [XIR]: Create ir session using build options failed\n", GetTime().c_str());
+        GEFinalize();
         return FAILED;
     }
 
@@ -200,23 +204,24 @@ int main(int argc, char* argv[])
         graph.SetInputs(inputs).SetOutputs(outputs);
     }
 
-    std::map<AscendString, AscendString> build_options = {};
+    std::map<AscendString, AscendString> buildOptions = {};
     printf("%s - INFO - [XIR]: Start to create ir session using build options\n", GetTime().c_str());
-    ge::Session* session = new Session(build_options);
+    std::unique_ptr<ge::Session> session(new (std::nothrow) ge::Session(buildOptions));
 
     if (session == nullptr) {
         printf("%s - ERROR - [XIR]: Create ir session using build options failed\n", GetTime().c_str());
+        GEFinalize();
         return FAILED;
     }
     printf("%s - INFO - [XIR]: Create ir session using build options success\n", GetTime().c_str());
     printf("%s - INFO - [XIR]: Start to add compute graph to ir session\n", GetTime().c_str());
 
-    std::map<AscendString, AscendString> graph_options = {};
-    uint32_t graph_id = 0;
-    ret = session->AddGraph(graph_id, graph, graph_options);
+    std::map<AscendString, AscendString> graphOptions = {};
+    uint32_t graphId = 0;
+    ret = session->AddGraph(graphId, graph, graphOptions);
     if (ret != SUCCESS) {
         printf("%s - ERROR - [XIR]: Add graph to session failed\n", GetTime().c_str());
-        delete session;
+        session.reset();
         GEFinalize();
         return FAILED;
     }
@@ -224,29 +229,67 @@ int main(int argc, char* argv[])
     printf("%s - INFO - [XIR]: Session add ir compute graph to ir session success\n", GetTime().c_str());
     printf("%s - INFO - [XIR]: Start to run ir compute graph\n", GetTime().c_str());
     std::vector<ge::Tensor> output;
-    ret = session->RunGraph(graph_id, input, output);
+    ret = session->RunGraph(graphId, input, output);
     if (ret != SUCCESS) {
         printf("%s - INFO - [XIR]: Run graph failed\n", GetTime().c_str());
-        delete session;
+        session.reset();
         GEFinalize();
         return FAILED;
     }
     printf("%s - INFO - [XIR]: Session run ir compute graph success\n", GetTime().c_str());
 
-    int output_num = output.size();
-    for (int i = 0; i < output_num; i++) {
+    int outputNum = output.size();
+    bool verified = outputNum == 1;
+    for (int i = 0; i < outputNum; i++) {
         std::cout << "output " << i << " dtype :  " << output[i].GetTensorDesc().GetDataType() << std::endl;
-        string output_file = "./tc_ge_irrun_test_expint_npu_output_" + std::to_string(i) + ".bin";
-        uint8_t* output_data_i = output[i].GetData();
-        int64_t output_shape = output[i].GetTensorDesc().GetShape().GetShapeSize();
-        std::cout << "this is " << i << "th output, output shape size =" << output_shape << std::endl;
-        uint32_t data_size = output_shape * GetDataTypeSize(output[i].GetTensorDesc().GetDataType());
-        WriteDataToFile((const char*)output_file.c_str(), data_size, output_data_i);
+        string outputFile = "./tc_ge_irrun_test_expint_npu_output_" + std::to_string(i) + ".bin";
+        const uint8_t* outputDataI = output[i].GetData();
+        int64_t outputShape = output[i].GetTensorDesc().GetShape().GetShapeSize();
+        std::cout << "this is " << i << "th output, output shape size =" << outputShape << std::endl;
+        uint32_t dataSize = outputShape *
+                            static_cast<uint32_t>(ge::GetSizeByDataType(output[i].GetTensorDesc().GetDataType()));
+        WriteDataToFile(outputFile.c_str(), dataSize, outputDataI);
+        verified = verified && output[i].GetTensorDesc().GetDataType() == DT_FLOAT &&
+                   outputShape == EXPECTED_OUTPUT_ELEMS;
+        std::vector<float> actual(static_cast<size_t>(outputShape));
+        std::copy(reinterpret_cast<const float*>(outputDataI),
+                  reinterpret_cast<const float*>(outputDataI) + actual.size(), actual.begin());
+        for (int64_t j = 0; verified && j < outputShape; ++j) {
+            const float inVal = InputValueAt(static_cast<size_t>(j));
+            // kernel 边界语义: x<0 -> NaN, x=0 -> -inf, x>~93.2 -> +inf（IEEE 溢出）
+            float expected;
+            if (inVal < 0.0f) {
+                expected = std::numeric_limits<float>::quiet_NaN();
+            } else if (inVal == 0.0f) {
+                expected = -std::numeric_limits<float>::infinity();
+            } else if (inVal > 93.2f) {
+                expected = std::numeric_limits<float>::infinity();
+            } else {
+                expected = static_cast<float>(std::expint(static_cast<double>(inVal)));
+            }
+            if (std::isnan(expected)) {
+                verified = std::isnan(actual[static_cast<size_t>(j)]);
+            } else if (std::isinf(expected)) {
+                verified = std::isinf(actual[static_cast<size_t>(j)]) &&
+                           std::signbit(actual[static_cast<size_t>(j)]) == std::signbit(expected);
+            } else {
+                verified = std::abs(actual[static_cast<size_t>(j)] - expected) <= ATOL + RTOL * std::abs(expected);
+            }
+        }
     }
+
+    if (!verified) {
+        printf("%s - ERROR - [XIR]: Output shape, dtype or value verification failed\n", GetTime().c_str());
+        session.reset();
+        GEFinalize();
+        return FAILED;
+    }
+    std::cout << "Shape, dtype and values PASSED for [4,4]" << std::endl;
+    std::cout << "Expint static GEIR verification PASSED" << std::endl;
 
     printf("%s - INFO - [XIR]: Precision is ok\n", GetTime().c_str());
     printf("%s - INFO - [XIR]: Start to finalize ir graph session\n", GetTime().c_str());
-    delete session;
+    session.reset();
     ret = ge::GEFinalize();
     if (ret != SUCCESS) {
         printf("%s - INFO - [XIR]: Finalize ir graph session failed\n", GetTime().c_str());

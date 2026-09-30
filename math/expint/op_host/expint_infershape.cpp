@@ -21,14 +21,14 @@ namespace ops {
 
 static ge::graphStatus InferShape4Expint(gert::InferShapeContext* context)
 {
-    const gert::Shape* input_shape = context->GetInputShape(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, input_shape);
+    const gert::Shape* inputShape = context->GetInputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputShape);
 
-    gert::Shape* output_shape = context->GetOutputShape(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, output_shape);
+    gert::Shape* outputShape = context->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, outputShape);
 
-    *output_shape = *input_shape;
-    OP_LOGI(context, "[InferShape] output shape=%s", Ops::Base::ToString(*output_shape).c_str());
+    *outputShape = *inputShape;
+    OP_LOGI(context, "[InferShape] output shape=%s", Ops::Base::ToString(*outputShape).c_str());
 
     return ge::GRAPH_SUCCESS;
 }

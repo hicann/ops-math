@@ -15,7 +15,7 @@
 #include "op_common/op_host/util/math_util.h"
 #include "op_common/op_host/util/platform_util.h"
 #include "../../op_kernel/arch35/expint_tiling_data.h"
-#include "../../op_kernel/arch35/expint_tiling_key.h"
+#include "op_host/tiling_base_util.h"
 
 namespace optiling {
 
@@ -28,22 +28,21 @@ using Ops::Base::GetUbBlockSize;
 constexpr uint32_t WS_SYS_SIZE = 0U;
 constexpr int64_t TYPE_SIZE_FP32 = 4;
 constexpr size_t WORKSPACE_NUM = 1;
+// FP32 path UB shares (fp32 each): output queue x2 + 5 calc buffers + initBuf.
+// The input queue is not allocated on the FP32 path (kernel streams via initBuf).
 constexpr int64_t BUFFER_NUM_FP32 = 8;
+// FP16/BF16 path UB shares (fp32-equivalent budget): input queue x2 + output queue x2
+// + 5 calc buffers + castInBuf + resultFp32Buf.
 constexpr int64_t BUFFER_NUM_FP16 = 10;
 constexpr int64_t SELECT_RESERVED_BYTES = 8192;
-constexpr size_t MAX_DIM_NUM = 8;
+// DataCopyParams.blockLen is uint16_t; cap ubFactor so blockLen never wraps.
+constexpr int64_t MAX_COPY_BYTES = 65535;
+constexpr size_t MAX_DIM_NUM = 8; // TBE dynamic-compile framework hard limit (E80012: dims in [0,8]), aligned with
+                                  // A2/A3 legacy implementations
 
-static const gert::Shape g_vec_1_shape = {1};
+static bool CheckFormat(ge::Format format) { return format == ge::FORMAT_ND; }
 
-static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape)
-{
-    if (in_shape.GetDimNum() == 0) {
-        return g_vec_1_shape;
-    }
-    return in_shape;
-}
-
-static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t* ubSize, int64_t* coreNum)
+static ge::graphStatus GetPlatformInfo(const gert::TilingContext* context, uint64_t* ubSize, int64_t* coreNum)
 {
     fe::PlatFormInfos* platformInfoPtr = context->GetPlatformInfo();
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfoPtr);
@@ -55,11 +54,11 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t* u
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t* totalIdx, ge::DataType* dataType)
+static ge::graphStatus GetShapeAttrsInfo(const gert::TilingContext* context, int64_t* totalIdx, ge::DataType* dataType)
 {
     auto inputX = context->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
-    auto inputShapeX = EnsureNotScalar(inputX->GetStorageShape());
+    auto inputShapeX = Ops::Base::EnsureNotScalar(inputX->GetStorageShape());
 
     OP_CHECK_IF(inputShapeX.GetDimNum() > MAX_DIM_NUM,
                 OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), "x",
@@ -69,11 +68,14 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t* 
 
     auto outY = context->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, outY);
-    auto outShapeY = EnsureNotScalar(outY->GetStorageShape());
+    auto outShapeY = Ops::Base::EnsureNotScalar(outY->GetStorageShape());
 
     OP_CHECK_IF(inputShapeX.GetShapeSize() != outShapeY.GetShapeSize(),
-                OP_LOGE(context, "Expint: input and output shape size mismatch: x=%ld, y=%ld",
-                        inputShapeX.GetShapeSize(), outShapeY.GetShapeSize()),
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x and y",
+                                                       ("x=" + std::to_string(inputShapeX.GetShapeSize()) +
+                                                        ", y=" + std::to_string(outShapeY.GetShapeSize()))
+                                                           .c_str(),
+                                                       "input and output must have the same number of elements"),
                 return ge::GRAPH_FAILED);
 
     *totalIdx = inputShapeX.GetShapeSize();
@@ -81,6 +83,10 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t* 
     const std::set<ge::DataType> supportedDtype = {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16};
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
+    OP_CHECK_IF(!CheckFormat(inputDesc->GetStorageFormat()),
+                OP_LOGE_WITH_INVALID_INPUT_FORMAT(context->GetNodeName(), "x",
+                                                  Ops::Base::ToString(inputDesc->GetStorageFormat()).c_str(), "ND"),
+                return ge::GRAPH_FAILED);
     *dataType = inputDesc->GetDataType();
     OP_CHECK_IF(supportedDtype.count(*dataType) == 0,
                 OP_LOGE_WITH_INVALID_INPUT_DTYPE(context->GetNodeName(), "x", Ops::Base::ToString(*dataType).c_str(),
@@ -119,9 +125,13 @@ static ge::graphStatus ExpintTilingFunc(gert::TilingContext* context)
     OP_CHECK_IF(memset_s(tiling, sizeof(ExpintTilingData), 0, sizeof(ExpintTilingData)) != EOK,
                 OP_LOGE(context, "set tiling data error"), return ge::GRAPH_FAILED);
 
+    OP_CHECK_IF(totalIdx < 0,
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(context->GetNodeName(), "x", std::to_string(totalIdx).c_str(),
+                                                       "negative dim or size overflow"),
+                return ge::GRAPH_FAILED);
     if (totalIdx == 0) {
-        context->SetBlockDim(1);
-        ASCENDC_TPL_SEL_PARAM(context, static_cast<uint32_t>(dataType));
+        OP_CHECK_IF(context->SetBlockDim(1) != ge::GRAPH_SUCCESS, OP_LOGE(context, "Failed to set block dim"),
+                    return ge::GRAPH_FAILED);
         return ge::GRAPH_SUCCESS;
     }
 
@@ -133,17 +143,20 @@ static ge::graphStatus ExpintTilingFunc(gert::TilingContext* context)
     int64_t usedCoreNum = CeilDiv(totalIdx, tiling->blockFactor);
 
     int64_t availableUbBytes = static_cast<int64_t>(ubSize) - SELECT_RESERVED_BYTES;
-    OP_CHECK_IF(availableUbBytes <= 0, OP_LOGE(context, "ubSize too small for Select reserved"),
+    OP_CHECK_IF(availableUbBytes <= 0,
+                OP_LOGE(context, "ubSize is %lu bytes, too small to reserve %ld bytes for Select instructions", ubSize,
+                        SELECT_RESERVED_BYTES),
                 return ge::GRAPH_FAILED);
     int64_t bufferNum = (dataType == ge::DT_FLOAT) ? BUFFER_NUM_FP32 : BUFFER_NUM_FP16;
-    tiling->ubFactor = FloorAlign(FloorDiv(availableUbBytes / TYPE_SIZE_FP32, bufferNum), ubBlockSize);
+    int64_t maxUbFactor = FloorAlign(MAX_COPY_BYTES / TYPE_SIZE_FP32, ubBlockSize);
+    int64_t ubFactorByBudget = FloorDiv(availableUbBytes / TYPE_SIZE_FP32, bufferNum);
+    tiling->ubFactor = FloorAlign(ubFactorByBudget < maxUbFactor ? ubFactorByBudget : maxUbFactor, ubBlockSize);
     OP_LOGI(context, "[TilingData] totalNum: %ld, blockFactor: %ld, ubFactor: %ld", tiling->totalNum,
             tiling->blockFactor, tiling->ubFactor);
 
-    context->SetBlockDim(usedCoreNum);
+    OP_CHECK_IF(context->SetBlockDim(usedCoreNum) != ge::GRAPH_SUCCESS, OP_LOGE(context, "Failed to set block dim"),
+                return ge::GRAPH_FAILED);
 
-    uint32_t dTypeX = static_cast<uint32_t>(dataType);
-    ASCENDC_TPL_SEL_PARAM(context, dTypeX);
     return ge::GRAPH_SUCCESS;
 }
 

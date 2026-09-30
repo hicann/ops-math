@@ -38,7 +38,7 @@ public:
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true)
-            .ExtendCfgInfo("opFile.value", "expint_apt");
+            .ExtendCfgInfo("opFile.value", "expint");
         this->AICore().AddConfig("ascend950", aiCoreConfig);
     }
 };
