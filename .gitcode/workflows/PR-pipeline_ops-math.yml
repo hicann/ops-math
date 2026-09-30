@@ -304,6 +304,55 @@ stages:
       #     chip_version: 'KirinX90'
       #     cases_pool: 'math_all.json'
       #     cases_baseline: 'math.json'
+    PreSmoke_ATK_A2:
+        name: PreSmoke_ATK_A2
+        steps:
+          -
+            name: Checkout
+            identifier: process_checkout
+            uses: checkout
+            with:
+              token: ${{secrets.GIT_TOKEN}}
+              ref: ${{ atomgit.event.pull_request.merge_commit_sha }}
+          -
+            name: download
+            uses: obs-download
+            with:
+              endpoint: "https://obs.cn-north-4.myhuaweicloud.com"
+              bucket: "ascend-ci"
+              access-key: ${{ secrets.AK }}
+              secret-key: ${{ secrets.SK }}
+              key: |
+                ${{ env.obs_path }}/pr_filelist.txt
+              path: ${{ steps.process_checkout.outputs.path }}
+          -
+            name: clone cann-dt-ci
+            run: |
+              cd ${{ steps.process_checkout.outputs.path }}/..
+              rm -rf cann-dt-ci cann-dt-ci.tar.gz
+              cp -r /data/cann-dt-ci .
+              cd cann-dt-ci; git pull -f
+          -
+            name: atk executor
+            timeout-minutes: 30
+            run: |
+              export single_tar_url=${{jobs.JOB_Compile_Ascend_single.outputs.arm_run_url}}
+              export soc_version='ascend910b'
+              export WORKSPACE=${{ steps.process_checkout.outputs.path }}
+              cd ${WORKSPACE}/../cann-dt-ci/ci
+              bash start_build.sh ${WORKSPACE}/pr_filelist.txt ${WORKSPACE}/atk_output ${WORKSPACE} ${{ env.MERGE_ID }} ${{ env.repo_name }} ${soc_version} ${single_tar_url}
+          - name: upload
+            uses: obs-upload
+            with:
+              endpoint: "https://obs.cn-north-4.myhuaweicloud.com"
+              bucket: "ascend-ci"
+              access-key: ${{ secrets.AK }}
+              secret-key: ${{ secrets.SK }}
+              artifact-path: "${{ steps.process_checkout.outputs.path }}/atk_output/*"
+              object-prefix: ${obs_smoke_path}/atk/
+
+        if: env.TARGET_BRANCH == 'master'
+        runs-on: ['self-hosted','os=ubuntu','type=atk_a2']
     pre:
     - type: auto
     fail-fast: true
