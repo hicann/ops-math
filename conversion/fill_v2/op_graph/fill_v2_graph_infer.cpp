@@ -22,9 +22,9 @@ namespace ops {
 static graphStatus InferDataType4FillV2(gert::InferDataTypeContext* context)
 {
     OP_LOGD(context->GetNodeName(), "InferDataType4FillV2 enter");
-    // FillV2的output dtype与input dims的dtype不同(dims为INT16/INT32/INT64),
-    // 无法从input推导,由图定义(IR的output desc)决定,此处透传已设置的dtype。
-    context->SetOutputDataType(0, context->GetOutputDataType(0));
+    // FillV2的output dtype与input dims的dtype不同(dims为INT16/INT32/INT64),无法从input推导;
+    // 对齐canndev FillV2D实现,输出数据类型固定为float32。
+    context->SetOutputDataType(0, ge::DT_FLOAT);
     OP_LOGD(context->GetNodeName(), "InferDataType4FillV2 end");
     return GRAPH_SUCCESS;
 }

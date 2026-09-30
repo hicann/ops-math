@@ -55,7 +55,7 @@ $$y_i=value$$
       <td>y</td>
       <td>输出</td>
       <td>待进行计算的出参，公式中的y_i。</td>
-      <td>FLOAT16、FLOAT、DOUBLE、INT8、INT16、INT32、INT64</td>
+      <td>FLOAT</td>
       <td>ND</td>
     </tr>
   </tbody></table>
@@ -64,7 +64,6 @@ $$y_i=value$$
 
 - 输入dims必须是1D张量，维度数不超过8。
 - 输入dims的维度值不能超过dims自身数据类型的表示范围：超出时数值按该类型回绕，回绕为负数会被tiling校验拦截报错，不会以错误shape执行；回绕后仍为非负时无法检测，将按回绕后的值执行。
-- 填充的value值超过输出数据类型能够表示的最大数值范围时，会溢出报错。
 
 ## 调用说明
 
