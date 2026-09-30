@@ -10,6 +10,7 @@
 
 #include "gtest/gtest.h"
 #include "math/cast/op_api/aclnn_cast.h"
+#include "opdev/platform.h"
 #include "op_api_ut_common/tensor_desc.h"
 #include "op_api_ut_common/array_desc.h"
 #include "op_api_ut_common/op_api_ut.h"
@@ -27,15 +28,9 @@ using namespace std;
  */
 class cast_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "cast_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "cast_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "cast_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "cast_test TearDown" << endl; }
 };
 
 /**
@@ -1168,6 +1163,40 @@ TEST_F(cast_test, case_73)
     auto out = TensorDesc({2, 3}, ACL_UINT64, ACL_FORMAT_ND);
 
     auto ut = OP_API_UT(aclnnCast, INPUT(self, ACL_UINT64), OUTPUT(out));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+/**
+ * @brief case_74: BFloat16 -> Float8_E8M0 类型转换测试
+ * @details 验证BF16到FLOAT8_E8M0的转换接口正常工作
+ */
+TEST_F(cast_test, case_74)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto self = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND);
+    auto out = TensorDesc({2, 3}, ACL_FLOAT8_E8M0, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnCast, INPUT(self, ACL_FLOAT8_E8M0), OUTPUT(out));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+/**
+ * @brief case_75: Float8_E8M0 -> BFloat16 类型转换测试
+ * @details 验证FLOAT8_E8M0到BF16的转换接口正常工作
+ */
+TEST_F(cast_test, case_75)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto self = TensorDesc({2, 3}, ACL_FLOAT8_E8M0, ACL_FORMAT_ND);
+    auto out = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND);
+
+    auto ut = OP_API_UT(aclnnCast, INPUT(self, ACL_BF16), OUTPUT(out));
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);

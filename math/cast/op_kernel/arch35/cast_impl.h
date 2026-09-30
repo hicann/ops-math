@@ -53,6 +53,10 @@ struct TypeGetTool<CAST_TPL_HIFLOAT8> {
     using type = hifloat8_t;
 };
 template <>
+struct TypeGetTool<CAST_TPL_FLOAT8_E8M0> {
+    using type = fp8_e8m0_t;
+};
+template <>
 struct TypeGetTool<CAST_TPL_UINT16> {
     using type = uint16_t;
 };
@@ -137,7 +141,8 @@ __aicore__ constexpr inline int64_t GetTplBitSize(int dtype)
     if (dtype == CAST_TPL_UINT1) {
         return 1;
     } else if (dtype == CAST_TPL_BOOL || dtype == CAST_TPL_INT8 || dtype == CAST_TPL_UINT8 ||
-               dtype == CAST_TPL_FLOAT8_E4M3FN || dtype == CAST_TPL_FLOAT8_E5M2 || dtype == CAST_TPL_HIFLOAT8) {
+               dtype == CAST_TPL_FLOAT8_E4M3FN || dtype == CAST_TPL_FLOAT8_E5M2 || dtype == CAST_TPL_HIFLOAT8 ||
+               dtype == CAST_TPL_FLOAT8_E8M0) {
         return B8_BITS;
     } else if (dtype == CAST_TPL_UINT16 || dtype == CAST_TPL_INT16 || dtype == CAST_TPL_FLOAT16 ||
                dtype == CAST_TPL_BF16) {
@@ -158,7 +163,7 @@ __aicore__ constexpr inline int64_t GetGeBitSize(int dtype)
     if (dtype == DT_UINT1) {
         return 1;
     } else if (dtype == DT_BOOL || dtype == DT_INT8 || dtype == DT_UINT8 || dtype == DT_FLOAT8_E4M3FN ||
-               dtype == DT_FLOAT8_E5M2 || dtype == DT_HIFLOAT8) {
+               dtype == DT_FLOAT8_E5M2 || dtype == DT_HIFLOAT8 || dtype == DT_FLOAT8_E8M0) {
         return B8_BITS;
     } else if (dtype == DT_UINT16 || dtype == DT_INT16 || dtype == DT_FLOAT16 || dtype == DT_BF16) {
         return B16_BITS;
@@ -1083,6 +1088,8 @@ CastMicro<id, ST, DT, MST, MMT, MDT, ldDist, stDist, castMode1, castMode2, RegCo
             Reg::Cast<MMT, fp4x2_e1m2_t, trait>(vregOut, (Reg::RegTensor<fp4x2_e1m2_t>&)vregIn, maskAll);
 #elif ORIG_DTYPE_X == DT_UINT32
             Reg::Cast<MMT, int64_t, trait>(vregOut, (Reg::RegTensor<int64_t>&)vregIn, maskAll);
+#elif ORIG_DTYPE_X == DT_FLOAT8_E8M0
+            Reg::Cast<MMT, fp8_e8m0_t, trait>(vregOut, (Reg::RegTensor<fp8_e8m0_t>&)vregIn, maskAll);
 #else
             Reg::Cast<MMT, MST, trait>(vregOut, vregIn, maskAll);
 #endif

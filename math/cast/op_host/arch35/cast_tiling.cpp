@@ -109,6 +109,8 @@ ge::DataType CastTiling::TransAclToGeDataType(int32_t aclType) const
             return ge::DT_FLOAT8_E5M2;
         case 36: // 36 DT_FLOAT8_E4M3FN
             return ge::DT_FLOAT8_E4M3FN;
+        case 37: // 37 DT_FLOAT8_E8M0
+            return ge::DT_FLOAT8_E8M0;
         case 40: // 40 DT_FLOAT4_E2M1
             return ge::DT_FLOAT4_E2M1;
         case 41: // 41 DT_FLOAT4_E1M2
@@ -267,7 +269,8 @@ int64_t CastTiling::GetDtypeBitSize(uint8_t dtype) const
     if (dtype == CAST_TPL_UINT1) {
         return 1;
     } else if (dtype == CAST_TPL_BOOL || dtype == CAST_TPL_INT8 || dtype == CAST_TPL_UINT8 ||
-               dtype == CAST_TPL_FLOAT8_E4M3FN || dtype == CAST_TPL_FLOAT8_E5M2 || dtype == CAST_TPL_HIFLOAT8) {
+               dtype == CAST_TPL_FLOAT8_E4M3FN || dtype == CAST_TPL_FLOAT8_E5M2 || dtype == CAST_TPL_HIFLOAT8 ||
+               dtype == CAST_TPL_FLOAT8_E8M0) {
         return B8_BITS;
     } else if (dtype == CAST_TPL_UINT16 || dtype == CAST_TPL_INT16 || dtype == CAST_TPL_FLOAT16 ||
                dtype == CAST_TPL_BF16) {
@@ -288,7 +291,7 @@ int64_t CastTiling::GetGeDtypeBitSize(ge::DataType dtype) const
     if (dtype == DT_UINT1) {
         return 1;
     } else if (dtype == DT_BOOL || dtype == DT_INT8 || dtype == DT_UINT8 || dtype == DT_FLOAT8_E4M3FN ||
-               dtype == DT_FLOAT8_E5M2 || dtype == DT_HIFLOAT8) {
+               dtype == DT_FLOAT8_E5M2 || dtype == DT_HIFLOAT8 || dtype == DT_FLOAT8_E8M0) {
         return B8_BITS;
     } else if (dtype == DT_UINT16 || dtype == DT_INT16 || dtype == DT_FLOAT16 || dtype == DT_BF16) {
         return B16_BITS;

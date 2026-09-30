@@ -265,7 +265,9 @@ static const std::initializer_list<std::pair<op::DataType, op::DataType>> REGBAS
     {op::DataType::DT_INT64, op::DataType::DT_DOUBLE},
     {op::DataType::DT_INT32, op::DataType::DT_INT4},
     {op::DataType::DT_DOUBLE, op::DataType::DT_INT32},
-    {op::DataType::DT_DOUBLE, op::DataType::DT_INT64}};
+    {op::DataType::DT_DOUBLE, op::DataType::DT_INT64},
+    {op::DataType::DT_BF16, op::DataType::DT_FLOAT8_E8M0},
+    {op::DataType::DT_FLOAT8_E8M0, op::DataType::DT_BF16}};
 
 static const std::initializer_list<std::pair<op::DataType, op::DataType>> ASCEND310P_SUPPORT_910_NOT_SUPPORT_LIST = {
     {op::DataType::DT_FLOAT, op::DataType::DT_INT16},
@@ -284,41 +286,36 @@ static bool IsAiCoreSupport(const aclTensor* self, op::DataType dstDtype)
 {
     // Cast只需要根据soc信息判断对应芯片的dtype支持
     auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
-    bool isAscend310pSupport =
-        std::find(
-            ASCEND310P_SUPPORT_910_NOT_SUPPORT_LIST.begin(), ASCEND310P_SUPPORT_910_NOT_SUPPORT_LIST.end(),
-            std::pair<op::DataType, op::DataType>(self->GetDataType(), dstDtype)) !=
-        ASCEND310P_SUPPORT_910_NOT_SUPPORT_LIST.end();
+    bool isAscend310pSupport = std::find(ASCEND310P_SUPPORT_910_NOT_SUPPORT_LIST.begin(),
+                                         ASCEND310P_SUPPORT_910_NOT_SUPPORT_LIST.end(),
+                                         std::pair<op::DataType, op::DataType>(self->GetDataType(), dstDtype)) !=
+                               ASCEND310P_SUPPORT_910_NOT_SUPPORT_LIST.end();
     if (curArch == NpuArch::DAV_2002 && isAscend310pSupport) {
         return true;
     }
 
-    bool isAscend610liteSupport =
-        std::find(
-            ASCEND610LITE_AICORE_DTYPE_SUPPORT_LIST.begin(), ASCEND610LITE_AICORE_DTYPE_SUPPORT_LIST.end(),
-            std::pair<op::DataType, op::DataType>(self->GetDataType(), dstDtype)) !=
-        ASCEND610LITE_AICORE_DTYPE_SUPPORT_LIST.end();
+    bool isAscend610liteSupport = std::find(ASCEND610LITE_AICORE_DTYPE_SUPPORT_LIST.begin(),
+                                            ASCEND610LITE_AICORE_DTYPE_SUPPORT_LIST.end(),
+                                            std::pair<op::DataType, op::DataType>(self->GetDataType(), dstDtype)) !=
+                                  ASCEND610LITE_AICORE_DTYPE_SUPPORT_LIST.end();
     if (curArch == NpuArch::DAV_3102) {
         return isAscend610liteSupport;
     }
 
     if (curArch == NpuArch::DAV_2201) {
-        return std::find(
-                   ASCEND910B_AICORE_DTYPE_SUPPORT_LIST.begin(), ASCEND910B_AICORE_DTYPE_SUPPORT_LIST.end(),
-                   std::pair<op::DataType, op::DataType>(self->GetDataType(), dstDtype)) !=
+        return std::find(ASCEND910B_AICORE_DTYPE_SUPPORT_LIST.begin(), ASCEND910B_AICORE_DTYPE_SUPPORT_LIST.end(),
+                         std::pair<op::DataType, op::DataType>(self->GetDataType(), dstDtype)) !=
                ASCEND910B_AICORE_DTYPE_SUPPORT_LIST.end();
     }
 
     if (IsRegBase(curArch)) {
-        return std::find(
-                   REGBASE_AICORE_DTYPE_SUPPORT_LIST.begin(), REGBASE_AICORE_DTYPE_SUPPORT_LIST.end(),
-                   std::pair<op::DataType, op::DataType>(self->GetDataType(), dstDtype)) !=
+        return std::find(REGBASE_AICORE_DTYPE_SUPPORT_LIST.begin(), REGBASE_AICORE_DTYPE_SUPPORT_LIST.end(),
+                         std::pair<op::DataType, op::DataType>(self->GetDataType(), dstDtype)) !=
                REGBASE_AICORE_DTYPE_SUPPORT_LIST.end();
     }
 
-    return std::find(
-               ASCEND910_AICORE_DTYPE_SUPPORT_LIST.begin(), ASCEND910_AICORE_DTYPE_SUPPORT_LIST.end(),
-               std::pair<op::DataType, op::DataType>(self->GetDataType(), dstDtype)) !=
+    return std::find(ASCEND910_AICORE_DTYPE_SUPPORT_LIST.begin(), ASCEND910_AICORE_DTYPE_SUPPORT_LIST.end(),
+                     std::pair<op::DataType, op::DataType>(self->GetDataType(), dstDtype)) !=
            ASCEND910_AICORE_DTYPE_SUPPORT_LIST.end();
 }
 
@@ -333,8 +330,8 @@ static bool IsAiCpuSupport(const aclTensor* self, op::DataType dstDtype)
 }
 
 // AICORE算子kernel
-static const aclTensor* CastAiCore(
-    const aclTensor* self, op::DataType dstDtype, const aclTensor* castOut, aclOpExecutor* executor)
+static const aclTensor* CastAiCore(const aclTensor* self, op::DataType dstDtype, const aclTensor* castOut,
+                                   aclOpExecutor* executor)
 {
     L0_DFX(CastAiCore, self, dstDtype, castOut);
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore Cast算子加入任务队列
@@ -348,8 +345,8 @@ static const aclTensor* CastAiCore(
 }
 
 // AICPU算子kernel
-static const aclTensor* CastAiCpu(
-    const aclTensor* self, op::DataType dstDtype, aclTensor* castOut, aclOpExecutor* executor)
+static const aclTensor* CastAiCpu(const aclTensor* self, op::DataType dstDtype, aclTensor* castOut,
+                                  aclOpExecutor* executor)
 {
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICPU，将AiCpu Cast算子加入任务队列
     // Cast是算子的OpType，self是算子的输入，castOut是算子的输出，dstDtype是算子的属性
@@ -358,22 +355,19 @@ static const aclTensor* CastAiCpu(
     auto ret = ACL_SUCCESS;
     if (IsComplexType(self->GetDataType())) {
         static internal::AicpuTaskSpace space("Cast", ge::DEPEND_IN_SHAPE, true);
-        ret = ADD_TO_LAUNCHER_LIST_AICPU(
-            Cast, OP_ATTR_NAMES({"SrcT", "DstT", "Truncate"}), OP_INPUT(self), OP_OUTPUT(castOut),
-            OP_ATTR(self->GetDataType(), dstDtype, false));
-        OP_CHECK(
-            ret == ACL_SUCCESS,
-            OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "CastAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed in ComplexType."),
-            return nullptr);
+        ret = ADD_TO_LAUNCHER_LIST_AICPU(Cast, OP_ATTR_NAMES({"SrcT", "DstT", "Truncate"}), OP_INPUT(self),
+                                         OP_OUTPUT(castOut), OP_ATTR(self->GetDataType(), dstDtype, false));
+        OP_CHECK(ret == ACL_SUCCESS,
+                 OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "CastAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed in ComplexType."),
+                 return nullptr);
         return castOut;
     }
     static internal::AicpuTaskSpace space("Cast");
-    ret = ADD_TO_LAUNCHER_LIST_AICPU(
-        Cast, OP_ATTR_NAMES({"dst_type"}), OP_INPUT(self), OP_OUTPUT(castOut), OP_ATTR(dstDtype));
+    ret = ADD_TO_LAUNCHER_LIST_AICPU(Cast, OP_ATTR_NAMES({"dst_type"}), OP_INPUT(self), OP_OUTPUT(castOut),
+                                     OP_ATTR(dstDtype));
 
-    OP_CHECK(
-        ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "CastAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
-        return nullptr);
+    OP_CHECK(ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "CastAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
+             return nullptr);
     return castOut;
 }
 
@@ -401,8 +395,8 @@ const aclTensor* CastOnlyForConvBackward(const aclTensor* self, op::DataType dst
     }
     OP_LOGD("Entering L0 CastOnlyForConvBackward");
 
-    auto outTensor = executor->AllocTensor(
-        self->GetStorageShape(), self->GetViewShape(), dstDtype, self->GetStorageFormat(), self->GetViewFormat());
+    auto outTensor = executor->AllocTensor(self->GetStorageShape(), self->GetViewShape(), dstDtype,
+                                           self->GetStorageFormat(), self->GetViewFormat());
     CHECK_RET(outTensor != nullptr, nullptr);
     if (IsAiCoreSupport(self, dstDtype)) {
         return CastAiCore(self, dstDtype, outTensor, executor);
