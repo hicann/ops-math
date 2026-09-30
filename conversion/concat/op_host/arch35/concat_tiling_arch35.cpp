@@ -101,8 +101,10 @@ template <typename T>
 static inline void PrintTilingDataList(T& tilingData)
 {
     auto strideList = tilingData.arrays.get_strideList();
+    auto concatDimList = tilingData.arrays.get_concatDimList();
     for (int32_t i = 0; i < tilingData.get_tensorNum(); i++) {
-        OP_LOGI("[Concat list]", "tensor: %d, stride: %ld", i, strideList[i]);
+        OP_LOGI("[Concat list]", "tensor: %d, stride: %ld, concatDim: %ld, segNum: %ld, isRowConcat: %d", i,
+                strideList[i], concatDimList[i], tilingData.get_rowConcatSegNum(), tilingData.get_isRowConcat());
     }
 }
 
@@ -463,10 +465,13 @@ inline static void GenTilingKey(ConcatTilingParam& param)
     if (IsEnableScatter(param)) {
         dtypeSize = param.orgDtypeSize;
     }
-    if (IsEnableGather(param)) {
+    if (param.isGather || param.isRowConcat) {
+        // 非连续 gather/rowconcat 强制走 diff-shape 模板（1222x），避免命中 same-shape 模板
+        isCatDimAlign = 2;
+    } else if (IsEnableGather(param)) {
         isCatDimAlign = GATHER_MODE;
     }
-    int64_t isInputShapeSame = shapeSame ? 1 : 2;
+    int64_t isInputShapeSame = (shapeSame && !param.isGather && !param.isRowConcat) ? 1 : 2;
     int64_t isFirstDim = DIGIT_TWO;
 
     // 判断是否可用 compact: 所有 tensor 的 dim1 < UINT32_MAX
@@ -547,7 +552,52 @@ static ge::graphStatus TilingUbForNosplitDim1(gert::TilingContext* context, int6
                                                       std::to_string(param.catDim1).c_str(),
                                                       "Shape concat_axis of output_tensor must be greater than 0."),
                 return ge::GRAPH_FAILED);
-    param.ubFactorDim0 = min(maxAvaliableUb / param.catDim1, param.catDim0);
+    int64_t ubDim1 = param.catDim1;
+    if (param.isRowConcat && param.rowConcatSegNum > 1) {
+        // rowconcat kernel 逐段搬入 UB,仅需容纳单个 tensor 一个段(seg = dim1/segNum)的数据,
+        // 段超出 UB 容量时 kernel 内部会再分块搬运
+        int64_t maxSeg = 0;
+        for (int64_t i = 0; i < param.tensorNum; i++) {
+            // concatDimList tensor i 沿 concat轴的长度，sameShapeTensorDim1
+            // dim+1到N的乘积，rowConcatSegNum从非连续轴+1到dim轴的乘积 rowconcat: kernel 逐段搬 → 一个段就够 seg =
+            // ceil(dim1_i / segNum)        // 每个 tensor 的段长 ubDim1 = max over tensors          // 最宽的段决定预算
+            // 例: (A,B·C) 合轴, segNum=B → 段长=C → ubDim1 = C
+            //  (kernel CopyInNoSplitDim1 rowconcat 分支按 段/段组 循环,一次只占一个段的 UB, 段超容量时 kernel 内部再按
+            //  bufferSize 切)
+            int64_t dim1 = static_cast<int64_t>(param.concatDimList[i]) * param.sameShapeTensorDim1;
+            int64_t seg = (dim1 + param.rowConcatSegNum - 1) / param.rowConcatSegNum;
+            maxSeg = std::max(maxSeg, seg);
+        }
+        ubDim1 = maxSeg;
+    }
+    // gather: kernel 逐 tensor 搬 → 最大 tensor 摊平宽(32B 上取整)
+    // ubDim1 = CeilAlign(max(dim1_i), everyBlockNumber)
+    // 例: 33×(2,16) f16 → 各 tensor 摊平 32 元素 → ubDim1 = 32
+    //(kernel 的 workLocal 行按 CeilAlign 落 UB, 预算必须按对齐后算, 否则行数超预算越界)
+    if (param.isGather) {
+        int64_t maxDim1 = 0;
+        for (int64_t i = 0; i < param.tensorNum; i++) {
+            int64_t dim1 = static_cast<int64_t>(param.concatDimList[i]) * param.sameShapeTensorDim1;
+            maxDim1 = std::max(maxDim1, dim1);
+        }
+        ubDim1 = (maxDim1 + param.everyBlockNumber - 1) / param.everyBlockNumber * param.everyBlockNumber;
+        // 32B 对齐上取整可能把刚好贴着预算的摊平宽推过线(maxDim1+31 内), 明确报错
+        // 并给出预算值, 避免下游 ubFactorDim0=0 的间接报错
+        OP_CHECK_IF(ubDim1 > maxAvaliableUb,
+                    OP_LOGE(context->GetNodeName(),
+                            "gather flattened tensor width %ld (aligned) exceeds UB budget %ld, gather path "
+                            "unsupported on this device, fallback to regular path is required",
+                            ubDim1, maxAvaliableUb),
+                    return ge::GRAPH_FAILED);
+    }
+    param.ubFactorDim0 = min(maxAvaliableUb / ubDim1, param.catDim0);
+    if (param.isRowConcat) {
+        // rowconcat 仅支持 dim0 切分(NoSplitDim1 模板),usedCoreNum == uoDim0 == ceil(catDim0/ubFactorDim0)。
+        // kernel 逐行逐段搬运,单次搬运大小只由段/段组决定,与 ubFactorDim0 无关;
+        // ubFactorDim0 受 UB 预算(maxAvaliableUb/maxSeg)钳制时 uoDim0 会退化为 1~4 核,
+        // 整份拷贝压在少数核上,此处固定 1 行/块,将行充分摊到多核并行。
+        param.ubFactorDim0 = 1;
+    }
     OP_CHECK_IF(
         param.ubFactorDim0 <= 0,
         OP_LOGE(context->GetNodeName(), "ubFactorDim0 must be greater than 0, ubFactorDim0: %ld", param.ubFactorDim0),
@@ -575,20 +625,49 @@ static ge::graphStatus TilingUbForSplitDim1(gert::TilingContext* context, int64_
                     OP_LOGE(context->GetNodeName(), "everyBlockNumber must be greater than 0, everyBlockNumber: %ld",
                             param.everyBlockNumber),
                     return ge::GRAPH_FAILED);
+        // 默认 32B 块
         int64_t alignFactorDim1 = param.everyBlockNumber;
+        // 小段场景按 tensor 单元对齐
         if (param.inputShapeSame == 1 && param.sameShapeTensorDim1 * param.dtypeSize <= param.gatherThreshold) {
             alignFactorDim1 = param.sameShapeTensorDim1;
         }
+        // 向下对齐
         realFactorDim1 = realFactorDim1 / alignFactorDim1 * alignFactorDim1;
     } else {
         maxAvaliableUb -= storageAlignUsed;
     }
     param.ubFactorDim1 = min(realFactorDim1, param.catDim1);
+    if (param.isGather && param.gatherSeg > 0) {
+        // 单个连续段(gatherSeg)必须装得进本设备 gather UB 预算: 段是 kernel 按 2D DMA 整段
+        // 搬运的最小单元, 无法再切; 超预算时明确报错并给出预算值, 避免"下限一个段"兜底
+        // 把 ubFactorDim1 抬超预算, 导致下游 ubFactorDim0=0 的间接报错(根因难定位,
+        // 且随设备 ubSize 不同 256K/512K 表现不一致)
+        OP_CHECK_IF(param.gatherSeg > maxAvaliableUb,
+                    OP_LOGE(context->GetNodeName(),
+                            "gatherSeg %ld exceeds UB budget %ld, gather path unsupported on this device, "
+                            "segment size is shape-determined, fallback to regular path is required",
+                            param.gatherSeg, maxAvaliableUb),
+                    return ge::GRAPH_FAILED);
+        // gatherSeg 非连续轴后b+1到结尾N的所有dim乘积
+        // gather kernel 逐行搬运，总调用数 = catDim0 * uoDim1 * 2，仅随列块数 uoDim1 增长、与行数无关：
+        // 按单行预算取 UB 能容纳的最大 gatherSeg
+        // 整数倍列宽（下限一个段），全预留给列。按照段对齐后，至少要有一个段max(maxColsByUb, param.gatherSeg)
+        // 使每行一次 DataCopyPad 合并尽量多的段，避免退化成单段(512B级)小搬运。
+        int64_t maxColsByUb = maxAvaliableUb / param.gatherSeg * param.gatherSeg;
+        param.ubFactorDim1 = min(param.catDim1, max(maxColsByUb, param.gatherSeg));
+    }
     OP_CHECK_IF(param.ubFactorDim1 <= 0,
                 OP_LOGE(context->GetNodeName(), "param.ubFactorDim1 must be greater than 0, param.ubFactorDim1: %ld",
                         param.ubFactorDim1),
                 return ge::GRAPH_FAILED);
     param.ubFactorDim0 = min(maxAvaliableUb / param.ubFactorDim1, param.catDim0);
+    if (param.isGather) {
+        // kernel 侧 gather 逐行按 32B 对齐落 UB，ubFactorDim0 必须按对齐后的行宽回算，
+        // 否则 rows*CeilAlign(ubFactorDim1, everyBlockNumber) 会超出 bufferSize 导致越界
+        int64_t paddedDim1 = (param.ubFactorDim1 + param.everyBlockNumber - 1) / param.everyBlockNumber *
+                             param.everyBlockNumber;
+        param.ubFactorDim0 = min(param.ubFactorDim0, maxAvaliableUb / paddedDim1);
+    }
     OP_CHECK_IF(param.ubFactorDim0 <= 0,
                 OP_LOGE(context->GetNodeName(), "param.ubFactorDim0 must be greater than 0, param.ubFactorDim0: %ld",
                         param.ubFactorDim0),
@@ -616,7 +695,7 @@ static ge::graphStatus TilingUb(gert::TilingContext* context, ConcatTilingParam&
             "The dtype size of x must be greater than 0."),
         return ge::GRAPH_FAILED);
     int64_t maxAvaliableUb = (param.ubSize - INDEX_USE_UB) / param.dtypeSize;
-    if (param.isAllTensorAlign == 0) {
+    if (param.isAllTensorAlign == 0 || param.isGather) {
         // tensor不对齐的场景下，需要在UB中拼接，内存分成输入输出2部分
         maxAvaliableUb = maxAvaliableUb / BUFFER_NUM;
         // 非对齐场景scatter/gather索引为u16/u32,需确保ub内每个tensor的元素个数不超过U16上限
@@ -637,7 +716,11 @@ static ge::graphStatus TilingUb(gert::TilingContext* context, ConcatTilingParam&
         return ge::GRAPH_FAILED);
     realFactorDim1 = realFactorDim1 / param.everyBlockNumber * param.everyBlockNumber;
 
-    if (param.catDim1 < realFactorDim1) {
+    if (param.isRowConcat && param.rowConcatSegNum <= 1) {
+        param.isRowConcat = 0;
+    }
+
+    if (param.catDim1 < realFactorDim1 || param.isRowConcat) {
         maxAvaliableUb = maxAvaliableUb - storageAlignUsed;
         OP_CHECK_IF(TilingUbForNosplitDim1(context, maxAvaliableUb, param) != ge::GRAPH_SUCCESS,
                     OP_LOGE(context->GetNodeName(), "TilingUbForNosplitDim1 failed"), return ge::GRAPH_FAILED);
@@ -651,7 +734,12 @@ static ge::graphStatus TilingUb(gert::TilingContext* context, ConcatTilingParam&
 
 inline static ge::graphStatus TilingBlock(gert::TilingContext* context, ConcatTilingParam& param)
 {
-    if (param.uoDim0 > (param.totalCoreNum / HALF)) {
+    // 非连续 rowconcat 场景 kernel 仅支持 NoSplitDim1 模板，必须保持 dim0 切分；
+    // 其余非连续场景（gather/断点轴==strideDim 的老路径）kernel 侧 ProcessBlockSplitDim1
+    // 均有对应分支（老路径分支即提交前原始代码），catDim0 小时 uoDim0 仅为 1~2，
+    // 强制 dim0 切分会把整份拷贝压在极少数核上，此处放行 dim1 借轴多核切分。
+    bool nonConDim1SplitAllowed = param.isNonContiguous && param.isRowConcat == 0;
+    if (param.uoDim0 > (param.totalCoreNum / HALF) || (param.isNonContiguous && !nonConDim1SplitAllowed)) {
         OP_CHECK_IF(param.totalCoreNum <= 0,
                     OP_LOGE(context->GetNodeName(),
                             "param.totalCoreNum must be greater than 0, param.totalCoreNum: %ld", param.totalCoreNum),
@@ -675,13 +763,32 @@ inline static ge::graphStatus TilingBlock(gert::TilingContext* context, ConcatTi
         if (param.inputShapeSame == 1 && param.sameShapeTensorDim1 * param.dtypeSize <= param.gatherThreshold) {
             alignFactorDim1 = param.sameShapeTensorDim1;
         }
+        // gather 借轴减半 ubFactorDim1 时必须保持 gatherSeg 整数倍对齐：
+        // kernel 侧 gather 搬运以 startSeg = colsOffset/gatherSeg、numSeg = copyCols/gatherSeg
+        // 整除计算段号/段数，非整数倍会静默截断导致数据错位。
+        if (param.isGather == 1 && param.gatherSeg > alignFactorDim1) {
+            alignFactorDim1 = param.gatherSeg;
+        } else if (param.isGather == 1 && param.gatherSeg > 1 && alignFactorDim1 % param.gatherSeg != 0) {
+            // seg ≤ af 且不整除: 仅按 af 对齐会在借轴减半时丢失 seg 整数倍性
+            // (如 seg=5/af=16: 2160→1080→对齐16得1072, 1072%5≠0 → kernel 段号截断错位)。
+            // 对齐到 lcm(af, seg), 同时保住 32B 块对齐与 seg 整数倍两种性质。
+            int64_t gcdAfSeg = alignFactorDim1;
+            int64_t segRem = param.gatherSeg;
+            while (segRem != 0) {
+                int64_t tmp = gcdAfSeg % segRem;
+                gcdAfSeg = segRem;
+                segRem = tmp;
+            }
+            alignFactorDim1 = alignFactorDim1 / gcdAfSeg * param.gatherSeg;
+        }
         OP_CHECK_IF(alignFactorDim1 <= 0,
                     OP_LOGE(context->GetNodeName(), "alignFactorDim1 must be greater than 0, alignFactorDim1: %ld",
                             alignFactorDim1),
                     return ge::GRAPH_FAILED);
         // 核未开满时，dim1借轴
         while (param.uoDim1 < leftCore && param.ubFactorDim1 * param.dtypeSize >= LEAST_COLS &&
-               param.ubFactorDim1 * param.ubFactorDim0 >= HALF * param.leastCopyNumber) {
+               param.ubFactorDim1 * param.ubFactorDim0 >= HALF * param.leastCopyNumber &&
+               param.ubFactorDim1 >= HALF * alignFactorDim1) {
             param.ubFactorDim1 = (param.ubFactorDim1 / HALF) / alignFactorDim1 * alignFactorDim1;
             OP_CHECK_IF(
                 param.ubFactorDim1 <= 0,
@@ -751,6 +858,10 @@ inline static void SetTilingData(T& tilingData, ConcatTilingParam& param)
     std::copy(param.tensorListDim1.begin(), param.tensorListDim1.begin() + preLoadSize, param.preLoadDim1Arr);
     tilingData.arrays.set_preLoadDim1(param.preLoadDim1Arr);
     tilingData.set_isNonContiguous(static_cast<int16_t>(param.isNonContiguous ? 1 : 0));
+    tilingData.set_isGather(param.isGather);
+    tilingData.set_isRowConcat(param.isRowConcat);
+    tilingData.set_gatherSeg(param.gatherSeg);
+    tilingData.set_rowConcatSegNum(param.rowConcatSegNum);
     if (param.isNonContiguous) {
         uint64_t strideList[NON_CON_TENSOR_SIZE];
         std::copy(param.strideList.begin(), param.strideList.end(), strideList);
@@ -799,6 +910,10 @@ void SetTilingData<ConcatTilingDataCompact>(ConcatTilingDataCompact& tilingData,
     }
     tilingData.arrays.set_preLoadDim1(param.preLoadDim1ArrCompact);
     tilingData.set_isNonContiguous(static_cast<int16_t>(param.isNonContiguous ? 1 : 0));
+    tilingData.set_isGather(param.isGather);
+    tilingData.set_isRowConcat(param.isRowConcat);
+    tilingData.set_gatherSeg(param.gatherSeg);
+    tilingData.set_rowConcatSegNum(param.rowConcatSegNum);
     if (param.isNonContiguous) {
         for (size_t i = 0; i < std::min(param.strideList.size(), static_cast<size_t>(NON_CON_TENSOR_SIZE)); i++) {
             param.strideListCompact[i] = static_cast<uint32_t>(param.strideList[i]);
@@ -837,6 +952,10 @@ void SetTilingData<ConcatTilingDataNoArrayCompact>(ConcatTilingDataNoArrayCompac
     }
     tilingData.arrays.set_preLoadDim1(param.preLoadDim1ArrCompact);
     tilingData.set_isNonContiguous(static_cast<int16_t>(param.isNonContiguous ? 1 : 0));
+    tilingData.set_isGather(param.isGather);
+    tilingData.set_isRowConcat(param.isRowConcat);
+    tilingData.set_gatherSeg(param.gatherSeg);
+    tilingData.set_rowConcatSegNum(param.rowConcatSegNum);
     if (param.isNonContiguous) {
         for (size_t i = 0; i < std::min(param.strideList.size(), static_cast<size_t>(NON_CON_TENSOR_SIZE)); i++) {
             param.strideListCompact[i] = static_cast<uint32_t>(param.strideList[i]);
@@ -894,6 +1013,12 @@ inline static bool IsEnableb8ToB16(const ConcatTilingParam& param)
 {
     // b8 dim1为偶数 不对齐场景可升为b16处理
     if (param.isNonContiguous) {
+        // gather/rowconcat 泛化分支的单位系（行距 strideList[b]/段长 gatherSeg/
+        // 合轴 stride）与 b8->b16 折算的 dim1/2 列宽语义不兼容（I 为奇数时无解），
+        // 1B 原生 gather 模板路径已验证正确，此处禁用折算
+        if (param.isGather == 1 || param.isRowConcat == 1) {
+            return false;
+        }
         if (param.dtypeSize != B8_BYTES || param.inputShapeSame != 1 || param.sameShapeTensorDim1 % DIGIT_TWO != 0 ||
             param.strideList[0] % DIGIT_TWO != 0) {
             return false;
@@ -923,7 +1048,12 @@ inline static bool IsEnableb8ToB16(const ConcatTilingParam& param)
 
 static ge::graphStatus PreProcessForNoAlign(ConcatTilingParam& param)
 {
-    if (param.isAllTensorAlign == 1) {
+    // gather/rowconcat 泛化分支强制走 NoAlignDiffShape 模板（222x/322x/122x），该模板的
+    // 8 字节实例按 uint32 折算视角消费数据（存量设计：老 8B noalign 场景必然经此处折算）。
+    // 因此 8B 且 isGather/isRowConcat 时即使 32B 对齐也必须折算，否则 tilingData 按 8B
+    // 元素数下发而 kernel 按 4B 消费，产生 8B 元素高低 32 位错位
+    bool forceB64Fold = (param.isGather == 1 || param.isRowConcat == 1) && param.dtypeSize == B64_BYTES;
+    if (param.isAllTensorAlign == 1 && !forceB64Fold) {
         return ge::GRAPH_SUCCESS;
     }
     if (param.dtypeSize == B64_BYTES) {
@@ -943,6 +1073,12 @@ static ge::graphStatus PreProcessForNoAlign(ConcatTilingParam& param)
             for (int16_t i = 0; i < param.tensorNum; ++i) {
                 param.strideList[i] *= DIGIT_TWO;
             }
+        }
+        // b64 降 b32 时 gather/rowconcat 泛化分支的新增参数同步 ×2 折算：
+        // kernel 侧按 4B 元素视角消费（seg 段长/段间 stride 均为元素数），
+        // 漏折算会导致段长减半、8B 元素高低 32 位错位
+        if (param.isGather && param.gatherSeg > 0) {
+            param.gatherSeg *= DIGIT_TWO;
         }
         return ge::GRAPH_SUCCESS;
     }
@@ -1125,6 +1261,11 @@ static ge::graphStatus TilingForConcatDSimt(gert::TilingContext* context, Concat
 
 static bool TilingForPureCopy(ConcatTilingParam& param)
 {
+    // PureCopy kernel 通过 strideList 感知行 stride，支持断点轴==strideDim 的老非连续场景；
+    // gather/rowconcat 的 strideList 语义不同（段间 stride/合轴 stride），必须排除。
+    if (param.isNonContiguous && (param.isGather == 1 || param.isRowConcat == 1)) {
+        return false;
+    }
     param.usedCoreNum = std::min(param.totalCoreNum,
                                  (param.catDim0 * param.catDim1 + EVERY_CORE_THRESHOLD - 1) / EVERY_CORE_THRESHOLD);
     int64_t nCols = (param.catDim1 + LEAST_BLOCK_BYTES - 1) / LEAST_BLOCK_BYTES;
@@ -1192,7 +1333,9 @@ inline static ge::graphStatus DoTiling(gert::TilingContext* context, ConcatTilin
         // 先尝试纯搬运模板
         return ge::GRAPH_SUCCESS;
     }
-    if (param.isAllTensorAlign == 0 && (param.dtypeSize == B64_BYTES || param.dtypeSize == B8_BYTES)) {
+    bool forceB64FoldCall = (param.isGather == 1 || param.isRowConcat == 1) && param.dtypeSize == B64_BYTES;
+    if ((param.isAllTensorAlign == 0 && (param.dtypeSize == B64_BYTES || param.dtypeSize == B8_BYTES)) ||
+        forceB64FoldCall) {
         OP_CHECK_IF(PreProcessForNoAlign(param) != ge::GRAPH_SUCCESS,
                     OP_LOGE(context->GetNodeName(), "check PreProcessForNoAlign failed"), return ge::GRAPH_FAILED);
     }
@@ -1431,7 +1574,9 @@ ge::graphStatus CheckNonConBasic(gert::TilingContext* context, ConcatTilingParam
         OP_LOGE_FOR_INVALID_TENSORNUM(context->GetNodeName(), "input_tensors", static_cast<int64_t>(param.tensorNum),
                                       ("within the range [2, " + std::to_string(NON_CON_TENSOR_SIZE) + "]").c_str()),
         return ge::GRAPH_FAILED);
-    OP_CHECK_IF(param.strideDim < 0,
+    // dim=0 泛化（非连续 gather）场景 strideDim = dim-1 = -1 合法：
+    // 断点轴 breakAxis >= dim=0 恒成立，走 gather 分支，strideDim 不作索引用
+    OP_CHECK_IF(param.strideDim < 0 && param.dim != 0,
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "stride_dim",
                                                       std::to_string(param.strideDim).c_str(),
                                                       "The value of stride_dim must be greater than or equal to 0."),
@@ -1454,18 +1599,84 @@ static ge::graphStatus ValidateDtypeConsistency(gert::TilingContext* context, in
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus ValidateAndSetStride(gert::TilingContext* context, ConcatTilingParam& param, int64_t inputIdx,
-                                            int64_t i)
+// 输入是否带有效 view stride（动态输入且 stride 非空）
+inline static bool HasEffectiveStride(gert::TilingContext* context, int64_t inputIdx, int64_t i)
 {
     bool isViewI = context->DynamicInputIsView(inputIdx, i);
     auto nonStrideI = context->GetDynamicInputStride(inputIdx, i);
-    if (isViewI && nonStrideI != nullptr && nonStrideI->GetDimNum() > 0) {
-        OP_CHECK_IF(nonStrideI->GetStride(param.tensorList[i].size() - 1) != 1,
-                    OP_LOGE_FOR_INVALID_STRIDE(
-                        context->GetNodeName(), "input_stride",
-                        std::to_string(nonStrideI->GetStride(param.tensorList[i].size() - 1)).c_str(), "1"),
+    return isViewI && nonStrideI != nullptr && nonStrideI->GetDimNum() > 0;
+}
+// 返回非连续断点轴：
+// -1：全连续（无断点）；-2：存在多个断点（不支持）；否则为唯一断点所在轴
+static int64_t FindBreakAxis(const gert::Stride* nonStrideI, const vector<int64_t>& tensorShape, int64_t dim)
+{
+    int64_t size = static_cast<int64_t>(tensorShape.size());
+    if (size == 0) {
+        return -1;
+    }
+    int64_t breaks = 0;
+    int64_t breakAxis = -1;
+    if (nonStrideI->GetStride(size - 1) != 1) {
+        breaks = 1;
+        breakAxis = size - 1;
+    }
+    for (int64_t j = size - 2; j >= 0; j--) {
+        // 仅 dim==0(gather 域)时对最外层 size==1 轴豁免断点投票:
+        // 该轴 stride 不参与寻址, 物理连续的视图(如 (1,I)/stride(X,1))按连续处理;
+        // dim!=0(legacy 域)时不豁免——保持断点投票走 legacy 轻模板(与基线行为一致,
+        // 常规路径对微小 tensor 比 legacy 直通慢); 其余轴保持既有判定公式
+        if (j == 0 && tensorShape[0] == 1 && dim == 0) {
+            continue;
+        }
+        int64_t expected = nonStrideI->GetStride(j + 1) * tensorShape[j + 1];
+        if (nonStrideI->GetStride(j) != expected) {
+            if (breaks > 0) {
+                return -2;
+            }
+            breaks = 1;
+            breakAxis = j;
+        }
+    }
+    return breakAxis;
+}
+
+static ge::graphStatus ValidateAndSetStride(gert::TilingContext* context, ConcatTilingParam& param, int64_t inputIdx,
+                                            int64_t i)
+{
+    int64_t size = static_cast<int64_t>(param.tensorList[i].size());
+    if (param.dimsMerged) {
+        // 合轴（rowconcat）场景：tensorList 已被归一为 2 维 [rows, cols]。
+        // strideList = 行间源stride（断点轴物理stride），
+        // concatDimList = 每个tensor的完整cols（与非rowconcat场景一致,
+        // kernel用concatDimList*sameShapeTensorDim1得到dim1）。
+        // 段间 stride 由 kernel 从 seg = dim1/rowConcatSegNum 推导（多中间轴时
+        // 断点轴下一轴物理 stride 会读错源地址，kernel 已弃用该数组）
+        param.strideList[i] = static_cast<uint64_t>(param.mergedStrideList[i][0]);
+        param.concatDimList[i] = static_cast<uint64_t>(param.tensorList[i][1]);
+        return ge::GRAPH_SUCCESS;
+    }
+    bool hasStride = HasEffectiveStride(context, inputIdx, i);
+    if (!hasStride) {
+        // 连续输入（非 view 或无有效 stride）：strideList 记录合轴后 dim0 行方向的自然 stride
+        param.strideList[i] = param.strideDim >= 0 ? MergeDim(param.tensorList[i], param.strideDim + 1, size) :
+                                                     MergeDim(param.tensorList[i], 0, size);
+        param.concatDimList[i] = static_cast<uint32_t>(param.tensorList[i][param.dim]);
+        return ge::GRAPH_SUCCESS;
+    }
+
+    auto nonStrideI = context->GetDynamicInputStride(inputIdx, i);
+    int64_t breakAxis = FindBreakAxis(nonStrideI, param.tensorList[i], param.dim);
+    OP_CHECK_IF(breakAxis == -2,
+                OP_LOGE_FOR_INVALID_STRIDE(context->GetNodeName(), "input_stride", "multiple_break", "single"),
+                return ge::GRAPH_FAILED);
+
+    // 既有非连续场景：断点轴必须为 dim-1，保持原有校验逻辑与 stride 语义完全不变
+    if (param.strideDim >= 0 && breakAxis == param.strideDim) {
+        OP_CHECK_IF(nonStrideI->GetStride(size - 1) != 1,
+                    OP_LOGE_FOR_INVALID_STRIDE(context->GetNodeName(), "input_stride",
+                                               std::to_string(nonStrideI->GetStride(size - 1)).c_str(), "1"),
                     return ge::GRAPH_FAILED);
-        for (int64_t j = param.tensorList[i].size() - 2; j >= 0; j--) {
+        for (int64_t j = size - 2; j >= 0; j--) {
             if (param.strideDim != j) {
                 OP_CHECK_IF(
                     nonStrideI->GetStride(j) != nonStrideI->GetStride(j + 1) * param.tensorList[i][j + 1],
@@ -1476,10 +1687,72 @@ static ge::graphStatus ValidateAndSetStride(gert::TilingContext* context, Concat
             }
         }
         param.strideList[i] = static_cast<uint64_t>(nonStrideI->GetStride(param.strideDim));
-    } else {
-        param.strideList[i] = MergeDim(param.tensorList[i], param.strideDim + 1, param.tensorList[i].size());
+        param.concatDimList[i] = static_cast<uint32_t>(param.tensorList[i][param.dim]);
+        return ge::GRAPH_SUCCESS;
     }
+
+    // 全连续 view（无断点）：按连续语义处理
+    if (breakAxis == -1) {
+        param.strideList[i] = param.strideDim >= 0 ? MergeDim(param.tensorList[i], param.strideDim + 1, size) :
+                                                     MergeDim(param.tensorList[i], 0, size);
+        param.concatDimList[i] = static_cast<uint32_t>(param.tensorList[i][param.dim]);
+        return ge::GRAPH_SUCCESS;
+    }
+
+    // 新增 slice pattern（单根轴）场景：全局唯一非连续轴，所有输入必须共享同一轴，轴维度不限
+    if (param.slicePatternAxis == -1) {
+        param.slicePatternAxis = breakAxis;
+    }
+    OP_CHECK_IF(param.slicePatternAxis != breakAxis,
+                OP_LOGE_FOR_INVALID_STRIDE(context->GetNodeName(), "input_stride", std::to_string(breakAxis).c_str(),
+                                           std::to_string(param.slicePatternAxis).c_str()),
+                return ge::GRAPH_FAILED);
+
+    // 断点以下的轴必须连续（末维向前到断点上方），仅当断点位于末维时放开"末维 stride == 1"校验
+    for (int64_t j = size - 2; j > breakAxis; j--) {
+        OP_CHECK_IF(nonStrideI->GetStride(j) != nonStrideI->GetStride(j + 1) * param.tensorList[i][j + 1],
+                    OP_LOGE_FOR_INVALID_STRIDE(
+                        context->GetNodeName(), "input_stride", std::to_string(nonStrideI->GetStride(j)).c_str(),
+                        std::to_string(nonStrideI->GetStride(j + 1) * param.tensorList[i][j + 1]).c_str()),
+                    return ge::GRAPH_FAILED);
+    }
+    if (breakAxis != size - 1) {
+        OP_CHECK_IF(nonStrideI->GetStride(size - 1) != 1,
+                    OP_LOGE_FOR_INVALID_STRIDE(context->GetNodeName(), "input_stride",
+                                               std::to_string(nonStrideI->GetStride(size - 1)).c_str(), "1"),
+                    return ge::GRAPH_FAILED);
+    }
+
+    // concatDimList：每个输入在 concat 轴的 size（维度不限）
     param.concatDimList[i] = static_cast<uint32_t>(param.tensorList[i][param.dim]);
+    if (breakAxis >= param.dim) {
+        // 末维断点（末维 stride != 1）不进非连续适配，报错回退连续逻辑
+        OP_CHECK_IF(breakAxis == size - 1,
+                    OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                        context->GetNodeName(), "input_stride", std::to_string(breakAxis).c_str(),
+                        "Slice pattern on the last axis is unsupported; only non-last-axis break is supported."),
+                    return ge::GRAPH_FAILED);
+        // gather 场景：断点位于 concat 轴及其后，dim1 段内部不连续。
+        // 每 tensor = rows(固定) x segNum_i 段 x seg 连续元素；
+        // strideList=断点轴物理 stride(段间源 stride)；concatDimList=concat轴size(与非gather一致,
+        // kernel乘sameShapeTensorDim1得到完整dim1)。
+        param.isGather = 1;
+        param.gatherSeg = MergeDim(param.tensorList[i], breakAxis + 1, size);
+        param.strideList[i] = static_cast<uint64_t>(nonStrideI->GetStride(breakAxis));
+        param.concatDimList[i] = static_cast<uint32_t>(param.tensorList[i][param.dim]);
+    } else {
+        // 断点 < concat 轴：dim1 段连续，走既有"rows x cols + 行 stride(DataCopyPad)"搬运。
+        // 仅放行断点 == concat 轴-1(legacy 位置): 严格更早的断点使 2D 行块内行距非均匀,
+        // 统一 stride[dim-1] 行距模型不适用; 全 view 输入已由 MergeDimsForEarlyBreakAxis
+        // 合轴提前返回, 混合输入(连续成员+早断点 view)无法合轴, 落入此分支会在 b 轴
+        // 换行处读错源地址, 恢复改动前的拒绝语义
+        OP_CHECK_IF(
+            breakAxis < param.dim - 1,
+            OP_LOGE_FOR_INVALID_STRIDE(context->GetNodeName(), "input_stride", std::to_string(breakAxis).c_str(),
+                                       "break axis earlier than concat axis - 1 is unsupported"),
+            return ge::GRAPH_FAILED);
+        param.strideList[i] = static_cast<uint64_t>(nonStrideI->GetStride(param.strideDim));
+    }
     return ge::GRAPH_SUCCESS;
 }
 
@@ -1516,6 +1789,9 @@ ge::graphStatus CheckNonContiguous(gert::TilingContext* context, ConcatTilingPar
     OP_CHECK_NULL_WITH_CONTEXT(context, input0Desc);
     auto input0DataType = input0Desc->GetDataType();
 
+    param.slicePatternAxis = -1;
+    param.isGather = 0;
+    param.gatherSeg = 0;
     for (int64_t i = 0; i < param.tensorNum; i++) {
         if (ValidateDtypeConsistency(context, inputIdx, i, input0DataType) != ge::GRAPH_SUCCESS) {
             return ge::GRAPH_FAILED;
@@ -1530,7 +1806,76 @@ ge::graphStatus CheckNonContiguous(gert::TilingContext* context, ConcatTilingPar
         }
     }
 
+    // gather(dim=0) 混合输入（连续 tensor + 非连续 view，如宿主分批后 concat 中间结果
+    // 与尾批 tensor 拼接）：连续 tensor 的行距应等于断点后连续块 I（= gatherSeg），
+    // ValidateAndSetStride 对全连续 view（有 stride 但 breakAxis==-1）按合轴填的是
+    // 全量元素数、对无 stride 输入同理，两者都会导致 kernel 行距放大造成源越界/错位，
+    // 此处统一回填修正
+    if (param.isGather && param.gatherSeg > 0) {
+        for (int64_t i = 0; i < param.tensorNum; i++) {
+            auto nonStrideI = context->GetDynamicInputStride(inputIdx, i);
+            bool isContigTensor = !HasEffectiveStride(context, inputIdx, i);
+            if (!isContigTensor && nonStrideI != nullptr) {
+                isContigTensor = (FindBreakAxis(nonStrideI, param.tensorList[i], param.dim) == -1);
+            }
+            if (isContigTensor) {
+                param.strideList[i] = static_cast<uint64_t>(param.gatherSeg);
+            }
+        }
+    }
+
     param.isNonContiguous = true;
+    return ge::GRAPH_SUCCESS;
+}
+
+// 合轴（rowconcat 场景）：断点轴 < dim-1 时，将断点及之上各轴合并为 dim0（行数）、
+// 断点之下各轴合并为 dim1（列数），并归一化 stride，使后续逻辑与"断点 == dim-1"既有场景一致。
+// 例：[2,3,4] dim=2 断点 0 → 合轴为 [2,12]（stride 24,1），dim 变为 1。
+static ge::graphStatus MergeDimsForEarlyBreakAxis(gert::TilingContext* context, ConcatTilingParam& param,
+                                                  int64_t inputIdx)
+{
+    if (!param.isNonContiguous || param.dim < 2) {
+        return ge::GRAPH_SUCCESS;
+    }
+    // 探测全局唯一断点：仅当所有输入断点一致且严格早于 dim-1 时才合轴
+    int64_t globalBreakAxis = -2;
+    for (int64_t i = 0; i < param.tensorNum; i++) {
+        auto nonStrideI = context->GetDynamicInputStride(inputIdx, i);
+        if (nonStrideI == nullptr || nonStrideI->GetDimNum() == 0) {
+            return ge::GRAPH_SUCCESS;
+        }
+        int64_t b = FindBreakAxis(nonStrideI, param.tensorList[i], param.dim);
+        if (b < 0) {
+            return ge::GRAPH_SUCCESS;
+        }
+        if (globalBreakAxis == -2) {
+            globalBreakAxis = b;
+        } else if (globalBreakAxis != b) {
+            return ge::GRAPH_SUCCESS;
+        }
+    }
+    if (globalBreakAxis < 0 || globalBreakAxis >= param.dim - 1) {
+        return ge::GRAPH_SUCCESS;
+    }
+    param.dimsMerged = true;
+    param.isRowConcat = 1;
+    // 每行段数：断点轴与 concat 轴之间各轴乘积（所有输入一致）
+    param.rowConcatSegNum = MergeDim(param.tensorList[0], globalBreakAxis + 1, param.dim);
+    param.mergedStrideList.clear();
+    for (int64_t i = 0; i < param.tensorNum; i++) {
+        auto& shp = param.tensorList[i];
+        int64_t rows = MergeDim(shp, 0, globalBreakAxis + 1);
+        int64_t cols = MergeDim(shp, globalBreakAxis + 1, static_cast<int64_t>(shp.size()));
+        auto nonStrideI = context->GetDynamicInputStride(inputIdx, i);
+        // 行间源 stride（断点轴物理 stride）+ 段间源 stride（断点轴下一轴物理 stride）
+        param.mergedStrideList.push_back(
+            {nonStrideI->GetStride(globalBreakAxis), nonStrideI->GetStride(globalBreakAxis + 1)});
+        param.strideList[i] = static_cast<uint64_t>(nonStrideI->GetStride(globalBreakAxis));
+        param.concatDimList[i] = static_cast<uint32_t>(cols);
+        shp = std::vector<int64_t>{rows, cols};
+    }
+    param.dim = 1;
+    param.strideDim = 0;
     return ge::GRAPH_SUCCESS;
 }
 
@@ -1559,6 +1904,9 @@ ge::graphStatus TilingCommon(gert::TilingContext* context, int64_t inputIdx, int
                 OP_LOGE(context->GetNodeName(), "GetDtypeSize failed."), return ge::GRAPH_FAILED);
     OP_CHECK_IF(GetTensorList(context, param, inputIdx) != ge::GRAPH_SUCCESS,
                 OP_LOGE(context->GetNodeName(), "GetTensorList failed."), return ge::GRAPH_FAILED);
+    // 合轴：断点轴 < dim-1 的场景归一为 2 维（dim0=断点及之上，dim1=断点之下），避免新增模板
+    OP_CHECK_IF(MergeDimsForEarlyBreakAxis(context, param, inputIdx) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "MergeDimsForEarlyBreakAxis failed."), return ge::GRAPH_FAILED);
     OP_CHECK_IF(IsShapeValid(context, param.tensorList, param.dim) != ge::GRAPH_SUCCESS,
                 OP_LOGE(context->GetNodeName(), "check input shape failed."), return ge::GRAPH_FAILED);
     OP_CHECK_IF(CalcBaseTilingParam(context, param) != ge::GRAPH_SUCCESS,
@@ -1567,6 +1915,11 @@ ge::graphStatus TilingCommon(gert::TilingContext* context, int64_t inputIdx, int
         OP_CHECK_IF(CheckNonContiguous(context, param, inputIdx) != ge::GRAPH_SUCCESS,
                     OP_LOGE(context->GetNodeName(), "input tensor non contiguous validation failed."),
                     return ge::GRAPH_FAILED);
+        // gather/rowconcat 场景下 concatDimList 记录的是 shape[dim](gather) 或合轴后 cols(rowconcat)，
+        // sameShapeTensorDim1 需统一为"concat 轴之后各轴乘积"，否则 same-shape 输入会在 kernel 端二次相乘
+        if (param.isGather || param.isRowConcat) {
+            param.sameShapeTensorDim1 = MergeDim(param.tensorList[0], param.dim + 1, param.tensorList[0].size());
+        }
     }
     // 处理simt模板
     if (IsEnableUsedSimt(param)) {

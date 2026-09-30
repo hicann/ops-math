@@ -34,7 +34,7 @@ const int64_t TILING_PRELOAD_DIM1_LENGTH = 2;
 // simt模板可以存储最大的Tensor偏移数目
 const int32_t TILING_COLS_OFFSET_LENGTH = 128;
 constexpr size_t MAX_CONCAT_NUM = 64;
-constexpr int64_t NON_CON_TENSOR_SIZE = 32;
+constexpr int64_t NON_CON_TENSOR_SIZE = 64;
 
 BEGIN_TILING_DATA_DEF(ConcatTilingDataArrays)
 TILING_DATA_FIELD_DEF_ARR(int16_t, TILING_ARRAY_LENGTH, endTensorIdx);
@@ -51,6 +51,10 @@ TILING_DATA_FIELD_DEF(int16_t, dim);         // 要连接的dim
 TILING_DATA_FIELD_DEF(int16_t, tensorNum);   // 输入的tensor数量
 TILING_DATA_FIELD_DEF(int16_t, dtypeSize);
 TILING_DATA_FIELD_DEF(int16_t, isNonContiguous);
+TILING_DATA_FIELD_DEF(int16_t, isGather);
+TILING_DATA_FIELD_DEF(int16_t, isRowConcat);
+TILING_DATA_FIELD_DEF(int64_t, gatherSeg);
+TILING_DATA_FIELD_DEF(int64_t, rowConcatSegNum);
 TILING_DATA_FIELD_DEF(int32_t, ubFactorDim0); // dim0轴切分数据量
 TILING_DATA_FIELD_DEF(int32_t, ubFactorDim1); // dim1轴切分数据量
 TILING_DATA_FIELD_DEF(int32_t, tailUbFactorDim0);
@@ -81,6 +85,10 @@ TILING_DATA_FIELD_DEF(int16_t, dim);         // 要连接的dim
 TILING_DATA_FIELD_DEF(int16_t, tensorNum);   // 输入的tensor数量
 TILING_DATA_FIELD_DEF(int16_t, dtypeSize);
 TILING_DATA_FIELD_DEF(int16_t, isNonContiguous);
+TILING_DATA_FIELD_DEF(int16_t, isGather);
+TILING_DATA_FIELD_DEF(int16_t, isRowConcat);
+TILING_DATA_FIELD_DEF(int64_t, gatherSeg);
+TILING_DATA_FIELD_DEF(int64_t, rowConcatSegNum);
 TILING_DATA_FIELD_DEF(int32_t, ubFactorDim0); // dim0轴切分数据量
 TILING_DATA_FIELD_DEF(int32_t, ubFactorDim1); // dim1轴切分数据量
 TILING_DATA_FIELD_DEF(int32_t, tailUbFactorDim0);
@@ -135,6 +143,10 @@ TILING_DATA_FIELD_DEF(int16_t, dim);
 TILING_DATA_FIELD_DEF(int16_t, tensorNum);
 TILING_DATA_FIELD_DEF(int16_t, dtypeSize);
 TILING_DATA_FIELD_DEF(int16_t, isNonContiguous);
+TILING_DATA_FIELD_DEF(int16_t, isGather);
+TILING_DATA_FIELD_DEF(int16_t, isRowConcat);
+TILING_DATA_FIELD_DEF(int64_t, gatherSeg);
+TILING_DATA_FIELD_DEF(int64_t, rowConcatSegNum);
 TILING_DATA_FIELD_DEF(int16_t, isFP4Type);
 TILING_DATA_FIELD_DEF(int32_t, ubFactorDim0);
 TILING_DATA_FIELD_DEF(int32_t, ubFactorDim1);
@@ -164,6 +176,10 @@ TILING_DATA_FIELD_DEF(int16_t, dim);
 TILING_DATA_FIELD_DEF(int16_t, tensorNum);
 TILING_DATA_FIELD_DEF(int16_t, dtypeSize);
 TILING_DATA_FIELD_DEF(int16_t, isNonContiguous);
+TILING_DATA_FIELD_DEF(int16_t, isGather);
+TILING_DATA_FIELD_DEF(int16_t, isRowConcat);
+TILING_DATA_FIELD_DEF(int64_t, gatherSeg);
+TILING_DATA_FIELD_DEF(int64_t, rowConcatSegNum);
 TILING_DATA_FIELD_DEF(int16_t, isFP4Type);
 TILING_DATA_FIELD_DEF(int32_t, ubFactorDim0);
 TILING_DATA_FIELD_DEF(int32_t, ubFactorDim1);
@@ -277,6 +293,11 @@ struct ConcatTilingParam {
     bool isEmpty{false};
     bool isNonContiguous{false};
     int64_t strideDim{0};
+    int64_t slicePatternAxis{-1};
+    int16_t isGather{0};
+    int16_t isRowConcat{0};
+    int64_t gatherSeg{0};
+    int64_t rowConcatSegNum{0};
     std::vector<int16_t> startTensorIdx;
     std::vector<int16_t> endTensorIdx;
     std::vector<int64_t> startTensorOffset;
@@ -290,10 +311,15 @@ struct ConcatTilingParam {
     std::vector<int32_t> tensorColsOffset;
     std::vector<std::vector<int64_t>> tensorList;
     std::vector<std::vector<int64_t>> mergeTensorList;
-    std::vector<uint64_t> strideList{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                                     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-    std::vector<uint64_t> concatDimList{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    std::vector<uint64_t> strideList{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    std::vector<uint64_t> concatDimList{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    // 合轴（rowconcat，断点轴 < dim-1）场景：输入被归一化为 2 维 [rows, cols]
+    bool dimsMerged{false};
+    std::vector<std::vector<int64_t>> mergedStrideList;
     int16_t endIdxArr[TILING_ARRAY_LENGTH]{0};
     int64_t endOffsetArr[TILING_ARRAY_LENGTH]{0};
     int64_t preLoadDim1Arr[TILING_PRELOAD_DIM1_LENGTH]{0};

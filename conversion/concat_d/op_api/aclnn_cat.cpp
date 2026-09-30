@@ -36,7 +36,7 @@ extern "C" {
 
 constexpr uint32_t MAX_UINT32_NUM = 4294967295;
 constexpr uint32_t STRIDE_SIZE = 32;
-constexpr uint32_t MAX_TENSOR_NUM = 32;
+constexpr uint32_t MAX_TENSOR_NUM = 64;
 constexpr uint32_t SMALL_BAG = 128;
 constexpr uint32_t SINGLE_CORE_PROCESS_SIZE = 8192;
 constexpr int32_t DIM_TWO = 2;
@@ -205,39 +205,98 @@ static aclnnStatus ProcessOneTensor(const aclTensor* in, aclTensor* out, aclOpEx
     return ACLNN_SUCCESS;
 }
 
-static bool CheckSocAndNonConBasic(op::FVector<const aclTensor*> tensors, int64_t realDim)
+static bool CheckSocAndNonConBasic(op::FVector<const aclTensor*> tensors)
 {
     auto npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
     if (!IsRegBase(npuArch)) {
         return false;
     }
-    if (realDim == 0) {
-        return false;
-    }
-    if (tensors.size() <= 1 || tensors.size() > MAX_TENSOR_NUM) {
+    if (tensors.size() <= 1) {
         return false;
     }
     return true;
 }
 
-static bool IsNonConCases(op::FVector<const aclTensor*> tensors, int64_t realDim, int64_t dimNum)
+// 识别唯一的非尾断点轴: 尾轴 stride 须为 1, 除断点轴外其余轴须满足
+// stride[j] = stride[j+1] * shape[j+1] 的连续关系, 且所有 tensor 的断点轴须同位
+
+static bool FindBreakAxis(op::FVector<const aclTensor*> tensors, int64_t dimNum, int64_t realDim, int64_t& breakAxis)
+{
+    int64_t bk0 = -1;
+    for (uint64_t i = 0; i < tensors.size(); i++) {
+        op::Shape shapeI = tensors[i]->GetViewShape();
+        op::Strides stridesI = tensors[i]->GetViewStrides();
+        if (stridesI[dimNum - 1] != 1) {
+            return false;
+        }
+        int64_t bkI = -1;
+        for (int64_t j = dimNum - DIM_TWO; j >= 0; j--) {
+            // 仅 dim==0(gather 域)时对最外层 size==1 轴豁免断点投票:
+            // 该轴 stride 不参与寻址, 物理连续的视图(如 (1,I)/stride(X,1))按连续处理,
+            // 避免被误路由到 gather 重模板(实测 0.81x 劣化);
+            // dim!=0(legacy 域)时不豁免——(1,I)/stride(X,1) 保持断点投票走 legacy 轻模板
+            // (与基线行为一致, 实测常规路径对微小 tensor 比 legacy 直通慢 0.58x)
+            if (j == 0 && shapeI.GetDim(0) == 1 && realDim == 0) {
+                continue;
+            }
+            if (stridesI[j] != stridesI[j + 1] * shapeI.GetDim(j + 1)) {
+                if (bkI >= 0) {
+                    return false;
+                }
+                bkI = j;
+            }
+        }
+        if (bkI < 0) {
+            continue;
+        }
+        if (bk0 < 0) {
+            bk0 = bkI;
+        } else if (bk0 != bkI) {
+            return false;
+        }
+    }
+    if (bk0 < 0) {
+        return false;
+    }
+    breakAxis = bk0;
+    return true;
+}
+
+// 该 tensor 的 stride 是否存在断点(与 FindBreakAxis 的判定公式一致, 含最外层 size=1 豁免)
+static bool TensorHasStrideBreak(const aclTensor* t, int64_t dimNum)
+{
+    op::Shape shape = t->GetViewShape();
+    op::Strides strides = t->GetViewStrides();
+    for (int64_t j = dimNum - DIM_TWO; j >= 0; j--) {
+        if (j == 0 && shape.GetDim(0) == 1) {
+            continue;
+        }
+        if (strides[j] != strides[j + 1] * shape.GetDim(j + 1)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool IsNonConCases(op::FVector<const aclTensor*> tensors, int64_t dimNum, int64_t breakAxis)
 {
     // 每个tensor都要校验，不满足尾轴大包；尾轴小包但stride大包；尾轴小包总体数据小包的场景，不支持非连续
     op::DataType shape0Dtype = tensors[0]->GetDataType();
     auto shape0DtypeSize = ge::GetSizeByDataType(shape0Dtype);
     auto coreNum = GetCurrentPlatformInfo().GetVectorCoreNum();
-    int64_t strideDim = realDim - 1;
     for (uint64_t i = 0; i < tensors.size(); i++) {
+        // 连续成员(无 stride 断点)在直通路径上是整块搬运, 不受小包约束:
+        // 豁免, 避免混合输入中"块大行小"的连续成员误杀整表直通
+        if (!TensorHasStrideBreak(tensors[i], dimNum)) {
+            continue;
+        }
         op::Shape shapeI = tensors[i]->GetViewShape();
         auto shapeIStride = tensors[i]->GetViewStrides();
         uint64_t lastAllData = 1;
-        for (int64_t j = dimNum - 1; j >= 0; j--) {
-            if (strideDim == j) {
-                break;
-            }
-            lastAllData *= shapeI[j];
+        for (int64_t j = breakAxis + 1; j < dimNum; j++) {
+            lastAllData *= shapeI.GetDim(j);
         }
-        if (!(lastAllData * shape0DtypeSize >= SMALL_BAG) && !(shapeIStride[strideDim] * shape0DtypeSize > SMALL_BAG) &&
+        if (!(lastAllData * shape0DtypeSize >= SMALL_BAG) && !(shapeIStride[breakAxis] * shape0DtypeSize > SMALL_BAG) &&
             !(shapeI.GetShapeSize() * shape0DtypeSize < coreNum * SINGLE_CORE_PROCESS_SIZE)) {
             return false;
         }
@@ -245,72 +304,162 @@ static bool IsNonConCases(op::FVector<const aclTensor*> tensors, int64_t realDim
     return true;
 }
 
-static bool IsNonContiguousSupport(op::FVector<const aclTensor*> tensors, int64_t realDim)
+// 断点轴识别放宽为任意非尾轴(b < size-1): dtype 一致、单一断点轴且各 tensor 同位、尾轴 stride 为 1、
+// 断点轴 stride < 2^32, 且满足小包条件; 断点轴位置由 breakAxis 传出。
+// 底层 ConcatD 已支持任意非尾断点轴: b == dim-1 走存量模板, 其余位置走 gather(b >= dim)/
+// rowconcat(b < dim) 泛化分支(复用 PureCopy 模板), tiling 拒绝时由调用方回退常规 Contiguous 路径
+static bool IsNonContiguousSupport(op::FVector<const aclTensor*> tensors, int64_t realDim, int64_t& breakAxis)
 {
-    if (!CheckSocAndNonConBasic(tensors, realDim)) {
+    if (!CheckSocAndNonConBasic(tensors)) {
         return false;
     }
     op::Shape shape0 = tensors[0]->GetViewShape();
     auto dimNum = static_cast<int64_t>(shape0.GetDimNum());
-    op::DataType shape0Dtype = tensors[0]->GetDataType();
-    int64_t strideDim = realDim - 1;
-    bool existNonCon = false;
-    for (uint64_t i = 0; i < tensors.size(); i++) {
-        op::Shape shapeI = tensors[i]->GetViewShape();
-        auto shapeIStride = tensors[i]->GetViewStrides();
-        op::DataType shapeIDtype = tensors[i]->GetDataType();
-        if (shapeIDtype != shape0Dtype) {
-            return false;
-        }
-        if (static_cast<uint32_t>(shapeIStride[strideDim]) >= MAX_UINT32_NUM) {
-            return false;
-        }
-        // 先校验是否存在tensor不连续，仅stridedim不连续要记录；其他轴必须连续（即其他轴的stride[i]=shape[i+1]*stride[i+1]）；
-        if (shapeIStride[dimNum - 1] != 1) {
-            return false;
-        }
-        for (int64_t j = dimNum - DIM_TWO; j >= 0; j--) {
-            if (strideDim == j) {
-                if (shapeIStride[j] != shapeIStride[j + 1] * shapeI[j + 1]) {
-                    existNonCon = true;
-                }
-            } else {
-                if (shapeIStride[j] != shapeIStride[j + 1] * shapeI[j + 1]) {
-                    return false;
-                }
-            }
-        }
-    }
-    if (!existNonCon) {
+    if (dimNum < 1 || realDim < 0 || realDim >= dimNum) {
         return false;
     }
-    if (!IsNonConCases(tensors, realDim, dimNum)) {
+    op::DataType shape0Dtype = tensors[0]->GetDataType();
+    for (uint64_t i = 0; i < tensors.size(); i++) {
+        if (tensors[i]->GetDataType() != shape0Dtype) {
+            return false;
+        }
+    }
+    if (!FindBreakAxis(tensors, dimNum, realDim, breakAxis)) {
+        return false;
+    }
+    // 断点位置范围(需求 2.3.5.3): 仅支持 b == realDim-1(存量 legacy)或 realDim == 0(泛化族, 断点任意非尾轴),
+    // 其余位置回退常规 Contiguous 路径
+    if (breakAxis != realDim - 1 && realDim != 0) {
+        return false;
+    }
+    // 底层泛化分支准入预检(与 tiling 对齐, 避免依赖 tiling 拒绝回退):
+    // FP4 不支持; 断点轴 stride 不得小于断点后连续块(重叠视图, 如 expand)
+    if (shape0Dtype == DataType::DT_FLOAT4_E1M2 || shape0Dtype == DataType::DT_FLOAT4_E2M1) {
+        return false;
+    }
+    // dim=0 泛化族底层走 gather 分支: 单个连续段(断点轴后各维乘积)必须装得进本设备 gather
+    // UB 预算, 口径与底层 tiling 完全一致: tiling 在 DoTiling 中先按 ENABLE_DB 将 ubSize
+    // 减半(双缓冲), 再 (ubSize/2-1024)/dtypeSize/2(BUFFER_NUM), 且受 u16 索引上限 65535
+    // 钳制。段长仅由 shape 决定(与 tensor 数无关), 随设备 UB 大小不同表现不同;
+    // 超预算时 tiling 会拒绝且 l0op::ConcatD 不回传 nullptr、带病进执行图导致整个调用
+    // 失败(ubFactorDim0=0 / INNER_NULLPTR), 无法事后回退, 必须在此前置拦截,
+    // 回退常规 Contiguous 路径
+    if (realDim == 0) {
+        int64_t segElems = 1;
+        for (int64_t j = breakAxis + 1; j < dimNum; j++) {
+            segElems *= shape0.GetDim(j);
+        }
+        uint64_t ubSize = 0;
+        auto* platformInfos = GetCurrentPlatformInfo().GetPlatformInfos();
+        if (platformInfos != nullptr) {
+            platformInfos->GetLocalMemSize(fe::LocalMemType::UB, ubSize);
+        }
+        constexpr int64_t DB_BUFFER_SPLIT = 2;         // 与 concat tiling 侧 ENABLE_DB(HALF) 一致
+        constexpr int64_t INDEX_USE_UB_RESERVE = 1024; // 与 concat tiling 侧 INDEX_USE_UB 一致
+        constexpr int64_t GATHER_BUFFER_NUM = 2;       // 与 concat tiling 侧 BUFFER_NUM 一致
+        constexpr int64_t U16_INDEX_LIMIT = 65535;
+        auto shape0DtypeSize = ge::GetSizeByDataType(shape0Dtype);
+        int64_t ubAfterDb = static_cast<int64_t>(ubSize) / DB_BUFFER_SPLIT;
+        int64_t gatherUbBudget = ubAfterDb <= INDEX_USE_UB_RESERVE ?
+                                     0 :
+                                     (ubAfterDb - INDEX_USE_UB_RESERVE) / shape0DtypeSize / GATHER_BUFFER_NUM;
+        if (gatherUbBudget > U16_INDEX_LIMIT) {
+            gatherUbBudget = U16_INDEX_LIMIT;
+        }
+        if (ubSize == 0 || segElems > gatherUbBudget) {
+            return false;
+        }
+    }
+    for (uint64_t i = 0; i < tensors.size(); i++) {
+        op::Shape shapeI = tensors[i]->GetViewShape();
+        op::Strides stridesI = tensors[i]->GetViewStrides();
+        // 断点轴 stride 上限校验(int64 域比较, 先 cast uint32 会截断高位):
+        // stride ≥ 2^32 的视图会通过门控后在 compact tiling 的 uint32 strideListCompact
+        // 中被静默截断, 导致错误源地址(老版本存在此检查, 门控重写时被移除, 此处恢复)
+        if (stridesI[breakAxis] >= static_cast<int64_t>(MAX_UINT32_NUM)) {
+            return false;
+        }
+        int64_t innerSize = 1;
+        for (int64_t j = breakAxis + 1; j < dimNum; j++) {
+            innerSize *= shapeI.GetDim(j);
+        }
+        if (stridesI[breakAxis] < 0 || stridesI[breakAxis] < innerSize) {
+            return false;
+        }
+    }
+    if (!IsNonConCases(tensors, dimNum, breakAxis)) {
         return false;
     }
     return true;
 }
 
-static aclnnStatus ProcessNonContiguous(op::FVector<const aclTensor*> tensorList, int64_t dim, aclTensor* out,
-                                        aclOpExecutor* executor)
+// 非连续直通尝试: 失败返回 false, 由调用方回退常规路径
+static bool TryProcessNonContiguous(op::FVector<const aclTensor*> tensorList, int64_t dim, aclTensor* out,
+                                    aclOpExecutor* executor)
 {
-    op::FVector<const aclTensor*> tensorListOnce;
+    op::FVector<const aclTensor*> tensorListA;
     for (uint64_t i = 0; i < tensorList.size(); i++) {
-        tensorListOnce.emplace_back(
-            executor->CreateView(tensorList[i], tensorList[i]->GetViewShape(), tensorList[i]->GetStorageShape(),
-                                 tensorList[i]->GetViewStrides(), tensorList[i]->GetViewOffset()));
+        auto viewTensor = executor->CreateView(tensorList[i], tensorList[i]->GetViewShape(),
+                                               tensorList[i]->GetStorageShape(), tensorList[i]->GetViewStrides(),
+                                               tensorList[i]->GetViewOffset());
+        if (viewTensor == nullptr) {
+            OP_LOGW("aclnnCat create non contiguous view failed, fallback to contiguous path.");
+            return false;
+        }
+        tensorListA.emplace_back(viewTensor);
     }
-    auto tensorAllocList = executor->AllocTensorList(tensorListOnce.data(), tensorListOnce.size());
-    auto concatTensor = l0op::ConcatD(tensorAllocList, dim, executor);
-    CHECK_RET(CheckShapeAndScalarSame(concatTensor, out), ACLNN_ERR_PARAM_INVALID);
-    auto castOut = l0op::Cast(concatTensor, out->GetDataType(), executor);
+
+    while (tensorListA.size() > 1) {
+        op::FVector<const aclTensor*> tensorListOnce;
+        op::FVector<const aclTensor*> tensorListB;
+        for (auto tensor : tensorListA) {
+            tensorListOnce.emplace_back(tensor);
+            if (tensorListOnce.size() == MAX_TENSOR_NUM) {
+                auto tensorAllocList = executor->AllocTensorList(tensorListOnce.data(), tensorListOnce.size());
+                auto concatTensor = l0op::ConcatD(tensorAllocList, dim, executor);
+                if (concatTensor == nullptr) {
+                    OP_LOGW("aclnnCat non contiguous ConcatD rejected, fallback to contiguous path.");
+                    return false;
+                }
+                tensorListB.emplace_back(concatTensor);
+                tensorListOnce.clear();
+            }
+        }
+        if (!tensorListOnce.empty()) {
+            if (tensorListOnce.size() == 1) {
+                tensorListB.emplace_back(tensorListOnce.front());
+            } else {
+                auto aclTensorListTail = executor->AllocTensorList(tensorListOnce.data(), tensorListOnce.size());
+                auto concatTensorTail = l0op::ConcatD(aclTensorListTail, dim, executor);
+                if (concatTensorTail == nullptr) {
+                    OP_LOGW("aclnnCat non contiguous ConcatD rejected, fallback to contiguous path.");
+                    return false;
+                }
+                tensorListB.emplace_back(concatTensorTail);
+            }
+            tensorListOnce.clear();
+        }
+        tensorListA = tensorListB;
+    }
+
+    if (tensorListA.empty()) {
+        return true;
+    }
+    if (!CheckShapeAndScalarSame(tensorListA.front(), out)) {
+        OP_LOGW("aclnnCat non contiguous result shape mismatch, fallback to contiguous path.");
+        return false;
+    }
+    auto castOut = l0op::Cast(tensorListA.front(), out->GetDataType(), executor);
     if (castOut == nullptr) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Result type %s can't be cast to the desired output type %s.",
-                op::ToString(concatTensor->GetDataType()).GetString(), op::ToString(out->GetDataType()).GetString());
-        return ACLNN_ERR_INNER_NULLPTR;
+        OP_LOGW("aclnnCat non contiguous cast failed, fallback to contiguous path.");
+        return false;
     }
     auto viewCopyResult = l0op::ViewCopy(castOut, out, executor);
-    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    return ACLNN_SUCCESS;
+    if (viewCopyResult == nullptr) {
+        OP_LOGW("aclnnCat non contiguous view copy failed, fallback to contiguous path.");
+        return false;
+    }
+    return true;
 }
 
 static aclnnStatus SplitToConcat(const aclTensorList* tensors, int64_t dim, aclTensor* out, aclOpExecutor* executor)
@@ -327,8 +476,16 @@ static aclnnStatus SplitToConcat(const aclTensorList* tensors, int64_t dim, aclT
         }
     }
 
-    if (IsNonContiguousSupport(tensorListA, dim)) {
-        return ProcessNonContiguous(tensorListA, dim, out, executor);
+    // 非连续输入: 满足门控时直通 ConcatD(断点=dim-1 走存量模板, 其余非尾断点位置走
+    // gather/rowconcat 泛化分支), 被拒时自动回退常规 Contiguous 路径。
+    // 注: 混合输入(连续+非连续)同样由此门控放行——FindBreakAxis 对连续成员跳过投票;
+    // 此处不再做"连续成员 Contiguous 归一化后二次重试"——归一化不改变门控可见的
+    // shape/stride, 二次判定必然与首次一致(实测不可达), 已删除。
+    int64_t breakAxis = -1;
+    if (IsNonContiguousSupport(tensorListA, dim, breakAxis)) {
+        if (TryProcessNonContiguous(tensorListA, dim, out, executor)) {
+            return ACLNN_SUCCESS;
+        }
     }
 
     if (tensorListA.size() == 1) {

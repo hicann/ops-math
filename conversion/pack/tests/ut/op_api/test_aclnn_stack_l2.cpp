@@ -585,3 +585,286 @@ TEST_F(l2_stack_test, ascend310P_l2_stack_test_dtype_bfloat16)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
+
+// ==================== 非连续输入用例 ====================
+// 构造说明: view {5, 64} stride {65, 1} 即 [5, 65] 存储上每行取前 64 列的切片视图,
+// 尾轴 stride=1、dim0 轴非连续; stack dim=1 后 view 为 [5, 1, 64], strides [65, 64, 1],
+// 非连续轴(strideDim=0)恰好落在允许位置, 满足 aclnnCat 同款门控, 走 ConcatD 非连续路径
+TEST_F(l2_stack_test, l2_stack_test_non_contiguous_dim1)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto tensor_desc = TensorDesc({5, 64}, ACL_FLOAT, ACL_FORMAT_ND, {65, 1}, 0, {5, 65}).ValueRange(-1, 1);
+    auto tensor_list_desc = TensorListDesc({tensor_desc, tensor_desc});
+    auto out_tensor_desc = TensorDesc({5, 2, 64}, ACL_FLOAT, ACL_FORMAT_ND);
+    int64_t dim = 1;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// 尾插轴 stack(dim=2) + 跨步视图: view {5, 64} stride {4096, 64}, 尾轴自身非连续(strideDim=1),
+// 其余轴连续, 满足门控
+TEST_F(l2_stack_test, l2_stack_test_non_contiguous_dim_end)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto tensor_desc = TensorDesc({5, 64}, ACL_FLOAT, ACL_FORMAT_ND, {4096, 64}, 0, {5, 4084}).ValueRange(-1, 1);
+    auto tensor_list_desc = TensorListDesc({tensor_desc, tensor_desc});
+    auto out_tensor_desc = TensorDesc({5, 64, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    int64_t dim = 2;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// dim=0 不满足非连续门控, 回退 Contiguous 常规路径
+TEST_F(l2_stack_test, l2_stack_test_non_contiguous_dim0)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto tensor_desc = TensorDesc({5, 64}, ACL_FLOAT, ACL_FORMAT_ND, {65, 1}, 0, {5, 65}).ValueRange(-1, 1);
+    auto tensor_list_desc = TensorListDesc({tensor_desc, tensor_desc});
+    auto out_tensor_desc = TensorDesc({2, 5, 64}, ACL_FLOAT, ACL_FORMAT_ND);
+    int64_t dim = 0;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// 非 RegBase 平台(DAV_2201)不支持非连续直通, 回退常规路径
+TEST_F(l2_stack_test, l2_stack_test_non_contiguous_910b)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_2201);
+    auto tensor_desc = TensorDesc({5, 64}, ACL_FLOAT, ACL_FORMAT_ND, {65, 1}, 0, {5, 65}).ValueRange(-1, 1);
+    auto tensor_list_desc = TensorListDesc({tensor_desc, tensor_desc});
+    auto out_tensor_desc = TensorDesc({5, 2, 64}, ACL_FLOAT, ACL_FORMAT_ND);
+    int64_t dim = 1;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// 33 个非连续 tensor: 超过 32 仍满足门控(单批 ConcatD 非连续支持 [2, 64])
+TEST_F(l2_stack_test, l2_stack_test_non_contiguous_33_tensors)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto tensor_desc = TensorDesc({5, 64}, ACL_FLOAT, ACL_FORMAT_ND, {65, 1}, 0, {5, 65}).ValueRange(-1, 1);
+    auto tensor_list_desc = TensorListDesc(33, tensor_desc);
+    auto out_tensor_desc = TensorDesc({5, 33, 64}, ACL_FLOAT, ACL_FORMAT_ND);
+    int64_t dim = 1;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// 65 个非连续 tensor: 超过单批上限 64, 需按 64 分批两级 ConcatD
+TEST_F(l2_stack_test, l2_stack_test_non_contiguous_65_tensors)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto tensor_desc = TensorDesc({5, 64}, ACL_FLOAT, ACL_FORMAT_ND, {65, 1}, 0, {5, 65}).ValueRange(-1, 1);
+    auto tensor_list_desc = TensorListDesc(65, tensor_desc);
+    auto out_tensor_desc = TensorDesc({5, 65, 64}, ACL_FLOAT, ACL_FORMAT_ND);
+    int64_t dim = 1;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// complex128 不在底层 ConcatD AICore 非连续 tiling 支持列表内, 排除后回退常规路径
+TEST_F(l2_stack_test, l2_stack_test_non_contiguous_complex128)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto tensor_desc = TensorDesc({5, 64}, ACL_COMPLEX128, ACL_FORMAT_ND, {65, 1}, 0, {5, 65}).ValueRange(-1, 1);
+    auto tensor_list_desc = TensorListDesc({tensor_desc, tensor_desc});
+    auto out_tensor_desc = TensorDesc({5, 2, 64}, ACL_COMPLEX128, ACL_FORMAT_ND);
+    int64_t dim = 1;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// 输入含 0 尺寸(空 tensor)时 shape 全一致即全空, 不满足门控, 回退常规路径
+TEST_F(l2_stack_test, l2_stack_test_non_contiguous_all_empty)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto tensor_desc = TensorDesc({5, 0}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto tensor_list_desc = TensorListDesc({tensor_desc, tensor_desc});
+    auto out_tensor_desc = TensorDesc({5, 2, 0}, ACL_FLOAT, ACL_FORMAT_ND);
+    int64_t dim = 1;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// 断点轴 stride 超过 uint32 上限: 门控拒绝直通, 回退常规路径物化成功。
+// 注: 超限 stride 放在 extent=1 的轴上(stride 永不被解引用), 视图才合法——
+// 若放在 extent>=2 的轴上, 合法视图需 >=2^32 元素(约17GB)存储, UT 无法构造。
+// 本例断点@轴1(stride=2^32, extent=1), dim=0 走 gather 族, 段长(64)在预算内,
+// 门控在 stride 上限校验处拒绝(int64 域比较), 回退 Contiguous+Pack 成功
+TEST_F(l2_stack_test, l2_stack_test_non_contiguous_stride_exceed_uint32)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto tensor_desc = TensorDesc({2, 1, 64}, ACL_FLOAT, ACL_FORMAT_ND, {64, 4294967296, 1}, 0, {2, 1, 64});
+    auto tensor_list_desc = TensorListDesc({tensor_desc, tensor_desc});
+    auto out_tensor_desc = TensorDesc({2, 2, 1, 64}, ACL_FLOAT, ACL_FORMAT_ND);
+    int64_t dim = 0;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// ==================== 非连续泛化用例 (dtype/rank/offset/混合连续性/边界) ====================
+// dtype 不一致时门控拒绝, 回退常规路径(promote 后 Pack)
+TEST_F(l2_stack_test, l2_stack_test_non_contiguous_mixed_dtype)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto tensor_1_desc = TensorDesc({5, 64}, ACL_FLOAT, ACL_FORMAT_ND, {65, 1}, 0, {5, 65}).ValueRange(-1, 1);
+    auto tensor_2_desc = TensorDesc({5, 64}, ACL_FLOAT16, ACL_FORMAT_ND, {65, 1}, 0, {5, 65}).ValueRange(-1, 1);
+    auto out_tensor_desc = TensorDesc({5, 2, 64}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
+    int64_t dim = 1;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// rank-1 gather 视图 {64} stride {2}, 尾插轴后非连续轴落在 strideDim, 小包条件放行
+TEST_F(l2_stack_test, l2_stack_test_non_contiguous_rank1_gather)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto tensor_desc = TensorDesc({64}, ACL_FLOAT, ACL_FORMAT_ND, {2}, 0, {128}).ValueRange(-1, 1);
+    auto tensor_list_desc = TensorListDesc({tensor_desc, tensor_desc});
+    auto out_tensor_desc = TensorDesc({64, 2}, ACL_FLOAT, ACL_FORMAT_ND);
+    int64_t dim = 1;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// view_offset 非零的非连续视图
+TEST_F(l2_stack_test, l2_stack_test_non_contiguous_offset)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto tensor_desc = TensorDesc({5, 64}, ACL_FLOAT, ACL_FORMAT_ND, {65, 1}, 66, {6, 65}).ValueRange(-1, 1);
+    auto tensor_list_desc = TensorListDesc({tensor_desc, tensor_desc});
+    auto out_tensor_desc = TensorDesc({5, 2, 64}, ACL_FLOAT, ACL_FORMAT_ND);
+    int64_t dim = 1;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// 一个连续 + 一个非连续混合输入, 门控要求至少一个非连续且其余校验通过
+TEST_F(l2_stack_test, l2_stack_test_non_contiguous_mixed_contiguity)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto tensor_1_desc = TensorDesc({5, 64}, ACL_FLOAT, ACL_FORMAT_ND, {64, 1}, 0, {5, 64}).ValueRange(-1, 1);
+    auto tensor_2_desc = TensorDesc({5, 64}, ACL_FLOAT, ACL_FORMAT_ND, {65, 1}, 0, {5, 65}).ValueRange(-1, 1);
+    auto out_tensor_desc = TensorDesc({5, 2, 64}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto tensor_list_desc = TensorListDesc({tensor_1_desc, tensor_2_desc});
+    int64_t dim = 1;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// 尾轴 stride 非 1(多轴非连续), 门控在末轴校验处拒绝, 回退常规路径
+TEST_F(l2_stack_test, l2_stack_test_non_contiguous_multiaxis)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto tensor_desc = TensorDesc({5, 64}, ACL_FLOAT, ACL_FORMAT_ND, {130, 2}, 0, {6, 130}).ValueRange(-1, 1);
+    auto tensor_list_desc = TensorListDesc({tensor_desc, tensor_desc});
+    auto out_tensor_desc = TensorDesc({5, 2, 64}, ACL_FLOAT, ACL_FORMAT_ND);
+    int64_t dim = 1;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// fp16 小包边界: 尾轴大包与 stride 大包均不满足, 靠总量小包放行
+TEST_F(l2_stack_test, l2_stack_test_non_contiguous_fp16_smalltotal)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto tensor_desc = TensorDesc({5, 8}, ACL_FLOAT16, ACL_FORMAT_ND, {9, 1}, 0, {5, 9}).ValueRange(-1, 1);
+    auto tensor_list_desc = TensorListDesc({tensor_desc, tensor_desc});
+    auto out_tensor_desc = TensorDesc({5, 2, 8}, ACL_FLOAT16, ACL_FORMAT_ND);
+    int64_t dim = 1;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// 128 个非连续 tensor: 64+64 两级 ConcatD
+TEST_F(l2_stack_test, l2_stack_test_non_contiguous_128_tensors)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto tensor_desc = TensorDesc({5, 64}, ACL_FLOAT, ACL_FORMAT_ND, {65, 1}, 0, {5, 65}).ValueRange(-1, 1);
+    auto tensor_list_desc = TensorListDesc(128, tensor_desc);
+    auto out_tensor_desc = TensorDesc({5, 128, 64}, ACL_FLOAT, ACL_FORMAT_ND);
+    int64_t dim = 1;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// 0-dim 输入: dim 只能取 0(或归一化为 0), 门控必拒, 走未改动的回退常规路径
+TEST_F(l2_stack_test, l2_stack_test_non_contiguous_zero_dim_tensor)
+{
+    op::SetPlatformNpuArch(NpuArch::DAV_3510);
+    auto tensor_desc = TensorDesc({}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto tensor_list_desc = TensorListDesc({tensor_desc, tensor_desc});
+    auto out_tensor_desc = TensorDesc({2}, ACL_FLOAT, ACL_FORMAT_ND);
+    int64_t dim = 0;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
