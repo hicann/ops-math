@@ -12,15 +12,11 @@
 
 import numpy as np
 
-__golden__ = {
-    "kernel": {
-        "clip_by_value_v2": "clip_by_value_v2_golden"
-    }
-}
+__golden__ = {"kernel": {"clip_by_value_v2": "clip_by_value_v2_golden"}}
 
 
 def clip_by_value_v2_golden(x, clip_value_min, clip_value_max, **kwargs):
-    '''
+    """
     Golden function for clip_by_value_v2.
     All the parameters (names and order) follow @clip_by_value_v2_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
@@ -31,13 +27,14 @@ def clip_by_value_v2_golden(x, clip_value_min, clip_value_max, **kwargs):
 
     Returns:
         Output tensor
-    '''
-    if "bfloat16" in str(x.dtype):
+    """
+    is_bfloat16 = "bfloat16" in str(x.dtype)
+    if is_bfloat16:
         x = x.astype("float32")
         clip_value_min = clip_value_min.astype("float32")
         clip_value_max = clip_value_max.astype("float32")
     max_ = np.maximum(x, clip_value_min)
     res = np.minimum(max_, clip_value_max)
-    if "bfloat16" in str(x.dtype):
-        return res.astype(x.dtype, copy=False)
+    if is_bfloat16:
+        return res.astype("bfloat16", copy=False)
     return res
