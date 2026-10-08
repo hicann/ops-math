@@ -45,10 +45,10 @@ private:
 
     __aicore__ inline uint32_t MergeSingleBatch();
     __aicore__ inline void DoIncrementalMerge(int64_t dstOffsetBase, typename Base::MergeListContext& ctx);
-    __aicore__ inline void MergeOneGroup(uint32_t groupStart, uint32_t groupBlockCount, uint32_t fullBlockElemCount,
-                                         uint32_t fullBlockSortLen, uint32_t lastBlockElemCount, uint32_t numBlocks,
-                                         uint32_t pingPongFlag, uint32_t& cumulativeOffset,
-                                         uint32_t& mergedGroupElemCount);
+    __aicore__ inline void MergeOneGroup(uint32_t groupStartIdx, uint32_t groupSegCount, uint32_t fullSegElemNum,
+                                         uint32_t fullSegSortLen, uint32_t tailSegElemNum, uint32_t pendingSegNum,
+                                         uint32_t pingPongRegionSel, uint32_t& passDstOffsetAcc,
+                                         uint32_t& groupMergedElemNum);
     __aicore__ inline void CopyRemainingList(typename Base::MergeListContext& ctx, int64_t dstOffsetBase,
                                              uint32_t& dstCumulativeOffset, uint32_t& dstElemCount);
     __aicore__ inline void ExtractAndCopyOut(int64_t batchIdx, uint32_t resultRegion);
@@ -141,100 +141,104 @@ __aicore__ inline void TopKMergeSortIntraCore<ValueType, IndexType, IsDescend>::
 template <typename ValueType, typename IndexType, bool IsDescend>
 __aicore__ inline uint32_t TopKMergeSortIntraCore<ValueType, IndexType, IsDescend>::MergeSingleBatch()
 {
-    uint32_t numBlocks = this->blocksPerRow_;
-    uint32_t fullBlockElemCount = this->blockSortSize_;
-    uint32_t fullBlockSortLen = this->blockSortLen_;
-    uint32_t lastBlockElemCount = this->lastBlockSize_;
+    uint32_t pendingSegNum = this->blocksPerRow_;
+    uint32_t fullSegElemNum = this->blockSortSize_;
+    uint32_t tailSegElemNum = this->lastBlockSize_;
+    uint32_t fullSegSortLen = this->blockSortLen_;
 
-    uint32_t pingPongFlag = 0;
-    uint32_t mergeRounds = 0;
+    uint32_t pingPongRegionSel = 0;
+    uint32_t mergePassNum = 0;
 
-    while (numBlocks > 1) {
-        uint32_t cumulativeOffset = 0;
-        uint32_t newNumBlocks = 0;
-        uint32_t newFullBlockElemCount = 0;
-        uint32_t newLastBlockElemCount = 0;
+    while (pendingSegNum > 1) {
+        uint32_t passDstOffsetAcc = 0;
+        uint32_t nextSegNum = 0;
+        uint32_t nextTailSegElemNum = 0;
+        uint32_t nextFullSegElemNum = 0;
 
-        for (uint32_t i = 0; i < numBlocks; i += Sort::MERGE_LIST_MAX_NUM) {
-            uint32_t groupBlockCount = (i + Sort::MERGE_LIST_MAX_NUM <= numBlocks) ? Sort::MERGE_LIST_MAX_NUM :
-                                                                                     (numBlocks - i);
+        for (uint32_t groupStartIdx = 0; groupStartIdx < pendingSegNum; groupStartIdx += Sort::MERGE_LIST_MAX_NUM) {
+            uint32_t groupSegCount = (groupStartIdx + Sort::MERGE_LIST_MAX_NUM <= pendingSegNum) ?
+                                         Sort::MERGE_LIST_MAX_NUM :
+                                         (pendingSegNum - groupStartIdx);
 
-            uint32_t mergedGroupElemCount = 0;
-            MergeOneGroup(i, groupBlockCount, fullBlockElemCount, fullBlockSortLen, lastBlockElemCount, numBlocks,
-                          pingPongFlag, cumulativeOffset, mergedGroupElemCount);
-            if (newNumBlocks == 0) {
-                newFullBlockElemCount = mergedGroupElemCount;
+            uint32_t groupMergedElemNum = 0;
+            MergeOneGroup(groupStartIdx, groupSegCount, fullSegElemNum, fullSegSortLen, tailSegElemNum, pendingSegNum,
+                          pingPongRegionSel, passDstOffsetAcc, groupMergedElemNum);
+            if (nextSegNum == 0) {
+                nextFullSegElemNum = groupMergedElemNum;
             }
-            newLastBlockElemCount = mergedGroupElemCount;
-            newNumBlocks++;
+            nextTailSegElemNum = groupMergedElemNum;
+            nextSegNum++;
         }
 
-        if (newNumBlocks == 0 || newNumBlocks >= numBlocks) {
+        if (nextSegNum == 0 || nextSegNum >= pendingSegNum) {
             break;
         }
 
-        numBlocks = newNumBlocks;
-        if (numBlocks == 1) {
-            fullBlockElemCount = newLastBlockElemCount;
+        pendingSegNum = nextSegNum;
+        if (pendingSegNum == 1) {
+            fullSegElemNum = nextTailSegElemNum;
         } else {
-            fullBlockElemCount = newFullBlockElemCount;
+            fullSegElemNum = nextFullSegElemNum;
         }
-        fullBlockSortLen = AscendC::GetSortLen<ValueType>(fullBlockElemCount);
-        lastBlockElemCount = newLastBlockElemCount;
-        pingPongFlag = 1 - pingPongFlag;
-        mergeRounds++;
-        event_t eventId = static_cast<event_t>(this->pipe_->FetchEventID(HardEvent::MTE3_MTE2));
-        SetFlag<HardEvent::MTE3_MTE2>(eventId);
-        WaitFlag<HardEvent::MTE3_MTE2>(eventId);
+        fullSegSortLen = AscendC::GetSortLen<ValueType>(fullSegElemNum);
+        tailSegElemNum = nextTailSegElemNum;
+        pingPongRegionSel = 1 - pingPongRegionSel;
+        mergePassNum++;
+        event_t barrierEvtId = static_cast<event_t>(this->pipe_->FetchEventID(HardEvent::MTE3_MTE2));
+        SetFlag<HardEvent::MTE3_MTE2>(barrierEvtId);
+        WaitFlag<HardEvent::MTE3_MTE2>(barrierEvtId);
     }
 
-    return (mergeRounds == 0) ? 0 : pingPongFlag;
+    return (mergePassNum == 0) ? 0 : pingPongRegionSel;
 }
 
 template <typename ValueType, typename IndexType, bool IsDescend>
 __aicore__ inline void TopKMergeSortIntraCore<ValueType, IndexType, IsDescend>::MergeOneGroup(
-    uint32_t groupStart, uint32_t groupBlockCount, uint32_t fullBlockElemCount, uint32_t fullBlockSortLen,
-    uint32_t lastBlockElemCount, uint32_t numBlocks, uint32_t pingPongFlag, uint32_t& cumulativeOffset,
-    uint32_t& mergedGroupElemCount)
+    uint32_t groupStartIdx, uint32_t groupSegCount, uint32_t fullSegElemNum, uint32_t fullSegSortLen,
+    uint32_t tailSegElemNum, uint32_t pendingSegNum, uint32_t pingPongRegionSel, uint32_t& passDstOffsetAcc,
+    uint32_t& groupMergedElemNum)
 {
-    typename Base::MergeListContext ctx;
-    ctx.listCount = groupBlockCount;
+    typename Base::MergeListContext segListCtx;
+    segListCtx.listCount = groupSegCount;
 
-    int64_t srcRegionOffset = (pingPongFlag == 0) ? 0 : this->batchSortLen_;
-    int64_t dstRegionOffset = (pingPongFlag == 0) ? this->batchSortLen_ : 0;
+    int64_t srcRegionBase = (pingPongRegionSel == 0) ? 0 : this->batchSortLen_;
+    int64_t dstRegionBase = (pingPongRegionSel == 0) ? this->batchSortLen_ : 0;
 
-    for (uint32_t j = 0; j < groupBlockCount; j++) {
-        uint32_t blockIdx = groupStart + j;
-        ctx.srcOffsets[j] = srcRegionOffset + blockIdx * fullBlockSortLen;
-        ctx.elemCounts[j] = (blockIdx < numBlocks - 1) ? fullBlockElemCount : lastBlockElemCount;
+    for (uint32_t segIdxInGroup = 0; segIdxInGroup < groupSegCount; segIdxInGroup++) {
+        uint32_t pendingSegIdx = groupStartIdx + segIdxInGroup;
+        segListCtx.srcOffsets[segIdxInGroup] = srcRegionBase + pendingSegIdx * fullSegSortLen;
+        segListCtx.elemCounts[segIdxInGroup] = (pendingSegIdx < pendingSegNum - 1) ? fullSegElemNum : tailSegElemNum;
     }
 
-    if (groupBlockCount > 1) {
-        DoIncrementalMerge(dstRegionOffset + cumulativeOffset, ctx);
+    if (groupSegCount > 1) {
+        DoIncrementalMerge(dstRegionBase + passDstOffsetAcc, segListCtx);
 
-        uint32_t totalElem = 0;
-        for (uint32_t j = 0; j < groupBlockCount; j++) {
-            totalElem += ctx.elemCounts[j];
+        uint32_t groupTotalElemNum = 0;
+        for (uint32_t segIdxInGroup = 0; segIdxInGroup < groupSegCount; segIdxInGroup++) {
+            groupTotalElemNum += segListCtx.elemCounts[segIdxInGroup];
         }
-        mergedGroupElemCount = (totalElem > topKValue_) ? topKValue_ : totalElem; // TopK limitation
-        cumulativeOffset += AscendC::GetSortLen<ValueType>(mergedGroupElemCount);
-    } else if (groupBlockCount == 1) {
-        mergedGroupElemCount = (ctx.elemCounts[0] > topKValue_) ? topKValue_ : ctx.elemCounts[0]; // TopK limitation
-        if (ctx.elemCounts[0] > 0) {
-            int64_t srcOffset = ctx.srcOffsets[0];
-            uint32_t remainElems = mergedGroupElemCount;
-            uint32_t srcChunkOffset = 0;
-            while (remainElems > 0) {
-                uint32_t chunkSize = (remainElems > this->blockSortSize_) ? this->blockSortSize_ : remainElems;
-                if (chunkSize == 0)
+        groupMergedElemNum = (groupTotalElemNum > topKValue_) ? topKValue_ : groupTotalElemNum; // TopK limitation
+        passDstOffsetAcc += AscendC::GetSortLen<ValueType>(groupMergedElemNum);
+    } else if (groupSegCount == 1) {
+        groupMergedElemNum = (segListCtx.elemCounts[0] > topKValue_) ? topKValue_ :
+                                                                       segListCtx.elemCounts[0]; // TopK limitation
+        if (segListCtx.elemCounts[0] > 0) {
+            int64_t singleSegGmOffset = segListCtx.srcOffsets[0];
+            uint32_t remainCopyElemNum = groupMergedElemNum;
+            uint32_t srcChunkElemOffset = 0;
+            while (remainCopyElemNum > 0) {
+                uint32_t copyChunkElemNum = (remainCopyElemNum > this->blockSortSize_) ? this->blockSortSize_ :
+                                                                                         remainCopyElemNum;
+                if (copyChunkElemNum == 0)
                     break;
                 this->CopyBlockChunk(
-                    srcOffset + AscendC::GetSortLen<ValueType>(srcChunkOffset),
-                    dstRegionOffset + cumulativeOffset + AscendC::GetSortLen<ValueType>(srcChunkOffset), chunkSize);
-                remainElems -= chunkSize;
-                srcChunkOffset += chunkSize;
+                    singleSegGmOffset + AscendC::GetSortLen<ValueType>(srcChunkElemOffset),
+                    dstRegionBase + passDstOffsetAcc + AscendC::GetSortLen<ValueType>(srcChunkElemOffset),
+                    copyChunkElemNum);
+                remainCopyElemNum -= copyChunkElemNum;
+                srcChunkElemOffset += copyChunkElemNum;
             }
-            cumulativeOffset += AscendC::GetSortLen<ValueType>(mergedGroupElemCount);
+            passDstOffsetAcc += AscendC::GetSortLen<ValueType>(groupMergedElemNum);
         }
     }
 }

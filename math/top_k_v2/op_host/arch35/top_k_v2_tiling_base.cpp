@@ -48,36 +48,36 @@ uint32_t GetSingleCoreModelDefaultTileDataSize(ge::DataType dataType)
 
 // ==================== Common Align Helpers ====================
 
-bool CeilAlignUint32(uint64_t rawSize, uint32_t alignSize, uint32_t& alignedSize)
+bool TopkCeilAlignUint32(uint64_t sizeToAlign, uint32_t alignment, uint32_t& alignedOut)
 {
-    uint64_t result = Ops::Base::CeilAlign(rawSize, static_cast<uint64_t>(alignSize));
-    if (result > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
+    uint64_t alignedResult = Ops::Base::CeilAlign(sizeToAlign, static_cast<uint64_t>(alignment));
+    if (alignedResult > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
         return false;
     }
-    alignedSize = static_cast<uint32_t>(result);
+    alignedOut = static_cast<uint32_t>(alignedResult);
     return true;
 }
 
 namespace {
 
-constexpr uint32_t SMALL_AXIS_MAX_DATACOPY_BLOCK_COUNT = 4095;
-constexpr uint32_t TWO_STAGE_RANK_INVERSE_MAX_N = 64;
-constexpr uint32_t SMALL_AXIS_TIER_COUNT = 4;
-constexpr uint32_t SMALL_AXIS_TIER_WIDTH = 2;
-constexpr uint32_t TWO_STAGE_VALUE_BUFFER_COUNT = 2;
-constexpr uint32_t TWO_STAGE_RANK_INVERSE_INDEX_BUFFER_COUNT = 2;
-constexpr uint32_t TWO_STAGE_RADIX_INDEX_BUFFER_COUNT = 3;
+constexpr uint32_t TOPK_SMALL_AXIS_MAX_DATACOPY_BLOCK_COUNT = 4095;
+constexpr uint32_t TOPK_TWO_STAGE_RANK_INVERSE_MAX_N = 64;
+constexpr uint32_t TOPK_SMALL_AXIS_TIER_COUNT = 4;
+constexpr uint32_t TOPK_SMALL_AXIS_TIER_WIDTH = 2;
+constexpr uint32_t TOPK_TWO_STAGE_VALUE_BUFFER_COUNT = 2;
+constexpr uint32_t TOPK_TWO_STAGE_RANK_INVERSE_INDEX_BUFFER_COUNT = 2;
+constexpr uint32_t TOPK_TWO_STAGE_RADIX_INDEX_BUFFER_COUNT = 3;
 
-struct SmallAxisRule {
+struct TopkSmallAxisRule {
     ge::DataType dtype;
-    uint32_t insertionMaxN;
-    uint32_t twoStageMaxN;
-    uint32_t insertionTiers[SMALL_AXIS_TIER_COUNT][SMALL_AXIS_TIER_WIDTH];
-    uint32_t twoStageTiers[SMALL_AXIS_TIER_COUNT][SMALL_AXIS_TIER_WIDTH];
+    uint32_t insertionAxisLimit;
+    uint32_t twoStageAxisLimit;
+    uint32_t insertionSegTiers[TOPK_SMALL_AXIS_TIER_COUNT][TOPK_SMALL_AXIS_TIER_WIDTH];
+    uint32_t twoStageSegTiers[TOPK_SMALL_AXIS_TIER_COUNT][TOPK_SMALL_AXIS_TIER_WIDTH];
 };
 
 // Each tier is {maximum axis length, minimum segments per core}; the values are empirical route thresholds.
-constexpr SmallAxisRule SMALL_AXIS_RULES[] = {
+constexpr TopkSmallAxisRule TOPK_SMALL_AXIS_RULES[] = {
     {ge::DT_INT64, 16, 512, {{8, 1}, {16, 4}, {0, 0}}, {{15, 8}, {128, 4}, {512, 8}, {0, 0}}},
     {ge::DT_UINT64, 16, 512, {{8, 1}, {16, 4}, {0, 0}}, {{15, 8}, {128, 4}, {512, 8}, {0, 0}}},
     {ge::DT_INT32, 11, 384, {{8, 2}, {11, 4}, {0, 0}}, {{11, 8}, {64, 4}, {384, 8}, {0, 0}}},
@@ -91,445 +91,464 @@ constexpr SmallAxisRule SMALL_AXIS_RULES[] = {
     {ge::DT_FLOAT16, 8, 54, {{4, 16}, {8, 48}, {0, 0}}, {{54, 64}, {0, 0}}},
 };
 
-struct TwoStageBatchPlan {
-    uint32_t batchSize = 0;
-    uint32_t batchNum = 0;
-    uint32_t blockDim = 0;
-    uint32_t tmpUbSize = 0;
+struct TopkTwoStageBatchPlan {
+    uint32_t rowsPerBatch = 0;
+    uint32_t batchTotal = 0;
+    uint32_t coreDim = 0;
+    uint32_t tempUbBytes = 0;
 };
 
-bool CeilDivUint32(uint64_t value, uint64_t divisor, uint32_t& result)
+bool TopkCeilDivUint32(uint64_t numerator, uint64_t divisorValue, uint32_t& divResult)
 {
-    if (divisor == 0U) {
+    if (divisorValue == 0U) {
         return false;
     }
-    uint64_t quotient = Ops::Base::CeilDiv(value, divisor);
-    if (quotient > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
+    uint64_t ceilQuotient = Ops::Base::CeilDiv(numerator, divisorValue);
+    if (ceilQuotient > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
         return false;
     }
-    result = static_cast<uint32_t>(quotient);
+    divResult = static_cast<uint32_t>(ceilQuotient);
     return true;
 }
 
-uint32_t LookupMinSegs(const uint32_t (*tiers)[SMALL_AXIS_TIER_WIDTH], uint32_t axisNum)
+uint32_t TopkLookupMinSegs(const uint32_t (*segTiers)[TOPK_SMALL_AXIS_TIER_WIDTH], uint32_t axisSize)
 {
-    for (uint32_t i = 0; i < SMALL_AXIS_TIER_COUNT && tiers[i][0] != 0U; ++i) {
-        if (axisNum <= tiers[i][0]) {
-            return tiers[i][1];
+    for (uint32_t tierIdx = 0; tierIdx < TOPK_SMALL_AXIS_TIER_COUNT && segTiers[tierIdx][0] != 0U; ++tierIdx) {
+        if (axisSize <= segTiers[tierIdx][0]) {
+            return segTiers[tierIdx][1];
         }
     }
     return std::numeric_limits<uint32_t>::max();
 }
 
-const SmallAxisRule* FindSmallAxisRule(ge::DataType dataType)
+const TopkSmallAxisRule* TopkFindSmallAxisRule(ge::DataType dtype)
 {
-    for (const SmallAxisRule& rule : SMALL_AXIS_RULES) {
-        if (rule.dtype == dataType) {
-            return &rule;
+    for (const TopkSmallAxisRule& routeRule : TOPK_SMALL_AXIS_RULES) {
+        if (routeRule.dtype == dtype) {
+            return &routeRule;
         }
     }
     return nullptr;
 }
 
-bool UseTwoStageRankInverse(uint32_t axisLen) { return axisLen <= TWO_STAGE_RANK_INVERSE_MAX_N; }
+bool TopkUseTwoStageRankInverse(uint32_t axisLength) { return axisLength <= TOPK_TWO_STAGE_RANK_INVERSE_MAX_N; }
 
-static bool ComputeBf16InsertionBytesPerSeg(uint32_t axisLen, uint64_t idxBytes, uint32_t blockUbSize,
-                                            uint64_t& bytesPerSeg)
+static bool ComputeTopkBf16InsertionBytesPerSeg(uint32_t axisLength, uint64_t idxAlignedBytes, uint32_t ubAlignSize,
+                                                uint64_t& segBytes)
 {
-    uint64_t castRawBytes = 0U;
-    if (ge::MulOverflow(axisLen, sizeof(int16_t), castRawBytes)) {
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("ComputeInsertionBytesPerSeg", "axisLen", std::to_string(axisLen).c_str(),
-                                              "The value of axisLen must not cause cast raw byte size overflow.");
+    uint64_t rawCastBytes = 0U;
+    if (ge::MulOverflow(axisLength, sizeof(int16_t), rawCastBytes)) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("ComputeTopkInsertionBytesPerSeg", "axisLength",
+                                              std::to_string(axisLength).c_str(),
+                                              "The value of axisLength must not cause cast raw byte size overflow.");
         return false;
     }
-    uint64_t castBytes = Ops::Base::CeilAlign<uint64_t>(castRawBytes, blockUbSize);
-    if (castBytes == 0U) {
+    uint64_t castSegBytes = Ops::Base::CeilAlign<uint64_t>(rawCastBytes, ubAlignSize);
+    if (castSegBytes == 0U) {
         return false;
     }
-    uint64_t castRowElems = castBytes / sizeof(int16_t);
-    uint64_t valueBytes = 0U;
-    if (ge::MulOverflow(castRowElems, sizeof(float), valueBytes) ||
-        ge::AddOverflow(valueBytes, idxBytes, bytesPerSeg) || ge::AddOverflow(bytesPerSeg, castBytes, bytesPerSeg)) {
+    uint64_t castRowElemCount = castSegBytes / sizeof(int16_t);
+    uint64_t floatCastBytes = 0U;
+    if (ge::MulOverflow(castRowElemCount, sizeof(float), floatCastBytes) ||
+        ge::AddOverflow(floatCastBytes, idxAlignedBytes, segBytes) ||
+        ge::AddOverflow(segBytes, castSegBytes, segBytes)) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("ComputeTopkInsertionBytesPerSeg", "segBytes",
+                                              (std::to_string(castRowElemCount) + ", " +
+                                               std::to_string(idxAlignedBytes) + ", " + std::to_string(castSegBytes))
+                                                  .c_str(),
+                                              "The value of bf16 segBytes must not overflow.");
+        return false;
+    }
+    return true;
+}
+
+uint32_t ComputeTopkInsertionBytesPerSeg(ge::DataType dtype, uint32_t axisLength, uint32_t elemSize,
+                                         uint32_t idxElemSize, uint32_t ubAlignSize)
+{
+    uint64_t rawValueBytes = 0U;
+    uint64_t rawIdxBytes = 0U;
+    if (ge::MulOverflow(axisLength, elemSize, rawValueBytes) || ge::MulOverflow(axisLength, idxElemSize, rawIdxBytes)) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("ComputeTopkInsertionBytesPerSeg", "axisLength",
+                                              std::to_string(axisLength).c_str(),
+                                              "The value of axisLength must not cause raw byte size overflow.");
+        return 0U;
+    }
+    uint64_t alignedValueBytes = Ops::Base::CeilAlign<uint64_t>(rawValueBytes, ubAlignSize);
+    uint64_t alignedIdxBytes = Ops::Base::CeilAlign<uint64_t>(rawIdxBytes, ubAlignSize);
+    if (alignedValueBytes == 0U || alignedIdxBytes == 0U) {
+        return 0U;
+    }
+    uint64_t segBytes = 0U;
+    if (ge::AddOverflow(alignedValueBytes, alignedIdxBytes, segBytes)) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            "ComputeInsertionBytesPerSeg", "bytesPerSeg",
-            (std::to_string(castRowElems) + ", " + std::to_string(idxBytes) + ", " + std::to_string(castBytes)).c_str(),
-            "The value of bf16 bytesPerSeg must not overflow.");
+            "ComputeTopkInsertionBytesPerSeg", "segBytes",
+            (std::to_string(alignedValueBytes) + ", " + std::to_string(alignedIdxBytes)).c_str(),
+            "The value of alignedValueBytes plus alignedIdxBytes must not overflow.");
+        return 0U;
+    }
+    if (dtype == ge::DT_BF16 &&
+        !ComputeTopkBf16InsertionBytesPerSeg(axisLength, alignedIdxBytes, ubAlignSize, segBytes)) {
+        return 0U;
+    }
+    if (segBytes > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("ComputeTopkInsertionBytesPerSeg", "segBytes",
+                                              std::to_string(segBytes).c_str(),
+                                              "The value of segBytes must be less than or equal to uint32 max.");
+        return 0U;
+    }
+    return static_cast<uint32_t>(segBytes);
+}
+
+static bool ComputeTopkNonLastBatchNum(int64_t outerCount, int64_t innerCount, uint32_t chunkWidth,
+                                       uint32_t& batchCount)
+{
+    if (outerCount <= 0 || innerCount <= 0 || chunkWidth == 0U) {
         return false;
     }
+    uint32_t innerLoopCount = 0U;
+    if (!TopkCeilDivUint32(static_cast<uint64_t>(innerCount), static_cast<uint64_t>(chunkWidth), innerLoopCount)) {
+        return false;
+    }
+    uint64_t batchCount64 = static_cast<uint64_t>(outerCount) * static_cast<uint64_t>(innerLoopCount);
+    if (batchCount64 == 0U || batchCount64 > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
+        return false;
+    }
+    batchCount = static_cast<uint32_t>(batchCount64);
     return true;
 }
 
-uint32_t ComputeInsertionBytesPerSeg(ge::DataType dataType, uint32_t axisLen, uint32_t dtypeSize,
-                                     uint32_t indexDtypeSize, uint32_t blockUbSize)
+bool QueryTopkSortTmpSizeRadix(ge::DataType dtype, uint32_t sortElemCount, uint32_t& tempUbSize)
 {
-    uint64_t valueRawBytes = 0U;
-    uint64_t idxRawBytes = 0U;
-    if (ge::MulOverflow(axisLen, dtypeSize, valueRawBytes) || ge::MulOverflow(axisLen, indexDtypeSize, idxRawBytes)) {
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("ComputeInsertionBytesPerSeg", "axisLen", std::to_string(axisLen).c_str(),
-                                              "The value of axisLen must not cause raw byte size overflow.");
-        return 0U;
-    }
-    uint64_t valueBytes = Ops::Base::CeilAlign<uint64_t>(valueRawBytes, blockUbSize);
-    uint64_t idxBytes = Ops::Base::CeilAlign<uint64_t>(idxRawBytes, blockUbSize);
-    if (valueBytes == 0U || idxBytes == 0U) {
-        return 0U;
-    }
-    uint64_t bytesPerSeg = 0U;
-    if (ge::AddOverflow(valueBytes, idxBytes, bytesPerSeg)) {
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("ComputeInsertionBytesPerSeg", "bytesPerSeg",
-                                              (std::to_string(valueBytes) + ", " + std::to_string(idxBytes)).c_str(),
-                                              "The value of valueBytes plus idxBytes must not overflow.");
-        return 0U;
-    }
-    if (dataType == ge::DT_BF16 && !ComputeBf16InsertionBytesPerSeg(axisLen, idxBytes, blockUbSize, bytesPerSeg)) {
-        return 0U;
-    }
-    if (bytesPerSeg > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("ComputeInsertionBytesPerSeg", "bytesPerSeg",
-                                              std::to_string(bytesPerSeg).c_str(),
-                                              "The value of bytesPerSeg must be less than or equal to uint32 max.");
-        return 0U;
-    }
-    return static_cast<uint32_t>(bytesPerSeg);
+    std::vector<int64_t> shapeList = {static_cast<int64_t>(sortElemCount)};
+    ge::Shape radixShape(shapeList);
+    AscendC::SortConfig sortCfg;
+    sortCfg.type = AscendC::SortType::RADIX_SORT;
+    sortCfg.isDescend = false;
+    sortCfg.hasSrcIndex = false;
+    sortCfg.hasDstIndex = true;
+    uint32_t maxTmpBytes = 0U;
+    uint32_t minTmpBytes = 0U;
+    AscendC::GetSortMaxMinTmpSize(radixShape, dtype, ge::DT_UINT32, false, sortCfg, maxTmpBytes, minTmpBytes);
+    tempUbSize = maxTmpBytes;
+    return maxTmpBytes > 0U;
 }
 
-static bool ComputeNonLastBatchNum(int64_t outerSize, int64_t innerSize, uint32_t innerChunk, uint32_t& batchNum)
+uint32_t TopkMaxTwoStageU16SafeBatch(uint32_t axisLength)
 {
-    if (outerSize <= 0 || innerSize <= 0 || innerChunk == 0U) {
-        return false;
-    }
-    uint32_t innerLoop = 0U;
-    if (!CeilDivUint32(static_cast<uint64_t>(innerSize), static_cast<uint64_t>(innerChunk), innerLoop)) {
-        return false;
-    }
-    uint64_t batchNum64 = static_cast<uint64_t>(outerSize) * static_cast<uint64_t>(innerLoop);
-    if (batchNum64 == 0U || batchNum64 > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
-        return false;
-    }
-    batchNum = static_cast<uint32_t>(batchNum64);
-    return true;
-}
-
-bool QuerySortTmpSizeRadix(ge::DataType dataType, uint32_t sortAxisNum, uint32_t& tmpUbSize)
-{
-    std::vector<int64_t> shapeVec = {static_cast<int64_t>(sortAxisNum)};
-    ge::Shape srcShape(shapeVec);
-    AscendC::SortConfig config;
-    config.type = AscendC::SortType::RADIX_SORT;
-    config.isDescend = false;
-    config.hasSrcIndex = false;
-    config.hasDstIndex = true;
-    uint32_t maxValue = 0U;
-    uint32_t minValue = 0U;
-    AscendC::GetSortMaxMinTmpSize(srcShape, dataType, ge::DT_UINT32, false, config, maxValue, minValue);
-    tmpUbSize = maxValue;
-    return maxValue > 0U;
-}
-
-uint32_t MaxTwoStageU16SafeBatch(uint32_t axisLen)
-{
-    if (axisLen == 0U || axisLen > static_cast<uint32_t>(std::numeric_limits<uint16_t>::max())) {
+    if (axisLength == 0U || axisLength > static_cast<uint32_t>(std::numeric_limits<uint16_t>::max())) {
         return 0U;
     }
-    uint32_t maxBatch = static_cast<uint32_t>(
-        std::sqrt(static_cast<double>(std::numeric_limits<uint16_t>::max()) / axisLen));
-    while (static_cast<uint64_t>(maxBatch) * maxBatch * axisLen >
+    uint32_t maxBatchSize = static_cast<uint32_t>(
+        std::sqrt(static_cast<double>(std::numeric_limits<uint16_t>::max()) / axisLength));
+    while (static_cast<uint64_t>(maxBatchSize) * maxBatchSize * axisLength >
            static_cast<uint64_t>(std::numeric_limits<uint16_t>::max())) {
-        --maxBatch;
+        --maxBatchSize;
     }
-    while (static_cast<uint64_t>(maxBatch + 1U) * (maxBatch + 1U) * axisLen <=
+    while (static_cast<uint64_t>(maxBatchSize + 1U) * (maxBatchSize + 1U) * axisLength <=
            static_cast<uint64_t>(std::numeric_limits<uint16_t>::max())) {
-        ++maxBatch;
+        ++maxBatchSize;
     }
-    return maxBatch;
+    return maxBatchSize;
 }
 
-bool ComputeTwoStageSortTmpUb(ge::DataType dataType, uint32_t axisLen, uint32_t totalElems, uint32_t blockUbSize,
-                              uint32_t& tmpUbSize)
+bool ComputeTopkTwoStageSortTmpUb(ge::DataType dtype, uint32_t axisLength, uint32_t totalElemCount,
+                                  uint32_t ubAlignSize, uint32_t& tempUbSize)
 {
-    tmpUbSize = 0U;
-    QuerySortTmpSizeRadix(dataType, totalElems, tmpUbSize);
-    uint32_t aligned = 0U;
-    if (!CeilAlignUint32(tmpUbSize, blockUbSize, aligned)) {
+    tempUbSize = 0U;
+    QueryTopkSortTmpSizeRadix(dtype, totalElemCount, tempUbSize);
+    uint32_t alignedTemp = 0U;
+    if (!TopkCeilAlignUint32(tempUbSize, ubAlignSize, alignedTemp)) {
         return false;
     }
-    tmpUbSize = aligned;
-    bool useRankInverse = UseTwoStageRankInverse(axisLen);
-    if (!useRankInverse) {
-        uint32_t stage2TmpUbSize = 0U;
-        QuerySortTmpSizeRadix(ge::DT_UINT16, totalElems, stage2TmpUbSize);
-        uint32_t stage2Aligned = 0U;
-        if (!CeilAlignUint32(stage2TmpUbSize, blockUbSize, stage2Aligned)) {
+    tempUbSize = alignedTemp;
+    bool rankInverse = TopkUseTwoStageRankInverse(axisLength);
+    if (!rankInverse) {
+        uint32_t stage2Temp = 0U;
+        QueryTopkSortTmpSizeRadix(ge::DT_UINT16, totalElemCount, stage2Temp);
+        uint32_t stage2AlignedTemp = 0U;
+        if (!TopkCeilAlignUint32(stage2Temp, ubAlignSize, stage2AlignedTemp)) {
             return false;
         }
-        tmpUbSize = std::max(tmpUbSize, stage2Aligned);
+        tempUbSize = std::max(tempUbSize, stage2AlignedTemp);
     }
     return true;
 }
 
-uint64_t EstimateTwoStageUbBytes(const TopKSmallAxisRouteInfo& info, uint32_t totalElems, uint32_t sortTmpUb)
+uint64_t EstimateTopkTwoStageUbBytes(const TopKSmallAxisRouteInfo& info, uint32_t totalElemCount, uint32_t sortTempUb)
 {
-    uint64_t valueRawBytes = 0U;
-    uint64_t idxRawBytes = 0U;
-    uint64_t finalIdxRawBytes = 0U;
-    if (ge::MulOverflow(totalElems, info.dtypeSize, valueRawBytes) ||
-        ge::MulOverflow(totalElems, sizeof(uint32_t), idxRawBytes) ||
-        ge::MulOverflow(totalElems, info.y2DtypeSize, finalIdxRawBytes)) {
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("EstimateTwoStageUbBytes", "totalElems",
-                                              std::to_string(totalElems).c_str(),
-                                              "The value of totalElems must not cause raw byte size overflow.");
+    uint64_t rawValueBytes = 0U;
+    uint64_t rawIdxBytes = 0U;
+    uint64_t rawFinalIdxBytes = 0U;
+    if (ge::MulOverflow(totalElemCount, info.dtypeSize, rawValueBytes) ||
+        ge::MulOverflow(totalElemCount, sizeof(uint32_t), rawIdxBytes) ||
+        ge::MulOverflow(totalElemCount, info.y2DtypeSize, rawFinalIdxBytes)) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("EstimateTopkTwoStageUbBytes", "totalElemCount",
+                                              std::to_string(totalElemCount).c_str(),
+                                              "The value of totalElemCount must not cause raw byte size overflow.");
         return std::numeric_limits<uint64_t>::max();
     }
-    uint64_t valueBytes = Ops::Base::CeilAlign<uint64_t>(valueRawBytes, info.blockUbSize);
-    uint64_t idxBytes = Ops::Base::CeilAlign<uint64_t>(idxRawBytes, info.blockUbSize);
-    uint64_t finalIdxBytes = Ops::Base::CeilAlign<uint64_t>(finalIdxRawBytes, info.blockUbSize);
-    if (valueBytes == 0U || idxBytes == 0U || finalIdxBytes == 0U) {
+    uint64_t alignedValueBytes = Ops::Base::CeilAlign<uint64_t>(rawValueBytes, info.blockUbSize);
+    uint64_t alignedIdxBytes = Ops::Base::CeilAlign<uint64_t>(rawIdxBytes, info.blockUbSize);
+    uint64_t alignedFinalIdxBytes = Ops::Base::CeilAlign<uint64_t>(rawFinalIdxBytes, info.blockUbSize);
+    if (alignedValueBytes == 0U || alignedIdxBytes == 0U || alignedFinalIdxBytes == 0U) {
         return std::numeric_limits<uint64_t>::max();
     }
-    uint32_t idxBufferCount = UseTwoStageRankInverse(static_cast<uint32_t>(info.lastAxis)) ?
-                                  TWO_STAGE_RANK_INVERSE_INDEX_BUFFER_COUNT :
-                                  TWO_STAGE_RADIX_INDEX_BUFFER_COUNT;
-    uint64_t totalBytes = 0U;
-    uint64_t idxTotalBytes = 0U;
-    if (ge::MulOverflow(valueBytes, TWO_STAGE_VALUE_BUFFER_COUNT, totalBytes) ||
-        ge::MulOverflow(idxBytes, idxBufferCount, idxTotalBytes) ||
-        ge::AddOverflow(totalBytes, idxTotalBytes, totalBytes) ||
-        ge::AddOverflow(totalBytes, finalIdxBytes, totalBytes) || ge::AddOverflow(totalBytes, sortTmpUb, totalBytes)) {
+    uint32_t indexBufCount = TopkUseTwoStageRankInverse(static_cast<uint32_t>(info.lastAxis)) ?
+                                 TOPK_TWO_STAGE_RANK_INVERSE_INDEX_BUFFER_COUNT :
+                                 TOPK_TWO_STAGE_RADIX_INDEX_BUFFER_COUNT;
+    uint64_t totalUbBytes = 0U;
+    uint64_t idxTotalUbBytes = 0U;
+    if (ge::MulOverflow(alignedValueBytes, TOPK_TWO_STAGE_VALUE_BUFFER_COUNT, totalUbBytes) ||
+        ge::MulOverflow(alignedIdxBytes, indexBufCount, idxTotalUbBytes) ||
+        ge::AddOverflow(totalUbBytes, idxTotalUbBytes, totalUbBytes) ||
+        ge::AddOverflow(totalUbBytes, alignedFinalIdxBytes, totalUbBytes) ||
+        ge::AddOverflow(totalUbBytes, sortTempUb, totalUbBytes)) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
-            "EstimateTwoStageUbBytes", "totalBytes",
-            (std::to_string(valueBytes) + ", " + std::to_string(idxBytes) + ", " + std::to_string(idxBufferCount) +
-             ", " + std::to_string(finalIdxBytes) + ", " + std::to_string(sortTmpUb))
+            "EstimateTopkTwoStageUbBytes", "totalUbBytes",
+            (std::to_string(alignedValueBytes) + ", " + std::to_string(alignedIdxBytes) + ", " +
+             std::to_string(indexBufCount) + ", " + std::to_string(alignedFinalIdxBytes) + ", " +
+             std::to_string(sortTempUb))
                 .c_str(),
-            "The value of totalBytes must not overflow.");
+            "The value of totalUbBytes must not overflow.");
         return std::numeric_limits<uint64_t>::max();
     }
-    return totalBytes;
+    return totalUbBytes;
 }
 
-bool PrepareTwoStageBatchCandidate(const TopKSmallAxisRouteInfo& info, uint32_t candidate, uint32_t& totalElems,
-                                   uint32_t& tmpUbSize, bool& useRankInverse, uint64_t& totalBytes)
+bool PrepareTopkTwoStageBatchCandidate(const TopKSmallAxisRouteInfo& info, uint32_t candidateBatch,
+                                       uint32_t& totalElemCount, uint32_t& tempUbSize, bool& rankInverse,
+                                       uint64_t& totalUbBytes)
 {
-    uint32_t axisLen = static_cast<uint32_t>(info.lastAxis);
-    uint64_t totalElems64 = static_cast<uint64_t>(candidate) * axisLen;
-    if (totalElems64 > std::numeric_limits<uint32_t>::max()) {
+    uint32_t axisLength = static_cast<uint32_t>(info.lastAxis);
+    uint64_t totalElemCount64 = static_cast<uint64_t>(candidateBatch) * axisLength;
+    if (totalElemCount64 > std::numeric_limits<uint32_t>::max()) {
         return false;
     }
-    totalElems = static_cast<uint32_t>(totalElems64);
-    tmpUbSize = 0U;
-    if (!ComputeTwoStageSortTmpUb(info.dataType, axisLen, totalElems, info.blockUbSize, tmpUbSize)) {
+    totalElemCount = static_cast<uint32_t>(totalElemCount64);
+    tempUbSize = 0U;
+    if (!ComputeTopkTwoStageSortTmpUb(info.dataType, axisLength, totalElemCount, info.blockUbSize, tempUbSize)) {
         return false;
     }
-    useRankInverse = UseTwoStageRankInverse(axisLen);
-    totalBytes = EstimateTwoStageUbBytes(info, totalElems, tmpUbSize);
+    rankInverse = TopkUseTwoStageRankInverse(axisLength);
+    totalUbBytes = EstimateTopkTwoStageUbBytes(info, totalElemCount, tempUbSize);
     return true;
 }
 
-bool SearchTwoStageBatchPlan(uint32_t maxBatch, std::function<bool(uint32_t, TwoStageBatchPlan&)> tryCandidate,
-                             TwoStageBatchPlan& result)
+bool SearchTopkTwoStageBatchPlan(uint32_t maxBatchSize,
+                                 std::function<bool(uint32_t, TopkTwoStageBatchPlan&)> tryBatchFn,
+                                 TopkTwoStageBatchPlan& chosenPlan)
 {
-    if (maxBatch == 0U) {
+    if (maxBatchSize == 0U) {
         return false;
     }
-    TwoStageBatchPlan maxPlan;
-    TwoStageBatchPlan bestPlan;
-    bool hasMaxPlan = false;
-    uint32_t maxPlanBatchesPerCore = 0U;
-    uint64_t bestIdleSlots = std::numeric_limits<uint64_t>::max();
-    for (uint32_t candidate = maxBatch; candidate >= 1U; --candidate) {
-        TwoStageBatchPlan candidatePlan;
-        if (!tryCandidate(candidate, candidatePlan)) {
+    TopkTwoStageBatchPlan firstValidPlan;
+    TopkTwoStageBatchPlan bestFitPlan;
+    bool hasFirstValid = false;
+    uint32_t firstPerCoreBatches = 0U;
+    uint64_t leastIdleSlots = std::numeric_limits<uint64_t>::max();
+    for (uint32_t candidateBatch = maxBatchSize; candidateBatch >= 1U; --candidateBatch) {
+        TopkTwoStageBatchPlan candPlan;
+        if (!tryBatchFn(candidateBatch, candPlan)) {
             continue;
         }
-        if (!hasMaxPlan) {
-            maxPlan = candidatePlan;
-            hasMaxPlan = true;
-            maxPlanBatchesPerCore = Ops::Base::CeilDiv(maxPlan.batchNum, maxPlan.blockDim);
-            bestPlan = maxPlan;
-            bestIdleSlots = static_cast<uint64_t>(maxPlanBatchesPerCore) * maxPlan.blockDim - maxPlan.batchNum;
+        if (!hasFirstValid) {
+            firstValidPlan = candPlan;
+            hasFirstValid = true;
+            firstPerCoreBatches = Ops::Base::CeilDiv(firstValidPlan.batchTotal, firstValidPlan.coreDim);
+            bestFitPlan = firstValidPlan;
+            leastIdleSlots = static_cast<uint64_t>(firstPerCoreBatches) * firstValidPlan.coreDim -
+                             firstValidPlan.batchTotal;
             continue;
         }
-        uint32_t batchesPerCore = Ops::Base::CeilDiv(candidatePlan.batchNum, candidatePlan.blockDim);
-        if (batchesPerCore != maxPlanBatchesPerCore) {
+        uint32_t perCoreBatches = Ops::Base::CeilDiv(candPlan.batchTotal, candPlan.coreDim);
+        if (perCoreBatches != firstPerCoreBatches) {
             break;
         }
-        uint64_t idleSlots = static_cast<uint64_t>(batchesPerCore) * candidatePlan.blockDim - candidatePlan.batchNum;
-        if (idleSlots < bestIdleSlots) {
-            bestPlan = candidatePlan;
-            bestIdleSlots = idleSlots;
+        uint64_t idleSlotCount = static_cast<uint64_t>(perCoreBatches) * candPlan.coreDim - candPlan.batchTotal;
+        if (idleSlotCount < leastIdleSlots) {
+            bestFitPlan = candPlan;
+            leastIdleSlots = idleSlotCount;
         }
     }
-    if (!hasMaxPlan) {
+    if (!hasFirstValid) {
         return false;
     }
-    result = bestPlan;
+    chosenPlan = bestFitPlan;
     return true;
 }
 
-static bool ComputeSmallAxisInsertionBatchParams(const TopKSmallAxisRouteInfo& info, uint32_t axisLen,
-                                                 uint32_t& bytesPerSeg, uint32_t& usableUb, uint32_t& maxBatchByUb)
+static bool ComputeTopkSmallAxisInsertionBatchParams(const TopKSmallAxisRouteInfo& info, uint32_t axisLength,
+                                                     uint32_t& segBytes, uint32_t& availableUb, uint32_t& ubBatchLimit)
 {
     if (info.ubSize <= topkV2DataInfo::SIMT_UB) {
         return false;
     }
-    bytesPerSeg = ComputeInsertionBytesPerSeg(info.dataType, axisLen, info.dtypeSize, info.y2DtypeSize,
-                                              info.blockUbSize);
-    if (bytesPerSeg == 0U) {
+    segBytes = ComputeTopkInsertionBytesPerSeg(info.dataType, axisLength, info.dtypeSize, info.y2DtypeSize,
+                                               info.blockUbSize);
+    if (segBytes == 0U) {
         return false;
     }
-    usableUb = info.ubSize - topkV2DataInfo::SIMT_UB;
-    maxBatchByUb = usableUb / bytesPerSeg;
+    availableUb = info.ubSize - topkV2DataInfo::SIMT_UB;
+    ubBatchLimit = availableUb / segBytes;
     return true;
 }
 
-template <typename ComputeBatchNumFn>
-static bool EstimateSmallAxisInsertionBatching(const TopKSmallAxisRouteInfo& info, uint32_t batchSizeCap,
-                                               ComputeBatchNumFn computeBatchNum, SmallAxisRoutePlan& plan)
+template <typename ComputeBatchCountFn>
+static bool EstimateTopkSmallAxisInsertionBatching(const TopKSmallAxisRouteInfo& info, uint32_t batchSizeLimit,
+                                                   ComputeBatchCountFn computeBatchCount, SmallAxisRoutePlan& routePlan)
 {
-    uint32_t axisLen = static_cast<uint32_t>(info.lastAxis);
-    uint32_t bytesPerSeg = 0U;
-    uint32_t usableUb = 0U;
-    uint32_t maxBatchByUb = 0U;
-    if (!ComputeSmallAxisInsertionBatchParams(info, axisLen, bytesPerSeg, usableUb, maxBatchByUb) ||
-        maxBatchByUb == 0U) {
+    uint32_t axisLength = static_cast<uint32_t>(info.lastAxis);
+    uint32_t segBytes = 0U;
+    uint32_t availableUb = 0U;
+    uint32_t ubBatchLimit = 0U;
+    if (!ComputeTopkSmallAxisInsertionBatchParams(info, axisLength, segBytes, availableUb, ubBatchLimit) ||
+        ubBatchLimit == 0U) {
         return false;
     }
-    uint32_t batchSize = std::min({batchSizeCap, maxBatchByUb, SMALL_AXIS_MAX_DATACOPY_BLOCK_COUNT});
-    if (batchSize == 0U) {
+    uint32_t batchValue = std::min({batchSizeLimit, ubBatchLimit, TOPK_SMALL_AXIS_MAX_DATACOPY_BLOCK_COUNT});
+    if (batchValue == 0U) {
         return false;
     }
-    plan.batchSize = batchSize;
-    if (!computeBatchNum(batchSize, plan.batchNum)) {
+    routePlan.batchSize = batchValue;
+    if (!computeBatchCount(batchValue, routePlan.batchNum)) {
         return false;
     }
-    plan.blockDim = std::min(info.maxCoreNum, plan.batchNum);
-    return plan.batchNum > 0U && plan.blockDim > 0U;
+    routePlan.blockDim = std::min(info.maxCoreNum, routePlan.batchNum);
+    return routePlan.batchNum > 0U && routePlan.blockDim > 0U;
 }
 
-template <typename ComputeBatchNumFn>
-static bool TrySmallAxisTwoStageBatchCandidate(const TopKSmallAxisRouteInfo& info, uint32_t candidate,
-                                               ComputeBatchNumFn computeBatchNum, SmallAxisRoutePlan& plan)
+template <typename ComputeBatchCountFn>
+static bool TryTopkSmallAxisTwoStageBatchCandidate(const TopKSmallAxisRouteInfo& info, uint32_t candidateBatch,
+                                                   ComputeBatchCountFn computeBatchCount, SmallAxisRoutePlan& routePlan)
 {
     // Reject candidates unsupported by the batch mapping before querying Sort temporary UB.
-    plan.batchSize = candidate;
-    if (!computeBatchNum(candidate, plan.batchNum)) {
+    routePlan.batchSize = candidateBatch;
+    if (!computeBatchCount(candidateBatch, routePlan.batchNum)) {
         return false;
     }
-    uint32_t totalElems = 0U;
-    uint32_t tmpUbSize = 0U;
-    bool useRankInverse = false;
-    uint64_t totalBytes = 0U;
-    if (!PrepareTwoStageBatchCandidate(info, candidate, totalElems, tmpUbSize, useRankInverse, totalBytes)) {
+    uint32_t totalElemCount = 0U;
+    uint32_t tempUbSize = 0U;
+    bool rankInverse = false;
+    uint64_t totalUbBytes = 0U;
+    if (!PrepareTopkTwoStageBatchCandidate(info, candidateBatch, totalElemCount, tempUbSize, rankInverse,
+                                           totalUbBytes)) {
         return false;
     }
-    if (totalBytes + topkV2DataInfo::SIMT_UB > info.ubSize) {
+    if (totalUbBytes + topkV2DataInfo::SIMT_UB > info.ubSize) {
         return false;
     }
-    plan.blockDim = std::min(info.maxCoreNum, plan.batchNum);
-    plan.tmpUbSize = tmpUbSize;
-    plan.useRankInverse = useRankInverse;
-    return plan.batchNum > 0U && plan.blockDim > 0U;
+    routePlan.blockDim = std::min(info.maxCoreNum, routePlan.batchNum);
+    routePlan.tmpUbSize = tempUbSize;
+    routePlan.useRankInverse = rankInverse;
+    return routePlan.batchNum > 0U && routePlan.blockDim > 0U;
 }
 
-template <typename ComputeBatchNumFn>
-static bool EstimateSmallAxisTwoStageBatching(const TopKSmallAxisRouteInfo& info, uint32_t batchSizeCap,
-                                              ComputeBatchNumFn computeBatchNum, SmallAxisRoutePlan& plan)
+template <typename ComputeBatchCountFn>
+static bool EstimateTopkSmallAxisTwoStageBatching(const TopKSmallAxisRouteInfo& info, uint32_t batchSizeLimit,
+                                                  ComputeBatchCountFn computeBatchCount, SmallAxisRoutePlan& routePlan)
 {
-    uint32_t axisLen = static_cast<uint32_t>(info.lastAxis);
-    if (info.ubSize <= topkV2DataInfo::SIMT_UB || axisLen == 0U || batchSizeCap == 0U) {
+    uint32_t axisLength = static_cast<uint32_t>(info.lastAxis);
+    if (info.ubSize <= topkV2DataInfo::SIMT_UB || axisLength == 0U || batchSizeLimit == 0U) {
         return false;
     }
-    bool useRankInverse = UseTwoStageRankInverse(axisLen);
-    uint32_t idxBufferCount = useRankInverse ? TWO_STAGE_RANK_INVERSE_INDEX_BUFFER_COUNT :
-                                               TWO_STAGE_RADIX_INDEX_BUFFER_COUNT;
-    uint64_t minBytesPerElem = static_cast<uint64_t>(info.dtypeSize) * TWO_STAGE_VALUE_BUFFER_COUNT +
-                               static_cast<uint64_t>(sizeof(uint32_t)) * idxBufferCount + info.y2DtypeSize;
-    uint64_t maxElemsByUb = (info.ubSize - topkV2DataInfo::SIMT_UB) / minBytesPerElem;
-    uint64_t maxBatchByUb = maxElemsByUb / axisLen;
-    uint32_t maxBatch = static_cast<uint32_t>(std::min<uint64_t>(static_cast<uint64_t>(batchSizeCap), maxBatchByUb));
-    if (!useRankInverse) {
-        maxBatch = std::min(maxBatch, MaxTwoStageU16SafeBatch(axisLen));
+    bool rankInverse = TopkUseTwoStageRankInverse(axisLength);
+    uint32_t indexBufCount = rankInverse ? TOPK_TWO_STAGE_RANK_INVERSE_INDEX_BUFFER_COUNT :
+                                           TOPK_TWO_STAGE_RADIX_INDEX_BUFFER_COUNT;
+    uint64_t minBytesPerElement = static_cast<uint64_t>(info.dtypeSize) * TOPK_TWO_STAGE_VALUE_BUFFER_COUNT +
+                                  static_cast<uint64_t>(sizeof(uint32_t)) * indexBufCount + info.y2DtypeSize;
+    uint64_t ubElemLimit = (info.ubSize - topkV2DataInfo::SIMT_UB) / minBytesPerElement;
+    uint64_t ubBatchLimit = ubElemLimit / axisLength;
+    uint32_t maxBatchSize = static_cast<uint32_t>(
+        std::min<uint64_t>(static_cast<uint64_t>(batchSizeLimit), ubBatchLimit));
+    if (!rankInverse) {
+        maxBatchSize = std::min(maxBatchSize, TopkMaxTwoStageU16SafeBatch(axisLength));
     }
 
-    TwoStageBatchPlan result;
-    auto tryCandidate = [&info, &computeBatchNum](uint32_t candidate, TwoStageBatchPlan& candidatePlan) -> bool {
-        SmallAxisRoutePlan routePlan;
-        if (!TrySmallAxisTwoStageBatchCandidate(info, candidate, computeBatchNum, routePlan)) {
+    TopkTwoStageBatchPlan chosenPlan;
+    auto tryBatchFn = [&info, &computeBatchCount](uint32_t candidateBatch, TopkTwoStageBatchPlan& candPlan) -> bool {
+        SmallAxisRoutePlan candRoute;
+        if (!TryTopkSmallAxisTwoStageBatchCandidate(info, candidateBatch, computeBatchCount, candRoute)) {
             return false;
         }
-        candidatePlan.batchSize = routePlan.batchSize;
-        candidatePlan.batchNum = routePlan.batchNum;
-        candidatePlan.blockDim = routePlan.blockDim;
-        candidatePlan.tmpUbSize = routePlan.tmpUbSize;
+        candPlan.rowsPerBatch = candRoute.batchSize;
+        candPlan.batchTotal = candRoute.batchNum;
+        candPlan.coreDim = candRoute.blockDim;
+        candPlan.tempUbBytes = candRoute.tmpUbSize;
         return true;
     };
-    if (!SearchTwoStageBatchPlan(maxBatch, tryCandidate, result)) {
+    if (!SearchTopkTwoStageBatchPlan(maxBatchSize, tryBatchFn, chosenPlan)) {
         return false;
     }
-    plan.batchSize = result.batchSize;
-    plan.batchNum = result.batchNum;
-    plan.blockDim = result.blockDim;
-    plan.tmpUbSize = result.tmpUbSize;
-    plan.useRankInverse = useRankInverse;
+    routePlan.batchSize = chosenPlan.rowsPerBatch;
+    routePlan.batchNum = chosenPlan.batchTotal;
+    routePlan.blockDim = chosenPlan.coreDim;
+    routePlan.tmpUbSize = chosenPlan.tempUbBytes;
+    routePlan.useRankInverse = rankInverse;
     return true;
 }
 
-static bool SelectSmallAxisRouteImpl(const TopKSmallAxisRouteInfo& info, uint32_t batchSizeCap,
-                                     std::function<bool(uint32_t, uint32_t&)> computeBatchNum, SmallAxisRoutePlan& plan)
+static bool PickTopkSmallAxisRouteImpl(const TopKSmallAxisRouteInfo& info, uint32_t batchSizeLimit,
+                                       std::function<bool(uint32_t, uint32_t&)> computeBatchCount,
+                                       SmallAxisRoutePlan& routePlan)
 {
-    uint32_t axisLen = static_cast<uint32_t>(info.lastAxis);
-    if (axisLen <= 1U) {
+    uint32_t axisLength = static_cast<uint32_t>(info.lastAxis);
+    if (axisLength <= 1U) {
         return false;
     }
-    const SmallAxisRule* rule = FindSmallAxisRule(info.dataType);
-    if (rule == nullptr) {
+    const TopkSmallAxisRule* routeRule = TopkFindSmallAxisRule(info.dataType);
+    if (routeRule == nullptr) {
         return false;
     }
-    uint32_t fullCoreSegs = 0U;
-    if (!CeilDivUint32(static_cast<uint64_t>(info.unsortedDim), static_cast<uint64_t>(info.maxCoreNum), fullCoreSegs)) {
+    uint32_t perCoreSegCount = 0U;
+    if (!TopkCeilDivUint32(static_cast<uint64_t>(info.unsortedDim), static_cast<uint64_t>(info.maxCoreNum),
+                           perCoreSegCount)) {
         return false;
     }
-    SmallAxisRoutePlan twoStagePlan;
-    if (rule->twoStageMaxN > 0U && axisLen <= rule->twoStageMaxN && axisLen <= SMALL_AXIS_THRESHOLD &&
-        fullCoreSegs >= LookupMinSegs(rule->twoStageTiers, axisLen) &&
-        EstimateSmallAxisTwoStageBatching(info, batchSizeCap, computeBatchNum, twoStagePlan)) {
-        plan = twoStagePlan;
-        plan.kind = SmallAxisRouteKind::TWO_STAGE;
+    SmallAxisRoutePlan twoStageRoute;
+    if (routeRule->twoStageAxisLimit > 0U && axisLength <= routeRule->twoStageAxisLimit &&
+        axisLength <= SMALL_AXIS_THRESHOLD &&
+        perCoreSegCount >= TopkLookupMinSegs(routeRule->twoStageSegTiers, axisLength) &&
+        EstimateTopkSmallAxisTwoStageBatching(info, batchSizeLimit, computeBatchCount, twoStageRoute)) {
+        routePlan = twoStageRoute;
+        routePlan.kind = SmallAxisRouteKind::TWO_STAGE;
         return true;
     }
-    if (axisLen > rule->insertionMaxN || fullCoreSegs < LookupMinSegs(rule->insertionTiers, axisLen)) {
+    if (axisLength > routeRule->insertionAxisLimit ||
+        perCoreSegCount < TopkLookupMinSegs(routeRule->insertionSegTiers, axisLength)) {
         return false;
     }
-    SmallAxisRoutePlan insertionPlan;
-    if (!EstimateSmallAxisInsertionBatching(info, batchSizeCap, computeBatchNum, insertionPlan)) {
+    SmallAxisRoutePlan insertionRoute;
+    if (!EstimateTopkSmallAxisInsertionBatching(info, batchSizeLimit, computeBatchCount, insertionRoute)) {
         return false;
     }
-    plan = insertionPlan;
-    plan.kind = SmallAxisRouteKind::INSERTION;
+    routePlan = insertionRoute;
+    routePlan.kind = SmallAxisRouteKind::INSERTION;
     return true;
 }
 
 } // namespace
 
-bool SelectSmallAxisRoute(const TopKSmallAxisRouteInfo& info, SmallAxisRoutePlan& plan)
+bool PickTopkSmallAxisRoute(const TopKSmallAxisRouteInfo& info, SmallAxisRoutePlan& routePlan)
 {
-    uint32_t fullCoreSegs = 0U;
-    if (!CeilDivUint32(static_cast<uint64_t>(info.unsortedDim), static_cast<uint64_t>(info.maxCoreNum), fullCoreSegs)) {
+    uint32_t perCoreSegCount = 0U;
+    if (!TopkCeilDivUint32(static_cast<uint64_t>(info.unsortedDim), static_cast<uint64_t>(info.maxCoreNum),
+                           perCoreSegCount)) {
         return false;
     }
-    auto computeBatchNum = [&info](uint32_t batchSize, uint32_t& batchNum) -> bool {
-        return CeilDivUint32(static_cast<uint64_t>(info.unsortedDim), batchSize, batchNum);
+    auto computeBatchCount = [&info](uint32_t batchValue, uint32_t& batchCount) -> bool {
+        return TopkCeilDivUint32(static_cast<uint64_t>(info.unsortedDim), batchValue, batchCount);
     };
-    return SelectSmallAxisRouteImpl(info, fullCoreSegs, computeBatchNum, plan);
+    return PickTopkSmallAxisRouteImpl(info, perCoreSegCount, computeBatchCount, routePlan);
 }
 
-bool SelectNonLastSmallAxisRoute(const TopKSmallAxisRouteInfo& info, SmallAxisRoutePlan& plan)
+bool PickTopkNonLastSmallAxisRoute(const TopKSmallAxisRouteInfo& info, SmallAxisRoutePlan& routePlan)
 {
-    uint32_t batchSizeCap = static_cast<uint32_t>(
+    uint32_t batchSizeLimit = static_cast<uint32_t>(
         std::min<int64_t>(info.innerSize, static_cast<int64_t>(std::numeric_limits<uint32_t>::max())));
-    auto computeBatchNum = [&info](uint32_t batchSize, uint32_t& batchNum) -> bool {
-        return ComputeNonLastBatchNum(info.outerSize, info.innerSize, batchSize, batchNum);
+    auto computeBatchCount = [&info](uint32_t batchValue, uint32_t& batchCount) -> bool {
+        return ComputeTopkNonLastBatchNum(info.outerSize, info.innerSize, batchValue, batchCount);
     };
-    return SelectSmallAxisRouteImpl(info, batchSizeCap, computeBatchNum, plan);
+    return PickTopkSmallAxisRouteImpl(info, batchSizeLimit, computeBatchCount, routePlan);
 }
 
 // ==================== FP32 MergeSort Helpers ====================
@@ -560,103 +579,103 @@ uint32_t ComputeTopkMergeMoreCoreOnceMaxElements(uint64_t ubSizePlatForm, ge::Da
 
 uint32_t ComputeTopkMergeIntraCoreBlockSortSize(uint64_t ubSizePlatForm)
 {
-    constexpr uint32_t phase2BytesPerElem = topkV2DataInfo::CONST_TWO * topkV2DataInfo::SORT_STRUCT_SIZE_FP32 *
-                                            topkV2DataInfo::CONST_TWO * topkV2DataInfo::CONST_TWO;
-    uint32_t blockSortSize = static_cast<uint32_t>(ubSizePlatForm / phase2BytesPerElem);
-    return (blockSortSize / topkV2DataInfo::MERGE_INTRA_CORE_SORT_ALIGN) * topkV2DataInfo::MERGE_INTRA_CORE_SORT_ALIGN;
+    constexpr uint32_t phase2Bytes = topkV2DataInfo::CONST_TWO * topkV2DataInfo::SORT_STRUCT_SIZE_FP32 *
+                                     topkV2DataInfo::CONST_TWO * topkV2DataInfo::CONST_TWO;
+    uint32_t blockSortElems = static_cast<uint32_t>(ubSizePlatForm / phase2Bytes);
+    return (blockSortElems / topkV2DataInfo::MERGE_INTRA_CORE_SORT_ALIGN) * topkV2DataInfo::MERGE_INTRA_CORE_SORT_ALIGN;
 }
 
 uint32_t ComputeTopkMergeIntraCoreExtractChunkSize(uint64_t ubSizePlatForm, ge::DataType indicesDType)
 {
-    uint32_t indexBytes = GetDataTypeSize(indicesDType);
-    uint32_t bytesPerElem = (topkV2DataInfo::SORT_STRUCT_SIZE_FP32 + sizeof(float) + sizeof(int32_t) + indexBytes) *
-                            topkV2DataInfo::CONST_TWO;
-    uint32_t extractChunkSize = static_cast<uint32_t>(ubSizePlatForm / bytesPerElem);
-    return (extractChunkSize / topkV2DataInfo::MERGE_INTRA_CORE_SORT_ALIGN) *
+    uint32_t idxElemBytes = GetDataTypeSize(indicesDType);
+    uint32_t bytesPerElement = (topkV2DataInfo::SORT_STRUCT_SIZE_FP32 + sizeof(float) + sizeof(int32_t) +
+                                idxElemBytes) *
+                               topkV2DataInfo::CONST_TWO;
+    uint32_t extractChunkElems = static_cast<uint32_t>(ubSizePlatForm / bytesPerElement);
+    return (extractChunkElems / topkV2DataInfo::MERGE_INTRA_CORE_SORT_ALIGN) *
            topkV2DataInfo::MERGE_INTRA_CORE_SORT_ALIGN;
 }
 
 // ==================== NonLastSmallAxis Helpers ====================
 
-uint32_t GetTopkPreferredInnerChunk(ge::DataType dataType, uint32_t index)
+uint32_t GetTopkPreferredInnerChunk(ge::DataType dtype, uint32_t candidateIdx)
 {
-    static constexpr uint32_t CHUNK_CANDIDATES[][topkV2DataInfo::MAX_INNER_CHUNK_CANDIDATES] = {
+    static constexpr uint32_t TOPK_CHUNK_CANDIDATES[][topkV2DataInfo::MAX_INNER_CHUNK_CANDIDATES] = {
         {4, 2, 1, 0, 0, 0},
         {8, 4, 2, 1, 0, 0},
         {16, 8, 4, 2, 1, 0},
         {32, 16, 8, 4, 2, 1},
     };
-    static constexpr uint32_t CHUNK_VALID_COUNT[] = {3, 4, 5, 6};
-    uint32_t group = 0;
-    if (dataType == ge::DT_INT64 || dataType == ge::DT_UINT64) {
-        group = topkV2DataInfo::INNER_CHUNK_GROUP_8BYTE;
-    } else if (dataType == ge::DT_FLOAT || dataType == ge::DT_INT32 || dataType == ge::DT_UINT32) {
-        group = topkV2DataInfo::INNER_CHUNK_GROUP_4BYTE;
-    } else if (dataType == ge::DT_FLOAT16 || dataType == ge::DT_BF16 || dataType == ge::DT_INT16 ||
-               dataType == ge::DT_UINT16) {
-        group = topkV2DataInfo::INNER_CHUNK_GROUP_2BYTE;
-    } else if (dataType == ge::DT_INT8 || dataType == ge::DT_UINT8) {
-        group = topkV2DataInfo::INNER_CHUNK_GROUP_1BYTE;
+    static constexpr uint32_t TOPK_CHUNK_VALID_COUNT[] = {3, 4, 5, 6};
+    uint32_t chunkGroup = 0;
+    if (dtype == ge::DT_INT64 || dtype == ge::DT_UINT64) {
+        chunkGroup = topkV2DataInfo::INNER_CHUNK_GROUP_8BYTE;
+    } else if (dtype == ge::DT_FLOAT || dtype == ge::DT_INT32 || dtype == ge::DT_UINT32) {
+        chunkGroup = topkV2DataInfo::INNER_CHUNK_GROUP_4BYTE;
+    } else if (dtype == ge::DT_FLOAT16 || dtype == ge::DT_BF16 || dtype == ge::DT_INT16 || dtype == ge::DT_UINT16) {
+        chunkGroup = topkV2DataInfo::INNER_CHUNK_GROUP_2BYTE;
+    } else if (dtype == ge::DT_INT8 || dtype == ge::DT_UINT8) {
+        chunkGroup = topkV2DataInfo::INNER_CHUNK_GROUP_1BYTE;
     } else {
         return 0;
     }
-    return index < CHUNK_VALID_COUNT[group] ? CHUNK_CANDIDATES[group][index] : 0;
+    return candidateIdx < TOPK_CHUNK_VALID_COUNT[chunkGroup] ? TOPK_CHUNK_CANDIDATES[chunkGroup][candidateIdx] : 0;
 }
 
-bool UseTopkNonLastMergeSort(ge::DataType dataType, uint32_t axisLen)
+bool UseTopkNonLastMergeSort(ge::DataType dtype, uint32_t axisLength)
 {
-    return dataType == ge::DT_FLOAT ||
-           ((dataType == ge::DT_FLOAT16 || dataType == ge::DT_BF16) && axisLen <= topkV2DataInfo::SMALL_MAX_DATA_SZIE);
+    return dtype == ge::DT_FLOAT ||
+           ((dtype == ge::DT_FLOAT16 || dtype == ge::DT_BF16) && axisLength <= topkV2DataInfo::SMALL_MAX_DATA_SZIE);
 }
 
-ge::DataType GetTopkNonLastSortDtype(ge::DataType dataType, bool useMergeSort)
+ge::DataType GetTopkNonLastSortDtype(ge::DataType dtype, bool mergeSortOn)
 {
-    return useMergeSort && dataType == ge::DT_BF16 ? ge::DT_FLOAT : dataType;
+    return mergeSortOn && dtype == ge::DT_BF16 ? ge::DT_FLOAT : dtype;
 }
 
-uint32_t GetTopkNonLastSortDtypeSize(uint32_t dtypeSize, bool useMergeSort, ge::DataType dataType)
+uint32_t GetTopkNonLastSortDtypeSize(uint32_t elemSize, bool mergeSortOn, ge::DataType dtype)
 {
-    return useMergeSort && dataType == ge::DT_BF16 ? static_cast<uint32_t>(sizeof(float)) : dtypeSize;
+    return mergeSortOn && dtype == ge::DT_BF16 ? static_cast<uint32_t>(sizeof(float)) : elemSize;
 }
 
-bool GetTopkNonLastSortTmpSize(ge::DataType dataType, uint32_t sortCount, bool useMergeSort, bool isDescend,
-                               uint32_t& tmpUbSize)
+bool GetTopkNonLastSortTmpSize(ge::DataType dtype, uint32_t sortElemCount, bool mergeSortOn, bool descendOn,
+                               uint32_t& tempUbSize)
 {
-    std::vector<int64_t> shapeVec = {static_cast<int64_t>(sortCount)};
-    ge::Shape srcShape(shapeVec);
-    AscendC::SortConfig config;
-    config.type = useMergeSort ? AscendC::SortType::MERGE_SORT : AscendC::SortType::RADIX_SORT;
-    config.isDescend = isDescend;
-    config.hasSrcIndex = false;
-    config.hasDstIndex = true;
-    uint32_t maxValue = 0;
-    uint32_t minValue = 0;
-    ge::DataType finalDataType = GetTopkNonLastSortDtype(dataType, useMergeSort);
-    AscendC::GetSortMaxMinTmpSize(srcShape, finalDataType, ge::DT_UINT32, true, config, maxValue, minValue);
-    tmpUbSize = maxValue;
-    return maxValue > 0;
+    std::vector<int64_t> shapeList = {static_cast<int64_t>(sortElemCount)};
+    ge::Shape nonLastShape(shapeList);
+    AscendC::SortConfig sortCfg;
+    sortCfg.type = mergeSortOn ? AscendC::SortType::MERGE_SORT : AscendC::SortType::RADIX_SORT;
+    sortCfg.isDescend = descendOn;
+    sortCfg.hasSrcIndex = false;
+    sortCfg.hasDstIndex = true;
+    uint32_t maxTmpBytes = 0;
+    uint32_t minTmpBytes = 0;
+    ge::DataType effectiveDtype = GetTopkNonLastSortDtype(dtype, mergeSortOn);
+    AscendC::GetSortMaxMinTmpSize(nonLastShape, effectiveDtype, ge::DT_UINT32, true, sortCfg, maxTmpBytes, minTmpBytes);
+    tempUbSize = maxTmpBytes;
+    return maxTmpBytes > 0;
 }
 
-void ComputeTopkAxisDimProducts(const gert::Shape& shape, int64_t axis, TopkNonLastSmallAxisTileInfo& info)
+void ComputeTopkAxisDimProducts(const gert::Shape& shape, int64_t sortAxisIdx, TopkNonLastSmallAxisTileInfo& info)
 {
-    int64_t rank = shape.GetDimNum();
-    if (axis < 0 || axis >= rank) {
+    int64_t shapeRank = shape.GetDimNum();
+    if (sortAxisIdx < 0 || sortAxisIdx >= shapeRank) {
         return;
     }
-    int64_t outerSize = 1;
-    int64_t innerSize = 1;
-    for (int64_t i = 0; i < rank; ++i) {
-        int64_t dimSize = shape.GetDim(i);
-        if (i < axis) {
-            outerSize *= dimSize;
-        } else if (i > axis) {
-            innerSize *= dimSize;
+    int64_t outerProduct = 1;
+    int64_t innerProduct = 1;
+    for (int64_t dimIdx = 0; dimIdx < shapeRank; ++dimIdx) {
+        int64_t dimValue = shape.GetDim(dimIdx);
+        if (dimIdx < sortAxisIdx) {
+            outerProduct *= dimValue;
+        } else if (dimIdx > sortAxisIdx) {
+            innerProduct *= dimValue;
         }
     }
-    info.outerSize = outerSize;
-    info.innerSize = innerSize;
-    info.lastAxis = shape.GetDim(axis);
-    info.unsortedDim = outerSize * innerSize;
+    info.outerSize = outerProduct;
+    info.innerSize = innerProduct;
+    info.lastAxis = shape.GetDim(sortAxisIdx);
+    info.unsortedDim = outerProduct * innerProduct;
 }
 
 // ==================== TopK API Buffer Calculation ====================
@@ -927,46 +946,49 @@ bool IsBitonicSmallTopkMode(int64_t kValue, int64_t sortPolicy, bool isSort)
 // ==================== NonLastSmallAxis Calculation Helpers ====================
 
 bool SearchTopkNonLastSmallAxisPlan(
-    const TopkNonLastSmallAxisTileInfo& info, uint64_t usableUb,
-    std::function<bool(TopkNonLastSmallAxisTileInfo&, uint32_t, uint64_t&, TopkNonLastSmallAxisCandidate&)> estimateUb,
-    TopkNonLastSmallAxisCandidate& best, TopkNonLastSmallAxisTileInfo* selectedInfo)
+    const TopkNonLastSmallAxisTileInfo& info, uint64_t availableUb,
+    std::function<bool(TopkNonLastSmallAxisTileInfo&, uint32_t, uint64_t&, TopkNonLastSmallAxisCandidate&)>
+        estimateUbFn,
+    TopkNonLastSmallAxisCandidate& bestCand, TopkNonLastSmallAxisTileInfo* chosenInfo)
 {
-    for (uint32_t i = 0; i < topkV2DataInfo::MAX_INNER_CHUNK_CANDIDATES; ++i) {
-        uint32_t chunk = GetTopkPreferredInnerChunk(info.dataType, i);
-        if (chunk == 0U) {
+    for (uint32_t candIdx = 0; candIdx < topkV2DataInfo::MAX_INNER_CHUNK_CANDIDATES; ++candIdx) {
+        uint32_t innerChunkSize = GetTopkPreferredInnerChunk(info.dataType, candIdx);
+        if (innerChunkSize == 0U) {
             break;
         }
-        chunk = static_cast<uint32_t>(std::min<uint64_t>(chunk, static_cast<uint64_t>(info.innerSize)));
-        if (chunk == 0U) {
+        innerChunkSize = static_cast<uint32_t>(
+            std::min<uint64_t>(innerChunkSize, static_cast<uint64_t>(info.innerSize)));
+        if (innerChunkSize == 0U) {
             return false;
         }
-        uint64_t innerLoopNum64 = (static_cast<uint64_t>(info.innerSize) + chunk - 1U) / chunk;
-        if (innerLoopNum64 == 0U || innerLoopNum64 > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
+        uint64_t innerLoopCount64 = (static_cast<uint64_t>(info.innerSize) + innerChunkSize - 1U) / innerChunkSize;
+        if (innerLoopCount64 == 0U || innerLoopCount64 > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
             continue;
         }
-        TopkNonLastSmallAxisCandidate cur;
-        cur.innerChunk = chunk;
-        cur.innerLoopNum = static_cast<uint32_t>(innerLoopNum64);
-        cur.tileCount = static_cast<uint64_t>(info.outerSize) * innerLoopNum64;
-        if (cur.tileCount > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
+        TopkNonLastSmallAxisCandidate curCand;
+        curCand.innerChunk = innerChunkSize;
+        curCand.innerLoopNum = static_cast<uint32_t>(innerLoopCount64);
+        curCand.tileCount = static_cast<uint64_t>(info.outerSize) * innerLoopCount64;
+        if (curCand.tileCount > static_cast<uint64_t>(std::numeric_limits<uint32_t>::max())) {
             continue;
         }
-        TopkNonLastSmallAxisTileInfo candidateInfo = info;
-        if (!estimateUb(candidateInfo, chunk, cur.peakUb, cur) || cur.peakUb > usableUb) {
+        TopkNonLastSmallAxisTileInfo candInfo = info;
+        if (!estimateUbFn(candInfo, innerChunkSize, curCand.peakUb, curCand) || curCand.peakUb > availableUb) {
             continue;
         }
-        cur.activeCore = static_cast<uint32_t>(
-            std::min<uint64_t>(static_cast<uint64_t>(info.maxCoreNum), cur.tileCount));
-        bool betterCoreUse = cur.activeCore > best.activeCore;
-        bool sameCoreUseLargerChunk = cur.activeCore == best.activeCore && cur.innerChunk > best.innerChunk;
-        if (betterCoreUse || sameCoreUseLargerChunk) {
-            best = cur;
-            if (selectedInfo != nullptr) {
-                *selectedInfo = candidateInfo;
+        curCand.activeCore = static_cast<uint32_t>(
+            std::min<uint64_t>(static_cast<uint64_t>(info.maxCoreNum), curCand.tileCount));
+        bool moreActiveCores = curCand.activeCore > bestCand.activeCore;
+        bool sameCoresPreferLargerChunk = curCand.activeCore == bestCand.activeCore &&
+                                          curCand.innerChunk > bestCand.innerChunk;
+        if (moreActiveCores || sameCoresPreferLargerChunk) {
+            bestCand = curCand;
+            if (chosenInfo != nullptr) {
+                *chosenInfo = candInfo;
             }
         }
     }
-    return best.innerChunk != 0U && best.tileCount != 0U && best.activeCore != 0U;
+    return bestCand.innerChunk != 0U && bestCand.tileCount != 0U && bestCand.activeCore != 0U;
 }
 
 bool ComputeTopkNonLastLayout(const TopkNonLastSmallAxisTileInfo& info, uint32_t kValue, uint32_t innerChunk,
@@ -990,11 +1012,12 @@ bool ComputeTopkNonLastLayout(const TopkNonLastSmallAxisTileInfo& info, uint32_t
         valueOutputRawBytes = std::max(valueOutputRawBytes,
                                        static_cast<uint64_t>(outputCount) * topkV2DataInfo::SORT_STRUCT_BYTES);
     }
-    if (!CeilAlignUint32(static_cast<uint64_t>(innerChunk) * info.dtypeSize, info.blockUbSize, layout.inputRowBytes) ||
-        !CeilAlignUint32(valueAxisRawBytes, info.blockUbSize, layout.axisRowBytes) ||
-        !CeilAlignUint32(valueOutputRawBytes, info.blockUbSize, layout.valueRowBytes) ||
-        !CeilAlignUint32(static_cast<uint64_t>(outputCount) * sizeof(uint32_t), info.blockUbSize,
-                         layout.indexRowBytes)) {
+    if (!TopkCeilAlignUint32(static_cast<uint64_t>(innerChunk) * info.dtypeSize, info.blockUbSize,
+                             layout.inputRowBytes) ||
+        !TopkCeilAlignUint32(valueAxisRawBytes, info.blockUbSize, layout.axisRowBytes) ||
+        !TopkCeilAlignUint32(valueOutputRawBytes, info.blockUbSize, layout.valueRowBytes) ||
+        !TopkCeilAlignUint32(static_cast<uint64_t>(outputCount) * sizeof(uint32_t), info.blockUbSize,
+                             layout.indexRowBytes)) {
         return false;
     }
 
@@ -1020,7 +1043,7 @@ bool EstimateTopkNonLastSmallAxisUb(TopkNonLastSmallAxisTileInfo& info, uint32_t
 
     uint32_t inputCastRowBytes = 0;
     if (useMergeSort && info.dataType == ge::DT_BF16 &&
-        !CeilAlignUint32(static_cast<uint64_t>(sortCount) * info.dtypeSize, info.blockUbSize, inputCastRowBytes)) {
+        !TopkCeilAlignUint32(static_cast<uint64_t>(sortCount) * info.dtypeSize, info.blockUbSize, inputCastRowBytes)) {
         return false;
     }
 

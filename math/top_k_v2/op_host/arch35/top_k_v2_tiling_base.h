@@ -129,14 +129,14 @@ struct SortTileInfo {
     uint32_t maxCoreNum = 0;
     uint32_t numTileDataSize = 0;
     uint64_t sortLoopTimes = 0;
-    uint32_t lastDimNeedCore = 0;
+    uint32_t tmpUbSize = 0;
     uint32_t keyParams0 = 0;
     uint32_t keyParams1 = 0;
     uint32_t keyParams2 = 0;
     uint32_t keyParams3 = 0;
     uint32_t keyParams4 = 0;
     uint32_t keyParams5 = 0;
-    uint32_t tmpUbSize = 0;
+    uint32_t lastDimNeedCore = 0;
     bool isDescend = false;
     ge::DataType dataType = ge::DT_UINT8;
     uint32_t isInt32 = 0;
@@ -208,8 +208,8 @@ struct TopKSmallAxisRouteInfo {
     int64_t innerSize = 1;
 };
 
-bool SelectSmallAxisRoute(const TopKSmallAxisRouteInfo& info, SmallAxisRoutePlan& plan);
-bool SelectNonLastSmallAxisRoute(const TopKSmallAxisRouteInfo& info, SmallAxisRoutePlan& plan);
+bool PickTopkSmallAxisRoute(const TopKSmallAxisRouteInfo& info, SmallAxisRoutePlan& routePlan);
+bool PickTopkNonLastSmallAxisRoute(const TopKSmallAxisRouteInfo& info, SmallAxisRoutePlan& routePlan);
 
 struct TopkNonLastSmallAxisTileInfo {
     int64_t rank = 0;
@@ -252,7 +252,7 @@ uint32_t GetSingleCoreModelDefaultTileDataSize(ge::DataType dataType);
 
 // ==================== Common Align Helpers ====================
 
-bool CeilAlignUint32(uint64_t rawSize, uint32_t alignSize, uint32_t& alignedSize);
+bool TopkCeilAlignUint32(uint64_t sizeToAlign, uint32_t alignment, uint32_t& alignedOut);
 
 // ==================== FP32 MergeSort Helpers ====================
 
@@ -263,13 +263,13 @@ uint32_t ComputeTopkMergeIntraCoreExtractChunkSize(uint64_t ubSizePlatForm, ge::
 
 // ==================== NonLastSmallAxis Helpers ====================
 
-uint32_t GetTopkPreferredInnerChunk(ge::DataType dataType, uint32_t index);
-bool UseTopkNonLastMergeSort(ge::DataType dataType, uint32_t axisLen);
-ge::DataType GetTopkNonLastSortDtype(ge::DataType dataType, bool useMergeSort);
-uint32_t GetTopkNonLastSortDtypeSize(uint32_t dtypeSize, bool useMergeSort, ge::DataType dataType);
-bool GetTopkNonLastSortTmpSize(ge::DataType dataType, uint32_t sortCount, bool useMergeSort, bool isDescend,
-                               uint32_t& tmpUbSize);
-void ComputeTopkAxisDimProducts(const gert::Shape& shape, int64_t axis, TopkNonLastSmallAxisTileInfo& info);
+uint32_t GetTopkPreferredInnerChunk(ge::DataType dtype, uint32_t candidateIdx);
+bool UseTopkNonLastMergeSort(ge::DataType dtype, uint32_t axisLength);
+ge::DataType GetTopkNonLastSortDtype(ge::DataType dtype, bool mergeSortOn);
+uint32_t GetTopkNonLastSortDtypeSize(uint32_t elemSize, bool mergeSortOn, ge::DataType dtype);
+bool GetTopkNonLastSortTmpSize(ge::DataType dtype, uint32_t sortElemCount, bool mergeSortOn, bool descendOn,
+                               uint32_t& tempUbSize);
+void ComputeTopkAxisDimProducts(const gert::Shape& shape, int64_t sortAxisIdx, TopkNonLastSmallAxisTileInfo& info);
 
 // ==================== TopK API Buffer Calculation ====================
 
@@ -306,9 +306,10 @@ bool IsBitonicSmallTopkMode(int64_t kValue, int64_t sortPolicy, bool isSort = tr
 // ==================== NonLastSmallAxis Calculation Helpers ====================
 
 bool SearchTopkNonLastSmallAxisPlan(
-    const TopkNonLastSmallAxisTileInfo& info, uint64_t usableUb,
-    std::function<bool(TopkNonLastSmallAxisTileInfo&, uint32_t, uint64_t&, TopkNonLastSmallAxisCandidate&)> estimateUb,
-    TopkNonLastSmallAxisCandidate& best, TopkNonLastSmallAxisTileInfo* selectedInfo = nullptr);
+    const TopkNonLastSmallAxisTileInfo& info, uint64_t availableUb,
+    std::function<bool(TopkNonLastSmallAxisTileInfo&, uint32_t, uint64_t&, TopkNonLastSmallAxisCandidate&)>
+        estimateUbFn,
+    TopkNonLastSmallAxisCandidate& bestCand, TopkNonLastSmallAxisTileInfo* chosenInfo = nullptr);
 bool ComputeTopkNonLastLayout(const TopkNonLastSmallAxisTileInfo& info, uint32_t kValue, uint32_t innerChunk,
                               bool useMergeSort, topkV2DataInfo::NonLastSmallAxisTopkLayout& layout);
 bool EstimateTopkNonLastSmallAxisUb(TopkNonLastSmallAxisTileInfo& info, uint32_t kValue, uint32_t innerChunk,

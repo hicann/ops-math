@@ -183,8 +183,8 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
     outValueQueue_.EnQue<T>(sortedValueLocal);
     inQueueX_.FreeTensor(xLocal);
     // copy result out
-    uint64_t gmOffset = sortLoopRound_ * unsortedDimParallel_ * outputLastDimValue_ * oneCoreRowNum_;
     uint64_t answerTileOffset = tileId * outputLastDimValue_ * oneCoreRowNum_;
+    uint64_t gmOffset = sortLoopRound_ * unsortedDimParallel_ * outputLastDimValue_ * oneCoreRowNum_;
 
     CopyValue2Gm(gmOffset, answerTileOffset, outputLastDimValue_, nowCoreRealRowNum);
 }
@@ -257,33 +257,34 @@ __aicore__ inline void MergeSort<T, CONVERT_TYPE, TILING_DATA_TYPE, IS_LARGEST, 
                                  IS_BITONIC_SORT>::CopyValue2Gm(uint64_t gmOffset, uint64_t tileOffset,
                                                                 uint32_t outputLastDimValue, uint32_t oneCoreRowNum)
 {
-    uint32_t aglinOneRowTileSize = ROUND_UP_AGLIN(numTileData_);
+    uint32_t alignedRowTileSize = ROUND_UP_AGLIN(numTileData_);
     // value stride
-    uint32_t currTileSizeAlign = ROUND_UP_AGLIN(outputLastDimValue * sizeof(T)) / sizeof(T);
-    uint32_t ubStrideValue = ((aglinOneRowTileSize - currTileSizeAlign) * sizeof(T)) / UB_AGLIN_VALUE;
+    uint32_t alignedValueRowSize = ROUND_UP_AGLIN(outputLastDimValue * sizeof(T)) / sizeof(T);
+    uint32_t ubValueRowGapStride = ((alignedRowTileSize - alignedValueRowSize) * sizeof(T)) / UB_AGLIN_VALUE;
     // index stride
-    uint32_t currSrcTileIndexSizeAlign = ROUND_UP_AGLIN(outputLastDimValue * sizeof(int32_t)) / sizeof(int32_t);
-    uint32_t ubSrcStrideIndex = ((aglinOneRowTileSize - currSrcTileIndexSizeAlign) * sizeof(int32_t)) / UB_AGLIN_VALUE;
+    uint32_t alignedInt32IndexRowSize = ROUND_UP_AGLIN(outputLastDimValue * sizeof(int32_t)) / sizeof(int32_t);
+    uint32_t ubInt32IndexRowGapStride = ((alignedRowTileSize - alignedInt32IndexRowSize) * sizeof(int32_t)) /
+                                        UB_AGLIN_VALUE;
 
-    uint32_t currTileIndexSizeAlign = ROUND_UP_AGLIN(outputLastDimValue * sizeof(INDEX_TYPE)) / sizeof(INDEX_TYPE);
-    uint32_t ubStrideIndex = ((aglinOneRowTileSize - currTileIndexSizeAlign) * sizeof(INDEX_TYPE)) / UB_AGLIN_VALUE;
+    uint32_t alignedIndexRowSize = ROUND_UP_AGLIN(outputLastDimValue * sizeof(INDEX_TYPE)) / sizeof(INDEX_TYPE);
+    uint32_t ubIndexRowGapStride = ((alignedRowTileSize - alignedIndexRowSize) * sizeof(INDEX_TYPE)) / UB_AGLIN_VALUE;
     // copy result out
-    AscendC::LocalTensor<T> outValueLocal = outValueQueue_.DeQue<T>();
-    AscendC::LocalTensor<INDEX_TYPE> outIndexLocal = outIndexQueue_.DeQue<INDEX_TYPE>();
-    AscendC::DataCopyExtParams dataCopyParamValue{static_cast<uint16_t>(oneCoreRowNum),
-                                                  static_cast<uint32_t>(outputLastDimValue * sizeof(T)), ubStrideValue,
-                                                  0, 0};
-    AscendC::DataCopyPad(outValueGm_[gmOffset + tileOffset], outValueLocal, dataCopyParamValue);
+    AscendC::LocalTensor<T> sortedValueLocal = outValueQueue_.DeQue<T>();
+    AscendC::LocalTensor<INDEX_TYPE> sortedIndexLocal = outIndexQueue_.DeQue<INDEX_TYPE>();
+    AscendC::DataCopyExtParams valueDataCopyParam{static_cast<uint16_t>(oneCoreRowNum),
+                                                  static_cast<uint32_t>(outputLastDimValue * sizeof(T)),
+                                                  ubValueRowGapStride, 0, 0};
+    AscendC::DataCopyPad(outValueGm_[gmOffset + tileOffset], sortedValueLocal, valueDataCopyParam);
 
-    AscendC::DataCopyExtParams dataCopyParamIndex{
+    AscendC::DataCopyExtParams indexDataCopyParam{
         static_cast<uint16_t>(oneCoreRowNum),                           // 连续数据块的个数
         static_cast<uint32_t>(outputLastDimValue * sizeof(INDEX_TYPE)), // 每个连续传输数据块的长度，长度为Byte
-        ubStrideIndex,                                                  // 源操作数，相邻连续数据块的间隔
+        ubIndexRowGapStride,                                            // 源操作数，相邻连续数据块的间隔
         0, // 目的操作数，相邻连续数据块的间隔
         0};
-    AscendC::DataCopyPad(outIndexGm_[gmOffset + tileOffset], outIndexLocal, dataCopyParamIndex);
-    outIndexQueue_.FreeTensor(outIndexLocal);
-    outValueQueue_.FreeTensor(outValueLocal);
+    AscendC::DataCopyPad(outIndexGm_[gmOffset + tileOffset], sortedIndexLocal, indexDataCopyParam);
+    outIndexQueue_.FreeTensor(sortedIndexLocal);
+    outValueQueue_.FreeTensor(sortedValueLocal);
 }
 } // namespace topkV2
 #endif

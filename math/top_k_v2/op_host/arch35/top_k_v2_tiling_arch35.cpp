@@ -1391,7 +1391,7 @@ static void InitTopKSmallAxisTileInfo(TopKSmallAxisRouteInfo& info,
  */
 static bool SelectTopKSmallAxisRoute(const TopKSmallAxisRouteInfo& info, SmallAxisRoutePlan& plan, bool& isTwoStage)
 {
-    bool selected = info.isNonLastAxis ? SelectNonLastSmallAxisRoute(info, plan) : SelectSmallAxisRoute(info, plan);
+    bool selected = info.isNonLastAxis ? PickTopkNonLastSmallAxisRoute(info, plan) : PickTopkSmallAxisRoute(info, plan);
     if (!selected || (plan.kind != SmallAxisRouteKind::INSERTION && plan.kind != SmallAxisRouteKind::TWO_STAGE)) {
         return false;
     }

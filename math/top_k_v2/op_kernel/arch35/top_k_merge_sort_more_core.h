@@ -35,14 +35,21 @@ constexpr int16_t MORE_CORE_XOR_OP_VALUE_HALF = 0x8000;
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
 struct TopKMergeSortMoreCore {
     __aicore__ inline TopKMergeSortMoreCore() {}
-    __aicore__ inline void Init(GM_ADDR inputValue, GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace, const TopKV2TilingDataSimd* tilingData, TPipe* pipe);
+    __aicore__ inline void Init(GM_ADDR inputValue, GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace,
+                                const TopKV2TilingDataSimd* tilingData, TPipe* pipe);
     __aicore__ inline void Process();
     __aicore__ inline void SortInSingleCore(uint32_t tileNum, int64_t offsetPerCore);
     __aicore__ inline void CopyInData(uint32_t tileNum, int64_t offsetPerCore);
-    __aicore__ inline void InitIndexLocal(uint32_t tileNum, LocalTensor<uint32_t> sortedValueIndexLocal, int64_t offsetPerCore);
-    __aicore__ inline void DoSort(uint32_t tileNum, LocalTensor<T> inputLocal, LocalTensor<CONVERT_TYPE> sortedValueLocal, LocalTensor<uint32_t> sortedValueIndexLocal);
-    __aicore__ inline void DoSortBf16(uint32_t tileNum, LocalTensor<T> inputLocal, LocalTensor<CONVERT_TYPE> sortedValueLocal, LocalTensor<uint32_t> sortedValueIndexLocal);
-    __aicore__ inline void CopyOutWorkSpace(uint32_t tileNum, int64_t offsetPerCore, LocalTensor<CONVERT_TYPE> sortedValueLocal);
+    __aicore__ inline void InitIndexLocal(uint32_t tileNum, LocalTensor<uint32_t> sortedValueIndexLocal,
+                                          int64_t offsetPerCore);
+    __aicore__ inline void DoSort(uint32_t tileNum, LocalTensor<T> inputLocal,
+                                  LocalTensor<CONVERT_TYPE> sortedValueLocal,
+                                  LocalTensor<uint32_t> sortedValueIndexLocal);
+    __aicore__ inline void DoSortBf16(uint32_t tileNum, LocalTensor<T> inputLocal,
+                                      LocalTensor<CONVERT_TYPE> sortedValueLocal,
+                                      LocalTensor<uint32_t> sortedValueIndexLocal);
+    __aicore__ inline void CopyOutWorkSpace(uint32_t tileNum, int64_t offsetPerCore,
+                                            LocalTensor<CONVERT_TYPE> sortedValueLocal);
     __aicore__ inline void CopyOutMultiCore();
     __aicore__ inline void SortInMultiCore();
     __aicore__ inline void FinalSortAndCopy();
@@ -56,6 +63,7 @@ struct TopKMergeSortMoreCore {
     __aicore__ inline void ExtractAndCopyOut();
     __aicore__ inline void ClearCache();
     __aicore__ inline uint32_t GetRemainingTopK() const;
+
 public:
     TQue<QuePosition::VECIN, MORE_CORE_DOUBLE_BUFFER> inputQueue_;
     TQue<QuePosition::VECOUT, MORE_CORE_DOUBLE_BUFFER> outValueQueue_;
@@ -82,7 +90,7 @@ public:
     TBuf<QuePosition::VECCALC> inputValueTempBuf_;
     TBuf<QuePosition::VECCALC> sortedValueLocalCastTbuf_;
 
-    TPipe *pipe_;
+    TPipe* pipe_;
     uint32_t blockIdx_ = 0;
     uint32_t numTileData_ = 0;
     uint32_t sortLoopRound_ = 0;
@@ -103,11 +111,11 @@ public:
     int64_t remainListNum_{0};
     int64_t outOffset_{0};
     int64_t offsets_[4] = {0};
-    int64_t listRemainElements_[4] = {0};
-    int64_t currentElements_{0};
     int64_t currentTailElements_{0};
     int64_t dealLengths_[4] = {0};
     int64_t allRemainElements_{0};
+    int64_t listRemainElements_[4] = {0};
+    int64_t currentElements_{0};
     int64_t curLoopSortedNum_{0};
     int64_t onceMaxElements_{0};
     uint16_t elementCountList_[4] = {0};
@@ -127,8 +135,9 @@ __aicore__ inline int64_t Align(int64_t elementNum, int64_t bytes)
 }
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
-__aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::Init(GM_ADDR inputValue, 
-    GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace, const TopKV2TilingDataSimd* tilingData, TPipe* pipe)
+__aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::Init(
+    GM_ADDR inputValue, GM_ADDR value, GM_ADDR indices, GM_ADDR workSpace, const TopKV2TilingDataSimd* tilingData,
+    TPipe* pipe)
 {
     blockIdx_ = GetBlockIdx();
     pipe_ = pipe;
@@ -143,20 +152,17 @@ __aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_
     rowOutputOffset_ = static_cast<int64_t>(rowIdx_) * static_cast<int64_t>(outputTopKValue_);
     // Per-row workspace stores Sort API sort-struct data. This capacity uses sortBufferSize bytes per
     // original element and UB-block byte alignment; it must cover later GetSortLen-based accesses.
-    rowWorkspaceOffset_ =
-        static_cast<int64_t>(rowIdx_) * Align(inputLastDimValue_, sortBufferSize) * sortBufferSize /
-        sizeof(CONVERT_TYPE) * 2;
+    rowWorkspaceOffset_ = static_cast<int64_t>(rowIdx_) * Align(inputLastDimValue_, sortBufferSize) * sortBufferSize /
+                          sizeof(CONVERT_TYPE) * 2;
     onceMaxElements_ = tilingData->keyParams0 / MORE_CORE_DEALING_SORT_NUM_ONCE * MORE_CORE_DEALING_SORT_NUM_ONCE;
 
     inputValueGm_.SetGlobalBuffer((__gm__ T*)(inputValue));
     outValueGm_.SetGlobalBuffer((__gm__ T*)(value));
     outIndexGm_.SetGlobalBuffer((__gm__ INDEX_TYPE*)(indices));
-    workspaceGm_[0].SetGlobalBuffer(
-        (__gm__ CONVERT_TYPE*)(workSpace) + rowWorkspaceOffset_,
-        Align(inputLastDimValue_, sortBufferSize) * sortBufferSize / sizeof(CONVERT_TYPE));
-    workspaceGm_[1].SetGlobalBuffer(
-        (__gm__ CONVERT_TYPE*)(workSpace) + rowWorkspaceOffset_ +
-            Align(inputLastDimValue_, sortBufferSize) * sortBufferSize / sizeof(CONVERT_TYPE));
+    workspaceGm_[0].SetGlobalBuffer((__gm__ CONVERT_TYPE*)(workSpace) + rowWorkspaceOffset_,
+                                    Align(inputLastDimValue_, sortBufferSize) * sortBufferSize / sizeof(CONVERT_TYPE));
+    workspaceGm_[1].SetGlobalBuffer((__gm__ CONVERT_TYPE*)(workSpace) + rowWorkspaceOffset_ +
+                                    Align(inputLastDimValue_, sortBufferSize) * sortBufferSize / sizeof(CONVERT_TYPE));
 
     uint32_t tailNum = inputLastDimValue_ - (frontCoreNum_ - 1) * numTileData_;
     uint32_t alignTile = (tailNum + MORE_CORE_BLOCK_UB - 1) / MORE_CORE_BLOCK_UB * MORE_CORE_BLOCK_UB;
@@ -186,20 +192,20 @@ __aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_
     pipe_->Reset();
     uint32_t sortBufferSize = 8;
     pipe_->InitBuffer(sortedQueue_, MORE_CORE_DOUBLE_BUFFER,
-        MORE_CORE_MERGE_SORT_LIST_MAX_NUM * onceMaxElements_ * sortBufferSize);
+                      MORE_CORE_MERGE_SORT_LIST_MAX_NUM * onceMaxElements_ * sortBufferSize);
     pipe_->InitBuffer(copyInQueue_, MORE_CORE_DOUBLE_BUFFER,
-        MORE_CORE_MERGE_SORT_LIST_MAX_NUM * onceMaxElements_ * sortBufferSize);
+                      MORE_CORE_MERGE_SORT_LIST_MAX_NUM * onceMaxElements_ * sortBufferSize);
     pipe_->InitBuffer(castValueQueue_, MORE_CORE_DOUBLE_BUFFER,
-        MORE_CORE_MERGE_SORT_LIST_MAX_NUM * onceMaxElements_ * sizeof(CONVERT_TYPE));
+                      MORE_CORE_MERGE_SORT_LIST_MAX_NUM * onceMaxElements_ * sizeof(CONVERT_TYPE));
     pipe_->InitBuffer(castIndexQueue_, MORE_CORE_DOUBLE_BUFFER,
-        MORE_CORE_MERGE_SORT_LIST_MAX_NUM * onceMaxElements_ * sizeof(uint32_t));
+                      MORE_CORE_MERGE_SORT_LIST_MAX_NUM * onceMaxElements_ * sizeof(uint32_t));
     if constexpr (std::is_same<bfloat16_t, T>::value) {
         pipe_->InitBuffer(outValueQueue_, MORE_CORE_DOUBLE_BUFFER,
-            MORE_CORE_MERGE_SORT_LIST_MAX_NUM * onceMaxElements_ * sizeof(T));
+                          MORE_CORE_MERGE_SORT_LIST_MAX_NUM * onceMaxElements_ * sizeof(T));
     }
     if constexpr (std::is_same<int64_t, INDEX_TYPE>::value) {
         pipe_->InitBuffer(outIndexQueue_, MORE_CORE_DOUBLE_BUFFER,
-            MORE_CORE_MERGE_SORT_LIST_MAX_NUM * onceMaxElements_ * sizeof(INDEX_TYPE));
+                          MORE_CORE_MERGE_SORT_LIST_MAX_NUM * onceMaxElements_ * sizeof(INDEX_TYPE));
     }
 
     listNum_ = frontCoreNum_;
@@ -207,7 +213,7 @@ __aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_
     currentTailElements_ = inputLastDimValue_ - numTileData_ * (frontCoreNum_ - 1);
     uint32_t currentCoreNum;
     uint32_t remainListNum;
-    while(listNum_ > MORE_CORE_MERGE_SORT_LIST_MAX_NUM) {
+    while (listNum_ > MORE_CORE_MERGE_SORT_LIST_MAX_NUM) {
         workspaceInput_ = workspaceGm_[workSpaceFlag_];
         workspaceOutput_ = workspaceGm_[1 - workSpaceFlag_];
         SortInMultiCore();
@@ -242,8 +248,8 @@ __aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_
 }
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
-__aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::CopyInData(uint32_t tileNum, 
-    int64_t offsetPerCore)
+__aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::CopyInData(uint32_t tileNum,
+                                                                                                  int64_t offsetPerCore)
 {
     LocalTensor<T> inputLocal = inputQueue_.AllocTensor<T>();
     T defaultValue = IS_DESCEND ? static_cast<T>(-INFINITY) : static_cast<T>(NAN);
@@ -270,8 +276,8 @@ __aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_
 }
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
-__aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::InitIndexLocal(uint32_t tileNum, 
-    LocalTensor<uint32_t> sortedValueIndexLocal, int64_t offsetPerCore)
+__aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::InitIndexLocal(
+    uint32_t tileNum, LocalTensor<uint32_t> sortedValueIndexLocal, int64_t offsetPerCore)
 {
     PipeBarrier<PIPE_ALL>();
     LocalTensor<int32_t> tempIndexLocal = sortedValueIndexLocal.ReinterpretCast<int32_t>();
@@ -280,17 +286,19 @@ __aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_
 }
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
-__aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::DoSortBf16(uint32_t tileNum, 
-    LocalTensor<T> inputLocal, LocalTensor<CONVERT_TYPE> sortedValueLocal, LocalTensor<uint32_t> sortedValueIndexLocal)
+__aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::DoSortBf16(
+    uint32_t tileNum, LocalTensor<T> inputLocal, LocalTensor<CONVERT_TYPE> sortedValueLocal,
+    LocalTensor<uint32_t> sortedValueIndexLocal)
 {
-    AscendC::LocalTensor<CONVERT_TYPE> sortTempLocal  = sortTempBuf_.Get<CONVERT_TYPE>();
+    AscendC::LocalTensor<CONVERT_TYPE> sortTempLocal = sortTempBuf_.Get<CONVERT_TYPE>();
     AscendC::LocalTensor<CONVERT_TYPE> concatTempLocal = concatTempBuf_.Get<CONVERT_TYPE>();
     AscendC::LocalTensor<CONVERT_TYPE> inputValueTempLocal = inputValueTempBuf_.Get<CONVERT_TYPE>();
     AscendC::LocalTensor<CONVERT_TYPE> sortedValueLocalCast = sortedValueLocalCastTbuf_.Get<CONVERT_TYPE>();
 
     uint32_t aglinTileNum = ((tileNum + MORE_CORE_BLOCK_UB - 1) / MORE_CORE_BLOCK_UB) * MORE_CORE_BLOCK_UB;
     uint32_t sortRepeatTimes = (aglinTileNum + MORE_CORE_DEALING_SORT_NUM_ONCE - 1) / MORE_CORE_DEALING_SORT_NUM_ONCE;
-    uint32_t concatRepeatTimes = (aglinTileNum + MORE_CORE_DEALING_CONCAT_NUM_ONCE - 1) / MORE_CORE_DEALING_CONCAT_NUM_ONCE;
+    uint32_t concatRepeatTimes = (aglinTileNum + MORE_CORE_DEALING_CONCAT_NUM_ONCE - 1) /
+                                 MORE_CORE_DEALING_CONCAT_NUM_ONCE;
 
     AscendC::Cast(inputValueTempLocal, inputLocal, AscendC::RoundMode::CAST_NONE, aglinTileNum);
     if constexpr (!IS_DESCEND) {
@@ -298,27 +306,31 @@ __aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_
     }
     AscendC::LocalTensor<CONVERT_TYPE> concatLocal;
     AscendC::Concat(concatLocal, inputValueTempLocal, concatTempLocal, concatRepeatTimes);
-    AscendC::Sort<CONVERT_TYPE, true>(sortedValueLocal, concatLocal, sortedValueIndexLocal, sortTempLocal, sortRepeatTimes);
+    AscendC::Sort<CONVERT_TYPE, true>(sortedValueLocal, concatLocal, sortedValueIndexLocal, sortTempLocal,
+                                      sortRepeatTimes);
 }
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
-__aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::DoSort(uint32_t tileNum, 
-    LocalTensor<T> inputLocal, LocalTensor<CONVERT_TYPE> sortedValueLocal, LocalTensor<uint32_t> sortedValueIndexLocal)
+__aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::DoSort(
+    uint32_t tileNum, LocalTensor<T> inputLocal, LocalTensor<CONVERT_TYPE> sortedValueLocal,
+    LocalTensor<uint32_t> sortedValueIndexLocal)
 {
-    AscendC::LocalTensor<CONVERT_TYPE> sortTempLocal  = sortTempBuf_.Get<CONVERT_TYPE>();
+    AscendC::LocalTensor<CONVERT_TYPE> sortTempLocal = sortTempBuf_.Get<CONVERT_TYPE>();
     AscendC::LocalTensor<CONVERT_TYPE> concatTempLocal = concatTempBuf_.Get<CONVERT_TYPE>();
     AscendC::LocalTensor<CONVERT_TYPE> sortedValueLocalCast = sortedValueLocalCastTbuf_.Get<CONVERT_TYPE>();
 
     uint32_t aglinTileNum = ((tileNum + MORE_CORE_BLOCK_UB - 1) / MORE_CORE_BLOCK_UB) * MORE_CORE_BLOCK_UB;
     uint32_t sortRepeatTimes = (aglinTileNum + MORE_CORE_DEALING_SORT_NUM_ONCE - 1) / MORE_CORE_DEALING_SORT_NUM_ONCE;
-    uint32_t concatRepeatTimes = (aglinTileNum + MORE_CORE_DEALING_CONCAT_NUM_ONCE - 1) / MORE_CORE_DEALING_CONCAT_NUM_ONCE;
+    uint32_t concatRepeatTimes = (aglinTileNum + MORE_CORE_DEALING_CONCAT_NUM_ONCE - 1) /
+                                 MORE_CORE_DEALING_CONCAT_NUM_ONCE;
 
     if constexpr (!IS_DESCEND) {
         FlipSignBit(inputLocal, aglinTileNum);
     }
     AscendC::LocalTensor<CONVERT_TYPE> concatLocal;
     AscendC::Concat(concatLocal, inputLocal, concatTempLocal, concatRepeatTimes);
-    AscendC::Sort<CONVERT_TYPE, true>(sortedValueLocal, concatLocal, sortedValueIndexLocal, sortTempLocal, sortRepeatTimes);
+    AscendC::Sort<CONVERT_TYPE, true>(sortedValueLocal, concatLocal, sortedValueIndexLocal, sortTempLocal,
+                                      sortRepeatTimes);
 }
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
@@ -328,7 +340,7 @@ __aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_
     if constexpr (std::is_same<float, CONVERT_TYPE>::value) {
         AscendC::LocalTensor<int32_t> castTensor = xLocal.template ReinterpretCast<int32_t>();
         AscendC::Adds(castTensor, castTensor, MORE_CORE_XOR_OP_VALUE_FP, aglinTileNum);
-    } else if constexpr (std::is_same<half, CONVERT_TYPE>::value ){
+    } else if constexpr (std::is_same<half, CONVERT_TYPE>::value) {
         AscendC::LocalTensor<int16_t> castTensor = xLocal.template ReinterpretCast<int16_t>();
         AscendC::Adds(castTensor, castTensor, MORE_CORE_XOR_OP_VALUE_HALF, aglinTileNum);
     }
@@ -366,7 +378,6 @@ __aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_
     sortedQueue_.FreeTensor<CONVERT_TYPE>(sortTempBuffer);
 }
 
-
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
 __aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::SortInMultiCore()
 {
@@ -399,7 +410,8 @@ __aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_
             copyParams.srcStride = 0;
             copyParams.dstStride = 0;
             DataCopyPadExtParams<CONVERT_TYPE> padParams{false, 0, 0, 0};
-            DataCopyPad(ubMainInput[GetSortLen<CONVERT_TYPE>(onceMaxElements_) * i], workspaceInput_[offsets_[i]], copyParams, padParams);
+            DataCopyPad(ubMainInput[GetSortLen<CONVERT_TYPE>(onceMaxElements_) * i], workspaceInput_[offsets_[i]],
+                        copyParams, padParams);
             elementCountList_[j] = dealLengths_[i];
             remainListNum_ += 1;
             j++;
@@ -409,7 +421,8 @@ __aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_
 }
 
 template <typename T, typename CONVERT_TYPE, bool IS_DESCEND, typename INDEX_TYPE>
-__aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::DealingMergeSort() {
+__aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_TYPE>::DealingMergeSort()
+{
     LocalTensor<CONVERT_TYPE> sortTempBuffer = sortedQueue_.AllocTensor<CONVERT_TYPE>();
     LocalTensor<CONVERT_TYPE> ubMainInput = copyInQueue_.DeQue<CONVERT_TYPE>();
     LocalTensor<CONVERT_TYPE> tmpUbInputs[4];
@@ -423,14 +436,14 @@ __aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_
         MrgSortSrcList sortListTail = MrgSortSrcList(tmpUbInputs[0], tmpUbInputs[1], tmpUbInputs[0], tmpUbInputs[0]);
         MrgSort<CONVERT_TYPE, true>(sortTempBuffer, sortListTail, elementCountList_, listSortedNums_, validBitTail_, 1);
     } else if (remainListNum_ == 3) {
-        MrgSortSrcList sortListTail =
-            MrgSortSrcList(tmpUbInputs[0], tmpUbInputs[1], tmpUbInputs[2], tmpUbInputs[0]);
+        MrgSortSrcList sortListTail = MrgSortSrcList(tmpUbInputs[0], tmpUbInputs[1], tmpUbInputs[2], tmpUbInputs[0]);
         MrgSort<CONVERT_TYPE, true>(sortTempBuffer, sortListTail, elementCountList_, listSortedNums_, validBitTail_, 1);
     } else if (remainListNum_ == 4) {
         MrgSortSrcList sortListTail = MrgSortSrcList(tmpUbInputs[0], tmpUbInputs[1], tmpUbInputs[2], tmpUbInputs[3]);
         MrgSort<CONVERT_TYPE, true>(sortTempBuffer, sortListTail, elementCountList_, listSortedNums_, validBitTail_, 1);
     } else {
-        AscendC::Copy(sortTempBuffer, tmpUbInputs[0], Align(GetSortLen<CONVERT_TYPE>(elementCountList_[0]), sizeof(CONVERT_TYPE)));
+        AscendC::Copy(sortTempBuffer, tmpUbInputs[0],
+                      Align(GetSortLen<CONVERT_TYPE>(elementCountList_[0]), sizeof(CONVERT_TYPE)));
         listSortedNums_[0] = elementCountList_[0];
     }
     sortedQueue_.EnQue(sortTempBuffer);
@@ -462,11 +475,11 @@ __aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_
     for (int64_t i = 0; i < MORE_CORE_MERGE_SORT_LIST_MAX_NUM; i++) {
         uint32_t blockNum = rowCoreIdx_ * MORE_CORE_MERGE_SORT_LIST_MAX_NUM + i;
         if (blockNum < listNum_ - 1) {
-            listRemainElements_[i]  = currentElements_;
+            listRemainElements_[i] = currentElements_;
             offsets_[i] = GetSortOffset<CONVERT_TYPE>(blockNum * currentElements_);
             allRemainElements_ += listRemainElements_[i];
         } else if (blockNum == listNum_ - 1) {
-            listRemainElements_[i]  = currentTailElements_;
+            listRemainElements_[i] = currentTailElements_;
             offsets_[i] = GetSortOffset<CONVERT_TYPE>(blockNum * currentElements_);
             allRemainElements_ += currentTailElements_;
         } else {
@@ -545,9 +558,12 @@ __aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_
     LocalTensor<CONVERT_TYPE> sortTempBuffer = sortedQueue_.DeQue<CONVERT_TYPE>();
     LocalTensor<CONVERT_TYPE> castValue = castValueQueue_.AllocTensor<CONVERT_TYPE>();
     LocalTensor<uint32_t> castIndex = castIndexQueue_.AllocTensor<uint32_t>();
-    AscendC::Extract(castValue, castIndex, sortTempBuffer, ((curLoopSortedNum_ + MORE_CORE_DEALING_EXTRACT_NUM_ONCE - 1) / MORE_CORE_DEALING_EXTRACT_NUM_ONCE));
+    AscendC::Extract(
+        castValue, castIndex, sortTempBuffer,
+        ((curLoopSortedNum_ + MORE_CORE_DEALING_EXTRACT_NUM_ONCE - 1) / MORE_CORE_DEALING_EXTRACT_NUM_ONCE));
     if constexpr (!IS_DESCEND) {
-        FlipSignBit(castValue, ((curLoopSortedNum_ + MORE_CORE_BLOCK_UB - 1) / MORE_CORE_BLOCK_UB * MORE_CORE_BLOCK_UB));
+        FlipSignBit(castValue,
+                    ((curLoopSortedNum_ + MORE_CORE_BLOCK_UB - 1) / MORE_CORE_BLOCK_UB * MORE_CORE_BLOCK_UB));
     }
     DataCopyExtParams copyParamsValue;
     copyParamsValue.blockCount = 1;
@@ -600,11 +616,11 @@ __aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_
     outOffset_ = 0;
     for (int64_t i = 0; i < MORE_CORE_MERGE_SORT_LIST_MAX_NUM; i++) {
         if (i < listNum_ - 1) {
-            listRemainElements_[i]  = currentElements_;
+            listRemainElements_[i] = currentElements_;
             offsets_[i] = GetSortOffset<CONVERT_TYPE>(i * currentElements_);
             allRemainElements_ += listRemainElements_[i];
         } else if (i == listNum_ - 1) {
-            listRemainElements_[i]  = currentTailElements_;
+            listRemainElements_[i] = currentTailElements_;
             offsets_[i] = GetSortOffset<CONVERT_TYPE>(i * currentElements_);
             allRemainElements_ += currentTailElements_;
         } else {
@@ -626,4 +642,4 @@ __aicore__ inline void TopKMergeSortMoreCore<T, CONVERT_TYPE, IS_DESCEND, INDEX_
     }
 }
 } // namespace topkV2
-#endif //TOP_K_MERGE_SORT_MORE_CORE_H
+#endif // TOP_K_MERGE_SORT_MORE_CORE_H

@@ -34,25 +34,24 @@ using namespace ge;
 using std::map;
 using std::string;
 using std::vector;
-#define ADD_INPUT(intputIndex, intputName, intputDtype, inputShape)                                         \
-    vector<int64_t> placeholder##intputIndex##_shape = inputShape;                                          \
-    auto placeholder##intputIndex = op::Data("placeholder" + intputIndex).set_attr_index(0);                \
-    TensorDesc placeholder##intputIndex##_desc =                                                            \
-        TensorDesc(ge::Shape(placeholder##intputIndex##_shape), FORMAT_ND, intputDtype);                    \
-    placeholder##intputIndex##_desc.SetPlacement(ge::kPlacementHost);                                       \
-    placeholder##intputIndex##_desc.SetFormat(FORMAT_ND);                                                   \
-    Tensor tensor_placeholder##intputIndex;                                                                 \
-    ret = GenOnesData(                                                                                      \
-        placeholder##intputIndex##_shape, tensor_placeholder##intputIndex, placeholder##intputIndex##_desc, \
-        intputDtype, 1);                                                                                    \
-    if (ret != SUCCESS) {                                                                                   \
-        printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());                      \
-        return FAILED;                                                                                      \
-    }                                                                                                       \
-    placeholder##intputIndex.update_input_desc_x(placeholder##intputIndex##_desc);                          \
-    input.push_back(tensor_placeholder##intputIndex);                                                       \
-    graph.AddOp(placeholder##intputIndex);                                                                  \
-    sortWithIndex.set_input_##intputName(placeholder##intputIndex);                                              \
+#define ADD_INPUT(intputIndex, intputName, intputDtype, inputShape)                                                 \
+    vector<int64_t> placeholder##intputIndex##_shape = inputShape;                                                  \
+    auto placeholder##intputIndex = op::Data("placeholder" + intputIndex).set_attr_index(0);                        \
+    TensorDesc placeholder##intputIndex##_desc = TensorDesc(ge::Shape(placeholder##intputIndex##_shape), FORMAT_ND, \
+                                                            intputDtype);                                           \
+    placeholder##intputIndex##_desc.SetPlacement(ge::kPlacementHost);                                               \
+    placeholder##intputIndex##_desc.SetFormat(FORMAT_ND);                                                           \
+    Tensor tensor_placeholder##intputIndex;                                                                         \
+    ret = GenOnesData(placeholder##intputIndex##_shape, tensor_placeholder##intputIndex,                            \
+                      placeholder##intputIndex##_desc, intputDtype, 1);                                             \
+    if (ret != SUCCESS) {                                                                                           \
+        printf("%s - ERROR - [XIR]: Generate input data failed\n", GetTime().c_str());                              \
+        return FAILED;                                                                                              \
+    }                                                                                                               \
+    placeholder##intputIndex.update_input_desc_x(placeholder##intputIndex##_desc);                                  \
+    input.push_back(tensor_placeholder##intputIndex);                                                               \
+    graph.AddOp(placeholder##intputIndex);                                                                          \
+    sortWithIndex.set_input_##intputName(placeholder##intputIndex);                                                 \
     inputs.push_back(placeholder##intputIndex)
 
 #define ADD_OUTPUT(outputIndex, outputName, outputDtype, outputShape)                                       \
@@ -120,8 +119,8 @@ int32_t GenOnesDataFloat32(vector<int64_t> shapes, Tensor& input_tensor, TensorD
     return SUCCESS;
 }
 
-int32_t GenOnesData(
-    vector<int64_t> shapes, Tensor& input_tensor, TensorDesc& input_tensor_desc, DataType data_type, int value)
+int32_t GenOnesData(vector<int64_t> shapes, Tensor& input_tensor, TensorDesc& input_tensor_desc, DataType data_type,
+                    int value)
 {
     input_tensor_desc.SetRealDimCnt(shapes.size());
     size_t size = 1;
@@ -130,8 +129,16 @@ int32_t GenOnesData(
     }
     uint32_t data_len = size * GetDataTypeSize(data_type);
     int32_t* pData = new (std::nothrow) int32_t[data_len];
-    for (uint32_t i = 0; i < size; ++i) {
-        *(pData + i) = value;
+    if (data_type == ge::DT_FLOAT) {
+        // float 输入需按 float 位填充，写入 int32 位模式会得到非规格化小数而非期望的浮点值
+        float* pFloatData = reinterpret_cast<float*>(pData);
+        for (size_t i = 0; i < size; ++i) {
+            *(pFloatData + i) = static_cast<float>(value);
+        }
+    } else {
+        for (size_t i = 0; i < size; ++i) {
+            *(pData + i) = value;
+        }
     }
     input_tensor = Tensor(input_tensor_desc, reinterpret_cast<uint8_t*>(pData), data_len);
     return SUCCESS;
@@ -145,9 +152,8 @@ int32_t WriteDataToFile(string bin_file, uint64_t data_size, uint8_t* inputData)
     return SUCCESS;
 }
 
-int CreateOppInGraph(
-    DataType dataType, DataType indexType, std::vector<ge::Tensor>& input, std::vector<Operator>& inputs, std::vector<Operator>& outputs,
-    Graph& graph)
+int CreateOppInGraph(DataType dataType, DataType indexType, std::vector<ge::Tensor>& input,
+                     std::vector<Operator>& inputs, std::vector<Operator>& outputs, Graph& graph)
 {
     Status ret = SUCCESS;
     // 自定义代码：添加单算子定义到图中
@@ -158,11 +164,10 @@ int CreateOppInGraph(
     ADD_OUTPUT(1, y, dataType, xShape);
     ADD_OUTPUT(2, sorted_index, indexType, xShape);
     outputs.push_back(sortWithIndex);
-    // 添加完毕
     return SUCCESS;
 }
 
-int InitializeAndSetupGraph(Graph& graph, std::vector<ge::Tensor>& input, DataType dataType,  DataType indexType)
+int InitializeAndSetupGraph(Graph& graph, std::vector<ge::Tensor>& input, DataType dataType, DataType indexType)
 {
     printf("%s - INFO - [XIR]: Start to initialize ge using ge global options\n", GetTime().c_str());
     std::map<AscendString, AscendString> global_options = {{"ge.exec.deviceId", "0"}, {"ge.graphRunMode", "1"}};
@@ -261,7 +266,9 @@ int main(int argc, char* argv[])
     Graph graph(graph_name);
     std::vector<ge::Tensor> input;
 
-    std::cout << argv[1] << std::endl;
+    if (argc > 1) {
+        std::cout << argv[1] << std::endl;
+    }
 
     DataType dataType = DT_FLOAT;
     DataType indexType = DT_INT32;
