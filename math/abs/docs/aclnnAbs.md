@@ -162,7 +162,13 @@ aclnnStatus aclnnAbs(
       <td>self和out的数据形状不一致。</td>
     </tr>
     <tr>
-      <td>当self为实数时，self和out的数据类型不一致。当self为COMPLEX64时，out的数据类型不为FLOAT32。当self为COMPLEX32时，out的数据类型不为FLOAT16</td>
+      <td>当self为实数时，self和out的数据类型不一致。</td>
+    </tr>
+    <tr>
+      <td>当self为COMPLEX64时，out的数据类型不为FLOAT32。</td>
+    </tr>
+    <tr>
+      <td>当self为COMPLEX32时，out的数据类型不为FLOAT16。</td>
     </tr>
   </tbody></table>
 
