@@ -588,16 +588,6 @@
   </tr>
   <tr>
     <td>math</td>
-    <td><a href="../../math/data_compare/README.md">data_compare</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>√</td>
-    <td>AI Core</td>
-    <td>逐元素比较两个相同shape和dtype的输入张量，统计差异超出容差范围的元素总个数。</td>
-  </tr>
-  <tr>
-    <td>math</td>
     <td><a href="../../math/dawsn/README.md">dawsn</a></td>
     <td>√</td>
     <td>√</td>
@@ -2358,26 +2348,6 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/slice_last_dim/README.md">slice_last_dim</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>√</td>
-    <td>AI Core</td>
-    <td>对输入张量的最后一维进行切片，通过start、end指定切片范围，stride指定步长。</td>
-  </tr>
-  <tr>
-    <td>conversion</td>
-    <td><a href="../../conversion/slice_with_axes/README.md">slice_with_axes</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>√</td>
-    <td>AI Core</td>
-    <td>沿指定axes从输入张量中提取切片，每个axis由offsets指定起始位置、size指定切片长度。</td>
-  </tr>
-  <tr>
-    <td>conversion</td>
     <td><a href="../../conversion/slice_write/README.md">slice_write</a></td>
     <td>√</td>
     <td>√</td>
@@ -2758,16 +2728,6 @@
   </tr>
   <tr>
     <td>conversion</td>
-    <td><a href="../../conversion/space_to_batch_nd/README.md">space_to_batch_nd</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>√</td>
-    <td>AI Core</td>
-    <td>将多个空间维度的数据按块重新排列到批次维度，并对空间维度补零。支持任意数量的空间维度。</td>
-  </tr>
-  <tr>
-    <td>conversion</td>
     <td><a href="../../conversion/sparse_reshape/README.md">sparse_reshape</a></td>
     <td>√</td>
     <td>√</td>
@@ -2845,16 +2805,6 @@
     <td>√</td>
     <td>AI Core</td>
     <td>将输入tensor的值搬运到输出tensor中。</td>
-  </tr>
-  <tr>
-    <td>conversion</td>
-    <td><a href="../../conversion/tile_with_axis/README.md">tile_with_axis</a></td>
-    <td>√</td>
-    <td>√</td>
-    <td>×</td>
-    <td>√</td>
-    <td>AI Core/AI CPU</td>
-    <td>沿指定维度复制输入Tensor数据，扩展输出Tensor。</td>
   </tr>
   <tr>
     <td>conversion</td>
