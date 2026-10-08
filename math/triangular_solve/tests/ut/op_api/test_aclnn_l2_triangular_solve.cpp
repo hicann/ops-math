@@ -18,21 +18,15 @@ using namespace std;
 
 class l2_triangular_solve_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "Triangular Solve Test Setup" << endl;
-    }
-    static void TearDownTestCase()
-    {
-        cout << "Triangular Solve Test TearDown" << endl;
-    }
+    static void SetUpTestCase() { cout << "Triangular Solve Test Setup" << endl; }
+    static void TearDownTestCase() { cout << "Triangular Solve Test TearDown" << endl; }
 };
 
 TEST_F(l2_triangular_solve_test, case_normal)
 {
     auto A_desc = TensorDesc({1, 1, 3, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9});
-    auto b_desc =
-        TensorDesc({1, 1, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
+    auto b_desc = TensorDesc({1, 1, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND)
+                      .Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
     bool upper = true;
     bool transpose = false;
     bool unitriangular = false;
@@ -40,8 +34,8 @@ TEST_F(l2_triangular_solve_test, case_normal)
     auto X_desc = TensorDesc(b_desc).Precision(0.0001, 0.0001);
     auto M_desc = TensorDesc(A_desc).Precision(0.0001, 0.0001);
 
-    auto ut =
-        OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular), OUTPUT(X_desc, M_desc));
+    auto ut = OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular),
+                        OUTPUT(X_desc, M_desc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
@@ -51,8 +45,8 @@ TEST_F(l2_triangular_solve_test, case_nullptr)
 
 {
     auto A_desc = TensorDesc({1, 1, 3, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9});
-    auto b_desc =
-        TensorDesc({1, 1, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
+    auto b_desc = TensorDesc({1, 1, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND)
+                      .Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
     bool upper = true;
     bool transpose = false;
     bool unitriangular = false;
@@ -60,26 +54,26 @@ TEST_F(l2_triangular_solve_test, case_nullptr)
     auto X_desc = TensorDesc(b_desc).Precision(0.0001, 0.0001);
     auto M_desc = TensorDesc(A_desc).Precision(0.0001, 0.0001);
 
-    auto ut1 = OP_API_UT(
-        aclnnTriangularSolve, INPUT(nullptr, A_desc, upper, transpose, unitriangular), OUTPUT(X_desc, M_desc));
+    auto ut1 = OP_API_UT(aclnnTriangularSolve, INPUT(nullptr, A_desc, upper, transpose, unitriangular),
+                         OUTPUT(X_desc, M_desc));
     uint64_t workspaceSize1 = 0;
     aclnnStatus aclRet1 = ut1.TestGetWorkspaceSize(&workspaceSize1);
-    EXPECT_EQ(aclRet1, ACLNN_ERR_INNER_NULLPTR);
+    EXPECT_EQ(aclRet1, ACLNN_ERR_PARAM_NULLPTR);
 
-    auto ut2 = OP_API_UT(
-        aclnnTriangularSolve, INPUT(b_desc, nullptr, upper, transpose, unitriangular), OUTPUT(X_desc, M_desc));
+    auto ut2 = OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, nullptr, upper, transpose, unitriangular),
+                         OUTPUT(X_desc, M_desc));
     uint64_t workspaceSize2 = 0;
     aclnnStatus aclRet2 = ut2.TestGetWorkspaceSize(&workspaceSize2);
-    EXPECT_EQ(aclRet2, ACLNN_ERR_INNER_NULLPTR);
+    EXPECT_EQ(aclRet2, ACLNN_ERR_PARAM_NULLPTR);
 
-    auto ut3 = OP_API_UT(
-        aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular), OUTPUT(nullptr, M_desc));
+    auto ut3 = OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular),
+                         OUTPUT(nullptr, M_desc));
     uint64_t workspaceSize3 = 0;
     aclnnStatus aclRet3 = ut3.TestGetWorkspaceSize(&workspaceSize3);
-    EXPECT_EQ(aclRet3, ACLNN_ERR_INNER_NULLPTR);
+    EXPECT_EQ(aclRet3, ACLNN_ERR_PARAM_NULLPTR);
 
-    auto ut4 = OP_API_UT(
-        aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular), OUTPUT(X_desc, nullptr));
+    auto ut4 = OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular),
+                         OUTPUT(X_desc, nullptr));
     uint64_t workspaceSize4 = 0;
     aclnnStatus aclRet4 = ut4.TestGetWorkspaceSize(&workspaceSize4);
     EXPECT_EQ(aclRet4, ACLNN_SUCCESS);
@@ -91,8 +85,8 @@ TEST_F(l2_triangular_solve_test, case_dtype_valid)
 
     int length = ValidList.size();
     for (int i = 0; i < length; i++) {
-        auto A_desc =
-            TensorDesc({1, 1, 3, 3}, ValidList[i], ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+        auto A_desc = TensorDesc({1, 1, 3, 3}, ValidList[i], ACL_FORMAT_ND)
+                          .Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9});
         auto b_desc = TensorDesc({1, 1, 3, 4}, ValidList[i], ACL_FORMAT_ND)
                           .Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
 
@@ -103,8 +97,8 @@ TEST_F(l2_triangular_solve_test, case_dtype_valid)
         auto X_desc = TensorDesc(b_desc).Precision(0.0001, 0.0001);
         auto M_desc = TensorDesc(A_desc).Precision(0.0001, 0.0001);
 
-        auto ut = OP_API_UT(
-            aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular), OUTPUT(X_desc, M_desc));
+        auto ut = OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular),
+                            OUTPUT(X_desc, M_desc));
         // SAMPLE: only test GetWorkspaceSize
         uint64_t workspaceSize = 0;
         aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
@@ -119,8 +113,8 @@ TEST_F(l2_triangular_solve_test, case_dtype_valid)
 TEST_F(l2_triangular_solve_test, case_dtype_diff)
 {
     auto A_desc = TensorDesc({1, 1, 3, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9});
-    auto b_desc =
-        TensorDesc({1, 1, 3, 4}, ACL_DOUBLE, ACL_FORMAT_ND).Value(vector<double>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
+    auto b_desc = TensorDesc({1, 1, 3, 4}, ACL_DOUBLE, ACL_FORMAT_ND)
+                      .Value(vector<double>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
     bool upper = true;
     bool transpose = false;
     bool unitriangular = false;
@@ -128,8 +122,8 @@ TEST_F(l2_triangular_solve_test, case_dtype_diff)
     auto X_desc = TensorDesc(b_desc).Precision(0.0001, 0.0001);
     auto M_desc = TensorDesc(A_desc).Precision(0.0001, 0.0001);
 
-    auto ut =
-        OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular), OUTPUT(X_desc, M_desc));
+    auto ut = OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular),
+                        OUTPUT(X_desc, M_desc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -146,8 +140,8 @@ TEST_F(l2_triangular_solve_test, case_dim_less_2)
     auto X_desc = TensorDesc(b_desc).Precision(0.0001, 0.0001);
     auto M_desc = TensorDesc(A_desc).Precision(0.0001, 0.0001);
 
-    auto ut =
-        OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular), OUTPUT(X_desc, M_desc));
+    auto ut = OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular),
+                        OUTPUT(X_desc, M_desc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -166,8 +160,8 @@ TEST_F(l2_triangular_solve_test, case_dim_more_8)
     auto X_desc = TensorDesc(b_desc).Precision(0.0001, 0.0001);
     auto M_desc = TensorDesc(A_desc).Precision(0.0001, 0.0001);
 
-    auto ut =
-        OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular), OUTPUT(X_desc, M_desc));
+    auto ut = OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular),
+                        OUTPUT(X_desc, M_desc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -176,8 +170,8 @@ TEST_F(l2_triangular_solve_test, case_dim_more_8)
 TEST_F(l2_triangular_solve_test, case_a_square)
 {
     auto A_desc = TensorDesc({1, 1, 3, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6});
-    auto b_desc =
-        TensorDesc({1, 1, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
+    auto b_desc = TensorDesc({1, 1, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND)
+                      .Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
     bool upper = true;
     bool transpose = false;
     bool unitriangular = false;
@@ -185,8 +179,8 @@ TEST_F(l2_triangular_solve_test, case_a_square)
     auto X_desc = TensorDesc(b_desc).Precision(0.0001, 0.0001);
     auto M_desc = TensorDesc(A_desc).Precision(0.0001, 0.0001);
 
-    auto ut =
-        OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular), OUTPUT(X_desc, M_desc));
+    auto ut = OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular),
+                        OUTPUT(X_desc, M_desc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -203,8 +197,8 @@ TEST_F(l2_triangular_solve_test, case_matrix_shape)
     auto X_desc = TensorDesc(b_desc).Precision(0.0001, 0.0001);
     auto M_desc = TensorDesc(A_desc).Precision(0.0001, 0.0001);
 
-    auto ut =
-        OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular), OUTPUT(X_desc, M_desc));
+    auto ut = OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular),
+                        OUTPUT(X_desc, M_desc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -213,8 +207,8 @@ TEST_F(l2_triangular_solve_test, case_matrix_shape)
 TEST_F(l2_triangular_solve_test, case_shape_boardcast_fail)
 {
     auto A_desc = TensorDesc({1, 2, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8});
-    auto b_desc =
-        TensorDesc({1, 3, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
+    auto b_desc = TensorDesc({1, 3, 2, 2}, ACL_FLOAT, ACL_FORMAT_ND)
+                      .Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
     bool upper = true;
     bool transpose = false;
     bool unitriangular = false;
@@ -222,8 +216,8 @@ TEST_F(l2_triangular_solve_test, case_shape_boardcast_fail)
     auto X_desc = TensorDesc(b_desc).Precision(0.0001, 0.0001);
     auto M_desc = TensorDesc(A_desc).Precision(0.0001, 0.0001);
 
-    auto ut =
-        OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular), OUTPUT(X_desc, M_desc));
+    auto ut = OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular),
+                        OUTPUT(X_desc, M_desc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -232,8 +226,8 @@ TEST_F(l2_triangular_solve_test, case_shape_boardcast_fail)
 TEST_F(l2_triangular_solve_test, case_shape_boardcast_succ)
 {
     auto A_desc = TensorDesc({3, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9});
-    auto b_desc =
-        TensorDesc({1, 1, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
+    auto b_desc = TensorDesc({1, 1, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND)
+                      .Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
     bool upper = true;
     bool transpose = false;
     bool unitriangular = false;
@@ -241,8 +235,8 @@ TEST_F(l2_triangular_solve_test, case_shape_boardcast_succ)
     auto X_desc = TensorDesc({1, 1, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
     auto M_desc = TensorDesc({1, 1, 3, 3}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
 
-    auto ut =
-        OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular), OUTPUT(X_desc, M_desc));
+    auto ut = OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular),
+                        OUTPUT(X_desc, M_desc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
@@ -251,8 +245,8 @@ TEST_F(l2_triangular_solve_test, case_shape_boardcast_succ)
 TEST_F(l2_triangular_solve_test, case_shape_boardcast_out_fail)
 {
     auto A_desc = TensorDesc({3, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9});
-    auto b_desc =
-        TensorDesc({1, 1, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
+    auto b_desc = TensorDesc({1, 1, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND)
+                      .Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
     bool upper = true;
     bool transpose = false;
     bool unitriangular = false;
@@ -260,8 +254,8 @@ TEST_F(l2_triangular_solve_test, case_shape_boardcast_out_fail)
     auto X_desc = TensorDesc(b_desc).Precision(0.0001, 0.0001);
     auto M_desc = TensorDesc(A_desc).Precision(0.0001, 0.0001);
 
-    auto ut =
-        OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular), OUTPUT(X_desc, M_desc));
+    auto ut = OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular),
+                        OUTPUT(X_desc, M_desc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
@@ -270,8 +264,8 @@ TEST_F(l2_triangular_solve_test, case_shape_boardcast_out_fail)
 TEST_F(l2_triangular_solve_test, case_empty)
 {
     auto A_desc = TensorDesc({1, 0, 3, 3}, ACL_FLOAT, ACL_FORMAT_ND);
-    auto b_desc =
-        TensorDesc({1, 1, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
+    auto b_desc = TensorDesc({1, 1, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND)
+                      .Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
     bool upper = true;
     bool transpose = false;
     bool unitriangular = false;
@@ -279,8 +273,8 @@ TEST_F(l2_triangular_solve_test, case_empty)
     auto X_desc = TensorDesc({1, 0, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
     auto M_desc = TensorDesc({1, 0, 3, 3}, ACL_FLOAT, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
 
-    auto ut =
-        OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular), OUTPUT(X_desc, M_desc));
+    auto ut = OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular),
+                        OUTPUT(X_desc, M_desc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
@@ -289,8 +283,8 @@ TEST_F(l2_triangular_solve_test, case_empty)
 TEST_F(l2_triangular_solve_test, case_transpose_true)
 {
     auto A_desc = TensorDesc({1, 1, 3, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9});
-    auto b_desc =
-        TensorDesc({1, 1, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
+    auto b_desc = TensorDesc({1, 1, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND)
+                      .Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
     bool upper = true;
     bool transpose = true;
     bool unitriangular = false;
@@ -298,8 +292,8 @@ TEST_F(l2_triangular_solve_test, case_transpose_true)
     auto X_desc = TensorDesc(b_desc).Precision(0.0001, 0.0001);
     auto M_desc = TensorDesc(A_desc).Precision(0.0001, 0.0001);
 
-    auto ut =
-        OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular), OUTPUT(X_desc, M_desc));
+    auto ut = OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular),
+                        OUTPUT(X_desc, M_desc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
@@ -308,8 +302,8 @@ TEST_F(l2_triangular_solve_test, case_transpose_true)
 TEST_F(l2_triangular_solve_test, case_unitriangular_true)
 {
     auto A_desc = TensorDesc({1, 1, 3, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9});
-    auto b_desc =
-        TensorDesc({1, 1, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
+    auto b_desc = TensorDesc({1, 1, 3, 4}, ACL_FLOAT, ACL_FORMAT_ND)
+                      .Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
     bool upper = true;
     bool transpose = false;
     bool unitriangular = true;
@@ -317,8 +311,8 @@ TEST_F(l2_triangular_solve_test, case_unitriangular_true)
     auto X_desc = TensorDesc(b_desc).Precision(0.0001, 0.0001);
     auto M_desc = TensorDesc(A_desc).Precision(0.0001, 0.0001);
 
-    auto ut =
-        OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular), OUTPUT(X_desc, M_desc));
+    auto ut = OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular),
+                        OUTPUT(X_desc, M_desc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_SUCCESS);
@@ -327,8 +321,8 @@ TEST_F(l2_triangular_solve_test, case_unitriangular_true)
 TEST_F(l2_triangular_solve_test, case_unitriangular_faile)
 {
     auto A_desc = TensorDesc({1, 1, 3, 3}, ACL_DOUBLE, ACL_FORMAT_ND).Value(vector<float>{1, 2, 3, 4, 5, 6, 7, 8, 9});
-    auto b_desc =
-        TensorDesc({1, 1, 3, 4}, ACL_DOUBLE, ACL_FORMAT_ND).Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
+    auto b_desc = TensorDesc({1, 1, 3, 4}, ACL_DOUBLE, ACL_FORMAT_ND)
+                      .Value(vector<float>{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2});
     bool upper = true;
     bool transpose = false;
     bool unitriangular = true;
@@ -336,8 +330,8 @@ TEST_F(l2_triangular_solve_test, case_unitriangular_faile)
     auto X_desc = TensorDesc(b_desc).Precision(0.0001, 0.0001);
     auto M_desc = TensorDesc(A_desc).Precision(0.0001, 0.0001);
 
-    auto ut =
-        OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular), OUTPUT(X_desc, M_desc));
+    auto ut = OP_API_UT(aclnnTriangularSolve, INPUT(b_desc, A_desc, upper, transpose, unitriangular),
+                        OUTPUT(X_desc, M_desc));
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
