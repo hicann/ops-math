@@ -606,6 +606,16 @@
     <td>AI Core/AI CPU</td>
     <td>该算子对输入Tensor完成linear_cross运算。</td>
   </tr>
+    <tr>
+    <td>math</td>
+    <td><a href="../../math/confusion_matrix/README.md">confusion_matrix</a></td>
+    <td>√</td>
+    <td>√</td>
+    <td>×</td>
+    <td>√</td>
+    <td>AI Core</td>
+    <td>计算分类任务的混淆矩阵，统计每个(标签, 预测)对的出现次数或加权累加和，输出num_classes×num_classes矩阵。</td>
+  </tr>
   <tr>
     <td>math</td>
     <td><a href="../../math/cummax/README.md">cummax</a></td>

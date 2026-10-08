@@ -426,44 +426,6 @@ REG_OP(ExpandDims)
     .OP_END_FACTORY_REG(Bitcast)
 
     /**
-    * @brief Computes the confusion matrix from predictions and labels .
-
-    * @par Inputs:
-    * Three inputs, including:
-    * @li labels: A Tensor. Must be one of the following types: float16, float32,
-    * int32, int8, uint8. 1D. Has format ND.
-    * @li predictions: A Tensor. Must be one of the following types: float16,
-    * float32, int32, int8, uint8. 1D. Has format ND.
-    * @li weights: A optional Tensor. Must be one of the following types: float16, float32,
-    * int32, int8, uint8. 1D. Has format ND. \n
-
-    * @par Attributes:
-    * @li num_classes: An integer for the shape of the output matrix.
-    * @li dtype: Data type of the confusion matrix. \n
-
-    * @par Outputs:
-    * y: A Tensor. 1D. Has format ND. Has the same type and format as input "labels" . \n
-
-    * @attention Constraints:
-    * @li "weights", "labels", and "predictions" are 1D tensors.
-    * @li The output is with shape (num_classes, num_classes),
-    * where, 1 <= num_classes <= 4096 . \n
-
-    * @see Region()
-
-    * @par Third-party framework compatibility
-    * Compatible with the TensorFlow operator ConfusionMatrix.
-    */
-    REG_OP(ConfusionMatrix)
-    .INPUT(labels, TensorType({DT_FLOAT, DT_INT32, DT_FLOAT16, DT_INT8, DT_UINT8}))
-    .INPUT(predictions, TensorType({DT_FLOAT, DT_INT32, DT_FLOAT16, DT_INT8, DT_UINT8}))
-    .OPTIONAL_INPUT(weights, TensorType({DT_FLOAT, DT_INT32, DT_FLOAT16, DT_INT8, DT_UINT8}))
-    .OUTPUT(y, TensorType({DT_FLOAT, DT_INT32, DT_FLOAT16, DT_INT8, DT_UINT8}))
-    .REQUIRED_ATTR(num_classes, Int)
-    .REQUIRED_ATTR(dtype, String)
-    .OP_END_FACTORY_REG(ConfusionMatrix)
-
-    /**
     * @brief Computes the cumulative product of the tensor "x" along "axis" .
 
     * @par Inputs:

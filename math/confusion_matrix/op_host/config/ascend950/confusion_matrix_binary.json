@@ -1,0 +1,380 @@
+{
+    "op_type": "ConfusionMatrix",
+    "op_list": [
+      {
+        "bin_filename": "ConfusionMatrix_float16_float16_float16_float16",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "float16", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "float16", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "float16", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "float16", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "float16" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_float16_float16_float32_float32",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "float16", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "float16", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "float32", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "float32", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "float32" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_float16_float16_int32_int32",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "float16", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "float16", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "int32", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "int32", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "int32" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_float16_float16_int8_int8",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "float16", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "float16", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "int8", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "int8", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "int8" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_float16_float16_uint8_uint8",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "float16", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "float16", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "uint8", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "uint8", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "uint8" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_float32_float32_float16_float16",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "float32", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "float32", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "float16", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "float16", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "float16" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_float32_float32_float32_float32",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "float32", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "float32", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "float32", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "float32", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "float32" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_float32_float32_int32_int32",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "float32", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "float32", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "int32", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "int32", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "int32" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_float32_float32_int8_int8",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "float32", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "float32", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "int8", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "int8", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "int8" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_float32_float32_uint8_uint8",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "float32", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "float32", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "uint8", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "uint8", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "uint8" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_int32_int32_float16_float16",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "int32", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "int32", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "float16", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "float16", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "float16" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_int32_int32_float32_float32",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "int32", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "int32", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "float32", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "float32", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "float32" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_int32_int32_int32_int32",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "int32", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "int32", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "int32", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "int32", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "int32" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_int32_int32_int8_int8",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "int32", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "int32", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "int8", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "int8", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "int8" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_int32_int32_uint8_uint8",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "int32", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "int32", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "uint8", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "uint8", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "uint8" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_int8_int8_float16_float16",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "int8", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "int8", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "float16", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "float16", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "float16" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_int8_int8_float32_float32",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "int8", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "int8", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "float32", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "float32", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "float32" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_int8_int8_int32_int32",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "int8", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "int8", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "int32", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "int32", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "int32" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_int8_int8_int8_int8",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "int8", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "int8", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "int8", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "int8", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "int8" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_int8_int8_uint8_uint8",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "int8", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "int8", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "uint8", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "uint8", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "uint8" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_uint8_uint8_float16_float16",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "uint8", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "uint8", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "float16", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "float16", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "float16" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_uint8_uint8_float32_float32",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "uint8", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "uint8", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "float32", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "float32", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "float32" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_uint8_uint8_int32_int32",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "uint8", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "uint8", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "int32", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "int32", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "int32" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_uint8_uint8_int8_int8",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "uint8", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "uint8", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "int8", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "int8", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "int8" }
+        ]
+      },
+      {
+        "bin_filename": "ConfusionMatrix_uint8_uint8_uint8_uint8",
+        "inputs": [
+          { "name": "labels", "index": 0, "dtype": "uint8", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "predictions", "index": 1, "dtype": "uint8", "format": "ND", "paramType": "required", "shape": [-2] },
+          { "name": "weights", "index": 2, "dtype": "uint8", "format": "ND", "paramType": "optional", "shape": [-2] }
+        ],
+        "outputs": [
+          { "name": "y", "index": 0, "dtype": "uint8", "format": "ND", "paramType": "required", "shape": [-2] }
+        ],
+        "attrs": [
+          { "name": "num_classes", "dtype": "int", "value": null },
+          { "name": "dtype", "dtype": "string", "value": "uint8" }
+        ]
+      }
+    ]
+}
