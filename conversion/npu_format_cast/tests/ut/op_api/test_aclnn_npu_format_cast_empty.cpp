@@ -19,7 +19,16 @@ using namespace op;
 
 class NpuFormatCastEmptyTest : public testing::Test {
 protected:
-    void SetUp() override { SetPlatformNpuArch(NpuArch::DAV_3510); }
+    void SetUp() override
+    {
+        prevSocVersion_ = GetCurrentPlatformInfo().GetSocVersion();
+        SetPlatformNpuArch(NpuArch::DAV_3510);
+    }
+    // 恢复SetUp前的平台，同时清除NpuArch覆盖值，避免污染同一二进制中后续算子的UT
+    void TearDown() override { SetPlatformSocVersion(prevSocVersion_); }
+
+private:
+    SocVersion prevSocVersion_ = SocVersion::ASCEND910B;
 };
 
 TEST_F(NpuFormatCastEmptyTest, NdToNzInfersZeroStorageShapeAndNeedsNoWorkspace)
