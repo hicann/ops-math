@@ -10,7 +10,7 @@
 
 #include "aclnn_remainder.h"
 
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "op_api/aclnn_check.h"
 
 #include "conversion/broadcast_to/op_api/broadcast_to.h"

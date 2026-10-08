@@ -17,7 +17,7 @@
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/reshape.h"
 #include "conversion/fill/op_api/fill.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "op_api/aclnn_check.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"

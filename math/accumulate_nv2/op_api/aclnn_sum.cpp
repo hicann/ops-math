@@ -24,7 +24,7 @@
 #include "opdev/op_executor.h"
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 
 using namespace op;
 #ifdef __cplusplus

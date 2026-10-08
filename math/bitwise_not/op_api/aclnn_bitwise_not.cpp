@@ -14,7 +14,7 @@
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "op_api/aclnn_check.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"

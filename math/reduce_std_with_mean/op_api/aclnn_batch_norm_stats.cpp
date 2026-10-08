@@ -23,7 +23,7 @@
 #include "math/pow/op_api/pow.h"
 #include "conversion/fill/op_api/fill.h"
 #include "aclnn/aclnn_base.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -34,7 +34,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "op_api/aclnn_check.h"
-#include "op_api/level2_base.h"
+#include "op_api/level2_base_math.h"
 
 using namespace op;
 #ifdef __cplusplus

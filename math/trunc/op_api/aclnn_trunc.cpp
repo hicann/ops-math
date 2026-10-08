@@ -15,7 +15,7 @@
 #include "opdev/make_op_executor.h"
 #include "opdev/op_dfx.h"
 #include "opdev/platform.h"
-#include "op_api/level2_base.h"
+#include "op_api/level2_base_math.h"
 #include "op_api/aclnn_check.h"
 
 using namespace op;

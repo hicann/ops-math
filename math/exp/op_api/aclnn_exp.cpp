@@ -22,7 +22,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
-#include "op_api/level2_base.h"
+#include "op_api/level2_base_math.h"
 #include "op_api/aclnn_check.h"
 
 using namespace op;

@@ -14,7 +14,7 @@
 #include "dsa_random_uniform.h"
 #include "math/muls/op_api/muls.h"
 #include "../../../../conversion/pack/op_api/pack.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "../../../random_common/op_api/random_common_utils.h"
 
 using namespace op;

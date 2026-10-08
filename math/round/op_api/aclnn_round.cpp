@@ -18,7 +18,7 @@
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/op_dfx.h"
 #include "opdev/platform.h"
-#include "op_api/level2_base.h"
+#include "op_api/level2_base_math.h"
 
 using namespace op;
 #ifdef __cplusplus

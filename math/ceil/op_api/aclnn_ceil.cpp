@@ -15,7 +15,7 @@
 #include "opdev/op_dfx.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/platform.h"
-#include "op_api/level2_base.h"
+#include "op_api/level2_base_math.h"
 #include "op_api/aclnn_check.h"
 
 using namespace op;
@@ -53,8 +53,8 @@ static inline aclnnStatus CheckParamsCeil(const aclTensor* self, const aclTensor
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus ExecCeilGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus ExecCeilGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                            aclOpExecutor** executor)
 {
     CHECK_NOT_NULL(self, out);
     // 固定写法，创建OpExecutor
@@ -90,8 +90,8 @@ static aclnnStatus ExecCeilGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnCeilGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnCeilGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                      aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnCeil, DFX_IN(self), DFX_OUT(out));
     return ExecCeilGetWorkspaceSize(self, out, workspaceSize, executor);

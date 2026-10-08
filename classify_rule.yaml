@@ -33,6 +33,7 @@ ops_math:
       - "random/random_standard_normal_v2"
       - "common/inc/op_api/aclnn_check.h"
       - "common/inc/op_api/level2_base.h"
+      - "common/inc/op_api/level2_base_math.h"
       - "random/stateless_random_uniform_v3"
       - "random/stateless_uniform"
       - "random/stateless_random_normal_v3"
@@ -458,6 +459,7 @@ HPTG2@ops-math:
         - ops/ops-math/CMakeLists.txt
         - ops/ops-math/common/inc/op_api/aclnn_check.h
         - ops/ops-math/common/inc/op_api/level2_base.h
+        - ops/ops-math/common/inc/op_api/level2_base_math.h
         - ops/ops-math/experimental/math/reduce_mean_with_count/tests/ut/common/tiling_case_executor.cpp
       non_delivery: null
       open_source: null
