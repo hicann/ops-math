@@ -317,7 +317,7 @@
         install(TARGETS ${test_aclnn_op_name} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
         ```
 
-    - **调用标准算子（内置算子）**：依赖op-math整包
+    - **调用标准算子（内置算子）**：依赖ops-math整包
 
         ```bash
         cmake_minimum_required(VERSION 3.14)
