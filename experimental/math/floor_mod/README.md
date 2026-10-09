@@ -38,21 +38,21 @@ $$
       <td>x1</td>
       <td>输入</td>
       <td>待进行FloorMod计算的被除数入参。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16、INT32</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、DOUBLE、INT32、INT64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>x2</td>
       <td>输入</td>
       <td>待进行FloorMod计算的除数入参。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16、INT32</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、DOUBLE、INT32、INT64</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
       <td>FloorMod计算的输出结果。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16、INT32</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、DOUBLE、INT32、INT64</td>
       <td>ND</td>
     </tr>
   </tbody></table>

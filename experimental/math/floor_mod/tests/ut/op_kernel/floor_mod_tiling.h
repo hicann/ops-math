@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <cstring>
 #include <securec.h>
+#include "../../../op_kernel/floor_mod_tiling_data.h"
 #include "../../../op_kernel/floor_mod_tiling_key.h"
 
 using namespace FloorModNs;
@@ -41,23 +42,19 @@ inline void InitTilingData(uint8_t* tiling, FloorModTilingData* constData)
 }
 #endif // __NPU_TILING__
 
-#define CONVERT_TILING_DATA(tilingStruct, tilingDataPointer, tilingPointer) \
-    __ubuf__ tilingStruct* tilingDataPointer =                              \
-        reinterpret_cast<__ubuf__ tilingStruct*>((__ubuf__ uint8_t*)(tilingPointer))
+#define CONVERT_TILING_DATA(tilingStruct, tilingDataPointer, tilingPointer)              \
+    __ubuf__ tilingStruct* tilingDataPointer = reinterpret_cast<__ubuf__ tilingStruct*>( \
+        (__ubuf__ uint8_t*)(tilingPointer))
 
 #define INIT_TILING_DATA(tilingStruct, tilingDataPointer, tilingPointer) \
     CONVERT_TILING_DATA(tilingStruct, tilingDataPointer, tilingPointer)
 
 #define GET_TILING_DATA_WITH_STRUCT(tilingStruct, tilingData, tilingArg) \
-    do {                                                                 \
-        tilingStruct tilingData;                                         \
-        InitTilingData(tilingArg, &tilingData);                          \
-    } while (0)
+    tilingStruct tilingData;                                             \
+    InitTilingData(tilingArg, &tilingData)
 
-#define GET_TILING_DATA(tilingData, tilingArg)  \
-    do {                                        \
-        FloorModTilingData tilingData;          \
-        InitTilingData(tilingArg, &tilingData); \
-    } while (0)
+#define GET_TILING_DATA(tilingData, tilingArg) \
+    FloorModTilingData tilingData;             \
+    InitTilingData(tilingArg, &tilingData)
 
 #endif // _FLOOR_MOD_TILING_H_

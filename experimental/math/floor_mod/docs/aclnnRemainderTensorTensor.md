@@ -67,7 +67,7 @@ aclnnStatus aclnnRemainderTensorTensor(
       <td>输入</td>
       <td>待进行 remainder 计算的被除数入参。</td>
       <td>数据类型需要与 other 满足数据类型推导规则。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16、INT32</td>
+      <td>INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -77,7 +77,7 @@ aclnnStatus aclnnRemainderTensorTensor(
       <td>输入</td>
       <td>待进行 remainder 计算的除数入参。</td>
       <td>数据类型需要与 self 满足数据类型推导规则。shape 需要与 self 满足 broadcast 关系。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16、INT32</td>
+      <td>INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -87,7 +87,7 @@ aclnnStatus aclnnRemainderTensorTensor(
       <td>输出</td>
       <td>待进行 remainder 计算的出参。</td>
       <td>shape 需要是 self 与 other broadcast 之后的 shape。数据类型支持范围同输入。</td>
-      <td>FLOAT、FLOAT16、FLOAT16、INT32</td>
+      <td>INT32、INT64、FLOAT16、FLOAT、DOUBLE、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>

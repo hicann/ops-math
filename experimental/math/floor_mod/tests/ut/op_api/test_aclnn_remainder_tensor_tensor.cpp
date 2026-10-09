@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -8,17 +8,5 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef OP_API_INC_LEVEL0_SQUEEZE_ND_H
-#define OP_API_INC_LEVEL0_SQUEEZE_ND_H
-
-#include "opdev/op_def.h"
-
-namespace l0op {
-
-const aclTensor* SqueezeNd(const aclTensor* x, const aclIntArray* dim, aclOpExecutor* executor);
-
-const aclTensor* SqueezeNd(const aclTensor* x, int64_t dim, aclOpExecutor* executor);
-
-} // namespace l0op
-
-#endif // OP_API_INC_LEVEL0_SQUEEZE_ND_H
+// The op-api UT collector only discovers test_aclnn_*.cpp sources.
+#include "test_remainder_tensor_tensor.cpp"

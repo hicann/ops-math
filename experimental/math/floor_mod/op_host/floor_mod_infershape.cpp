@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -12,31 +12,36 @@
  * \file floor_mod_infer.cpp
  * \brief
  */
-#include "register/op_impl_registry.h"
+#include "infershape_broadcast_util.h"
 #include "log/log.h"
-
-using namespace ge;
+#include "register/op_impl_registry.h"
 
 namespace ops {
-static constexpr int64_t IDX_0 = 0;
+namespace {
+constexpr size_t kInputX1 = 0U;
+constexpr size_t kInputX2 = 1U;
+constexpr size_t kOutputY = 0U;
 
-static ge::graphStatus InferShape4FloorMod(gert::InferShapeContext* context)
+ge::graphStatus InferShapeFloorMod(gert::InferShapeContext* context)
 {
-    OP_LOGD(context->GetNodeName(), "Begin to do InferShape4FloorMod");
-
-    // get input shapes
-    const gert::Shape* xShape = context->GetInputShape(IDX_0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, xShape);
-
-    // get output shapes
-    gert::Shape* yShape = context->GetOutputShape(IDX_0);
+    const gert::Shape* x1Shape = context->GetInputShape(kInputX1);
+    const gert::Shape* x2Shape = context->GetInputShape(kInputX2);
+    gert::Shape* yShape = context->GetOutputShape(kOutputY);
+    OP_CHECK_NULL_WITH_CONTEXT(context, x1Shape);
+    OP_CHECK_NULL_WITH_CONTEXT(context, x2Shape);
     OP_CHECK_NULL_WITH_CONTEXT(context, yShape);
 
-    // 填充输出shape大小
-    *yShape = *xShape;
-    OP_LOGD(context->GetNodeName(), "End to do InferShape4FloorMod");
-    return GRAPH_SUCCESS;
+    if (x1Shape->GetDimNum() == 0U) {
+        *yShape = *x2Shape;
+        return ge::GRAPH_SUCCESS;
+    }
+    if (x2Shape->GetDimNum() == 0U) {
+        *yShape = *x1Shape;
+        return ge::GRAPH_SUCCESS;
+    }
+    return Ops::Base::InferShape4Broadcast(context);
 }
+} // namespace
 
-IMPL_OP_INFERSHAPE(FloorMod).InferShape(InferShape4FloorMod);
+IMPL_OP_INFERSHAPE(FloorMod).InferShape(InferShapeFloorMod);
 } // namespace ops

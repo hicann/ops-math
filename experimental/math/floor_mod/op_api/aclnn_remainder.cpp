@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -9,18 +9,16 @@
  */
 #include "aclnn_remainder.h"
 
-#include "op_api/op_api_def.h"
-#include "op_api/aclnn_check.h"
-
-#include "conversion/broadcast_to/op_api/broadcast_to.h"
 #include "aclnn_kernels/cast.h"
+#include "aclnn_kernels/common/op_error_check.h"
 #include "aclnn_kernels/contiguous.h"
-#include "floor_mod.h"
+#include "aclnn_kernels/transdata.h"
+#include "conversion/broadcast_to/op_api/broadcast_to.h"
 #include "conversion/squeeze/op_host/op_api/squeeze.h"
 #include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
-#include "aclnn_kernels/transdata.h"
-
-#include "aclnn_kernels/common/op_error_check.h"
+#include "floor_mod.h"
+#include "op_api/aclnn_check.h"
+#include "op_api/op_api_def.h"
 #include "opdev/op_dfx.h"
 #include "opdev/op_executor.h"
 
@@ -39,8 +37,8 @@ static const std::initializer_list<op::DataType> ASCEND310P_DTYPE_DTYPE_SUPPORT_
     op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT,
     op::DataType::DT_DOUBLE};
 static const std::initializer_list<DataType> emptyDtypes = {};
-static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_COMPLEX = {
-    op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128};
+static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST_COMPLEX = {op::DataType::DT_COMPLEX64,
+                                                                               op::DataType::DT_COMPLEX128};
 
 static const std::initializer_list<DataType>& GetDtypeSupportList(SocVersion socVersion)
 {
@@ -166,9 +164,8 @@ static bool CheckPromoteType(const op::DataType selfDtype, const op::DataType ot
     // 检查self和other能否做数据类型推导
     auto promoteType = op::PromoteType(selfDtype, otherDtype);
     if (promoteType == DataType::DT_UNDEFINED) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "self dtype %s and other dtype %s can not promote dtype.",
-            op::ToString(selfDtype).GetString(), op::ToString(otherDtype).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self dtype %s and other dtype %s can not promote dtype.",
+                op::ToString(selfDtype).GetString(), op::ToString(otherDtype).GetString());
         return false;
     }
 
@@ -181,9 +178,8 @@ static bool CheckPromoteType(const op::DataType selfDtype, const op::DataType ot
         return false;
     }
     if (!CheckType(promoteType, DTYPE_SUPPORT_LIST)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Promote type %s should be in dtype support list [%s].",
-            op::ToString(promoteType).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Promote type %s should be in dtype support list [%s].",
+                op::ToString(promoteType).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
         return false;
     }
 
@@ -191,8 +187,8 @@ static bool CheckPromoteType(const op::DataType selfDtype, const op::DataType ot
 }
 
 // 1. self和other没有complex  2. self能cast成castDtype  3. castDtype为算子支持的数据类型  4. castDtype能cast成out
-static bool CheckPromoteTypeTensorScalar(
-    const op::DataType selfDtype, const op::DataType otherDtype, const op::DataType outDtype)
+static bool CheckPromoteTypeTensorScalar(const op::DataType selfDtype, const op::DataType otherDtype,
+                                         const op::DataType outDtype)
 {
     // 检查self和other没有为complex
     if (CheckType(selfDtype, DTYPE_SUPPORT_LIST_COMPLEX) || CheckType(otherDtype, DTYPE_SUPPORT_LIST_COMPLEX)) {
@@ -211,9 +207,8 @@ static bool CheckPromoteTypeTensorScalar(
         return false;
     }
     if (!CheckType(castDtype, DTYPE_SUPPORT_LIST)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "expected dtype %s should be in dtype support list [%s].",
-            op::ToString(castDtype).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "expected dtype %s should be in dtype support list [%s].",
+                op::ToString(castDtype).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
         return false;
     }
 
@@ -224,8 +219,8 @@ static bool CheckPromoteTypeTensorScalar(
 }
 
 // 1. self和other没有complex  2. other能cast成outDtype  3. outDtype为算子支持的数据类型
-static bool CheckPromoteTypeScalarTensor(
-    const op::DataType selfDtype, const op::DataType otherDtype, const op::DataType outDtype)
+static bool CheckPromoteTypeScalarTensor(const op::DataType selfDtype, const op::DataType otherDtype,
+                                         const op::DataType outDtype)
 {
     // 检查self和other没有为complex
     if (CheckType(selfDtype, DTYPE_SUPPORT_LIST_COMPLEX) || CheckType(otherDtype, DTYPE_SUPPORT_LIST_COMPLEX)) {
@@ -243,9 +238,8 @@ static bool CheckPromoteTypeScalarTensor(
         return false;
     }
     if (!CheckType(outDtype, DTYPE_SUPPORT_LIST)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "out dtype %s should be in dtype support list [%s].",
-            op::ToString(outDtype).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "out dtype %s should be in dtype support list [%s].",
+                op::ToString(outDtype).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
         return false;
     }
 
@@ -298,10 +292,9 @@ static bool CheckBroadcastShape(const aclTensor* self, const aclTensor* other, c
             return true;
         }
 
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "expected consistent tensor shape for the broadcast shape and out, but got %s and %s respectively.",
-            op::ToString(broadcastShape).GetString(), op::ToString(out->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "expected consistent tensor shape for the broadcast shape and out, but got %s and %s respectively.",
+                op::ToString(broadcastShape).GetString(), op::ToString(out->GetViewShape()).GetString());
         return false;
     }
 
@@ -359,8 +352,8 @@ static aclIntArray* GetTensorShape(const aclTensor* self, aclOpExecutor* executo
 }
 
 // broadcast成对应shape
-static const aclTensor* BroadcastTensor(
-    const aclTensor* x, const aclTensor* out, const aclIntArray* broadcastShape, aclOpExecutor* executor)
+static const aclTensor* BroadcastTensor(const aclTensor* x, const aclTensor* out, const aclIntArray* broadcastShape,
+                                        aclOpExecutor* executor)
 {
     // 涉及3维->4维，4维->5维，因此都reformat成ND
     x = l0op::ReFormat(x, op::Format::FORMAT_ND);
@@ -383,10 +376,57 @@ static const aclTensor* BroadcastTensor(
     return x;
 }
 
-static aclnnStatus RemainderMainProcess(
-    const aclTensor* selfContiguous, const aclTensor* otherContiguous, const aclTensor* out, bool needUnsqueeze,
-    aclOpExecutor* executor)
+// Contiguous is a graph operation for non-contiguous views. Keep an already
+// contiguous tensor unchanged so callers do not pay for a redundant graph node.
+static const aclTensor* EnsureContiguous(const aclTensor* x, aclOpExecutor* executor)
 {
+    if (op::IsContiguous(x)) {
+        return x;
+    }
+    return l0op::Contiguous(x, executor);
+}
+
+// FloorMod consumes contiguous GM, but its broadcast tiler also needs the
+// caller's logical dimensions.  Keep those dimensions explicit on a view of
+// the contiguous storage; this is metadata-only and does not materialize a
+// broadcast tensor.  The FP64 path requires it because its storage tensors can
+// otherwise be canonicalized to one dimension by the OP-plugin.
+static const aclTensor* EnsureContiguousLogicalView(const aclTensor* x, aclOpExecutor* executor)
+{
+    const aclTensor* contiguous = EnsureContiguous(x, executor);
+    if (contiguous == nullptr) {
+        return nullptr;
+    }
+    return executor->CreateView(contiguous, x->GetViewShape(), contiguous->GetViewOffset());
+}
+
+// The native FP64 kernel requires equal input dtypes. Keep the ordinary FP64
+// case metadata-only, but preserve ACLNN promotion semantics for mixed inputs.
+// Scalars retain the existing one-element lowering so the result can be
+// squeezed back to a scalar output by RemainderMainProcess.
+static const aclTensor* PreparePromotedDoubleTensor(const aclTensor* x, aclOpExecutor* executor)
+{
+    const aclTensor* prepared = nullptr;
+    if (GetTensorDimNum(x) == 0) {
+        prepared = InitializeTensor(x, op::DataType::DT_DOUBLE, executor);
+    } else {
+        prepared = EnsureContiguousLogicalView(x, executor);
+        if (prepared != nullptr && prepared->GetDataType() != op::DataType::DT_DOUBLE) {
+            prepared = l0op::Cast(prepared, op::DataType::DT_DOUBLE, executor);
+        }
+    }
+    return prepared;
+}
+
+static aclnnStatus RemainderMainProcess(const aclTensor* selfContiguous, const aclTensor* otherContiguous,
+                                        aclTensor* out, bool needUnsqueeze, aclOpExecutor* executor)
+{
+    if (!needUnsqueeze && selfContiguous->GetDataType() == out->GetDataType() && op::IsContiguous(out)) {
+        auto directOut = l0op::FloorMod(selfContiguous, otherContiguous, out, executor);
+        CHECK_RET(directOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        return ACLNN_SUCCESS;
+    }
+
     auto remainderOut = l0op::FloorMod(selfContiguous, otherContiguous, executor);
     CHECK_RET(remainderOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
@@ -414,9 +454,8 @@ static aclnnStatus CheckParamsTensorScalarCommon(const aclTensor* self, const ac
     // 2. self和out的shape一致
     OP_CHECK_SHAPE_NOT_EQUAL(self, out, return ACLNN_ERR_PARAM_INVALID);
     // 3. self和other没有complex + self能cast成castDtype + castDtype为算子支持的数据类型 + castDtype能cast成out
-    CHECK_RET(
-        CheckPromoteTypeTensorScalar(self->GetDataType(), other->GetDataType(), out->GetDataType()),
-        ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckPromoteTypeTensorScalar(self->GetDataType(), other->GetDataType(), out->GetDataType()),
+              ACLNN_ERR_PARAM_INVALID);
     // 4. 维度数不能超过8维
     CHECK_RET(CheckTensorDimSize(self), ACLNN_ERR_PARAM_INVALID);
     CHECK_RET(CheckTensorDimSize(out), ACLNN_ERR_PARAM_INVALID);
@@ -480,9 +519,8 @@ static aclnnStatus CheckParamsScalarTensor(const aclScalar* self, const aclTenso
     // 2. other和out的shape一致
     OP_CHECK_SHAPE_NOT_EQUAL(other, out, return ACLNN_ERR_PARAM_INVALID);
     // 3. self和other没有complex + other能cast成outDtype + outDtype为算子支持的数据类型
-    CHECK_RET(
-        CheckPromoteTypeScalarTensor(self->GetDataType(), other->GetDataType(), out->GetDataType()),
-        ACLNN_ERR_PARAM_INVALID);
+    CHECK_RET(CheckPromoteTypeScalarTensor(self->GetDataType(), other->GetDataType(), out->GetDataType()),
+              ACLNN_ERR_PARAM_INVALID);
     // 4. 维度数不能超过8维
     CHECK_RET(CheckTensorDimSize(other), ACLNN_ERR_PARAM_INVALID);
     CHECK_RET(CheckTensorDimSize(out), ACLNN_ERR_PARAM_INVALID);
@@ -491,8 +529,8 @@ static aclnnStatus CheckParamsScalarTensor(const aclScalar* self, const aclTenso
 }
 
 // 提取SetWorkspaceAndRelease逻辑
-static aclnnStatus SetWorkspaceAndRelease(
-    UniqueExecutor& uniqueExecutor, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus SetWorkspaceAndRelease(UniqueExecutor& uniqueExecutor, uint64_t* workspaceSize,
+                                          aclOpExecutor** executor)
 {
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();
     uniqueExecutor.ReleaseTo(executor);
@@ -500,9 +538,9 @@ static aclnnStatus SetWorkspaceAndRelease(
 }
 
 // 提取RunRemainderProcessAndRelease逻辑，消除else分支重复
-static aclnnStatus RunRemainderProcessAndRelease(
-    const aclTensor* self, const aclTensor* other, const aclTensor* out, UniqueExecutor& uniqueExecutor,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus RunRemainderProcessAndRelease(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                                 UniqueExecutor& uniqueExecutor, uint64_t* workspaceSize,
+                                                 aclOpExecutor** executor)
 {
     bool needUnsqueeze = (GetTensorDimNum(out) == 0);
     auto remainderRes = RemainderMainProcess(self, other, out, needUnsqueeze, uniqueExecutor.get());
@@ -511,9 +549,66 @@ static aclnnStatus RunRemainderProcessAndRelease(
     return SetWorkspaceAndRelease(uniqueExecutor, workspaceSize, executor);
 }
 
+static bool IsNativeBroadcastFloorModType(const op::DataType dtype)
+{
+    const auto npuArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    return npuArch == NpuArch::DAV_2201 &&
+           (dtype == op::DataType::DT_BF16 || dtype == op::DataType::DT_FLOAT16 || dtype == op::DataType::DT_FLOAT ||
+            dtype == op::DataType::DT_INT32 || dtype == op::DataType::DT_INT64);
+}
+
+static aclnnStatus RunRegBaseTensorTensor(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                          op::DataType promoteType, UniqueExecutor& executor, uint64_t* workspaceSize,
+                                          aclOpExecutor** targetExecutor)
+{
+    if (promoteType == op::DataType::DT_DOUBLE) {
+        auto selfContiguous = PreparePromotedDoubleTensor(self, executor.get());
+        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto otherContiguous = PreparePromotedDoubleTensor(other, executor.get());
+        CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        return RunRemainderProcessAndRelease(selfContiguous, otherContiguous, out, executor, workspaceSize,
+                                             targetExecutor);
+    }
+    auto selfContiguous = EnsureContiguous(self, executor.get());
+    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    auto selfCasted = l0op::Cast(selfContiguous, promoteType, executor.get());
+    CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    auto otherContiguous = EnsureContiguous(other, executor.get());
+    CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    auto otherCasted = l0op::Cast(otherContiguous, promoteType, executor.get());
+    CHECK_RET(otherCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    OP_LOGI("Remainder compute dtype: requested=%s self=%s other=%s.", op::ToString(promoteType).GetString(),
+            op::ToString(selfCasted->GetDataType()).GetString(), op::ToString(otherCasted->GetDataType()).GetString());
+    auto floorModOpOut = l0op::FloorMod(selfCasted, otherCasted, executor.get());
+    CHECK_RET(floorModOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    auto castOut = l0op::Cast(floorModOpOut, out->GetDataType(), executor.get());
+    CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    auto viewCopyResult = l0op::ViewCopy(castOut, out, executor.get());
+    CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    return SetWorkspaceAndRelease(executor, workspaceSize, targetExecutor);
+}
+
+static aclnnStatus RunGenericTensorTensor(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                          op::DataType promoteType, UniqueExecutor& executor, uint64_t* workspaceSize,
+                                          aclOpExecutor** targetExecutor)
+{
+    auto selfContiguous = InitializeTensor(self, promoteType, executor.get());
+    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    auto otherContiguous = InitializeTensor(other, promoteType, executor.get());
+    CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    if (!IsNativeBroadcastFloorModType(promoteType)) {
+        auto broadcastShape = GetTensorShape(out, executor.get());
+        selfContiguous = BroadcastTensor(selfContiguous, out, broadcastShape, executor.get());
+        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        otherContiguous = BroadcastTensor(otherContiguous, out, broadcastShape, executor.get());
+        CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    }
+    return RunRemainderProcessAndRelease(selfContiguous, otherContiguous, out, executor, workspaceSize, targetExecutor);
+}
+
 // Tensor self, Tensor other
-aclnnStatus ExecRemainderTensorTensorGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus ExecRemainderTensorTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                                      uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
@@ -526,47 +621,15 @@ aclnnStatus ExecRemainderTensorTensorGetWorkspaceSize(
     }
 
     auto promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
-    if (IsRegBase() && promoteType != op::DataType::DT_DOUBLE) {
-        auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
-        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        auto selfCasted = l0op::Cast(selfContiguous, promoteType, uniqueExecutor.get());
-        CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-        auto otherContiguous = l0op::Contiguous(other, uniqueExecutor.get());
-        CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        auto otherCasted = l0op::Cast(otherContiguous, promoteType, uniqueExecutor.get());
-        CHECK_RET(otherCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-        auto floorModOpOut = l0op::FloorMod(selfCasted, otherCasted, uniqueExecutor.get());
-        CHECK_RET(floorModOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-        auto castOut = l0op::Cast(floorModOpOut, out->GetDataType(), uniqueExecutor.get());
-        CHECK_RET(castOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        auto viewCopyResult = l0op::ViewCopy(castOut, out, uniqueExecutor.get());
-        CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-        return SetWorkspaceAndRelease(uniqueExecutor, workspaceSize, executor);
-    } else {
-        auto selfContiguous = InitializeTensor(self, promoteType, uniqueExecutor.get());
-        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        auto otherContiguous = InitializeTensor(other, promoteType, uniqueExecutor.get());
-        CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-        // 需要做broadcast
-        auto broadcastShape = GetTensorShape(out, uniqueExecutor.get());
-        selfContiguous = BroadcastTensor(selfContiguous, out, broadcastShape, uniqueExecutor.get());
-        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-        otherContiguous = BroadcastTensor(otherContiguous, out, broadcastShape, uniqueExecutor.get());
-        CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-        return RunRemainderProcessAndRelease(
-            selfContiguous, otherContiguous, out, uniqueExecutor, workspaceSize, executor);
+    if (IsRegBase() || promoteType == op::DataType::DT_DOUBLE) {
+        return RunRegBaseTensorTensor(self, other, out, promoteType, uniqueExecutor, workspaceSize, executor);
     }
+    return RunGenericTensorTensor(self, other, out, promoteType, uniqueExecutor, workspaceSize, executor);
 }
 
 // Tensor self, Scalar other
-aclnnStatus ExecRemainderTensorScalarGetWorkspaceSize(
-    const aclTensor* self, const aclScalar* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus ExecRemainderTensorScalarGetWorkspaceSize(const aclTensor* self, const aclScalar* other, aclTensor* out,
+                                                      uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
@@ -584,8 +647,8 @@ aclnnStatus ExecRemainderTensorScalarGetWorkspaceSize(
         auto selfCasted = l0op::Cast(selfContiguous, castDtype, uniqueExecutor.get());
         CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-        auto floorModOpOut =
-            l0op::FloorMod(selfCasted, uniqueExecutor.get()->ConvertToTensor(other, castDtype), uniqueExecutor.get());
+        auto floorModOpOut = l0op::FloorMod(selfCasted, uniqueExecutor.get()->ConvertToTensor(other, castDtype),
+                                            uniqueExecutor.get());
         CHECK_RET(floorModOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
         auto castOut = l0op::Cast(floorModOpOut, out->GetDataType(), uniqueExecutor.get());
@@ -603,14 +666,14 @@ aclnnStatus ExecRemainderTensorScalarGetWorkspaceSize(
         otherContiguous = l0op::BroadcastTo(otherContiguous, selfShape, uniqueExecutor.get());
         CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-        return RunRemainderProcessAndRelease(
-            selfContiguous, otherContiguous, out, uniqueExecutor, workspaceSize, executor);
+        return RunRemainderProcessAndRelease(selfContiguous, otherContiguous, out, uniqueExecutor, workspaceSize,
+                                             executor);
     }
 }
 
 // 非inplace
-aclnnStatus aclnnRemainderTensorTensorGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnRemainderTensorTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                                       uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnRemainderTensorTensor, DFX_IN(self, other), DFX_OUT(out));
     auto ret = CheckParamsTensorTensor(self, other, out);
@@ -618,8 +681,8 @@ aclnnStatus aclnnRemainderTensorTensorGetWorkspaceSize(
     return ExecRemainderTensorTensorGetWorkspaceSize(self, other, out, workspaceSize, executor);
 }
 
-aclnnStatus aclnnRemainderTensorScalarGetWorkspaceSize(
-    const aclTensor* self, const aclScalar* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnRemainderTensorScalarGetWorkspaceSize(const aclTensor* self, const aclScalar* other, aclTensor* out,
+                                                       uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnRemainderTensorScalar, DFX_IN(self, other), DFX_OUT(out));
     auto ret = CheckParamsTensorScalar(self, other, out);
@@ -628,8 +691,8 @@ aclnnStatus aclnnRemainderTensorScalarGetWorkspaceSize(
 }
 
 // Scalar self, Tensor other
-aclnnStatus aclnnRemainderScalarTensorGetWorkspaceSize(
-    const aclScalar* self, const aclTensor* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnRemainderScalarTensorGetWorkspaceSize(const aclScalar* self, const aclTensor* other, aclTensor* out,
+                                                       uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnRemainderScalarTensor, DFX_IN(self, other), DFX_OUT(out));
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -651,8 +714,8 @@ aclnnStatus aclnnRemainderScalarTensorGetWorkspaceSize(
         auto otherCasted = l0op::Cast(otherContiguous, castDtype, uniqueExecutor.get());
         CHECK_RET(otherCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-        auto floorModOpOut =
-            l0op::FloorMod(uniqueExecutor.get()->ConvertToTensor(self, castDtype), otherCasted, uniqueExecutor.get());
+        auto floorModOpOut = l0op::FloorMod(uniqueExecutor.get()->ConvertToTensor(self, castDtype), otherCasted,
+                                            uniqueExecutor.get());
         CHECK_RET(floorModOpOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
         auto castOut = l0op::Cast(floorModOpOut, out->GetDataType(), uniqueExecutor.get());
@@ -670,14 +733,14 @@ aclnnStatus aclnnRemainderScalarTensorGetWorkspaceSize(
         auto otherContiguous = InitializeTensor(other, out->GetDataType(), uniqueExecutor.get());
         CHECK_RET(otherContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-        return RunRemainderProcessAndRelease(
-            selfContiguous, otherContiguous, out, uniqueExecutor, workspaceSize, executor);
+        return RunRemainderProcessAndRelease(selfContiguous, otherContiguous, out, uniqueExecutor, workspaceSize,
+                                             executor);
     }
 }
 
 // inplace
-aclnnStatus aclnnInplaceRemainderTensorTensorGetWorkspaceSize(
-    aclTensor* selfRef, const aclTensor* other, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceRemainderTensorTensorGetWorkspaceSize(aclTensor* selfRef, const aclTensor* other,
+                                                              uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceRemainderTensorTensor, DFX_IN(selfRef, other), DFX_OUT(selfRef));
     auto out = const_cast<aclTensor*>(selfRef);
@@ -686,8 +749,8 @@ aclnnStatus aclnnInplaceRemainderTensorTensorGetWorkspaceSize(
     return ExecRemainderTensorTensorGetWorkspaceSize(selfRef, other, out, workspaceSize, executor);
 }
 
-aclnnStatus aclnnInplaceRemainderTensorScalarGetWorkspaceSize(
-    aclTensor* selfRef, const aclScalar* other, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceRemainderTensorScalarGetWorkspaceSize(aclTensor* selfRef, const aclScalar* other,
+                                                              uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceRemainderTensorScalar, DFX_IN(selfRef, other), DFX_OUT(selfRef));
     auto out = const_cast<aclTensor*>(selfRef);
@@ -697,40 +760,40 @@ aclnnStatus aclnnInplaceRemainderTensorScalarGetWorkspaceSize(
 }
 
 // Tensor self, Tensor other
-aclnnStatus aclnnRemainderTensorTensor(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+aclnnStatus aclnnRemainderTensorTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                       aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnRemainderTensorTensor);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
 // Tensor self, Scalar other
-aclnnStatus aclnnRemainderTensorScalar(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+aclnnStatus aclnnRemainderTensorScalar(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                       aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnRemainderTensorScalar);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
 // Scalar self, Tensor other
-aclnnStatus aclnnRemainderScalarTensor(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+aclnnStatus aclnnRemainderScalarTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                       aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnRemainderScalarTensor);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
 // Tensor self, Tensor other
-aclnnStatus aclnnInplaceRemainderTensorTensor(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+aclnnStatus aclnnInplaceRemainderTensorTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                              aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnInplaceRemainderTensorTensor);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
 // Tensor self, Scalar other
-aclnnStatus aclnnInplaceRemainderTensorScalar(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+aclnnStatus aclnnInplaceRemainderTensorScalar(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                              aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnInplaceRemainderTensorScalar);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
