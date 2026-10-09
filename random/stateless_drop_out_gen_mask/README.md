@@ -14,7 +14,7 @@
 ## 功能说明
 
 - 算子功能：
-    根据seed、seed1和offset，计算随机数输入参数key和counter，其次调用philox_random算法生成随机数，在调用uniform算法完成uint32类型随机数的归一化，最后调用compare_scalar比较函数完成mask结果输出。
+    根据seed、seed1和offset，计算随机数输入参数key和counter，其次调用philox_random算法生成随机数，再调用uniform算法完成uint32类型随机数的归一化，最后调用compare_scalar比较函数完成mask结果输出。
 
 ## 参数说明
 
