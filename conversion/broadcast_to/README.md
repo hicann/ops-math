@@ -19,7 +19,7 @@
 
 | 参数名 | 输入/输出/属性 | 描述                                                         | 数据类型 | 数据格式 |
 | :----- | :------------- | :----------------------------------------------------------- | :------- | :------- |
-| x   | 输入张量       | 需要被广播的张量。  | BF16、FLOAT16、FLOAT、 DOUBLE、INT64、INT32、UINT8、UINT16、UINT32、UINT64、INT8、INT16、COMPLEX32、COMPLEX64、COMPLEX128、QINT8、QUINT8、QINT16、QUINT16、QINT32、BOOL、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、STRING   | ND       |
+| x   | 输入张量       | 需要被广播的张量。  | INT8、INT16、INT32、INT64、UINT8、UINT32、FLOAT16、BF16、FLOAT、BOOL、HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN   | ND       |
 | shape   | 输入张量       | 表示x广播后的shape大小。| INT64、INT32    | -        |
 | y    | 输出           | 维度最大不超过8维，shape由shape输入决定，dtype需要与x一致。 | 同x   | ND       |
 
