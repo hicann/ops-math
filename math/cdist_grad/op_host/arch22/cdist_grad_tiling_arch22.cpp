@@ -420,8 +420,7 @@ static ge::graphStatus CdistGradTilingFunc(gert::TilingContext* context)
 
     // SCH_MODE = 0 (FullM)
     uint32_t schMode = 0;
-    uint32_t dType = static_cast<uint32_t>(inputDType);
-    ASCENDC_TPL_SEL_PARAM(context, dType, pModeInt, schMode);
+    ASCENDC_TPL_SEL_PARAM(context, pModeInt, schMode);
 
     return ge::GRAPH_SUCCESS;
 }
