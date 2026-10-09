@@ -21,18 +21,12 @@
 
 #include "ascendc/host_api/tiling/template_argument.h"
 
-ASCENDC_TPL_ARGS_DECL(CdistGrad, ASCENDC_TPL_DATATYPE_DECL(D_T, C_DT_FLOAT, C_DT_FLOAT16, ASCENDC_TPL_INPUT(0)),
-                      ASCENDC_TPL_UINT_DECL(P_MODE, 8, ASCENDC_TPL_UI_LIST, 0, 1, 2, 3, 4),
+ASCENDC_TPL_ARGS_DECL(CdistGrad, ASCENDC_TPL_UINT_DECL(P_MODE, 8, ASCENDC_TPL_UI_LIST, 0, 1, 2, 3, 4),
                       ASCENDC_TPL_UINT_DECL(SCH_MODE, 8, ASCENDC_TPL_UI_LIST, 0));
 
 ASCENDC_TPL_SEL(
-    // float + 5 p modes + FullM
-    ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_FLOAT),
-                         ASCENDC_TPL_UINT_SEL(P_MODE, ASCENDC_TPL_UI_LIST, 0, 1, 2, 3, 4),
-                         ASCENDC_TPL_UINT_SEL(SCH_MODE, ASCENDC_TPL_UI_LIST, 0)),
-    // float16 + 5 p modes + FullM
-    ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_DATATYPE_SEL(D_T, C_DT_FLOAT16),
-                         ASCENDC_TPL_UINT_SEL(P_MODE, ASCENDC_TPL_UI_LIST, 0, 1, 2, 3, 4),
+    // 5 p modes + FullM
+    ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_UINT_SEL(P_MODE, ASCENDC_TPL_UI_LIST, 0, 1, 2, 3, 4),
                          ASCENDC_TPL_UINT_SEL(SCH_MODE, ASCENDC_TPL_UI_LIST, 0)), );
 
 #endif // __CDIST_GRAD_TILING_KEY_H__
