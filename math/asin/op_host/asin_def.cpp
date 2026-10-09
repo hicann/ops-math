@@ -38,8 +38,10 @@ public:
             .PrecisionReduceFlag(true)
             .ExtendCfgInfo("opFile.value", "asin_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend960pr", aicoreConfig);
+        this->AICore().AddConfig("ascend960dt", aicoreConfig);
     }
 };
 
 OP_ADD(Asin);
-}  // namespace ops
+} // namespace ops

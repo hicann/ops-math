@@ -49,6 +49,8 @@ public:
             .ExtendCfgInfo("opFile.value", "truncate_mod_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
         this->AICore().AddConfig("ascend350", aicoreConfig);
+        this->AICore().AddConfig("ascend960pr", aicoreConfig);
+        this->AICore().AddConfig("ascend960dt", aicoreConfig);
     }
 };
 OP_ADD(TruncateMod); // 添加算子信息库
