@@ -21,7 +21,7 @@
 
 - 计算公式：
 
-  输入x1，  x2为变长输入，为N个tensor组成的列表。x1输入中的每个tensor shape都为[B, M, 1], x2输入中的每个tensor shape都为[B, 1, K], y为输出，shape为[B, M, K]; N对应为addn算子的n数量，也为融合算子融合mul的数量。
+  输入x1，  x2为变长输入，为N个tensor组成的列表。x1输入中的每个tensor shape都为[B, M, 1], x2输入中的每个tensor shape都为[B, 1, K], y为输出，shape为[B, M, K]; N对应为addn算子的n数量，也为融合算子mul的数量。
 
 $$
 x1 * x2 = y

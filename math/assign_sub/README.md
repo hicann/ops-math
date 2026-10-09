@@ -55,7 +55,7 @@ $$out_i = var_i - value_i$$
       <td>var</td>
       <td>输出</td>
       <td>输出张量，公式中的out_i,与var_i同地址。</td>
-      <td>BFOAT16、FLOAT16、FLOAT、INT8、INT32、INT64、UINT8</td>
+      <td>BFLOAT16、FLOAT16、FLOAT、INT8、INT32、INT64、UINT8</td>
       <td>ND</td>
     </tr>
      <tr>

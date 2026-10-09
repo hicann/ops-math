@@ -42,7 +42,7 @@ $$
     <tr>
       <td>x</td>
       <td>输入</td>
-      <td>公式中的输入张量x1。</td>
+      <td>公式中的输入张量x。</td>
       <td>FLOAT、FLOAT16、DOUBLE</td>
       <td>ND</td>
     </tr>

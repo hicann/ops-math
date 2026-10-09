@@ -23,7 +23,7 @@
 
   1. 将x根据indices中的索引进行重排，对应同一组权重的x排列在一起。
 
-  2. 循环每个Lora分组，分别拿相应的x和weightA做矩阵乘：
+  2. 循环每个LoRa分组，分别拿相应的x和weightA做矩阵乘：
 
      $$
      Z1 = x_{i} \cdot weightA[i, layerIdx, :, :]

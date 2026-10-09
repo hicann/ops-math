@@ -57,7 +57,7 @@ $$
       <td>exclusive</td>
       <td>属性</td>
       <td>默认值为false，表示执行包含性累积求和（inclusive cumsum），即输出的第一个元素与输入的第一个元素相同；<br>
-      true表示执行排除性累计求和（exclusive cumsum），即输出的第一个元素为0，后续元素为输入的前缀和。</td>
+      true表示执行排除性累积求和（exclusive cumsum），即输出的第一个元素为0，后续元素为输入的前缀和。</td>
       <td>BOOL</td>
       <td>-</td>
     </tr>

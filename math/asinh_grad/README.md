@@ -69,4 +69,4 @@
 
 | 调用方式   | 样例代码           | 说明                                         |
 | ---------------- | --------------------------- | --------------------------------------------------- |
-| 图模式  | [test_geir_asinh_grad.cpp](examples/test_geir_asinh_grad.cpp) | 通过图模式方式调用AsinhGrad算子。 |
+| 图模式  | [test_geir_asinh_grad.cpp](examples/test_geir_asinh_grad.cpp) | 通过图模式调用AsinhGrad算子。 |

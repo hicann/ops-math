@@ -76,7 +76,7 @@
       <td>-</td>
     </tr>
     <tr>
-      <td>reshuff</td>
+      <td>reshuffle</td>
       <td>可选属性</td>
       <td><ul><li>表示是否对各核编码后的结果进行内存重整。</li><li>默认值为false。</li></ul></td>
       <td>Bool</td>

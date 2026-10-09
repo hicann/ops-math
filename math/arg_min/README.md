@@ -164,7 +164,7 @@ aclnnStatus aclnnArgMin(
       <td>dim超出tensor数组维度。</td>
     </tr>
     <tr>
-      <td>传入的out的shape不满足infershape。</td>
+      <td>传入的out的shape不满足InferShape。</td>
     </tr>
   </tbody>
   </table>
