@@ -93,7 +93,7 @@ $$
 
   ```text
   第一段接口完成入参校验，出现以下场景时报错：
-  返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的selfRef、other是空指针时。
+  返回161001（ACLNN_ERR_PARAM_NULLPTR）：1. 传入的selfRef、other是空指针。
   返回161002（ACLNN_ERR_PARAM_INVALID）：1. selfRef和other的数据类型不在支持的范围之内。
                                         2. selfRef和other的数据类型不满足数据类型推导规则。
                                         3. selfRef的维度大于8。

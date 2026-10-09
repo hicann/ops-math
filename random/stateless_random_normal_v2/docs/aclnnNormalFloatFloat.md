@@ -99,7 +99,7 @@ aclnnStatus aclnnNormalFloatFloat(
       <tr>
       <td>seed</td>
       <td>输入</td>
-      <td>采样伪随机数生成器的种子值，Host侧标量。</td>
+      <td>采用伪随机数生成器的种子值，Host侧标量。</td>
       <td>-</td>
       <td>INT64</td>
       <td>-</td>

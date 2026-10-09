@@ -23,7 +23,7 @@
 
 ## 功能说明
 
-- 接口功能：对输入TensorList中的tensors进行主元素相加求和操作。
+- 接口功能：对输入TensorList中的tensors进行逐元素相加求和操作。
 
 - 计算公式：
 
