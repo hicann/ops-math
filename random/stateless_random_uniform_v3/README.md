@@ -53,7 +53,7 @@
     <tr>
       <td>key</td>
       <td>输入</td>
-      <td>用于基于计数器的随机数生成算法的秘钥。</td>
+      <td>用于基于计数器的随机数生成算法的密钥。</td>
       <td>INT64</td>
       <td>ND</td>
     </tr>
@@ -67,14 +67,14 @@
     <tr>
       <td>from</td>
       <td>输入</td>
-      <td>用于随即范围的下界（包含）。</td>
+      <td>用于随机范围的下界（包含）。</td>
       <td>FLOAT</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>to</td>
       <td>输入</td>
-      <td>用于随即范围的上界（不包含）。</td>
+      <td>用于随机范围的上界（不包含）。</td>
       <td>FLOAT</td>
       <td>ND</td>
     </tr>

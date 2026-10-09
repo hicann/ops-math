@@ -77,7 +77,7 @@
 
 ## 约束说明
 
-- lambd必须大于0
+- lambda必须大于0
 - offset必须为4的倍数（Ascend 950）
 - count必须等于self张量的元素总数（Ascend 950）
 - 仅支持ND格式
