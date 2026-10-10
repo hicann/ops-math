@@ -18,8 +18,7 @@
 #include "log/log.h"
 
 using namespace ge;
-namespace ops
-{
+namespace ops {
 static bool CheckHasUnknownDim(const gert::Shape* ptrShape, size_t dimNum)
 {
     for (size_t i = 0; i < dimNum; ++i) {
@@ -40,6 +39,9 @@ static graphStatus GetNumPartitions(const T* context, int64_t& numParts)
         OP_CHECK_NULL_WITH_CONTEXT(context, ptrNumParts);
         numParts = *ptrNumParts;
     }
+    OP_CHECK_IF(numParts < 1,
+                OP_LOGE(context->GetNodeName(), "num_partitions must be greater than 0, got %ld", numParts),
+                return GRAPH_FAILED);
     return GRAPH_SUCCESS;
 }
 
@@ -50,8 +52,8 @@ static graphStatus InferFirstOutputRange(gert::InferShapeRangeContext* context, 
     auto xDimNum = ptrXMaxShape->GetDimNum();
     auto pDimNum = ptrPartMaxShape->GetDimNum();
     OP_CHECK_IF(pDimNum > xDimNum,
-             OP_LOGE(context->GetNodeName(), "The partitions dim num %zu is larger than x's %zu!", pDimNum, xDimNum),
-             return GRAPH_FAILED);
+                OP_LOGE(context->GetNodeName(), "The partitions dim num %zu is larger than x's %zu!", pDimNum, xDimNum),
+                return GRAPH_FAILED);
 
     auto yDimNum = xDimNum - pDimNum + 1;
     ptrYMaxShape->SetDimNum(yDimNum);
@@ -89,7 +91,7 @@ static graphStatus InferShapeRange4DynamicPartition(gert::InferShapeRangeContext
 
     int64_t numParts = 1;
     OP_CHECK_IF(GetNumPartitions<gert::InferShapeRangeContext>(context, numParts) != GRAPH_SUCCESS,
-             OP_LOGE(context->GetNodeName(), "Failed to get attr num_partitions!"), return GRAPH_FAILED);
+                OP_LOGE(context->GetNodeName(), "Failed to get attr num_partitions!"), return GRAPH_FAILED);
 
     auto ptrXMaxShape = ptrXShapeRange->GetMax();
     auto ptrXMinShape = ptrXShapeRange->GetMin();
@@ -102,9 +104,9 @@ static graphStatus InferShapeRange4DynamicPartition(gert::InferShapeRangeContext
     OP_CHECK_NULL_WITH_CONTEXT(context, ptrYMaxShape);
     OP_CHECK_NULL_WITH_CONTEXT(context, ptrYMinShape);
 
-    OP_CHECK_IF(InferFirstOutputRange(context, ptrXMaxShape, ptrXMinShape, ptrPartMaxShape, ptrYMaxShape, ptrYMinShape) !=
-                 GRAPH_SUCCESS,
-             OP_LOGE(context->GetNodeName(), "Failed to infer range for first output!"), return GRAPH_FAILED);
+    OP_CHECK_IF(InferFirstOutputRange(context, ptrXMaxShape, ptrXMinShape, ptrPartMaxShape, ptrYMaxShape,
+                                      ptrYMinShape) != GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "Failed to infer range for first output!"), return GRAPH_FAILED);
 
     for (int64_t oIdx = 1; oIdx < numParts; ++oIdx) {
         auto ptrYShapeRange1 = context->GetOutputShapeRange(oIdx);
@@ -121,6 +123,5 @@ static graphStatus InferShapeRange4DynamicPartition(gert::InferShapeRangeContext
     return GRAPH_SUCCESS;
 }
 
-IMPL_OP_INFERSHAPE(DynamicPartition)
-     .InferShapeRange(InferShapeRange4DynamicPartition);
-}  // namespace ops
+IMPL_OP_INFERSHAPE(DynamicPartition).InferShapeRange(InferShapeRange4DynamicPartition);
+} // namespace ops
