@@ -47,8 +47,17 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* padding, const 
             expectShape.SetDim(i, self->GetViewShape().GetDim(i));
         }
     }
-    expectShape.SetDim(selfDimnum - 1, self->GetViewShape().GetDim(selfDimnum - 1) + (*padding)[0] + (*padding)[1]);
-    expectShape.SetDim(selfDimnum - 2, self->GetViewShape().GetDim(selfDimnum - 2) + (*padding)[2] + (*padding)[3]);
+    int64_t expectDim;
+    OP_CHECK(SafePadSum(self->GetViewShape().GetDim(selfDimnum - 1), (*padding)[0], (*padding)[1], expectDim),
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                     "The input size plus padding resulted in a negative or overflow output size, which is invalid."),
+             return false);
+    expectShape.SetDim(selfDimnum - 1, expectDim);
+    OP_CHECK(SafePadSum(self->GetViewShape().GetDim(selfDimnum - 2), (*padding)[2], (*padding)[3], expectDim),
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                     "The input size plus padding resulted in a negative or overflow output size, which is invalid."),
+             return false);
+    expectShape.SetDim(selfDimnum - 2, expectDim);
     OP_CHECK_SHAPE_NOT_EQUAL_WITH_EXPECTED_SIZE(out, expectShape, return false);
     return true;
 }

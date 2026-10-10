@@ -45,6 +45,25 @@ inline static bool CheckNotNull(const aclTensor* self, const aclIntArray* paddin
     return true;
 }
 
+// 安全计算dimSize + padFront + padBack并校验有效性：求和会溢出int64、或任一侧负pad裁剪超出
+// 对应维度（与aclnnConstantPadNd的min检查语义一致）时返回false，避免有符号溢出(UB)导致coredump
+inline static bool SafePadSum(int64_t dimSize, int64_t padFront, int64_t padBack, int64_t& result)
+{
+    if ((padFront > 0 && padBack > 0 && padFront > INT64_MAX - padBack) ||
+        (padFront < 0 && padBack < 0 && padFront < INT64_MIN - padBack)) {
+        return false;
+    }
+    int64_t padSum = padFront + padBack;
+    if (padSum > 0 && dimSize > INT64_MAX - padSum) {
+        return false;
+    }
+    result = dimSize + padSum;
+    if ((padFront < 0 && dimSize + padFront < 0) || (padBack < 0 && dimSize + padBack < 0) || result < 0) {
+        return false;
+    }
+    return true;
+}
+
 inline static bool CheckFormat(const aclTensor* self, const aclTensor* out)
 {
     OP_CHECK(

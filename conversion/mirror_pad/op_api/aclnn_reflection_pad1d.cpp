@@ -106,8 +106,12 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* padding, const 
              return false);
 
     // check the last dim value of out. 0, 1 are indexes
-    OP_CHECK(out->GetViewShape().GetDim(selfDimnum - 1) ==
-                 self->GetViewShape().GetDim(selfDimnum - 1) + (*padding)[0] + (*padding)[1],
+    int64_t expectDim;
+    OP_CHECK(SafePadSum(self->GetViewShape().GetDim(selfDimnum - 1), (*padding)[0], (*padding)[1], expectDim),
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                     "The input size plus padding resulted in a negative or overflow output size, which is invalid."),
+             return false);
+    OP_CHECK(out->GetViewShape().GetDim(selfDimnum - 1) == expectDim,
              OP_LOGE(ACLNN_ERR_PARAM_INVALID, "wrong out shape."), return false);
     return true;
 }

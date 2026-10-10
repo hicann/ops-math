@@ -20,6 +20,25 @@ namespace op {
 
 static const string kCircularMode = "circular";
 
+// 安全计算dimSize + padFront + padBack并校验有效性：求和会溢出int64、或任一侧负pad裁剪超出
+// 对应维度时返回false，避免有符号溢出(UB)导致coredump
+inline static bool SafePadSum(int64_t dimSize, int64_t padFront, int64_t padBack, int64_t& result)
+{
+    if ((padFront > 0 && padBack > 0 && padFront > INT64_MAX - padBack) ||
+        (padFront < 0 && padBack < 0 && padFront < INT64_MIN - padBack)) {
+        return false;
+    }
+    int64_t padSum = padFront + padBack;
+    if (padSum > 0 && dimSize > INT64_MAX - padSum) {
+        return false;
+    }
+    result = dimSize + padSum;
+    if ((padFront < 0 && dimSize + padFront < 0) || (padBack < 0 && dimSize + padBack < 0) || result < 0) {
+        return false;
+    }
+    return true;
+}
+
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> kCircularPadDtypeSupportList = {
     op::DataType::DT_FLOAT, op::DataType::DT_BF16, op::DataType::DT_FLOAT16, op::DataType::DT_INT32,
@@ -81,10 +100,16 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* padding, const 
             expectShape.SetDim(i, self->GetViewShape().GetDim(i));
         }
     }
-    // 通用循环处理所有padding维度的shape计算
+    // 通用循环处理所有padding维度的shape计算（安全求和：防溢出及每侧负向越界）
     for (size_t k = 0; k < paddingDim; k++) {
-        expectShape.SetDim(selfDimnum - 1 - k,
-                           self->GetViewShape().GetDim(selfDimnum - 1 - k) + (*padding)[k * 2] + (*padding)[k * 2 + 1]);
+        int64_t expectDim;
+        OP_CHECK(
+            SafePadSum(self->GetViewShape().GetDim(selfDimnum - 1 - k), (*padding)[k * 2], (*padding)[k * 2 + 1],
+                       expectDim),
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                    "The input size plus padding resulted in a negative or overflow output size, which is invalid."),
+            return false);
+        expectShape.SetDim(selfDimnum - 1 - k, expectDim);
     }
     OP_CHECK_SHAPE_NOT_EQUAL_WITH_EXPECTED_SIZE(out, expectShape, return false);
     return true;

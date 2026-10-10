@@ -112,10 +112,25 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* pad, const aclT
         int64_t curShape = self->GetViewShape().GetDim(selfDim - i - 1);
         int64_t begin = (SIZE_T_TWICE * i) >= padLen ? 0 : (*pad)[SIZE_T_TWICE * i];
         int64_t end = (SIZE_T_TWICE * i + 1) >= padLen ? 0 : (*pad)[SIZE_T_TWICE * i + 1];
-        int64_t newShape = curShape + begin + end;
-        int64_t min = std::min(begin, end);
-        min = std::min(min, begin + end);
-        if (curShape + min < 0) {
+        // 有符号求和先判后算，防止溢出(UB)：先安全计算padSum = begin + end
+        if ((begin > 0 && end > 0 && begin > INT64_MAX - end) || (begin < 0 && end < 0 && begin < INT64_MIN - end)) {
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                    "The padding %ld and %ld resulted in an overflow of output size, which is invalid."
+                    " Check dimension %zu of your input.",
+                    begin, end, selfDim - i - 1);
+            return false;
+        }
+        int64_t padSum = begin + end;
+        if (padSum > 0 && curShape > INT64_MAX - padSum) {
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                    "The input size %ld plus padding %ld and %ld resulted in an overflow of output size,"
+                    " which is invalid. Check dimension %zu of your input.",
+                    curShape, begin, end, selfDim - i - 1);
+            return false;
+        }
+        int64_t newShape = curShape + padSum;
+        // 等价于原curShape + min(begin, end, begin + end) < 0的负向校验：每侧单独及总和均不能为负
+        if ((begin < 0 && curShape + begin < 0) || (end < 0 && curShape + end < 0) || newShape < 0) {
             OP_LOGE(ACLNN_ERR_PARAM_INVALID,
                     "The input size %ld plus padding %ld and %ld resulted in a negative output size,"
                     " which is invalid. Check dimension %zu of your input.",
