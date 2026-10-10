@@ -48,9 +48,7 @@ static const std::initializer_list<DataType> ASCEND910B_OPERATOR_SUPPORT_LIST = 
 
 static inline const std::initializer_list<DataType>& GetDtypeSupportList(bool isInput)
 {
-    if ((GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-         GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E) ||
-        IsRegBase()) {
+    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201 || IsRegBase()) {
         return isInput ? ASCEND910B_INPUT_DTYPE_SUPPORT_LIST : ASCEND910B_OPERATOR_SUPPORT_LIST;
     } else {
         return isInput ? ASCEND910_INPUT_DTYPE_SUPPORT_LIST : ASCEND910_OPERATOR_SUPPORT_LIST;

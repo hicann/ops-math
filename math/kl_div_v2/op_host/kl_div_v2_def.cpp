@@ -13,44 +13,32 @@
  * \brief kl_div_v2 def
  */
 
- #include <cstdint>
- #include "register/op_def_registry.h"
+#include <cstdint>
+#include "register/op_def_registry.h"
 
 namespace ops {
-static const std::vector<ge::DataType> dataType = {
-    ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT
-};
+static const std::vector<ge::DataType> dataType = {ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT};
 
-static const std::vector<ge::Format> dataFormat = {
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND
-};
+static const std::vector<ge::Format> dataFormat = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
 class KLDivV2 : public OpDef {
-    public:
-        explicit KLDivV2(const char* name) : OpDef(name)
-        {
-            this->Input("x")
-                .ParamType(REQUIRED)
-                .DataType(dataType)
-                .Format(dataFormat);
-            this->Input("target")
-                .ParamType(REQUIRED)
-                .DataType(dataType)
-                .Format(dataFormat);
-            this->Output("y")
-                .ParamType(REQUIRED)
-                .DataType(dataType)
-                .Format(dataFormat);
-            this->Attr("reduction").AttrType(OPTIONAL).String("mean");
-            this->Attr("log_target").AttrType(OPTIONAL).Bool(false);
+public:
+    explicit KLDivV2(const char* name) : OpDef(name)
+    {
+        this->Input("x").ParamType(REQUIRED).DataType(dataType).Format(dataFormat);
+        this->Input("target").ParamType(REQUIRED).DataType(dataType).Format(dataFormat);
+        this->Output("y").ParamType(REQUIRED).DataType(dataType).Format(dataFormat);
+        this->Attr("reduction").AttrType(OPTIONAL).String("mean");
+        this->Attr("log_target").AttrType(OPTIONAL).Bool(false);
 
-            OpAICoreConfig aicoreConfig;
-            aicoreConfig.DynamicCompileStaticFlag(true)
-                .DynamicRankSupportFlag(true)
-                .DynamicShapeSupportFlag(true)
-                .ExtendCfgInfo("opFile.value", "kl_div_v2_apt");
-            this->AICore().AddConfig("ascend950", aicoreConfig);
-        }
+        OpAICoreConfig aicoreConfig;
+        aicoreConfig.DynamicCompileStaticFlag(true)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .ExtendCfgInfo("opFile.value", "kl_div_v2_apt");
+        this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend350", aicoreConfig);
+    }
 };
 
 OP_ADD(KLDivV2);
-}  // namespace ops
+} // namespace ops
