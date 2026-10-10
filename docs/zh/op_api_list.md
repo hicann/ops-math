@@ -69,7 +69,7 @@
 | [aclnnBitwiseOrTensor&aclnnInplaceBitwiseOrTensor](../../math/bitwise_or/docs/aclnnBitwiseOrTensor&aclnnInplaceBitwiseOrTensor.md) | 计算张量self中每个元素与other张量中对应位置的元素的按位或。  | 默认确定性实现| 默认确定性实现 |
 | [aclnnBitwiseXorScalar&aclnnInplaceBitwiseXorScalar](../../math/bitwise_xor/docs/aclnnBitwiseXorScalar&aclnnInplaceBitwiseXorScalar.md) | 计算输入张量self中每个元素和输入标量other的按位异或，输入self和other必须是整数或布尔类型，对于布尔类型，计算逻辑异或。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnBitwiseXorTensor&aclnnInplaceBitwiseXorTensor](../../math/bitwise_xor/docs/aclnnBitwiseXorTensor&aclnnInplaceBitwiseXorTensor.md) | 计算输入张量self中每个元素与输入张量other中对应位置元素的按位异或，输入self和other必须是整数或布尔类型，对于布尔类型，计算逻辑异或。 | 默认确定性实现| 默认确定性实现 |
-| [aclnnCalculateConvolutionWeightSize](../../conversion/trans_data/docs/aclnnCalculateConvolutionWeightSize.md)   | 在Convolution算子NCHW格式输入下，计算需要申请的weight的大小，仅支持Float16数据类型，该接口仅仅用于判断对weight Tensor进行预处理需要使用多少size才可使Convolution算子执行性能最优。 | 默认确定性实现| - |
+| [aclnnCalculateConvolutionWeightSize](../../conversion/trans_data/docs/aclnnCalculateConvolutionWeightSize.md)   | 在Convolution算子NCHW格式输入下，计算需要申请的weight的大小，仅支持Float16数据类型，该接口仅仅用于判断对weight Tensor进行预处理需要使用多少size才可使Convolution算子执行性能最优。 | -| - |
 | [aclnnCalculateMatmulWeightSize](../../conversion/trans_data/docs/aclnnCalculateMatmulWeightSize.md)   | 在Matmul算子ND格式输入下，计算需要申请的weight的大小，该接口仅仅用于判断对weight Tensor进行预处理需要使用多少size才可使Matmul算子执行性能最优。 | 默认确定性实现|  默认确定性实现 |
 | [aclnnCalculateMatmulWeightSizeV2](../../conversion/trans_data/docs/aclnnCalculateMatmulWeightSizeV2.md)      | 在Matmul算子ND格式输入下，计算如果要转换到NZ格式下需要占用的空间大小（单位为元素个数），该接口仅仅用于判断对weight Tensor预处理需要使用多少size才可使Matmul算子执行性能最优。 | 默认确定性实现| 默认确定性实现  |
 | [aclnnCast](../../math/cast/docs/aclnnCast.md)                  | 实现张量数据类型转换。                                       | 默认确定性实现| 默认确定性实现|
@@ -308,7 +308,7 @@
 | [aclnnTopk](../../math/topk/docs/aclnnTopk.md) | 返回输入Tensor在指定维度上的k个极值及索引。                                            | 默认确定性实现| 默认确定性实现 |
 | [aclnnTrace](../../math/trace/docs/aclnnTrace.md) | 计算矩阵从左上角开始的主对角线元素的和。                                            | 默认确定性实现| - |
 | [aclnnTransformBiasRescaleQkv](../../math/transform_bias_rescale_qkv/docs/aclnnTransformBiasRescaleQkv.md) | TransformBiasRescaleQkv算子是一个用于处理多头注意力机制中查询（Query）、键（Key）、值（Value）向量的接口。 | 默认确定性实现| 默认确定性实现   |
-| [aclnnTransConvolutionWeight](../../conversion/trans_data/docs/aclnnTransConvolutionWeight.md) | 需要和aclnnCalculateConvolutionWeightSize接口配套使用，用于创建一个对于Convolution算子计算性能亲和的weight Tensor。 | 默认确定性实现| - |
+| [aclnnTransConvolutionWeight](../../conversion/trans_data/docs/aclnnTransConvolutionWeight.md) | 需要和aclnnCalculateConvolutionWeightSize接口配套使用，用于创建一个对于Convolution算子计算性能亲和的weight Tensor。 | -| - |
 | [aclnnTransMatmulWeight](../../conversion/trans_data/docs/aclnnTransMatmulWeight.md) | 需要和aclnnCalculateMatmulWeightSize、aclnnCalculateMatmulWeightSizeV2接口配套使用，用于创建一个对于Matmul算子计算性能亲和的weight Tensor。 | 默认确定性实现| 默认确定性实现  |
 | [aclnnTriangularSolve](../../math/triangular_solve/docs/aclnnTriangularSolve.md) | 求解一个具有方形上或下三角形可逆矩阵A和多个右侧b的方程组。   | 默认确定性实现| 默认确定性实现|
 | [aclnnTril&aclnnInplaceTril](../../conversion/tril/docs/aclnnTril&aclnnInplaceTril.md) | 将输入的self张量的最后二维（按shape从左向右数）沿对角线的右上部分置零。   | 默认确定性实现| 默认确定性实现  |
