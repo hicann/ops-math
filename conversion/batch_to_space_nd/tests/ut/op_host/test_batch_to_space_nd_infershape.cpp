@@ -420,6 +420,63 @@ TEST_F(BatchToSpaceNDInfershapeTest, batch_to_space_nd_output_dim_zero_all_spati
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
+TEST_F(BatchToSpaceNDInfershapeTest, batch_to_space_nd_rejects_negative_block_shape)
+{
+    std::vector<int32_t> blockShapeValues = {-1, 2};
+    std::vector<int32_t> cropsValues = {0, 0, 0, 0};
+
+    gert::InfershapeContextPara infershapeContextPara(
+        "BatchToSpaceND",
+        {
+            {{{4, 1, 1, 1}, {4, 1, 1, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{2}, {2}}, ge::DT_INT32, ge::FORMAT_ND, true, blockShapeValues.data()},
+            {{{2, 2}, {2, 2}}, ge::DT_INT32, ge::FORMAT_ND, true, cropsValues.data()},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        });
+
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED);
+}
+
+TEST_F(BatchToSpaceNDInfershapeTest, batch_to_space_nd_rejects_negative_block_shape_with_unknown_rank)
+{
+    std::vector<int32_t> blockShapeValues = {-1, 2};
+    std::vector<int32_t> cropsValues = {0, 0, 0, 0};
+
+    gert::InfershapeContextPara infershapeContextPara(
+        "BatchToSpaceND",
+        {
+            {{{-2}, {-2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{2}, {2}}, ge::DT_INT32, ge::FORMAT_ND, true, blockShapeValues.data()},
+            {{{2, 2}, {2, 2}}, ge::DT_INT32, ge::FORMAT_ND, true, cropsValues.data()},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        });
+
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED);
+}
+
+TEST_F(BatchToSpaceNDInfershapeTest, batch_to_space_nd_zero_block_shape_should_fail)
+{
+    std::vector<int32_t> blockShapeValues = {0, 2};
+    std::vector<int32_t> cropsValues = {0, 0, 0, 0};
+
+    gert::InfershapeContextPara infershapeContextPara(
+        "BatchToSpaceND",
+        {
+            {{{4, 1, 1, 1}, {4, 1, 1, 1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+            {{{2}, {2}}, ge::DT_INT32, ge::FORMAT_ND, true, blockShapeValues.data()},
+            {{{2, 2}, {2, 2}}, ge::DT_INT32, ge::FORMAT_ND, true, cropsValues.data()},
+        },
+        {
+            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        });
+
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED);
+}
+
 TEST_F(BatchToSpaceNDInfershapeTest, batch_to_space_nd_output_dim_zero_with_large_crops)
 {
     std::vector<int32_t> blockShapeValues = {4, 4};

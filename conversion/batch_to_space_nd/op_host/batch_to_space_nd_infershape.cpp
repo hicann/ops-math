@@ -86,10 +86,6 @@ ge::graphStatus BatchToSpaceNDInferShapeHelper::AppendBatchDim()
     int64_t batch = xShape_->GetDim(0);
     if (batch != UNKNOWN_DIM) {
         for (size_t i = 0; i < blockNum_; ++i) {
-            OP_CHECK_IF(blockVec_.GetDim(i) == 0,
-                        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "block_shape", "0",
-                                                              "The value of block_shape cannot be zero"),
-                        return ge::GRAPH_FAILED);
             batch = batch / blockVec_.GetDim(i);
         }
     }
@@ -126,7 +122,19 @@ ge::graphStatus BatchToSpaceNDInferShapeHelper::Inference()
         return ret;
     }
 
-    if (Ops::Base::IsUnknownRank(*xShape_) || !isConstBlock_) {
+    if (!isConstBlock_) {
+        Ops::Base::SetUnknownRank(*yShape_);
+        return ge::GRAPH_SUCCESS;
+    }
+
+    for (size_t i = 0; i < blockNum_; ++i) {
+        OP_CHECK_IF(blockVec_.GetDim(i) <= 0,
+                    OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "block_shape", "non-positive",
+                                                          "The value of block_shape must be greater than zero"),
+                    return ge::GRAPH_FAILED);
+    }
+
+    if (Ops::Base::IsUnknownRank(*xShape_)) {
         Ops::Base::SetUnknownRank(*yShape_);
         return ge::GRAPH_SUCCESS;
     }
