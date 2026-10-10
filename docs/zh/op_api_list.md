@@ -90,7 +90,7 @@
 | [aclnnClampMinTensor&aclnnInplaceClampMinTensor](../../conversion/clip_by_value_v2/docs/aclnnClampMinTensor&aclnnInplaceClampMinTensor.md) | 将输入的所有元素限制在[min, inf]范围内。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnClampTensor](../../conversion/clip_by_value_v2/docs/aclnnClampTensor.md) | 将输入的所有元素限制在[min, max]范围内，如果min缺省，则无下限，如果max缺省，则无上限。 | 默认确定性实现| 默认确定性实现 |
 | [aclnnComplex](../../math/complex/docs/aclnnComplex.md)         | 输入两个Shape满足broadcast关系、Dtype一致的Tensor。               | 默认确定性实现| 默认确定性实现 |
-| [aclnnConfusionTranspose](../../conversion/confusion_transpose_d/docs/aclnnConfusionTranspose.md) | 融合reshape和transpose运算。 | 默认确定性实现| 默认确定性实现 |
+| [aclnnConfusionTranspose](../../conversion/confusion_transpose_d/docs/aclnnConfusionTranspose.md) | 融合reshape和transpose运算。 | -| 默认确定性实现 |
 | [aclnnConstantPadNd](../../conversion/pad_v3/docs/aclnnConstantPadNd.md) | 对输入的张量self，以pad参数为基准进行数据填充，填充值为value。 | 默认确定性实现| 默认确定性实现|
 | [aclnnCos&aclnnInplaceCos](../../math/cos/docs/aclnnCos&aclnnInplaceCos.md) | 对输入矩阵的每个元素进行余弦操作后输出。                     | 默认确定性实现| 默认确定性实现 |
 | [aclnnCosh&aclnnInplaceCosh](../../math/cosh/docs/aclnnCosh&aclnnInplaceCosh.md) | 双曲函数，根据公式返回一个新的tensor。结果的形状与输入tensor相同。 | 默认确定性实现| 默认确定性实现 |
@@ -113,7 +113,7 @@
 | [aclnnDropoutGenMask](../../random/dsa_gen_bit_mask/docs/aclnnDropoutGenMask.md)         | 训练过程中，按照概率prob生成mask，用于元素置零。 | 默认确定性实现| 默认确定性实现  |
 | [aclnnDropoutGenMaskV2](../../random/dsa_gen_bit_mask/docs/aclnnDropoutGenMaskV2.md)         | 训练过程中，按照概率prob生成mask，用于元素置零。 | 默认确定性实现| 默认确定性实现  |
 | [aclnnDropoutGenMaskV2Tensor](../../random/dsa_gen_bit_mask/docs/aclnnDropoutGenMaskV2Tensor.md)         | 训练过程中，按照概率prob生成mask，用于元素置零。 | 默认确定性实现| 默认确定性实现 |
-| [aclnnDropoutV3](../../random/drop_out_v3/docs/aclnnDropoutV3.md)         | 按照概率p随机将输入中的元素置零，并将输出按照1/(1-p)的比例缩放。 | 默认确定性实现| 默认确定性实现  |
+| [aclnnDropoutV3](../../random/drop_out_v3/docs/aclnnDropoutV3.md)         | 按照概率p随机将输入中的元素置零，并将输出按照1/(1-p)的比例缩放。 | -| 默认确定性实现  |
 | [aclnnDropoutV3Tensor](../../random/drop_out_v3/docs/aclnnDropoutV3Tensor.md)         | 按照概率p随机将输入中的元素置零，并将输出按照1/(1-p)的比例缩放。seed和offset以Tensor形式传入。 | - | 默认确定性实现  |
 | [aclnnDropoutV3Grad](../../random/drop_out_v3_grad/docs/aclnnDropoutV3Grad.md)         | 按照传入mask将输入中的元素置零，并将输出按照scale的比例缩放。 | -| 默认确定性实现  |
 | [aclnnEqScalar&aclnnInplaceEqScalar](../../math/equal/docs/aclnnEqScalar&aclnnInplaceEqScalar.md) | 计算self中的元素的值与other的值是否相等，将self每个元素与other的值的比较结果写入out中。 | 默认确定性实现| 默认确定性实现 |
