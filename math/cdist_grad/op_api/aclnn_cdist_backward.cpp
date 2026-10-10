@@ -16,6 +16,7 @@
 #include "cdist_grad.h"
 #include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
 #include "conversion/broadcast_to/op_api/broadcast_to.h"
+#include "conversion/fill/op_api/fill.h"
 #include "aclnn_kernels/transpose.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
@@ -156,6 +157,16 @@ static aclnnStatus CheckParams(const aclTensor* grad, const aclTensor* x1, const
     return ACLNN_SUCCESS;
 }
 
+static const aclTensor* GetOutTensorWithValueZero(aclTensor* out, aclOpExecutor* executor)
+{
+    aclScalar* scalar = executor->AllocScalar(0);
+    auto valueTensor = executor->ConvertToTensor(scalar, out->GetDataType());
+    auto outputDims = op::ToShapeVector(out->GetViewShape());
+    aclIntArray* dimArray = executor->AllocIntArray(outputDims.data(), outputDims.size());
+    auto dimTensor = executor->ConvertToTensor(dimArray, op::DataType::DT_INT64);
+    return l0op::Fill(dimTensor, valueTensor, dimArray, executor);
+}
+
 aclnnStatus aclnnCdistBackwardGetWorkspaceSize(const aclTensor* grad, const aclTensor* x1, const aclTensor* x2,
                                                const aclTensor* cdist, float p, aclTensor* out, uint64_t* workspaceSize,
                                                aclOpExecutor** executor)
@@ -172,7 +183,13 @@ aclnnStatus aclnnCdistBackwardGetWorkspaceSize(const aclTensor* grad, const aclT
     CHECK_RET(ret == ACLNN_SUCCESS, ret);
 
     if (grad->IsEmpty() || x1->IsEmpty() || x2->IsEmpty() || cdist->IsEmpty()) {
-        *workspaceSize = 0;
+        auto fillout = GetOutTensorWithValueZero(out, uniqueExecutor.get());
+        CHECK_RET(fillout != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+        auto viewCopyResult = l0op::ViewCopy(fillout, out, uniqueExecutor.get());
+        CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+
+        *workspaceSize = uniqueExecutor->GetWorkspaceSize();
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
     }
