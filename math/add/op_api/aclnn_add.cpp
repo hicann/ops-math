@@ -191,9 +191,11 @@ static inline bool IsEqualToOne(const op::DataType calcType, const aclScalar* al
     }
 
     if (calcType == DataType::DT_DOUBLE) {
-        return !(alpha->ToDouble() > 1 || alpha->ToDouble() < 1);
+        double alphaVal = alpha->ToDouble();
+        return !std::isnan(alphaVal) && !(alphaVal > 1 || alphaVal < 1);
     }
-    return !(alpha->ToFloat() > 1 || alpha->ToFloat() < 1);
+    float alphaVal = alpha->ToFloat();
+    return !std::isnan(alphaVal) && !(alphaVal > 1 || alphaVal < 1);
 }
 
 static bool CheckPromoteType(const op::DataType selfDtype, const op::DataType otherDtype, const aclScalar* alpha,
