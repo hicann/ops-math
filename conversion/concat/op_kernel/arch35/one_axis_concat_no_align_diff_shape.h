@@ -885,6 +885,12 @@ __aicore__ inline bool OneAxisConcatNoAlignDiffShape<T, U, TILINGDATA>::GatherSu
                 int64_t batchRows = rowsPerBatch < rows - r0 ? rowsPerBatch : rows - r0;
                 int64_t size1 = chunkCols / regChunk;
                 int64_t tailChunk = chunkCols - size1 * regChunk;
+                // 尾块归一化：整除时把最后一个满块并入尾块，使尾块必走且 mask=全量，
+                // 消除 __VEC_SCOPE__ 行循环内的运行时分支（PTO TExtract 同款尾处理 idiom）
+                if (tailChunk == 0 && size1 > 0) {
+                    size1 -= 1;
+                    tailChunk = regChunk;
+                }
                 // SetFlag 先行入 MTE2 流（位于 CopyPad(k) 之后），随后才下发 CopyPad(k+1)，
                 // 保证 WaitFlag 只同步当前 chunk，MTE2 引擎背靠背不空转
                 auto mte2WaitVEventID = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
@@ -931,12 +937,10 @@ __aicore__ inline bool OneAxisConcatNoAlignDiffShape<T, U, TILINGDATA>::GatherSu
                             AscendC::Reg::DataCopyGather(vd2, srcAddr, vd1, p0);
                             AscendC::Reg::StoreAlign(curDstAddr + c * regChunk, vd2, p0);
                         }
-                        if (tailChunk > 0) {
-                            AscendC::Reg::Adds(vd1, vd0, (U)(r * spanAligned + size1 * (regChunk / seg) * dim0stride),
-                                               p1);
-                            AscendC::Reg::DataCopyGather(vd2, srcAddr, vd1, p1);
-                            AscendC::Reg::StoreAlign(curDstAddr + size1 * regChunk, vd2, p1);
-                        }
+                        // 尾块已归一化（tailChunk ∈ [1, regChunk]，整除时并入最后一个满块），无条件执行
+                        AscendC::Reg::Adds(vd1, vd0, (U)(r * spanAligned + size1 * (regChunk / seg) * dim0stride), p1);
+                        AscendC::Reg::DataCopyGather(vd2, srcAddr, vd1, p1);
+                        AscendC::Reg::StoreAlign(curDstAddr + size1 * regChunk, vd2, p1);
                     }
                 }
                 auto vMTE3WaitVEventID = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
@@ -968,6 +972,12 @@ __aicore__ inline bool OneAxisConcatNoAlignDiffShape<T, U, TILINGDATA>::GatherSu
             int64_t chunkStartSeg = startSeg + c0;
             int64_t size1 = chunkCols / regChunk;
             int64_t tailChunk = chunkCols - size1 * regChunk;
+            // 尾块归一化：整除时把最后一个满块并入尾块，使尾块必走且 mask=全量，
+            // 消除 __VEC_SCOPE__ 行循环内的运行时分支（PTO TExtract 同款尾处理 idiom）
+            if (tailChunk == 0 && size1 > 0) {
+                size1 -= 1;
+                tailChunk = regChunk;
+            }
             for (int64_t r0 = 0; r0 < rows; r0 += rowsPerBatch) {
                 int64_t batchRows = rowsPerBatch < rows - r0 ? rowsPerBatch : rows - r0;
                 LocalTensor<T> workLocal = copyQueue_.AllocTensor<T>();
@@ -1003,12 +1013,10 @@ __aicore__ inline bool OneAxisConcatNoAlignDiffShape<T, U, TILINGDATA>::GatherSu
                             AscendC::Reg::DataCopyGather(vd2, srcAddr, vd1, p0);
                             AscendC::Reg::StoreAlign(curDstAddr + c * regChunk, vd2, p0);
                         }
-                        if (tailChunk > 0) {
-                            AscendC::Reg::Adds(vd1, vd0, (U)(r * spanAligned + size1 * (regChunk / seg) * dim0stride),
-                                               p1);
-                            AscendC::Reg::DataCopyGather(vd2, srcAddr, vd1, p1);
-                            AscendC::Reg::StoreAlign(curDstAddr + size1 * regChunk, vd2, p1);
-                        }
+                        // 尾块已归一化（tailChunk ∈ [1, regChunk]，整除时并入最后一个满块），无条件执行
+                        AscendC::Reg::Adds(vd1, vd0, (U)(r * spanAligned + size1 * (regChunk / seg) * dim0stride), p1);
+                        AscendC::Reg::DataCopyGather(vd2, srcAddr, vd1, p1);
+                        AscendC::Reg::StoreAlign(curDstAddr + size1 * regChunk, vd2, p1);
                     }
                 }
                 auto vMTE3WaitVEventID = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
