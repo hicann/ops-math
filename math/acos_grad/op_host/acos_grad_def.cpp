@@ -26,10 +26,8 @@ class AcosGrad : public OpDef {
 public:
     explicit AcosGrad(const char* name) : OpDef(name)
     {
-        const std::vector<ge::DataType> AcosGradDataType = {
-            ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16};
-        const std::vector<ge::Format> AcosGradFormat = {
-            ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+        const std::vector<ge::DataType> AcosGradDataType = {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16};
+        const std::vector<ge::Format> AcosGradFormat = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
 
         this->Input("y")
             .ParamType(REQUIRED)
@@ -61,6 +59,7 @@ public:
             .DynamicRankSupportFlag(true)
             .ExtendCfgInfo("opFile.value", "acos_grad_apt");
         this->AICore().AddConfig("ascend950", aiCoreConfig);
+        this->AICore().AddConfig("ascend350", aiCoreConfig);
     }
 };
 OP_ADD(AcosGrad);
