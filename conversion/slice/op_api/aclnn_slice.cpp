@@ -121,7 +121,13 @@ static bool CheckShape(const aclTensor* self, int64_t dim, int64_t start, int64_
     }
     CalculateValuesSliceUpperForSlice(self, dim, start, end);
     CalculateValuesSliceLowerForSlice(self, dim, start, end);
-    int64_t sliceNum = (end - start + step - 1) / step;
+
+    int64_t sliceNum = 0;
+    if (step >= end - start) {
+        sliceNum = (end > start) ? 1 : 0;
+    } else {
+        sliceNum = (end - start - 1) / step + 1; // (end - start + step - 1) / step 的防溢出写法
+    }
     auto sliceShape = self->GetViewShape();
     sliceShape.SetDim(dim, sliceNum);
     auto outShape = out->GetViewShape();
