@@ -1330,8 +1330,8 @@ aclnnStatus aclnnNpuFormatCastGetWorkspaceSize(const aclTensor* srcTensor, aclTe
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
 
-    CHECK_RET(srcTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
-    CHECK_RET(dstTensor != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    CHECK_RET(srcTensor != nullptr, ACLNN_ERR_PARAM_NULLPTR);
+    CHECK_RET(dstTensor != nullptr, ACLNN_ERR_PARAM_NULLPTR);
     auto ret = CheckGetWorkSpaceSizeInputs(srcTensor, dstTensor);
     op::Format srcFormat = srcTensor->GetStorageFormat();
     op::Format dstFormat = dstTensor->GetStorageFormat();
