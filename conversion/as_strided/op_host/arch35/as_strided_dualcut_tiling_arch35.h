@@ -200,7 +200,7 @@ public:
     void GenTilingData();
     void ComputeBlockTiling(int coreNum);
 
-    int ComputeOutputShape(AxisInf& axis);
+    int64_t ComputeOutputShape(AxisInf& axis);
 
 public:
     gert::TilingContext* context_ = nullptr;
@@ -220,13 +220,13 @@ public:
     int conter{0};
 
     // Tiling data:
-    int32_t gmShape[SHAPE_ARRAY_LEN] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-    int32_t gmInStride[SHAPE_ARRAY_LEN] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    int32_t gmOutStride[SHAPE_ARRAY_LEN] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int64_t gmShape[SHAPE_ARRAY_LEN] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    int64_t gmInStride[SHAPE_ARRAY_LEN] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int64_t gmOutStride[SHAPE_ARRAY_LEN] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     int32_t ubShape[SHAPE_NDDMA_LEN] = {1, 1, 1, 1, 1};
     int64_t ubInStride[SHAPE_NDDMA_LEN] = {0};
-    int32_t ubOutStride[SHAPE_NDDMA_LEN] = {0};
+    int64_t ubOutStride[SHAPE_NDDMA_LEN] = {0};
 
     int cutAxisNums{0};
     int outerAxisNums{0};
@@ -322,10 +322,10 @@ void DualCutAxisSeeker::ComputeBlockTiling(int coreNum)
     this->dimsPerCoreTail = totalOuterDim - (this->useCoreNum - 1) * this->dimsPerCore;
 }
 
-int DualCutAxisSeeker::ComputeOutputShape(AxisInf& axis)
+int64_t DualCutAxisSeeker::ComputeOutputShape(AxisInf& axis)
 {
     int idx = axis.idx;
-    int prod = 1;
+    int64_t prod = 1;
     for (uint32_t i = idx + 1; i < this->outputAxis.size(); i++) {
         prod *= this->outputAxis[i].dim;
     }

@@ -40,7 +40,7 @@ public:
 
         if (IS_CASE_NORMAL) {
             storageOffset_ = tiling->storageOffset;
-            cutAxisNum_ = tiling->axisOutTotalFactor;
+            cutAxisNum_ = static_cast<uint32_t>(tiling->axisOutTotalFactor);
             outerAxisNum_ = tiling->outerAxisNum;
             innerAxisNum_ = tiling->innerAxisNum;
             ubSize_ = tiling->ubSize;
@@ -130,7 +130,8 @@ public:
             DataCopyExtParams copyParams{copyOutParamV2.blockCount, copyOutParamV2.blockLen,
                                          (copyOutParamV2.srcStride - copyOutParamV2.blockLen) / 32,
                                          copyOutParamV2.dstStride - copyOutParamV2.blockLen, 0};
-            DataCopyPad(outputGm_[outAddr + aIdx * ubOutStride_[0]], outLocal[aIdx * ubDstStride_[0]], copyParams);
+            DataCopyPad(outputGm_[outAddr + static_cast<int64_t>(aIdx) * ubOutStride_[0]],
+                        outLocal[static_cast<int64_t>(aIdx) * ubDstStride_[0]], copyParams);
         }
         ResetLoopModePara(DataCopyMVType::UB_TO_OUT);
     }
@@ -280,9 +281,9 @@ private:
     uint32_t ubOutStride_[TILING_NDDMA_LEN] = {0};
     uint32_t ubDstStride_[TILING_NDDMA_LEN] = {0};
 
-    int32_t gmShape_[TILING_ARRAY_LEN] = {0};
-    int32_t gmInStride_[TILING_ARRAY_LEN] = {0};
-    int32_t gmOutStride_[TILING_ARRAY_LEN] = {0};
+    int64_t gmShape_[TILING_ARRAY_LEN] = {0};
+    int64_t gmInStride_[TILING_ARRAY_LEN] = {0};
+    int64_t gmOutStride_[TILING_ARRAY_LEN] = {0};
 
     uint32_t cutAxisNum_ = 0;
     uint32_t outerAxisNum_ = 0;
