@@ -14,25 +14,35 @@
  */
 
 #include <algorithm>
+#include <cstdlib>
+#include <set>
 #include <string>
 #include <vector>
 
 #include "ge/es_graph_builder.h"
 #include "es_math_ops.h"
-#include "platform/platform_info.h"
-#include "ge/ge_utils.h"
+#include "platform/soc_spec.h"
 #include "ge/fusion/pass/pattern_fusion_pass.h"
 #include "ge/fusion/graph_rewriter.h"
 #include "log/log.h"
 #include "graph/tensor.h"
+#include "version/ge-compiler_version.h"
 
 #include "concat_to_concatd_fusion_pass.h"
 
+extern "C" {
+typedef int32_t rtError_t;
+static const int32_t RT_ERROR_NONE = 0;
+rtError_t rtGetSocSpec(const char* label, const char* key, char* val, const uint32_t maxLen);
+__attribute__((weak)) int32_t aclsysGetVersionNum(char* pkgName, int32_t* versionNum);
+}
+
 using namespace ge;
-using namespace fe;
 using namespace ge::fusion;
 
 namespace ops {
+
+#define GE_COMPILER_VERSION_900 90000000
 
 namespace {
 const std::string kPassName = "ConcatToConcatDFusionPass";
@@ -42,20 +52,35 @@ const std::string kTypeConcatV2D = "ConcatV2D";
 constexpr int32_t kConcatDimIdxConcat = 0;
 constexpr int64_t kMaxConcatDInputs = 512; // max data inputs per ConcatD node; more are split into a tree
 
+#if GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
+CustomPassStage GetConcatToConcatDPassStage()
+{
+    int32_t version = 0;
+    if (aclsysGetVersionNum != nullptr) {
+        aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &version);
+    }
+    if (version >= GE_COMPILER_VERSION_900) {
+        return CustomPassStage::kCompatibleInherited;
+    }
+    return CustomPassStage::kBeforeInferShape;
+}
+#endif
+
 bool IsTargetPlatform()
 {
-    PlatformInfo platformInfo;
-    OptionalInfo optionalInfo;
-    if (PlatformInfoManager::Instance().GetPlatformInfoWithOutSocVersion(platformInfo, optionalInfo) != SUCCESS) {
-        OP_LOGE(kPassName.c_str(), "Get platform info failed.");
+    char npuArchVal[32] = {0};
+    if (rtGetSocSpec("version", "NpuArch", npuArchVal, sizeof(npuArchVal)) != RT_ERROR_NONE) {
+        OP_LOGW(kPassName.c_str(), "Get NpuArch from soc spec failed, skip whole graph.");
         return false;
     }
-    const std::string soc = platformInfo.str_info.short_soc_version;
-    const bool isPlatform950 = (soc == "Ascend950");
-    if (!isPlatform950) {
-        OP_LOGI(kPassName.c_str(), "Platform %s is not Ascend950, skip whole graph.", soc.c_str());
+    const auto npuArch = static_cast<NpuArch>(std::strtol(npuArchVal, nullptr, 10));
+    static const std::set<NpuArch> regbaseArch = {NpuArch::DAV_3510, NpuArch::DAV_5102};
+    const bool isRegBase = (regbaseArch.count(npuArch) > 0);
+    if (!isRegBase) {
+        OP_LOGI(kPassName.c_str(), "Platform NpuArch %u is not regbase(DAV_3510/DAV_5102), skip whole graph.",
+                static_cast<uint32_t>(npuArch));
     }
-    return isPlatform950;
+    return isRegBase;
 }
 
 bool ReadConcatDim(const GNode& matchedNode, int32_t concatDimIdx, int64_t& concatDim)
@@ -106,6 +131,8 @@ es::EsTensorHolder BuildConcatDTree(es::EsGraphBuilder& builder, std::vector<es:
         for (size_t i = 0; i < holders.size(); ++i) {
             TensorDesc tensorDesc;
             if (matchedNode.GetInputDesc(static_cast<int32_t>(srcInputIdxs[i]), tensorDesc) == SUCCESS) {
+                // Normalize to FORMAT_ND to match the ConcatD op information library.
+                tensorDesc.SetFormat(FORMAT_ND);
                 (void)concatDNode.UpdateInputDesc(static_cast<int32_t>(i), tensorDesc);
             }
         }
@@ -135,6 +162,26 @@ Status ConcatToConcatDFusionPass::Run(GraphPtr& graph, CustomPassContext& passCo
         passContext.SetPassName(kPassName.c_str());
     }
     OP_LOGI(kPassName.c_str(), "ConcatToConcatDFusionPass fusion start.");
+    int32_t geVersion = 0;
+    const bool versionQueryOk = (aclsysGetVersionNum != nullptr);
+    if (versionQueryOk) {
+        aclsysGetVersionNum(const_cast<char*>("ge_compiler"), &geVersion);
+    } else {
+        // Distinguish "symbol unresolved" from "runtime too old": the former is an environment
+        // anomaly worth a warning, the latter is a normal old-runtime deployment.
+        OP_LOGW(kPassName.c_str(),
+                "aclsysGetVersionNum is not resolved, GE runtime version unknown, defer to the built-in pass.");
+    }
+#if GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
+    if (!versionQueryOk || geVersion < GE_COMPILER_VERSION_900) {
+        OP_LOGD(kPassName.c_str(), "GE runtime version %d < 9.0.0, defer to the built-in pass.", geVersion);
+        return GRAPH_NOT_CHANGED;
+    }
+#else
+    OP_LOGD(kPassName.c_str(),
+            "compiled with pre-9.0.0 ge headers, kCompatibleInherited unavailable, defer to the built-in pass.");
+    return GRAPH_NOT_CHANGED;
+#endif
     if (!IsTargetPlatform()) {
         return GRAPH_NOT_CHANGED;
     }
@@ -214,6 +261,23 @@ Status ConcatToConcatDFusionPass::Run(GraphPtr& graph, CustomPassContext& passCo
             continue;
         }
 
+        TensorDesc firstKeepDesc;
+        if (matchedNode.GetInputDesc(static_cast<int32_t>(keepIdxs[0]), firstKeepDesc) == SUCCESS) {
+            const DataType firstDtype = firstKeepDesc.GetDataType();
+            for (size_t k = 1; k < keepIdxs.size(); ++k) {
+                TensorDesc keepDesc;
+                if (matchedNode.GetInputDesc(static_cast<int32_t>(keepIdxs[k]), keepDesc) == SUCCESS &&
+                    keepDesc.GetDataType() != firstDtype) {
+                    OP_LOGW(kPassName.c_str(),
+                            "Node %s has mixed input dtypes (x0=%d, x%zu=%d), rewrite to ConcatD anyway and rely on "
+                            "GE trans node insertion to align dtype.",
+                            nodeNameStr.GetString(), static_cast<int32_t>(firstDtype), k,
+                            static_cast<int32_t>(keepDesc.GetDataType()));
+                    break;
+                }
+            }
+        }
+
         // Build the boundary: every matched-node input slot (axis, pruned and kept)
         // becomes a boundary input with the same index, so the framework grafts
         // boundary inputs one-to-one without any offset and a shared axis Const stays
@@ -264,8 +328,11 @@ Status ConcatToConcatDFusionPass::Run(GraphPtr& graph, CustomPassContext& passCo
             }
             // Names must be unique, otherwise the builder merges the Data nodes and
             // multiple ConcatD inputs end up connected to one single placeholder.
+            // The ConcatD op information library only accepts FORMAT_ND, while the source
+            // TF-style Concat may carry other formats (e.g. RESERVED); normalize here so
+            // the support check and later op selection see a library-matching desc.
             dataHolders.emplace_back(replaceGraphBuilder.CreateInput(i, ("x" + std::to_string(i)).c_str(),
-                                                                     tensorDesc.GetDataType(), tensorDesc.GetFormat(),
+                                                                     tensorDesc.GetDataType(), FORMAT_ND,
                                                                      tensorDesc.GetShape().GetDims()));
         }
         if (!nodeOk) {
@@ -287,6 +354,9 @@ Status ConcatToConcatDFusionPass::Run(GraphPtr& graph, CustomPassContext& passCo
         GNode topNode = *y.GetProducer();
         TensorDesc srcOutputDesc;
         if (matchedNode.GetOutputDesc(0, srcOutputDesc) == SUCCESS) {
+            // ConcatD op information library only accepts FORMAT_ND (see the Data-node
+            // note above); keep the source dtype/shape but normalize the format.
+            srcOutputDesc.SetFormat(FORMAT_ND);
             (void)topNode.UpdateOutputDesc(0, srcOutputDesc);
         } else {
             TensorDesc firstDataDesc;
@@ -294,33 +364,12 @@ Status ConcatToConcatDFusionPass::Run(GraphPtr& graph, CustomPassContext& passCo
                 TensorDesc dstOutputDesc;
                 if (topNode.GetOutputDesc(0, dstOutputDesc) == SUCCESS) {
                     dstOutputDesc.SetDataType(firstDataDesc.GetDataType());
-                    dstOutputDesc.SetFormat(firstDataDesc.GetFormat());
+                    dstOutputDesc.SetFormat(FORMAT_ND);
                     (void)topNode.UpdateOutputDesc(0, dstOutputDesc);
                 }
             }
         }
 
-        // AI Core support check: the verdict is only trusted when it explicitly reports
-        // "not supported"; a failed check is logged and the node proceeds, because at
-        // kBeforeInferShape shapes are not derived yet (and UT has no op-kernel
-        // registry) - GE's own op selection during compilation still guards the rest.
-        bool isSupported = false;
-        AscendString unsupportedReason;
-        const Status checkStatus = GeUtils::CheckNodeSupportOnAicore(topNode, isSupported, unsupportedReason);
-        if (checkStatus == SUCCESS && !isSupported) {
-            OP_LOGI(kPassName.c_str(), "ConcatD not supported (%s), skip node %s.", unsupportedReason.GetString(),
-                    nodeNameStr.GetString());
-            continue;
-        }
-        if (checkStatus != SUCCESS) {
-            OP_LOGW(kPassName.c_str(),
-                    "CheckNodeSupportOnAicore not conclusive (status %d), proceed without the check.",
-                    static_cast<int32_t>(checkStatus));
-        }
-
-        // The 4-arg overload performs the fusable check AND the official fusion-result
-        // reporting (match_times/effect_times) that ATC aggregates into
-        // fusion_result.json; the 2-arg overload skips the reporting.
         const Status replaceStatus = SubgraphRewriter::Replace(*boundary, *replaceGraphPtr, passContext);
         if (replaceStatus != SUCCESS) {
             OP_LOGE(kPassName.c_str(), "SubgraphRewriter::Replace failed for node %s, status=%d.",
@@ -337,6 +386,10 @@ Status ConcatToConcatDFusionPass::Run(GraphPtr& graph, CustomPassContext& passCo
     return (fusedCount > 0) ? SUCCESS : GRAPH_NOT_CHANGED;
 }
 
+#if GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
+REG_FUSION_PASS(ConcatToConcatDFusionPass).Stage(GetConcatToConcatDPassStage());
+#else
 REG_FUSION_PASS(ConcatToConcatDFusionPass).Stage(CustomPassStage::kBeforeInferShape);
+#endif
 
 } // namespace ops

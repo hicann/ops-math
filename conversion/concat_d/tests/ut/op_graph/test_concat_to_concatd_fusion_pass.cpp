@@ -8,6 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <vector>
 #include <gtest/gtest.h>
 
@@ -31,13 +34,44 @@ const std::string kTypeConcatD = "ConcatD";
 const std::string kTypeConcat = "Concat";
 const std::string kTypeConcatV2 = "ConcatV2";
 const std::string kTypeConst = "Const";
+const char* const kRegbaseArchDav3510 = "3510";
+const char* const kRegbaseArchDav5102 = "5102";
+
+// UT stub for rtGetSocSpec: the UT executable does not link the runtime lib, while the pass gates
+// on NpuArch via this API. The stub feeds the arch from the ASCEND_NPU_ARCH env variable (same
+// convention as third_party/opbase runtime_stub.cpp). Weak definition: yields to any real one.
+extern "C" {
+typedef int32_t rtError_t;
+static const int32_t RT_ERROR_NONE = 0;
+rtError_t rtGetSocSpec(const char* label, const char* key, char* val, const uint32_t maxLen);
+}
+
+__attribute__((weak)) rtError_t rtGetSocSpec(const char* label, const char* key, char* val, const uint32_t maxLen)
+{
+    const char* arch = std::getenv("ASCEND_NPU_ARCH");
+    if (arch == nullptr || std::strcmp(label, "version") != 0 || std::strcmp(key, "NpuArch") != 0) {
+        return static_cast<rtError_t>(1);
+    }
+    (void)std::snprintf(val, maxLen, "%s", arch);
+    return RT_ERROR_NONE;
+}
+
+static void SetNpuArch(const char* arch) { (void)setenv("ASCEND_NPU_ARCH", arch, 1); }
 } // namespace
 
 class ConcatToConcatDFusionPassTest : public testing::Test {
 protected:
-    static void SetUpTestCase() { SetPlatform("Ascend950", "Ascend950"); }
+    static void SetUpTestCase()
+    {
+        SetPlatform("Ascend950", "Ascend950");
+        SetNpuArch(kRegbaseArchDav3510);
+    }
 
-    void SetUp() override { SetPlatform("Ascend950", "Ascend950"); }
+    void SetUp() override
+    {
+        SetPlatform("Ascend950", "Ascend950");
+        SetNpuArch(kRegbaseArchDav3510);
+    }
 
     static void SetPlatform(const std::string& shortSoc, const std::string& socVersion)
     {
@@ -822,10 +856,12 @@ TEST_F(ConcatToConcatDFusionPassTest, five13InputsSplit)
     EXPECT_EQ(childChecked, 2);
 }
 
-TEST_F(ConcatToConcatDFusionPassTest, ascend910_95PlatformNotFused)
+TEST_F(ConcatToConcatDFusionPassTest, nonRegbaseArchNotFused)
 {
-    // Path: non-Ascend950 platform -> graph not changed.
-    SetPlatform("Ascend910_95", "Ascend910_95");
+    // Path: non-regbase NpuArch -> graph not changed. The gate reads NpuArch instead of the soc
+    // string, so even a soc map claiming Ascend950 does not fuse when the arch is not regbase.
+    SetPlatform("Ascend950", "Ascend950");
+    SetNpuArch("2003");
     std::vector<std::vector<int64_t>> dimsVec{{2, 3}, {2, 5}};
     std::shared_ptr<Graph> graphPtr = BuildConcatGraph(1, dimsVec, DT_FLOAT);
 
@@ -878,9 +914,45 @@ TEST_F(ConcatToConcatDFusionPassTest, concatAxisInt32FusionSuccess)
     }
 }
 
+TEST_F(ConcatToConcatDFusionPassTest, mixedDtypeInputsRewrittenToConcatD)
+{
+    // Path: mixed-dtype data inputs -> rewrite to ConcatD anyway.
+    auto graphBuilder = es::EsGraphBuilder("concat_mixed_dtype_graph");
+    auto concatDim = graphBuilder.CreateScalar(static_cast<int64_t>(1));
+    SetTensorOutputDesc(concatDim, DT_INT64, {});
+    std::vector<es::EsTensorHolder> xVec;
+    const std::vector<DataType> dtypes = {DT_INT32, DT_FLOAT};
+    const std::vector<std::vector<int64_t>> dimsVec = {{2, 3}, {2, 5}};
+    for (size_t i = 0; i < dimsVec.size(); ++i) {
+        auto x = graphBuilder.CreateInput(static_cast<int32_t>(i), ("x" + std::to_string(i)).c_str(), dtypes[i],
+                                          FORMAT_ND, dimsVec[i]);
+        SetTensorOutputDesc(x, dtypes[i], dimsVec[i]);
+        xVec.emplace_back(x);
+    }
+    auto y = es::Concat(concatDim, xVec, static_cast<int64_t>(dimsVec.size()));
+    GNode concatNode = *y.GetProducer();
+    TensorDesc axisDesc;
+    concatDim.GetProducer()->GetOutputDesc(0, axisDesc);
+    (void)concatNode.UpdateInputDesc(0, axisDesc);
+    for (size_t i = 0; i < dimsVec.size(); ++i) {
+        TensorDesc xDesc;
+        xVec[i].GetProducer()->GetOutputDesc(0, xDesc);
+        (void)concatNode.UpdateInputDesc(static_cast<int32_t>(i + 1), xDesc);
+    }
+    std::shared_ptr<Graph> graphPtr = graphBuilder.BuildAndReset({y});
+
+    ConcatToConcatDFusionPass pass;
+    CustomPassContext passContext;
+    Status status = pass.Run(graphPtr, passContext);
+    EXPECT_EQ(status, SUCCESS);
+    EXPECT_EQ(CountNodesOfType(graphPtr, kTypeConcatD), 1);
+    EXPECT_FALSE(HasNodeType(graphPtr, kTypeConcat));
+}
+
 TEST_F(ConcatToConcatDFusionPassTest, unsupportedPlatformFail)
 {
     SetPlatform("Ascend910B", "Ascend910B1");
+    SetNpuArch("2003");
     std::vector<std::vector<int64_t>> dimsVec{{2, 3}, {2, 5}};
     std::shared_ptr<Graph> graphPtr = BuildConcatGraph(1, dimsVec, DT_FLOAT);
 
@@ -895,6 +967,23 @@ TEST_F(ConcatToConcatDFusionPassTest, unsupportedPlatformFail)
 TEST_F(ConcatToConcatDFusionPassTest, ascend950FusionSuccess)
 {
     SetPlatform("Ascend950", "Ascend950");
+    SetNpuArch(kRegbaseArchDav3510);
+    std::vector<std::vector<int64_t>> dimsVec{{2, 3, 4}, {2, 3, 5}};
+    std::shared_ptr<Graph> graphPtr = BuildConcatGraph(2, dimsVec, DT_FLOAT);
+
+    ConcatToConcatDFusionPass pass;
+    CustomPassContext passContext;
+    Status status = pass.Run(graphPtr, passContext);
+    EXPECT_EQ(status, SUCCESS);
+
+    EXPECT_EQ(CountNodesOfType(graphPtr, kTypeConcatD), 1);
+}
+
+TEST_F(ConcatToConcatDFusionPassTest, regbaseDav5102FusionSuccess)
+{
+    // Path: the other regbase arch (DAV_5102) also passes the gate.
+    SetPlatform("Ascend950", "Ascend950");
+    SetNpuArch(kRegbaseArchDav5102);
     std::vector<std::vector<int64_t>> dimsVec{{2, 3, 4}, {2, 3, 5}};
     std::shared_ptr<Graph> graphPtr = BuildConcatGraph(2, dimsVec, DT_FLOAT);
 
