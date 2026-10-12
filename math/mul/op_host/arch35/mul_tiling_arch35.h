@@ -25,12 +25,8 @@ namespace optiling {
 
 class MulTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit MulTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
-    gert::TilingContext* GetContext() const
-    {
-        return context_;
-    }
+    explicit MulTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
+    gert::TilingContext* GetContext() const { return context_; }
 
 protected:
     bool IsCapable() override;

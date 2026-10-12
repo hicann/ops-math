@@ -19,19 +19,21 @@
 using namespace Ops::Base;
 using namespace ge;
 namespace ops {
-static ge::graphStatus InferShape4Broadcast(gert::InferShapeContext* context) {
-  auto in_shape1 = context->GetInputShape(0);
-  OP_CHECK_NULL_WITH_CONTEXT(context, in_shape1);
-  auto in_shape2 = context->GetInputShape(1);
-  OP_CHECK_NULL_WITH_CONTEXT(context, in_shape2);
-  auto out_shape = context->GetOutputShape(0);
-  OP_CHECK_NULL_WITH_CONTEXT(context, out_shape);
+static ge::graphStatus InferShape4Broadcast(gert::InferShapeContext* context)
+{
+    auto in_shape1 = context->GetInputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, in_shape1);
+    auto in_shape2 = context->GetInputShape(1);
+    OP_CHECK_NULL_WITH_CONTEXT(context, in_shape2);
+    auto out_shape = context->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, out_shape);
 
-  OP_CHECK_IF(!BroadcastShape(in_shape1, in_shape2, out_shape),
-           OP_LOGE(context->GetNodeName(), "shape %s and %s cannot broadcast!", ToString(*in_shape1).c_str(), ToString(*in_shape2).c_str()),
-           return ge::GRAPH_FAILED);
+    OP_CHECK_IF(!BroadcastShape(in_shape1, in_shape2, out_shape),
+                OP_LOGE(context->GetNodeName(), "shape %s and %s cannot broadcast!", ToString(*in_shape1).c_str(),
+                        ToString(*in_shape2).c_str()),
+                return ge::GRAPH_FAILED);
 
-  return ge::GRAPH_SUCCESS;
+    return ge::GRAPH_SUCCESS;
 }
 IMPL_OP_INFERSHAPE(Sub).InferShape(InferShape4Broadcast);
-}  // namespace ops
+} // namespace ops

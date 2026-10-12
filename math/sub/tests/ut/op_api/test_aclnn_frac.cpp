@@ -26,15 +26,9 @@ using namespace std;
 
 class l2_frac_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "l2_frac_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "l2_frac_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "l2_frac_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "l2_frac_test TearDown" << endl; }
 };
 
 TEST_F(l2_frac_test, frac_different_shape)

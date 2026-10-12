@@ -22,15 +22,9 @@ using namespace std;
 
 class l2_mul_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "mul_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "mul_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "mul_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "mul_test TearDown" << endl; }
 };
 
 TEST_F(l2_mul_test, case_nullptr)

@@ -24,30 +24,23 @@ using namespace ge;
 
 class AddTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "AddTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "AddTiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "AddTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "AddTiling TearDown" << std::endl; }
 };
 
 TEST_F(AddTiling, add_test_0)
 {
     optiling::AddCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara tilingContextPara(
-        "Add",
-        {
-            {{{1, 1, 1, 1, 1}, {1, 1, 1, 1, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Add",
+                                              {
+                                                  {{{1, 1, 1, 1, 1}, {1, 1, 1, 1, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "2048 281492156580096 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -57,16 +50,15 @@ TEST_F(AddTiling, add_test_0)
 TEST_F(AddTiling, add_test_2)
 {
     optiling::AddCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara tilingContextPara(
-        "Add",
-        {
-            {{{9, 8, 1}, {9, 8, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{9, 8, 1}, {9, 8, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{9, 8, 1}, {9, 8, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Add",
+                                              {
+                                                  {{{9, 8, 1}, {9, 8, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{9, 8, 1}, {9, 8, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{9, 8, 1}, {9, 8, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "72 4294967552 ";
     std::vector<size_t> expectWorkspaces = {16777216};

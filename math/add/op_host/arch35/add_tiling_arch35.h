@@ -18,7 +18,6 @@
 
 #include "op_host/tiling_base_class.h"
 
-
 namespace optiling {
 
 struct AddCompileInfo {
@@ -28,8 +27,7 @@ struct AddCompileInfo {
 
 class AddTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit AddTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit AddTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
 protected:
     bool IsCapable() override;
@@ -44,9 +42,8 @@ protected:
 private:
     uint64_t tilingKey = 0;
     bool IsMixedDtype(const ge::DataType& input0Dtype, const ge::DataType& input1Dtype) const;
-    bool CheckDtype(
-        const ge::DataType& input0Dtype, const ge::DataType& input1Dtype, const ge::DataType& outputDtype,
-        bool isMixedDtype) const;
+    bool CheckDtype(const ge::DataType& input0Dtype, const ge::DataType& input1Dtype, const ge::DataType& outputDtype,
+                    bool isMixedDtype) const;
 };
 
 } // namespace optiling

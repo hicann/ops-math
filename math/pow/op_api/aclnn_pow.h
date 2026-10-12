@@ -92,4 +92,4 @@ ACLNN_API aclnnStatus aclnnPowScalarTensor(void* workspace, uint64_t workspaceSi
 }
 #endif
 
-#endif  // OP_API_INC_POW_TENSOR_SCALAR_H_
+#endif // OP_API_INC_POW_TENSOR_SCALAR_H_

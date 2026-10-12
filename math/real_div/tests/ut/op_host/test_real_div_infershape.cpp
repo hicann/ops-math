@@ -23,28 +23,21 @@ using namespace ge;
 // ----------------RealDivInfershape-------------------
 class RealDivInfershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "RealDivInfershape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "RealDivInfershape SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "RealDivInfershape TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "RealDivInfershape TearDown" << std::endl; }
 };
 
 TEST_F(RealDivInfershape, real_div_infershape_test_0)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "RealDiv",
-        {
-            {{{2, 2, 1}, {2, 2, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{2, 2, 3}, {2, 2, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("RealDiv",
+                                                      {
+                                                          {{{2, 2, 1}, {2, 2, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{2, 2, 3}, {2, 2, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {2, 2, 3},
     };

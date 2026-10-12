@@ -46,15 +46,13 @@ REG_OP(Mul)
     .INPUT(x1, "T1")
     .INPUT(x2, "T2")
     .OUTPUT(y, "T3")
-    .DATATYPE(T1, TensorType({DT_BOOL, DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_UINT8, DT_INT8,
-                              DT_UINT16, DT_INT16, DT_INT32, DT_INT64, DT_BF16,
-                              DT_COMPLEX64, DT_COMPLEX128, DT_COMPLEX32}))
-    .DATATYPE(T2, TensorType({DT_BOOL, DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_UINT8, DT_INT8,
-                              DT_UINT16, DT_INT16, DT_INT32, DT_INT64, DT_BF16,
-                              DT_COMPLEX64, DT_COMPLEX128, DT_COMPLEX32}))
+    .DATATYPE(T1, TensorType({DT_BOOL, DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_UINT8, DT_INT8, DT_UINT16, DT_INT16,
+                              DT_INT32, DT_INT64, DT_BF16, DT_COMPLEX64, DT_COMPLEX128, DT_COMPLEX32}))
+    .DATATYPE(T2, TensorType({DT_BOOL, DT_FLOAT16, DT_FLOAT, DT_DOUBLE, DT_UINT8, DT_INT8, DT_UINT16, DT_INT16,
+                              DT_INT32, DT_INT64, DT_BF16, DT_COMPLEX64, DT_COMPLEX128, DT_COMPLEX32}))
     .DATATYPE(T3, Promote({"T1", "T2"}))
     .OP_END_FACTORY_REG(Mul)
 
-}  // namespace ge
+} // namespace ge
 
-#endif  // MUL_PROTO_H_
+#endif // MUL_PROTO_H_

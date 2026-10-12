@@ -17,24 +17,21 @@
 
 namespace aicpu {
 template <typename T>
-using TensorMap =
-    Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor, Eigen::DenseIndex>,
-                     Eigen::Aligned>;
+using TensorMap = Eigen::TensorMap<Eigen::Tensor<T, 1, Eigen::RowMajor, Eigen::DenseIndex>, Eigen::Aligned>;
 
 class SubCpuKernel : public CpuKernel {
- public:
-  SubCpuKernel() = default;
-  ~SubCpuKernel() = default;
+public:
+    SubCpuKernel() = default;
+    ~SubCpuKernel() = default;
 
-  uint32_t Compute(CpuKernelContext &ctx) override;
+    uint32_t Compute(CpuKernelContext& ctx) override;
 
- private:
-  template <typename T>
-  uint32_t DoCompute(const CpuKernelContext &ctx);
+private:
+    template <typename T>
+    uint32_t DoCompute(const CpuKernelContext& ctx);
 
-  template <typename T, int32_t RANK>
-  uint32_t BroadcastCompute(TensorMap<T> &x, TensorMap<T> &y, TensorMap<T> &out,
-                            const Bcast &bcast);
+    template <typename T, int32_t RANK>
+    uint32_t BroadcastCompute(TensorMap<T>& x, TensorMap<T>& y, TensorMap<T>& out, const Bcast& bcast);
 };
-}  // namespace aicpu
+} // namespace aicpu
 #endif

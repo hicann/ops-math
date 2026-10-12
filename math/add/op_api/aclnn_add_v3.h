@@ -22,21 +22,20 @@ extern "C" {
  * @brief aclnnAddV3的第一段接口，根据具体的计算流程，计算workspace大小。
  * @domain aclnn_math
  */
-ACLNN_API aclnnStatus aclnnAddV3GetWorkspaceSize(
-    const aclScalar* self, const aclTensor* other, const aclScalar* alpha, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnAddV3GetWorkspaceSize(const aclScalar* self, const aclTensor* other, const aclScalar* alpha,
+                                                 aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor);
 ACLNN_API aclnnStatus aclnnAddV3(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
 
 /**
  * @brief aclnnInplaceAddV3的第一段接口，根据具体的计算流程，计算workspace大小。
  * @domain aclnn_math
  */
-ACLNN_API aclnnStatus aclnnInplaceAddV3GetWorkspaceSize(
-    const aclScalar* selfRef, const aclTensor* other, const aclScalar* alpha, uint64_t* workspaceSize,
-    aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnInplaceAddV3GetWorkspaceSize(const aclScalar* selfRef, const aclTensor* other,
+                                                        const aclScalar* alpha, uint64_t* workspaceSize,
+                                                        aclOpExecutor** executor);
 
-ACLNN_API aclnnStatus
-aclnnInplaceAddV3(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
+ACLNN_API aclnnStatus aclnnInplaceAddV3(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                        aclrtStream stream);
 
 #ifdef __cplusplus
 }

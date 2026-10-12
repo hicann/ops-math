@@ -16,16 +16,19 @@ class Sub : public OpDef {
 public:
     explicit Sub(const char* name) : OpDef(name)
     {
-        this->Input("x1").DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_DOUBLE, ge::DT_UINT8, ge::DT_INT8, ge::DT_UINT16,
-                                    ge::DT_INT16, ge::DT_INT32, ge::DT_INT64, ge::DT_COMPLEX64, ge::DT_COMPLEX128});
-        this->Input("x2").DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_DOUBLE, ge::DT_UINT8, ge::DT_INT8, ge::DT_UINT16,
-                                    ge::DT_INT16, ge::DT_INT32, ge::DT_INT64, ge::DT_COMPLEX64, ge::DT_COMPLEX128});
-        this->Output("y").DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_DOUBLE, ge::DT_UINT8, ge::DT_INT8, ge::DT_UINT16,
-                                    ge::DT_INT16, ge::DT_INT32, ge::DT_INT64, ge::DT_COMPLEX64, ge::DT_COMPLEX128});
+        this->Input("x1").DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_DOUBLE, ge::DT_UINT8, ge::DT_INT8,
+                                    ge::DT_UINT16, ge::DT_INT16, ge::DT_INT32, ge::DT_INT64, ge::DT_COMPLEX64,
+                                    ge::DT_COMPLEX128});
+        this->Input("x2").DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_DOUBLE, ge::DT_UINT8, ge::DT_INT8,
+                                    ge::DT_UINT16, ge::DT_INT16, ge::DT_INT32, ge::DT_INT64, ge::DT_COMPLEX64,
+                                    ge::DT_COMPLEX128});
+        this->Output("y").DataType({ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_DOUBLE, ge::DT_UINT8, ge::DT_INT8,
+                                    ge::DT_UINT16, ge::DT_INT16, ge::DT_INT32, ge::DT_INT64, ge::DT_COMPLEX64,
+                                    ge::DT_COMPLEX128});
 
         ApplyMathAicpuDefaultCfg(*this);
     }
 };
 
 OP_ADD(Sub);
-}  // namespace ops
+} // namespace ops

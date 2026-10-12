@@ -15,23 +15,22 @@
 
 namespace aicpu {
 class PowCpuKernel : public CpuKernel {
- public:
-  PowCpuKernel() = default;
-  uint32_t Compute(CpuKernelContext &ctx) override;
+public:
+    PowCpuKernel() = default;
+    uint32_t Compute(CpuKernelContext& ctx) override;
 
-  template <typename TIn1, typename TIn2, typename TOut>
-  static uint32_t PowCompute(CpuKernelContext &ctx);
+    template <typename TIn1, typename TIn2, typename TOut>
+    static uint32_t PowCompute(CpuKernelContext& ctx);
 
- private:
-  template <typename TIn1, typename TIn2, typename TOut>
-  static void SpecialCompute(BcastShapeType type, int64_t start, int64_t end,
-                             CpuKernelContext &ctx);
+private:
+    template <typename TIn1, typename TIn2, typename TOut>
+    static void SpecialCompute(BcastShapeType type, int64_t start, int64_t end, CpuKernelContext& ctx);
 
-  template <typename TIn1, typename TIn2, typename TOut>
-  static uint32_t NoBcastCompute(CpuKernelContext &ctx);
+    template <typename TIn1, typename TIn2, typename TOut>
+    static uint32_t NoBcastCompute(CpuKernelContext& ctx);
 
-  template <typename TIn1, typename TIn2, typename TOut>
-  static uint32_t BcastCompute(CpuKernelContext &ctx, Bcast &bcast);
+    template <typename TIn1, typename TIn2, typename TOut>
+    static uint32_t BcastCompute(CpuKernelContext& ctx, Bcast& bcast);
 };
-}  // namespace aicpu
+} // namespace aicpu
 #endif

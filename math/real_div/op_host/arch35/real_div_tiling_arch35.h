@@ -19,16 +19,14 @@
 #include "register/op_impl_registry.h"
 #include "op_host/tiling_base_class.h"
 
-namespace optiling
-{
+namespace optiling {
 
 struct RealDivCompileInfo {
     uint64_t coreNum;
     uint64_t ubSize;
 };
 
-class RealDivTiling : public Ops::Base::TilingBaseClass
-{
+class RealDivTiling : public Ops::Base::TilingBaseClass {
 public:
     explicit RealDivTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
@@ -46,6 +44,6 @@ private:
     uint64_t tilingKey = 0;
 };
 
-}  // namespace optiling
+} // namespace optiling
 
-#endif  // OPS_OP_TILING_RUNTIME_REAL_DIV_TILING_H
+#endif // OPS_OP_TILING_RUNTIME_REAL_DIV_TILING_H

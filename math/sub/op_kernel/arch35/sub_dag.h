@@ -21,56 +21,56 @@
 #include "atvoss/util/placeholder.h"
 
 namespace SubOp {
-    using namespace AscendC;
-    using namespace Ops::Base;
-    constexpr int CAST_NONE_MODE = 0;
-    constexpr int CAST_RINT_MODE = 1;
+using namespace AscendC;
+using namespace Ops::Base;
+constexpr int CAST_NONE_MODE = 0;
+constexpr int CAST_RINT_MODE = 1;
 
-    template <typename T>
-    struct SubWithoutCastCompute {
-        using OpInputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
-        using OpInputX2 = Bind<Vec::CopyInBrc<T>, Placeholder::In1<T>>;
+template <typename T>
+struct SubWithoutCastCompute {
+    using OpInputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
+    using OpInputX2 = Bind<Vec::CopyInBrc<T>, Placeholder::In1<T>>;
 
-        using OpSubRes = Bind<Vec::Sub<T>, OpInputX1, OpInputX2>;
+    using OpSubRes = Bind<Vec::Sub<T>, OpInputX1, OpInputX2>;
 
-        using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpSubRes>;
+    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpSubRes>;
 
-        using Outputs = Elems<OpCopyOut>;
-        using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
-        using OpDag = DAGSch<Outputs, void, MemCfg>;
-    };
+    using Outputs = Elems<OpCopyOut>;
+    using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
+    using OpDag = DAGSch<Outputs, void, MemCfg>;
+};
 
-    template <typename T>
-    struct SubWithCastCompute {
-        using OpInputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
-        using OpInputX2 = Bind<Vec::CopyInBrc<T>, Placeholder::In1<T>>;
+template <typename T>
+struct SubWithCastCompute {
+    using OpInputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
+    using OpInputX2 = Bind<Vec::CopyInBrc<T>, Placeholder::In1<T>>;
 
-        using OpCastX1 = Bind<Vec::Cast<float, T, CAST_NONE_MODE>, OpInputX1>;
-        using OpCastX2 = Bind<Vec::Cast<float, T, CAST_NONE_MODE>, OpInputX2>;
-        using OpSubRes = Bind<Vec::Sub<float>, OpCastX1, OpCastX2>;
-        using OpCastRes = Bind<Vec::Cast<T, float, CAST_RINT_MODE>, OpSubRes>;
+    using OpCastX1 = Bind<Vec::Cast<float, T, CAST_NONE_MODE>, OpInputX1>;
+    using OpCastX2 = Bind<Vec::Cast<float, T, CAST_NONE_MODE>, OpInputX2>;
+    using OpSubRes = Bind<Vec::Sub<float>, OpCastX1, OpCastX2>;
+    using OpCastRes = Bind<Vec::Cast<T, float, CAST_RINT_MODE>, OpSubRes>;
 
-        using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpCastRes>;
+    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpCastRes>;
 
-        using Outputs = Elems<OpCopyOut>;
-        using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
-        using OpDag = DAGSch<Outputs, void, MemCfg>;
-    };
+    using Outputs = Elems<OpCopyOut>;
+    using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
+    using OpDag = DAGSch<Outputs, void, MemCfg>;
+};
 
-    template <typename T>
-    struct SubBoolCompute {
-        using OpInputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
-        using OpInputX2 = Bind<Vec::CopyInBrc<T>, Placeholder::In1<T>>;
+template <typename T>
+struct SubBoolCompute {
+    using OpInputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
+    using OpInputX2 = Bind<Vec::CopyInBrc<T>, Placeholder::In1<T>>;
 
-        using OpSubRes = Bind<Vec::Sub<T>, OpInputX1, OpInputX2>;
-        using OpAbsRes = Bind<Vec::Abs<T>, OpSubRes>;
+    using OpSubRes = Bind<Vec::Sub<T>, OpInputX1, OpInputX2>;
+    using OpAbsRes = Bind<Vec::Abs<T>, OpSubRes>;
 
-        using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpAbsRes>;
+    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, OpAbsRes>;
 
-        using Outputs = Elems<OpCopyOut>;
-        using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
-        using OpDag = DAGSch<Outputs, void, MemCfg>;
-    };
-}
+    using Outputs = Elems<OpCopyOut>;
+    using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
+    using OpDag = DAGSch<Outputs, void, MemCfg>;
+};
+} // namespace SubOp
 
 #endif // SUB_DAG_H

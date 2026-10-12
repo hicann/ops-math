@@ -11,21 +11,18 @@
 # ----------------------------------------------------------------------------
 import numpy
 
-__golden__ = {
-  	"kernel": {
-  	    "real_div": "real_div_golden"
-  	}
-}
+__golden__ = {"kernel": {"real_div": "real_div_golden"}}
+
 
 def real_div_golden(x1, x2, **kwargs):
-    '''
+    """
     Kernel golden for real_div.
     All the parameters follow @real_div_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
-	    input_formats, output_formats, input_ori_formats, output_ori_formats,
-	    input_dtypes, output_dtypes.
-    '''
+            input_formats, output_formats, input_ori_formats, output_ori_formats,
+            input_dtypes, output_dtypes.
+    """
     ori_dtype = x1.dtype
     if "bfloat16" in str(ori_dtype):
         x1, x2 = x1.astype("float32"), x2.astype("float32")
@@ -34,5 +31,6 @@ def real_div_golden(x1, x2, **kwargs):
     output_dtype = kwargs.get("output_dtypes", [res.dtype])[0]
     if "bfloat16" in str(output_dtype):
         from ml_dtypes import bfloat16
+
         return res.astype(bfloat16, copy=False)
     return res.astype(output_dtype, copy=False)

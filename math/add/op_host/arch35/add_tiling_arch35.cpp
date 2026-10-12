@@ -24,15 +24,9 @@ namespace optiling {
 
 constexpr static uint64_t ADD_COMMON_TILING_PRIORITY = 0;
 
-ge::graphStatus AddTiling::GetShapeAttrsInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus AddTiling::GetShapeAttrsInfo() { return ge::GRAPH_SUCCESS; }
 
-bool AddTiling::IsCapable()
-{
-    return true;
-}
+bool AddTiling::IsCapable() { return true; }
 
 bool AddTiling::IsMixedDtype(const ge::DataType& input0Dtype, const ge::DataType& input1Dtype) const
 {
@@ -42,25 +36,25 @@ bool AddTiling::IsMixedDtype(const ge::DataType& input0Dtype, const ge::DataType
            (input0Dtype == ge::DT_FLOAT && input1Dtype == ge::DT_BF16);
 }
 
-bool AddTiling::CheckDtype(
-    const ge::DataType& input0Dtype, const ge::DataType& input1Dtype, const ge::DataType& outputDtype,
-    bool isMixedDtype) const
+bool AddTiling::CheckDtype(const ge::DataType& input0Dtype, const ge::DataType& input1Dtype,
+                           const ge::DataType& outputDtype, bool isMixedDtype) const
 {
     if (!isMixedDtype && (input0Dtype != input1Dtype || input0Dtype != outputDtype)) {
-        std::string reasonMsg = "The dtype of x1 must be the same as the dtypes " +
-                                ge::TypeUtils::DataTypeToSerialString(input1Dtype) + " and " +
-                                ge::TypeUtils::DataTypeToSerialString(outputDtype) + " of x2 and y"
-                                ", when the dtypes of x1 and x2 are not within the supported floating-point type combinations: "
-                                "x1 is float and x2 is float16 or bfloat16, or x2 is float and x2 is float16 or bfloat16";
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-            context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
-            reasonMsg.c_str());
+        std::string
+            reasonMsg = "The dtype of x1 must be the same as the dtypes " +
+                        ge::TypeUtils::DataTypeToSerialString(input1Dtype) + " and " +
+                        ge::TypeUtils::DataTypeToSerialString(outputDtype) +
+                        " of x2 and y"
+                        ", when the dtypes of x1 and x2 are not within the supported floating-point type combinations: "
+                        "x1 is float and x2 is float16 or bfloat16, or x2 is float and x2 is float16 or bfloat16";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "x1",
+                                              ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
+                                              reasonMsg.c_str());
         return false;
     }
     if (isMixedDtype && outputDtype != ge::DT_FLOAT) {
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-            context_->GetNodeName(), "y",
-            ge::TypeUtils::DataTypeToSerialString(outputDtype).c_str(),
+            context_->GetNodeName(), "y", ge::TypeUtils::DataTypeToSerialString(outputDtype).c_str(),
             "The dtype of output y must be float, when the dtype of x1 or x2 is float "
             "and the dtype of another input x2 or x1 is float16 or bfloat16");
         return false;
@@ -121,39 +115,24 @@ ge::graphStatus AddTiling::DoOpTiling()
         ret = brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(
-            context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
-            "fp16, bf16, fp32, int64, int32, uint8, int8, bool, complex32, complex64");
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1",
+                                  ge::TypeUtils::DataTypeToSerialString(input0Dtype).c_str(),
+                                  "fp16, bf16, fp32, int64, int32, uint8, int8, bool, complex32, complex64");
         return ge::GRAPH_FAILED;
     }
 
     return ret;
 }
 
-ge::graphStatus AddTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus AddTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t AddTiling::GetTilingKey() const
-{
-    return tilingKey;
-}
+uint64_t AddTiling::GetTilingKey() const { return tilingKey; }
 
-ge::graphStatus AddTiling::GetWorkspaceSize()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus AddTiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus AddTiling::PostTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus AddTiling::PostTiling() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus AddTiling::GetPlatformInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus AddTiling::GetPlatformInfo() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus TilingForAdd(gert::TilingContext* context)
 {

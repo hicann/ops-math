@@ -23,15 +23,9 @@ using namespace std;
 
 class l2_inplace_add_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "inplace_add_test SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "inplace_add_test SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "inplace_add_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "inplace_add_test TearDown" << std::endl; }
 };
 
 TEST_F(l2_inplace_add_test, case_1)
@@ -51,8 +45,8 @@ TEST_F(l2_inplace_add_test, case_nullptr)
 {
     auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_FLOAT, ACL_FORMAT_NCHW);
 
-    auto ut =
-        OP_API_UT(aclnnInplaceAdd, INPUT((aclTensor*)nullptr, (aclTensor*)nullptr, (aclScalar*)nullptr), OUTPUT());
+    auto ut = OP_API_UT(aclnnInplaceAdd, INPUT((aclTensor*)nullptr, (aclTensor*)nullptr, (aclScalar*)nullptr),
+                        OUTPUT());
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -149,10 +143,10 @@ TEST_F(l2_inplace_add_test, case_007)
 // BOOL场景
 TEST_F(l2_inplace_add_test, case_008)
 {
-    auto self_tensor_desc =
-        TensorDesc({1, 2, 3}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{true, false, false, false, true, false});
-    auto other_tensor_desc =
-        TensorDesc({1, 2, 3}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{true, false, true, false, false, false});
+    auto self_tensor_desc = TensorDesc({1, 2, 3}, ACL_BOOL, ACL_FORMAT_ND)
+                                .Value(vector<bool>{true, false, false, false, true, false});
+    auto other_tensor_desc = TensorDesc({1, 2, 3}, ACL_BOOL, ACL_FORMAT_ND)
+                                 .Value(vector<bool>{true, false, true, false, false, false});
     auto scalar_desc = ScalarDesc(static_cast<int64_t>(2));
 
     auto ut = OP_API_UT(aclnnInplaceAdd, INPUT(self_tensor_desc, other_tensor_desc, scalar_desc), OUTPUT());
@@ -332,8 +326,8 @@ TEST_F(l2_inplace_add_test, case_022)
 // aclnnInplaceAdds
 TEST_F(l2_inplace_add_test, case_029)
 {
-    auto self_tensor_desc =
-        TensorDesc({1, 2, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<bool>{true, false, false, false, true, false});
+    auto self_tensor_desc = TensorDesc({1, 2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                                .Value(vector<bool>{true, false, false, false, true, false});
     auto other_desc = ScalarDesc(static_cast<int64_t>(2));
     auto scalar_desc = ScalarDesc(static_cast<int64_t>(2));
 
@@ -385,8 +379,8 @@ TEST_F(l2_inplace_add_test, case_031)
 // aclnnInplaceAdds BOOL场景
 TEST_F(l2_inplace_add_test, case_032)
 {
-    auto self_tensor_desc =
-        TensorDesc({1, 2, 3}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{true, false, false, false, true, false});
+    auto self_tensor_desc = TensorDesc({1, 2, 3}, ACL_BOOL, ACL_FORMAT_ND)
+                                .Value(vector<bool>{true, false, false, false, true, false});
     auto other_desc = ScalarDesc(false);
     auto scalar_desc = ScalarDesc(static_cast<int64_t>(2));
 

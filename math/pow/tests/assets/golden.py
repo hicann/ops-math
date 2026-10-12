@@ -11,21 +11,18 @@
 # ----------------------------------------------------------------------------
 import numpy
 
-__golden__ = {
-  	"kernel": {
-  	    "pow": "pow_golden"
-  	}
-}
+__golden__ = {"kernel": {"pow": "pow_golden"}}
+
 
 def pow_golden(x1, x2, **kwargs):
-    '''
+    """
     Kernel golden for pow.
     All the parameters follow @pow_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
-	    input_formats, output_formats, input_ori_formats, output_ori_formats,
-	    input_dtypes, output_dtypes.
-    '''
+            input_formats, output_formats, input_ori_formats, output_ori_formats,
+            input_dtypes, output_dtypes.
+    """
     import torch
 
     dtype = x1.dtype

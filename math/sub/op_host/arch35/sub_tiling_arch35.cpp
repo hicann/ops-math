@@ -29,15 +29,9 @@ namespace optiling {
 
 constexpr static uint64_t SUB_COMMON_TILING_PRIORITY = 0;
 
-ge::graphStatus SubTiling::GetShapeAttrsInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus SubTiling::GetShapeAttrsInfo() { return ge::GRAPH_SUCCESS; }
 
-bool SubTiling::IsCapable()
-{
-    return true;
-}
+bool SubTiling::IsCapable() { return true; }
 
 bool SubTiling::CheckDtype(const ge::DataType& input0Dtype, const ge::DataType& input1Dtype,
                            const ge::DataType& outputDtype) const
@@ -46,8 +40,8 @@ bool SubTiling::CheckDtype(const ge::DataType& input0Dtype, const ge::DataType& 
         std::string dtypesStr = ge::TypeUtils::DataTypeToSerialString(input0Dtype) + ", " +
                                 ge::TypeUtils::DataTypeToSerialString(input1Dtype) + " and " +
                                 ge::TypeUtils::DataTypeToSerialString(outputDtype);
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1, x2 and y",
-            dtypesStr.c_str(), "The dtypes of x1, x2 and y must be the same");
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1, x2 and y", dtypesStr.c_str(),
+                                               "The dtypes of x1, x2 and y must be the same");
         return false;
     }
     return true;
@@ -100,37 +94,22 @@ ge::graphStatus SubTiling::DoOpTiling()
     } else {
         std::string dtypeStr = ge::TypeUtils::DataTypeToSerialString(input0Dtype);
         OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1", dtypeStr.c_str(),
-            "fp16, bf16, fp32, int64, int32, uint8, int8, bool, complex32 or complex64");
+                                  "fp16, bf16, fp32, int64, int32, uint8, int8, bool, complex32 or complex64");
         return ge::GRAPH_FAILED;
     }
 
     return ret;
 }
 
-ge::graphStatus SubTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus SubTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t SubTiling::GetTilingKey() const
-{
-    return tilingKey;
-}
+uint64_t SubTiling::GetTilingKey() const { return tilingKey; }
 
-ge::graphStatus SubTiling::GetWorkspaceSize()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus SubTiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus SubTiling::PostTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus SubTiling::PostTiling() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus SubTiling::GetPlatformInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus SubTiling::GetPlatformInfo() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus TilingForSub(gert::TilingContext* context)
 {
@@ -147,11 +126,11 @@ ge::graphStatus TilingForSub(gert::TilingContext* context)
     return Ops::Math::OpTiling::TilingRegistry::GetInstance().DoTilingImpl(context);
 }
 
-ge::graphStatus TilingPrepareForSub(gert::TilingParseContext *context)
+ge::graphStatus TilingPrepareForSub(gert::TilingParseContext* context)
 {
     auto compileInfoPtr = context->GetCompiledInfo<SubCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfoPtr);
-    fe::PlatFormInfos *platformInfoPtr = context->GetPlatformInfo();
+    fe::PlatFormInfos* platformInfoPtr = context->GetPlatformInfo();
     OP_CHECK_NULL_WITH_CONTEXT(context, platformInfoPtr);
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfoPtr);
     compileInfoPtr->coreNum = ascendcPlatform.GetCoreNumAiv();
@@ -159,9 +138,7 @@ ge::graphStatus TilingPrepareForSub(gert::TilingParseContext *context)
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_OPTILING(Sub)
-    .Tiling(TilingForSub)
-    .TilingParse<SubCompileInfo>(TilingPrepareForSub);
+IMPL_OP_OPTILING(Sub).Tiling(TilingForSub).TilingParse<SubCompileInfo>(TilingPrepareForSub);
 
 REGISTER_OPS_TILING_TEMPLATE(Sub, SubTiling, SUB_COMMON_TILING_PRIORITY);
-}   // namespace optiling
+} // namespace optiling

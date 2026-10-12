@@ -62,4 +62,4 @@ ACLNN_API aclnnStatus aclnnInplacePowTensorTensor(void* workspace, uint64_t work
 }
 #endif
 
-#endif  // OP_API_INC_LEVEL2_ACLNN_POW_TENSOR_TENSOR_H_
+#endif // OP_API_INC_LEVEL2_ACLNN_POW_TENSOR_TENSOR_H_

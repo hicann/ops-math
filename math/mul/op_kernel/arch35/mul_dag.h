@@ -71,9 +71,8 @@ struct CastComplex32ToComplex64 : public Vec::ElemwiseUnaryOP<T1, T2> {
     __aicore__ inline CastComplex32ToComplex64(LocalTensor<T1>& dst, LocalTensor<T2>& src, uint32_t count)
     {
 #ifdef __CCE_AICORE__
-        AscendC::Cast(
-            dst.template ReinterpretCast<float>(), src.template ReinterpretCast<half>(), RoundMode::CAST_NONE,
-            count * COUNT_DOUBLE);
+        AscendC::Cast(dst.template ReinterpretCast<float>(), src.template ReinterpretCast<half>(), RoundMode::CAST_NONE,
+                      count * COUNT_DOUBLE);
 #endif
     }
 };
@@ -82,9 +81,8 @@ struct CastComplex64ToComplex32 : public Vec::ElemwiseUnaryOP<T1, T2> {
     __aicore__ inline CastComplex64ToComplex32(LocalTensor<T1>& dst, LocalTensor<T2>& src, uint32_t count)
     {
 #ifdef __CCE_AICORE__
-        AscendC::Cast(
-            dst.template ReinterpretCast<half>(), src.template ReinterpretCast<float>(), RoundMode::CAST_RINT,
-            count * COUNT_DOUBLE);
+        AscendC::Cast(dst.template ReinterpretCast<half>(), src.template ReinterpretCast<float>(), RoundMode::CAST_RINT,
+                      count * COUNT_DOUBLE);
 #endif
     }
 };
@@ -102,8 +100,8 @@ struct AndFF : public Vec::ElemwiseUnaryOP<T, T> {
 
 #ifdef __CCE_AICORE__
 template <typename T>
-__simt_vf__ __aicore__
-    LAUNCH_BOUND(1024) inline void MulDouble_vf(__ubuf__ T* dst, __ubuf__ T* src1, __ubuf__ T* src2, int count)
+__simt_vf__ __aicore__ LAUNCH_BOUND(1024) inline void MulDouble_vf(__ubuf__ T* dst, __ubuf__ T* src1, __ubuf__ T* src2,
+                                                                   int count)
 {
     for (uint32_t index = static_cast<uint32_t>(threadIdx.x); index < count;
          index += static_cast<uint32_t>(blockDim.x)) {
@@ -187,7 +185,7 @@ __simt_vf__ __aicore__
 
         res[1].i[0] = res[0].i[1];
         res[1].i[1] = 0;
-         // 利用FMA指令处理进位（参考ISA的IMAD指令）
+        // 利用FMA指令处理进位（参考ISA的IMAD指令）
         res[1].il += (unsigned long long)ma_low * (unsigned long long)mb_high;
         // 即采用了 unsigned int * unsigned int + unsigned long long -> 的指令
         res[1].il += (unsigned long long)ma_high * (unsigned long long)mb_low;

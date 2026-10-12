@@ -19,14 +19,10 @@ using namespace std;
 using namespace ge;
 
 class MulTiling : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "MulTiling SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() { std::cout << "MulTiling SetUp" << std::endl; }
 
-  static void TearDownTestCase() {
-    std::cout << "MulTiling TearDown" << std::endl;
-  }
+    static void TearDownTestCase() { std::cout << "MulTiling TearDown" << std::endl; }
 };
 
 TEST_F(MulTiling, mul_test_tiling_001)
@@ -35,11 +31,12 @@ TEST_F(MulTiling, mul_test_tiling_001)
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 253952;
 
-    gert::TilingContextPara tilingContextPara("Mul",
-        {{{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-         {{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND}},
-        {{{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},},
-         &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "Mul", {{{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND}, {{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND}},
+        {
+            {{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "64 4294967552 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -52,11 +49,12 @@ TEST_F(MulTiling, mul_test_tiling_002)
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 253952;
 
-    gert::TilingContextPara tilingContextPara("Mul",
-        {{{{8, 8}, {8, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
-         {{{8, 8}, {8, 8}}, ge::DT_FLOAT, ge::FORMAT_ND}},
-        {{{{8, 8}, {8, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},},
-         &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "Mul", {{{{8, 8}, {8, 8}}, ge::DT_FLOAT, ge::FORMAT_ND}, {{{8, 8}, {8, 8}}, ge::DT_FLOAT, ge::FORMAT_ND}},
+        {
+            {{{8, 8}, {8, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "64 4294967424 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -69,11 +67,12 @@ TEST_F(MulTiling, mul_test_tiling_003)
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 253952;
 
-    gert::TilingContextPara tilingContextPara("Mul",
-        {{{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-         {{{8, 8}, {8, 8}}, ge::DT_FLOAT, ge::FORMAT_ND}},
-        {{{{8, 8}, {8, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},},
-         &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "Mul", {{{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND}, {{{8, 8}, {8, 8}}, ge::DT_FLOAT, ge::FORMAT_ND}},
+        {
+            {{{8, 8}, {8, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+        },
+        &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "64 4294967552 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -86,11 +85,12 @@ TEST_F(MulTiling, mul_test_tiling_004)
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 253952;
 
-    gert::TilingContextPara tilingContextPara("Mul",
-        {{{{8, 8}, {8, 8}}, ge::DT_INT8, ge::FORMAT_ND},
-         {{{8, 8}, {8, 8}}, ge::DT_INT8, ge::FORMAT_ND}},
-        {{{{8, 8}, {8, 8}}, ge::DT_INT8, ge::FORMAT_ND},},
-         &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "Mul", {{{{8, 8}, {8, 8}}, ge::DT_INT8, ge::FORMAT_ND}, {{{8, 8}, {8, 8}}, ge::DT_INT8, ge::FORMAT_ND}},
+        {
+            {{{8, 8}, {8, 8}}, ge::DT_INT8, ge::FORMAT_ND},
+        },
+        &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "64 4294967808 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -103,11 +103,12 @@ TEST_F(MulTiling, mul_test_tiling_005)
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 253952;
 
-    gert::TilingContextPara tilingContextPara("Mul",
-        {{{{8, 8}, {8, 8}}, ge::DT_INT16, ge::FORMAT_ND},
-         {{{8, 8}, {8, 8}}, ge::DT_INT16, ge::FORMAT_ND}},
-        {{{{8, 8}, {8, 8}}, ge::DT_INT16, ge::FORMAT_ND},},
-         &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "Mul", {{{{8, 8}, {8, 8}}, ge::DT_INT16, ge::FORMAT_ND}, {{{8, 8}, {8, 8}}, ge::DT_INT16, ge::FORMAT_ND}},
+        {
+            {{{8, 8}, {8, 8}}, ge::DT_INT16, ge::FORMAT_ND},
+        },
+        &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "64 4294967552 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -120,11 +121,12 @@ TEST_F(MulTiling, mul_test_tiling_006)
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 253952;
 
-    gert::TilingContextPara tilingContextPara("Mul",
-        {{{{8, 8}, {8, 8}}, ge::DT_INT32, ge::FORMAT_ND},
-         {{{8, 8}, {8, 8}}, ge::DT_INT32, ge::FORMAT_ND}},
-        {{{{8, 8}, {8, 8}}, ge::DT_INT32, ge::FORMAT_ND},},
-         &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "Mul", {{{{8, 8}, {8, 8}}, ge::DT_INT32, ge::FORMAT_ND}, {{{8, 8}, {8, 8}}, ge::DT_INT32, ge::FORMAT_ND}},
+        {
+            {{{8, 8}, {8, 8}}, ge::DT_INT32, ge::FORMAT_ND},
+        },
+        &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "64 4294967424 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -137,11 +139,12 @@ TEST_F(MulTiling, mul_test_tiling_007)
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 253952;
 
-    gert::TilingContextPara tilingContextPara("Mul",
-        {{{{8, 8}, {8, 8}}, ge::DT_BF16, ge::FORMAT_ND},
-         {{{8, 8}, {8, 8}}, ge::DT_BF16, ge::FORMAT_ND}},
-        {{{{8, 8}, {8, 8}}, ge::DT_BF16, ge::FORMAT_ND},},
-         &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "Mul", {{{{8, 8}, {8, 8}}, ge::DT_BF16, ge::FORMAT_ND}, {{{8, 8}, {8, 8}}, ge::DT_BF16, ge::FORMAT_ND}},
+        {
+            {{{8, 8}, {8, 8}}, ge::DT_BF16, ge::FORMAT_ND},
+        },
+        &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "64 4294967552 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -154,11 +157,12 @@ TEST_F(MulTiling, mul_test_tiling_008)
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 253952;
 
-    gert::TilingContextPara tilingContextPara("Mul",
-        {{{{8, 8}, {8, 8}}, ge::DT_UINT8, ge::FORMAT_ND},
-         {{{8, 8}, {8, 8}}, ge::DT_UINT8, ge::FORMAT_ND}},
-        {{{{8, 8}, {8, 8}}, ge::DT_UINT8, ge::FORMAT_ND},},
-         &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "Mul", {{{{8, 8}, {8, 8}}, ge::DT_UINT8, ge::FORMAT_ND}, {{{8, 8}, {8, 8}}, ge::DT_UINT8, ge::FORMAT_ND}},
+        {
+            {{{8, 8}, {8, 8}}, ge::DT_UINT8, ge::FORMAT_ND},
+        },
+        &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "64 4294967808 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -171,11 +175,12 @@ TEST_F(MulTiling, mul_test_tiling_009)
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 253952;
 
-    gert::TilingContextPara tilingContextPara("Mul",
-        {{{{8, 8}, {8, 8}}, ge::DT_INT64, ge::FORMAT_ND},
-         {{{8, 8}, {8, 8}}, ge::DT_INT64, ge::FORMAT_ND}},
-        {{{{8, 8}, {8, 8}}, ge::DT_INT64, ge::FORMAT_ND},},
-         &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "Mul", {{{{8, 8}, {8, 8}}, ge::DT_INT64, ge::FORMAT_ND}, {{{8, 8}, {8, 8}}, ge::DT_INT64, ge::FORMAT_ND}},
+        {
+            {{{8, 8}, {8, 8}}, ge::DT_INT64, ge::FORMAT_ND},
+        },
+        &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "64 4294967360 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -188,11 +193,12 @@ TEST_F(MulTiling, mul_test_tiling_010)
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 253952;
 
-    gert::TilingContextPara tilingContextPara("Mul",
-        {{{{8, 8}, {8, 8}}, ge::DT_DOUBLE, ge::FORMAT_ND},
-         {{{8, 8}, {8, 8}}, ge::DT_DOUBLE, ge::FORMAT_ND}},
-        {{{{8, 8}, {8, 8}}, ge::DT_DOUBLE, ge::FORMAT_ND},},
-         &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "Mul", {{{{8, 8}, {8, 8}}, ge::DT_DOUBLE, ge::FORMAT_ND}, {{{8, 8}, {8, 8}}, ge::DT_DOUBLE, ge::FORMAT_ND}},
+        {
+            {{{8, 8}, {8, 8}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+        },
+        &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "64 4294967360 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -205,11 +211,13 @@ TEST_F(MulTiling, mul_test_tiling_011)
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 253952;
 
-    gert::TilingContextPara tilingContextPara("Mul",
-        {{{{8, 8}, {8, 8}}, ge::DT_COMPLEX32, ge::FORMAT_ND},
-         {{{8, 8}, {8, 8}}, ge::DT_COMPLEX32, ge::FORMAT_ND}},
-        {{{{8, 8}, {8, 8}}, ge::DT_COMPLEX32, ge::FORMAT_ND},},
-         &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "Mul",
+        {{{{8, 8}, {8, 8}}, ge::DT_COMPLEX32, ge::FORMAT_ND}, {{{8, 8}, {8, 8}}, ge::DT_COMPLEX32, ge::FORMAT_ND}},
+        {
+            {{{8, 8}, {8, 8}}, ge::DT_COMPLEX32, ge::FORMAT_ND},
+        },
+        &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "64 4294967424 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -222,11 +230,13 @@ TEST_F(MulTiling, mul_test_tiling_012)
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 253952;
 
-    gert::TilingContextPara tilingContextPara("Mul",
-        {{{{8, 8}, {8, 8}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
-         {{{8, 8}, {8, 8}}, ge::DT_COMPLEX64, ge::FORMAT_ND}},
-        {{{{8, 8}, {8, 8}}, ge::DT_COMPLEX64, ge::FORMAT_ND},},
-         &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "Mul",
+        {{{{8, 8}, {8, 8}}, ge::DT_COMPLEX64, ge::FORMAT_ND}, {{{8, 8}, {8, 8}}, ge::DT_COMPLEX64, ge::FORMAT_ND}},
+        {
+            {{{8, 8}, {8, 8}}, ge::DT_COMPLEX64, ge::FORMAT_ND},
+        },
+        &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "64 4294967360 ";
     std::vector<size_t> expectWorkspaces = {16777216};

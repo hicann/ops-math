@@ -22,15 +22,9 @@ using namespace std;
 
 class l2_add_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "add_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "add_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "add_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "add_test TearDown" << endl; }
 };
 
 TEST_F(l2_add_test, case_1)
@@ -44,15 +38,14 @@ TEST_F(l2_add_test, case_1)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 TEST_F(l2_add_test, case_nullptr)
 {
     auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_FLOAT, ACL_FORMAT_NCHW);
 
-    auto ut =
-        OP_API_UT(aclnnAdd, INPUT((aclTensor*)nullptr, (aclTensor*)nullptr, (aclScalar*)nullptr), OUTPUT(tensor_desc));
+    auto ut = OP_API_UT(aclnnAdd, INPUT((aclTensor*)nullptr, (aclTensor*)nullptr, (aclScalar*)nullptr),
+                        OUTPUT(tensor_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -74,7 +67,6 @@ TEST_F(l2_add_test, case_001)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 TEST_F(l2_add_test, Ascend910B2_case_002)
@@ -90,7 +82,6 @@ TEST_F(l2_add_test, Ascend910B2_case_002)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 TEST_F(l2_add_test, case_003)
@@ -106,7 +97,6 @@ TEST_F(l2_add_test, case_003)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 TEST_F(l2_add_test, case_004)
@@ -122,7 +112,6 @@ TEST_F(l2_add_test, case_004)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 TEST_F(l2_add_test, case_006)
@@ -138,7 +127,6 @@ TEST_F(l2_add_test, case_006)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 TEST_F(l2_add_test, case_007)
@@ -154,16 +142,15 @@ TEST_F(l2_add_test, case_007)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 // BOOL场景
 TEST_F(l2_add_test, case_008)
 {
-    auto self_tensor_desc =
-        TensorDesc({1, 2, 3}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{true, false, false, false, true, false});
-    auto other_tensor_desc =
-        TensorDesc({1, 2, 3}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{true, false, true, false, false, false});
+    auto self_tensor_desc = TensorDesc({1, 2, 3}, ACL_BOOL, ACL_FORMAT_ND)
+                                .Value(vector<bool>{true, false, false, false, true, false});
+    auto other_tensor_desc = TensorDesc({1, 2, 3}, ACL_BOOL, ACL_FORMAT_ND)
+                                 .Value(vector<bool>{true, false, true, false, false, false});
     auto out_tensor_desc = TensorDesc(self_tensor_desc).Precision(0.0001, 0.0001);
     auto scalar_desc = ScalarDesc(static_cast<int64_t>(2));
 
@@ -173,7 +160,6 @@ TEST_F(l2_add_test, case_008)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 // COMPLEX暂时不支持
@@ -238,7 +224,6 @@ TEST_F(l2_add_test, case_013)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 TEST_F(l2_add_test, case_014)
@@ -254,7 +239,6 @@ TEST_F(l2_add_test, case_014)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 TEST_F(l2_add_test, case_015)
@@ -303,7 +287,6 @@ TEST_F(l2_add_test, case_017)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 TEST_F(l2_add_test, case_019)
@@ -380,8 +363,9 @@ TEST_F(l2_add_test, case_022)
 
     self_tensor_desc = TensorDesc({10, 5, 5, 10}, ACL_FLOAT, ACL_FORMAT_NHWC).ValueRange(-2, 2);
     other_tensor_desc = TensorDesc({10, 5, 5, 10}, ACL_FLOAT, ACL_FORMAT_NHWC).ValueRange(-2, 2);
-    out_tensor_desc =
-        TensorDesc({10, 5, 10, 5}, ACL_FLOAT, ACL_FORMAT_NHWC).ValueRange(-2, 2).Precision(0.0001, 0.0001);
+    out_tensor_desc = TensorDesc({10, 5, 10, 5}, ACL_FLOAT, ACL_FORMAT_NHWC)
+                          .ValueRange(-2, 2)
+                          .Precision(0.0001, 0.0001);
     scalar_desc = ScalarDesc(5.9f);
 
     auto ut_2 = OP_API_UT(aclnnAdd, INPUT(self_tensor_desc, other_tensor_desc, scalar_desc), OUTPUT(out_tensor_desc));
@@ -435,8 +419,8 @@ TEST_F(l2_add_test, case_027)
 // aclnnAdds
 TEST_F(l2_add_test, case_029)
 {
-    auto self_tensor_desc =
-        TensorDesc({1, 2, 3}, ACL_FLOAT, ACL_FORMAT_ND).Value(vector<bool>{true, false, false, false, true, false});
+    auto self_tensor_desc = TensorDesc({1, 2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                                .Value(vector<bool>{true, false, false, false, true, false});
     auto other_desc = ScalarDesc(static_cast<int64_t>(2));
     auto out_tensor_desc = TensorDesc(self_tensor_desc).Precision(0.0001, 0.0001);
     auto scalar_desc = ScalarDesc(static_cast<int64_t>(2));
@@ -495,8 +479,8 @@ TEST_F(l2_add_test, case_031)
 // aclnnAdds BOOL场景
 TEST_F(l2_add_test, case_032)
 {
-    auto self_tensor_desc =
-        TensorDesc({1, 2, 3}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{true, false, false, false, true, false});
+    auto self_tensor_desc = TensorDesc({1, 2, 3}, ACL_BOOL, ACL_FORMAT_ND)
+                                .Value(vector<bool>{true, false, false, false, true, false});
     auto other_desc = ScalarDesc(false);
     auto out_tensor_desc = TensorDesc(self_tensor_desc).Precision(0.0001, 0.0001);
     auto scalar_desc = ScalarDesc(static_cast<int64_t>(2));
@@ -507,7 +491,6 @@ TEST_F(l2_add_test, case_032)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 // aclnnAdds empty tensor
@@ -524,7 +507,6 @@ TEST_F(l2_add_test, case_033)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 // aclnnAdds mul + add
@@ -541,7 +523,6 @@ TEST_F(l2_add_test, case_034)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 // aclnnAdds mul + add
@@ -558,7 +539,6 @@ TEST_F(l2_add_test, Ascend910B2_case_034)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 // aclnnAdd, fp16+fp32
@@ -596,7 +576,6 @@ TEST_F(l2_add_test, Ascend910B2_case_fp32_fp16_mix_dtype)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
 
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 // aclnnAdd, bf16+fp32
@@ -667,7 +646,6 @@ TEST_F(l2_add_test, Ascend950PR_89_case_005)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 TEST_F(l2_add_test, Ascend950PR_89_case_007)
@@ -683,7 +661,6 @@ TEST_F(l2_add_test, Ascend950PR_89_case_007)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 // aclnnAdds bool + bool

@@ -18,8 +18,7 @@
 #include "kernel_operator.h"
 #include "atvoss/util/broadcast_utils.h"
 
-namespace Pow
-{
+namespace Pow {
 using namespace Ops::Base;
 using AscendC::GlobalTensor;
 using AscendC::LocalTensor;
@@ -28,8 +27,7 @@ using AscendC::TPipe;
 using AscendC::TQue;
 
 // input_x is int16, input_y is int16, output_z is int16, max dims in ub is 5 and nddma does not need loops
-class PowS16NddmaWithoutLoops
-{
+class PowS16NddmaWithoutLoops {
 public:
     __aicore__ inline PowS16NddmaWithoutLoops(){};
     __aicore__ inline void Init(GM_ADDR inputX, GM_ADDR inputY, GM_ADDR outputZ, GM_ADDR workspace,
@@ -49,8 +47,8 @@ public:
 
     __aicore__ inline void Process()
     {
-        int64_t ubLoopNum = AscendC::GetBlockIdx() == AscendC::GetBlockNum() - 1 ? tilingDataPtr_->blockTail
-                                                                                 : tilingDataPtr_->blockFormer;
+        int64_t ubLoopNum = AscendC::GetBlockIdx() == AscendC::GetBlockNum() - 1 ? tilingDataPtr_->blockTail :
+                                                                                   tilingDataPtr_->blockFormer;
         int64_t axesIndices[BROADCAST_MAX_DIMS] = {0};
         BroadcastGetAxesIndices(axesIndices, tilingDataPtr_->blockFormer * AscendC::GetBlockIdx(),
                                 tilingDataPtr_->outputDims, tilingDataPtr_->ubSplitAxis,
@@ -60,9 +58,9 @@ public:
                 BroadcastUpdateAxesIndices(axesIndices, tilingDataPtr_->outputDims, tilingDataPtr_->ubSplitAxis,
                                            tilingDataPtr_->ubOuter);
             }
-            int64_t ubSplitSize = axesIndices[tilingDataPtr_->ubSplitAxis] == tilingDataPtr_->ubOuter - 1
-                                      ? tilingDataPtr_->ubTail
-                                      : tilingDataPtr_->ubFormer;
+            int64_t ubSplitSize = axesIndices[tilingDataPtr_->ubSplitAxis] == tilingDataPtr_->ubOuter - 1 ?
+                                      tilingDataPtr_->ubTail :
+                                      tilingDataPtr_->ubFormer;
             CopyIn0(ubSplitSize, axesIndices, ubLoopIdx);
             CopyIn1(ubSplitSize, axesIndices, ubLoopIdx);
             Compute2(ubSplitSize, axesIndices, ubLoopIdx);
@@ -107,8 +105,8 @@ private:
         bufferIn0_ = queIn0_.DeQue<int16_t>();
         bufferIn1_ = queIn1_.DeQue<int16_t>();
         bufferOut0_ = queOut0_.AllocTensor<int16_t>();
-        Power<int16_t, false, pConfig_>(bufferOut0_, bufferIn0_, bufferIn1_, 
-            ubSplitSize * tilingDataPtr_->outputStrides[tilingDataPtr_->ubSplitAxis]);
+        Power<int16_t, false, pConfig_>(bufferOut0_, bufferIn0_, bufferIn1_,
+                                        ubSplitSize * tilingDataPtr_->outputStrides[tilingDataPtr_->ubSplitAxis]);
         queIn0_.FreeTensor(bufferIn0_);
         queIn1_.FreeTensor(bufferIn1_);
         queOut0_.EnQue<int16_t>(bufferOut0_);
@@ -120,8 +118,8 @@ private:
         bufferOut0_ = queOut0_.DeQue<int16_t>();
         AscendC::DataCopyExtParams dataCopyExtParams;
         dataCopyExtParams.blockCount = 1;
-        dataCopyExtParams.blockLen =
-            ubSplitSize * tilingDataPtr_->outputStrides[tilingDataPtr_->ubSplitAxis] * sizeof(int16_t);
+        dataCopyExtParams.blockLen = ubSplitSize * tilingDataPtr_->outputStrides[tilingDataPtr_->ubSplitAxis] *
+                                     sizeof(int16_t);
         int64_t gmOffset = BroadcastGetGmOffset(axesIndices, tilingDataPtr_->outputStrides, tilingDataPtr_->ubSplitAxis,
                                                 tilingDataPtr_->ubFormer);
         AscendC::DataCopyPad(outputGmOutputZ_[gmOffset], bufferOut0_[0], dataCopyExtParams);
@@ -143,5 +141,5 @@ private:
     constexpr static PowerConfig pConfig_ = {PowerAlgo::INTRINSIC};
 };
 
-}  // namespace Pow
-#endif  // ASCENDC_POW_S16_NDDMA_WITHOUT_LOOPS_H_
+} // namespace Pow
+#endif // ASCENDC_POW_S16_NDDMA_WITHOUT_LOOPS_H_

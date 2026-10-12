@@ -42,8 +42,8 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST =
     DataType::DT_INT32, DataType::DT_INT64,   DataType::DT_UINT8, DataType::DT_BF16};
 
 // 根据API定义，列出需要调用Trunc算子的所有dtype
-static const std::initializer_list<op::DataType> ASCEND910_NEED_TRUNC_SUPPORT_LIST = {
-    DataType::DT_FLOAT16, DataType::DT_FLOAT};
+static const std::initializer_list<op::DataType> ASCEND910_NEED_TRUNC_SUPPORT_LIST = {DataType::DT_FLOAT16,
+                                                                                      DataType::DT_FLOAT};
 
 static const std::initializer_list<op::DataType> ASCEND910B_NEED_TRUNC_SUPPORT_LIST = {
     DataType::DT_FLOAT16, DataType::DT_FLOAT, DataType::DT_BF16};
@@ -63,16 +63,15 @@ static inline bool CheckNotNull(const aclTensor* input, const aclTensor* out)
 // 获取芯片类型，判断芯片是否为Ascend910B
 static bool CheckIsAscend910BSocVersion()
 {
-    return (
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-        GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 ||
-        IsRegBase());
+    return (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+            GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase());
 }
 
 static bool CheckDtypeValid(const aclTensor* input, const aclTensor* out)
 {
-    const std::initializer_list<op::DataType> CURRENT_DTYPE_SUPPORT_LIST =
-        CheckIsAscend910BSocVersion() ? ASCEND910B_DTYPE_SUPPORT_LIST : ASCEND910_DTYPE_SUPPORT_LIST;
+    const std::initializer_list<op::DataType> CURRENT_DTYPE_SUPPORT_LIST = CheckIsAscend910BSocVersion() ?
+                                                                               ASCEND910B_DTYPE_SUPPORT_LIST :
+                                                                               ASCEND910_DTYPE_SUPPORT_LIST;
 
     // 检查输入和输出的数据类型是否一致
     OP_CHECK_DTYPE_NOT_MATCH(out, input->GetDataType(), return false);
@@ -105,8 +104,8 @@ static aclnnStatus CheckParams(const aclTensor* input, const aclTensor* out)
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus ExecFracGetWorkspaceSize(
-    const aclTensor* input, const aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus ExecFracGetWorkspaceSize(const aclTensor* input, const aclTensor* out, uint64_t* workspaceSize,
+                                            aclOpExecutor** executor)
 {
     // 创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -126,8 +125,9 @@ static aclnnStatus ExecFracGetWorkspaceSize(
     auto inputContiguous = l0op::Contiguous(input, uniqueExecutor.get());
     CHECK_RET(inputContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    const std::initializer_list<op::DataType> CURRENT_NEED_TRUNC_SUPPORT_LIST =
-        CheckIsAscend910BSocVersion() ? ASCEND910B_NEED_TRUNC_SUPPORT_LIST : ASCEND910_NEED_TRUNC_SUPPORT_LIST;
+    const std::initializer_list<op::DataType> CURRENT_NEED_TRUNC_SUPPORT_LIST = CheckIsAscend910BSocVersion() ?
+                                                                                    ASCEND910B_NEED_TRUNC_SUPPORT_LIST :
+                                                                                    ASCEND910_NEED_TRUNC_SUPPORT_LIST;
     const aclTensor* fracOutRet = nullptr;
     if (CheckType(input->GetDataType(), CURRENT_NEED_TRUNC_SUPPORT_LIST)) {
         auto inputOtherInteger = l0op::Trunc(inputContiguous, uniqueExecutor.get());
@@ -151,8 +151,8 @@ static aclnnStatus ExecFracGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnFracGetWorkspaceSize(
-    const aclTensor* input, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnFracGetWorkspaceSize(const aclTensor* input, aclTensor* out, uint64_t* workspaceSize,
+                                      aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 

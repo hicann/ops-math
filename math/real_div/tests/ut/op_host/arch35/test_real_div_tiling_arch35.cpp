@@ -25,15 +25,9 @@ using namespace ge;
 
 class RealDivTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "RealDivTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "RealDivTiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "RealDivTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "RealDivTiling TearDown" << std::endl; }
 };
 
 TEST_F(RealDivTiling, real_div_test_bf16)
@@ -41,16 +35,15 @@ TEST_F(RealDivTiling, real_div_test_bf16)
     Ops::Base::BroadcastCompileInfo compileInfo;
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 245760;
-    gert::TilingContextPara tilingContextPara(
-        "RealDiv",
-        {
-            {{{1, 1, 1, 1, 1}, {1, 1, 1, 1, 1}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("RealDiv",
+                                              {
+                                                  {{{1, 1, 1, 1, 1}, {1, 1, 1, 1, 1}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                  {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "2048 281492156580096 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -83,16 +76,15 @@ TEST_F(RealDivTiling, real_div_test_int32)
     Ops::Base::BroadcastCompileInfo compileInfo;
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 245760;
-    gert::TilingContextPara tilingContextPara(
-        "RealDiv",
-        {
-            {{{7, 56, 2, 3, 11}, {7, 56, 2, 3, 11}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{7, 56, 2, 3, 11}, {7, 56, 2, 3, 11}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{7, 56, 2, 3, 11}, {7, 56, 2, 3, 11}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("RealDiv",
+                                              {
+                                                  {{{7, 56, 2, 3, 11}, {7, 56, 2, 3, 11}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{7, 56, 2, 3, 11}, {7, 56, 2, 3, 11}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{7, 56, 2, 3, 11}, {7, 56, 2, 3, 11}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "25872 146028888448 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -104,18 +96,19 @@ TEST_F(RealDivTiling, real_div_test_float32)
     Ops::Base::BroadcastCompileInfo compileInfo;
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 245760;
-    gert::TilingContextPara tilingContextPara(
-        "RealDiv",
-        {
-            {{{1, 1, 789, 1}, {3, 5, 1, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1, 1, 789, 1}, {3, 5, 1, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{3, 5, 789, 5}, {3, 5, 789, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("RealDiv",
+                                              {
+                                                  {{{1, 1, 789, 1}, {3, 5, 1, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1, 1, 789, 1}, {3, 5, 1, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{3, 5, 789, 5}, {3, 5, 789, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
-    string expectTilingData = "12884901888 8589934592 1 8 1 1 8 10880 8 15 789 5 0 0 0 0 0 3945 5 1 0 0 0 0 0 0 0 0 0 15 1 5 0 0 0 0 0 15 1 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 5 0 1 0 0 0 0 0 5 0 1 0 0 0 0 0 0 0 ";
+    string expectTilingData = "12884901888 8589934592 1 8 1 1 8 10880 8 15 789 5 0 0 0 0 0 3945 5 1 0 0 0 0 0 0 0 0 0 "
+                              "15 1 5 0 0 0 0 0 15 1 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 5 0 1 0 0 0 0 0 5 0 1 "
+                              "0 0 0 0 0 0 0 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
@@ -125,16 +118,15 @@ TEST_F(RealDivTiling, real_div_test_bool)
     Ops::Base::BroadcastCompileInfo compileInfo;
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 245760;
-    gert::TilingContextPara tilingContextPara(
-        "RealDiv",
-        {
-            {{{7, 56, 2, 3, 11}, {7, 56, 2, 3, 11}}, ge::DT_BOOL, ge::FORMAT_ND},
-            {{{7, 56, 2, 3, 11}, {7, 56, 2, 3, 11}}, ge::DT_BOOL, ge::FORMAT_ND},
-        },
-        {
-            {{{7, 56, 2, 3, 11}, {7, 56, 2, 3, 11}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("RealDiv",
+                                              {
+                                                  {{{7, 56, 2, 3, 11}, {7, 56, 2, 3, 11}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                                  {{{7, 56, 2, 3, 11}, {7, 56, 2, 3, 11}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{7, 56, 2, 3, 11}, {7, 56, 2, 3, 11}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "25872 111669150208 ";
     std::vector<size_t> expectWorkspaces = {16777216};

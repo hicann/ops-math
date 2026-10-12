@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under terms and conditions of
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to License for details. You may not use this file except in compliance with License.
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in root of the software repository for the full text of the License.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "gtest/gtest.h"
@@ -25,14 +25,8 @@ using namespace aicpu;
 
 class TEST_SUB_UT : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "sub_test SetUp\n" << endl;
-    }
-    static void TearDownTestCase()
-    {
-        cout << "sub_test TearDown\n" << endl;
-    }
+    static void SetUpTestCase() { cout << "sub_test SetUp\n" << endl; }
+    static void TearDownTestCase() { cout << "sub_test TearDown\n" << endl; }
 };
 
 template <typename T>
@@ -77,9 +71,9 @@ void SubCalcExpectWithDiffShape(const NodeDef& node_def, T expect_out[])
 
 #define CREATE_NODEDEF(shapes, data_types, datas)                    \
     auto node_def = CpuKernelUtils::CpuKernelUtils::CreateNodeDef(); \
-    NodeDefBuilder(node_def.get(), "Sub", "Sub")       \
-        .Input({"x1", data_types[0], shapes[0], datas[0]})            \
-        .Input({"x2", data_types[1], shapes[1], datas[1]})            \
+    NodeDefBuilder(node_def.get(), "Sub", "Sub")                     \
+        .Input({"x1", data_types[0], shapes[0], datas[0]})           \
+        .Input({"x2", data_types[1], shapes[1], datas[1]})           \
         .Output({"y", data_types[2], shapes[2], datas[2]})
 
 template <typename T1, typename T2, typename T3>

@@ -32,8 +32,8 @@ extern "C" {
  * @param [out]  executor         返回op执行器，包含了算子计算流程。
  * @return       aclnnStatus      返回状态码
  */
-ACLNN_API aclnnStatus
-aclnnFracGetWorkspaceSize(const aclTensor* input, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnFracGetWorkspaceSize(const aclTensor* input, aclTensor* out, uint64_t* workspaceSize,
+                                                aclOpExecutor** executor);
 
 /**
  * @brief aclnnFrac的第二段接口，用于执行计算。
@@ -71,8 +71,8 @@ ACLNN_API aclnnStatus aclnnFrac(void* workspace, uint64_t workspaceSize, aclOpEx
  * @param [out]  executor         返回op执行器，包含了算子计算流程。
  * @return       aclnnStatus      返回状态码
  */
-ACLNN_API aclnnStatus
-aclnnInplaceFracGetWorkspaceSize(aclTensor* inputRef, uint64_t* workspaceSize, aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnInplaceFracGetWorkspaceSize(aclTensor* inputRef, uint64_t* workspaceSize,
+                                                       aclOpExecutor** executor);
 
 /**
  * @brief: aclnnInplaceFrac的第二段接口，用于执行计算
@@ -83,8 +83,8 @@ aclnnInplaceFracGetWorkspaceSize(aclTensor* inputRef, uint64_t* workspaceSize, a
  * @param [in] stream: acl stream流。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus
-aclnnInplaceFrac(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
+ACLNN_API aclnnStatus aclnnInplaceFrac(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                       aclrtStream stream);
 
 #ifdef __cplusplus
 }

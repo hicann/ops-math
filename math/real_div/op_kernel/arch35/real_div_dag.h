@@ -20,8 +20,7 @@
 #include "atvoss/util/vec.h"
 #include "atvoss/util/placeholder.h"
 
-namespace RealDivOp
-{
+namespace RealDivOp {
 using namespace AscendC;
 using namespace Ops::Base;
 
@@ -92,6 +91,6 @@ struct RealDivIntegerWithCast {
     using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
     using OpDag = DAGSch<Outputs, void, MemCfg>;
 };
-}  // namespace RealDivOp
+} // namespace RealDivOp
 
-#endif  // REAL_DIV_DAG_H
+#endif // REAL_DIV_DAG_H

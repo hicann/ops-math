@@ -18,15 +18,9 @@
 
 class l2_rsub_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "l2_rsub_test SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "l2_rsub_test SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "l2_rsub_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "l2_rsub_test TearDown" << std::endl; }
 };
 
 TEST_F(l2_rsub_test, case_nullptr)

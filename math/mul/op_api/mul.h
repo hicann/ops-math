@@ -14,9 +14,9 @@
 #include "opdev/op_executor.h"
 
 namespace l0op {
-const aclTensor *Mul(const aclTensor *self, const aclTensor *other, aclOpExecutor *executor);
-bool IsMulSupportNonContiguous(const aclTensor* self, const aclTensor *other);
-const aclTensor *MulInplace(const aclTensor *self, const aclTensor *rfRes, aclOpExecutor *executor);
-}
+const aclTensor* Mul(const aclTensor* self, const aclTensor* other, aclOpExecutor* executor);
+bool IsMulSupportNonContiguous(const aclTensor* self, const aclTensor* other);
+const aclTensor* MulInplace(const aclTensor* self, const aclTensor* rfRes, aclOpExecutor* executor);
+} // namespace l0op
 
 #endif // OP_API_INC_LEVEL0_MUL_H_

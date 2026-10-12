@@ -34,15 +34,12 @@ namespace ge {
 *Compatible with the TensorFlow operator Subtract.
 */
 REG_OP(Sub)
-    .INPUT(x1, TensorType({DT_FLOAT, DT_FLOAT16, DT_DOUBLE, DT_UINT8, DT_INT8,
-                           DT_UINT16, DT_INT16, DT_INT32, DT_INT64, DT_BOOL,
-                           DT_COMPLEX64, DT_COMPLEX128, DT_BF16, DT_COMPLEX32}))
-    .INPUT(x2, TensorType({DT_FLOAT, DT_FLOAT16, DT_DOUBLE, DT_UINT8, DT_INT8,
-                           DT_UINT16, DT_INT16, DT_INT32, DT_INT64, DT_BOOL,
-                           DT_COMPLEX64, DT_COMPLEX128, DT_BF16, DT_COMPLEX32}))
-    .OUTPUT(y, TensorType({DT_FLOAT, DT_FLOAT16, DT_DOUBLE, DT_UINT8, DT_INT8,
-                           DT_UINT16, DT_INT16, DT_INT32, DT_INT64, DT_BOOL,
-                           DT_COMPLEX64, DT_COMPLEX128, DT_BF16, DT_COMPLEX32}))
+    .INPUT(x1, TensorType({DT_FLOAT, DT_FLOAT16, DT_DOUBLE, DT_UINT8, DT_INT8, DT_UINT16, DT_INT16, DT_INT32, DT_INT64,
+                           DT_BOOL, DT_COMPLEX64, DT_COMPLEX128, DT_BF16, DT_COMPLEX32}))
+    .INPUT(x2, TensorType({DT_FLOAT, DT_FLOAT16, DT_DOUBLE, DT_UINT8, DT_INT8, DT_UINT16, DT_INT16, DT_INT32, DT_INT64,
+                           DT_BOOL, DT_COMPLEX64, DT_COMPLEX128, DT_BF16, DT_COMPLEX32}))
+    .OUTPUT(y, TensorType({DT_FLOAT, DT_FLOAT16, DT_DOUBLE, DT_UINT8, DT_INT8, DT_UINT16, DT_INT16, DT_INT32, DT_INT64,
+                           DT_BOOL, DT_COMPLEX64, DT_COMPLEX128, DT_BF16, DT_COMPLEX32}))
     .OP_END_FACTORY_REG(Sub)
 
 } // namespace ge

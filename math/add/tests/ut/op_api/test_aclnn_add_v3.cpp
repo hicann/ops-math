@@ -22,15 +22,9 @@ using namespace std;
 
 class l2_add_v3_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "add_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "add_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "add_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "add_test TearDown" << endl; }
 };
 
 TEST_F(l2_add_v3_test, case_1)
@@ -44,15 +38,14 @@ TEST_F(l2_add_v3_test, case_1)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 TEST_F(l2_add_v3_test, case_nullptr)
 {
     auto tensor_desc = TensorDesc({1, 16, 1, 1}, ACL_FLOAT, ACL_FORMAT_NCHW);
 
-    auto ut =
-        OP_API_UT(aclnnAddV3, INPUT((aclScalar*)nullptr, (aclTensor*)nullptr, (aclScalar*)nullptr), OUTPUT(tensor_desc));
+    auto ut = OP_API_UT(aclnnAddV3, INPUT((aclScalar*)nullptr, (aclTensor*)nullptr, (aclScalar*)nullptr),
+                        OUTPUT(tensor_desc));
 
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 0;
@@ -73,7 +66,6 @@ TEST_F(l2_add_v3_test, case_001)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }
 
 TEST_F(l2_add_v3_test, Ascend910B2_case_002)
@@ -88,5 +80,4 @@ TEST_F(l2_add_v3_test, Ascend910B2_case_002)
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
-
 }

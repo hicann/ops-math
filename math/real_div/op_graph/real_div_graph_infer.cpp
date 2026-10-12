@@ -15,14 +15,14 @@ using namespace ge;
 namespace ops {
 static ge::graphStatus InferDataType4RealDiv(gert::InferDataTypeContext* context)
 {
-  OP_LOGI("Begin InferDataType4RealDiv");
-  const ge::DataType x1DataType = context->GetInputDataType(0);
-  if (x1DataType != DT_BOOL) {
-    context->SetOutputDataType(0, x1DataType);
-  } else {
-    context->SetOutputDataType(0, DT_FLOAT);
-  }
-  return ge::GRAPH_SUCCESS;
+    OP_LOGI("Begin InferDataType4RealDiv");
+    const ge::DataType x1DataType = context->GetInputDataType(0);
+    if (x1DataType != DT_BOOL) {
+        context->SetOutputDataType(0, x1DataType);
+    } else {
+        context->SetOutputDataType(0, DT_FLOAT);
+    }
+    return ge::GRAPH_SUCCESS;
 }
 
 IMPL_OP(RealDiv).InferDataType(InferDataType4RealDiv);

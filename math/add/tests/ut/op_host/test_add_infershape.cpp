@@ -20,28 +20,21 @@
 
 class AddInfershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "AddInfershape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "AddInfershape SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "AddInfershape TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "AddInfershape TearDown" << std::endl; }
 };
 
 TEST_F(AddInfershape, add_infer_shape_fp16)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "Add",
-        {
-            {{{-1}, {-1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{-1}, {-1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("Add",
+                                                      {
+                                                          {{{-1}, {-1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{-1}, {-1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {-1},
     };

@@ -18,8 +18,7 @@
 #include "graph/operator_reg.h"
 #include "graph/operator.h"
 
-namespace ge
-{
+namespace ge {
 /**
 * @brief Returns x1/x2 element-wise for real types. Support broadcasting operations.
 
@@ -40,15 +39,12 @@ namespace ge
 * Compatible with the TensorFlow operator RealDiv.
 */
 REG_OP(RealDiv)
-    .INPUT(x1, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16, DT_DOUBLE, DT_UINT8, DT_INT8,
-                           DT_UINT16, DT_INT16, DT_INT32, DT_INT64, DT_BOOL,
-                           DT_COMPLEX64, DT_COMPLEX128}))
-    .INPUT(x2, TensorType({DT_FLOAT16, DT_FLOAT, DT_BF16, DT_DOUBLE, DT_UINT8, DT_INT8,
-                           DT_UINT16, DT_INT16, DT_INT32, DT_INT64, DT_BOOL,
-                           DT_COMPLEX64, DT_COMPLEX128}))
-    .OUTPUT(y, TensorType({DT_FLOAT16, DT_FLOAT, DT_BF16, DT_DOUBLE, DT_UINT8, DT_INT8,
-                           DT_UINT16, DT_INT16, DT_INT32, DT_INT64,
-                           DT_COMPLEX64, DT_COMPLEX128}))
+    .INPUT(x1, TensorType({DT_FLOAT, DT_FLOAT16, DT_BF16, DT_DOUBLE, DT_UINT8, DT_INT8, DT_UINT16, DT_INT16, DT_INT32,
+                           DT_INT64, DT_BOOL, DT_COMPLEX64, DT_COMPLEX128}))
+    .INPUT(x2, TensorType({DT_FLOAT16, DT_FLOAT, DT_BF16, DT_DOUBLE, DT_UINT8, DT_INT8, DT_UINT16, DT_INT16, DT_INT32,
+                           DT_INT64, DT_BOOL, DT_COMPLEX64, DT_COMPLEX128}))
+    .OUTPUT(y, TensorType({DT_FLOAT16, DT_FLOAT, DT_BF16, DT_DOUBLE, DT_UINT8, DT_INT8, DT_UINT16, DT_INT16, DT_INT32,
+                           DT_INT64, DT_COMPLEX64, DT_COMPLEX128}))
     .OP_END_FACTORY_REG(RealDiv)
 } // namespace ge
 #endif

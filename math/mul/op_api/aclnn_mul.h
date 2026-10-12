@@ -135,4 +135,4 @@ ACLNN_API aclnnStatus aclnnInplaceMul(void* workspace, uint64_t workspaceSize, a
 }
 #endif
 
-#endif  // OP_API_INC_LEVEL2_ACLNN_MUL_H_
+#endif // OP_API_INC_LEVEL2_ACLNN_MUL_H_

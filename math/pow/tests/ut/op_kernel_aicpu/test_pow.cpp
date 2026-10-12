@@ -95,621 +95,654 @@
 #include "Eigen/Core"
 #include <iostream>
 
-
 using namespace std;
 using namespace aicpu;
 
-class TEST_POW_UT : public testing::Test { };
+class TEST_POW_UT : public testing::Test {};
 
-#define CREATE_NODEDEF(shapes, data_types, datas)                  \
-  auto node_def = CpuKernelUtils::CpuKernelUtils::CreateNodeDef(); \
-  NodeDefBuilder(node_def.get(), "Pow", "Pow")                     \
-      .Input({"x1", data_types[0], shapes[0], datas[0]})           \
-      .Input({"x2", data_types[1], shapes[1], datas[1]})           \
-      .Output({"y", data_types[2], shapes[2], datas[2]})
+#define CREATE_NODEDEF(shapes, data_types, datas)                    \
+    auto node_def = CpuKernelUtils::CpuKernelUtils::CreateNodeDef(); \
+    NodeDefBuilder(node_def.get(), "Pow", "Pow")                     \
+        .Input({"x1", data_types[0], shapes[0], datas[0]})           \
+        .Input({"x2", data_types[1], shapes[1], datas[1]})           \
+        .Output({"y", data_types[2], shapes[2], datas[2]})
 
-TEST_F(TEST_POW_UT, DATA_TYPE_FLOAT_SUCC) {
-  vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
-  vector<vector<int64_t>> shapes = {{3, 3}, {3, 3}, {3, 3}};
-  float input0[9] = {1.0f, 2.0f, 6.7f, 3.0f, 4.0f, 7.0f, 2.0f, 4.0f, 1.0f};
-  float input1[9] = {2.0f, 2.0f, 3.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 2.0f};
-  float output[9] = {0};
-  float expect[9] = {1.0f, 4.0f, 300.763f, 3.0f, 4.0f, 7.0f, 2.0f, 1.0f, 1.0f};
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  bool result = true;
-  for (int i = 0; i < 9; ++i) {
-    float absolute_error = std::fabs(output[i] - expect[i]);
-    float relative_error = (expect[i] == 0) ? absolute_error : absolute_error / std::fabs(expect[i]);
-    if ((absolute_error > 0.01f) && (relative_error > 0.01f)) {
-      result = false;
-      break;
+TEST_F(TEST_POW_UT, DATA_TYPE_FLOAT_SUCC)
+{
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{3, 3}, {3, 3}, {3, 3}};
+    float input0[9] = {1.0f, 2.0f, 6.7f, 3.0f, 4.0f, 7.0f, 2.0f, 4.0f, 1.0f};
+    float input1[9] = {2.0f, 2.0f, 3.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 2.0f};
+    float output[9] = {0};
+    float expect[9] = {1.0f, 4.0f, 300.763f, 3.0f, 4.0f, 7.0f, 2.0f, 1.0f, 1.0f};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    bool result = true;
+    for (int i = 0; i < 9; ++i) {
+        float absolute_error = std::fabs(output[i] - expect[i]);
+        float relative_error = (expect[i] == 0) ? absolute_error : absolute_error / std::fabs(expect[i]);
+        if ((absolute_error > 0.01f) && (relative_error > 0.01f)) {
+            result = false;
+            break;
+        }
     }
-  }
-  EXPECT_EQ(result, true);
+    EXPECT_EQ(result, true);
 }
 
-TEST_F(TEST_POW_UT, DATA_TYPE_FLOAT16_BROADCAST_SUCC) {
-  vector<DataType> data_types = {DT_FLOAT16, DT_FLOAT16, DT_FLOAT16};
-  vector<vector<int64_t>> shapes = {{3, 3}, {1, 3}, {3, 3}};
-  Eigen::half input0[9] = {Eigen::half(1.0f), Eigen::half(2.0f), Eigen::half(3.0f),
-                           Eigen::half(3.0f), Eigen::half(4.0f), Eigen::half(2.0f),
-                           Eigen::half(2.0f), Eigen::half(4.0f), Eigen::half(1.0f)};
-  Eigen::half input1[3] = {Eigen::half(2.0f), Eigen::half(2.0f), Eigen::half(2.0f)};
-  Eigen::half output[9] = {Eigen::half(0.0f)};
-  Eigen::half expect[9] = {Eigen::half(1.0f), Eigen::half(4.0f), Eigen::half(9.0f),
-                           Eigen::half(9.0f), Eigen::half(16.0f), Eigen::half(4.0f),
-                           Eigen::half(4.0f), Eigen::half(16.0f), Eigen::half(1.0f)};
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  bool result = true;
-  for (int i = 0; i < 9; ++i) {
-    float out_val = static_cast<float>(output[i]);
-    float exp_val = static_cast<float>(expect[i]);
-    float absolute_error = std::fabs(out_val - exp_val);
-    float relative_error = (exp_val == 0) ? absolute_error : absolute_error / std::fabs(exp_val);
-    if ((absolute_error > 0.1f) && (relative_error > 0.01f)) {
-      result = false;
-      break;
+TEST_F(TEST_POW_UT, DATA_TYPE_FLOAT16_BROADCAST_SUCC)
+{
+    vector<DataType> data_types = {DT_FLOAT16, DT_FLOAT16, DT_FLOAT16};
+    vector<vector<int64_t>> shapes = {{3, 3}, {1, 3}, {3, 3}};
+    Eigen::half input0[9] = {Eigen::half(1.0f), Eigen::half(2.0f), Eigen::half(3.0f),
+                             Eigen::half(3.0f), Eigen::half(4.0f), Eigen::half(2.0f),
+                             Eigen::half(2.0f), Eigen::half(4.0f), Eigen::half(1.0f)};
+    Eigen::half input1[3] = {Eigen::half(2.0f), Eigen::half(2.0f), Eigen::half(2.0f)};
+    Eigen::half output[9] = {Eigen::half(0.0f)};
+    Eigen::half expect[9] = {Eigen::half(1.0f), Eigen::half(4.0f),  Eigen::half(9.0f),
+                             Eigen::half(9.0f), Eigen::half(16.0f), Eigen::half(4.0f),
+                             Eigen::half(4.0f), Eigen::half(16.0f), Eigen::half(1.0f)};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    bool result = true;
+    for (int i = 0; i < 9; ++i) {
+        float out_val = static_cast<float>(output[i]);
+        float exp_val = static_cast<float>(expect[i]);
+        float absolute_error = std::fabs(out_val - exp_val);
+        float relative_error = (exp_val == 0) ? absolute_error : absolute_error / std::fabs(exp_val);
+        if ((absolute_error > 0.1f) && (relative_error > 0.01f)) {
+            result = false;
+            break;
+        }
     }
-  }
-  EXPECT_EQ(result, true);
+    EXPECT_EQ(result, true);
 }
 
-TEST_F(TEST_POW_UT, DATA_TYPE_INT32_BROADCAST_SUCC) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
-  vector<vector<int64_t>> shapes = {{3, 3}, {1, 3}, {3, 3}};
-  int32_t input0[9] = {1, 2, 3, 4, 5, 6, 2, 4, 1};
-  int32_t input1[3] = {2, 2, 2};
-  int32_t output[9] = {0};
-  int32_t expect[9] = {1, 4, 9, 16, 25, 36, 4, 16, 1};
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  bool compare = CompareResult(output, expect, 9);
-  EXPECT_EQ(compare, true);
+TEST_F(TEST_POW_UT, DATA_TYPE_INT32_BROADCAST_SUCC)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{3, 3}, {1, 3}, {3, 3}};
+    int32_t input0[9] = {1, 2, 3, 4, 5, 6, 2, 4, 1};
+    int32_t input1[3] = {2, 2, 2};
+    int32_t output[9] = {0};
+    int32_t expect[9] = {1, 4, 9, 16, 25, 36, 4, 16, 1};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    bool compare = CompareResult(output, expect, 9);
+    EXPECT_EQ(compare, true);
 }
 
-TEST_F(TEST_POW_UT, DATA_TYPE_INT64_SUCC) {
-  vector<DataType> data_types = {DT_INT64, DT_INT64, DT_INT64};
-  vector<vector<int64_t>> shapes = {{3, 3}, {3, 3}, {3, 3}};
-  int64_t input0[9] = {1, 2, 7, 3, 4, 7, 2, 48, 1};
-  int64_t input1[9] = {2, 2, 3, 8, 8, 5, 5, 2, 2};
-  int64_t output[9] = {0};
-  int64_t expect[9] = {1, 4, 343, 6561, 65536, 16807, 32, 2304, 1};
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  bool compare = CompareResult(output, expect, 9);
-  EXPECT_EQ(compare, true);
+TEST_F(TEST_POW_UT, DATA_TYPE_INT64_SUCC)
+{
+    vector<DataType> data_types = {DT_INT64, DT_INT64, DT_INT64};
+    vector<vector<int64_t>> shapes = {{3, 3}, {3, 3}, {3, 3}};
+    int64_t input0[9] = {1, 2, 7, 3, 4, 7, 2, 48, 1};
+    int64_t input1[9] = {2, 2, 3, 8, 8, 5, 5, 2, 2};
+    int64_t output[9] = {0};
+    int64_t expect[9] = {1, 4, 343, 6561, 65536, 16807, 32, 2304, 1};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    bool compare = CompareResult(output, expect, 9);
+    EXPECT_EQ(compare, true);
 }
 
-TEST_F(TEST_POW_UT, DATA_TYPE_INT8_SUCC) {
-  vector<DataType> data_types = {DT_INT8, DT_INT8, DT_INT8};
-  vector<vector<int64_t>> shapes = {{2, 3}, {2, 3}, {2, 3}};
-  int8_t input0[6] = {1, 2, 1, 3, 2, 2};
-  int8_t input1[6] = {2, 2, 3, 1, 2, 2};
-  int8_t output[6] = {0};
-  int8_t expect[6] = {1, 4, 1, 3, 4, 4};
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  bool compare = CompareResult(output, expect, 6);
-  EXPECT_EQ(compare, true);
+TEST_F(TEST_POW_UT, DATA_TYPE_INT8_SUCC)
+{
+    vector<DataType> data_types = {DT_INT8, DT_INT8, DT_INT8};
+    vector<vector<int64_t>> shapes = {{2, 3}, {2, 3}, {2, 3}};
+    int8_t input0[6] = {1, 2, 1, 3, 2, 2};
+    int8_t input1[6] = {2, 2, 3, 1, 2, 2};
+    int8_t output[6] = {0};
+    int8_t expect[6] = {1, 4, 1, 3, 4, 4};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    bool compare = CompareResult(output, expect, 6);
+    EXPECT_EQ(compare, true);
 }
 
-TEST_F(TEST_POW_UT, DATA_TYPE_DOUBLE_SUCC) {
-  vector<DataType> data_types = {DT_DOUBLE, DT_DOUBLE, DT_DOUBLE};
-  vector<vector<int64_t>> shapes = {{2, 3}, {2, 3}, {2, 3}};
-  double input0[6] = {1.0, 2.0, 3.0, 4.0, 5.0, 2.0};
-  double input1[6] = {2.0, 2.0, 2.0, 2.0, 2.0, 2.0};
-  double output[6] = {0};
-  double expect[6] = {1.0, 4.0, 9.0, 16.0, 25.0, 4.0};
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  bool compare = CompareResult(output, expect, 6);
-  EXPECT_EQ(compare, true);
+TEST_F(TEST_POW_UT, DATA_TYPE_DOUBLE_SUCC)
+{
+    vector<DataType> data_types = {DT_DOUBLE, DT_DOUBLE, DT_DOUBLE};
+    vector<vector<int64_t>> shapes = {{2, 3}, {2, 3}, {2, 3}};
+    double input0[6] = {1.0, 2.0, 3.0, 4.0, 5.0, 2.0};
+    double input1[6] = {2.0, 2.0, 2.0, 2.0, 2.0, 2.0};
+    double output[6] = {0};
+    double expect[6] = {1.0, 4.0, 9.0, 16.0, 25.0, 4.0};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    bool compare = CompareResult(output, expect, 6);
+    EXPECT_EQ(compare, true);
 }
 
-TEST_F(TEST_POW_UT, DATA_TYPE_COMPLEX64_SUCC) {
-  vector<DataType> data_types = {DT_COMPLEX64, DT_COMPLEX64, DT_COMPLEX64};
-  vector<vector<int64_t>> shapes = {{2, 2}, {2, 2}, {2, 2}};
-  std::complex<float> input0[4] = {std::complex<float>(2.0f, 0.0f), std::complex<float>(3.0f, 0.0f),
-                                   std::complex<float>(2.0f, 0.0f), std::complex<float>(3.0f, 0.0f)};
-  std::complex<float> input1[4] = {std::complex<float>(2.0f, 0.0f), std::complex<float>(2.0f, 0.0f),
-                                    std::complex<float>(2.0f, 0.0f), std::complex<float>(2.0f, 0.0f)};
-  std::complex<float> output[4] = {std::complex<float>(0.0f, 0.0f)};
-  std::complex<float> expect[4] = {std::complex<float>(4.0f, 0.0f), std::complex<float>(9.0f, 0.0f),
-                                    std::complex<float>(4.0f, 0.0f), std::complex<float>(9.0f, 0.0f)};
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  bool result = true;
-  for (int i = 0; i < 4; ++i) {
-    float absolute_error = std::abs(output[i] - expect[i]);
-    if (absolute_error > 0.001f) {
-      result = false;
-      break;
+TEST_F(TEST_POW_UT, DATA_TYPE_COMPLEX64_SUCC)
+{
+    vector<DataType> data_types = {DT_COMPLEX64, DT_COMPLEX64, DT_COMPLEX64};
+    vector<vector<int64_t>> shapes = {{2, 2}, {2, 2}, {2, 2}};
+    std::complex<float> input0[4] = {std::complex<float>(2.0f, 0.0f), std::complex<float>(3.0f, 0.0f),
+                                     std::complex<float>(2.0f, 0.0f), std::complex<float>(3.0f, 0.0f)};
+    std::complex<float> input1[4] = {std::complex<float>(2.0f, 0.0f), std::complex<float>(2.0f, 0.0f),
+                                     std::complex<float>(2.0f, 0.0f), std::complex<float>(2.0f, 0.0f)};
+    std::complex<float> output[4] = {std::complex<float>(0.0f, 0.0f)};
+    std::complex<float> expect[4] = {std::complex<float>(4.0f, 0.0f), std::complex<float>(9.0f, 0.0f),
+                                     std::complex<float>(4.0f, 0.0f), std::complex<float>(9.0f, 0.0f)};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    bool result = true;
+    for (int i = 0; i < 4; ++i) {
+        float absolute_error = std::abs(output[i] - expect[i]);
+        if (absolute_error > 0.001f) {
+            result = false;
+            break;
+        }
     }
-  }
-  EXPECT_EQ(result, true);
+    EXPECT_EQ(result, true);
 }
 
-TEST_F(TEST_POW_UT, DATA_TYPE_COMPLEX128_SUCC) {
-  vector<DataType> data_types = {DT_COMPLEX128, DT_COMPLEX128, DT_COMPLEX128};
-  vector<vector<int64_t>> shapes = {{2, 2}, {2, 2}, {2, 2}};
-  std::complex<double> input0[4] = {std::complex<double>(2.0, 0.0), std::complex<double>(3.0, 0.0),
-                                     std::complex<double>(2.0, 0.0), std::complex<double>(3.0, 0.0)};
-  std::complex<double> input1[4] = {std::complex<double>(2.0, 0.0), std::complex<double>(2.0, 0.0),
-                                     std::complex<double>(2.0, 0.0), std::complex<double>(2.0, 0.0)};
-  std::complex<double> output[4] = {std::complex<double>(0.0, 0.0)};
-  std::complex<double> expect[4] = {std::complex<double>(4.0, 0.0), std::complex<double>(9.0, 0.0),
-                                     std::complex<double>(4.0, 0.0), std::complex<double>(9.0, 0.0)};
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  bool result = true;
-  for (int i = 0; i < 4; ++i) {
-    double absolute_error = std::abs(output[i] - expect[i]);
-    if (absolute_error > 0.001) {
-      result = false;
-      break;
+TEST_F(TEST_POW_UT, DATA_TYPE_COMPLEX128_SUCC)
+{
+    vector<DataType> data_types = {DT_COMPLEX128, DT_COMPLEX128, DT_COMPLEX128};
+    vector<vector<int64_t>> shapes = {{2, 2}, {2, 2}, {2, 2}};
+    std::complex<double> input0[4] = {std::complex<double>(2.0, 0.0), std::complex<double>(3.0, 0.0),
+                                      std::complex<double>(2.0, 0.0), std::complex<double>(3.0, 0.0)};
+    std::complex<double> input1[4] = {std::complex<double>(2.0, 0.0), std::complex<double>(2.0, 0.0),
+                                      std::complex<double>(2.0, 0.0), std::complex<double>(2.0, 0.0)};
+    std::complex<double> output[4] = {std::complex<double>(0.0, 0.0)};
+    std::complex<double> expect[4] = {std::complex<double>(4.0, 0.0), std::complex<double>(9.0, 0.0),
+                                      std::complex<double>(4.0, 0.0), std::complex<double>(9.0, 0.0)};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    bool result = true;
+    for (int i = 0; i < 4; ++i) {
+        double absolute_error = std::abs(output[i] - expect[i]);
+        if (absolute_error > 0.001) {
+            result = false;
+            break;
+        }
     }
-  }
-  EXPECT_EQ(result, true);
+    EXPECT_EQ(result, true);
 }
 
-TEST_F(TEST_POW_UT, DATA_TYPE_ONE_X_ELEMENT_SUCC) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
-  vector<vector<int64_t>> shapes = {{4, 2}, {}, {4, 2}};
-  int32_t input0[8] = {1, 2, 2, 1, 2, 1, 2, 1};
-  int32_t input1[1] = {3};
-  int32_t output[8] = {0};
-  int32_t expect[8] = {1, 8, 8, 1, 8, 1, 8, 1};
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  bool compare = CompareResult(output, expect, 8);
-  EXPECT_EQ(compare, true);
+TEST_F(TEST_POW_UT, DATA_TYPE_ONE_X_ELEMENT_SUCC)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{4, 2}, {}, {4, 2}};
+    int32_t input0[8] = {1, 2, 2, 1, 2, 1, 2, 1};
+    int32_t input1[1] = {3};
+    int32_t output[8] = {0};
+    int32_t expect[8] = {1, 8, 8, 1, 8, 1, 8, 1};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    bool compare = CompareResult(output, expect, 8);
+    EXPECT_EQ(compare, true);
 }
 
-TEST_F(TEST_POW_UT, DATA_TYPE_ONE_Y_ELEMENT_SUCC) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
-  vector<vector<int64_t>> shapes = {{}, {2, 3}, {2, 3}};
-  int32_t input0[1] = {2};
-  int32_t input1[6] = {1, 2, 7, 2, 8, 1};
-  int32_t output[6] = {0};
-  int32_t expect[6] = {2, 4, 128, 4, 256, 2};
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  bool compare = CompareResult(output, expect, 6);
-  EXPECT_EQ(compare, true);
+TEST_F(TEST_POW_UT, DATA_TYPE_ONE_Y_ELEMENT_SUCC)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{}, {2, 3}, {2, 3}};
+    int32_t input0[1] = {2};
+    int32_t input1[6] = {1, 2, 7, 2, 8, 1};
+    int32_t output[6] = {0};
+    int32_t expect[6] = {2, 4, 128, 4, 256, 2};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    bool compare = CompareResult(output, expect, 6);
+    EXPECT_EQ(compare, true);
 }
 
-TEST_F(TEST_POW_UT, DATA_TYPE_NOBROADCAST_LARGE_35x1024) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
-  vector<vector<int64_t>> shapes = {{35, 1024}, {35, 1024}, {35, 1024}};
-  int32_t input0[35840];
-  int32_t input1[35840];
-  int32_t output[35840];
-  for (size_t i = 0; i < 35840; ++i) {
-    input0[i] = (i % 10) + 1;
-    input1[i] = (i % 3) + 1;
-  }
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  bool result = true;
-  for (size_t i = 0; i < 35840; ++i) {
-    int32_t expected = 1;
-    for (int j = 0; j < input1[i]; ++j) {
-      expected *= input0[i];
+TEST_F(TEST_POW_UT, DATA_TYPE_NOBROADCAST_LARGE_35x1024)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{35, 1024}, {35, 1024}, {35, 1024}};
+    int32_t input0[35840];
+    int32_t input1[35840];
+    int32_t output[35840];
+    for (size_t i = 0; i < 35840; ++i) {
+        input0[i] = (i % 10) + 1;
+        input1[i] = (i % 3) + 1;
     }
-    if (output[i] != expected) {
-      result = false;
-      break;
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    bool result = true;
+    for (size_t i = 0; i < 35840; ++i) {
+        int32_t expected = 1;
+        for (int j = 0; j < input1[i]; ++j) {
+            expected *= input0[i];
+        }
+        if (output[i] != expected) {
+            result = false;
+            break;
+        }
     }
-  }
-  EXPECT_EQ(result, true);
+    EXPECT_EQ(result, true);
 }
 
-TEST_F(TEST_POW_UT, DATA_TYPE_NOBROADCAST_LARGE_141x256) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
-  vector<vector<int64_t>> shapes = {{141, 256}, {141, 256}, {141, 256}};
-  int32_t input0[36096];
-  int32_t input1[36096];
-  int32_t output[36096];
-  for (size_t i = 0; i < 36096; ++i) {
-    input0[i] = (i % 5) + 1;
-    input1[i] = (i % 2) + 1;
-  }
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  bool result = true;
-  for (size_t i = 0; i < 36096; ++i) {
-    int32_t expected = 1;
-    for (int j = 0; j < input1[i]; ++j) {
-      expected *= input0[i];
+TEST_F(TEST_POW_UT, DATA_TYPE_NOBROADCAST_LARGE_141x256)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{141, 256}, {141, 256}, {141, 256}};
+    int32_t input0[36096];
+    int32_t input1[36096];
+    int32_t output[36096];
+    for (size_t i = 0; i < 36096; ++i) {
+        input0[i] = (i % 5) + 1;
+        input1[i] = (i % 2) + 1;
     }
-    if (output[i] != expected) {
-      result = false;
-      break;
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    bool result = true;
+    for (size_t i = 0; i < 36096; ++i) {
+        int32_t expected = 1;
+        for (int j = 0; j < input1[i]; ++j) {
+            expected *= input0[i];
+        }
+        if (output[i] != expected) {
+            result = false;
+            break;
+        }
     }
-  }
-  EXPECT_EQ(result, true);
+    EXPECT_EQ(result, true);
 }
 
-TEST_F(TEST_POW_UT, DATA_TYPE_BROADCAST_LARGE_30x1024) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
-  vector<vector<int64_t>> shapes = {{30, 1024}, {1024}, {30, 1024}};
-  int32_t input0[30720];
-  int32_t input1[1024];
-  int32_t output[30720];
-  for (size_t i = 0; i < 30720; ++i) {
-    input0[i] = (i % 10) + 1;
-  }
-  for (size_t i = 0; i < 1024; ++i) {
-    input1[i] = (i % 3) + 1;
-  }
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  bool result = true;
-  for (size_t i = 0; i < 30720; ++i) {
-    int32_t expected = 1;
-    int32_t y = input1[i % 1024];
-    for (int j = 0; j < y; ++j) {
-      expected *= input0[i];
+TEST_F(TEST_POW_UT, DATA_TYPE_BROADCAST_LARGE_30x1024)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{30, 1024}, {1024}, {30, 1024}};
+    int32_t input0[30720];
+    int32_t input1[1024];
+    int32_t output[30720];
+    for (size_t i = 0; i < 30720; ++i) {
+        input0[i] = (i % 10) + 1;
     }
-    if (output[i] != expected) {
-      result = false;
-      break;
+    for (size_t i = 0; i < 1024; ++i) {
+        input1[i] = (i % 3) + 1;
     }
-  }
-  EXPECT_EQ(result, true);
-}
-
-TEST_F(TEST_POW_UT, DATA_TYPE_FLOAT16_LARGE_100) {
-  vector<DataType> data_types = {DT_FLOAT16, DT_FLOAT16, DT_FLOAT16};
-  vector<vector<int64_t>> shapes = {{100}, {100}, {100}};
-  Eigen::half input0[100];
-  Eigen::half input1[100];
-  Eigen::half output[100];
-  for (size_t i = 0; i < 100; ++i) {
-    input0[i] = Eigen::half(static_cast<float>((i % 5) + 1));
-    input1[i] = Eigen::half(static_cast<float>((i % 3) + 1));
-  }
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  bool result = true;
-  for (size_t i = 0; i < 100; ++i) {
-    float expected = powf(static_cast<float>(input0[i]), static_cast<float>(input1[i]));
-    float actual = static_cast<float>(output[i]);
-    if (std::fabs(expected - actual) > 0.01f) {
-      result = false;
-      break;
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    bool result = true;
+    for (size_t i = 0; i < 30720; ++i) {
+        int32_t expected = 1;
+        int32_t y = input1[i % 1024];
+        for (int j = 0; j < y; ++j) {
+            expected *= input0[i];
+        }
+        if (output[i] != expected) {
+            result = false;
+            break;
+        }
     }
-  }
-  EXPECT_EQ(result, true);
+    EXPECT_EQ(result, true);
 }
 
-TEST_F(TEST_POW_UT, DATA_TYPE_BROADCAST_FLOAT_100x24) {
-  vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
-  vector<vector<int64_t>> shapes = {{100, 24}, {24}, {100, 24}};
-  float input0[2400];
-  float input1[24];
-  float output[2400];
-  for (size_t i = 0; i < 2400; ++i) {
-    input0[i] = static_cast<float>((i % 5) + 1);
-  }
-  for (size_t i = 0; i < 24; ++i) {
-    input1[i] = static_cast<float>((i % 3) + 1);
-  }
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  bool result = true;
-  for (size_t i = 0; i < 2400; ++i) {
-    float expected = powf(input0[i], input1[i % 24]);
-    if (std::fabs(output[i] - expected) > 0.01f) {
-      result = false;
-      break;
+TEST_F(TEST_POW_UT, DATA_TYPE_FLOAT16_LARGE_100)
+{
+    vector<DataType> data_types = {DT_FLOAT16, DT_FLOAT16, DT_FLOAT16};
+    vector<vector<int64_t>> shapes = {{100}, {100}, {100}};
+    Eigen::half input0[100];
+    Eigen::half input1[100];
+    Eigen::half output[100];
+    for (size_t i = 0; i < 100; ++i) {
+        input0[i] = Eigen::half(static_cast<float>((i % 5) + 1));
+        input1[i] = Eigen::half(static_cast<float>((i % 3) + 1));
     }
-  }
-  EXPECT_EQ(result, true);
-}
-
-TEST_F(TEST_POW_UT, DATA_TYPE_DOUBLE_LARGE_100) {
-  vector<DataType> data_types = {DT_DOUBLE, DT_DOUBLE, DT_DOUBLE};
-  vector<vector<int64_t>> shapes = {{100}, {100}, {100}};
-  double input0[100];
-  double input1[100];
-  double output[100];
-  for (size_t i = 0; i < 100; ++i) {
-    input0[i] = static_cast<double>((i % 5) + 1);
-    input1[i] = static_cast<double>((i % 3) + 1);
-  }
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  bool result = true;
-  for (size_t i = 0; i < 100; ++i) {
-    double expected = pow(input0[i], input1[i]);
-    if (std::fabs(output[i] - expected) > 0.0001) {
-      result = false;
-      break;
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    bool result = true;
+    for (size_t i = 0; i < 100; ++i) {
+        float expected = powf(static_cast<float>(input0[i]), static_cast<float>(input1[i]));
+        float actual = static_cast<float>(output[i]);
+        if (std::fabs(expected - actual) > 0.01f) {
+            result = false;
+            break;
+        }
     }
-  }
-  EXPECT_EQ(result, true);
+    EXPECT_EQ(result, true);
 }
 
-TEST_F(TEST_POW_UT, DATA_TYPE_INT32_LARGE_100) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
-  vector<vector<int64_t>> shapes = {{100}, {100}, {100}};
-  int32_t input0[100];
-  int32_t input1[100];
-  int32_t output[100];
-  for (size_t i = 0; i < 100; ++i) {
-    input0[i] = (i % 5) + 1;
-    input1[i] = (i % 3) + 1;
-  }
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  bool result = true;
-  for (size_t i = 0; i < 100; ++i) {
-    int32_t expected = 1;
-    for (int j = 0; j < input1[i]; ++j) {
-      expected *= input0[i];
+TEST_F(TEST_POW_UT, DATA_TYPE_BROADCAST_FLOAT_100x24)
+{
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{100, 24}, {24}, {100, 24}};
+    float input0[2400];
+    float input1[24];
+    float output[2400];
+    for (size_t i = 0; i < 2400; ++i) {
+        input0[i] = static_cast<float>((i % 5) + 1);
     }
-    if (output[i] != expected) {
-      result = false;
-      break;
+    for (size_t i = 0; i < 24; ++i) {
+        input1[i] = static_cast<float>((i % 3) + 1);
     }
-  }
-  EXPECT_EQ(result, true);
-}
-
-TEST_F(TEST_POW_UT, DATA_TYPE_UINT8_LARGE_10x10x100) {
-  vector<DataType> data_types = {DT_UINT8, DT_UINT8, DT_UINT8};
-  vector<vector<int64_t>> shapes = {{10, 10, 100}, {10, 10, 100}, {10, 10, 100}};
-  uint8_t input0[10000];
-  uint8_t input1[10000];
-  uint8_t output[10000];
-  for (size_t i = 0; i < 10000; ++i) {
-    input0[i] = (i % 4) + 1;
-    input1[i] = (i % 2) + 1;
-  }
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  bool result = true;
-  for (size_t i = 0; i < 10000; ++i) {
-    uint8_t expected = 1;
-    for (int j = 0; j < input1[i]; ++j) {
-      expected *= input0[i];
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    bool result = true;
+    for (size_t i = 0; i < 2400; ++i) {
+        float expected = powf(input0[i], input1[i % 24]);
+        if (std::fabs(output[i] - expected) > 0.01f) {
+            result = false;
+            break;
+        }
     }
-    if (output[i] != expected) {
-      result = false;
-      break;
+    EXPECT_EQ(result, true);
+}
+
+TEST_F(TEST_POW_UT, DATA_TYPE_DOUBLE_LARGE_100)
+{
+    vector<DataType> data_types = {DT_DOUBLE, DT_DOUBLE, DT_DOUBLE};
+    vector<vector<int64_t>> shapes = {{100}, {100}, {100}};
+    double input0[100];
+    double input1[100];
+    double output[100];
+    for (size_t i = 0; i < 100; ++i) {
+        input0[i] = static_cast<double>((i % 5) + 1);
+        input1[i] = static_cast<double>((i % 3) + 1);
     }
-  }
-  EXPECT_EQ(result, true);
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    bool result = true;
+    for (size_t i = 0; i < 100; ++i) {
+        double expected = pow(input0[i], input1[i]);
+        if (std::fabs(output[i] - expected) > 0.0001) {
+            result = false;
+            break;
+        }
+    }
+    EXPECT_EQ(result, true);
 }
 
-TEST_F(TEST_POW_UT, INPUT_NULL_EXCEPTION) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
- vector<vector<int64_t>> shapes = {{4,4},{4,4},{4,4}};
- int8_t input0[16]={(int32_t)0};
- int8_t input1[16]={(int32_t)0};
- int8_t output[16]={(int32_t)0};
- vector<void *> datas = {(void *)nullptr,(void *)nullptr, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
+TEST_F(TEST_POW_UT, DATA_TYPE_INT32_LARGE_100)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{100}, {100}, {100}};
+    int32_t input0[100];
+    int32_t input1[100];
+    int32_t output[100];
+    for (size_t i = 0; i < 100; ++i) {
+        input0[i] = (i % 5) + 1;
+        input1[i] = (i % 3) + 1;
+    }
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    bool result = true;
+    for (size_t i = 0; i < 100; ++i) {
+        int32_t expected = 1;
+        for (int j = 0; j < input1[i]; ++j) {
+            expected *= input0[i];
+        }
+        if (output[i] != expected) {
+            result = false;
+            break;
+        }
+    }
+    EXPECT_EQ(result, true);
 }
 
-TEST_F(TEST_POW_UT, INPUT_DTYPE_EXCEPTION) {
-  vector<DataType> data_types = {DT_BOOL, DT_BOOL, DT_BOOL};
-  vector<vector<int64_t>> shapes = {{1,2},{2,2},{2,2}};
-  bool input0[2]={0,0};
-  bool input1[4]={0,1,0,1};
-  bool output[4]={0,1,0,1};
-  vector<void *> datas = {(void *)input0,(void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
+TEST_F(TEST_POW_UT, DATA_TYPE_UINT8_LARGE_10x10x100)
+{
+    vector<DataType> data_types = {DT_UINT8, DT_UINT8, DT_UINT8};
+    vector<vector<int64_t>> shapes = {{10, 10, 100}, {10, 10, 100}, {10, 10, 100}};
+    uint8_t input0[10000];
+    uint8_t input1[10000];
+    uint8_t output[10000];
+    for (size_t i = 0; i < 10000; ++i) {
+        input0[i] = (i % 4) + 1;
+        input1[i] = (i % 2) + 1;
+    }
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    bool result = true;
+    for (size_t i = 0; i < 10000; ++i) {
+        uint8_t expected = 1;
+        for (int j = 0; j < input1[i]; ++j) {
+            expected *= input0[i];
+        }
+        if (output[i] != expected) {
+            result = false;
+            break;
+        }
+    }
+    EXPECT_EQ(result, true);
 }
 
-TEST_F(TEST_POW_UT, OUTPUT_NULL_EXCEPTION) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
-  vector<vector<int64_t>> shapes = {{4,4},{4,4},{4,4}};
-  int32_t input0[16]={1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
-  int32_t input1[16]={1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
-  vector<void *> datas = {(void *)input0,(void *)input1, (void *)nullptr};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
+TEST_F(TEST_POW_UT, INPUT_NULL_EXCEPTION)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{4, 4}, {4, 4}, {4, 4}};
+    int8_t input0[16] = {(int32_t)0};
+    int8_t input1[16] = {(int32_t)0};
+    int8_t output[16] = {(int32_t)0};
+    vector<void*> datas = {(void*)nullptr, (void*)nullptr, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
 }
 
-TEST_F(TEST_POW_UT, NEGATIVE_EXPONENT_EXCEPTION) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
-  vector<vector<int64_t>> shapes = {{3},{3},{3}};
-  int32_t input0[3]={2,3,4};
-  int32_t input1[3]={-1,-2,-3};
-  int32_t output[3]={0};
-  vector<void *> datas = {(void *)input0,(void *)input1,(void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+TEST_F(TEST_POW_UT, INPUT_DTYPE_EXCEPTION)
+{
+    vector<DataType> data_types = {DT_BOOL, DT_BOOL, DT_BOOL};
+    vector<vector<int64_t>> shapes = {{1, 2}, {2, 2}, {2, 2}};
+    bool input0[2] = {0, 0};
+    bool input1[4] = {0, 1, 0, 1};
+    bool output[4] = {0, 1, 0, 1};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
 }
 
-TEST_F(TEST_POW_UT, ZERO_NEGATIVE_POWER_EXCEPTION) {
-  vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
-  vector<vector<int64_t>> shapes = {{3},{3},{3}};
-  float input0[3]={0.0f,0.0f,0.0f};
-  float input1[3]={-1.0f,-2.0f,-3.0f};
-  float output[3]={0};
-  vector<void *> datas = {(void *)input0,(void *)input1,(void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+TEST_F(TEST_POW_UT, OUTPUT_NULL_EXCEPTION)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{4, 4}, {4, 4}, {4, 4}};
+    int32_t input0[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+    int32_t input1[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)nullptr};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
 }
 
-TEST_F(TEST_POW_UT, INPUT_X_NULL_EXCEPTION) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
-  vector<vector<int64_t>> shapes = {{4,4},{4,4},{4,4}};
-  int32_t input1[16]={1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
-  int32_t output[16]={0};
-  vector<void *> datas = {(void *)nullptr,(void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
+TEST_F(TEST_POW_UT, NEGATIVE_EXPONENT_EXCEPTION)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{3}, {3}, {3}};
+    int32_t input0[3] = {2, 3, 4};
+    int32_t input1[3] = {-1, -2, -3};
+    int32_t output[3] = {0};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
 }
 
-TEST_F(TEST_POW_UT, INPUT_Y_NULL_EXCEPTION) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
-  vector<vector<int64_t>> shapes = {{4,4},{4,4},{4,4}};
-  int32_t input0[16]={1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
-  int32_t output[16]={0};
-  vector<void *> datas = {(void *)input0,(void *)nullptr, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
+TEST_F(TEST_POW_UT, ZERO_NEGATIVE_POWER_EXCEPTION)
+{
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{3}, {3}, {3}};
+    float input0[3] = {0.0f, 0.0f, 0.0f};
+    float input1[3] = {-1.0f, -2.0f, -3.0f};
+    float output[3] = {0};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
 }
 
-TEST_F(TEST_POW_UT, EMPTY_SHAPE_EXCEPTION) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
-  vector<vector<int64_t>> shapes = {{0},{1},{1}};
-  int32_t input1[1]={1};
-  int32_t output[1]={0};
-  vector<void *> datas = {(void *)nullptr,(void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+TEST_F(TEST_POW_UT, INPUT_X_NULL_EXCEPTION)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{4, 4}, {4, 4}, {4, 4}};
+    int32_t input1[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    int32_t output[16] = {0};
+    vector<void*> datas = {(void*)nullptr, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
 }
 
-TEST_F(TEST_POW_UT, FLOAT_SAME_SHAPE_SUCC) {
-  vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
-  vector<vector<int64_t>> shapes = {{3}, {3}, {3}};
-  float input0[3] = {2.0f, 3.0f, 4.0f};
-  float input1[3] = {2.0f, 2.0f, 2.0f};
-  float output[3] = {0};
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  float expect[3] = {4.0f, 9.0f, 16.0f};
-  bool compare = CompareResult(output, expect, 3);
-  EXPECT_EQ(compare, true);
+TEST_F(TEST_POW_UT, INPUT_Y_NULL_EXCEPTION)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{4, 4}, {4, 4}, {4, 4}};
+    int32_t input0[16] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+    int32_t output[16] = {0};
+    vector<void*> datas = {(void*)input0, (void*)nullptr, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_PARAM_INVALID);
 }
 
-TEST_F(TEST_POW_UT, FLOAT16_X_ONE_ELEMENT_SUCC) {
-  vector<DataType> data_types = {DT_FLOAT16, DT_FLOAT16, DT_FLOAT16};
-  vector<vector<int64_t>> shapes = {{}, {3}, {3}};
-  Eigen::half input0[1] = {Eigen::half(2.0f)};
-  Eigen::half input1[3] = {Eigen::half(2.0f), Eigen::half(3.0f), Eigen::half(4.0f)};
-  Eigen::half output[3] = {Eigen::half(0.0f)};
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  Eigen::half expect[3] = {Eigen::half(4.0f), Eigen::half(8.0f), Eigen::half(16.0f)};
-  bool compare = CompareResult(output, expect, 3);
-  EXPECT_EQ(compare, true);
+TEST_F(TEST_POW_UT, EMPTY_SHAPE_EXCEPTION)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{0}, {1}, {1}};
+    int32_t input1[1] = {1};
+    int32_t output[1] = {0};
+    vector<void*> datas = {(void*)nullptr, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
 }
 
-TEST_F(TEST_POW_UT, INT32_Y_ONE_ELEMENT_SUCC) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
-  vector<vector<int64_t>> shapes = {{3}, {}, {3}};
-  int32_t input0[3] = {2, 3, 4};
-  int32_t input1[1] = {2};
-  int32_t output[3] = {0};
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  int32_t expect[3] = {4, 9, 16};
-  bool compare = CompareResult(output, expect, 3);
-  EXPECT_EQ(compare, true);
+TEST_F(TEST_POW_UT, FLOAT_SAME_SHAPE_SUCC)
+{
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{3}, {3}, {3}};
+    float input0[3] = {2.0f, 3.0f, 4.0f};
+    float input1[3] = {2.0f, 2.0f, 2.0f};
+    float output[3] = {0};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    float expect[3] = {4.0f, 9.0f, 16.0f};
+    bool compare = CompareResult(output, expect, 3);
+    EXPECT_EQ(compare, true);
 }
 
-TEST_F(TEST_POW_UT, INT32_POWER_0_SUCC) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
-  vector<vector<int64_t>> shapes = {{3}, {3}, {3}};
-  int32_t input0[3] = {2, 3, 4};
-  int32_t input1[3] = {0, 0, 0};
-  int32_t output[3] = {0};
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  int32_t expect[3] = {1, 1, 1};
-  bool compare = CompareResult(output, expect, 3);
-  EXPECT_EQ(compare, true);
+TEST_F(TEST_POW_UT, FLOAT16_X_ONE_ELEMENT_SUCC)
+{
+    vector<DataType> data_types = {DT_FLOAT16, DT_FLOAT16, DT_FLOAT16};
+    vector<vector<int64_t>> shapes = {{}, {3}, {3}};
+    Eigen::half input0[1] = {Eigen::half(2.0f)};
+    Eigen::half input1[3] = {Eigen::half(2.0f), Eigen::half(3.0f), Eigen::half(4.0f)};
+    Eigen::half output[3] = {Eigen::half(0.0f)};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    Eigen::half expect[3] = {Eigen::half(4.0f), Eigen::half(8.0f), Eigen::half(16.0f)};
+    bool compare = CompareResult(output, expect, 3);
+    EXPECT_EQ(compare, true);
 }
 
-TEST_F(TEST_POW_UT, INT32_POWER_1_SUCC) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
-  vector<vector<int64_t>> shapes = {{3}, {3}, {3}};
-  int32_t input0[3] = {2, 3, 4};
-  int32_t input1[3] = {1, 1, 1};
-  int32_t output[3] = {0};
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  int32_t expect[3] = {2, 3, 4};
-  bool compare = CompareResult(output, expect, 3);
-  EXPECT_EQ(compare, true);
+TEST_F(TEST_POW_UT, INT32_Y_ONE_ELEMENT_SUCC)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{3}, {}, {3}};
+    int32_t input0[3] = {2, 3, 4};
+    int32_t input1[1] = {2};
+    int32_t output[3] = {0};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    int32_t expect[3] = {4, 9, 16};
+    bool compare = CompareResult(output, expect, 3);
+    EXPECT_EQ(compare, true);
 }
 
-TEST_F(TEST_POW_UT, INT32_POWER_NEGATIVE_1_SUCC) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
-  vector<vector<int64_t>> shapes = {{3}, {3}, {3}};
-  int32_t input0[3] = {-1, -1, -1};
-  int32_t input1[3] = {-2, -3, -4};
-  int32_t output[3] = {0};
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  int32_t expect[3] = {1, -1, 1};
-  bool compare = CompareResult(output, expect, 3);
-  EXPECT_EQ(compare, true);
+TEST_F(TEST_POW_UT, INT32_POWER_0_SUCC)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{3}, {3}, {3}};
+    int32_t input0[3] = {2, 3, 4};
+    int32_t input1[3] = {0, 0, 0};
+    int32_t output[3] = {0};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    int32_t expect[3] = {1, 1, 1};
+    bool compare = CompareResult(output, expect, 3);
+    EXPECT_EQ(compare, true);
 }
 
-TEST_F(TEST_POW_UT, INT32_POWER_NEGATIVE_OTHER_SUCC) {
-  vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
-  vector<vector<int64_t>> shapes = {{3}, {3}, {3}};
-  int32_t input0[3] = {2, 3, 4};
-  int32_t input1[3] = {-2, -3, -4};
-  int32_t output[3] = {0};
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
-  int32_t expect[3] = {0, 0, 0};
-  bool compare = CompareResult(output, expect, 3);
-  EXPECT_EQ(compare, true);
+TEST_F(TEST_POW_UT, INT32_POWER_1_SUCC)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{3}, {3}, {3}};
+    int32_t input0[3] = {2, 3, 4};
+    int32_t input1[3] = {1, 1, 1};
+    int32_t output[3] = {0};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    int32_t expect[3] = {2, 3, 4};
+    bool compare = CompareResult(output, expect, 3);
+    EXPECT_EQ(compare, true);
 }
 
-TEST_F(TEST_POW_UT, EMPTY_TENSOR_SUCC) {
-  vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
-  vector<vector<int64_t>> shapes = {{0}, {0}, {0}};
-  float input0[1] = {0};
-  float input1[1] = {0};
-  float output[1] = {0};
-  vector<void *> datas = {(void *)input0, (void *)input1, (void *)output};
-  CREATE_NODEDEF(shapes, data_types, datas);
-  RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+TEST_F(TEST_POW_UT, INT32_POWER_NEGATIVE_1_SUCC)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{3}, {3}, {3}};
+    int32_t input0[3] = {-1, -1, -1};
+    int32_t input1[3] = {-2, -3, -4};
+    int32_t output[3] = {0};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    int32_t expect[3] = {1, -1, 1};
+    bool compare = CompareResult(output, expect, 3);
+    EXPECT_EQ(compare, true);
 }
 
-#define RUN_POW_CASE(base_type_in1, base_type_in2, base_type_out,                            \
-                     aicpu_type_in1, aicpu_type_in2, aicpu_type_out)                         \
-  TEST_F(TEST_POW_UT, TestCast_##aicpu_type_in1##aicpu_type_in2####aicpu_type_out) {         \
-      vector<DataType> data_types = {aicpu_type_in1, aicpu_type_in2, aicpu_type_out};        \
-      base_type_in1 input1[3] = {(base_type_in1)2, (base_type_in1)3, (base_type_in1)4};      \
-      base_type_in2 input2[1] = {(base_type_in2)2};                                          \
-      base_type_out output[3] = {};                                                          \
-      vector<void *> datas = {(void *)input1, (void *)input2, (void *)output};               \
-      vector<vector<int64_t>> shapes = {{3}, {}, {3}};                                       \
-      CREATE_NODEDEF(shapes, data_types, datas);                                             \
-      RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);                                          \
-      base_type_out expect_out[3] = {(base_type_out)4, (base_type_out)9, (base_type_out)16}; \
-      EXPECT_EQ(CompareResult<base_type_out>(output, expect_out, 3), true);                  \
-  }
+TEST_F(TEST_POW_UT, INT32_POWER_NEGATIVE_OTHER_SUCC)
+{
+    vector<DataType> data_types = {DT_INT32, DT_INT32, DT_INT32};
+    vector<vector<int64_t>> shapes = {{3}, {3}, {3}};
+    int32_t input0[3] = {2, 3, 4};
+    int32_t input1[3] = {-2, -3, -4};
+    int32_t output[3] = {0};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+    int32_t expect[3] = {0, 0, 0};
+    bool compare = CompareResult(output, expect, 3);
+    EXPECT_EQ(compare, true);
+}
+
+TEST_F(TEST_POW_UT, EMPTY_TENSOR_SUCC)
+{
+    vector<DataType> data_types = {DT_FLOAT, DT_FLOAT, DT_FLOAT};
+    vector<vector<int64_t>> shapes = {{0}, {0}, {0}};
+    float input0[1] = {0};
+    float input1[1] = {0};
+    float output[1] = {0};
+    vector<void*> datas = {(void*)input0, (void*)input1, (void*)output};
+    CREATE_NODEDEF(shapes, data_types, datas);
+    RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);
+}
+
+#define RUN_POW_CASE(base_type_in1, base_type_in2, base_type_out, aicpu_type_in1, aicpu_type_in2, aicpu_type_out) \
+    TEST_F(TEST_POW_UT, TestCast_##aicpu_type_in1##aicpu_type_in2####aicpu_type_out)                              \
+    {                                                                                                             \
+        vector<DataType> data_types = {aicpu_type_in1, aicpu_type_in2, aicpu_type_out};                           \
+        base_type_in1 input1[3] = {(base_type_in1)2, (base_type_in1)3, (base_type_in1)4};                         \
+        base_type_in2 input2[1] = {(base_type_in2)2};                                                             \
+        base_type_out output[3] = {};                                                                             \
+        vector<void*> datas = {(void*)input1, (void*)input2, (void*)output};                                      \
+        vector<vector<int64_t>> shapes = {{3}, {}, {3}};                                                          \
+        CREATE_NODEDEF(shapes, data_types, datas);                                                                \
+        RUN_KERNEL(node_def, HOST, KERNEL_STATUS_OK);                                                             \
+        base_type_out expect_out[3] = {(base_type_out)4, (base_type_out)9, (base_type_out)16};                    \
+        EXPECT_EQ(CompareResult<base_type_out>(output, expect_out, 3), true);                                     \
+    }
 
 RUN_POW_CASE(int8_t, int8_t, int8_t, DT_INT8, DT_INT8, DT_INT8);
 RUN_POW_CASE(int8_t, int16_t, int8_t, DT_INT8, DT_INT16, DT_INT8);
@@ -830,7 +863,8 @@ RUN_POW_CASE(std::complex<float>, double, std::complex<float>, DT_COMPLEX64, DT_
 RUN_POW_CASE(std::complex<float>, double, std::complex<double>, DT_COMPLEX64, DT_DOUBLE, DT_COMPLEX128);
 RUN_POW_CASE(std::complex<float>, std::complex<float>, std::complex<float>, DT_COMPLEX64, DT_COMPLEX64, DT_COMPLEX64);
 RUN_POW_CASE(std::complex<float>, std::complex<double>, std::complex<float>, DT_COMPLEX64, DT_COMPLEX128, DT_COMPLEX64);
-RUN_POW_CASE(std::complex<float>, std::complex<double>, std::complex<double>, DT_COMPLEX64, DT_COMPLEX128, DT_COMPLEX128);
+RUN_POW_CASE(std::complex<float>, std::complex<double>, std::complex<double>, DT_COMPLEX64, DT_COMPLEX128,
+             DT_COMPLEX128);
 
 RUN_POW_CASE(std::complex<double>, int8_t, std::complex<double>, DT_COMPLEX128, DT_INT8, DT_COMPLEX128);
 RUN_POW_CASE(std::complex<double>, int16_t, std::complex<double>, DT_COMPLEX128, DT_INT16, DT_COMPLEX128);
@@ -840,5 +874,7 @@ RUN_POW_CASE(std::complex<double>, uint8_t, std::complex<double>, DT_COMPLEX128,
 RUN_POW_CASE(std::complex<double>, Eigen::half, std::complex<double>, DT_COMPLEX128, DT_FLOAT16, DT_COMPLEX128);
 RUN_POW_CASE(std::complex<double>, float, std::complex<double>, DT_COMPLEX128, DT_FLOAT, DT_COMPLEX128);
 RUN_POW_CASE(std::complex<double>, double, std::complex<double>, DT_COMPLEX128, DT_DOUBLE, DT_COMPLEX128);
-RUN_POW_CASE(std::complex<double>, std::complex<float>, std::complex<double>, DT_COMPLEX128, DT_COMPLEX64, DT_COMPLEX128);
-RUN_POW_CASE(std::complex<double>, std::complex<double>, std::complex<double>, DT_COMPLEX128, DT_COMPLEX128, DT_COMPLEX128);
+RUN_POW_CASE(std::complex<double>, std::complex<float>, std::complex<double>, DT_COMPLEX128, DT_COMPLEX64,
+             DT_COMPLEX128);
+RUN_POW_CASE(std::complex<double>, std::complex<double>, std::complex<double>, DT_COMPLEX128, DT_COMPLEX128,
+             DT_COMPLEX128);
