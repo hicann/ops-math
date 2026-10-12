@@ -359,7 +359,7 @@ inline bool HasDuplicate(gert::TilingContext* context, gert::Shape outStride)
             context->GetNodeName(), "outStride", std::to_string(outStride.GetDimNum()).c_str(),
             ("The shape dim of outStride must be within the range [0, " + std::to_string(VALID_DIM) + "].").c_str()),
         return false);
-    int32_t numStride[VALID_DIM] = {0};
+    int64_t numStride[VALID_DIM] = {0};
     for (uint32_t i = 0; i < outStride.GetDimNum(); i++) {
         numStride[i] = outStride[i];
     }
@@ -408,11 +408,23 @@ inline static bool CheckLastDim(gert::Shape outSize, gert::Shape outStride, cons
  * 2. The outStride range is larger than 32B.
  * 3. The outStride doesn' t have duplicate value.
  */
+// MTE DataCopy/LoopMode 的字节步长参数为 32 位，任一视图 stride 换算为字节后超限时不能走 MoveAlign 模板
+constexpr int64_t MTE_BYTE_STRIDE_LIMIT = 0xFFFFFFFFLL;
+inline static bool IsByteStrideOverflow(gert::Shape outStride, const AsStridedTilingParam& tilingParam)
+{
+    for (uint32_t i = 0; i < outStride.GetDimNum(); i++) {
+        if (outStride.GetDim(i) * static_cast<int64_t>(tilingParam.sizeofDtype) > MTE_BYTE_STRIDE_LIMIT) {
+            return true;
+        }
+    }
+    return false;
+}
+
 inline static bool IsMoveAlign(gert::TilingContext* context, gert::Shape outSize, gert::Shape outStride,
                                AsStridedTilingParam& tilingParam)
 {
     if (CheckLastDim(outSize, outStride, tilingParam) && CalStrideRange(outStride, tilingParam) &&
-        (!HasDuplicate(context, outStride))) {
+        (!HasDuplicate(context, outStride)) && (!IsByteStrideOverflow(outStride, tilingParam))) {
         OP_LOGD(context, "Need MoveAlign");
         return true;
     }
@@ -471,6 +483,18 @@ inline static bool IsUbGather(gert::TilingContext* context, const AsStridedTilin
          tilingParam.ubSizePlatForm / CONST_FOUR)) {
         OP_LOGD(context, "Need UbGather.");
         return true;
+    }
+    return false;
+}
+
+// gather模板的向量索引域为uint16/uint32, 正常路径下stride受输入全载UB约束不会超限;
+// 防御性拦截超限stride, 回落其他模板, 避免静默回绕
+inline static bool IsGatherStrideOverflow(gert::Shape outStride)
+{
+    for (uint32_t i = 0; i < outStride.GetDimNum(); i++) {
+        if (outStride.GetDim(i) > static_cast<int64_t>(UINT32_MAX)) {
+            return true;
+        }
     }
     return false;
 }
@@ -549,17 +573,18 @@ inline static void CalcTilingCore(const gert::TilingContext* context, gert::Shap
                 preSize *= outSize[i];
             }
         }
-        ubGatherParam.coreInnerAxisFactor = Ops::Base::CeilDiv(ubGatherParam.coreCurAxisFactor, ubGatherParam.blockNum);
+        ubGatherParam.coreInnerAxisFactor = Ops::Base::CeilDiv(ubGatherParam.coreCurAxisFactor,
+                                                               static_cast<uint64_t>(ubGatherParam.blockNum));
         ubGatherParam.blockNum = Ops::Base::CeilDiv(ubGatherParam.coreCurAxisFactor, ubGatherParam.coreInnerAxisFactor);
         ubGatherParam.coreInnerAxisTailFactor = ubGatherParam.coreCurAxisFactor -
                                                 (ubGatherParam.blockNum - 1) * ubGatherParam.coreInnerAxisFactor;
-        ubGatherParam.coreOuterAxisFactor = static_cast<uint32_t>(Ops::Base::CeilDiv(
-            outSize[ubGatherParam.blockAxisIdx], static_cast<int64_t>(ubGatherParam.coreInnerAxisFactor)));
+        ubGatherParam.coreOuterAxisFactor = Ops::Base::CeilDiv(
+            static_cast<uint64_t>(outSize[ubGatherParam.blockAxisIdx]), ubGatherParam.coreInnerAxisFactor);
     }
 
     OP_LOGD(context, "[CalcTilingCore]blockAxisIdx:%u, blockNum:%u.", ubGatherParam.blockAxisIdx,
             ubGatherParam.blockNum);
-    OP_LOGD(context, "[CalcTilingCore]coreInnerAxisFactor:%u, coreInnerAxisTailFactor:%u, coreOuterAxisFactor:%u",
+    OP_LOGD(context, "[CalcTilingCore]coreInnerAxisFactor:%lu, coreInnerAxisTailFactor:%lu, coreOuterAxisFactor:%lu",
             ubGatherParam.coreInnerAxisFactor, ubGatherParam.coreInnerAxisTailFactor,
             ubGatherParam.coreOuterAxisFactor);
 }
@@ -567,11 +592,11 @@ inline static void CalcTilingCore(const gert::TilingContext* context, gert::Shap
 inline static void CalcMaxUbFactor(AsStridedTilingParam& tilingParam, AsStridedUbGatherParam& ubGatherParam,
                                    uint32_t& maxUbFactor, gert::Shape outSize, gert::Shape outStride)
 {
-    uint32_t requiredStorageSize = 0;
+    uint64_t requiredStorageSize = 0;
     for (size_t i = 0; i < outSize.GetDimNum(); i++) {
         requiredStorageSize += (outSize[i] - 1) * outStride[i];
     }
-    ubGatherParam.inDataLen = requiredStorageSize + 1;
+    ubGatherParam.inDataLen = static_cast<uint32_t>(requiredStorageSize + 1);
     ubGatherParam.inUbSize = Ops::Base::CeilDiv(ubGatherParam.inDataLen * tilingParam.sizeofDtype, UB_ALIGN_SIZE) *
                              UB_ALIGN_SIZE;
     uint32_t outUbAlign = ((tilingParam.ubSizePlatForm - ubGatherParam.inUbSize) / UB_ALIGN_SIZE) * UB_ALIGN_SIZE;
@@ -586,7 +611,7 @@ inline static void CalcMaxUbFactor(AsStridedTilingParam& tilingParam, AsStridedU
     }
 }
 
-inline static void SetubParamWhenOutAxesLimit(gert::Shape outSize, uint32_t coreInnerAxisFactor,
+inline static void SetubParamWhenOutAxesLimit(gert::Shape outSize, uint64_t coreInnerAxisFactor,
                                               AsStridedUbGatherParam& ubGatherParam, UbParam& ubParam)
 {
     // 切分思路：ub全载后三根轴，三根轴外到核切分内轴为ub循环次数
@@ -609,7 +634,7 @@ inline static void SetubParamWhenOutAxesLimit(gert::Shape outSize, uint32_t core
     }
 }
 
-inline static void SetubParamWhenAxesSame(uint32_t coreInnerAxisFactor, uint32_t maxUbFactor,
+inline static void SetubParamWhenAxesSame(uint64_t coreInnerAxisFactor, uint32_t maxUbFactor,
                                           AsStridedUbGatherParam& ubGatherParam, UbParam& ubParam)
 {
     // 切在同一根轴，要保证ub不能切到核外
@@ -631,15 +656,15 @@ inline static void CalctilingCoreWithInAxis(const gert::TilingContext* context, 
         SetubParamWhenAxesSame(ubGatherParam.coreInnerAxisTailFactor, maxUbFactor, ubGatherParam,
                                ubGatherParam.tailBlockUbParam);
     } else {
-        uint32_t outerCoreNum = 1;
+        uint64_t outerCoreNum = 1;
         for (uint32_t i = 0; i < ubGatherParam.blockAxisIdx; i++) {
             outerCoreNum *= outSize[i];
         }
         uint32_t innerCoreNum = ubGatherParam.blockNumMin / outerCoreNum;
-        ubGatherParam.coreInnerAxisFactor = static_cast<uint32_t>(
-            Ops::Base::CeilDiv(outSize[ubGatherParam.blockAxisIdx], static_cast<int64_t>(innerCoreNum)));
+        ubGatherParam.coreInnerAxisFactor = Ops::Base::CeilDiv(
+            static_cast<uint64_t>(outSize[ubGatherParam.blockAxisIdx]), static_cast<uint64_t>(innerCoreNum));
         innerCoreNum = static_cast<uint32_t>(Ops::Base::CeilDiv(
-            outSize[ubGatherParam.blockAxisIdx], static_cast<int64_t>(ubGatherParam.coreInnerAxisFactor)));
+            static_cast<uint64_t>(outSize[ubGatherParam.blockAxisIdx]), ubGatherParam.coreInnerAxisFactor));
 
         UbParam& ubParam = ubGatherParam.mainBlockUbParam;
         ubParam.innerAxisFactor = maxUbFactor / ubGatherParam.preSize;
@@ -647,14 +672,14 @@ inline static void CalctilingCoreWithInAxis(const gert::TilingContext* context, 
         ubParam.outerAxisFactor = Ops::Base::CeilDiv(ubGatherParam.coreInnerAxisFactor, ubParam.innerAxisFactor);
 
         ubGatherParam.coreInnerAxisFactor = ubParam.innerAxisFactor * ubParam.outerAxisFactor >
-                                                    outSize[ubGatherParam.blockAxisIdx] ?
+                                                    static_cast<uint64_t>(outSize[ubGatherParam.blockAxisIdx]) ?
                                                 ubGatherParam.coreInnerAxisFactor :
                                                 ubParam.innerAxisFactor * ubParam.outerAxisFactor; // 按主核均分UB修正
         SetubParamWhenAxesSame(ubGatherParam.coreInnerAxisFactor, maxUbFactor, ubGatherParam,
                                ubGatherParam.mainBlockUbParam);
         innerCoreNum = std::min(innerCoreNum, static_cast<uint32_t>(Ops::Base::CeilDiv(
-                                                  outSize[ubGatherParam.blockAxisIdx],
-                                                  static_cast<int64_t>(ubGatherParam.coreInnerAxisFactor))));
+                                                  static_cast<uint64_t>(outSize[ubGatherParam.blockAxisIdx]),
+                                                  ubGatherParam.coreInnerAxisFactor)));
         ubGatherParam.coreOuterAxisFactor = innerCoreNum;
         ubGatherParam.blockNum = innerCoreNum * outerCoreNum; // 再次修正核数
         ubGatherParam.mainBlockCnt = (innerCoreNum - 1) * outerCoreNum;
@@ -670,12 +695,12 @@ inline static void CalctilingCoreWithInAxis(const gert::TilingContext* context, 
     }
 }
 
-inline static void SetubParamWhenAxesDiff(gert::Shape outSize, uint32_t coreInnerAxisFactor, uint32_t maxUbFactor,
+inline static void SetubParamWhenAxesDiff(gert::Shape outSize, uint64_t coreInnerAxisFactor, uint32_t maxUbFactor,
                                           AsStridedUbGatherParam& ubGatherParam, UbParam& ubParam)
 {
     ubParam.innerAxisFactor = maxUbFactor / ubGatherParam.preSize;
-    ubParam.outerAxisFactor = static_cast<uint32_t>(
-        Ops::Base::CeilDiv(outSize[ubGatherParam.tilingAxisIdx], static_cast<int64_t>(ubParam.innerAxisFactor)));
+    ubParam.outerAxisFactor = Ops::Base::CeilDiv(static_cast<uint64_t>(outSize[ubGatherParam.tilingAxisIdx]),
+                                                 ubParam.innerAxisFactor);
     ubParam.innerAxisFactorTail = outSize[ubGatherParam.tilingAxisIdx] -
                                   ubParam.innerAxisFactor * (ubParam.outerAxisFactor - 1);
     ubParam.ubFactor = ubGatherParam.preSize * ubParam.innerAxisFactor;
@@ -692,13 +717,13 @@ inline static void PrintUbGatherParam(const gert::TilingContext* context, AsStri
 {
     OP_LOGI(context, "[CalcTilingUb]tilingAxisIdx:%u, blockAxisIdx:%u, preSize:%u.", ubGatherParam.tilingAxisIdx,
             ubGatherParam.blockAxisIdx, ubGatherParam.preSize);
-    OP_LOGI(context, "[CalcTilingUb]mainBlockUbParam, innerAxisFactor:%u, innerAxisFactorTail:%u, \
-        outerAxisFactor:%u, ubFactor:%u, ubFactorTail:%u, loopsPerCore:%u.",
+    OP_LOGI(context, "[CalcTilingUb]mainBlockUbParam, innerAxisFactor:%lu, innerAxisFactorTail:%lu, \
+        outerAxisFactor:%lu, ubFactor:%u, ubFactorTail:%u, loopsPerCore:%lu.",
             ubGatherParam.mainBlockUbParam.innerAxisFactor, ubGatherParam.mainBlockUbParam.innerAxisFactorTail,
             ubGatherParam.mainBlockUbParam.outerAxisFactor, ubGatherParam.mainBlockUbParam.ubFactor,
             ubGatherParam.mainBlockUbParam.ubFactorTail, ubGatherParam.mainBlockUbParam.loopsPerCore);
-    OP_LOGI(context, "[CalcTilingUb]tailBlockUbParam, innerAxisFactor:%u, innerAxisFactorTail:%u, \
-        outerAxisFactor:%u, ubFactor:%u, ubFactorTail:%u, loopsPerCore:%u.",
+    OP_LOGI(context, "[CalcTilingUb]tailBlockUbParam, innerAxisFactor:%lu, innerAxisFactorTail:%lu, \
+        outerAxisFactor:%lu, ubFactor:%u, ubFactorTail:%u, loopsPerCore:%lu.",
             ubGatherParam.tailBlockUbParam.innerAxisFactor, ubGatherParam.tailBlockUbParam.innerAxisFactorTail,
             ubGatherParam.tailBlockUbParam.outerAxisFactor, ubGatherParam.tailBlockUbParam.ubFactor,
             ubGatherParam.tailBlockUbParam.ubFactorTail, ubGatherParam.tailBlockUbParam.loopsPerCore);
@@ -712,7 +737,7 @@ inline static void CalcTilingUb(const gert::TilingContext* context, gert::Shape 
     OP_LOGD(context, "[CalcTilingUb]maxUbFactor:%u.", maxUbFactor);
 
     ubGatherParam.preSize = 1;
-    uint32_t curAxisFactor = 0;
+    uint64_t curAxisFactor = 0;
     for (int32_t i = outSize.GetDimNum() - 1; i >= static_cast<int32_t>(ubGatherParam.blockAxisIdx); i--) {
         // UB内最多三根轴
         if (outSize.GetDimNum() - i > GATHER_AXES_LIMIT) {
@@ -777,8 +802,8 @@ inline static void SetUbGatherTilingParam(gert::Shape outSize, gert::Shape outSt
     }
 
     // 当coreInnerAxisTailFactor大于coreInnerAxisFactor时，此结果非预期
-    ubGatherParam.idxStrideArr[ubGatherParam.tilingAxisIdx] = static_cast<uint32_t>(Ops::Base::CeilDiv(
-        outSize[ubGatherParam.tilingAxisIdx], static_cast<int64_t>(ubGatherParam.mainBlockUbParam.innerAxisFactor)));
+    ubGatherParam.idxStrideArr[ubGatherParam.tilingAxisIdx] = Ops::Base::CeilDiv(
+        static_cast<uint64_t>(outSize[ubGatherParam.tilingAxisIdx]), ubGatherParam.mainBlockUbParam.innerAxisFactor);
     for (int32_t i = ubGatherParam.tilingAxisIdx - 1; i >= 0; i--) {
         ubGatherParam.idxStrideArr[i] = ubGatherParam.idxStrideArr[i + 1] * outSize[i];
     }
@@ -980,7 +1005,7 @@ ge::graphStatus AsStridedTilingClass::SingleCutOfNDDMAForAsStrided(AsStridedTili
     }
 
     // to find tiling axis
-    uint32_t curProd = 1;
+    uint64_t curProd = 1;
     for (int32_t i = outShapeSize - 1; i >= 0; i--) {
         tilingParam.curAxisFactor = outSize[i] * tilingParam.preSize;
         curProd = outSize[i] * tilingParam.preSize;
@@ -1050,7 +1075,7 @@ ge::graphStatus AsStridedTilingClass::SingleCutOfNDDMAForAsStrided(AsStridedTili
                 tilingParam.outerAxisFactor = (outSize[i] + tilingParam.innerAxisFactor - 1) /
                                               tilingParam.innerAxisFactor;
                 tilingParam.innerAxisFactorTail = (tilingParam.innerAxisFactor * tilingParam.outerAxisFactor ==
-                                                   outSize[i]) ?
+                                                   static_cast<uint64_t>(outSize[i])) ?
                                                       0 :
                                                       outSize[i] - tilingParam.innerAxisFactor *
                                                                        (tilingParam.outerAxisFactor - 1);
@@ -1139,7 +1164,7 @@ ge::graphStatus AsStridedTilingClass::NDDMAForAsStrided(AsStridedTilingParam& ti
     }
 
     // UB gather
-    if (IsUbGather(context_, tilingParam)) {
+    if (IsUbGather(context_, tilingParam) && (!IsGatherStrideOverflow(outStride))) {
         AsStridedUbGatherParam ubGatherParam;
         ComputeUbGatherParam(context_, outSize, outStride, tilingParam, ubGatherParam);
         if (CheckBndryForUint16GatherIdx(outSize, outStride, tilingParam, ubGatherParam) &&
@@ -1200,6 +1225,19 @@ ge::graphStatus AsStridedTilingClass::NDDMAForAsStrided(AsStridedTilingParam& ti
             seeker.ComputeBlockTiling(tilingParam.numCore);
             seeker.PrintDebug();
 
+            // DualCut 模板输出侧字节步长受 MTE 32 位参数限制，超限时回落单切分 NDDMA
+            bool dualOutStrideOverflow = false;
+            for (int64_t i = 0; i < TILING_NDDMA_LEN; i++) {
+                if (seeker.ubOutStride[i] * tilingParam.sizeofDtype > MTE_BYTE_STRIDE_LIMIT) {
+                    dualOutStrideOverflow = true;
+                    break;
+                }
+            }
+            if (dualOutStrideOverflow) {
+                OP_LOGD(context_, "Exit DualCut template, because output byte stride exceeds MTE 32bit limit.");
+                return ge::GRAPH_SUCCESS;
+            }
+
             int64_t dualTileSize = tilingParam.sizeofDtype; // 双切分tileSize
             for (int64_t i = 0; i < TILING_NDDMA_LEN; i++) {
                 dualTileSize *= static_cast<int64_t>(seeker.ubShape[i]);
@@ -1246,8 +1284,8 @@ ge::graphStatus AsStridedTilingClass::NDDMAForAsStrided(AsStridedTilingParam& ti
 bool CheckInputInfo(gert::TilingContext* context, gert::Shape outSize, gert::Shape outStride, const gert::Shape& xShape,
                     AsStridedTilingParam& tilingParam)
 {
-    uint32_t requiredStorageSize = 0;
-    uint32_t originalTensorStorageSize = 1;
+    uint64_t requiredStorageSize = 0;
+    uint64_t originalTensorStorageSize = 1;
     for (size_t i = 0; i < outSize.GetDimNum(); i++) {
         OP_CHECK_IF(outSize[i] < 0,
                     OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
@@ -1272,8 +1310,7 @@ bool CheckInputInfo(gert::TilingContext* context, gert::Shape outSize, gert::Sha
         originalTensorStorageSize *= xShape.GetDim(i);
     }
 
-    OP_CHECK_IF((tilingParam.storageOffset + static_cast<int64_t>(requiredStorageSize)) >=
-                    static_cast<int64_t>(originalTensorStorageSize),
+    OP_CHECK_IF((tilingParam.storageOffset + requiredStorageSize) >= originalTensorStorageSize,
                 OP_LOGE(context, "The output element is out of input range!"), return false);
 
     tilingParam.inputSize = originalTensorStorageSize;

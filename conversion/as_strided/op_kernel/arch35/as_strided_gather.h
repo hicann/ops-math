@@ -36,7 +36,7 @@ public:
     template <typename K>
     __aicore__ inline void CopyArray(const K* src, K* dst, int64_t size);
     __aicore__ inline uint16_t CeilDiv(uint32_t a, uint16_t b);
-    __aicore__ inline int64_t GetMod(int64_t a, uint32_t b);
+    __aicore__ inline int64_t GetMod(int64_t a, uint64_t b);
     __aicore__ inline void Process();
     __aicore__ inline void AsCopyGM2Ub();
     __aicore__ inline void AsComputeIdx();
@@ -68,31 +68,31 @@ private:
     int64_t blockNum_ = 0;
     int64_t bufferCnt_ = 2; // enable db
 
-    uint32_t ubBatchArr_[TILING_ARRAY_LEN];
-    uint32_t strideArr_[TILING_ARRAY_LEN];
-    uint32_t sizeArr_[TILING_ARRAY_LEN];
+    uint64_t ubBatchArr_[TILING_ARRAY_LEN];
+    uint64_t strideArr_[TILING_ARRAY_LEN];
+    uint64_t sizeArr_[TILING_ARRAY_LEN];
 
     uint32_t realInUbSize_ = 0;
     uint32_t realInDataLen_ = 0;
     uint32_t dimNum_ = 10;
     uint32_t tilingAxisIdx_ = 9;
-    uint32_t blockInnerAxisFactor_ = 0;
-    uint32_t blockTailInnerAxisFactor_ = 0;
+    uint64_t blockInnerAxisFactor_ = 0;
+    uint64_t blockTailInnerAxisFactor_ = 0;
     uint32_t blockUbFactor_ = 0;
     uint32_t blockUbFactorTail_ = 0;
     uint32_t curUbFactor_ = 0;
     uint32_t blockTailUbFactor_ = 0;
     uint32_t blockTailUbFactorTail_ = 0;
-    uint32_t blockFactor_ = 0;
+    uint64_t blockFactor_ = 0;
     uint32_t blockMainCount_ = 0;
-    uint32_t blockTailFactor_ = 0;
+    uint64_t blockTailFactor_ = 0;
 
     uint32_t blockAxisIdx_ = 9;
-    uint32_t blockOuterAxisFactor_ = 0;
-    uint32_t blockTailOuterAxisFactor_ = 0;
-    uint32_t coreOuterAxisFactor_ = 0;
-    uint32_t coreInnerAxisFactor_ = 0;
-    uint32_t coreInnerAxisTailFactor_ = 0;
+    uint64_t blockOuterAxisFactor_ = 0;
+    uint64_t blockTailOuterAxisFactor_ = 0;
+    uint64_t coreOuterAxisFactor_ = 0;
+    uint64_t coreInnerAxisFactor_ = 0;
+    uint64_t coreInnerAxisTailFactor_ = 0;
     uint32_t preSize_ = 0;
 
     int64_t loopsUb_ = 0;
@@ -156,7 +156,7 @@ __aicore__ inline void KernelAsStridedGather<T>::ComputeCoreOffset()
     loopsUb_ = blockFactor_;
     if (blockAxisIdx_ == tilingAxisIdx_) { // 切同轴
         if (tilingAxisIdx_ != 0) {         // 不切在首轴
-            uint32_t mulsFactor = blockIdx_ / coreOuterAxisFactor_;
+            uint64_t mulsFactor = blockIdx_ / coreOuterAxisFactor_;
             int64_t modFactor = 0;
             if (coreOuterAxisFactor_ != 1) { // 核外轴不为1
                 modFactor = GetMod(blockIdx_, coreOuterAxisFactor_);
@@ -399,14 +399,14 @@ __aicore__ inline void KernelAsStridedGather<T>::GenDim3Index()
     __ubuf__ IdxType_* idxAddr = (__ubuf__ IdxType_*)indexLocal_.GetPhyAddr();
     uint16_t vfLen = VF_LENGTH / sizeof(IdxType_);
 
-    uint32_t lastDimInOffset = strideArr_[dimNum_ - 1];
-    uint32_t last2ndDimInOffset = strideArr_[dimNum_ - 2];
-    uint32_t last3rdDimInOffset = strideArr_[dimNum_ - 3];
-    uint32_t lastDimSize = sizeArr_[dimNum_ - 1];
-    uint32_t last2ndDimSize = sizeArr_[dimNum_ - 2];
-    uint32_t lastDimInc = vfLen % lastDimSize;
-    uint32_t last2ndDimInc = vfLen / lastDimSize % last2ndDimSize;
-    uint32_t last3rdDimInc = vfLen / (lastDimSize * last2ndDimSize);
+    uint64_t lastDimInOffset = strideArr_[dimNum_ - 1];
+    uint64_t last2ndDimInOffset = strideArr_[dimNum_ - 2];
+    uint64_t last3rdDimInOffset = strideArr_[dimNum_ - 3];
+    uint64_t lastDimSize = sizeArr_[dimNum_ - 1];
+    uint64_t last2ndDimSize = sizeArr_[dimNum_ - 2];
+    uint64_t lastDimInc = vfLen % lastDimSize;
+    uint64_t last2ndDimInc = vfLen / lastDimSize % last2ndDimSize;
+    uint64_t last3rdDimInc = vfLen / (lastDimSize * last2ndDimSize);
 
     uint32_t leftDimSize = 0;
     uint16_t loopsCnt = 0;
@@ -498,12 +498,12 @@ __aicore__ inline void KernelAsStridedGather<T>::GenDim2Index()
 {
     __ubuf__ IdxType_* idxAddr = (__ubuf__ IdxType_*)indexLocal_.GetPhyAddr();
     uint16_t vfLen = VF_LENGTH / sizeof(IdxType_);
-    uint32_t lastDimInOffset = strideArr_[dimNum_ - 1];
-    uint32_t last2ndDimInOffset = strideArr_[dimNum_ - 2];
-    uint32_t lastDimSize = sizeArr_[dimNum_ - 1];
+    uint64_t lastDimInOffset = strideArr_[dimNum_ - 1];
+    uint64_t last2ndDimInOffset = strideArr_[dimNum_ - 2];
+    uint64_t lastDimSize = sizeArr_[dimNum_ - 1];
 
-    uint32_t lastDimInc = vfLen % lastDimSize;
-    uint32_t last2ndDimInc = vfLen / lastDimSize;
+    uint64_t lastDimInc = vfLen % lastDimSize;
+    uint64_t last2ndDimInc = vfLen / lastDimSize;
 
     uint32_t leftDimSize = 0;
     uint16_t loopsCnt = 0;
@@ -570,7 +570,7 @@ __aicore__ inline void KernelAsStridedGather<T>::GenDim1Index()
 {
     __ubuf__ IdxType_* idxAddr = (__ubuf__ IdxType_*)indexLocal_.GetPhyAddr();
     uint16_t vfLen = VF_LENGTH / sizeof(IdxType_);
-    uint32_t lastDimInOffset = strideArr_[dimNum_ - 1];
+    uint64_t lastDimInOffset = strideArr_[dimNum_ - 1];
     uint16_t loopsCnt = CeilDiv(blockUbFactor_, vfLen);
     uint32_t tempBUF = blockUbFactor_;
     __VEC_SCOPE__
@@ -609,12 +609,12 @@ __aicore__ inline uint16_t KernelAsStridedGather<T>::CeilDiv(uint32_t a, uint16_
 };
 
 template <typename T>
-__aicore__ inline int64_t KernelAsStridedGather<T>::GetMod(int64_t a, uint32_t b)
+__aicore__ inline int64_t KernelAsStridedGather<T>::GetMod(int64_t a, uint64_t b)
 {
     if (b == 0) {
         return a;
     }
-    return a - b * (a / b);
+    return a - static_cast<int64_t>(b) * (a / static_cast<int64_t>(b));
 };
 } // namespace AsStrided
 #endif // OP_KERNEL_AS_STRIDED_GATHER

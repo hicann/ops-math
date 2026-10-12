@@ -73,9 +73,9 @@ public:
         CopyArray(tilingData.nddmaSrcStride, nddmaSrcStride_, TILING_NDDMA_LEN);
         CopyArray(tilingData.nddmaDstStride, nddmaDstStride_, TILING_NDDMA_LEN);
 
-        blockOffset_ = loopsPerCore_ * ubFactor_;
-        tileOffset_ = ubFactorTail_ == 0 ? ubFactor_ * outerAxisFactor_ :
-                                           ubFactor_ * (outerAxisFactor_ - 1) + ubFactorTail_;
+        blockOffset_ = static_cast<uint64_t>(loopsPerCore_) * ubFactor_;
+        tileOffset_ = ubFactorTail_ == 0 ? static_cast<uint64_t>(ubFactor_) * outerAxisFactor_ :
+                                           static_cast<uint64_t>(ubFactor_) * (outerAxisFactor_ - 1) + ubFactorTail_;
 
         inputGm_.SetGlobalBuffer((__gm__ T*)input + storageOffset_);
         outputGm_.SetGlobalBuffer((__gm__ T*)output);
@@ -83,7 +83,7 @@ public:
         pipe_.InitBuffer(inQueue_, BUFFER_NUM, ubSize_ * sizeof(T));
     }
 
-    __aicore__ inline int64_t Product(int32_t* outLoopArr, size_t size)
+    __aicore__ inline int64_t Product(int64_t* outLoopArr, size_t size)
     {
         int64_t result = 1;
         for (size_t i = size; i < TILING_ARRAY_LEN; i++) {
@@ -154,7 +154,7 @@ public:
         SubProcess();
     }
 
-    __aicore__ inline void CopyProcess(int64_t srcOffset, int64_t dstOffset, uint32_t totalIdx)
+    __aicore__ inline void CopyProcess(int64_t srcOffset, int64_t dstOffset, uint64_t totalIdx)
     {
         static constexpr NdDmaConfig Config = {false, 0, 0, false};
         if (innerAxisFactorTail_ == 0) {
@@ -191,7 +191,7 @@ public:
 
         for (int64_t loop = 0; loop < loopsPerCore_; loop++) {
             int64_t currentIdx = loop * GetBlockNum() + GetBlockIdx();
-            if (currentIdx >= axisOutTotalFactor_) {
+            if (currentIdx >= static_cast<int64_t>(axisOutTotalFactor_)) {
                 break;
             }
             int64_t totalIdx = currentIdx;
@@ -223,21 +223,21 @@ private:
     uint32_t loopsTailCore_ = 0;
     uint32_t tilingAxisIdx_ = 0;
     uint32_t blockNum_ = 0;
-    uint32_t outerAxisFactor_ = 0;
+    uint64_t outerAxisFactor_ = 0;
     uint32_t innerAxisFactor_ = 0;
     uint32_t outerAxisNum_ = 0;
     uint32_t loopsPerCore_ = 0;
     uint32_t ubFactor_ = 0;
     uint32_t ubFactorTail_ = 0;
     uint32_t ubSize_ = 0;
-    uint32_t blockOffset_ = 0;
+    uint64_t blockOffset_ = 0;
     uint32_t innerAxisNum_ = 0;
     int64_t storageOffset_ = 0;
     uint32_t innerAxisFactorTail_ = 0;
-    uint32_t axisOutTotalFactor_ = 0;
-    uint32_t tileOffset_ = 0;
-    int32_t outLoopArr_[TILING_ARRAY_LEN] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-    int32_t outStrideArr_[TILING_ARRAY_LEN] = {0};
+    uint64_t axisOutTotalFactor_ = 0;
+    uint64_t tileOffset_ = 0;
+    int64_t outLoopArr_[TILING_ARRAY_LEN] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    int64_t outStrideArr_[TILING_ARRAY_LEN] = {0};
     uint32_t nddmaLoop_[TILING_NDDMA_LEN] = {1, 1, 1, 1, 1};
     uint32_t nddmaTailLoop_[TILING_NDDMA_LEN] = {1, 1, 1, 1, 1};
     uint32_t nddmaDstStride_[TILING_NDDMA_LEN] = {1, 1, 1, 1, 1};
