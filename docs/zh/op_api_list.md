@@ -74,7 +74,7 @@
 | [aclnnCalculateMatmulWeightSizeV2](../../conversion/trans_data/docs/aclnnCalculateMatmulWeightSizeV2.md)      | 在Matmul算子ND格式输入下，计算如果要转换到NZ格式下需要占用的空间大小（单位为元素个数），该接口仅仅用于判断对weight Tensor预处理需要使用多少size才可使Matmul算子执行性能最优。 | 默认确定性实现| 默认确定性实现  |
 | [aclnnCast](../../math/cast/docs/aclnnCast.md)                  | 实现张量数据类型转换。                                       | 默认确定性实现| 默认确定性实现|
 | [aclnnCat](../../conversion/concat_d/docs/aclnnCat.md)            | 将tensors中所有tensor按照维度dim进行级联。    | 默认确定性实现| 默认确定性实现  |
-| [aclnnCdist](../../math/cdist/docs/aclnnCdist.md)            | 计算两个向量集合中每个点之间的p范数距离。    | 默认确定性实现| - |
+| [aclnnCdist](../../math/cdist/docs/aclnnCdist.md)            | 计算两个向量集合中每个点之间的p范数距离。    | 默认确定性实现| 默认确定性实现|
 | [aclnnCdistBackward](../../math/cdist_grad/docs/aclnnCdistBackward.md)            | 完成aclnnCdist的反向。    | 默认确定性实现| 默认确定性实现 |
 | [aclnnCeil&aclnnInplaceCeil](../../math/ceil/docs/aclnnCeil&aclnnInplaceCeil.md) | 返回输入tensor中每个元素向上取整的结果。                     | 默认确定性实现| 默认确定性实现|
 | [aclnnChannelShuffle](../../conversion/transpose/docs/aclnnChannelShuffle.md) | 将(\*, C, H, W)张量的channels分成g个组，然后将每个通道组中的通道进行随机重排，最后将所有通道合并输出，同时保持最终输出张量的shape和输入张量保持一致。 | 默认确定性实现| 默认确定性实现|
