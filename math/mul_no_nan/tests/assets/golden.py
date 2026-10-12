@@ -49,23 +49,27 @@ def mul_no_nan_golden(x1, x2, **kwargs):
     product is returned as is, so x1 == 0 with x2 == inf still yields NaN and
     NOT 0. This is the core differentiator vs plain Mul.
     """
-    dtype = x1.dtype
-    if dtype == np.int32:
-        # Integer path: no NaN/Inf, kernel computes in native int32.
-        prod = (x1 * x2).astype(np.int32)
-        out = np.where(x2 == 0, np.int32(0), prod).astype(np.int32)
-    else:
-        # Float / half / bf16 path: lift to fp32 for the intermediate compute
-        # to match the kernel's MulNoNanFloatCast template for fp16/bf16, and
-        # to be a no-op for the native fp32 template. Cast back at the end.
-        x1f = x1.astype(np.float32)
-        x2f = x2.astype(np.float32)
-        mask = x2f == np.float32(0.0)
-        prod = x1f * x2f
-        # np.where picks element-wise, so wherever mask is True we get 0 even
-        # if prod[i] is NaN/Inf -- this is exactly the MulNoNan semantics.
-        out = np.where(mask, np.float32(0.0), prod).astype(dtype)
-    return out
+    import tensorflow as tf
+
+    with tf.device("/CPU:0"):
+        x, y = (
+            tf.convert_to_tensor(np.asarray(x1)),
+            tf.convert_to_tensor(np.asarray(x2)),
+        )
+        output_dtype = x.dtype
+        promote = kwargs.get("golden_mode") == "Promote"
+        if not promote and output_dtype in (tf.float16, tf.bfloat16):
+            x, y = tf.cast(x, tf.float32), tf.cast(y, tf.float32)
+        if output_dtype.is_integer:
+            # The native TF op excludes int32; its primitive composition has
+            # the same mask-on-x2 and native integer overflow semantics.
+            product = tf.multiply(x, y)
+            output = tf.where(tf.equal(y, 0), tf.zeros_like(product), product)
+        else:
+            output = tf.raw_ops.MulNoNan(x=x, y=y)
+        if not promote:
+            output = tf.cast(output, output_dtype)
+        return np.asarray(output.numpy())
 
 
 class _MulNoNanCompose:
@@ -73,75 +77,40 @@ class _MulNoNanCompose:
 
     def __call__(self, x1, x2, **kwargs):
         del kwargs
-        import torch  # the remote server executes this, the local golden stays numpy-only
+        import torch
 
+        output_dtype = x1.dtype
+        if output_dtype in (torch.float16, torch.bfloat16):
+            x1, x2 = x1.to(torch.float32), x2.to(torch.float32)
         prod = torch.mul(x1, x2)
-        return [torch.where(torch.eq(x2, 0), torch.zeros_like(prod), prod)]
-
-
-class _MulNoNanTfCompose:
-    """TensorFlow reference executed by the isolated third-party provider."""
-
-    def __call__(self, x1, x2, **kwargs):
-        del kwargs
-        import tensorflow as tf
-
-        # TensorFlow's native MulNoNan excludes int32, while the CANN kernel
-        # supports it. Keep the named raw op for its supported floating dtypes
-        # and use the equivalent TensorFlow primitive composition for int32.
-        if x1.dtype.is_integer:
-            product = tf.multiply(x1, x2)
-            return [tf.where(tf.equal(x2, 0), tf.zeros_like(product), product)]
-        return [tf.raw_ops.MulNoNan(x=x1, y=x2)]
+        output = torch.where(torch.eq(x2, 0), torch.zeros_like(prod), prod)
+        return [output.to(output_dtype)]
 
 
 class MulNoNanKernelSpec:
-    """kernel spec: numpy golden + third-party reference + precision standard."""
+    """Kernel/GEIR: TensorFlow CPU golden and a Torch GPU competitor."""
 
     @staticmethod
     def golden(x1, x2, **kwargs):
         return [mul_no_nan_golden(x1, x2, **kwargs)]
 
-    # Keep Torch first so existing unfiltered cross-check behavior is unchanged;
-    # TensorFlow can be selected explicitly with ``--provider tf``.
-    third_party = {"torch": _MulNoNanCompose, "tf": _MulNoNanTfCompose}
+    third_party = {"torch": _MulNoNanCompose}
     tolerance = _KERNEL_TOLERANCE
 
 
-def _to_numpy_array(value):
-    """Convert a NumPy or framework tensor to an independent host array."""
-    if isinstance(value, np.ndarray):
-        return np.array(value, copy=True)
-    if hasattr(value, "numpy"):
-        return np.array(value.numpy(), copy=True)
-    return np.array(value, copy=True)
+class _MulNoNanE2ECompose:
+    """Use the TF API's parameter names for TTK's name-based GPU dispatch."""
 
-
-def _promote_reference_array(array):
-    """Promote floating inputs so cross-check uses an independent CPU truth."""
-    target_dtype = {
-        "float16": np.float32,
-        "bfloat16": np.float32,
-        "float32": np.float64,
-    }.get(array.dtype.name)
-    return array.astype(target_dtype) if target_dtype is not None else array
-
-
-def tensorflow_mul_no_nan_golden(x, y, name=None, **kwargs):
-    """CPU golden for ``tf.raw_ops.MulNoNan``."""
-    del name, kwargs
-    x_array = _promote_reference_array(_to_numpy_array(x))
-    y_array = _promote_reference_array(_to_numpy_array(y))
-    with np.errstate(invalid="ignore", over="ignore"):
-        product = np.multiply(x_array, y_array)
-    return [np.where(y_array == 0, np.zeros((), dtype=product.dtype), product)]
+    def __call__(self, x, y, **kwargs):
+        return _MulNoNanCompose()(x, y, **kwargs)
 
 
 class MulNoNanTensorFlowSpec:
     """TensorFlow E2E spec registered by the CSV ``api_name``."""
 
-    golden = staticmethod(tensorflow_mul_no_nan_golden)
-    third_party = {"tf": "tf.raw_ops.MulNoNan"}
+    # Omit a custom golden: TTK's native CPU TF fallback applies Promote to
+    # raw inputs.  Its custom E2E plugin path bypasses that promotion.
+    third_party = {"torch": _MulNoNanE2ECompose}
     # tf.raw_ops.MulNoNan itself supports floating/complex tensors, not int32.
     # This CANN operator exposes only the three floating types from that overlap.
     tolerance = _TENSORFLOW_TOLERANCE

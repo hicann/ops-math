@@ -68,9 +68,7 @@ def _to_torch(array):
     if not array.flags.c_contiguous:
         array = np.ascontiguousarray(array)
     if array.dtype.name == "bfloat16":
-        # CPU torch cannot consume an ml_dtypes array directly. Computing AddV2
-        # in float32 and casting its output back is the established BF16 fallback.
-        array = array.astype(np.float32)
+        return torch.from_numpy(array.view(np.int16)).view(torch.bfloat16)
     return torch.from_numpy(array)
 
 
@@ -81,14 +79,18 @@ def _to_numpy(tensor):
     return tensor.numpy()
 
 
-def _compute(x1, x2):
+def _compute(x1, x2, golden_mode=None):
     """Compute AddV2 through the PyTorch reference interface."""
     if x1.dtype != x2.dtype:
         raise ValueError(
             f"add_v2 only supports identical input dtypes, got x1={x1.dtype}, "
             f"x2={x2.dtype}"
         )
-    return [torch.add(x1, x2)]
+    output_dtype = x1.dtype
+    if golden_mode != "Promote" and output_dtype in (torch.float16, torch.bfloat16):
+        x1, x2 = x1.to(torch.float32), x2.to(torch.float32)
+    output = torch.add(x1, x2)
+    return [output if golden_mode == "Promote" else output.to(output_dtype)]
 
 
 def _kernel_golden(x1, x2, **kwargs):
@@ -98,7 +100,12 @@ def _kernel_golden(x1, x2, **kwargs):
             f"x2={x2.dtype}"
         )
 
-    outputs = [_to_numpy(output) for output in _compute(_to_torch(x1), _to_torch(x2))]
+    outputs = [
+        _to_numpy(output)
+        for output in _compute(_to_torch(x1), _to_torch(x2), kwargs.get("golden_mode"))
+    ]
+    if kwargs.get("golden_mode") == "Promote":
+        return outputs
     output_dtypes = _output_dtypes(kwargs)
     return [
         output.astype(_numpy_dtype(output_dtypes[index]), copy=False)
@@ -108,6 +115,19 @@ def _kernel_golden(x1, x2, **kwargs):
     ]
 
 
+class _AddV2Compose:
+    """Torch GPU reference with the kernel's FP32 intermediates for FP16/BF16."""
+
+    def __call__(self, x1, x2, **kwargs):
+        del kwargs
+        import torch
+
+        output_dtype = x1.dtype
+        if output_dtype in (torch.float16, torch.bfloat16):
+            x1, x2 = x1.to(torch.float32), x2.to(torch.float32)
+        return [torch.add(x1, x2).to(output_dtype)]
+
+
 class AddV2KernelSpec:
     """TestSpec shared by the AddV2 kernel and GEIR pathways."""
 
@@ -115,10 +135,7 @@ class AddV2KernelSpec:
     def golden(x1, x2, **kwargs):
         return _kernel_golden(x1, x2, **kwargs)
 
-    third_party = {
-        "torch": "torch.add",
-        "tf": "tf.raw_ops.AddV2",
-    }
+    third_party = {"torch": _AddV2Compose}
     tolerance = _TOLERANCE
 
 

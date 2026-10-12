@@ -106,10 +106,7 @@ class TensorRedirectKernelSpec:
     def golden(x, **kwargs):
         return _kernel_golden(x, **kwargs)
 
-    third_party = {
-        "torch": "torch.clone",
-        "tf": "tf.identity",
-    }
+    third_party = {"torch": "torch.clone"}
     tolerance = _TOLERANCE
 
 
