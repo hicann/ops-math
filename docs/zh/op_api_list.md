@@ -243,8 +243,8 @@
 | [aclnnRange](../../math/range/docs/aclnnRange.md)               | 从start起始到end结束按照step的间隔取值。                     | 默认确定性实现| 默认确定性实现 |
 | [aclnnReal](../../math/real/docs/aclnnReal.md)                  | 为输入张量的每一个元素取实数部分。                           | 默认确定性实现| 默认确定性实现 |
 | [aclnnReciprocal&aclnnInplaceReciprocal](../../math/reciprocal/docs/aclnnReciprocal&aclnnInplaceReciprocal.md) | 返回一个具有每个输入元素倒数的新张量。                       | 默认确定性实现| 默认确定性实现|
-| [aclnnReduceLogSum](../../math/reduce_log_sum/docs/aclnnReduceLogSum.md) | 返回给定维度中输入张量每行的和再取对数。                     | 默认确定性实现| - |
-| [aclnnReduceNansum](../../math/reduce_nansum/docs/aclnnReduceNansum.md) | 将tensor中NaN处理为0后，返回输入tensor给定维度上的和。       | 默认确定性实现| - |
+| [aclnnReduceLogSum](../../math/reduce_log_sum/docs/aclnnReduceLogSum.md) | 返回给定维度中输入张量每行的和再取对数。                     | 默认确定性实现| 默认确定性实现|
+| [aclnnReduceNansum](../../math/reduce_nansum/docs/aclnnReduceNansum.md) | 将tensor中NaN处理为0后，返回输入tensor给定维度上的和。       | 默认确定性实现| 默认确定性实现|
 | [aclnnReduceSum](../../math/reduce_sum/docs/aclnnReduceSum.md) | 返回给定维度中输入张量每行的和。                             | 默认确定性实现| 默认确定性实现|
 | [aclnnReflectionPad1d](../../conversion/mirror_pad/docs/aclnnReflectionPad1d.md) | 使用输入边界的反射填充输入tensor。                           | 默认确定性实现| 默认确定性实现|
 | [aclnnReflectionPad1dBackward](../../conversion/pad_v4_grad/docs/aclnnReflectionPad1dBackward.md) | reflection_pad1d的反向传播，前向计算参考aclnnReflectionPad1d。 | 默认确定性实现| 默认确定性实现|
