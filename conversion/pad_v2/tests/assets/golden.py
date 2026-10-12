@@ -14,11 +14,9 @@ import numpy as np
 from collections import deque
 
 
-__golden__ = {
-    "kernel": {
-        "pad_v2": "pad_v2_golden"
-    }
-}
+__golden__ = {"kernel": {"pad_v2": "pad_v2_golden"}}
+
+__spec__ = {"pad_v2": "PadV2TestSpec"}
 
 
 def _numpy_bfloat16():
@@ -27,45 +25,55 @@ def _numpy_bfloat16():
     except ModuleNotFoundError:
         try:
             import tensorflow
+
             bfloat16 = tensorflow.bfloat16.as_numpy_dtype
         except ModuleNotFoundError:
-            raise RuntimeError("ml-dtypes or tensorflow is needed to support bfloat16 dtype!!! "
-                                "Please install with `pip3 install ml-dtypes` or `pip3 install tensorflow`")
+            raise RuntimeError(
+                "ml-dtypes or tensorflow is needed to support bfloat16 dtype!!! "
+                "Please install with `pip3 install ml-dtypes` or `pip3 install tensorflow`"
+            )
     return bfloat16
 
 
 def _numpy_float8_e5m2():
     from ml_dtypes import float8_e5m2
+
     return float8_e5m2
 
 
 def _numpy_float8_e4m3fn():
     from ml_dtypes import float8_e4m3fn
+
     return float8_e4m3fn
 
 
 def _numpy_float8_e8m0():
     from en_dtypes import float8_e8m0
+
     return float8_e8m0
 
 
 def _numpy_float4_e2m1():
     from en_dtypes import float4_e2m1
+
     return float4_e2m1
 
 
 def _numpy_float4_e1m2():
     from en_dtypes import float4_e1m2
+
     return float4_e1m2
 
 
 def _numpy_hifloat8():
     from en_dtypes import hifloat8
+
     return hifloat8
 
 
 def _numpy_to_torch_tensor(np_array):
     import torch
+
     if np_array is None:
         return None
     np_dtype = np_array.dtype.name
@@ -79,6 +87,7 @@ def _numpy_to_torch_tensor(np_array):
 
 def _torch_to_numpy_tensor(torch_tensor):
     import torch
+
     if torch_tensor is None:
         return None
     if not isinstance(torch_tensor, torch.Tensor):
@@ -93,14 +102,14 @@ def _torch_to_numpy_tensor(torch_tensor):
 
 
 def pad_v2_golden(x, paddings, constant_values, **kwargs):
-    '''
+    """
     Kernel golden for pad_v2.
     All the parameters follow @pad_v2_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
         input_formats, output_formats, input_ori_formats, output_ori_formats,
         input_dtypes, output_dtypes.
-    '''
+    """
     import torch
 
     paddings_arr = np.array(paddings).astype(np.int64)
@@ -109,8 +118,8 @@ def pad_v2_golden(x, paddings, constant_values, **kwargs):
     paddings_val = paddings_arr.tolist()
     constant_values_arr = constant_values
 
-    input_formats = kwargs.get('input_formats', ())
-    x_format = input_formats[0] if input_formats and len(input_formats) > 0 else 'ND'
+    input_formats = kwargs.get("input_formats", ())
+    x_format = input_formats[0] if input_formats and len(input_formats) > 0 else "ND"
 
     pad_shape = deque()
     for i in range(len(paddings_val)):
@@ -121,7 +130,7 @@ def pad_v2_golden(x, paddings, constant_values, **kwargs):
         pad_shape.appendleft(0)
         pad_shape.appendleft(0)
 
-    dtypes = {'uint8': 'int8', 'uint16': 'int16', 'uint32': 'int32', 'uint64': 'int64'}
+    dtypes = {"uint8": "int8", "uint16": "int16", "uint32": "int32", "uint64": "int64"}
     fp8dtypes = ["hifloat8", "float8_e8m0", "float8_e4m3fn", "float8_e5m2"]
     fp4dtypes = ["float4_e2m1", "float4_e1m2"]
 
@@ -134,14 +143,26 @@ def pad_v2_golden(x, paddings, constant_values, **kwargs):
     elif x.dtype.name in fp8dtypes:
         x_tensor = _numpy_to_torch_tensor(x.view(np.int8))
         constant_values_arr = constant_values_arr.view(np.int8)
-        cv = constant_values_arr.item() if constant_values_arr.size == 1 else constant_values_arr
+        cv = (
+            constant_values_arr.item()
+            if constant_values_arr.size == 1
+            else constant_values_arr
+        )
     elif x.dtype.name in fp4dtypes:
         x_tensor = _numpy_to_torch_tensor(x.astype(np.float32))
         constant_values_arr = constant_values_arr.astype(np.float32)
-        cv = constant_values_arr.item() if constant_values_arr.size == 1 else constant_values_arr
+        cv = (
+            constant_values_arr.item()
+            if constant_values_arr.size == 1
+            else constant_values_arr
+        )
     else:
         x_tensor = _numpy_to_torch_tensor(x)
-        cv = constant_values_arr[0]
+        cv = (
+            constant_values_arr.item()
+            if constant_values_arr.size == 1
+            else constant_values_arr
+        )
 
     golden = torch.constant_pad_nd(x_tensor, tuple(pad_shape), cv)
 
@@ -159,3 +180,31 @@ def pad_v2_golden(x, paddings, constant_values, **kwargs):
         golden = golden.numpy()
 
     return golden
+
+
+class PadV2Impl:
+    def __call__(self, x, paddings, constant_values):
+        import torch
+
+        paddings_arr = np.asarray(
+            torch.as_tensor(paddings).detach().cpu().tolist(), dtype=np.int64
+        ).reshape(-1, 2)
+        torch_paddings = []
+        for dim in reversed(paddings_arr):
+            torch_paddings.extend([dim[0], dim[1]])
+        cv = torch.as_tensor(constant_values).reshape(-1)
+        value = cv[0].item() if cv.numel() else 0
+        return torch.constant_pad_nd(x, torch_paddings, value)
+
+
+class PadV2TestSpec:
+    def golden(x, paddings, constant_values, **kwargs):
+        return [pad_v2_golden(x, paddings, constant_values, **kwargs)]
+
+    third_party = {"torch": PadV2Impl}
+
+    tolerance = {
+        "float32": {"standard": "binary_equal"},
+        "float16": {"standard": "binary_equal"},
+        "bfloat16": {"standard": "binary_equal"},
+    }

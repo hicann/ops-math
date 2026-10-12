@@ -15,6 +15,8 @@ import numpy as np
 
 __golden__ = {"kernel": {"matrix_set_diag_v2": "matrix_set_diag_v2_golden"}}
 
+__spec__ = {"matrix_set_diag_v2": "MatrixSetDiagV2TestSpec"}
+
 
 def matrix_set_diag_v2_golden(x, diagonal, k, **kwargs):
     """
@@ -67,3 +69,60 @@ def matrix_set_diag_v2_golden(x, diagonal, k, **kwargs):
         y[..., rows, cols] = diag_vals
 
     return y
+
+
+class MatrixSetDiagV2Impl:
+    @staticmethod
+    def _build(x_np, diag_np, k_np):
+        import tensorflow as tf
+
+        return tf.raw_ops.MatrixSetDiagV2(
+            input=tf.convert_to_tensor(x_np),
+            diagonal=tf.convert_to_tensor(diag_np),
+            k=tf.convert_to_tensor(np.asarray(k_np, dtype=np.int32)),
+        )
+
+    def __call__(self, x, diagonal, k):
+        import numpy as np
+        import tensorflow as tf
+        import torch
+
+        def to_np(v):
+            if isinstance(v, torch.Tensor):
+                v = v.detach().cpu()
+                if v.dtype == torch.bfloat16:
+                    from ml_dtypes import bfloat16
+
+                    return v.view(torch.int16).numpy().view(bfloat16)
+                return v.numpy()
+            return np.asarray(v)
+
+        x_np = np.asarray(to_np(x))
+        diag_np = np.asarray(to_np(diagonal))
+        k_np = np.asarray(to_np(k))
+        if tf.executing_eagerly():
+            out_np = self._build(x_np, diag_np, k_np).numpy()
+            return np.asarray(out_np)
+        graph = tf.Graph()
+        with graph.as_default():
+            out_g = self._build(x_np, diag_np, k_np)
+        with tf.compat.v1.Session(graph=graph) as sess:
+            out_np = sess.run(out_g)
+        return np.asarray(out_np)
+
+
+class MatrixSetDiagV2TestSpec:
+    def golden(x, diagonal, k, **kwargs):
+        return [matrix_set_diag_v2_golden(x, diagonal, k, **kwargs)]
+
+    third_party = {"tf": MatrixSetDiagV2Impl}
+
+    tolerance = {
+        "float32": {"standard": "binary_equal"},
+        "float16": {"standard": "binary_equal"},
+        "bfloat16": {"standard": "binary_equal"},
+        "int8": {"standard": "binary_equal"},
+        "int16": {"standard": "binary_equal"},
+        "int32": {"standard": "binary_equal"},
+        "int64": {"standard": "binary_equal"},
+    }

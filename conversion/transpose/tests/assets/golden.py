@@ -23,7 +23,7 @@ import torch
 
 def _parse_perm(perm):
     if hasattr(perm, "tolist"):
-        return perm.tolist()
+        perm = perm.tolist()
     if isinstance(perm, int):
         return [perm]
     return list(perm)
@@ -31,7 +31,49 @@ def _parse_perm(perm):
 
 class TransposeImpl:
     def __call__(self, x, perm, **kwargs):
+        if not isinstance(x, torch.Tensor):
+            x_np = np.asarray(x)
+            x = (
+                torch.from_numpy(x_np.view(np.int16)).view(torch.bfloat16)
+                if x_np.dtype.name == "bfloat16"
+                else torch.from_numpy(x_np)
+            )
         return torch.permute(x, _parse_perm(perm)).contiguous()
+
+
+class AclnnPermuteImpl:
+    def __call__(self, *inputs, dims=0, out=None, input_formats=None, **kwargs):
+        # ACLNN names the input tensor "self"; the remote binder forwards it
+        # through *inputs to avoid colliding with the Python instance parameter.
+        if len(inputs) != 1:
+            raise ValueError("aclnnPermute expects exactly one input tensor")
+        return TransposeImpl()(inputs[0], dims)
+
+
+class TransposeTFImpl:
+    def __call__(self, x, perm, **kwargs):
+        import tensorflow as tf
+
+        if isinstance(x, torch.Tensor):
+            x = x.detach().cpu()
+            if x.dtype == torch.bfloat16:
+                from ml_dtypes import bfloat16
+
+                x_np = x.view(torch.int16).numpy().view(bfloat16)
+            else:
+                x_np = x.numpy()
+        else:
+            x_np = np.asarray(x)
+        perm = [axis + x_np.ndim if axis < 0 else axis for axis in _parse_perm(perm)]
+        if tf.executing_eagerly():
+            out_np = tf.transpose(tf.convert_to_tensor(x_np), perm=perm).numpy()
+        else:
+            graph = tf.Graph()
+            with graph.as_default():
+                out_g = tf.transpose(tf.convert_to_tensor(x_np), perm=perm)
+            with tf.compat.v1.Session(graph=graph) as sess:
+                out_np = sess.run(out_g)
+        return np.asarray(out_np)
 
 
 _TOLERANCE = {
@@ -58,7 +100,7 @@ class TransposeKernelSpec:
         perm_val = _parse_perm(perm)
         return [np.transpose(x, perm_val)]
 
-    third_party = {"torch": TransposeImpl}
+    third_party = {"torch": TransposeImpl, "tf": TransposeTFImpl}
     tolerance = _TOLERANCE
 
 
@@ -70,5 +112,5 @@ class AclnnPermuteSpec:
             dims = [dims]
         return [torch.permute(self, dims).contiguous()]
 
-    third_party = {"torch": TransposeImpl}
+    third_party = {"torch": AclnnPermuteImpl}
     tolerance = _TOLERANCE

@@ -14,7 +14,50 @@ import numpy as np
 __spec__ = {"histogram_fixed_width": "HistogramFixedWidthTestSpec"}
 
 
+class HistogramFixedWidthTFImpl:
+    def __call__(self, x, value_range, nbins, **kwargs):
+        import tensorflow as tf
+        import torch
+
+        def as_numpy(value):
+            return (
+                value.detach().cpu().numpy()
+                if isinstance(value, torch.Tensor)
+                else np.asarray(value)
+            )
+
+        x_np, range_np = as_numpy(x), as_numpy(value_range)
+        if x_np.dtype.name not in ("int32", "int64", "float32", "float64"):
+            raise NotImplementedError(
+                f"TensorFlow histogram_fixed_width does not support dtype: {x_np.dtype.name}"
+            )
+        bins = int(as_numpy(nbins).item())
+        output_dtypes = kwargs.get("output_dtypes", ["int32"])
+        dtype = tf.as_dtype(output_dtypes[0] if output_dtypes else "int32")
+
+        def build():
+            return tf.histogram_fixed_width(
+                tf.convert_to_tensor(x_np),
+                tf.convert_to_tensor(range_np),
+                nbins=bins,
+                dtype=dtype,
+            )
+
+        if tf.executing_eagerly():
+            out_np = build().numpy()
+        else:
+            graph = tf.Graph()
+            with graph.as_default():
+                out_g = build()
+            with tf.compat.v1.Session(graph=graph) as sess:
+                out_np = sess.run(out_g)
+        return np.asarray(out_np)
+
+
 class HistogramFixedWidthTestSpec:
+    third_party = {"tf": HistogramFixedWidthTFImpl}
+    tolerance = {"int32": {"standard": "binary_equal"}}
+
     def golden(x, value_range, nbins, **kwargs):
         output_dtypes = kwargs.get("output_dtypes", ["int32"])
         out_dtype = output_dtypes[0] if output_dtypes else "int32"

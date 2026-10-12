@@ -13,11 +13,10 @@
 import numpy as np
 
 
-__golden__ = {
-    "kernel": {
-        "batch_to_space_nd": "batch_to_space_nd_golden"
-    }
-}
+__golden__ = {"kernel": {"batch_to_space_nd": "batch_to_space_nd_golden"}}
+
+
+__spec__ = {"batch_to_space_nd": "BatchToSpaceNdTestSpec"}
 
 
 def _ceil_div(x, y):
@@ -34,6 +33,7 @@ def shape_6d_2_5d(tensor):
 
 def shape_5d_2_6d(tensor):
     import math
+
     c0 = 16
     n, di, hi, wi, c = tensor.shape
     c1 = math.ceil(c / c0)
@@ -51,8 +51,15 @@ def trans_nhwc_to_nc1hwc0(input_data, c0=16):
     axis_c0 = c0
     axis_c1 = _ceil_div(axis_c, axis_c0)
     c_pad = 0
-    tmp_input_tensor = np.pad(input_data, ((0, 0), (0, 0), (0, 0), (0, c_pad)), mode="constant", constant_values=(0, 0))
-    tmp_input_tensor = tmp_input_tensor.reshape(axis_n, axis_h, axis_w, axis_c1, axis_c0)
+    tmp_input_tensor = np.pad(
+        input_data,
+        ((0, 0), (0, 0), (0, 0), (0, c_pad)),
+        mode="constant",
+        constant_values=(0, 0),
+    )
+    tmp_input_tensor = tmp_input_tensor.reshape(
+        axis_n, axis_h, axis_w, axis_c1, axis_c0
+    )
     output_arr = np.transpose(tmp_input_tensor, axes=(0, 3, 1, 2, 4))
     return output_arr
 
@@ -65,7 +72,9 @@ def trans_nc1hwc0_to_nhwc(input_data):
     axis_w = in_shape[3]
     axis_c0 = in_shape[4]
     tmp_input_tensor = np.transpose(input_data, axes=(0, 2, 3, 1, 4))
-    tmp_input_tensor = tmp_input_tensor.reshape(axis_n, axis_h, axis_w, axis_c1 * axis_c0)
+    tmp_input_tensor = tmp_input_tensor.reshape(
+        axis_n, axis_h, axis_w, axis_c1 * axis_c0
+    )
     return tmp_input_tensor
 
 
@@ -113,27 +122,28 @@ def _high_dim_batch_to_space_nd(input_tensor, block_shape, crops):
 
 
 def batch_to_space_nd_golden(x, block_shape, crops, **kwargs):
-    '''
+    """
     Kernel golden for batch_to_space_nd.
     All the parameters follow @batch_to_space_nd_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
         input_formats, output_formats, input_ori_formats, output_ori_formats,
         input_dtypes, output_dtypes.
-    '''
+    """
     import tensorflow.compat.v1 as tf
+
     tf.disable_v2_behavior()
 
     data_x = x
     block_shape_arr = np.array(block_shape).astype(np.int64)
     crops_arr = np.array(crops).astype(np.int64)
 
-    input_formats = kwargs.get('input_formats', ())
-    fmt = input_formats[0] if input_formats and len(input_formats) > 0 else 'ND'
+    input_formats = kwargs.get("input_formats", ())
+    fmt = input_formats[0] if input_formats and len(input_formats) > 0 else "ND"
     if isinstance(fmt, (list, tuple)):
-        fmt = fmt[0] if fmt else 'ND'
+        fmt = fmt[0] if fmt else "ND"
 
-    if fmt == 'NC1HWC0':
+    if fmt == "NC1HWC0":
         data_x = trans_nc1hwc0_to_nhwc(data_x)
     elif fmt == "NDC1HWC0":
         data_x = shape_6d_2_5d(data_x)
@@ -154,3 +164,98 @@ def batch_to_space_nd_golden(x, block_shape, crops, **kwargs):
     elif fmt == "NDC1HWC0":
         res = shape_5d_2_6d(res)
     return res
+
+
+class BatchToSpaceNdTfImpl:
+    @staticmethod
+    def _build(x_np, blocks_np, crops_np, input_format="ND"):
+        import tensorflow as tf
+
+        x = tf.convert_to_tensor(x_np)
+        shape = tf.shape(x)
+        if input_format == "NC1HWC0":
+            if x.shape.rank != 5:
+                raise ValueError("NC1HWC0 requires rank 5")
+            x = tf.reshape(
+                tf.transpose(x, [0, 2, 3, 1, 4]),
+                [shape[0], shape[2], shape[3], shape[1] * shape[4]],
+            )
+        elif input_format == "NDC1HWC0":
+            if x.shape.rank != 6:
+                raise ValueError("NDC1HWC0 requires rank 6")
+            x = tf.reshape(
+                tf.transpose(x, [0, 1, 3, 4, 2, 5]),
+                [shape[0], shape[1], shape[3], shape[4], shape[2] * shape[5]],
+            )
+        elif input_format != "ND":
+            raise NotImplementedError(f"Unsupported input format: {input_format}")
+        out = tf.raw_ops.BatchToSpaceND(
+            input=x,
+            block_shape=tf.cast(tf.convert_to_tensor(blocks_np), tf.int32),
+            crops=tf.cast(tf.convert_to_tensor(crops_np), tf.int32),
+        )
+        out_shape = tf.shape(out)
+        if input_format == "NC1HWC0":
+            c0 = shape[4]
+            out = tf.reshape(
+                out, [out_shape[0], out_shape[1], out_shape[2], out_shape[3] // c0, c0]
+            )
+            out = tf.transpose(out, [0, 3, 1, 2, 4])
+        elif input_format == "NDC1HWC0":
+            c0 = shape[5]
+            out = tf.reshape(
+                out,
+                [
+                    out_shape[0],
+                    out_shape[1],
+                    out_shape[2],
+                    out_shape[3],
+                    out_shape[4] // c0,
+                    c0,
+                ],
+            )
+            out = tf.transpose(out, [0, 1, 4, 2, 3, 5])
+        return out
+
+    def __call__(self, x, block_shape, crops, **kwargs):
+        import numpy as np
+        import tensorflow as tf
+        import torch
+
+        def to_np(v):
+            if not isinstance(v, torch.Tensor):
+                return np.asarray(v)
+            v = v.detach().cpu()
+            if v.dtype == torch.bfloat16:
+                import ml_dtypes
+
+                return v.view(torch.int16).numpy().view(ml_dtypes.bfloat16)
+            return v.numpy()
+
+        x_np = np.asarray(to_np(x))
+        blocks_np = np.asarray(to_np(block_shape)).reshape(-1)
+        crops_np = np.asarray(to_np(crops)).reshape(-1, 2)
+        formats = kwargs.get("input_formats", ())
+        input_format = formats[0] if formats else "ND"
+        if isinstance(input_format, (list, tuple)):
+            input_format = input_format[0] if input_format else "ND"
+        if tf.executing_eagerly():
+            return [self._build(x_np, blocks_np, crops_np, input_format).numpy()]
+        graph = tf.Graph()
+        with graph.as_default():
+            out_g = self._build(x_np, blocks_np, crops_np, input_format)
+        with tf.compat.v1.Session(graph=graph) as sess:  # TF1 图模式兜底
+            return [sess.run(out_g)]
+
+
+class BatchToSpaceNdTestSpec:
+    def golden(x, block_shape, crops, **kwargs):
+        return [batch_to_space_nd_golden(x, block_shape, crops, **kwargs)]
+
+    third_party = {"tf": BatchToSpaceNdTfImpl}
+
+    tolerance = {
+        "float32": {"standard": "binary_equal"},
+        "float16": {"standard": "binary_equal"},
+        "bfloat16": {"standard": "binary_equal"},
+    }

@@ -13,11 +13,9 @@
 import numpy as np
 
 
-__golden__ = {
-    "kernel": {
-        "circular_pad_grad": "circular_pad_grad_golden"
-    }
-}
+__golden__ = {"kernel": {"circular_pad_grad": "circular_pad_grad_golden"}}
+
+__spec__ = {"circular_pad_grad": "CircularPadGradTestSpec"}
 
 
 def _numpy_bfloat16():
@@ -26,15 +24,19 @@ def _numpy_bfloat16():
     except ModuleNotFoundError:
         try:
             import tensorflow
+
             bfloat16 = tensorflow.bfloat16.as_numpy_dtype
         except ModuleNotFoundError:
-            raise RuntimeError("ml-dtypes or tensorflow is needed to support bfloat16 dtype!!! "
-                                "Please install with `pip3 install ml-dtypes` or `pip3 install tensorflow`")
+            raise RuntimeError(
+                "ml-dtypes or tensorflow is needed to support bfloat16 dtype!!! "
+                "Please install with `pip3 install ml-dtypes` or `pip3 install tensorflow`"
+            )
     return bfloat16
 
 
 def _numpy_to_torch_tensor(np_array):
     import torch
+
     if np_array is None:
         return None
     np_dtype = np_array.dtype.name
@@ -48,6 +50,7 @@ def _numpy_to_torch_tensor(np_array):
 
 def _torch_to_numpy_tensor(torch_tensor):
     import torch
+
     if torch_tensor is None:
         return None
     if not isinstance(torch_tensor, torch.Tensor):
@@ -68,7 +71,9 @@ def _cal_out_shape(in_shape, paddings):
         if i < len(in_shape) - len(paddings):
             out_shape.append(in_shape[i])
         else:
-            out_shape.append(in_shape[i] - paddings[i - offset][0] - paddings[i - offset][1])
+            out_shape.append(
+                in_shape[i] - paddings[i - offset][0] - paddings[i - offset][1]
+            )
     return out_shape
 
 
@@ -98,7 +103,7 @@ def _torch_direct_invoke_circular(grad_output_np, y_shape_list, pad_temp):
 
     golden = x.grad
 
-    golden.squeeze(0)
+    golden = golden.squeeze(0)
     if origin_dtype == "bfloat16":
         golden = _torch_to_numpy_tensor(golden.to(torch.bfloat16))
     else:
@@ -108,28 +113,27 @@ def _torch_direct_invoke_circular(grad_output_np, y_shape_list, pad_temp):
 
 def _numpy_pad_v3_grad_circular(grad_output, input_shape, pad):
     dim = len(input_shape)
+    pad = [[0, 0]] * (dim - len(pad)) + list(pad)
 
     true_dtype = grad_output.dtype
     grad_output = np.array(grad_output, dtype=np.float32)
     grad_input = np.zeros(input_shape, dtype=np.float32)
     for idx_out in np.ndindex(grad_output.shape):
-        idx_in = tuple(
-            (idx_out[d] - pad[d][0]) % input_shape[d] for d in range(dim)
-        )
+        idx_in = tuple((idx_out[d] - pad[d][0]) % input_shape[d] for d in range(dim))
         grad_input[idx_in] += grad_output[idx_out]
     grad_input = np.array(grad_input, dtype=true_dtype)
     return grad_input
 
 
 def circular_pad_grad_golden(x, paddings, **kwargs):
-    '''
+    """
     Kernel golden for circular_pad_grad.
     All the parameters follow @circular_pad_grad_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
         input_formats, output_formats, input_ori_formats, output_ori_formats,
         input_dtypes, output_dtypes.
-    '''
+    """
     grad_output = x
 
     paddings_arr = np.array(paddings).astype(np.int64)
@@ -139,8 +143,26 @@ def circular_pad_grad_golden(x, paddings, **kwargs):
 
     y_shape = _cal_out_shape(grad_output.shape, pad_shape)
 
-    if grad_output.ndim <= 3:
+    if len(pad_shape) > grad_output.ndim or any(size <= 0 for size in y_shape):
+        raise ValueError("paddings must leave a positive size in every input dimension")
+    # PyTorch circular padding accepts only trailing spatial dimensions.
+    while pad_shape and pad_shape[0] == [0, 0]:
+        pad_shape = pad_shape[1:]
+    if not pad_shape:
+        return grad_output.copy()
+    if grad_output.ndim <= 3 and len(pad_shape) == grad_output.ndim - 1:
         grad = _torch_direct_invoke_circular(grad_output, y_shape, pad_shape)
     else:
         grad = _numpy_pad_v3_grad_circular(grad_output, y_shape, pad_shape)
     return grad
+
+
+class CircularPadGradTestSpec:
+    def golden(x, paddings, **kwargs):
+        return [circular_pad_grad_golden(x, paddings, **kwargs)]
+
+    tolerance = {
+        "float32": {"standard": "mix_tolerance"},
+        "float16": {"standard": "mix_tolerance"},
+        "bfloat16": {"standard": "mix_tolerance"},
+    }

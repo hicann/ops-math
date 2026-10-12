@@ -14,6 +14,8 @@ import numpy as np
 
 __golden__ = {"kernel": {"erfc": "erfc_golden"}}
 
+__spec__ = {"erfc": "ErfcTestSpec"}
+
 
 def erfc_golden(x, **kwargs):
     """
@@ -41,3 +43,16 @@ def erfc_golden(x, **kwargs):
         x_tensor = torch.from_numpy(x)
         output = torch.erfc(x_tensor)
         return output.numpy()
+
+
+class ErfcTestSpec:
+    def golden(x, **kwargs):
+        return [erfc_golden(x, **kwargs)]
+
+    third_party = {"torch": "torch.erfc"}
+
+    tolerance = {
+        "float32": {"standard": "mix_tolerance"},
+        "float16": {"standard": "mix_tolerance"},
+        "bfloat16": {"standard": "mix_tolerance"},
+    }

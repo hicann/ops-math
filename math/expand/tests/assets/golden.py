@@ -13,11 +13,9 @@
 import numpy as np
 
 
-__golden__ = {
-    "kernel": {
-        "expand": "expand_golden"
-    }
-}
+__golden__ = {"kernel": {"expand": "expand_golden"}}
+
+__spec__ = {"expand": "ExpandTestSpec"}
 
 
 def _numpy_bfloat16():
@@ -26,15 +24,19 @@ def _numpy_bfloat16():
     except ModuleNotFoundError:
         try:
             import tensorflow
+
             bfloat16 = tensorflow.bfloat16.as_numpy_dtype
         except ModuleNotFoundError:
-            raise RuntimeError("ml-dtypes or tensorflow is needed to support bfloat16 dtype!!! "
-                                "Please install with `pip3 install ml-dtypes` or `pip3 install tensorflow`")
+            raise RuntimeError(
+                "ml-dtypes or tensorflow is needed to support bfloat16 dtype!!! "
+                "Please install with `pip3 install ml-dtypes` or `pip3 install tensorflow`"
+            )
     return bfloat16
 
 
 def _numpy_to_torch_tensor(np_array):
     import torch
+
     if np_array is None:
         return None
     np_dtype = np_array.dtype.name
@@ -48,6 +50,7 @@ def _numpy_to_torch_tensor(np_array):
 
 def _torch_to_numpy_tensor(torch_tensor):
     import torch
+
     if torch_tensor is None:
         return None
     if not isinstance(torch_tensor, torch.Tensor):
@@ -62,16 +65,39 @@ def _torch_to_numpy_tensor(torch_tensor):
 
 
 def expand_golden(x, shape, **kwargs):
-    '''
+    """
     Kernel golden for expand.
     All the parameters follow @expand_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
         input_formats, output_formats, input_ori_formats, output_ori_formats,
         input_dtypes, output_dtypes.
-    '''
-    import torch
+    """
 
     shape_val = shape.tolist() if isinstance(shape, np.ndarray) else shape
     x_tensor = _numpy_to_torch_tensor(x)
-    return _torch_to_numpy_tensor(x_tensor.expand(shape_val)).astype(x.dtype, copy=False)
+    return _torch_to_numpy_tensor(x_tensor.expand(shape_val)).astype(
+        x.dtype, copy=False
+    )
+
+
+class ExpandImpl:
+    def __call__(self, x, shape):
+        import torch
+
+        if isinstance(shape, (np.ndarray, torch.Tensor)):
+            shape = shape.tolist()
+        return x.expand(*shape).contiguous()
+
+
+class ExpandTestSpec:
+    def golden(x, shape, **kwargs):
+        return [expand_golden(x, shape, **kwargs)]
+
+    third_party = {"torch": ExpandImpl}
+
+    tolerance = {
+        "float32": {"standard": "binary_equal"},
+        "float16": {"standard": "binary_equal"},
+        "bfloat16": {"standard": "binary_equal"},
+    }

@@ -13,11 +13,10 @@
 import numpy as np
 
 
-__golden__ = {
-    "kernel": {
-        "sinc": "sinc_golden"
-    }
-}
+__golden__ = {"kernel": {"sinc": "sinc_golden"}}
+
+
+__spec__ = {"sinc": "SincTestSpec"}
 
 
 def _numpy_bfloat16():
@@ -26,15 +25,19 @@ def _numpy_bfloat16():
     except ModuleNotFoundError:
         try:
             import tensorflow
+
             bfloat16 = tensorflow.bfloat16.as_numpy_dtype
         except ModuleNotFoundError:
-            raise RuntimeError("ml-dtypes or tensorflow is needed to support bfloat16 dtype!!! "
-                                "Please install with `pip3 install ml-dtypes` or `pip3 install tensorflow`")
+            raise RuntimeError(
+                "ml-dtypes or tensorflow is needed to support bfloat16 dtype!!! "
+                "Please install with `pip3 install ml-dtypes` or `pip3 install tensorflow`"
+            )
     return bfloat16
 
 
 def _numpy_to_torch_tensor(np_array):
     import torch
+
     if np_array is None:
         return None
     np_dtype = np_array.dtype.name
@@ -48,6 +51,7 @@ def _numpy_to_torch_tensor(np_array):
 
 def _torch_to_numpy_tensor(torch_tensor):
     import torch
+
     if torch_tensor is None:
         return None
     if not isinstance(torch_tensor, torch.Tensor):
@@ -62,16 +66,29 @@ def _torch_to_numpy_tensor(torch_tensor):
 
 
 def sinc_golden(x, **kwargs):
-    '''
+    """
     Kernel golden for sinc.
     All the parameters follow @sinc_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
         input_formats, output_formats, input_ori_formats, output_ori_formats,
         input_dtypes, output_dtypes.
-    '''
+    """
     import torch
 
     input_x = _numpy_to_torch_tensor(x)
     output = torch.sinc(input_x)
     return _torch_to_numpy_tensor(output)
+
+
+class SincTestSpec:
+    def golden(x, **kwargs):
+        return [sinc_golden(x, **kwargs)]
+
+    third_party = {"torch": "torch.sinc"}
+
+    tolerance = {
+        "float32": {"standard": "mix_tolerance"},
+        "float16": {"standard": "mix_tolerance"},
+        "bfloat16": {"standard": "mix_tolerance"},
+    }

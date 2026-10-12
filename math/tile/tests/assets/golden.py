@@ -20,6 +20,8 @@ __golden__ = {
     "kernel": {"tile": "tile_golden", "tile_d": "tile_golden"},
 }
 
+__spec__ = {"tile": "TileTestSpec", "tile_d": "TileDTestSpec"}
+
 
 def tile_golden(x, multiples, **kwargs):
     """
@@ -43,3 +45,40 @@ def aclnn_repeat_golden(self, repeats=0, out=None, **kwargs):
     elif isinstance(repeats, int):
         repeats = [repeats]
     return [self.repeat(*repeats)]
+
+
+class TileImpl:
+    def __call__(self, x, multiples):
+        import torch
+
+        if isinstance(multiples, (np.ndarray, torch.Tensor)):
+            multiples = multiples.tolist()
+        elif isinstance(multiples, int):
+            multiples = [multiples]
+        return torch.tile(x, tuple(multiples)).contiguous()
+
+
+class TileTestSpec:
+    def golden(x, multiples, **kwargs):
+        return [tile_golden(x, multiples, **kwargs)]
+
+    third_party = {"torch": TileImpl}
+
+    tolerance = {
+        "float32": {"standard": "binary_equal"},
+        "float16": {"standard": "binary_equal"},
+        "bfloat16": {"standard": "binary_equal"},
+    }
+
+
+class TileDTestSpec:
+    def golden(x, multiples, **kwargs):
+        return [tile_golden(x, multiples, **kwargs)]
+
+    third_party = {"torch": TileImpl}
+
+    tolerance = {
+        "float32": {"standard": "binary_equal"},
+        "float16": {"standard": "binary_equal"},
+        "bfloat16": {"standard": "binary_equal"},
+    }

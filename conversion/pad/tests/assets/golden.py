@@ -13,11 +13,9 @@
 import numpy as np
 
 
-__golden__ = {
-    "kernel": {
-        "pad": "pad_golden"
-    }
-}
+__golden__ = {"kernel": {"pad": "pad_golden"}}
+
+__spec__ = {"pad": "PadTestSpec"}
 
 
 def _numpy_bfloat16():
@@ -26,15 +24,19 @@ def _numpy_bfloat16():
     except ModuleNotFoundError:
         try:
             import tensorflow
+
             bfloat16 = tensorflow.bfloat16.as_numpy_dtype
         except ModuleNotFoundError:
-            raise RuntimeError("ml-dtypes or tensorflow is needed to support bfloat16 dtype!!! "
-                                "Please install with `pip3 install ml-dtypes` or `pip3 install tensorflow`")
+            raise RuntimeError(
+                "ml-dtypes or tensorflow is needed to support bfloat16 dtype!!! "
+                "Please install with `pip3 install ml-dtypes` or `pip3 install tensorflow`"
+            )
     return bfloat16
 
 
 def _numpy_to_torch_tensor(np_array):
     import torch
+
     if np_array is None:
         return None
     np_dtype = np_array.dtype.name
@@ -48,6 +50,7 @@ def _numpy_to_torch_tensor(np_array):
 
 def _torch_to_numpy_tensor(torch_tensor):
     import torch
+
     if torch_tensor is None:
         return None
     if not isinstance(torch_tensor, torch.Tensor):
@@ -62,17 +65,17 @@ def _torch_to_numpy_tensor(torch_tensor):
 
 
 def pad_golden(x, paddings, **kwargs):
-    '''
+    """
     Kernel golden for pad.
     All the parameters follow @pad_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
         input_formats, output_formats, input_ori_formats, output_ori_formats,
         input_dtypes, output_dtypes.
-    '''
+    """
     import torch
 
-    dtypes = {'uint8': 'int8', 'uint16': 'int16', 'uint32': 'int32', 'uint64': 'int64'}
+    dtypes = {"uint8": "int8", "uint16": "int16", "uint32": "int32", "uint64": "int64"}
 
     if x.dtype.name in dtypes.keys():
         x_tensor = _numpy_to_torch_tensor(x.view(dtypes[x.dtype.name]))
@@ -98,3 +101,29 @@ def pad_golden(x, paddings, **kwargs):
         golden = golden.numpy()
 
     return golden
+
+
+class PadImpl:
+    def __call__(self, x, paddings):
+        import torch
+
+        paddings_arr = np.asarray(
+            torch.as_tensor(paddings).detach().cpu().tolist(), dtype=np.int64
+        ).reshape(-1, 2)
+        torch_paddings = []
+        for dim in reversed(paddings_arr):
+            torch_paddings.extend([dim[0], dim[1]])
+        return torch.nn.functional.pad(x, torch_paddings)
+
+
+class PadTestSpec:
+    def golden(x, paddings, **kwargs):
+        return [pad_golden(x, paddings, **kwargs)]
+
+    third_party = {"torch": PadImpl}
+
+    tolerance = {
+        "float32": {"standard": "binary_equal"},
+        "float16": {"standard": "binary_equal"},
+        "bfloat16": {"standard": "binary_equal"},
+    }
