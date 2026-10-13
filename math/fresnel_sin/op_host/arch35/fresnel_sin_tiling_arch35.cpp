@@ -14,8 +14,8 @@
 #include "op_common/log/log.h"
 #include "op_common/op_host/util/math_util.h"
 #include "op_common/op_host/util/platform_util.h"
+#include <graph/utils/type_utils.h>
 #include "../../op_kernel/arch35/fresnel_sin_tiling_data.h"
-#include "log/log.h"
 
 namespace optiling {
 
@@ -91,6 +91,11 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t* 
         supportedDtype.count(*dataType) == 0,
         OP_LOGE_WITH_INVALID_INPUT_DTYPE(context->GetNodeName(), "x", "unsupported", "DT_FLOAT, DT_FLOAT16, DT_BF16"),
         return ge::GRAPH_FAILED);
+
+    auto inputFormat = inputDesc->GetFormat().GetStorageFormat();
+    OP_CHECK_IF(inputFormat != ge::FORMAT_ND,
+                OP_LOGE_FOR_INVALID_FORMAT(context->GetNodeName(), "x", ge::GetFormatName(inputFormat), "ND"),
+                return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }

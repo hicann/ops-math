@@ -126,8 +126,10 @@ private:
     TQue<QuePosition::VECOUT, 1> qOut;
     TQue<QuePosition::VECCALC, 1> calcQ[CALC_BUF_COUNT];
     TQue<QuePosition::VECCALC, 1> maskQ;
-    GlobalTensor<T> xGM, yGM;
-    int64_t blkLen_ = 0, ubLen_ = 0;
+    GlobalTensor<T> xGM;
+    GlobalTensor<T> yGM;
+    int64_t blkLen_ = 0;
+    int64_t ubLen_ = 0;
 };
 
 template <typename T>
@@ -150,13 +152,18 @@ __aicore__ inline void FresnelSin<T>::Init(GM_ADDR x, GM_ADDR y, const FresnelSi
 template <typename T>
 __aicore__ inline void FresnelSin<T>::Process()
 {
+    // Empty tensor short-circuit: blkLen_<=0 (or ubLen_<=0) means no work on this core
+    if (blkLen_ <= 0 || ubLen_ <= 0) {
+        return;
+    }
     constexpr int64_t CMP_ALIGN = (sizeof(T) == 4) ? CMP_ALIGN_FP32 : CMP_ALIGN_FP16;
     int64_t loops = (blkLen_ + ubLen_ - 1) / ubLen_;
     for (int64_t i = 0; i < loops; i++) {
         int64_t n = (i == loops - 1) ? (blkLen_ - ubLen_ * i) : ubLen_;
         int64_t computeN = ((n + CMP_ALIGN - 1) / CMP_ALIGN) * CMP_ALIGN;
-        if (computeN > ubLen_)
+        if (computeN > ubLen_) {
             computeN = ubLen_;
+        }
 
         auto xL = qIn.AllocTensor<T>();
         AscendC::DataCopyExtParams copyInParams{static_cast<uint16_t>(1), static_cast<uint32_t>(n * sizeof(T)), 0, 0,
@@ -282,10 +289,6 @@ __aicore__ inline void FresnelSin<T>::ComputePolynomialBranch(
     AscendC::LocalTensor<float>& b5, AscendC::LocalTensor<float>& b6, AscendC::LocalTensor<float>& b7,
     AscendC::LocalTensor<uint8_t>& mask, uint32_t cN)
 {
-    Duplicate(b4, ZERO_VAL, cN);
-    Div(b5, b4, b4, cN);
-    Duplicate(b4, ZERO_VAL, cN);
-
     Mul(b6, b1, b1, cN);
     Mul(b7, b6, b6, cN);
 
@@ -327,7 +330,7 @@ __aicore__ inline void FresnelSin<T>::HandleSpecialValues(
     Compare(mask, b0, b0, CMPMODE::EQ, cN);
     Select(b3, mask, b3, b5, SELMODE::VSEL_TENSOR_TENSOR_MODE, cN);
 
-    // Handle ±Inf: override with ±0.5
+    // Handle ±Inf and large-value truncation (|x| >= ASYM_THRESH): override with ±0.5
     Duplicate(b4, HALF_VAL, cN);
     Duplicate(b5, -HALF_VAL, cN);
     Select(b4, maskPInf, b4, b5, SELMODE::VSEL_TENSOR_TENSOR_MODE, cN);
@@ -390,13 +393,11 @@ __aicore__ inline void FresnelSin<T>::DoCompute(int64_t n, int64_t computeN)
 
     Abs(b1, b0, cN);
     Mul(b2, b1, b1, cN);
-    Compare(mask, b0, b0, CMPMODE::EQ, cN);
 
     auto maskPInf = maskQ.AllocTensor<uint8_t>();
     auto maskInf = maskQ.AllocTensor<uint8_t>();
-    Duplicate(b4, ONE_VAL, cN);
-    Add(b5, b1, b4, cN);
-    Compare(maskInf, b1, b5, CMPMODE::EQ, cN);
+    // Explicit truncation per DESIGN §1.3: |x| >= ASYM_THRESH (incl. ±Inf) -> sign(x)*0.5
+    CompareScalar<uint8_t>(maskInf, b1, ASYM_THRESH, CMPMODE::GE, cN);
     CompareScalar<uint8_t>(maskPInf, b0, ZERO_VAL, CMPMODE::GT, cN);
 
     ComputeAsymptoticBranch(b1, b2, b3, b4, b5, b6, b7, mask, cN);

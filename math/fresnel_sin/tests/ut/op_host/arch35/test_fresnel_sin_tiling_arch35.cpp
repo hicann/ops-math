@@ -269,6 +269,35 @@ TEST_F(FresnelSinTilingTest, invalid_dtype_int32)
 }
 
 // =============================================================================
+// Invalid format: non-ND should fail
+// =============================================================================
+TEST_F(FresnelSinTilingTest, invalid_format_nchw)
+{
+    FresnelSinTestParam p = {"invalid_fmt_nchw",
+                             {128},
+                             ge::DT_FLOAT,
+                             ge::FORMAT_NCHW,
+                             {128},
+                             ge::DT_FLOAT,
+                             ge::FORMAT_NCHW,
+                             ge::GRAPH_FAILED,
+                             0,
+                             {},
+                             64,
+                             262144,
+                             4096};
+    gert::StorageShape xShape = {p.xShape, p.xShape};
+    gert::StorageShape yShape = {p.yShape, p.yShape};
+    std::vector<gert::TilingContextPara::TensorDescription> inputDesc({{xShape, p.xDtype, p.xFormat}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputDesc({{yShape, p.yDtype, p.yFormat}});
+    gert::TilingContextPara tilingPara(OP_NAME, inputDesc, outputDesc, &compileInfo, p.maxAIVNum, p.ubSize,
+                                       p.tilingDataMaxSize);
+    TilingInfo info;
+    bool ok = ExecuteTiling(tilingPara, info);
+    EXPECT_FALSE(ok);
+}
+
+// =============================================================================
 // Large shape: 8*16*32*64 = 262144 elements
 // =============================================================================
 TEST_F(FresnelSinTilingTest, large_shape_fp32)

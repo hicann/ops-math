@@ -56,6 +56,10 @@ $$S(x) = \int_{0}^{x} \sin\left(\frac{\pi}{2} t^{2}\right) \mathrm{d}t$$
 ## 约束说明
 
 - 不支持DOUBLE（FP64）数据类型。
+- x 的维度数（rank）范围为 0~8，支持 0 维标量输入。
+- 支持空 Tensor（0 元素）输入：Host 侧 Tiling 短路直接返回，输出为同 shape 空 Tensor（自动处理）。
+- 支持非连续 Tensor 输入（Host 侧自动处理）。
+- 动态 shape 支持情况：支持动态 shape 与动态 rank（-1 未知维度 / -2 未知 rank）。
 
 ## 调用说明
 
