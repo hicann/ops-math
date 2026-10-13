@@ -112,6 +112,11 @@ private:
     int32_t dstGroupGroupIdx_ = 0;
     bool isInvert_ = false;
 
+    // group场景: R切分轴内层所有R轴shape的乘积
+    uint64_t innerUbRCnt_ = 1;
+    // group场景: 当前核所在group处理的R元素数
+    uint64_t groupReduceCnt_ = 1;
+
     // NDDMA 转置模板 (CopyInWithNddmaInvert) 下 UB 内真实数据数（不含 pad）
     // outer==1 短路分支：ubRealABundle_ = 转置后 slab 行数，ubRealRBundle_ = 每行真实数据数
     //   （!TailA: 行=R, 每行=A；TailA: 行=A, 每行=R）
@@ -175,6 +180,10 @@ public:
 
         lastRAxisLen_ = tiling_->shape[Dim - 1];
         lastRAxisLenAlign_ = Ops::Base::CeilAlign(lastRAxisLen_, (BLOCK_SIZE_BYTE / sizeof(DataType)));
+        CalcInnerUbRCnt();
+        if constexpr (SchLoopInfo.loopRCount > 0) {
+            groupReduceCnt_ = CalcGroupReduceCnt(blockIdx_ % tiling_->groupR);
+        }
     }
 
     __aicore__ inline void ReInitWelfordGroups()
@@ -372,8 +381,10 @@ public:
                     } else {
                         realRLen = (uint32_t)shape.value[1];
                     }
-                    VFMeanVarTwoPassAR<DataType, isStd>(xLocal, dichotomyAddAddr, outMeanAddr, outVarAddr,
-                                                        shape.value[0], shape.value[1], realRLen, varScale);
+                    // AR 两趟路径不使用 welford 缓存, 借 tMeanTensor_ 作 Common 的 partial scratch
+                    VFMeanVarTwoPassAR<DataType, isStd>(xLocal, dichotomyAddAddr,
+                                                        (__ubuf__ float*)tMeanTensor_.GetPhyAddr(), outMeanAddr,
+                                                        outVarAddr, shape.value[0], shape.value[1], realRLen, varScale);
                 } else {
                     VFMeanVarTwoPassARPad<DataType, isStd>(
                         xLocal, dichotomyAddAddr, outMeanAddr, outVarAddr, shape.value[0], shape.value[1],
@@ -384,8 +395,10 @@ public:
             if (tiling_->isInvert == 1) {
                 // RA→AR: UB data is transposed, call AR VF with swapped shape
                 uint32_t realRLen = ubRealRBundle_;
-                VFMeanVarTwoPassAR<DataType, isStd>(xLocal, dichotomyAddAddr, outMeanAddr, outVarAddr, shape.value[0],
-                                                    shape.value[1], realRLen, varScale);
+                // AR 两趟路径不使用 welford 缓存, 借 tMeanTensor_ 作 Common 的 partial scratch
+                VFMeanVarTwoPassAR<DataType, isStd>(xLocal, dichotomyAddAddr,
+                                                    (__ubuf__ float*)tMeanTensor_.GetPhyAddr(), outMeanAddr, outVarAddr,
+                                                    shape.value[0], shape.value[1], realRLen, varScale);
             } else {
                 VFMeanVarTwoPassRA<DataType, isStd>(xLocal, tDichAddTensor_, tMeanTensor_, tVarTensor_, outMeanTensor,
                                                     outVarTensor, shape.value[1], shape.value[0], varScale);
@@ -837,7 +850,7 @@ public:
 
         float meanScale = tiling_->meanFactor;
         if constexpr (SchLoopInfo.loopRCount > 0) {
-            meanScale = 1.0f / static_cast<float>(tiling_->reduceCntEachGroupR[blockIdx_ % tiling_->groupR]);
+            meanScale = 1.0f / static_cast<float>(groupReduceCnt_);
         }
 
         // RA finalize
@@ -922,7 +935,7 @@ public:
 
             float meanScale = tiling_->meanFactor;
             if constexpr (SchLoopInfo.loopRCount > 0) {
-                meanScale = 1.0f / static_cast<float>(tiling_->reduceCntEachGroupR[blockIdx_ % tiling_->groupR]);
+                meanScale = 1.0f / static_cast<float>(groupReduceCnt_);
             }
             VFWelfordFinalizeRA<T, isStd, isM2Out>(RNum, ANum, tMeanTensor, tVarTensor, tmpCountLocal, outMeanTensor,
                                                    outVarTensor, dichotomyAddLocal, meanScale, varScale);
@@ -955,8 +968,7 @@ public:
         if (tailsNum == 0) {
             meanScale = (float)count * tiling_->meanFactor; // 无尾块场景, meanscale需要乘以count
             if constexpr (SchLoopInfo.loopRCount > 0) {
-                meanScale = float(count) /
-                            static_cast<float>(tiling_->reduceCntEachGroupR[blockIdx_ % tiling_->groupR]);
+                meanScale = float(count) / static_cast<float>(groupReduceCnt_);
             }
             if (isLastAlign) {
                 // 不带pad
@@ -972,7 +984,7 @@ public:
         } else if (isLastAlign) {
             meanScale = tiling_->meanFactor;
             if constexpr (SchLoopInfo.loopRCount > 0) {
-                meanScale = 1.0f / static_cast<float>(tiling_->reduceCntEachGroupR[blockIdx_ % tiling_->groupR]);
+                meanScale = 1.0f / static_cast<float>(groupReduceCnt_);
             }
             VFWelfordParallelFinalizeARNonAlign<T, isStd, isM2Out>(
                 meanBufAddr, varBufAddr, dichotomyAddLocal, outMeanAddr, outVarAddr, aNum, rNum, rStride, varScale,
@@ -980,7 +992,7 @@ public:
         } else {
             meanScale = tiling_->meanFactor;
             if constexpr (SchLoopInfo.loopRCount > 0) {
-                meanScale = 1.0f / static_cast<float>(tiling_->reduceCntEachGroupR[blockIdx_ % tiling_->groupR]);
+                meanScale = 1.0f / static_cast<float>(groupReduceCnt_);
             }
             VFWelfordParallelFinalizeARNonAlignPad<T, isStd, isM2Out>(
                 tMeanTensor, tVarTensor, tDichAddTensor_, outMeanTensor, outVarTensor, aNum, rNum, rStride, varScale,
@@ -1017,8 +1029,7 @@ public:
             if (tailsNum == 0) {
                 meanScale = (float)count * tiling_->meanFactor;
                 if constexpr (SchLoopInfo.loopRCount > 0) {
-                    meanScale = float(count) /
-                                static_cast<float>(tiling_->reduceCntEachGroupR[blockIdx_ % tiling_->groupR]);
+                    meanScale = float(count) / static_cast<float>(groupReduceCnt_);
                 }
                 VFWelfordParallelFinalizeARAlign<T, isStd, isM2Out>(meanBufAddr, varBufAddr, dichotomyAddLocal,
                                                                     outMeanAddr, outVarAddr, aNum, rNum, rStride,
@@ -1026,7 +1037,7 @@ public:
             } else {
                 meanScale = tiling_->meanFactor;
                 if constexpr (SchLoopInfo.loopRCount > 0) {
-                    meanScale = 1.0f / static_cast<float>(tiling_->reduceCntEachGroupR[blockIdx_ % tiling_->groupR]);
+                    meanScale = 1.0f / static_cast<float>(groupReduceCnt_);
                 }
                 VFWelfordParallelFinalizeARNonAlign<T, isStd, isM2Out>(
                     meanBufAddr, varBufAddr, dichotomyAddLocal, outMeanAddr, outVarAddr, aNum, rNum, rStride, varScale,
@@ -1050,7 +1061,7 @@ public:
 
         float meanScale = tiling_->meanFactor;
         if constexpr (SchLoopInfo.loopRCount > 0) {
-            meanScale = 1.0f / static_cast<float>(tiling_->reduceCntEachGroupR[blockIdx_ % tiling_->groupR]);
+            meanScale = 1.0f / static_cast<float>(groupReduceCnt_);
         }
         VFWelfordFinalizeRA<T, isStd, isM2Out>(RNum, ANum, tMeanTensor, tVarTensor, tmpCountLocal, outMeanTensor,
                                                outVarTensor, dichotomyAddLocal, meanScale, varScale);
@@ -1105,7 +1116,7 @@ public:
         Ops::Base::ReduceOpTmpl::SetEvent<HardEvent::V_S>(HardEvent::V_S);
         __ubuf__ float* groupCountBufAddr = (__ubuf__ float*)tCountTensor_.GetPhyAddr();
         for (int i = 0; i < tiling_->groupR; i++) {
-            float reduceCnt = static_cast<float>(tiling_->reduceCntEachGroupR[i]);
+            float reduceCnt = static_cast<float>(CalcGroupReduceCnt(i));
             tCountTensor_.SetValue(i, reduceCnt);
         }
 
@@ -1170,6 +1181,40 @@ public:
 
         ubFactorA_ = tiling_->ubFactorA;
         ubFactorR_ = tiling_->ubFactorR;
+    }
+
+    // group场景: 计算R切分轴内层所有R轴shape的乘积
+    __aicore__ inline void CalcInnerUbRCnt()
+    {
+        if constexpr (SchLoopInfo.loopRCount > 0) {
+            constexpr int32_t rAxis = SchLoopInfo.loopRAxis[SchLoopInfo.loopRCount - 1];
+            uint64_t innerUbRCnt = 1;
+            // A/R 轴交替排列, 与 rAxis 同奇偶的后续轴才是内层 R 轴, 故步长为 2
+            for (int32_t idx = rAxis + 2; idx < Dim; idx += 2) {
+                innerUbRCnt *= tiling_->shape[idx];
+            }
+            innerUbRCnt_ = innerUbRCnt;
+        }
+    }
+
+    // group场景: 计算第groupIdx组真实规约的R元素数
+    // stride(i)以rStepNum为周期, 满周期和为切分轴长度; 前缀和 = (n/rStepNum)*rAxisLen + (n%rStepNum)*ubFactorR
+    __aicore__ inline uint64_t CalcGroupReduceCnt(int32_t groupIdx) const
+    {
+        if constexpr (SchLoopInfo.loopRCount > 0) {
+            constexpr int32_t rAxis = SchLoopInfo.loopRAxis[SchLoopInfo.loopRCount - 1];
+            uint64_t rAxisLen = tiling_->shape[rAxis];
+            uint64_t rStepNum = Ops::Base::CeilDiv(rAxisLen, tiling_->ubFactorR);
+            uint64_t rTotalCnt = tiling_->factorRTotalCnt;
+            uint64_t startIdx = static_cast<uint64_t>(groupIdx) * tiling_->factorRCntPerCore;
+            uint64_t endIdx = startIdx + tiling_->factorRCntPerCore;
+            startIdx = startIdx > rTotalCnt ? rTotalCnt : startIdx;
+            endIdx = endIdx > rTotalCnt ? rTotalCnt : endIdx;
+            uint64_t prefixStart = (startIdx / rStepNum) * rAxisLen + (startIdx % rStepNum) * tiling_->ubFactorR;
+            uint64_t prefixEnd = (endIdx / rStepNum) * rAxisLen + (endIdx % rStepNum) * tiling_->ubFactorR;
+            return (prefixEnd - prefixStart) * innerUbRCnt_;
+        }
+        return 1UL;
     }
 
     __aicore__ inline void CopyInX(int64_t index,

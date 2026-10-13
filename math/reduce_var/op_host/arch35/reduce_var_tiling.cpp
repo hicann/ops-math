@@ -167,69 +167,8 @@ void ReduceVarTiling::ReduceVarCalcInput(const Ops::Base::ReduceOpInputParam& in
             Ops::Base::ReduceOpTmpl::VectorToString(inputParam.shape).c_str(), varFactor_, meanFactor_);
 }
 
-void ReduceVarTiling::SetReduceCntEachGroupR()
-{
-    uint64_t groupR = reduceVarTilingData_->groupR;
-    if (groupR <= 1) {
-        return;
-    }
-
-    int64_t reduceCntEachGroupR[MAX_CORE_COUNT] = {0};
-
-    uint64_t loopRStart;
-    uint64_t loopREnd;
-    uint64_t maxRCnt = reduceVarTilingData_->factorRTotalCnt;
-    uint64_t rCntPerCore = reduceVarTilingData_->factorRCntPerCore;
-    uint64_t* shape = reduceVarTilingData_->shape;
-    uint64_t factorR = reduceVarTilingData_->ubFactorR;
-    uint64_t rStepNum = unitR_.idx < 0 ? 1 : Ops::Base::CeilDiv(shape[unitR_.idx], factorR);
-    uint64_t start = 0;
-    uint64_t stride = 0;
-
-    for (uint64_t groupIdx = 0; groupIdx < groupR; groupIdx++) {
-        loopRStart = groupIdx % groupR * rCntPerCore;
-        loopREnd = loopRStart + rCntPerCore;
-        if (loopRStart > maxRCnt) {
-            loopRStart = maxRCnt;
-        }
-        if (loopREnd > maxRCnt) {
-            loopREnd = maxRCnt;
-        }
-
-        reduceCntEachGroupR[groupIdx] = 0;
-        for (uint64_t i = loopRStart; i < loopREnd; i++) {
-            auto cur = i % rStepNum;
-            start = cur * factorR;
-            stride = shape[unitR_.idx] - start;
-            if (likely(stride >= factorR)) {
-                stride = factorR;
-            }
-            reduceCntEachGroupR[groupIdx] += stride * innerUbRCnt_;
-        }
-    }
-    OP_LOGI(context_->GetNodeName(), "reduceCntEachGroupR:%s innerUbRCnt_:%lu",
-            Ops::Base::ReduceOpTmpl::VectorToString(reduceCntEachGroupR, groupR).c_str(), innerUbRCnt_);
-
-    for (uint64_t i = 0; i < groupR; i++) {
-        reduceVarTilingData_->reduceCntEachGroupR[i] = reduceCntEachGroupR[i];
-    }
-}
-
-void ReduceVarTiling::ComputeInnerUbRCnt(const uint64_t* shape)
-{
-    if (unitR_.idx < -1 * Ops::Base::ReduceOpTmpl::CONST2) {
-        return;
-    }
-
-    for (auto idx = unitR_.idx + Ops::Base::ReduceOpTmpl::CONST2; idx < dimNum_;
-         idx += Ops::Base::ReduceOpTmpl::CONST2) {
-        innerUbRCnt_ *= shape[idx];
-    }
-}
-
 void ReduceVarTiling::SetReduceVarTilingData()
 {
-    SetReduceCntEachGroupR();
     reduceVarTilingData_->correction = correction_;
     reduceVarTilingData_->correctionInvalid = correctionInvalid_;
     reduceVarTilingData_->isMeanOut = isMeanOut_;
@@ -1105,7 +1044,6 @@ ge::graphStatus ReduceVarTiling::RunTiling(Ops::Base::ReduceTilingKey& key)
     OP_CHECK_IF((DoTiling(inputParam, key) == ge::GRAPH_FAILED),
                 OP_LOGE(context_->GetNodeName(), "ReduceVarTiling Run failed"), return ge::GRAPH_FAILED);
 
-    ComputeInnerUbRCnt(reduceVarTilingData_->shape);
     SetReduceVarTilingData();
 
     return ge::GRAPH_SUCCESS;

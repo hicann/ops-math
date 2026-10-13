@@ -18,7 +18,6 @@
 
 // ========== 独立常量定义（从 reduce 模板提取，避免 include 依赖）==========
 constexpr int32_t REDUCE_VAR_MAX_DIM = 9; // 等价于 Ops::Base::ReduceOpTmpl::MAX_DIM
-constexpr int32_t MAX_CORE_COUNT = 128;   // 最大核数
 
 struct ReduceVarTilingData {
     // ===== reduce 切分相关字段（原 ReduceVarTilingDataStru）=====
@@ -45,9 +44,8 @@ struct ReduceVarTilingData {
     int64_t correctionInvalid;
     int64_t isMeanOut;
     int64_t workSpaceSize;
-    float varFactor;                             // 1/(R-correction)
-    float meanFactor;                            // 1/R
-    int64_t reduceCntEachGroupR[MAX_CORE_COUNT]; // 每个groupR处理的R的个数
+    float varFactor;  // 1/(R-correction)
+    float meanFactor; // 1/R
 };
 
 #endif

@@ -74,141 +74,247 @@ __aicore__ inline void VFMeanVarTwoPassARLessVL(__ubuf__ T* xInUb, __ubuf__ floa
 }
 
 template <typename T, bool isStd = false>
+__aicore__ inline void VFMeanVarTwoPassARLessTwoVL(__ubuf__ T* xInUb, __ubuf__ T* outMeanLocal, __ubuf__ T* outVarLocal,
+                                                   uint32_t ANum, uint32_t RStride, uint32_t RNum, float varScale)
+{
+    uint32_t nextR = FindNextPower2(RNum);
+    float meanScale = float(1.0) / float(nextR);
+    float meanCorrection = float(nextR) / float(RNum);
+    uint32_t tailNum = RNum - VL_FP32;
+
+    uint16_t aLoopNum = static_cast<uint16_t>(ANum);
+
+    __VEC_SCOPE__
+    {
+        RegTensor<float> x1;
+        RegTensor<float> x2;
+        RegTensor<float> scale1;
+        RegTensor<float> scale2;
+        RegTensor<float> meanSum;
+        RegTensor<float> mean;
+        RegTensor<float> meanBrc;
+        RegTensor<float> y1;
+        RegTensor<float> y2;
+        RegTensor<float> y1Scale;
+        RegTensor<float> y2Scale;
+        RegTensor<float> varSum;
+        RegTensor<float> var;
+
+        MaskReg pregMain = CreateMask<float, MaskPattern::ALL>();
+        MaskReg pregMerge = CreateMask<float, MaskPattern::VL1>();
+        uint32_t sregTail = tailNum;
+        MaskReg pregTail = UpdateMask<float>(sregTail);
+
+        for (uint16_t k = 0; k < aLoopNum; k++) {
+            LoadOneTensorForDtypeT(xInUb, x1, pregMain, (k * RStride));
+            LoadOneTensorForDtypeT(xInUb, x2, pregTail, (k * RStride + VL_FP32));
+            Muls(scale1, x1, meanScale, pregMain);
+            Muls(scale2, x2, meanScale, pregTail);
+            Add(meanSum, scale1, scale2, pregMain);
+            MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(mean, meanSum, pregMain);
+            Muls(mean, mean, meanCorrection, pregMerge);
+            StoreOneElementForDtypeT<T>(outMeanLocal, mean, pregMerge, k);
+
+            Duplicate(meanBrc, mean, pregMain);
+
+            Sub(y1, x1, meanBrc, pregMain);
+            Sub(y2, x2, meanBrc, pregTail);
+            // 先乘以系数，防止平方溢出
+            Muls(y1Scale, y1, varScale, pregMain);
+            Muls(y2Scale, y2, varScale, pregTail);
+            Mul(y1, y1Scale, y1, pregMain);
+            Mul(y2, y2Scale, y2, pregTail);
+            Add(varSum, y1, y2, pregMain);
+            MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(var, varSum, pregMain);
+            if constexpr (isStd == true) {
+                Sqrt(var, var, pregMerge);
+            }
+            StoreOneElementForDtypeT<T>(outVarLocal, var, pregMerge, k);
+        }
+    }
+}
+
+// 前置条件：仅由 VFMeanVarTwoPassAR 在 RNum > 2*VL_FP32 时调用。
+// 满足 pow2 >= 4*VL、quotient = pow2/2 >= 2*VL、tail = RNum - quotient ∈ (0, quotient]，
+// 从而 quotLoop = quotient/VL >= tailCeil，单块循环上界 (quotLoop - tailCeil) 非负；
+// 若绕过该前提（如 RNum <= VL），quotLoop - tailCeil 会在 uint16_t 下溢，禁止直接复用本函数。
+template <typename T, bool isStd = false>
+__aicore__ inline void VFMeanVarTwoPassARCommon(__ubuf__ T* xInUb, __ubuf__ float* dichotomyAddLocal,
+                                                __ubuf__ float* partBufLocal, __ubuf__ T* outMeanLocal,
+                                                __ubuf__ T* outVarLocal, uint32_t ANum, uint32_t RStride, uint32_t RNum,
+                                                float varScale)
+{
+    constexpr uint32_t BLK_B32 = Ops::Base::GetUbBlockSize() / static_cast<uint32_t>(sizeof(float));
+    uint32_t pow2 = static_cast<uint32_t>(FindNextPower2(RNum));
+    uint32_t quotient = pow2 / 2;
+    uint32_t tail = RNum - quotient;
+    uint16_t tailCeil = static_cast<uint16_t>(Ops::Base::CeilDiv(tail, VL_FP32));
+    uint16_t quotLoop = static_cast<uint16_t>(quotient / VL_FP32);
+    uint16_t aLoopNum = static_cast<uint16_t>(ANum);
+    float meanScale = float(1.0) / float(pow2);
+    float meanCorrection = float(pow2) / float(RNum);
+
+    uint32_t partStride = Ops::Base::CeilAlign(static_cast<uint32_t>(quotLoop), BLK_B32);
+    uint32_t nChunks = (quotLoop >= VL_FP32) ? (quotLoop / VL_FP32) : 1;
+    uint16_t foldTimes = static_cast<uint16_t>(CONST_SIXTY_FOUR -
+                                               AscendC::ScalarCountLeadingZero(static_cast<uint64_t>(nChunks)) - 1);
+    uint32_t lastNum = (quotLoop >= VL_FP32) ? VL_FP32 : quotLoop;
+
+    // scratch：meanBuf 复用二分缓存 dichotomyAddLocal，partBuf 使用独立的 tMeanTensor_（AR 两趟路径下
+    // welford 缓存空闲），容量同 tDichAddTensor_（fp32 11008 / fp16、bf16 13440 个 float）。
+    // partBuf 需求 = max(ANum*partStride, (ANum-1)*partStride + VL)（fold/final 的 LoadAlign 整 VL 读），
+    // 由 tile 容量约束 A*R <= basicBlock/sizeof(T) 可推得最坏 < ~1000 floats，余量 >10x；ANum=1 同样安全。
+    __ubuf__ float* meanBuf = dichotomyAddLocal;
+    __ubuf__ float* partBuf = partBufLocal;
+
+    __VEC_SCOPE__
+    {
+        RegTensor<float> x1;
+        RegTensor<float> x2;
+        RegTensor<float> sumReg;
+        RegTensor<float> mean;
+        MaskReg pregMain = CreateMask<float, MaskPattern::ALL>();
+        MaskReg pregMerge = CreateMask<float, MaskPattern::VL1>();
+        MaskReg pregTail;
+
+        // 每行生成 quotLoop 个 mean partial（尾部自更新 mask，最后一次自动收窄到 tailCeil*VL-tail）
+        for (uint16_t a = 0; a < aLoopNum; a++) {
+            uint32_t sregTail = tail;
+            for (uint16_t r = 0; r < tailCeil; r++) {
+                pregTail = UpdateMask<float>(sregTail);
+                LoadTwoTensorForDtypeT(xInUb, xInUb, x1, x2, pregMain, pregTail, (r * VL_FP32 + a * RStride),
+                                       (quotient + r * VL_FP32 + a * RStride));
+                Muls(x1, x1, meanScale, pregMain);
+                Muls(x2, x2, meanScale, pregTail);
+                Add(sumReg, x1, x2, pregMain);
+                MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(mean, sumReg, pregMain);
+                MicroAPI::StoreAlign<float, StoreDist::DIST_FIRST_ELEMENT_B32>(partBuf + a * partStride + r, mean,
+                                                                               pregMerge);
+            }
+            for (uint16_t r = 0; r < static_cast<uint16_t>(quotLoop - tailCeil); r++) {
+                LoadOneTensorForDtypeT(xInUb, x1, pregMain, ((tailCeil + r) * VL_FP32 + a * RStride));
+                Muls(x1, x1, meanScale, pregMain);
+                MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(mean, x1, pregMain);
+                MicroAPI::StoreAlign<float, StoreDist::DIST_FIRST_ELEMENT_B32>(partBuf + a * partStride + tailCeil + r,
+                                                                               mean, pregMerge);
+            }
+        }
+        LocalMemBar<MemType::VEC_STORE, MemType::VEC_LOAD>();
+
+        // partial 折半（bar 在行循环之外）
+        for (uint16_t k = 0; k < foldTimes; k++) {
+            uint16_t half = static_cast<uint16_t>(nChunks >> (k + 1));
+            for (uint16_t a = 0; a < aLoopNum; a++) {
+                for (uint16_t j = 0; j < half; j++) {
+                    MicroAPI::LoadAlign(sumReg, partBuf + a * partStride + j * VL_FP32);
+                    MicroAPI::LoadAlign(x1, partBuf + a * partStride + (j + half) * VL_FP32);
+                    Add(sumReg, sumReg, x1, pregMain);
+                    MicroAPI::StoreAlign(partBuf + a * partStride + j * VL_FP32, sumReg, pregMain);
+                }
+            }
+            LocalMemBar<MemType::VEC_STORE, MemType::VEC_LOAD>();
+        }
+
+        uint32_t sregLast = lastNum;
+        MaskReg pregLast = UpdateMask<float>(sregLast);
+        for (uint16_t a = 0; a < aLoopNum; a++) {
+            MicroAPI::LoadAlign(sumReg, partBuf + a * partStride);
+            MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(mean, sumReg, pregLast);
+            Muls(mean, mean, meanCorrection, pregMerge);
+            MicroAPI::StoreAlign<float, StoreDist::DIST_FIRST_ELEMENT_B32>(meanBuf + a, mean, pregMerge);
+            StoreOneElementForDtypeT<T>(outMeanLocal, mean, pregMerge, a);
+        }
+    }
+
+    __VEC_SCOPE__
+    {
+        RegTensor<float> x1;
+        RegTensor<float> x2;
+        RegTensor<float> x1Scale;
+        RegTensor<float> x2Scale;
+        RegTensor<float> sumReg;
+        RegTensor<float> meanBrc;
+        RegTensor<float> var;
+        MaskReg pregMain = CreateMask<float, MaskPattern::ALL>();
+        MaskReg pregMerge = CreateMask<float, MaskPattern::VL1>();
+        MaskReg pregTail;
+
+        // 每行生成 quotLoop 个 var partial
+        for (uint16_t a = 0; a < aLoopNum; a++) {
+            MicroAPI::LoadAlign<float, LoadDist::DIST_BRC_B32>(meanBrc, meanBuf + a);
+            uint32_t sregTail = tail;
+            for (uint16_t r = 0; r < tailCeil; r++) {
+                pregTail = UpdateMask<float>(sregTail);
+                LoadTwoTensorForDtypeT(xInUb, xInUb, x1, x2, pregMain, pregTail, (r * VL_FP32 + a * RStride),
+                                       (quotient + r * VL_FP32 + a * RStride));
+                Sub(x1, x1, meanBrc, pregMain);
+                Sub(x2, x2, meanBrc, pregTail);
+                // 先乘以系数，防止平方溢出
+                Muls(x1Scale, x1, varScale, pregMain);
+                Muls(x2Scale, x2, varScale, pregTail);
+                Mul(x1, x1Scale, x1, pregMain);
+                Mul(x2, x2Scale, x2, pregTail);
+                Add(sumReg, x1, x2, pregMain);
+                MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(var, sumReg, pregMain);
+                MicroAPI::StoreAlign<float, StoreDist::DIST_FIRST_ELEMENT_B32>(partBuf + a * partStride + r, var,
+                                                                               pregMerge);
+            }
+            for (uint16_t r = 0; r < static_cast<uint16_t>(quotLoop - tailCeil); r++) {
+                LoadOneTensorForDtypeT(xInUb, x1, pregMain, ((tailCeil + r) * VL_FP32 + a * RStride));
+                Sub(x1, x1, meanBrc, pregMain);
+                // 先乘以系数，防止平方溢出
+                Muls(x1Scale, x1, varScale, pregMain);
+                Mul(x1, x1Scale, x1, pregMain);
+                MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(var, x1, pregMain);
+                MicroAPI::StoreAlign<float, StoreDist::DIST_FIRST_ELEMENT_B32>(partBuf + a * partStride + tailCeil + r,
+                                                                               var, pregMerge);
+            }
+        }
+        LocalMemBar<MemType::VEC_STORE, MemType::VEC_LOAD>();
+
+        for (uint16_t k = 0; k < foldTimes; k++) {
+            uint16_t half = static_cast<uint16_t>(nChunks >> (k + 1));
+            for (uint16_t a = 0; a < aLoopNum; a++) {
+                for (uint16_t j = 0; j < half; j++) {
+                    MicroAPI::LoadAlign(sumReg, partBuf + a * partStride + j * VL_FP32);
+                    MicroAPI::LoadAlign(x1, partBuf + a * partStride + (j + half) * VL_FP32);
+                    Add(sumReg, sumReg, x1, pregMain);
+                    MicroAPI::StoreAlign(partBuf + a * partStride + j * VL_FP32, sumReg, pregMain);
+                }
+            }
+            LocalMemBar<MemType::VEC_STORE, MemType::VEC_LOAD>();
+        }
+
+        uint32_t sregLast = lastNum;
+        MaskReg pregLast = UpdateMask<float>(sregLast);
+        for (uint16_t a = 0; a < aLoopNum; a++) {
+            MicroAPI::LoadAlign(sumReg, partBuf + a * partStride);
+            MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(var, sumReg, pregLast);
+            if constexpr (isStd == true) {
+                Sqrt(var, var, pregMerge);
+            }
+            StoreOneElementForDtypeT<T>(outVarLocal, var, pregMerge, a);
+        }
+    }
+}
+
+template <typename T, bool isStd = false>
 __aicore__ inline void VFMeanVarTwoPassAR(__ubuf__ T* xInUb, __ubuf__ float* dichotomyAddLocal,
-                                          __ubuf__ T* outMeanLocal, __ubuf__ T* outVarLocal, uint32_t ANum,
-                                          uint32_t RStride, uint32_t RNum, float varScale)
+                                          __ubuf__ float* partBufLocal, __ubuf__ T* outMeanLocal,
+                                          __ubuf__ T* outVarLocal, uint32_t ANum, uint32_t RStride, uint32_t RNum,
+                                          float varScale)
 {
     if (RNum <= VL_FP32) {
         VFMeanVarTwoPassARLessVL<T, isStd>(xInUb, dichotomyAddLocal, outMeanLocal, outVarLocal, ANum, RStride, RNum,
                                            varScale);
         return;
     }
-
-    uint32_t nextR = FindNextPower2(RNum);
-    float meanScale = float(1.0) / float(nextR);
-    float meanCorrection = float(nextR) / float(RNum);
-
-    uint32_t dichotomyAddPower = Ops::Base::ReduceOpTmpl::FindNearestPower2(RNum);
-    uint32_t dichotomyAddReminder = RNum - dichotomyAddPower;
-    uint16_t dichotomyAddReminderLoopCount = Ops::Base::CeilDiv(dichotomyAddReminder, VL_FP32);
-    uint16_t dichotomyAddPowerLoopCount = dichotomyAddPower / VL_FP32;
-    uint16_t innerLoopCountOrigin = dichotomyAddPowerLoopCount / VL_FP32;
-    uint16_t dichtomyPowerReminder = (dichotomyAddPowerLoopCount > dichotomyAddReminderLoopCount) ?
-                                         (dichotomyAddPowerLoopCount - dichotomyAddReminderLoopCount) :
-                                         0;
-    uint16_t outerLoop = 0;
-    uint16_t dichotomyAddLastNum = 0;
-    if (dichotomyAddPowerLoopCount <= VL_FP32) {
-        outerLoop = 0;
-        dichotomyAddLastNum = dichotomyAddPowerLoopCount;
-    } else {
-        int64_t tmpBinaryAddNum = 1;
-        while (tmpBinaryAddNum < innerLoopCountOrigin) {
-            outerLoop = outerLoop + 1;
-            tmpBinaryAddNum = tmpBinaryAddNum * Ops::Base::ReduceOpTmpl::CONST2;
-        }
-        dichotomyAddLastNum = VL_FP32;
+    if (RNum <= 2 * VL_FP32) {
+        VFMeanVarTwoPassARLessTwoVL<T, isStd>(xInUb, outMeanLocal, outVarLocal, ANum, RStride, RNum, varScale);
+        return;
     }
-
-    uint16_t aLoopNum = static_cast<uint16_t>(ANum);
-
-    __VEC_SCOPE__
-    {
-        RegTensor<float> x;
-        RegTensor<float> meanSum;
-        RegTensor<float> mean;
-
-        RegTensor<float> x1;
-        RegTensor<float> y1;
-        RegTensor<float> y1Scale;
-        RegTensor<float> y1Pow;
-        RegTensor<float> varSum;
-        RegTensor<float> var;
-
-        RegTensor<float> binaryAddQ;
-        RegTensor<float> binaryAddR;
-        RegTensor<float> vlMean;
-
-        RegTensor<float> binaryAddQScale;
-        RegTensor<float> binaryAddRScale;
-        RegTensor<float> binaryAddQPow;
-        RegTensor<float> binaryAddRPow;
-        RegTensor<float> vlVar;
-
-        MaskReg pregMain = CreateMask<float, MaskPattern::ALL>();
-        MaskReg pregMerge = CreateMask<float, MaskPattern::VL1>();
-        MaskReg pregLoop;
-
-        for (uint16_t k = 0; k < aLoopNum; k++) {
-            uint32_t sreg0 = dichotomyAddReminder;
-            for (uint16_t i = 0; i < dichotomyAddReminderLoopCount; i++) {
-                pregLoop = UpdateMask<float>(sreg0);
-                LoadTwoTensorForDtypeT(xInUb, xInUb, binaryAddQ, binaryAddR, pregMain, pregLoop,
-                                       (i * VL_FP32 + k * RStride), (i * VL_FP32 + k * RStride + dichotomyAddPower));
-                Muls(binaryAddQ, binaryAddQ, meanScale, pregMain);
-                Muls(binaryAddR, binaryAddR, meanScale, pregLoop);
-                Add(binaryAddQ, binaryAddQ, binaryAddR, pregMain);
-                MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(vlMean, binaryAddQ, pregMain);
-                MicroAPI::StoreAlign<float, StoreDist::DIST_FIRST_ELEMENT_B32>(((__ubuf__ float*)dichotomyAddLocal + i),
-                                                                               vlMean, pregMerge);
-            }
-            for (uint16_t i = 0; i < dichtomyPowerReminder; i++) {
-                LoadOneTensorForDtypeT(xInUb, x, pregMain,
-                                       ((i + dichotomyAddReminderLoopCount) * VL_FP32 + k * RStride));
-                Muls(x, x, meanScale, pregMain);
-                MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(vlMean, x, pregMain);
-                MicroAPI::StoreAlign<float, StoreDist::DIST_FIRST_ELEMENT_B32>(
-                    ((__ubuf__ float*)dichotomyAddLocal + dichotomyAddReminderLoopCount + i), vlMean, pregMerge);
-            }
-
-            DichotomyAdd(mean, dichotomyAddLocal, outerLoop, innerLoopCountOrigin, dichotomyAddLastNum);
-            Muls(mean, mean, meanCorrection, pregMerge);
-
-            // mean out
-            StoreOneElementForDtypeT<T>(outMeanLocal, mean, pregMerge, k);
-
-            Duplicate<float, AscendC::Reg::HighLowPart::LOWEST, MaskMergeMode::ZEROING>(mean, mean, pregMain);
-            LocalMemBar<MemType::VEC_LOAD, MemType::VEC_STORE>();
-
-            uint32_t sreg1 = dichotomyAddReminder;
-            for (uint16_t i = 0; i < dichotomyAddReminderLoopCount; i++) {
-                pregLoop = UpdateMask<float>(sreg1);
-                LoadTwoTensorForDtypeT(xInUb, xInUb, binaryAddQ, binaryAddR, pregMain, pregLoop,
-                                       (i * VL_FP32 + k * RStride), (i * VL_FP32 + k * RStride + dichotomyAddPower));
-                Sub(binaryAddQ, binaryAddQ, mean, pregMain);
-                Sub(binaryAddR, binaryAddR, mean, pregLoop);
-                // 先乘以系数，防止平方溢出
-                Muls(binaryAddQScale, binaryAddQ, varScale, pregMain);
-                Muls(binaryAddRScale, binaryAddR, varScale, pregLoop);
-                Mul(binaryAddQPow, binaryAddQScale, binaryAddQ, pregMain);
-                Mul(binaryAddRPow, binaryAddRScale, binaryAddR, pregLoop);
-                Add(binaryAddQPow, binaryAddQPow, binaryAddRPow, pregMain);
-                MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(vlVar, binaryAddQPow, pregMain);
-                MicroAPI::StoreAlign<float, StoreDist::DIST_FIRST_ELEMENT_B32>(((__ubuf__ float*)dichotomyAddLocal + i),
-                                                                               vlVar, pregMerge);
-            }
-            for (uint16_t i = 0; i < dichtomyPowerReminder; i++) {
-                LoadOneTensorForDtypeT(xInUb, x1, pregMain,
-                                       ((i + dichotomyAddReminderLoopCount) * VL_FP32 + k * RStride));
-                Sub(y1, x1, mean, pregMain);
-                Muls(y1Scale, y1, varScale, pregMain);
-                Mul(y1Pow, y1Scale, y1, pregMain);
-                MicroAPI::Reduce<MicroAPI::ReduceType::SUM>(vlVar, y1Pow, pregMain);
-                MicroAPI::StoreAlign<float, StoreDist::DIST_FIRST_ELEMENT_B32>(
-                    ((__ubuf__ float*)dichotomyAddLocal + dichotomyAddReminderLoopCount + i), vlVar, pregMerge);
-            }
-
-            DichotomyAdd(var, dichotomyAddLocal, outerLoop, innerLoopCountOrigin, dichotomyAddLastNum);
-            // var out
-            if constexpr (isStd == true) {
-                Sqrt(var, var, pregMerge);
-                StoreOneElementForDtypeT<T>(outVarLocal, var, pregMerge, k);
-            } else {
-                StoreOneElementForDtypeT<T>(outVarLocal, var, pregMerge, k);
-            }
-            LocalMemBar<MemType::VEC_LOAD, MemType::VEC_STORE>();
-        }
-    }
+    VFMeanVarTwoPassARCommon<T, isStd>(xInUb, dichotomyAddLocal, partBufLocal, outMeanLocal, outVarLocal, ANum, RStride,
+                                       RNum, varScale);
 }
 
 template <typename T, bool isStd = false>

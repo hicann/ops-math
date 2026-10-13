@@ -43,11 +43,7 @@ TEST_F(ReduceVarTiling, ReduceVar_test_tiling_001)
         &compileInfo);
     uint64_t expectTilingKey = 12350;
     string expectTilingData = "1 3 2 9 169 832 19 5 45568 512 64 3959346946488926208 1 13 5 10647 0 0 0 0 0 692055 "
-                              "53235 10647 1 0 0 0 0 0 5 5 1 1 0 0 0 0 0 0 0 1 16384 3959346947410783506 7488 7319 "
-                              "7319 7488 7319 7319 7488 7319 7319 7488 7319 7319 7319 7488 7319 7319 7488 7319 5655 0 "
-                              "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
-                              "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
-                              "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ";
+                              "53235 10647 1 0 0 0 0 0 5 5 1 1 0 0 0 0 0 0 0 1 16384 3959346947410783506 ";
     std::vector<size_t> expectWorkspaces = {16809984};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }

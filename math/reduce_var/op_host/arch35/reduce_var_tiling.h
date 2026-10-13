@@ -41,13 +41,11 @@ public:
     ge::graphStatus RunTiling(Ops::Base::ReduceTilingKey& key); // ReduceOpInputParam& opInput, ReduceTilingKey& key);
 
 private:
-    void ComputeInnerUbRCnt(const uint64_t* shape);
     void CalcUserBasicBlock(bool patternA);
     void CalcUserWorkSpace();
     ge::graphStatus PrepareCompileInfo();
     ge::graphStatus ReduceVarGetInputParams(Ops::Base::ReduceOpInputParam& inputParam);
     void ReduceVarCalcInput(const Ops::Base::ReduceOpInputParam& inputParam);
-    void SetReduceCntEachGroupR();
     void SetReduceVarTilingData();
     ge::graphStatus PreProcessOptionalParam();
     void EliminateOne(const std::vector<int64_t>& oriShape, std::vector<int64_t>& axes, uint64_t* shape,
@@ -123,8 +121,7 @@ private:
     int64_t correction_ = 0;
     int64_t isMeanOut_ = 1;
     int64_t totalReduceSize_ = 1;
-    uint64_t innerUbRCnt_ = 1; // ub切分R轴右侧的r的大小，不包含切分轴
-    uint8_t isInvert_ = 0;     // cached during SetTilingData, written to tiling data
+    uint8_t isInvert_ = 0; // cached during SetTilingData, written to tiling data
     double varFactor_ = 1.0;
     double meanFactor_ = 1.0;
 };
