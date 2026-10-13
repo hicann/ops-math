@@ -2241,7 +2241,7 @@
     <td><a href="../../conversion/diag_flat/README.md">diag_flat</a></td>
     <td>√</td>
     <td>√</td>
-    <td>√</td>
+    <td>×</td>
     <td>√</td>
     <td>AI Core</td>
     <td>创建一个以输入数组为对角线元素的平铺对角矩阵。</td>
