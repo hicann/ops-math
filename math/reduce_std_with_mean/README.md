@@ -129,6 +129,7 @@ ReduceStdWithMean 为 CANN 内部 L0 算子，被 `aclnnStd`、`aclnnStdMeanCorr
 
 - x 与 mean 数据类型须一致，仅支持 float16 / float32 / bfloat16；输出 dtype 与 x 一致。
 - x 的 shape 维度不超过 8 维。
+- 支持 rank=0 标量输入（x/mean 为 0-D）：dim 为空全归约，输出为标量（keepdim=true 时输出 1-D size 1）。
 - mean 的 shape 须与 x 完全一致（mean 须已广播到 x 形状）。
 - dim 取值范围 [-rank(x), rank(x)-1]，空表示全部维度归约，且不能包含重复轴（负数轴归一化后判重）。
 - 输出 y 的 shape 须与 dim + keepdim 推导结果一致。

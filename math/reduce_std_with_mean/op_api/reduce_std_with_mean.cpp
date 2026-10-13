@@ -33,7 +33,8 @@ using namespace op;
 
 namespace l0op {
 
-// 归约轴标记栈数组容量；与 L2 CheckShape 的 OP_CHECK_MAX_DIM(self, 8) 及 infershape MAX_SUPPORTED_RANK 一致。
+// 归约轴标记栈数组容量；与 L2 CheckShape 的 OP_CHECK_MAX_DIM(self, 8)
+// 及 infershape MAX_SUPPORTED_RANK 一致。
 static constexpr size_t MAX_SUPPORTED_RANK = 8;
 
 OP_TYPE_REGISTER(ReduceStdWithMean);
@@ -41,7 +42,8 @@ OP_TYPE_REGISTER(ReduceStdWithMean);
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {DataType::DT_FLOAT, DataType::DT_FLOAT16,
                                                                               DataType::DT_BF16};
 
-// 950 AICore 路径可用性判断：平台/dtype 不匹配时静默回退通用路径（非 950 属正常场景，不算错误）
+// 950 AICore 路径可用性判断：平台/dtype 不匹配时静默回退通用路径
+//   （非 950 属正常场景，不算错误）
 static bool IsAiCoreSupport(const aclTensor* self)
 {
     auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
@@ -112,8 +114,8 @@ static const aclTensor* ReduceStdWithMeanAiCore(const aclTensor* self, const acl
     return out;
 }
 
-// 非 950 平台回退路径：与基线（内置算子库）行为一致 —— INFER_SHAPE 推导输出 + 通用 launcher 下发，
-// 由框架按平台解析到对应实现，保持 910b/A2/A3 等平台的既有支持。
+// 非 950 平台回退路径：与基线（内置算子库）行为一致 —— INFER_SHAPE 推导输出
+//   + 通用 launcher 下发，由框架按平台解析到对应实现，保持 910b/A2/A3 等平台既有支持。
 static const aclTensor* ReduceStdWithMeanGeneric(const aclTensor* self, const aclTensor* mean, const aclIntArray* dim,
                                                  int64_t correction, bool keepdim, bool invert, float eps,
                                                  aclOpExecutor* executor)

@@ -91,7 +91,7 @@ static bool CheckDimValid(const aclTensor* self, const aclIntArray* dim)
         if (currentDim > dimMax || currentDim < dimMin) {
             OP_LOGE(ACLNN_ERR_PARAM_INVALID,
                     "Dimension out of range (expected to be in range of [%ld, %ld], but got %ld)", dimMin, dimMax,
-                    selfDimNum);
+                    currentDim);
             return false;
         }
         // dim值可以为负

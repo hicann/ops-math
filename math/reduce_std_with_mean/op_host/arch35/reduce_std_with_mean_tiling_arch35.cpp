@@ -70,7 +70,8 @@ static constexpr int64_t CACHE_BUF_BYTES = 16 * 1024; // cacheBuf 固定 16 KB
 static constexpr int64_t FP32_BYTES = 4;              // ComputeT = fp32
 static constexpr int64_t DB_FACTOR = 2;               // 主链路 DB
 static constexpr int64_t N_PRE_REUSE = 1;             // x 主链路复用槽（DB=2）
-static constexpr int64_t N_PRE_PARALLEL = 2; // mean 并行槽（preInMeanQue_ bufNum=2，两输入较单输入 reduce 多一路）
+// mean 并行槽（preInMeanQue_ bufNum=2，两输入较单输入 reduce 多一路）
+static constexpr int64_t N_PRE_PARALLEL = 2;
 static constexpr int64_t N_OUT = 1;          // y 单输出
 static constexpr int64_t TMP_BUF_COPIES = 2; // 主+尾共 2 份 fp32
 
@@ -147,9 +148,9 @@ struct ReduceStdWithMeanCtx {
     float invDenomStd = 0.0f; // 1 / max(0, N - correction)
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // 1) 平台 / shape / dtype 信息收集
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, ReduceStdWithMeanCtx& ctx)
 {
     fe::PlatFormInfos* platformInfoPtr = context->GetPlatformInfo();
@@ -246,9 +247,9 @@ static ge::graphStatus GetShapeAndDtype(gert::TilingContext* context, ReduceStdW
     return ge::GRAPH_SUCCESS;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // 2) dim 属性解析 + A/R 类型表（dim 为 ListInt 属性，非 axes 输入张量）
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 static ge::graphStatus ParseDimAttr(gert::TilingContext* context, ReduceStdWithMeanCtx& ctx)
 {
     const gert::RuntimeAttrs* attrs = context->GetAttrs();
@@ -310,6 +311,14 @@ static ge::graphStatus ComputePostOpScalars(gert::TilingContext* context, Reduce
         return ge::GRAPH_FAILED;
     }
 
+    // epsilon 值域校验：须 ≥ 0（spec.yaml machine_constraint float_ge 0.0；
+    //   eps<0 会使 invert=true 分母 ss·invN+eps ≤0 → NaN/Inf）
+    if (ctx.epsilon < 0.0f) {
+        OP_LOGE_FOR_INVALID_VALUE(context->GetNodeName(), "epsilon", std::to_string(ctx.epsilon).c_str(),
+                                  "a non-negative float (>= 0)");
+        return ge::GRAPH_FAILED;
+    }
+
     int64_t n = 1;
     for (int64_t a : ctx.reduceAxes) {
         n *= ctx.xShape[static_cast<size_t>(a)];
@@ -334,9 +343,9 @@ static void BuildInitialAxisList(ReduceStdWithMeanCtx& ctx)
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // 3) Pattern 预处理 4 步（顺序不可换）
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // 3.1 去 1：所有 size==1 的轴整根删除；非空保留：若 ∏shape==1 则保留 1 根 A=1 占位
 static void DropSizeOneAxes(ReduceStdWithMeanCtx& ctx)
 {
@@ -406,14 +415,14 @@ static void PadRIfPureA(ReduceStdWithMeanCtx& ctx)
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // 3.0 空 tensor 分类——在 4 步预处理之前做：
 //   ∃ A 轴 axisShape==0 → EMPTY_A
 //   ∃ R 轴 axisShape==0 且 ∀ A 轴 axisShape>0 → EMPTY_R（aTotal = ∏ A axisShape；空 A 集合 → 1）
 //   其它 → NORMAL
 //
 // 触发后由 ComputeEmpty*Tiling 单独填 tilingdata，跳过整套 normal 路径。
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 static void ClassifyEmptyTensor(ReduceStdWithMeanCtx& ctx)
 {
     bool hasZeroA = false;
@@ -472,10 +481,10 @@ static ge::graphStatus PreprocessPattern(gert::TilingContext* context, ReduceStd
     return ge::GRAPH_SUCCESS;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // 4) Axis stride（按 element）—— 给 kernel 算 GM offset 用
 //    stride[i] = ∏_{j > i} axisShape[j]
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 static void ComputeAxisStrides(ReduceStdWithMeanCtx& ctx, int64_t outStride[])
 {
     int64_t acc = 1;
@@ -518,9 +527,9 @@ static int32_t PrevSameTypeAxis(const ReduceStdWithMeanCtx& ctx, int32_t from, b
     return -1;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // 5) UB 切分 Step 1：定 aSplitAxisIdx 与 aUbFactor
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 static void ComputeAUbFactor(ReduceStdWithMeanCtx& ctx)
 {
     const int32_t lastA = LastAAxisIdx(ctx);
@@ -582,13 +591,13 @@ static void ComputeAUbFactor(ReduceStdWithMeanCtx& ctx)
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // 6) UB 切分 Step 2：定 rSplitAxisIdx 与 rUbFactor（基于 UB 预算反解）
 //
 //    bytesPerRElem = (DB × N_pre_reuse + N_pre_parallel) × sizeof(D_T) + 2 × sizeof(fp32)
 //    outBytes      = N_out × sizeof(D_T) × aUnit
 //    r_i_max       = (ubAvailable − outBytes) / (aUnit × bytesPerRElem)
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 static int64_t ComputeRiMax(const ReduceStdWithMeanCtx& ctx)
 {
     const int64_t ubAvailable = ctx.ubSize - CACHE_BUF_BYTES;
@@ -653,7 +662,7 @@ static ge::graphStatus ComputeRUbFactor(gert::TilingContext* context, ReduceStdW
                     return ge::GRAPH_FAILED);
     }
 
-    // rUbFactorAlign：仅「切在最内 R 且 tail R」时 rUbFactor 自身是 burst tail 行宽 → 需按 block CeilAlign
+    // rUbFactorAlign：仅「切在最内 R 且 tail R」时 rUbFactor 为 burst tail 行宽 → 按 block CeilAlign
     //   - 全载分支（rUbFactor==rAxisSize）跳过 FloorAlign 时也走这里，让 padded 行宽 ≥ valid
     //   - FloorAlign 已生效时 CeilAlign 结果 == 原值，幂等
     //   - 其它情况 rUbFactor 是「外侧 R 轴」的 chunk count，不需要 block 对齐
@@ -665,9 +674,9 @@ static ge::graphStatus ComputeRUbFactor(gert::TilingContext* context, ReduceStdW
     return ge::GRAPH_SUCCESS;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // 7) UB 切分 Step 3：R 全载后扩 A（rUbFactor==axisShape[rSplit] 且 rSplit 已是最外 R）
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 static bool RIsFullyLoaded(const ReduceStdWithMeanCtx& ctx)
 {
     const int32_t rSplit = ctx.rSplitAxisIdx;
@@ -768,10 +777,10 @@ static ge::graphStatus ExpandAIfRFullyLoaded(gert::TilingContext* context, Reduc
     return ge::GRAPH_SUCCESS;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // 8) 多核切分（fused aLoop）：把 aSplit 左侧所有 A 整根 + aSplit 的 outer chunk 数
 //    fuse 成一根线性计数 aLoopCntTotal，按 coreNum 均衡分到大小核。
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 static void ComputeFusedALoopSplit(ReduceStdWithMeanCtx& ctx)
 {
     int64_t outerAProd = 1;
@@ -789,9 +798,9 @@ static void ComputeFusedALoopSplit(ReduceStdWithMeanCtx& ctx)
     ctx.usedCoreNum = std::max(ctx.usedCoreNum, 1); // aLoopCntTotal==0 时兜底（实际不应触发）
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // 9) 算 rLoopCntTotal、UB sizes
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 static void ComputeRLoopCnt(ReduceStdWithMeanCtx& ctx)
 {
     int64_t outerR = 1;
@@ -819,9 +828,9 @@ static void ComputeUbSizes(ReduceStdWithMeanCtx& ctx)
     ctx.postReduceUbSize = (outRaw + ctx.blockSize - 1) / ctx.blockSize * ctx.blockSize;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // 10) Group 模板触发判定与 A×R 2D 多核切分
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 static bool ShouldUseGroup(const ReduceStdWithMeanCtx& ctx)
 {
     if (ctx.aLoopCntTotal > ctx.coreNum / 2) {
@@ -852,9 +861,9 @@ static void ComputeGroupSplit(ReduceStdWithMeanCtx& ctx)
     ctx.isGroup = true;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // 11) workspace 大小设置
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 static ge::graphStatus SetWorkspaceSize(gert::TilingContext* context, const ReduceStdWithMeanCtx& ctx)
 {
     size_t* ws = context->GetWorkspaceSizes(1);
@@ -878,9 +887,9 @@ static ge::graphStatus SetWorkspaceSize(gert::TilingContext* context, const Redu
     return ge::GRAPH_SUCCESS;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // 12) 填 tilingdata + 打日志
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 static ge::graphStatus FillAndLogTilingData(gert::TilingContext* context, const ReduceStdWithMeanCtx& ctx)
 {
     ReduceStdWithMeanTilingData* td = context->GetTilingData<ReduceStdWithMeanTilingData>();
@@ -952,13 +961,13 @@ static ge::graphStatus FillAndLogTilingData(gert::TilingContext* context, const 
     return ge::GRAPH_SUCCESS;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // 11) 空 tensor 模板 tiling 计算
 //
 // EMPTY_A：output 是空 tensor，usedCoreNum=0、kernel 早退；TilingData 其余字段填 0、不读。
 // EMPTY_R：每 output entry = sqrt(0) = 0；按规则算 aUbFactor + 多核切分，
 //          把 aTotal 放进 axisShape[0]，N_tmp=0（本算子退化为直接写 D_T outBuf）。
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 static void ComputeEmptyRTiling(ReduceStdWithMeanCtx& ctx)
 {
     // max_ub_factor —— 仅 N_out=1 路 D_T，64KB 单 buf 封顶
@@ -1042,9 +1051,9 @@ static ge::graphStatus FillEmptyTilingData(gert::TilingContext* context, const R
     return ge::GRAPH_SUCCESS;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // 12) 空 tensor 路径处理；返回 GRAPH_SUCCESS 表示已处理完毕调用方应直接 return
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 static ge::graphStatus HandleEmptyTensor(gert::TilingContext* context, ReduceStdWithMeanCtx& ctx)
 {
     if (ctx.emptyKind == ReduceStdWithMeanEmptyKind::EMPTY_R) {
@@ -1065,9 +1074,9 @@ static ge::graphStatus HandleEmptyTensor(gert::TilingContext* context, ReduceStd
     return ge::GRAPH_SUCCESS;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // Tiling 主入口
-// ─────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 static ge::graphStatus ReduceStdWithMeanTilingFunc(gert::TilingContext* context)
 {
     OP_LOGI(context->GetNodeName(), "Enter ReduceStdWithMeanTilingFunc");
@@ -1099,9 +1108,13 @@ static ge::graphStatus ReduceStdWithMeanTilingFunc(gert::TilingContext* context)
     ComputeRLoopCnt(ctx);
 
     // group 模板触发：A 用不满核（aLoopCntTotal ≤ coreNum/2）且 R 有并行度（rLoopCntTotal > 1）
-    //   → A×R 2D 分核 + 两阶段确定性归约（Phase1 写 workspace，Phase2 跨核合并，禁 AtomicAdd）。
+    //   → A×R 2D 分核 + 两阶段确定性归约（Phase1 写 ws，Phase2 跨核合并，禁 AtomicAdd）。
     if (ShouldUseGroup(ctx)) {
         ComputeGroupSplit(ctx);
+        // kernel ProcessGroup 调用 SyncAll 跨核同步，
+        //   多流场景必须切 BATCH_MODE_SCHEDULE 避免卡死（TOPK-13）。
+        OP_CHECK_IF(context->SetScheduleMode(1) != ge::GRAPH_SUCCESS, OP_LOGE(context, "Failed to set ScheduleMode!"),
+                    return ge::GRAPH_FAILED);
     }
 
     ComputeUbSizes(ctx);

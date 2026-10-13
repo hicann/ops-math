@@ -50,10 +50,10 @@ constexpr uint32_t UINT64_BITS = 64;                        // uint64 位宽（F
 
 // UB 内一根轴的描述（innermost-first 排列）
 struct UBAxisDesc {
-    int32_t gmIdx;  // 该轴在 tilingdata.axisShape / axisStride 中的下标
-    int64_t ubSize; // 该轴在 UB 中的有效长度（split 轴为 aLen/rLen，其它为整根 axisShape）
-    int64_t paddedSize; // 该轴在 UB 中的占位长度（含 LastA/LastR 行宽 CeilAlign / split 轴 rUbFactor·aUbFactor[Align]）
-    int64_t gmStride; // 该轴在 GM 上的 stride（元素，来自 axisStride）
+    int32_t gmIdx;      // 该轴在 tilingdata.axisShape / axisStride 中的下标
+    int64_t ubSize;     // 该轴在 UB 中的有效长度（split 轴为 aLen/rLen，其它为整根 axisShape）
+    int64_t paddedSize; // UB 占位长度（含 LastA/LastR 行宽 CeilAlign / split 轴 rUbFactor·aUbFactor[Align]）
+    int64_t gmStride;   // 该轴在 GM 上的 stride（元素，来自 axisStride）
 };
 
 template <typename DType, bool isTailR>
@@ -63,20 +63,18 @@ public:
     using ComputeT = float;
 
     static constexpr bool IS_FP32 = std::is_same_v<D_T, float>;
-    static constexpr bool IS_INT32 = std::is_same_v<D_T, int32_t>;
     static constexpr bool IS_B16 = (sizeof(D_T) == 2); // fp16 / bf16
     static constexpr bool NEED_CAST = !IS_FP32;
 
-    // CastTrait：X → fp32（扩位，硬件不读 sat / round，按 Cast_regbase_detail 推荐模板用 UNKNOWN + CAST_NONE）
+    // CastTrait：X → fp32（扩位，硬件不读 sat / round）
+    //   按 Cast_regbase_detail 推荐模板用 UNKNOWN + CAST_NONE
     static constexpr AscendC::Reg::CastTrait CAST_TRAIT_TO_FP32{
         AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::UNKNOWN, AscendC::Reg::MaskMergeMode::ZEROING,
         AscendC::RoundMode::CAST_NONE};
-    // CastTrait：fp32 → X（硬件不允许 CAST_NONE）
-    //   int32：CAST_TRUNC（与 TensorFlow reduce_reduce_std_with_mean(int32) trunc-to-zero 一致）
-    //   fp16/bf16：CAST_RINT
+    // CastTrait：fp32 → X（硬件不允许 CAST_NONE，fp16/bf16 用 CAST_RINT）
     static constexpr AscendC::Reg::CastTrait CAST_TRAIT_FROM_FP32{
         AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::NO_SAT, AscendC::Reg::MaskMergeMode::ZEROING,
-        IS_INT32 ? AscendC::RoundMode::CAST_TRUNC : AscendC::RoundMode::CAST_RINT};
+        AscendC::RoundMode::CAST_RINT};
 
     __aicore__ inline ReduceStdWithMeanKernel() {}
 
@@ -185,9 +183,9 @@ private:
     TQue<QuePosition::VECOUT, 1> outQue_;
 };
 
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 // 工具函数
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 template <typename DType, bool isTailR>
 __aicore__ inline int32_t ReduceStdWithMeanKernel<DType, isTailR>::LastAAxis() const
 {
@@ -293,9 +291,9 @@ __aicore__ inline int64_t ReduceStdWithMeanKernel<DType, isTailR>::UnravelOuterR
     return gmOff + rChunkIdxOut * rUbFactor_ * axisStride_[rSplit_];
 }
 
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 // Init
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 template <typename DType, bool isTailR>
 __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::Init(GM_ADDR x, GM_ADDR mean, GM_ADDR y,
                                                                      const ReduceStdWithMeanTilingData* td)
@@ -359,9 +357,9 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::Init(GM_ADDR x, 
     pipe_.InitBuffer(outQue_, /*bufNum=*/1, td->postReduceUbSize);
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // UnravelALoop: aLoopIdx → (aSplitChunkIdx, chunkGmOff, chunkOutOff)
-// ────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 template <typename DType, bool isTailR>
 __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::UnravelALoop(int64_t aLoopIdx, int64_t& aSplitChunkIdx,
                                                                              int64_t& chunkGmOff, int64_t& chunkOutOff)
@@ -382,7 +380,7 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::UnravelALoop(int
     }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 // Process: fused aLoop 多核解码
 //
 // blockIdx → [aLoopStart, aLoopEnd)：
@@ -391,7 +389,7 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::UnravelALoop(int
 //   blockIdx ≥ usedCoreNum 早退（idle）。
 //
 // 每个 aLoopIdx 调 UnravelALoop 解码 → DoOneAChunk + PostElewise + CopyOut
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 template <typename DType, bool isTailR>
 __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::Process()
 {
@@ -438,9 +436,9 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::Process()
     }
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // 单 A chunk 完整流程：清缓存树 → Phase A 配对 → Phase B 单块
-// ────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 template <typename DType, bool isTailR>
 __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::DoOneAChunk(int64_t outerGmOff, int64_t aLen)
 {
@@ -510,7 +508,7 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::DoOneAChunk(int6
     }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 // BuildUBAxes：根据 aSplit/rSplit/isTailR 枚举 UB 内轴（innermost→outermost）
 //
 // 返回值 = UB 内轴数 K（2 ≤ K ≤ axisNum）
@@ -521,7 +519,7 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::DoOneAChunk(int6
 //   - 其他普通轴：ubSize = paddedSize = axisShape[i]
 //
 // out[0] 是 burst 尾轴（最内层 stride 1），out[K-1] 是 UB 内最外侧轴。
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 template <typename DType, bool isTailR>
 __aicore__ inline int32_t ReduceStdWithMeanKernel<DType, isTailR>::BuildUBAxes(int64_t aLen, int64_t rLen,
                                                                                UBAxisDesc out[])
@@ -624,7 +622,7 @@ __aicore__ inline int32_t ReduceStdWithMeanKernel<DType, isTailR>::BuildUBAxes(i
     return k;
 }
 
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 // DoCopyInTile：用 DataCopyPad + LoopMode（可选 host for）把一块 GM tile 装入 preIn
 //
 // UB 内轴最多 4 根用 DataCopyPad+LoopMode 一次性搞定；超过的部分 host for 拆。
@@ -633,7 +631,7 @@ __aicore__ inline int32_t ReduceStdWithMeanKernel<DType, isTailR>::BuildUBAxes(i
 //   - dstStride = (paddedSize[0] × s − CeilAlign(blockLen, 32)) / 32（partial chunk 时 > 0）
 //   - loop1/2DstStride 用 ubStride[k] = ∏ paddedSize[0..k-1] × s 累积
 //   - host for 同样按 ubStride[k] 步进
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 template <typename DType, bool isTailR>
 __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::DoCopyInTile(int64_t baseGmOff, int64_t aLen,
                                                                              int64_t rLen,
@@ -728,7 +726,8 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::DoCopyInTile(int
             addUbOffBytes += ix * ubStride[k];
         }
         const int64_t ubOffElems = addUbOffBytes / dtBytes;
-        // 两输入：x 主链路 + mean 并行槽，同形同参搬入（LoopMode 对两次 DataCopyPad 同样生效）
+        // 两输入：x 主链路 + mean 并行槽，同形同参搬入
+        //   （LoopMode 对两次 DataCopyPad 同样生效）
         DataCopyPad(xLocal[ubOffElems], xGm_[baseGmOff + addGmOffElem], extParams, padParams);
         DataCopyPad(meanLocal[ubOffElems], meanGm_[baseGmOff + addGmOffElem], extParams, padParams);
     }
@@ -738,10 +737,10 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::DoCopyInTile(int
     }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 // SubSquareVf：Load(x, mean) → (Cast→fp32) → diff=x-mean → sq=diff² → Store(tmpBuf[slot])
 //   ReduceStdWithMean 相对单输入 reduce 的核心改造：两输入 pre-elewise (x-mean)²。
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 template <typename DType, bool isTailR>
 __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::SubSquareVf(AscendC::LocalTensor<D_T>& xIn,
                                                                             AscendC::LocalTensor<D_T>& meanIn,
@@ -780,13 +779,6 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::SubSquareVf(Asce
                 AscendC::Reg::LoadAlign<D_T, AscendC::Reg::LoadDist::DIST_UNPACK_B16>(mB16, mPtr + off);
                 AscendC::Reg::Cast<float, D_T, CAST_TRAIT_TO_FP32>(xReg, xB16, mask);
                 AscendC::Reg::Cast<float, D_T, CAST_TRAIT_TO_FP32>(mReg, mB16, mask);
-            } else { // int32
-                AscendC::Reg::RegTensor<int32_t> xI;
-                AscendC::Reg::RegTensor<int32_t> mI;
-                AscendC::Reg::LoadAlign(xI, reinterpret_cast<__ubuf__ int32_t*>(xPtr) + off);
-                AscendC::Reg::LoadAlign(mI, reinterpret_cast<__ubuf__ int32_t*>(mPtr) + off);
-                AscendC::Reg::Cast<float, int32_t, CAST_TRAIT_TO_FP32>(xReg, xI, mask);
-                AscendC::Reg::Cast<float, int32_t, CAST_TRAIT_TO_FP32>(mReg, mI, mask);
             }
 
             // ★ pre-elewise: diff = x - mean; sq = diff * diff
@@ -798,7 +790,7 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::SubSquareVf(Asce
     }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 // ClearChunkExtensionVf：rSplit 方向 [rLen, rUbFactor) 段填 0.0f
 //   tail R / tail A 都需要；rLen < rUbFactor 时才生效。
 //
@@ -812,7 +804,7 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::SubSquareVf(Asce
 //     cellElems = aUbFactorAlign × innerAProdAlign × innerRProdAlign，
 //     在 tail-A 下 aUbFactorAlign × innerAProdAlign 必是 bsElem 倍数（CeilAlign 已在 tiling 注入），
 //     所以 cellElems 是 fp32 的 8-lane 倍数，StoreAlign 起点 32B 对齐。
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 template <typename DType, bool isTailR>
 __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::ClearChunkExtensionVf(uint32_t slot, int64_t rLen)
 {
@@ -880,9 +872,9 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::ClearChunkExtens
     }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 // MergeTmpBufVf：tmpBuf[0] += tmpBuf[1]
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 template <typename DType, bool isTailR>
 __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::MergeTmpBufVf()
 {
@@ -896,7 +888,8 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::MergeTmpBufVf()
 
     __VEC_SCOPE__
     {
-        AscendC::Reg::RegTensor<float> aReg, bReg;
+        AscendC::Reg::RegTensor<float> aReg;
+        AscendC::Reg::RegTensor<float> bReg;
         AscendC::Reg::MaskReg mask;
         uint32_t remaining = totalElems;
         for (uint16_t i = 0; i < repeatTime; ++i) {
@@ -910,14 +903,14 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::MergeTmpBufVf()
     }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 // ReduceRPattern：AscendC::ReduceSum<fp32, AR/RA>
 //   src = tmpBuf[0]，dst = tmpBuf[1]（src/dst 不可重叠）
 //
 // srcShape 顺序：{外层维, 内层维}。
-//   tail R：UB=[A_bundle, R_bundle]，外=A_bundle 元素数，内=R_bundle 元素数（含 LastR align）→ Pattern=AR
+//   tail R：UB=[A_bundle, R_bundle]，外=A_bundle 数，内=R_bundle 数（含 LastR align）→ Pattern=AR
 //   tail A：UB=[R_bundle, A_bundle]，外=R_bundle，内=A_bundle → Pattern=RA
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 template <typename DType, bool isTailR>
 __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::ReduceRPattern()
 {
@@ -940,9 +933,9 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::ReduceRPattern()
     }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 // ClearCacheTreeVf：整个 cacheBuf 清 0（容量从 tilingdata cacheBufUbSize 下发）
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 template <typename DType, bool isTailR>
 __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::ClearCacheTreeVf()
 {
@@ -964,10 +957,10 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::ClearCacheTreeVf
     }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 // DoCachingVf：ReduceSum 结果（tmpBuf[1] 前 laneN 个 fp32）→ 缓存树 level cacheID
 //   laneN = aUbFactorAlign × innerAProdAlign（v2：含多 A 轴 bundle 因子）
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 template <typename DType, bool isTailR>
 __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::DoCachingVf(uint16_t cacheID)
 {
@@ -984,7 +977,8 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::DoCachingVf(uint
 
     __VEC_SCOPE__
     {
-        AscendC::Reg::RegTensor<float> aReg, bReg;
+        AscendC::Reg::RegTensor<float> aReg;
+        AscendC::Reg::RegTensor<float> bReg;
         AscendC::Reg::MaskReg mask;
         uint32_t remaining = laneN;
         for (uint16_t i = 0; i < repeatTime; ++i) {
@@ -1003,9 +997,9 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::DoCachingVf(uint
     }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 // PostElewise：读树根 → vSqrt → Cast→D_T → outBuf → EnQue
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 template <typename DType, bool isTailR>
 __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::PostElewise(int64_t aLen)
 {
@@ -1037,7 +1031,7 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::PostElewise(int6
                 AscendC::Reg::Sqrt(f32Reg, f32Reg, mask);
             } else {
                 // invstd = 1 / sqrt(ss / N + eps) = 1 / sqrt(ss × invN + epsilon)
-                //   本 arch35 SDK 无 AscendC::Reg::Rsqrt，用 Sqrt + Div(1, ·) 等价实现（设计兜底路径）。
+                //   arch35 SDK 无 Reg::Rsqrt，用 Sqrt + Div(1, ·) 等价实现（设计兜底路径）。
                 AscendC::Reg::RegTensor<float> oneReg;
                 AscendC::Reg::Duplicate(oneReg, 1.0f);
                 AscendC::Reg::Muls(f32Reg, f32Reg, invN_, mask);
@@ -1052,17 +1046,13 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::PostElewise(int6
                 AscendC::Reg::RegTensor<D_T> b16Reg;
                 AscendC::Reg::Cast<D_T, float, CAST_TRAIT_FROM_FP32>(b16Reg, f32Reg, mask);
                 AscendC::Reg::StoreAlign<D_T, AscendC::Reg::StoreDist::DIST_PACK_B32>(outPtr + off, b16Reg, mask);
-            } else { // int32
-                AscendC::Reg::RegTensor<int32_t> iReg;
-                AscendC::Reg::Cast<int32_t, float, CAST_TRAIT_FROM_FP32>(iReg, f32Reg, mask);
-                AscendC::Reg::StoreAlign(outPtr + off, iReg, mask);
             }
         }
     }
     outQue_.EnQue(outLocal);
 }
 
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 // CopyOut：DeQue → DataCopyPad → FreeTensor
 //
 // CopyOut 字段映射（按 isTailR 拆三路径）：
@@ -1074,7 +1064,7 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::PostElewise(int6
 //                                  blockCount = aLen × innerAProd / lastA
 //           UB per-a0 含 CeilAlign(lastA,bsElem) padding，HW 按 32B 跨过
 //   srcStride = dstStride = 0
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 template <typename DType, bool isTailR>
 __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::CopyOut(int64_t outerOutOff, int64_t aLen)
 {
@@ -1100,7 +1090,7 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::CopyOut(int64_t 
     outQue_.FreeTensor(outDeq);
 }
 
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 // Group 模板：A×R 2D 分核 Phase1 → SyncAll → Phase2 RA mini-kernel
 //
 // 数据流：
@@ -1111,7 +1101,7 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::CopyOut(int64_t 
 //
 // 确定性：Phase1 各核局部归约用固定二分累加树，Phase2 沿 rGroup 维 ReduceSum 顺序固定，
 //   全程禁用 AtomicAdd（spec determinism.bitwise_reproducible）。
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════
 template <typename DType, bool isTailR>
 __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::InitGroup(GM_ADDR x, GM_ADDR mean, GM_ADDR y,
                                                                           GM_ADDR workspace,
@@ -1136,9 +1126,9 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::ProcessGroup()
     Phase2Process();
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // Phase1Process: 2D 坐标计算 + 局部 R 段 reduce + 写 workspace
-// ────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 template <typename DType, bool isTailR>
 __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::Phase1Process()
 {
@@ -1189,9 +1179,9 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::Phase1Process()
     Phase1OutputToWorkspace(chunkOutOff, aLen, rChunkIdx, rCount);
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // DoOneAChunkGroup: DoOneAChunk 变体 —— R 区间限制在 [rStart, rEnd)，两输入 (x-mean)²
-// ────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 template <typename DType, bool isTailR>
 __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::DoOneAChunkGroup(int64_t outerGmOff, int64_t aLen,
                                                                                  int64_t rStart, int64_t rEnd)
@@ -1272,10 +1262,10 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::DoOneAChunkGroup
     // 循环结束后 cache 树根 = 本核 R 段 [rStart, rEnd) 的 fp32 部分平方和（未经 post-op）
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // Phase1OutputToWorkspace: 读 cache 树根 fp32 → MTE3 CopyOut 到 workspace[rChunkIdx][wsColOff]
 //   workspace 布局 [rGroupCnt_, aTotal_]，fp32 dense（无 padding）。
-// ────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 template <typename DType, bool isTailR>
 __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::Phase1OutputToWorkspace(int64_t wsColOff, int64_t aLen,
                                                                                         int64_t rChunkIdx,
@@ -1321,10 +1311,10 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::Phase1OutputToWo
     DataCopyPad(wsGm_[wsOff], cacheLocal[rootOff], ext);
 }
 
-// ────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 // Phase2Process: RA mini-kernel —— 每核处理 aUbFactorP2 宽 A 列，消解全部 rGroupCnt_ 行 +
 //   post-op（invert 双模式）+ Cast → yGm_。
-// ────────────────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────
 template <typename DType, bool isTailR>
 __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::Phase2Process()
 {
@@ -1440,10 +1430,6 @@ __aicore__ inline void ReduceStdWithMeanKernel<DType, isTailR>::Phase2Process()
                         AscendC::Reg::Cast<D_T, float, CAST_TRAIT_FROM_FP32>(b16Reg, f32Reg, mask);
                         AscendC::Reg::StoreAlign<D_T, AscendC::Reg::StoreDist::DIST_PACK_B32>(dstPtr + off, b16Reg,
                                                                                               mask);
-                    } else { // int32
-                        AscendC::Reg::RegTensor<int32_t> iReg;
-                        AscendC::Reg::Cast<int32_t, float, CAST_TRAIT_FROM_FP32>(iReg, f32Reg, mask);
-                        AscendC::Reg::StoreAlign(dstPtr + off, iReg, mask);
                     }
                 }
             }

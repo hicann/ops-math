@@ -59,7 +59,7 @@ public:
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true)
-            .ExtendCfgInfo("opFile.value", "reduce_std_with_mean_apt");
+            .ExtendCfgInfo("opFile.value", "reduce_std_with_mean");
         this->AICore().AddConfig("ascend950", aicoreConfig);
         this->AICore().AddConfig("ascend350", aicoreConfig);
     }

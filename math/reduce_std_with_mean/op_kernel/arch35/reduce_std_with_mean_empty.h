@@ -17,9 +17,9 @@
  * 覆盖两种几何：
  *   EMPTY_A (∃ A 轴 axisShape==0)：output 是空 tensor，kernel 零操作。
  *       usedCoreNum=0、SetBlockDim(1)、所有核命中 `blockIdx >= usedCoreNum` 早退。
- *   EMPTY_R (∃ R 轴 axisShape==0 且 ∀ A 轴 axisShape>0)：output entry = sqrt(sum(empty)) = sqrt(0) = 0。
- *       由于 sqrt(0)=0 且 Cast(0)=0 对 fp16/bf16/fp32/int32 均成立，
- *       本算子退化为 "Duplicate D_T(0) → outBuf → DataCopyPad" —— 不需要 fp32 tmpBuf、
+ *   EMPTY_R (∃ R 轴 axisShape==0 且 ∀ A 轴 axisShape>0)：output entry = std(空) = 0/0 = NaN。
+ *       由于 N=0 时分母退化为 0，参照 numpy golden 输出 NaN（invstd 亦 NaN），
+ *       本算子退化为 "Duplicate D_T(NaN) → outBuf → DataCopyPad" —— 不需要 fp32 tmpBuf、
  *       不需要 sqrt（与设计 "无 post-elewise" 路径同型，N_tmp=0）。
  *
  * 与 normal 模板共享：
@@ -47,13 +47,12 @@ public:
     using ComputeT = float;
 
     static constexpr bool IS_FP32 = std::is_same_v<D_T, float>;
-    static constexpr bool IS_INT32 = std::is_same_v<D_T, int32_t>;
     static constexpr bool IS_B16 = (sizeof(D_T) == 2); // fp16 / bf16
 
-    // CastTrait：fp32 → X（与 normal kernel 一致；int32 用 CAST_TRUNC，fp16/bf16 用 CAST_RINT）
+    // CastTrait：fp32 → X（与 normal kernel 一致，fp16/bf16 用 CAST_RINT）
     static constexpr AscendC::Reg::CastTrait CAST_TRAIT_FROM_FP32{
         AscendC::Reg::RegLayout::ZERO, AscendC::Reg::SatMode::NO_SAT, AscendC::Reg::MaskMergeMode::ZEROING,
-        IS_INT32 ? AscendC::RoundMode::CAST_TRUNC : AscendC::RoundMode::CAST_RINT};
+        AscendC::RoundMode::CAST_RINT};
 
     static constexpr uint32_t VL_BYTES = 256;
     static constexpr uint32_t REP_F32 = VL_BYTES / sizeof(float); // = 64
@@ -73,7 +72,7 @@ public:
         emptyOutValue_ = td->emptyOutValue; // EMPTY_R 填充值 = NaN（host 预置）
 
         yGm_.SetGlobalBuffer(reinterpret_cast<__gm__ D_T*>(y));
-        // 仅 outBuf：N_post_alive=0, N_out=1, N_tmp=0；postReduceUbSize = CeilAlign(aUbFactor × sizeof(D_T), blockSize)
+        // 仅 outBuf：N_post_alive=0, N_out=1, N_tmp=0；postReduceUbSize = CeilAlign(aUbFactor × dtSize, blockSize)
         pipe_.InitBuffer(outQue_, /*bufNum=*/2, td->postReduceUbSize);
     }
 
@@ -86,8 +85,9 @@ public:
             return;
         }
 
-        // blockIdx → [aStart, aEnd) 按 a 元素数切（同型简化版：aSplit 单核独享一段，外层无 outer A）
-        int64_t aStart, aEnd;
+        // blockIdx → [aStart, aEnd) 按 a 元素数切（同型简化：aSplit 单核独享一段，无 outer A）
+        int64_t aStart = 0;
+        int64_t aEnd = 0;
         if (blockIdx < static_cast<int64_t>(aBigCoreCnt_)) {
             aStart = blockIdx * aBigCoreLoopCnt_ * aUbFactor_;
             aEnd = aStart + aBigCoreLoopCnt_ * aUbFactor_;
@@ -102,19 +102,19 @@ public:
 
         for (int64_t aOff = aStart; aOff < aEnd; aOff += aUbFactor_) {
             const int64_t aLen = (aOff + aUbFactor_ > aEnd) ? (aEnd - aOff) : aUbFactor_;
-            FillZeroAndCopyOut(aOff, aLen);
+            FillEmptyValueAndCopyOut(aOff, aLen);
         }
     }
 
 private:
-    // ════════════════════════════════════════════════════════════════════════
+    // ═════════════════════════════════════
     // 单 chunk：Duplicate D_T(emptyOutValue=NaN) → outBuf → DataCopyPad
     //   EMPTY_R（N=0）：ReduceStdWithMean 每个输出 entry = std(空) = 0/0 = NaN（invstd 亦 NaN），
     //   与 numpy golden 一致。（区别于 EuclideanNorm 的 sqrt(0)=0 —— std 的分母 N=0 → NaN。）
     //   做法：寄存器内 Duplicate fp32 NaN → (如需) Cast 到 D_T → StoreAlign outBuf
-    //         StoreAlign 起点天然 32B 对齐（outBuf 是 UB 上独立分配），尾部 mask 由 UpdateMask 收住。
-    // ════════════════════════════════════════════════════════════════════════
-    __aicore__ inline void FillZeroAndCopyOut(int64_t outOff, int64_t aLen)
+    //         StoreAlign 天然 32B 对齐（outBuf 是 UB 上独立分配），尾部 mask 由 UpdateMask 收住。
+    // ═════════════════════════════════════
+    __aicore__ inline void FillEmptyValueAndCopyOut(int64_t outOff, int64_t aLen)
     {
         auto outLocal = outQue_.AllocTensor<D_T>();
         __ubuf__ D_T* outPtr = reinterpret_cast<__ubuf__ D_T*>(outLocal.GetPhyAddr());
@@ -140,10 +140,6 @@ private:
                     AscendC::Reg::RegTensor<D_T> b16Reg;
                     AscendC::Reg::Cast<D_T, float, CAST_TRAIT_FROM_FP32>(b16Reg, f32Reg, mask);
                     AscendC::Reg::StoreAlign<D_T, AscendC::Reg::StoreDist::DIST_PACK_B32>(outPtr + off, b16Reg, mask);
-                } else { // int32
-                    AscendC::Reg::RegTensor<int32_t> iReg;
-                    AscendC::Reg::Cast<int32_t, float, CAST_TRAIT_FROM_FP32>(iReg, f32Reg, mask);
-                    AscendC::Reg::StoreAlign(outPtr + off, iReg, mask);
                 }
             }
         }

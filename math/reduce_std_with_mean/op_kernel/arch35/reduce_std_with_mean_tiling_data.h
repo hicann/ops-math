@@ -15,11 +15,12 @@
  * \brief ReduceStdWithMean 算子 TilingData 定义
  *
  * 直接套用 ReduceNormalGenericTilingData 布局，
- * 无 ReduceStdWithMean 专属字段（sqrt 是 in-register、不需要传系数；与 mean 需要 invRTotal 不同）。
+ * 无 ReduceStdWithMean 专属字段（sqrt 是 in-register、不需要传系数；
+ * 与 mean 需要 invRTotal 不同）。
  *
  * 字段分 5 组：
- *   - pattern 描述：axisNum / axisShape[MAX_PATTERN_RANK] / axisStride[MAX_PATTERN_RANK]（去 1 / 合轴 / 补 R 增广后的
- * pattern）
+ *   - pattern 描述：axisNum / axisShape[MAX_PATTERN_RANK] /
+ *     axisStride[MAX_PATTERN_RANK]（去 1 / 合轴 / 补 R 增广后的 pattern）
  *   - 多核切分（fused aLoop）：aLoopCntTotal / aSplitChunkCnt / aBigCoreLoopCnt /
  *              aSmallCoreLoopCnt / aBigCoreCnt / usedCoreNum
  *   - UB 切分：aSplitAxisIdx / rSplitAxisIdx / aUbFactor / aUbFactorAlign /
@@ -41,10 +42,11 @@ struct ReduceStdWithMeanTilingData {
     int64_t axisStride[MAX_PATTERN_RANK] = {0}; // 每根轴的 GM stride（按 element）
     // axisType[i] 由位置 i 的奇偶决定：i 偶→A，i 奇→R（A 起头 + 严格交替），不入 tilingdata
 
-    // ─── 多核切分（normal 模板：外层 A loop 全部 fuse 成线性计数，按 coreNum 均衡分核） ───
+    // ─── 多核切分（normal：A loop 全部 fuse 成线性计数，按 coreNum 均衡分核） ───
     int64_t aLoopCntTotal = 0;  // ∏(outer A 整根) × aSplitChunkCnt
     int64_t aSplitChunkCnt = 0; // CeilDiv(axisShape[aSplitAxisIdx], aUbFactor)
-    int64_t aBigCoreLoopCnt = 0; // 前 aBigCoreCnt 个核处理的 aLoop 数 (= aSmallCoreLoopCnt + 1，当 aBigCoreCnt>0)
+    // 前 aBigCoreCnt 个核处理的 aLoop 数 (= aSmallCoreLoopCnt + 1，当 aBigCoreCnt>0)
+    int64_t aBigCoreLoopCnt = 0;
     int64_t aSmallCoreLoopCnt = 0; // 其余核处理的 aLoop 数 (= aLoopCntTotal / coreNum，floor)
     int32_t aBigCoreCnt = 0;       // 大核个数 (= aLoopCntTotal % coreNum)
     int32_t usedCoreNum = 0;       // 实际使用核数 (aSmallCoreLoopCnt>0 ? coreNum : aBigCoreCnt)
@@ -75,7 +77,8 @@ struct ReduceStdWithMeanTilingData {
     int64_t rGroupCnt = 0; // Phase 1 分组数 = Phase 2 workspace R 维大小
 
     // ─── empty 模板 ───
-    //   EMPTY_R（归约轴积==0 → N=0）：填 empty_r_output_value=NaN（std: 0/0=NaN，invstd: 1/sqrt(NaN)=NaN），
+    //   EMPTY_R（归约轴积==0 → N=0）：填 empty_r_output_value=NaN
+    //   （std: 0/0=NaN，invstd: 1/sqrt(NaN)=NaN），
     //   与 numpy golden 一致。EMPTY_A（A 轴积==0）→ 输出空 tensor no-op，不读此字段。
     float emptyOutValue = 0.0f;
 

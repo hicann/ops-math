@@ -58,9 +58,9 @@ static bool IsUnknownRank(const gert::Shape& shape)
 
 // 从 dim 属性解析 reduce 轴到 int64 数组：
 //   dim 为空 → all reduce（dim = [0..xRank-1]，与 tiling::ParseDimAttr 一致）；
-//   否则归一化负数到 [0, xRank)，重复/越界返回 false。
+//   否则归一化负数到 [0, xRank)，重复/越界返回 false（badValue/errMsg 供 EZ0026 结构化上报）。
 static bool LoadDimFromAttr(const gert::RuntimeAttrs* attrs, int64_t xRank, std::vector<int64_t>& axesOut,
-                            std::string& errMsg)
+                            std::string& badValue, std::string& errMsg)
 {
     const auto* dimVec = attrs->GetListInt(ATTR_DIM_IDX);
     const int64_t dimNum = (dimVec == nullptr) ? 0 : static_cast<int64_t>(dimVec->GetSize());
@@ -75,6 +75,7 @@ static bool LoadDimFromAttr(const gert::RuntimeAttrs* attrs, int64_t xRank, std:
 
     const int64_t* data = dimVec->GetData();
     if (data == nullptr) {
+        badValue = "null";
         errMsg = "dim attr data ptr is null";
         return false;
     }
@@ -83,13 +84,14 @@ static bool LoadDimFromAttr(const gert::RuntimeAttrs* attrs, int64_t xRank, std:
     for (int64_t i = 0; i < dimNum; ++i) {
         const int64_t v = data[i];
         if (v < -xRank || v >= xRank) {
-            errMsg = "dim[" + std::to_string(i) + "]=" + std::to_string(v) + " out of range [-" +
-                     std::to_string(xRank) + ", " + std::to_string(xRank) + ")";
+            badValue = std::to_string(v);
+            errMsg = "each dim must be in range [-" + std::to_string(xRank) + ", " + std::to_string(xRank) + ")";
             return false;
         }
         const int64_t norm = (v < 0) ? (v + xRank) : v;
         if (!seen.insert(norm).second) {
-            errMsg = "duplicate dim " + std::to_string(norm) + " (idx=" + std::to_string(i) + ")";
+            badValue = std::to_string(v);
+            errMsg = "duplicate axes are not allowed (axis " + std::to_string(norm) + " appears more than once)";
             return false;
         }
         axesOut.push_back(norm);
@@ -140,9 +142,11 @@ static ge::graphStatus InferShape4ReduceStdWithMean(gert::InferShapeContext* con
     const int64_t xRank = static_cast<int64_t>(xShape->GetDimNum());
 
     // 1.5) rank 上界守卫：xRank 来自外部 shape，后续 isReduce[MAX_SUPPORTED_RANK] 按其索引访问，
-    //      必须先拦截 rank>MAX_SUPPORTED_RANK，避免栈数组越界读写（与 L2 aclnn 路径 OP_CHECK_MAX_DIM 对齐）。
+    //      必须先拦截 rank>MAX_SUPPORTED_RANK，避免栈数组越界读写
+    //      （与 L2 aclnn 路径 OP_CHECK_MAX_DIM 对齐）。
     if (xRank > static_cast<int64_t>(MAX_SUPPORTED_RANK)) {
-        OP_LOGE(context->GetNodeName(), "xRank=%ld exceeds max supported rank %zu", xRank, MAX_SUPPORTED_RANK);
+        OP_LOGE_FOR_INVALID_SHAPEDIM(context->GetNodeName(), "x", std::to_string(xRank).c_str(),
+                                     std::to_string(MAX_SUPPORTED_RANK).c_str());
         return GRAPH_FAILED;
     }
 
@@ -157,13 +161,15 @@ static ge::graphStatus InferShape4ReduceStdWithMean(gert::InferShapeContext* con
     const bool keepDim = ReadKeepDim(attrs);
 
     std::vector<int64_t> axes;
+    std::string badValue;
     std::string errMsg;
-    if (!LoadDimFromAttr(attrs, xRank, axes, errMsg)) {
-        OP_LOGE(context->GetNodeName(), "%s; xRank=%ld", errMsg.c_str(), xRank);
+    if (!LoadDimFromAttr(attrs, xRank, axes, badValue, errMsg)) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "dim", badValue.c_str(), errMsg.c_str());
         return GRAPH_FAILED;
     }
 
-    // 4) 计算输出 shape：keepDim=false 删除 reduce 轴；keepDim=true 置 1（axes 已归一化、无重复、无越界）
+    // 4) 计算输出 shape：keepDim=false 删除 reduce 轴；
+    //    keepDim=true 置 1（axes 已归一化、无重复、无越界）
     bool isReduce[MAX_SUPPORTED_RANK] = {}; // xRank<=MAX_SUPPORTED_RANK 已由上方守卫保证
     for (int64_t a : axes) {
         isReduce[static_cast<size_t>(a)] = true;
