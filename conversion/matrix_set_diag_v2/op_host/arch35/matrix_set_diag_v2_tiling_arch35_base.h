@@ -82,6 +82,8 @@ private:
     // 辅助函数
     template <typename T>
     inline T AlignBlock(T elementCount);
+    // kernel 侧 Scatter 非满载路径 diag 按矩阵对齐存放, 预算需按对齐后大小计算
+    uint64_t GetDiagBudgetSize();
 
     // 打印
     void ShowCutTailTilingData();

@@ -75,7 +75,8 @@ TEST_F(MatrixSetDiagV2TilingTest, test_tiling_float)
                                                   {{{2, 3, 3}, {2, 3, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
                                               },
                                               &compileInfo);
-    uint64_t expectTilingKey = 0b0'0'1'00000010;
+    // ratio = diagDataSize(9)/tailAxisDataSize(9) = 1.0 >= SCATTER_RATIO(0.65)，走 GATHER 路径且 VL 满载
+    uint64_t expectTilingKey = 0b0'0'1'00000001;
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }

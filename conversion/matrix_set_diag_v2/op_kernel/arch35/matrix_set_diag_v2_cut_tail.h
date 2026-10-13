@@ -85,7 +85,6 @@ private:
     constexpr static uint32_t DIAG_MAX_ELEMENTS = DIAG_MAX_BUF_SIZE / D_SIZE;
     constexpr static uint32_t BANK_OFFSET = 256;
     constexpr static uint32_t BANK_CONFLIC_STRIDE = 512;
-    constexpr static uint32_t BANK_CONFLIC_STRIDE_ELE_NUM = BANK_CONFLIC_STRIDE / D_SIZE;
     constexpr static uint32_t MAX_DISCRETE_BANK_CFLT_CNT = 4;
 
     template <uint32_t N>
@@ -123,7 +122,6 @@ private:
     // 中间变量
     uint32_t mainBlockElements_{0};
     uint64_t diagElementsPerBatch_{0};
-    bool scatterBankConflict_{false};
 
     // 搬运参数
     const DataCopyPadExtParams<T> padParams_{false, 0, 0, 0};
@@ -233,7 +231,6 @@ __aicore__ inline void MatrixSetDiagCutTail<T, U>::Init(GM_ADDR x, GM_ADDR diago
     // 中间变量
     diagElementsPerBatch_ = maxDiagLen_ * static_cast<uint64_t>(static_cast<int64_t>(k1_) - k0_ + 1);
     mainBlockElements_ = xRowFactor_ * xColFactor_;
-    scatterBankConflict_ = (xColNum_ + 1) % BANK_CONFLIC_STRIDE_ELE_NUM == 0;
 
     // ub
     pipe_->InitBuffer(buf_, BUF_NUM * (X_MAX_BUF_SIZE + DIAG_MAX_BUF_SIZE + BANK_OFFSET));
@@ -666,8 +663,8 @@ __simd_vf__ inline void MatrixSetDiagCutTail<T, U>::SimdSetDiagGatherScatter(
         Reg::Compares<IdxType, CMPMODE::LT>(validMask, xCol, static_cast<IdxType>(colCnt), mask);
         // Reg::And(validMask, geZero, ltColCnt, mask);
         // 5. xIdx = pRow * colCnt + xCol  (pRow = xRow)
-        Reg::Mul(xIdx, pRow, colCntReg, mask);
-        Reg::Add(xIdx, xIdx, xCol, mask);
+        xIdx = xCol;
+        Reg::MulAddDst(xIdx, pRow, colCntReg, mask);
         // 6. diagRow = diagCntIdx - pCol (= (diagCnt-1) - pCol)
         //    pCol in [0, diagCnt-1] => diagRow in [0, diagCnt-1]，恒有效，无回绕。
         Reg::Duplicate(tmp2, diagCntIdx);
@@ -972,18 +969,23 @@ __aicore__ inline void MatrixSetDiagCutTail<T, U>::ProcessWithXShape()
     MutexID mutexId0 = AllocMutexID();
     MutexID mutexId1 = AllocMutexID();
 
+    // batch/rowIdx/colIdx 循环外一次除法解出初值，idx 每轮步进 1，循环内增量递推，
+    // 免去每轮对 idx 的 u64 软除法（idx / cntPerBatch、hwIdx / cntInCol）
+    uint64_t batch = startIdx / cntPerBatch;
+    uint64_t rowIdx = (startIdx - batch * cntPerBatch) / cntInCol;
+    uint64_t colIdx = startIdx - batch * cntPerBatch - rowIdx * cntInCol;
+
     // 遍历UB块
     for (uint64_t idx = startIdx; idx < endIdx; ++idx) {
         MSDCutTailBlockInfo info;
         // 同步事件
         info.eventID = (idx & 1) ? mutexId1 : mutexId0;
         // 计算当前块范围
-        info.batch = idx / cntPerBatch;
-        uint64_t hwIdx = idx - info.batch * cntPerBatch;
-        info.startRow = (hwIdx / cntInCol) * xRowFactor_;
+        info.batch = batch;
+        info.startRow = rowIdx * xRowFactor_;
         info.rowCnt = Std::min(static_cast<uint64_t>(xRowFactor_), xRowNum_ - info.startRow);
         info.endRow = info.startRow + info.rowCnt - 1;
-        info.startCol = (hwIdx % cntInCol) * xColFactor_;
+        info.startCol = colIdx * xColFactor_;
         info.colCnt = Std::min(static_cast<uint64_t>(xColFactor_), xColNum_ - info.startCol);
         info.endCol = info.startCol + info.colCnt - 1;
         // 计算对角线范围
@@ -1020,6 +1022,15 @@ __aicore__ inline void MatrixSetDiagCutTail<T, U>::ProcessWithXShape()
             CopyOut(xTensor, xStart, processNum);
         }
         Mutex::Unlock<PIPE_MTE3>(info.eventID);
+
+        // 块索引递推：colIdx 先行，溢出进 rowIdx，再溢出进 batch
+        if (++colIdx >= cntInCol) {
+            colIdx = 0;
+            if (++rowIdx >= cntInRow) {
+                rowIdx = 0;
+                ++batch;
+            }
+        }
     }
     ReleaseMutexID(mutexId0);
     ReleaseMutexID(mutexId1);

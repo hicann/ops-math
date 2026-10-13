@@ -66,6 +66,7 @@ private:
     uint32_t ubFactor_{0};
     uint32_t oneTailSize_{0};
     uint32_t oneDiagSize_{0};
+    uint32_t diagAlignStride_{0};
     int32_t firstK_{0};
     int32_t k0_;
 
@@ -88,7 +89,13 @@ public:
         firstK_ = tdPtr_->input.k1;
         k0_ = tdPtr_->input.k0;
         oneTailSize_ = Ops::Base::CeilAlign(ubFactor_ * tailAxisDataSize_, ALIGN_NUM);
-        oneDiagSize_ = Ops::Base::CeilAlign(ubFactor_ * tailDiagSize_, ALIGN_NUM);
+        // Scatter 非满载路径 diag 段按矩阵对齐存放(消除计算循环中的非对齐 LoadUnAlign)
+        diagAlignStride_ = Ops::Base::CeilAlign(tailDiagSize_, ALIGN_NUM);
+        if constexpr (PROC_MODE == 2 && VL_MODE == 0 && (sizeof(T) == 1 || sizeof(T) == 2 || sizeof(T) == 4)) {
+            oneDiagSize_ = ubFactor_ * diagAlignStride_;
+        } else {
+            oneDiagSize_ = Ops::Base::CeilAlign(ubFactor_ * tailDiagSize_, ALIGN_NUM);
+        }
 
         inputGm_.SetGlobalBuffer((__gm__ T*)x);
         diagonalGm_.SetGlobalBuffer((__gm__ T*)diagonal);
@@ -127,10 +134,18 @@ public:
             idxLocal = indexQue_.Get<RangeType_>();
             GenGatherIndex(idxLocal, tailAxisDataSize_);
         }
-        for (uint32_t idx = startIdx; idx < endIdx; idx += coreNum_) {
+        // magic除数(xRowNum_*diagNum_/diagNum_)在整个循环中恒定, 循环外计算一次
+        uint32_t magic0 = 0, shift0 = 0, magic1 = 0, shift1 = 0;
+        if constexpr (PROC_MODE == 3) {
+            GetUintDivMagicAndShift(magic0, shift0, static_cast<uint32_t>(xRowNum_ * diagNum_));
+            GetUintDivMagicAndShift(magic1, shift1, static_cast<uint32_t>(diagNum_));
+        }
+        // buf_idx为迭代序号(idx自startIdx起每轮步进coreNum_), 递增计数与原(idx-startIdx)/coreNum_等价,
+        // 免去每轮一次u32软件除法
+        uint32_t buf_idx = 0;
+        for (uint32_t idx = startIdx; idx < endIdx; idx += coreNum_, ++buf_idx) {
             LocalTensor<T> inLocal = inQue_.Get<T>();
             LocalTensor<T> diagLocal = diagQue_.Get<T>();
-            uint32_t buf_idx = (idx - startIdx) / coreNum_;
             curMergeDimIdx = idx * ubFactor_;
             curMergeDimIdxEnd = min(curMergeDimIdx + static_cast<uint64_t>(ubFactor_), mergeDimSize_);
             inputLen = static_cast<uint32_t>((curMergeDimIdxEnd - curMergeDimIdx) * tailAxisDataSize_);
@@ -141,7 +156,7 @@ public:
             SetWaitEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V, buf_idx);
             if constexpr (PROC_MODE == 3) {
                 SimtProcess(curMergeDimIdx, curMergeDimIdxEnd, inLocal[(buf_idx & 1) * oneTailSize_],
-                            diagLocal[(buf_idx & 1) * oneDiagSize_]);
+                            diagLocal[(buf_idx & 1) * oneDiagSize_], magic0, shift0, magic1, shift1);
             } else if constexpr (PROC_MODE == 2) {
                 ScatterProcess(inLocal[(buf_idx & 1) * oneTailSize_], diagLocal[(buf_idx & 1) * oneDiagSize_], idxLocal,
                                curMergeDimIdxEnd - curMergeDimIdx);
@@ -165,7 +180,18 @@ public:
         DataCopyExtParams copyInParams = {1u, static_cast<uint32_t>(inputProcessNum * sizeof(T)), 0, 0, 0};
         DataCopyExtParams diagParams = {1u, static_cast<uint32_t>(diagProcessNum * sizeof(T)), 0, 0, 0};
         DataCopyPad(inLocal, inputGm_[inputAddr], copyInParams, inPadParams);
-        DataCopyPad(diagLocal, diagonalGm_[diagAddr], diagParams, diagPadParams);
+        if constexpr (PROC_MODE == 2 && VL_MODE == 0 && (sizeof(T) == 1 || sizeof(T) == 2 || sizeof(T) == 4)) {
+            // 一条 2D 拷贝完成 diag 分段布局: blockCount 个矩阵段, GM 侧连续(srcStride=0),
+            // UB 侧块起点自动 32B 对齐(dstStride=0, 块间步进为 CeilAlign(blockLen, 32B), 即段对齐步长);
+            // 段间 pad 区内容不参与计算(scatter 谓词仅作用于有效 lane)
+            uint32_t matNum = diagProcessNum / tailDiagSize_;
+            DataCopyExtParams diagAlignParams = {static_cast<uint16_t>(matNum),
+                                                 static_cast<uint32_t>(tailDiagSize_ * sizeof(T)), 0, 0, 0};
+            DataCopyPadExtParams<T> diagAlignPadParams{false, 0, 0, 0};
+            DataCopyPad(diagLocal, diagonalGm_[diagAddr], diagAlignParams, diagAlignPadParams);
+        } else {
+            DataCopyPad(diagLocal, diagonalGm_[diagAddr], diagParams, diagPadParams);
+        }
         inQue_.EnQue(inLocal);
         diagQue_.EnQue(diagLocal);
     }
@@ -292,6 +318,8 @@ public:
         RangeType_ xRowNum = xRowNum_;
         RangeType_ xColOffset = -1 * xColNum_ - 1;
         RangeType_ firstKOffset = -1 * firstK_;
+        RangeType_ kLower = k0_;
+        RangeType_ kUpper = firstK_;
         auto* idxPtr = (__ubuf__ RangeType_*)idxLocal.GetPhyAddr();
         RangeType_ dataTypeFactor = sizeof(T) > 4 ? 2 : 1;
         RangeType_ tailAxisDataSize = tailDiagSize_;
@@ -327,9 +355,13 @@ public:
                     Reg::Compares<RangeType_, AscendC::CMPMODE::LT>(tMask, kReg, 0, mask);
                     Reg::Add(tempReg, indexReg, kReg, tMask);
                     Reg::Select(indexReg, tempReg, indexReg, tMask);
+                    Reg::Compares<RangeType_, AscendC::CMPMODE::GE>(kMask, kReg, kLower, mask);
+                    Reg::Compares<RangeType_, AscendC::CMPMODE::LE>(tMask, kReg, kUpper, mask);
+                    Reg::And(kMask, kMask, tMask, mask);
                     Reg::Adds(kReg, kReg, firstKOffset, mask);
                     Reg::Muls(kReg, kReg, oneDiagLen, mask);
                     Reg::Add(indexReg, indexReg, kReg, mask);
+                    Reg::Select(indexReg, indexReg, outIdxReg, kMask);
                     tMask = Reg::UpdateMask<RangeType_>(temp);
                     Reg::Compares<RangeType_, AscendC::CMPMODE::GE>(tMask, indexReg, 0, tMask);
                     Reg::Compares<RangeType_, AscendC::CMPMODE::LT>(tMask, indexReg, tailAxisDataSize, tMask);
@@ -358,9 +390,13 @@ public:
                 Reg::Compares<RangeType_, AscendC::CMPMODE::LT>(tMask, kReg, 0, mask);
                 Reg::Add(tempReg, indexReg, kReg, tMask);
                 Reg::Select(indexReg, tempReg, indexReg, tMask);
+                Reg::Compares<RangeType_, AscendC::CMPMODE::GE>(kMask, kReg, kLower, mask);
+                Reg::Compares<RangeType_, AscendC::CMPMODE::LE>(tMask, kReg, kUpper, mask);
+                Reg::And(kMask, kMask, tMask, mask);
                 Reg::Adds(kReg, kReg, firstKOffset, mask);
                 Reg::Muls(kReg, kReg, oneDiagLen, mask);
                 Reg::Add(indexReg, indexReg, kReg, mask);
+                Reg::Select(indexReg, indexReg, outIdxReg, kMask);
                 tMask = Reg::UpdateMask<RangeType_>(temp2);
                 Reg::Compares<RangeType_, AscendC::CMPMODE::GE>(tMask, indexReg, 0, tMask);
                 Reg::Compares<RangeType_, AscendC::CMPMODE::LT>(tMask, indexReg, tailAxisDataSize, tMask);
@@ -378,12 +414,9 @@ public:
     }
 
     __aicore__ inline void SimtProcess(uint64_t startN, uint64_t endN, const LocalTensor<T>& inLocal,
-                                       const LocalTensor<T>& diagLocal)
+                                       const LocalTensor<T>& diagLocal, uint32_t magic0, uint32_t shift0,
+                                       uint32_t magic1, uint32_t shift1)
     {
-        uint32_t magic0 = 0, shift0 = 0, magic1 = 0, shift1 = 0;
-        GetUintDivMagicAndShift(magic0, shift0, static_cast<uint32_t>(xRowNum_ * diagNum_));
-        GetUintDivMagicAndShift(magic1, shift1, static_cast<uint32_t>(diagNum_));
-
         uint32_t maxIterations = static_cast<uint32_t>((endN - startN) * xRowNum_ * diagNum_);
         __ubuf__ T* diagPtr = (__ubuf__ T*)(diagLocal.GetPhyAddr());
         __ubuf__ T* xPtr = (__ubuf__ T*)(inLocal.GetPhyAddr());
@@ -417,7 +450,12 @@ public:
             hasTail = tailSize == 0 ? 0 : 1;
             offset = static_cast<RangeType_>(loop1Num) * static_cast<RangeType_>(tailAxisDataSize_);
         }
-        uint32_t diagStride = oneProcessSize;
+        uint32_t diagStride;
+        if constexpr (VL_MODE == 0 && (sizeof(T) == 1 || sizeof(T) == 2 || sizeof(T) == 4)) {
+            diagStride = diagAlignStride_;
+        } else {
+            diagStride = oneProcessSize;
+        }
         if constexpr (sizeof(T) == sizeof(int8_t) || sizeof(T) == sizeof(int64_t)) {
             oneProcessSize = oneProcessSize * ELEMENT_EXPAND_TIMES;
             if constexpr (VL_MODE == 1) {
@@ -445,8 +483,13 @@ public:
                     mask = Reg::UpdateMask<MaskType_>(oneProcessSize);
                     Reg::LoadAlign(indexReg, idxPtr + i * vlLenR);
                     for (uint16_t j = 0; j < loop2Num; j++) {
-                        Reg::LoadUnAlignPre(uReg, diagPtr + i * vlLenC + j * diagStride);
-                        Reg::LoadUnAlign(diagReg, uReg, diagPtr + i * vlLenC + j * diagStride);
+                        if constexpr (sizeof(T) == 1 || sizeof(T) == 2 || sizeof(T) == 4) {
+                            // diag 段已对齐存放, 对齐加载消除 LoadUnAlignPre 开销
+                            Reg::LoadAlign(diagReg, diagPtr + i * vlLenC + j * diagStride);
+                        } else {
+                            Reg::LoadUnAlignPre(uReg, diagPtr + i * vlLenC + j * diagStride);
+                            Reg::LoadUnAlign(diagReg, uReg, diagPtr + i * vlLenC + j * diagStride);
+                        }
                         Reg::Compares<RangeType_, AscendC::CMPMODE::GE>(tMask, indexReg, j * offset, mask);
                         if constexpr (sizeof(T) == sizeof(int64_t)) {
                             Reg::UnPack(kMask, tMask);
@@ -548,7 +591,7 @@ public:
             Reg::MaskReg tMask;
             Reg::MaskReg kMask;
             Reg::UnalignRegForLoad uReg;
-
+            Reg::UnalignRegForStore uRegStore;
             if constexpr (VL_MODE == 0) {
                 for (uint16_t i = 0; i < loop1Num; i++) {
                     mask = Reg::UpdateMask<MaskType_>(oneProcessSize);
@@ -563,20 +606,20 @@ public:
                             Reg::UnPack(kMask, tMask);
                             Reg::Gather(diagReg, diagPtr, (Reg::RegTensor<IdxType_>&)indexReg, kMask);
                             Reg::Select(diagReg, diagReg, inputReg, kMask);
-                            Reg::StoreUnAlign(tempPtr, diagReg, uReg, vlLenC);
+                            Reg::StoreUnAlign(tempPtr, diagReg, uRegStore, vlLenC);
                         } else if constexpr (sizeof(T) == sizeof(int8_t)) {
                             Reg::Gather((Reg::RegTensor<CastType_>&)diagReg, diagPtr,
                                         (Reg::RegTensor<IdxType_>&)indexReg, tMask);
                             Reg::Pack(diagCastReg, (Reg::RegTensor<CastType_>&)diagReg);
                             Reg::Pack(kMask, tMask);
                             Reg::Select(diagCastReg, diagCastReg, inputReg, kMask);
-                            Reg::StoreUnAlign(tempPtr, diagCastReg, uReg, vlLenC);
+                            Reg::StoreUnAlign(tempPtr, diagCastReg, uRegStore, vlLenC);
                         } else {
                             Reg::Gather(diagReg, diagPtr, (Reg::RegTensor<IdxType_>&)indexReg, tMask);
                             Reg::Select(diagReg, diagReg, inputReg, tMask);
-                            Reg::StoreUnAlign(tempPtr, diagReg, uReg, vlLenC);
+                            Reg::StoreUnAlign(tempPtr, diagReg, uRegStore, vlLenC);
                         }
-                        Reg::StoreUnAlignPost(tempPtr, uReg, 0);
+                        Reg::StoreUnAlignPost(tempPtr, uRegStore, 0);
                         Reg::Adds(indexReg, indexReg, offset, mask);
                     }
                 }
@@ -594,20 +637,20 @@ public:
                             Reg::UnPack(kMask, tMask);
                             Reg::Gather(diagReg, diagPtr, (Reg::RegTensor<IdxType_>&)indexReg, kMask);
                             Reg::Select(diagReg, diagReg, inputReg, kMask);
-                            Reg::StoreUnAlign(tempPtr, diagReg, uReg, tailSize / 2);
+                            Reg::StoreUnAlign(tempPtr, diagReg, uRegStore, tailSize / 2);
                         } else if constexpr (sizeof(T) == sizeof(int8_t)) {
                             Reg::Gather((Reg::RegTensor<CastType_>&)diagReg, diagPtr,
                                         (Reg::RegTensor<IdxType_>&)indexReg, tMask);
                             Reg::Pack(diagCastReg, (Reg::RegTensor<CastType_>&)diagReg);
                             Reg::Pack(kMask, tMask);
                             Reg::Select(diagCastReg, diagCastReg, inputReg, kMask);
-                            Reg::StoreUnAlign(tempPtr, diagCastReg, uReg, tailSize / 2);
+                            Reg::StoreUnAlign(tempPtr, diagCastReg, uRegStore, tailSize / 2);
                         } else {
                             Reg::Gather(diagReg, diagPtr, (Reg::RegTensor<IdxType_>&)indexReg, tMask);
                             Reg::Select(diagReg, diagReg, inputReg, tMask);
-                            Reg::StoreUnAlign(tempPtr, diagReg, uReg, tailSize);
+                            Reg::StoreUnAlign(tempPtr, diagReg, uRegStore, tailSize);
                         }
-                        Reg::StoreUnAlignPost(tempPtr, uReg, 0);
+                        Reg::StoreUnAlignPost(tempPtr, uRegStore, 0);
                         Reg::Adds(indexReg, indexReg, offset, mask);
                     }
                 }
@@ -624,20 +667,20 @@ public:
                         Reg::UnPack(kMask, tMask);
                         Reg::Gather(diagReg, diagPtr, (Reg::RegTensor<IdxType_>&)indexReg, kMask);
                         Reg::Select(diagReg, diagReg, inputReg, kMask);
-                        Reg::StoreUnAlign(tempPtr, diagReg, uReg, diagStride);
+                        Reg::StoreUnAlign(tempPtr, diagReg, uRegStore, diagStride);
                     } else if constexpr (sizeof(T) == sizeof(int8_t)) {
                         Reg::Gather((Reg::RegTensor<CastType_>&)diagReg, diagPtr, (Reg::RegTensor<IdxType_>&)indexReg,
                                     tMask);
                         Reg::Pack(diagCastReg, (Reg::RegTensor<CastType_>&)diagReg);
                         Reg::Pack(kMask, tMask);
                         Reg::Select(diagCastReg, diagCastReg, inputReg, kMask);
-                        Reg::StoreUnAlign(tempPtr, diagCastReg, uReg, diagStride);
+                        Reg::StoreUnAlign(tempPtr, diagCastReg, uRegStore, diagStride);
                     } else {
                         Reg::Gather(diagReg, diagPtr, (Reg::RegTensor<IdxType_>&)indexReg, tMask);
                         Reg::Select(diagReg, diagReg, inputReg, tMask);
-                        Reg::StoreUnAlign(tempPtr, diagReg, uReg, diagStride);
+                        Reg::StoreUnAlign(tempPtr, diagReg, uRegStore, diagStride);
                     }
-                    Reg::StoreUnAlignPost(tempPtr, uReg, 0);
+                    Reg::StoreUnAlignPost(tempPtr, uRegStore, 0);
                     Reg::Adds(indexReg, indexReg, offset, mask);
                 }
                 for (uint16_t i = 0; i < hasTail; i++) {
@@ -651,20 +694,20 @@ public:
                         Reg::UnPack(kMask, tMask);
                         Reg::Gather(diagReg, diagPtr, (Reg::RegTensor<IdxType_>&)indexReg, kMask);
                         Reg::Select(diagReg, diagReg, inputReg, kMask);
-                        Reg::StoreUnAlign(tempPtr, diagReg, uReg, tailSize / 2);
+                        Reg::StoreUnAlign(tempPtr, diagReg, uRegStore, tailSize / 2);
                     } else if constexpr (sizeof(T) == sizeof(int8_t)) {
                         Reg::Gather((Reg::RegTensor<CastType_>&)diagReg, diagPtr, (Reg::RegTensor<IdxType_>&)indexReg,
                                     tMask);
                         Reg::Pack(diagCastReg, (Reg::RegTensor<CastType_>&)diagReg);
                         Reg::Pack(kMask, tMask);
                         Reg::Select(diagCastReg, diagCastReg, inputReg, kMask);
-                        Reg::StoreUnAlign(tempPtr, diagCastReg, uReg, tailSize / 2);
+                        Reg::StoreUnAlign(tempPtr, diagCastReg, uRegStore, tailSize / 2);
                     } else {
                         Reg::Gather(diagReg, diagPtr, (Reg::RegTensor<IdxType_>&)indexReg, tMask);
                         Reg::Select(diagReg, diagReg, inputReg, tMask);
-                        Reg::StoreUnAlign(tempPtr, diagReg, uReg, tailSize);
+                        Reg::StoreUnAlign(tempPtr, diagReg, uRegStore, tailSize);
                     }
-                    Reg::StoreUnAlignPost(tempPtr, uReg, 0);
+                    Reg::StoreUnAlignPost(tempPtr, uRegStore, 0);
                 }
             }
         }

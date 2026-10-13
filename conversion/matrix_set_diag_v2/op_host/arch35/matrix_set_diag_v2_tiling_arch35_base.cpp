@@ -24,8 +24,8 @@ namespace optiling {
 // BUFFER分割数量
 static constexpr uint32_t BUFFER_NUM = 2;
 
-static constexpr double SIMT_RATIO = 0.1;
-static constexpr double SCATTER_RATIO = 1.2;
+static constexpr double SIMT_RATIO = 0.25;
+static constexpr double SCATTER_RATIO = 0.65;
 static constexpr uint32_t SIMT_DCACHE_SIZE = 32 * 1024U;
 static constexpr uint32_t CUT_TAIL_X_MAX_SIZE = 32 * 1024U;
 // UB内 scatter 操作的最大元素个数
@@ -46,6 +46,8 @@ static constexpr double MIN_USED_CORES_RATIO = 0.8;
 static constexpr int64_t MIN_PER_UB_SIZE = 1024;
 static constexpr int64_t MIN_PER_UB_SIZE_V1 = 4096;
 static constexpr int32_t MAX_UB_SCATTER_ELEMENT_NUM_V1 = std::numeric_limits<uint16_t>::max();
+static constexpr uint32_t B16 = 2;
+static constexpr uint32_t B32 = 4;
 
 void MatrixSetDiagTilingBase::CalcInputInfo()
 {
@@ -89,6 +91,17 @@ template <typename T>
 inline T MatrixSetDiagTilingBase::AlignBlock(T elementCount)
 {
     return Ops::Base::CeilAlign(elementCount, static_cast<T>(ubBlockElements_));
+}
+
+uint64_t MatrixSetDiagTilingBase::GetDiagBudgetSize()
+{
+    // kernel Scatter 非满载路径对 1/2/4 字节 dtype 的 diag 段按矩阵对齐存放, 段步长为 AlignBlock(diagDataSize);
+    // 满载路径 kernel 未启用对齐布局, 预算须保持原始值
+    if (way_ == TPL_WAY_SCATTER && !isVLFullLoad_ &&
+        (inputInfo_.dSize == 1 || inputInfo_.dSize == B16 || inputInfo_.dSize == B32)) {
+        return AlignBlock(diagDataSize_);
+    }
+    return diagDataSize_;
 }
 
 void MatrixSetDiagTilingBase::ShowCutTailTilingData()
@@ -199,7 +212,7 @@ ge::graphStatus MatrixSetDiagTilingBase::Tiling4NoCutTail()
         isVLFullLoad_ = false;
         return Tiling4CutTail();
     }
-    uint64_t totalTailSize = (tailAxisDataSize_ + diagDataSize_) * inputInfo_.dSize;
+    uint64_t totalTailSize = (tailAxisDataSize_ + GetDiagBudgetSize()) * inputInfo_.dSize;
     uint64_t totalCount = Ops::Base::CeilDiv(inputInfo_.mergeDimSize, ubFactor_);
     uint64_t perCoreCount = Ops::Base::CeilDiv(totalCount, static_cast<uint64_t>(coreNum_));
     realCoreNum_ = Ops::Base::CeilDiv(totalCount, perCoreCount);
@@ -258,7 +271,7 @@ ge::graphStatus MatrixSetDiagTilingBase::CalculateValidBufSize(uint64_t addition
 
 void MatrixSetDiagTilingBase::CalculateUbFactorAndCheck(uint64_t validBufSize)
 {
-    uint64_t totalTailSize = (tailAxisDataSize_ + diagDataSize_) * inputInfo_.dSize;
+    uint64_t totalTailSize = (tailAxisDataSize_ + GetDiagBudgetSize()) * inputInfo_.dSize;
     OP_LOGI(context_, "\ttotalTailSize %lu, validBufSize %lu", totalTailSize, validBufSize);
     if (totalTailSize == 0) {
         ubFactor_ = 1;
@@ -302,7 +315,7 @@ void MatrixSetDiagTilingBase::GetOptimizeTilingNoCutTail()
         }
         curFactor = Ops::Base::CeilDiv(inputInfo_.mergeDimSize, static_cast<uint64_t>(i));
         if (curFactor < ubFactor_) {
-            uint64_t sizeTaken = AlignBlock(curFactor * (tailAxisDataSize_ + diagDataSize_) * inputInfo_.dSize);
+            uint64_t sizeTaken = AlignBlock(curFactor * (tailAxisDataSize_ + GetDiagBudgetSize()) * inputInfo_.dSize);
             if (sizeTaken <= MIN_PER_UB_SIZE) {
                 break;
             } else {

@@ -104,22 +104,31 @@ public:
         LocalTensor<T> xLocal = inQue_.Get<T>();
         LocalTensor<T> diagLocal = diagQue_.Get<T>();
 
-        for (uint64_t idx = blockIdx_; idx < ubPerTail_ * mergeDimSize_; idx += coreNum_) {
+        // tileIdx/tailIdx 循环外一次除法解出初值；步进 coreNum_ 分解为 stepQ 整圈 + stepR 余数
+        // （stepR < ubPerTail_），循环内增量递推，免去每轮对 idx 的 u64 软除法（idx / ubPerTail_、idx % ubPerTail_）
+        uint64_t totalTiles = ubPerTail_ * mergeDimSize_;
+        uint64_t tailIdx = blockIdx_ / ubPerTail_;
+        uint64_t tileIdx = blockIdx_ - tailIdx * ubPerTail_;
+        uint64_t stepQ = coreNum_ / ubPerTail_;
+        uint64_t stepR = coreNum_ - stepQ * ubPerTail_;
+        uint64_t tailAxisSize = xRowNum_ * xColNum_;
+
+        for (uint64_t idx = blockIdx_; idx < totalTiles; idx += coreNum_) {
             LocalTensor<T> x = xLocal[(bufIdx & BUFIDX_BIT0) * ubFactorAlign_];
             LocalTensor<T> diag = diagLocal[(bufIdx & BUFIDX_BIT0) * diagLoadLenAlign_];
 
-            xOffsetInTail = (idx % ubPerTail_) * ubFactor_;
-            xOffsetCurCore = (idx / ubPerTail_) * xRowNum_ * xColNum_ + xOffsetInTail;
-            xNum = static_cast<uint32_t>(min(xOffsetCurCore + ubFactor_, (idx / ubPerTail_ + 1) * xRowNum_ * xColNum_) -
+            xOffsetInTail = tileIdx * ubFactor_;
+            xOffsetCurCore = tailIdx * tailAxisSize + xOffsetInTail;
+            xNum = static_cast<uint32_t>(min(xOffsetCurCore + ubFactor_, (tailIdx + 1) * tailAxisSize) -
                                          xOffsetCurCore);
 
             // x终点地址覆盖的对角线个数 - x起始地址覆盖的对角线个数
             diagNum = min(diagLen_, Ops::Base::CeilDiv(xOffsetInTail + xNum, xColNum_ + 1)) -
                       min(diagLen_, Ops::Base::CeilDiv(xOffsetInTail, xColNum_ + 1));
-            diagOffsetCurCore = (idx / ubPerTail_) * diagLen_ + Ops::Base::CeilDiv(xOffsetInTail, xColNum_ + 1);
+            diagOffsetCurCore = tailIdx * diagLen_ + Ops::Base::CeilDiv(xOffsetInTail, xColNum_ + 1);
 
             rowIdxInTail = xOffsetInTail / xColNum_;
-            colIdxInTail = xOffsetInTail % xColNum_;
+            colIdxInTail = xOffsetInTail - rowIdxInTail * xColNum_;
 
             if (bufIdx > 1) {
                 if (bufIdx & BUFIDX_BIT0) {
@@ -133,6 +142,14 @@ public:
             ScatterAndCopyOut(x, diag, diagNum, rowIdxInTail, colIdxInTail, xOffsetCurCore, xNum, xOffsetInTail,
                               bufIdx);
             bufIdx++;
+
+            // tileIdx 增量递推：stepR < ubPerTail_ 故每轮至多回绕一圈
+            tileIdx += stepR;
+            tailIdx += stepQ;
+            if (tileIdx >= ubPerTail_) {
+                tileIdx -= ubPerTail_;
+                ++tailIdx;
+            }
         }
     }
 
