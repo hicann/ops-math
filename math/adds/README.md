@@ -53,9 +53,9 @@
     <td>ND</td>
   </tr>
   <tr>
-    <td>scalar</td>
-    <td>输入</td>
-    <td>标量值，对应公式中的scalar。</td>
+    <td>value</td>
+    <td>属性</td>
+    <td>必填标量属性，对应公式中的scalar。</td>
     <td>FLOAT</td>
     <td>-</td>
   </tr>
