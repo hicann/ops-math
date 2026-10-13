@@ -14,7 +14,7 @@
  * \file acosh_grad_def.cpp
  * \brief AcoshGrad 算子定义
  *
- * 迭代二：FP16 + BF16 + FP32 全 dtype 注册。
+ * FP16 + BF16 + FP32 全 dtype 注册。
  */
 #include "register/op_def_registry.h"
 
@@ -49,7 +49,7 @@ public:
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(true)
-            .ExtendCfgInfo("opFile.value", "acosh_grad_apt");
+            .ExtendCfgInfo("opFile.value", "acosh_grad");
         this->AICore().AddConfig("ascend950", aiCoreConfig);
         this->AICore().AddConfig("ascend350", aiCoreConfig);
     }

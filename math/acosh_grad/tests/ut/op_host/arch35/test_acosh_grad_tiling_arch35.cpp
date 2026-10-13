@@ -26,6 +26,9 @@
  *        - unsupported dtype (DT_DOUBLE)    → GRAPH_FAILED
  *        - input dtype mismatch             → GRAPH_FAILED
  *        - output dtype mismatch            → GRAPH_FAILED
+ *        - private format y (NC1HWC0)       → GRAPH_FAILED
+ *        - private format dy (FRACTAL_NZ)   → GRAPH_FAILED
+ *        - private format z (FRACTAL_Z)     → GRAPH_FAILED
  *
  * Platform constants (UT faker): coreNum=64, ubSize=262144, ubBlockSize=32.
  *
@@ -329,6 +332,69 @@ TEST_F(AcoshGradTilingTest, test_tiling_fail_output_dtype_mismatch_013)
                                               },
                                               {
                                                   {{{8}, {8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
+    string expectTilingData = "";
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectTilingData, expectWorkspaces);
+}
+
+// ===========================================================================
+// 14) FAIL: y private origin format (NC1HWC0) → GRAPH_FAILED
+// ===========================================================================
+TEST_F(AcoshGradTilingTest, test_tiling_fail_private_format_y_014)
+{
+    optiling::AcoshGradCompileInfo compileInfo;
+    gert::TilingContextPara tilingContextPara("AcoshGrad",
+                                              {
+                                                  {{{2, 3}, {2, 3}}, ge::DT_FLOAT, ge::FORMAT_NC1HWC0},
+                                                  {{{2, 3}, {2, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{2, 3}, {2, 3}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
+    string expectTilingData = "";
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectTilingData, expectWorkspaces);
+}
+
+// ===========================================================================
+// 15) FAIL: dy private origin format (FRACTAL_NZ) → GRAPH_FAILED
+// ===========================================================================
+TEST_F(AcoshGradTilingTest, test_tiling_fail_private_format_dy_015)
+{
+    optiling::AcoshGradCompileInfo compileInfo;
+    gert::TilingContextPara tilingContextPara("AcoshGrad",
+                                              {
+                                                  {{{2, 3}, {2, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{2, 3}, {2, 3}}, ge::DT_FLOAT16, ge::FORMAT_FRACTAL_NZ},
+                                              },
+                                              {
+                                                  {{{2, 3}, {2, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
+    string expectTilingData = "";
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectTilingData, expectWorkspaces);
+}
+
+// ===========================================================================
+// 16) FAIL: z private origin format (FRACTAL_Z) → GRAPH_FAILED
+// ===========================================================================
+TEST_F(AcoshGradTilingTest, test_tiling_fail_private_format_z_016)
+{
+    optiling::AcoshGradCompileInfo compileInfo;
+    gert::TilingContextPara tilingContextPara("AcoshGrad",
+                                              {
+                                                  {{{2, 3}, {2, 3}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                  {{{2, 3}, {2, 3}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{2, 3}, {2, 3}}, ge::DT_BF16, ge::FORMAT_FRACTAL_Z},
                                               },
                                               &compileInfo);
     uint64_t expectTilingKey = 0;

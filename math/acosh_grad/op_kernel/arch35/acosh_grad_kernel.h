@@ -19,7 +19,7 @@
  * 计算路径 (FP32): Mul → Adds(-1) → Sqrt → Div
  * Double Buffer 流水线并行
  *
- * 关键设计约束（来自迭代二穿刺验证）：
+ * 关键设计约束（穿刺验证）：
  *   1. GlobalTensor 多 tile 不自动推进：每次 tile 循环前必须显式调用
  *      SetGlobalBuffer(base + offset, remain) 更新 GM 指针偏移
  *   2. TBuf 必须用独立实例：3 个独立 TBuf<VECCALC>（bufSlot0_/1_/2_），
@@ -41,13 +41,12 @@ using namespace AscendC;
 
 template <typename T>
 class AcoshGradKernel {
-    static constexpr int32_t BUFFER_NUM = 2;  // Double Buffer
+    static constexpr int32_t BUFFER_NUM = 2; // Double Buffer
 
 public:
-    __aicore__ inline AcoshGradKernel() {};
+    __aicore__ inline AcoshGradKernel(){};
 
-    __aicore__ inline void Init(GM_ADDR y, GM_ADDR dy, GM_ADDR z,
-                                const AcoshGradTilingData* tilingData);
+    __aicore__ inline void Init(GM_ADDR y, GM_ADDR dy, GM_ADDR z, const AcoshGradTilingData* tilingData);
     __aicore__ inline void Process();
 
 private:
@@ -64,9 +63,9 @@ private:
     // 3 个独立 FP32 中间计算 buffer（禁止合并为单 TBuf + GetWithOffset）
     // 穿刺 probe_fp16_overflow 验证：单 TBuf 在 totalNum=1 时仅分配 12 字节，
     // 导致 slot 地址重叠，输出 +Inf
-    TBuf<TPosition::VECCALC> bufSlot0_;  // yFp32 → dyFp32 → result
-    TBuf<TPosition::VECCALC> bufSlot1_;  // ySq → ySqM1
-    TBuf<TPosition::VECCALC> bufSlot2_;  // sqrtVal
+    TBuf<TPosition::VECCALC> bufSlot0_; // yFp32 → dyFp32 → result
+    TBuf<TPosition::VECCALC> bufSlot1_; // ySq → ySqM1
+    TBuf<TPosition::VECCALC> bufSlot2_; // sqrtVal
 
     GlobalTensor<T> yGM;
     GlobalTensor<T> dyGM;
@@ -82,12 +81,12 @@ private:
 };
 
 template <typename T>
-__aicore__ inline void AcoshGradKernel<T>::Init(
-    GM_ADDR y, GM_ADDR dy, GM_ADDR z, const AcoshGradTilingData* tilingData)
+__aicore__ inline void AcoshGradKernel<T>::Init(GM_ADDR y, GM_ADDR dy, GM_ADDR z, const AcoshGradTilingData* tilingData)
 {
     int64_t remainderLength = tilingData->totalNum - tilingData->blockFactor * AscendC::GetBlockIdx();
     blockLength_ = (remainderLength > tilingData->blockFactor) ? tilingData->blockFactor : remainderLength;
-    // blockIdx 过大时 remainderLength 可能为负，钳为 0 避免后续计算出错（参考 ndtri_kernel.h:152-154）
+    // blockIdx 过大时 remainderLength 可能为负，钳为 0 避免后续计算出错
+    // （参考 ndtri_kernel.h:152-154）
     if (blockLength_ < 0) {
         blockLength_ = 0;
     }
@@ -145,9 +144,9 @@ __aicore__ inline void AcoshGradKernel<T>::Compute(int64_t currentNum)
 
     // 从 3 个独立 TBuf 获取 FP32 中间 Buffer（无地址冲突）
     // 穿刺 probe_fp16_overflow 验证：独立 TBuf 实例保证地址不重叠
-    LocalTensor<float> slot0 = bufSlot0_.Get<float>();  // yFp32 → dyFp32 → result
-    LocalTensor<float> slot1 = bufSlot1_.Get<float>();  // ySq → ySqM1
-    LocalTensor<float> slot2 = bufSlot2_.Get<float>();  // sqrtVal
+    LocalTensor<float> slot0 = bufSlot0_.Get<float>(); // yFp32 → dyFp32 → result
+    LocalTensor<float> slot1 = bufSlot1_.Get<float>(); // ySq → ySqM1
+    LocalTensor<float> slot2 = bufSlot2_.Get<float>(); // sqrtVal
 
     if constexpr (std::is_same_v<T, float>) {
         // FP32 路径：直接计算，无需 Cast
@@ -161,19 +160,19 @@ __aicore__ inline void AcoshGradKernel<T>::Compute(int64_t currentNum)
         AscendC::Div<float>(zLocal, dyLocal, slot2, currentNum);
     } else {
         // FP16/BF16 路径：Cast→FP32→计算→Cast
-        // Step 1: Cast y → FP32 (slot0)
+        // Cast y → FP32 (slot0)
         AscendC::Cast<float, T>(slot0, yLocal, AscendC::RoundMode::CAST_NONE, currentNum);
-        // Step 2: y² (slot1)
+        // y² (slot1)
         AscendC::Mul<float>(slot1, slot0, slot0, currentNum);
-        // Step 3: y² - 1 (slot1, in-place)
+        // y² - 1 (slot1, in-place)
         AscendC::Adds<float>(slot1, slot1, -1.0f, currentNum);
-        // Step 4: sqrt(y² - 1) (slot2)
+        // sqrt(y² - 1) (slot2)
         AscendC::Sqrt<float>(slot2, slot1, currentNum);
-        // Step 5: Cast dy → FP32 (slot0, 复用)
+        // Cast dy → FP32 (slot0, 复用)
         AscendC::Cast<float, T>(slot0, dyLocal, AscendC::RoundMode::CAST_NONE, currentNum);
-        // Step 6: dy / sqrt (slot0, 复用)
+        // dy / sqrt (slot0, 复用)
         AscendC::Div<float>(slot0, slot0, slot2, currentNum);
-        // Step 7: Cast result → 原 dtype (zLocal)
+        // Cast result → 原 dtype (zLocal)
         AscendC::Cast<T, float>(zLocal, slot0, AscendC::RoundMode::CAST_ROUND, currentNum);
     }
 
@@ -201,7 +200,9 @@ __aicore__ inline void AcoshGradKernel<T>::CopyOut(int64_t currentNum)
 template <typename T>
 __aicore__ inline void AcoshGradKernel<T>::Process()
 {
-    if (blockLength_ == 0) return;
+    if (blockLength_ == 0) {
+        return;
+    }
 
     int64_t loopCount = (blockLength_ + ubLength_ - 1) / ubLength_;
     for (int64_t i = 0; i < loopCount; i++) {

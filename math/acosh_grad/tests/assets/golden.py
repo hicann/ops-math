@@ -57,3 +57,11 @@ def _acosh_grad(context):
     # Compute acosh forward, then backward to get its input gradient.
     result = torch.autograd.grad(torch.acosh(y_f), y_f, grad_outputs=dy_f)[0]
     return torch_to_numpy_tensor(result.to(out_dtype).detach().cpu())
+
+
+third_party = {"torch": "torch.acosh"}
+tolerance = {
+    "float16": {"standard": "cross_check", "level": "L2"},
+    "bfloat16": {"standard": "cross_check", "level": "L2"},
+    "float32": {"standard": "cross_check", "level": "L2"},
+}

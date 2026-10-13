@@ -73,6 +73,8 @@
 - y与dy的shape必须完全一致。
 - y与dy的dtype必须完全一致。
 - 仅支持ND格式。
+- 支持动态shape：shape在运行时确定，支持动态shape与动态rank（rank范围0~8）；y/dy/z的shape需完全一致。
+- 空Tensor（元素个数为0）直接返回空结果。
 - 支持[非连续的Tensor](../../docs/zh/context/non_contiguous_tensor.md)，非连续的Tensor维度不大于8。
 
 ## 调用说明
