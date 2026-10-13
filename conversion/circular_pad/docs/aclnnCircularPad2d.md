@@ -102,7 +102,7 @@ aclnnStatus aclnnCircularPad2d(
       <td>padding（aclIntArray*）</td>
       <td>输入</td>
       <td>长度为4，数值依次代表左右上下需要填充的值。</td>
-      <td><ul><li>长度为4，数值依次代表左右上下需要填充的值。</li><li>padding前两个数值都需小于self最后一维度的大小，后两个数值需小于self倒数第二维度的大小。</li></ul></td>
+      <td><ul><li>长度为4，数值依次代表左右上下需要填充的值。</li><li>Ascend 950（Arch35）上，padding前两个数值对应self最后一维，后两个对应倒数第二维；每侧正padding不超过对应维度大小（允许等于）。其他产品以对应版本约束为准。</li></ul></td>
       <td>INT64</td>
       <td>-</td>
       <td>1</td>
