@@ -325,7 +325,7 @@ aclnnStatus aclnnInplaceCumprod(
       <td>dim（aclScalar*）</td>
       <td>输入</td>
       <td>指定计算累积乘积的维度，对于一个二维张量，dim=0表示沿着行方向计算，dim=1表示沿列方向计算。</td>
-      <td>取值范围 [-rank(input), rank(input)]。</td>
+      <td>当rank(input) &gt; 0时，取值范围为[-rank(input), rank(input))；当rank(input) = 0时，dim取值为-1或0。</td>
       <td>INT32</td>
       <td>-</td>
       <td>-</td>
