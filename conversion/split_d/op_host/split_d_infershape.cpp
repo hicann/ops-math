@@ -53,6 +53,10 @@ static graphStatus CheckSplitParams(gert::InferShapeContext* context, const gert
                 OP_LOGE(context->GetNodeName(), "%s", GenInvalidDimMsg("split_dim", xShapeDim, splitDim).c_str()),
                 return GRAPH_FAILED);
 
+    if (splitDim < 0) {
+        splitDim += xShapeDim;
+    }
+
     OP_CHECK_IF((xShape->GetDim(splitDim) % numSplit != 0) && (xShape->GetDim(splitDim) != -1),
                 OP_LOGE(context->GetNodeName(), "%s",
                         ConcatString("the split_dim dimension of x_shape must be divided by num_split.",
