@@ -28,6 +28,8 @@ constexpr int64_t IR_IDX2 = 1;
 constexpr int64_t RALATIVE_IDX = 0;
 constexpr int64_t OUTPUT_Y_IDX = 0;
 constexpr int64_t X_IDX = 0;
+constexpr int64_t ATTR_N_IDX = 0;
+constexpr int64_t MIN_N = 2;
 
 constexpr size_t DIM0 = 0;
 constexpr size_t DIM1 = 1;
@@ -36,6 +38,13 @@ constexpr size_t outDimNum = 3;
 
 static ge::graphStatus InferShapeForMulAddn(gert::InferShapeContext* context)
 {
+    OP_CHECK_NULL_WITH_CONTEXT(context, context->GetAttrs());
+    const auto* nAttr = context->GetAttrs()->GetAttrPointer<int64_t>(ATTR_N_IDX);
+    OP_CHECK_NULL_WITH_CONTEXT(context, nAttr);
+    OP_CHECK_IF(*nAttr < MIN_N,
+                OP_LOGE(context->GetNodeName(), "attribute N must be greater than or equal to %ld, but got %ld.", MIN_N,
+                        *nAttr),
+                return GRAPH_FAILED);
     auto x1Shape = context->GetDynamicInputShape(IR_IDX1, RALATIVE_IDX);
     auto x2Shape = context->GetDynamicInputShape(IR_IDX2, RALATIVE_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context, x1Shape);

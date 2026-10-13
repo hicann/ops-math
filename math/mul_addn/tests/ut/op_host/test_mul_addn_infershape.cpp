@@ -16,32 +16,43 @@
 
 class MulAddn : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "MulAddn Proto Test SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "MulAddn Proto Test SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "MulAddn Proto Test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "MulAddn Proto Test TearDown" << std::endl; }
 };
 
 TEST_F(MulAddn, infershape_bf16)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "MulAddn",
-        {// input info
-         {{{1500, 512, 1}, {1500, 512, 1}}, ge::DT_BF16, ge::FORMAT_ND},
-         {{{1500, 1, 128}, {1500, 1, 128}}, ge::DT_BF16, ge::FORMAT_ND}},
-        {
-            // output info
-            {{{}, {}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            // attr
-            {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(6)},
-        });
-    std::vector<std::vector<int64_t>> expectOutputShape = {{1500, 512, 128},};                                                                            // 预期输出shape
+    gert::InfershapeContextPara infershapeContextPara("MulAddn",
+                                                      {// input info
+                                                       {{{1500, 512, 1}, {1500, 512, 1}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                       {{{1500, 1, 128}, {1500, 1, 128}}, ge::DT_BF16, ge::FORMAT_ND}},
+                                                      {
+                                                          // output info
+                                                          {{{}, {}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          // attr
+                                                          {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(6)},
+                                                      });
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {1500, 512, 128},
+    }; // 预期输出shape
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape); // 框架中已提供该接口
+}
+
+TEST_F(MulAddn, infershape_invalid_n)
+{
+    for (const int64_t n : {1, 0, -1}) {
+        gert::InfershapeContextPara infershapeContextPara("MulAddn",
+                                                          {{{{2, 4, 1}, {2, 4, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                           {{{2, 1, 3}, {2, 1, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND}},
+                                                          {
+                                                              {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          },
+                                                          {
+                                                              {"N", Ops::Math::AnyValue::CreateFrom<int64_t>(n)},
+                                                          });
+        ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, {});
+    }
 }
