@@ -22,7 +22,7 @@ extern "C" {
  * @domain aclnn_math
  * 功能描述：对输入张量self和other进行逐元素的反正切运算，注（self表示y坐标，other表示x坐标）。
  * 计算公式：
- * out_{i}=tan^{-1}(self_{i}/other_{i})
+ * out_{i}=atan2(self_{i}, other_{i})
  * 参数描述：
  * @param [in] self:npu device侧的aclTensor，数据类型支持INT8、INT16、INT32, INT64, UINT8、BOOL、BFLOAT16、
  * FLOAT、FLOAT16、DOUBLE。支持非连续的Tensor，数据格式支持ND，维度不大于8，且shape需要与other满足broadcast关系。
@@ -40,16 +40,14 @@ ACLNN_API aclnnStatus aclnnAtan2GetWorkspaceSize(const aclTensor* self, const ac
  * @brief aclnnAtan2的第二段接口，用于执行计算。
  * 功能描述：对输入张量self和other进行逐元素的反正切运算，注（self表示y坐标，other表示x坐标）。
  * 计算公式：
- * out_{i}=tan^{-1}(self_{i}/other_{i})
+ * out_{i}=atan2(self_{i}, other_{i})
  * 实现说明：
  * api计算的基本路径：
 ```mermaid
 graph LR
-    A[(Self)] -->B([l0op::Contiguous])
-    B --> C([l0op::Atan])
-    C --> G([l0op::Cast])
-    G --> E([l0op::ViewCopy])
-    E --> S[(Out)]
+    A1[(Self)] --> B1([l0op::Contiguous]) --> C1([l0op::Cast]) --> D([l0op::Atan2])
+    A2[(Other)] --> B2([l0op::Contiguous]) --> C2([l0op::Cast]) --> D([l0op::Atan2])
+    D --> E([l0op::Cast]) --> F([l0op::ViewCopy]) --> G[(Out)]
 ```
  * @param [in] workspace: 在npu device侧申请的workspace内存起址。
  * @param [in] workspaceSize: 在npu device侧申请的workspace大小，由第一段接口aclnnAtan2GetWorkspaceSize获取。
@@ -64,7 +62,7 @@ ACLNN_API aclnnStatus aclnnAtan2(void* workspace, uint64_t workspaceSize, aclOpE
  * @domain aclnn_math
  * 功能描述：对输入张量self和other进行逐元素的反正切运算，注（self表示y坐标，other表示x坐标）。
  * 计算公式：
- * out_{i}=tan^{-1}(self_{i}/other_{i})
+ * out_{i}=atan2(self_{i}, other_{i})
  * 参数描述：
  * @param [in] self:npu device侧的aclTensor，数据类型支持INT8、INT16、INT32, INT64, UINT8、BOOL、BFLOAT16、
  * FLOAT、FLOAT16、DOUBLE。支持非连续的Tensor，数据格式支持ND，维度不大于8，且shape需要与other满足broadcast关系。

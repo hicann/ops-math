@@ -30,7 +30,7 @@
 - 计算公式：
 
   $$
-  out_{i}=tan^{-1}(self_{i}/other_{i})
+  out_{i}=atan2(self_{i}, other_{i})
   $$
 
 ## 函数原型
