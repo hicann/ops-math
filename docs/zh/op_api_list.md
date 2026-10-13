@@ -237,7 +237,7 @@
 | [aclnnPrecisionCompare](../../math/precision_compare/docs/aclnnPrecisionCompare.md)           | 计算两个Tensor元素是否相同，进行精度比对，返回算子执行的状态码，不会触发管理面故障上报。                               | 默认确定性实现| 默认确定性实现  |
 | [aclnnProd](../../math/reduce_prod/docs/aclnnProd.md)           | 返回输入tensor中所有元素的乘积。                               | 默认确定性实现| 默认确定性实现|
 | [aclnnProdDim](../../math/reduce_prod/docs/aclnnProdDim.md)     | 返回输入tensor给定维度上每行的乘积。                         | 默认确定性实现| 默认确定性实现|
-| [aclnnQr](../../math/qr/docs/aclnnQr.md)     | 对输入Tensor进行正交分解。                         | 默认确定性实现| - |
+| [aclnnQr](../../math/qr/docs/aclnnQr.md)     | 对输入Tensor进行正交分解。                         | 默认确定性实现| 默认确定性实现 |
 | [aclnnInplaceRandomWithoutFromTo](../../random/dsa_random_uniform/docs/aclnnInplaceRandomWithoutFromTo.md)     | 给定seed/offset(int64),默认从 [0, DTYPE_MAX_VALUE] 的离散均匀分布中采样整数填充selfRef张量。                         | - |  默认确定性实现 |
 | [aclnnInplaceRandomWithoutFromToTensor](../../random/dsa_random_uniform/docs/aclnnInplaceRandomWithoutFromToTensor.md)     | 给定seed/offset(tensor),默认从 [0, DTYPE_MAX_VALUE] 的离散均匀分布中采样整数填充selfRef张量。                         | - |  默认确定性实现 |
 | [aclnnRandperm](../../random/stateless_randperm/docs/aclnnRandperm.md)     | 返回从0到n-1的整数随机排列。                         | 默认确定性实现|  默认确定性实现 |
