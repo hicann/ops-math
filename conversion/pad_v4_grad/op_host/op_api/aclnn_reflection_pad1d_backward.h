@@ -22,7 +22,7 @@ extern "C" {
  * @domain aclnn_ops_train
  *
  * 算子功能：reflection_pad1d的反向传播。
- * @param [in] gradOutput: 数据类型支持FLOAT16, FLOAT32, DOUBLE, COMPLEX64,
+ * @param [in] gradOutput: 数据类型支持BFLOAT16, FLOAT16, FLOAT32, DOUBLE, COMPLEX64,
  * COMPLEX128，支持[非连续的Tensor](#)，数据格式支持ND([参考](#))，
  * 维度支持二维或三维且与self和gradInput一致，shape需要与reflection_pad1d正向传播的output一致。
  * @param [in] self:
@@ -35,9 +35,9 @@ extern "C" {
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnReflectionPad1dBackwardGetWorkspaceSize(
-    const aclTensor* gradOutput, const aclTensor* self, const aclIntArray* padding, aclTensor* gradInput,
-    uint64_t* workspaceSize, aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnReflectionPad1dBackwardGetWorkspaceSize(const aclTensor* gradOutput, const aclTensor* self,
+                                                                   const aclIntArray* padding, aclTensor* gradInput,
+                                                                   uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief: aclnnReflectionPad1dBackward的第二段接口，用于执行计算
@@ -50,8 +50,8 @@ ACLNN_API aclnnStatus aclnnReflectionPad1dBackwardGetWorkspaceSize(
  * @param [in] executor: op执行器，包含了算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus
-aclnnReflectionPad1dBackward(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
+ACLNN_API aclnnStatus aclnnReflectionPad1dBackward(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                                   aclrtStream stream);
 
 #ifdef __cplusplus
 }
