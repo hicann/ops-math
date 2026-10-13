@@ -760,7 +760,9 @@ aclnnStatus aclnnNpuFormatCast(
   示例代码如下，仅供参考，具体编译和执行过程请参考[编译与运行样例](../../../docs/zh/context/compile_and_run_sample.md)。
 
   ```c++
+  #include <cstddef>
   #include <iostream>
+  #include <limits>
   #include <vector>
   #include "acl/acl.h"
   #include "aclnnop/aclnn_npu_format_cast.h"
@@ -894,8 +896,6 @@ aclnnStatus aclnnNpuFormatCast(
           }
       }
 
-      std::vector<int32_t> dstTensorHostData(N * C * D * H * W, 1);
-
       int64_t* dstShape = nullptr;
       uint64_t dstShapeSize = 0;
       int actualFormat;
@@ -912,6 +912,8 @@ aclnnStatus aclnnNpuFormatCast(
       // 计算目标tensor的shape和format
       ret = aclnnNpuFormatCastCalculateSizeAndFormat(srcTensor, dstFormat, additionalDtype, &dstShape, &dstShapeSize, &actualFormat);
       CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("aclnnNpuFormatCastCalculateSizeAndFormat failed. ERROR: %d\n", ret); return ret);
+      CHECK_RET(dstShape != nullptr && dstShapeSize > 0,
+                LOG_PRINT("Invalid dstShape.\n"); return ACL_ERROR_INTERNAL_ERROR);
 
       std::cout << "actualFormat = " << actualFormat << std::endl;
       std::cout << "&dstShape = " << &dstShape << std::endl;
@@ -920,6 +922,23 @@ aclnnStatus aclnnNpuFormatCast(
           std::cout << dstShape[i] << " ";
       }
       std::cout << "]" << std::endl;
+
+      std::size_t dstTensorElementCount = 1;
+      for (uint64_t i = 0; i < dstShapeSize; ++i) {
+          CHECK_RET(dstShape[i] > 0,
+                    LOG_PRINT("Invalid dstShape dimension.\n"); return ACL_ERROR_INTERNAL_ERROR);
+          auto dim = static_cast<uint64_t>(dstShape[i]);
+          CHECK_RET(dim <= std::numeric_limits<std::size_t>::max(),
+                    LOG_PRINT("dstShape dimension exceeds size_t.\n"); return ACL_ERROR_INTERNAL_ERROR);
+          auto sizeDim = static_cast<std::size_t>(dim);
+          CHECK_RET(dstTensorElementCount <= std::numeric_limits<std::size_t>::max() / sizeDim,
+                    LOG_PRINT("dstShape element count overflows size_t.\n"); return ACL_ERROR_INTERNAL_ERROR);
+          dstTensorElementCount *= sizeDim;
+      }
+      std::vector<int32_t> dstTensorHostData;
+      CHECK_RET(dstTensorElementCount <= dstTensorHostData.max_size(),
+                LOG_PRINT("dstShape element count exceeds vector max_size.\n"); return ACL_ERROR_INTERNAL_ERROR);
+      dstTensorHostData.assign(dstTensorElementCount, 1);
 
       ret = CreateAclTensorWithFormat(dstTensorHostData, srcShape, &dstShape, &dstShapeSize, &dstDeviceAddr, srcDtype, &dstTensor, static_cast<aclFormat>(actualFormat));
       CHECK_RET(ret == ACL_SUCCESS, LOG_PRINT("CreateAclTensorWithFormat failed. ERROR: %d\n", ret); return ret);
