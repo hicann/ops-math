@@ -15,7 +15,7 @@
 
 namespace ge {
 /**
-* @brief Returns a batched diagonal tensor with given batched diagonal values .
+* @brief Extracts one or more diagonals from the last two dimensions of a tensor.
 
 * @par Inputs:
 * @li x: A Tensor. Rank r tensor where r >= 2.
@@ -33,7 +33,7 @@ namespace ge {
 * @li align:An optional string from: "LEFT_RIGHT", "RIGHT_LEFT", "LEFT_LEFT", "RIGHT_RIGHT". Defaults to "RIGHT_LEFT".
 
 * @par Third-party framework compatibility
-* Compatible with the Tensorflow  operator FillDiagonal.
+* Compatible with the TensorFlow operator MatrixDiagPartV3.
 */
 REG_OP(MatrixDiagPartV3)
     .INPUT(x, TensorType::BasicType())
