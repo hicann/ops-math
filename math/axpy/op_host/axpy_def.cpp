@@ -14,10 +14,8 @@
  */
 #include "register/op_def_registry.h"
 
-namespace ops
-{
-class Axpy : public OpDef
-{
+namespace ops {
+class Axpy : public OpDef {
 public:
     explicit Axpy(const char* name) : OpDef(name)
     {
@@ -46,8 +44,9 @@ public:
             .PrecisionReduceFlag(true)
             .ExtendCfgInfo("opFile.value", "axpy_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend350", aicoreConfig);
     }
 };
 
 OP_ADD(Axpy);
-}  // namespace ops
+} // namespace ops

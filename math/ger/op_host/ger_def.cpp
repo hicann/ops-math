@@ -14,16 +14,14 @@
  */
 #include "register/op_def_registry.h"
 
-namespace ops
-{
-class Ger : public OpDef
-{
+namespace ops {
+class Ger : public OpDef {
 public:
     explicit Ger(const char* name) : OpDef(name)
     {
         this->Input("x1")
             .ParamType(REQUIRED)
-            .DataType({ge::DT_BF16, ge::DT_FLOAT16,ge::DT_FLOAT})
+            .DataType({ge::DT_BF16, ge::DT_FLOAT16, ge::DT_FLOAT})
             .Format({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND})
             .UnknownShapeFormat({ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
         this->Input("x2")
@@ -45,8 +43,9 @@ public:
             .PrecisionReduceFlag(true)
             .ExtendCfgInfo("opFile.value", "ger_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend350", aicoreConfig);
     }
 };
 
 OP_ADD(Ger);
-}  // namespace ops
+} // namespace ops
