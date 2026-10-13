@@ -168,7 +168,7 @@
 | [aclnnIsClose](../../math/is_close/docs/aclnnIsClose.md)        | 返回一个带有布尔元素的新张量，判断给定的self和other是否彼此接近，如果值接近，则返回True，否则返回False。 | 默认确定性实现| 默认确定性实现|
 | [aclnnIsFinite](../../math/is_finite/docs/aclnnIsFinite.md)     | 判断张量中哪些元素是有限数值，即不是inf、-inf或nan。         | 默认确定性实现| 默认确定性实现|
 | [aclnnIsInf](../../math/is_inf/docs/aclnnIsInf.md)              | 判断张量中哪些元素是无限大值，即是inf、-inf。                | 默认确定性实现| 默认确定性实现|
-| [aclnnIsInScalarTensor](../../math/equal/docs/aclnnIsInScalarTensor.md) | 检查element中的元素是否等于testElement。                     | 默认确定性实现| 默认确定性实现 |
+| [aclnnIsInScalarTensor](../../math/equal/docs/aclnnIsInScalarTensor.md) | 检查element中的元素是否等于testElement。                     | 默认确定性实现| - |
 | [aclnnIsInTensorScalar](../../math/equal/docs/aclnnIsInTensorScalar.md) | 检查element中的元素是否等于testElement。                     | 默认确定性实现| 默认确定性实现 |
 | [aclnnIsNegInf](../../math/is_neg_inf/docs/aclnnIsNegInf.md)    | 判断输入张量的元素是否为负无穷。                             | 默认确定性实现| 默认确定性实现|
 | [aclnnIsPosInf](../../math/is_pos_inf/docs/aclnnIsPosInf.md)    | 判断输入张量的元素是否为正无穷。                             | 默认确定性实现| 默认确定性实现|
