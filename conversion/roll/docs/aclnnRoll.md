@@ -104,7 +104,7 @@ aclnnStatus aclnnRoll(
       <td>shifts（aclIntArray*）</td>
       <td>输入</td>
       <td>指定每个维度上要滚动的步数。</td>
-      <td>数组长度与dims保持一致。</td>
+      <td>dims非空时，数组长度与dims保持一致；dims为空时，数组长度必须为1，并对展平后的x执行roll。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
@@ -114,7 +114,7 @@ aclnnStatus aclnnRoll(
       <td>dims（aclIntArray*）</td>
       <td>输入</td>
       <td>指定要滚动的维度。</td>
-      <td>数组长度与shifts保持一致，取值范围在[-x.dim(), x.dim() - 1]之内，例如：x的维度是4，则取值范围在[-4, 3]。</td>
+      <td>dims非空时，数组长度与shifts保持一致，取值范围在[-x.dim(), x.dim() - 1]之内，例如：x的维度是4，则取值范围在[-4, 3]；dims为空时，对展平后的x执行roll，且shifts数组长度必须为1。</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>

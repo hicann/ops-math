@@ -24,9 +24,10 @@ extern "C" {
  * 算子功能： 对输入Tensor完成roll操作
  * @param [in] x: device侧的aclTensor，数据类型支持BFLOAT16,FLOAT16, FLOAT32, INT8, UINT8, INT32, UINT32，BOOL, INT64,
  * COMPLEX64。支持 [非连续的Tensor](#)，数据格式支持ND（[参考](#)）。
- * @param [in] shifts: int64的数组，数组长度与dims保持一致。
- * @param [in] dims: int64的数组，数组长度与shifts保持一致，取值范围在[-x.dim(), x.dim() -
- * 1]之内，例如：x的维度是4，则取值范 围在[-4, 3]。
+ * @param [in] shifts: int64的数组；dims非空时，数组长度与dims保持一致；dims为空时，数组长度必须为1，
+ * 并对展平后的x执行roll。
+ * @param [in] dims: int64的数组；非空时，数组长度与shifts保持一致，取值范围在[-x.dim(), x.dim() -
+ * 1]之内，例如：x的维度是4，则取值范围在[-4, 3]；为空时，对展平后的x执行roll，且shifts数组长度必须为1。
  * @param [in] out: device侧的aclTensor，数据类型和数据格式与输入x保持一致
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。
