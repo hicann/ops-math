@@ -31,9 +31,9 @@ extern "C" {
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnInplaceRandomGetWorkspaceSize(
-    const aclTensor* selfRef, int64_t from, int64_t to, int64_t seed, int64_t offset, uint64_t* workspaceSize,
-    aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnInplaceRandomGetWorkspaceSize(const aclTensor* selfRef, int64_t from, int64_t to,
+                                                         int64_t seed, int64_t offset, uint64_t* workspaceSize,
+                                                         aclOpExecutor** executor);
 
 /**
  * @brief aclnnInplaceRandom的第二段接口，用于执行计算。
@@ -44,8 +44,8 @@ ACLNN_API aclnnStatus aclnnInplaceRandomGetWorkspaceSize(
  * @return aclnnStatus: 返回状态码。
  */
 
-ACLNN_API aclnnStatus
-aclnnInplaceRandom(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
+ACLNN_API aclnnStatus aclnnInplaceRandom(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                         aclrtStream stream);
 
 /**
  * @brief aclnnInplaceRandomTensor的第一段接口，根据具体的计算流程，计算workspace大小。
@@ -65,9 +65,10 @@ aclnnInplaceRandom(void* workspace, uint64_t workspaceSize, aclOpExecutor* execu
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnInplaceRandomTensorGetWorkspaceSize(
-    const aclTensor* selfRef, int64_t from, int64_t to, const aclTensor* seedTensor, const aclTensor* offsetTensor,
-    int64_t offset, uint64_t* workspaceSize, aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnInplaceRandomTensorGetWorkspaceSize(const aclTensor* selfRef, int64_t from, int64_t to,
+                                                               const aclTensor* seedTensor,
+                                                               const aclTensor* offsetTensor, int64_t offset,
+                                                               uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief aclnnInplaceRandomTensor的第二段接口，用于执行计算。
@@ -80,8 +81,8 @@ ACLNN_API aclnnStatus aclnnInplaceRandomTensorGetWorkspaceSize(
  * @return aclnnStatus: 返回状态码。
  */
 
-ACLNN_API aclnnStatus
-aclnnInplaceRandomTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
+ACLNN_API aclnnStatus aclnnInplaceRandomTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                               aclrtStream stream);
 
 /**
  * @brief aclnnInplaceRandomWithoutFromTo的第一段接口，根据具体的计算流程，计算workspace大小。
@@ -95,27 +96,28 @@ aclnnInplaceRandomTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor*
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnInplaceRandomWithoutFromToGetWorkspaceSize(
-    const aclTensor* selfRef, int64_t seed, int64_t offset, uint64_t* workspaceSize,
-    aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnInplaceRandomWithoutFromToGetWorkspaceSize(const aclTensor* selfRef, int64_t seed,
+                                                                      int64_t offset, uint64_t* workspaceSize,
+                                                                      aclOpExecutor** executor);
 
 /**
  * @brief aclnnInplaceRandomWithoutFromTo的第二段接口，用于执行计算。
  * @param [in] workspace: 在npu device侧申请的workspace内存起址。
- * @param [in] workspaceSize: 在npu device侧申请的workspace大小，由第一段接口aclnnInplaceRandomWithoutFromToGetWorkspaceSize获取。
+ * @param [in] workspaceSize: 在npu
+ * device侧申请的workspace大小，由第一段接口aclnnInplaceRandomWithoutFromToGetWorkspaceSize获取。
  * @param [in] stream: acl stream流。
  * @param [in] executor: op执行器，包含了算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
 
-ACLNN_API aclnnStatus
-aclnnInplaceRandomWithoutFromTo(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
+ACLNN_API aclnnStatus aclnnInplaceRandomWithoutFromTo(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                                      aclrtStream stream);
 
 /**
  * @brief aclnnInplaceRandomWithoutFromToTensor的第一段接口，根据具体的计算流程，计算workspace大小。
  * @domain aclnn_rand
  *
- * 算子功能：从[from, to-1]的离散均匀分布中采样的数填充selfRef张量。
+ * 算子功能：该接口不接收from和to入参，默认从 [0, DTYPE_MAX_VALUE] 的离散均匀分布中采样整数填充selfRef张量。
  * @param [in] selfRef: npu device侧的aclTensor，数据类型支持FLOAT、INT32、INT64、BFLOAT16、FLOAT16、
  * INT16、INT8、UINT8、BOOL。数据格式支持ND。支持非连续的Tensor。
  * @param [in] seedTensor: npu device侧的aclTensor，数据类型支持INT64。数据格式支持ND。
@@ -127,24 +129,26 @@ aclnnInplaceRandomWithoutFromTo(void* workspace, uint64_t workspaceSize, aclOpEx
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnInplaceRandomWithoutFromToTensorGetWorkspaceSize(
-    const aclTensor* selfRef, const aclTensor* seedTensor, const aclTensor* offsetTensor,
-    int64_t offset, uint64_t* workspaceSize, aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnInplaceRandomWithoutFromToTensorGetWorkspaceSize(const aclTensor* selfRef,
+                                                                            const aclTensor* seedTensor,
+                                                                            const aclTensor* offsetTensor,
+                                                                            int64_t offset, uint64_t* workspaceSize,
+                                                                            aclOpExecutor** executor);
 
 /**
  * @brief aclnnInplaceRandomWithoutFromToTensor的第二段接口，用于执行计算。
  *
- * 算子功能：从[from, to-1]的离散均匀分布中采样的数填充selfRef张量。
+ * 算子功能：该接口不接收from和to入参，默认从 [0, DTYPE_MAX_VALUE] 的离散均匀分布中采样整数填充selfRef张量。
  * @param [in] workspace: 在npu device侧申请的workspace内存起址。
- * @param [in] workspaceSize: 在npu device侧申请的workspace大小，由第一段接口aclnnInplaceRandomWithoutFromToTensorGetWorkspaceSize获取。
+ * @param [in] workspaceSize: 在npu
+ * device侧申请的workspace大小，由第一段接口aclnnInplaceRandomWithoutFromToTensorGetWorkspaceSize获取。
  * @param [in] executor: op执行器，包含了算子计算流程。
  * @param [in] stream: acl stream流。
  * @return aclnnStatus: 返回状态码。
  */
 
-ACLNN_API aclnnStatus
-aclnnInplaceRandomWithoutFromToTensor(void* workspace, uint64_t workspaceSize,
-                                      aclOpExecutor* executor, aclrtStream stream);
+ACLNN_API aclnnStatus aclnnInplaceRandomWithoutFromToTensor(void* workspace, uint64_t workspaceSize,
+                                                            aclOpExecutor* executor, aclrtStream stream);
 
 #ifdef __cplusplus
 }
