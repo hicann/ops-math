@@ -1,6 +1,6 @@
 # aclnnQr
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/q_r)
+[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/qr)
 
 ## 产品支持情况
 
