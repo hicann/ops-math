@@ -49,7 +49,7 @@
       <td>x</td>
       <td>输入</td>
       <td>待进行镜像扩充的原始tensor。</td>
-      <td>INT8, UINT8, INT16, UINT16, INT32, UINT32, INT64, UINT64, BF16, FLOAT16, FLOAT, DOUBLE, BOOL</td>
+      <td>INT8, UINT8, INT16, UINT16, INT32, UINT32, INT64, UINT64, BF16, FLOAT16, FLOAT, DOUBLE, BOOL, HIFLOAT8, FLOAT8_E5M2, FLOAT8_E4M3FN, FLOAT8_E8M0</td>
       <td>ND</td>
     </tr>
     <tr>
@@ -70,10 +70,12 @@
       <td>y</td>
       <td>输出</td>
       <td>进行扩充后的tensor。</td>
-      <td>INT8, UINT8, INT16, UINT16, INT32, UINT32, INT64, UINT64, BF16, FLOAT16, FLOAT, DOUBLE, BOOL</td>
+      <td>INT8, UINT8, INT16, UINT16, INT32, UINT32, INT64, UINT64, BF16, FLOAT16, FLOAT, DOUBLE, BOOL, HIFLOAT8, FLOAT8_E5M2, FLOAT8_E4M3FN, FLOAT8_E8M0</td>
       <td>ND</td>
     </tr>
   </tbody></table>
+
+注：HIFLOAT8、FLOAT8_E5M2、FLOAT8_E4M3FN、FLOAT8_E8M0仅在<term>Ascend 950PR&950DT系列产品</term>上支持，其余产品不支持。
 
 - paddings
   paddings的第0维表示对输入x第0维的扩充配置，以此类推。每一行表示对应维度上的填充数量（左/右、前/后、上/下等）。对于每一行[a, b]，a表示在该维度的开头填充的元素数，b表示在该维度的末尾填充的元素数。
