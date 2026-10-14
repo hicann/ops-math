@@ -12,40 +12,18 @@
 #define SINKHORN_KERNEL_UPDATE_D1_INC_
 
     template<typename T, typename IT>
-    __aicore__ inline void KernelSinkhorn<T, IT>::SumD1(int block)
-    {
-        DataCopyExtParams copyParams{1, static_cast<uint32_t>(totalCol * sizeof(T)), 0, 0, 0};
-        DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
-
-        // copy from core level
-        {
-            LocalTensor<T> d1InLocal = d1InQueue.AllocTensor<T>();
-            DataCopyPad(d1InLocal, d1BlockInWS[block * totalCol], copyParams, padParams);
-            d1InQueue.EnQue(d1InLocal);
-        }
-        {
-            LocalTensor<T> d1OutLocal = d1OutQueue.DeQue<T>();
-            LocalTensor<T> d1InLocal = d1InQueue.DeQue<T>();
-            DUMP_LT_2(d1InLocal, totalCol, " d1[   ]: ");
-            Add(d1OutLocal, d1InLocal, d1OutLocal, totalCol);
-            d1OutQueue.EnQue(d1OutLocal);
-            d1InQueue.FreeTensor(d1InLocal);
-        }
-    }
-
-    template<typename T, typename IT>
     __aicore__ inline void KernelSinkhorn<T, IT>::UpdateD1()
     {
         if (blockIdx == 0) {
             DataCopyExtParams copyParams{1, static_cast<uint32_t>(totalCol * sizeof(T)), 0, 0, 0};
             DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
 
-            // d1OutQueue2 = new d1 + eps
+            // d1OutQueue2 = new d1 + EPS
             {
                 LocalTensor<T> d1OutLocal = d1OutQueue.DeQue<T>();
                 DUMP_LT_2(d1OutLocal, totalCol, " d1[sum]: ");
                 LocalTensor<T> d1OutLocal2 = d1OutQueue2.AllocTensor<T>();
-                Adds(d1OutLocal2, d1OutLocal, (T)eps, totalCol);
+                Adds(d1OutLocal2, d1OutLocal, (T)EPS, totalCol);
                 d1OutQueue2.EnQue(d1OutLocal2);
                 d1OutQueue.FreeTensor(d1OutLocal);
             }

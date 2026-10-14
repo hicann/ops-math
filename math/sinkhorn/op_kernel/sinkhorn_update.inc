@@ -200,7 +200,7 @@ namespace AscendC {
             LocalTensor<T> d0OutLocal3 = d0OutQueue3.AllocTensor<T>();
             LocalTensor<T> d0OutLocal = d0OutQueue.DeQue<T>();
             DUMP_LT_3(d0OutLocal, row, "d0[sum]: ");
-            Adds(d0OutLocal2, d0OutLocal, (T)eps, row);
+            Adds(d0OutLocal2, d0OutLocal, (T)EPS, row);
             DUMP_LT_3(d0OutLocal2, row, "d0[eps]: ");
             PipeBarrier<PIPE_V>();
             Duplicate(d0OutLocal3, static_cast<T>(1.0f), row);
@@ -339,53 +339,6 @@ namespace AscendC {
         d1OutQueue2.FreeTensor(level1);
     }
 
-    // 计算每个Tile的d1   torch.sum(d0.unsqueeze(1) * cost, 1)
-    template<typename T, typename IT>
-    __aicore__ inline void KernelSinkhorn<T, IT>::ComputeD1(uint32_t row, LocalTensor<T> costSrcLocal, LocalTensor<T> d0OutLocal)
-    {
-        LocalTensor<T> d1OutLocal = d1OutQueue.AllocTensor<T>();
-
-        DataCopyExtParams copyParams{1, static_cast<uint32_t>(totalCol * sizeof(T)), 0, 0, 0};
-        SetAtomicAdd<T>();
-        event_t eventId_MTE3_V = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_V));
-        SetFlag<HardEvent::MTE3_V>(eventId_MTE3_V);
-        for (int r = 0; r < row; r++) {
-            uint32_t rowIdx = r * rowLengthAligned;
-            T d0 = d0OutLocal.GetValue(r);
-            WaitFlag<HardEvent::MTE3_V>(eventId_MTE3_V);
-            Muls(d1OutLocal, costSrcLocal[rowIdx], d0, totalCol);
-            event_t eventId_V_MTE3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
-            SetFlag<HardEvent::V_MTE3>(eventId_V_MTE3);
-            WaitFlag<HardEvent::V_MTE3>(eventId_V_MTE3);
-            DataCopyPad(d1BlockInWS, d1OutLocal, copyParams);
-            SetFlag<HardEvent::MTE3_V>(eventId_MTE3_V);
-        }
-        WaitFlag<HardEvent::MTE3_V>(eventId_MTE3_V);
-        SetAtomicNone();
-        d1OutQueue.FreeTensor(d1OutLocal);
-    }
-
-    template<typename T, typename IT>
-    __aicore__ inline void KernelSinkhorn<T, IT>::CopyInD1BlockInWS(DataCopyExtParams copyParams, DataCopyPadExtParams<T> padParams)
-    {
-        LocalTensor<T> d1OutLocal = d1OutQueue.AllocTensor<T>();
-        DataCopyPad(d1OutLocal, d1BlockInWS, copyParams, padParams);
-        d1OutQueue.EnQue(d1OutLocal);
-        DUMP_LT_2(d1BlockInWS, totalCol, " d1[sm1]: ");
-    }
-
-    template<typename T, typename IT>
-    __aicore__ inline void KernelSinkhorn<T, IT>::SumD1Block(DataCopyExtParams copyParams)
-    {
-        LocalTensor<T> d1OutLocal = d1OutQueue.DeQue<T>();
-        DUMP_LT_2(d1OutLocal, totalCol, " d1[sm2]: ");
-        SetAtomicAdd<T>();
-        DataCopyPad(d1GlobalInWSNew, d1OutLocal, copyParams);
-        DataCacheClean(d1GlobalInWSNew);
-        SetAtomicNone();
-        d1OutQueue.FreeTensor(d1OutLocal);
-    }
-
     template<typename T, typename IT>
     __aicore__ inline void KernelSinkhorn<T, IT>::UpdateD0()
     {
@@ -442,9 +395,6 @@ namespace AscendC {
         ReduceD1CpuPartials();
         DataCacheCleanAndInvalid<uint64_t, CacheLine::ENTIRE_DATA_CACHE, DcciDst::CACHELINE_OUT>(headerInWS);
         DUMP_LT_0_2(d0BlockInWS, blockRow, "d0 : ");
-#ifdef MULTI_CORE_SUM_FOR_D1
-        DUMP_LT_0_2(d1GlobalInWSNew, totalCol, "d1[sum] : ");
-#endif
     }
 
 #include "sinkhorn_update_d1.inc"

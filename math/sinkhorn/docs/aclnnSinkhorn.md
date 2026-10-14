@@ -81,11 +81,79 @@
 
 - **参数说明**：
 
-    - cost（aclTensor*，计算输入）：表示成本张量，公式中的`cost`，Device侧的aclTensor。数据类型支持BFLOAT16、FLOAT16、FLOAT。取值需要在[0,1]之间，可以进行归一化处理。[数据格式](../../../docs/zh/context/data_format.md)支持ND，输入为二维矩阵且行数不超过10000，列数不超过1024。支持[非连续的Tensor](../../../docs/zh/context/non_contiguous_tensor.md)。
-    - tol (aclScalar*，入参)：表示计算Sinkhorn的误差，数据类型支持FLOAT。如果传入空指针，则tol取0.0001。
-    - p（aclTensor*，计算输出）：表示最优传输张量，公式中的`p`，Device侧的aclTensor。数据类型支持BFLOAT16、FLOAT16、FLOAT。[数据格式](../../../docs/zh/context/data_format.md)支持ND。shape维度为2。不支持[非连续的Tensor](../../../docs/zh/context/non_contiguous_tensor.md)。数据类型和shape与入参`cost`的数据类型和shape一致。
-    - workspaceSize（uint64_t\*，出参）：返回用户需要在Device侧申请的workspace大小。
-    - executor（aclOpExecutor\**，出参）：返回op执行器，包含了算子计算流程。
+  <table style="table-layout: fixed; width: 1550px"><colgroup>
+  <col style="width: 180px">
+  <col style="width: 120px">
+  <col style="width: 280px">
+  <col style="width: 320px">
+  <col style="width: 250px">
+  <col style="width: 120px">
+  <col style="width: 140px">
+  <col style="width: 140px">
+  </colgroup>
+  <thead>
+    <tr>
+      <th>参数名</th>
+      <th>输入/输出</th>
+      <th>描述</th>
+      <th>使用说明</th>
+      <th>数据类型</th>
+      <th>数据格式</th>
+      <th>维度(shape)</th>
+      <th>非连续Tensor</th>
+    </tr></thead>
+  <tbody>
+    <tr>
+      <td>cost（aclTensor*）</td>
+      <td>输入</td>
+      <td>表示成本张量，公式中的`cost`，Device侧的aclTensor。</td>
+      <td><ul><li>取值建议在[0,1]之间，超出范围时`exp(cost)`可能溢出，可以进行归一化处理。</li><li>输入为二维矩阵，行数不超过10000，列数不超过4096。</li></ul></td>
+      <td>BFLOAT16、FLOAT16、FLOAT</td>
+      <td>ND</td>
+      <td>2</td>
+      <td>√</td>
+    </tr>
+    <tr>
+      <td>tol（aclScalar*）</td>
+      <td>可选输入</td>
+      <td>表示计算Sinkhorn的误差。</td>
+      <td>取值必须为正的有限值（大于0）。如果传入空指针，则tol取0.0001。</td>
+      <td>FLOAT</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>p（aclTensor*）</td>
+      <td>输出</td>
+      <td>表示最优传输张量，公式中的`p`，Device侧的aclTensor。</td>
+      <td>数据类型和shape与入参`cost`的数据类型和shape一致。</td>
+      <td>BFLOAT16、FLOAT16、FLOAT</td>
+      <td>ND</td>
+      <td>2</td>
+      <td>×</td>
+    </tr>
+    <tr>
+      <td>workspaceSize（uint64_t*）</td>
+      <td>输出</td>
+      <td>返回用户需要在Device侧申请的workspace大小。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>executor（aclOpExecutor**）</td>
+      <td>输出</td>
+      <td>返回op执行器，包含了算子计算流程。</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+    </tr>
+  </tbody></table>
 
 - **返回值**：
 
@@ -166,8 +234,10 @@
 
 ## 约束说明
 
+- 收敛保护：内部迭代最多执行 10000 次。若 10000 次内误差仍未收敛至 `tol`（如 `tol` 取值极小或矩阵病态导致收敛缓慢时可能发生），计算将停止并以第 10000 次迭代的状态作为输出结果正常结束，不产生错误返回。
 - 确定性计算：
   - aclnnSinkhorn默认确定性实现。
+- 空 tensor：当 `cost` 或 `p` 为空 tensor 时，`workspaceSize` 返回 0，不执行 kernel 计算。
 
 ## 调用示例
 

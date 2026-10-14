@@ -23,6 +23,7 @@
 #include "opdev/op_executor.h"
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
+#include "log/log.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -42,9 +43,6 @@ static const std::initializer_list<op::DataType> SELF_DTYPE_SUPPORT_LIST_NOT_SUP
 static const std::initializer_list<op::DataType> SELF_DTYPE_SUPPORT_LIST_SUPPORT_BF16 = {
     op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> MASK_DTYPE_SUPPORT_LIST = {op::DataType::DT_UINT8,
-                                                                            op::DataType::DT_BOOL};
-
 static const std::initializer_list<op::DataType> TOL_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT};
 
 inline static bool CheckNotNull(const aclTensor* cost, const aclTensor* p)
@@ -62,7 +60,8 @@ static bool CheckTolValid(const aclScalar* tol)
     OP_CHECK_DTYPE_NOT_SUPPORT(tol, TOL_DTYPE_SUPPORT_LIST, return false);
     float tolValue = tol->ToFloat();
     if (std::isinf(tolValue) || std::isnan(tolValue) || tolValue <= 0) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "tol is %f, it must be a positive finite value.", tolValue);
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON("aclnnSinkhorn", "tol", std::to_string(tolValue),
+                                              "tol must be a positive finite value (> 0)");
         return false;
     }
     return true;
@@ -85,6 +84,8 @@ static bool CheckDtypeValid(const aclTensor* cost, const aclTensor* p)
     OP_CHECK_DTYPE_NOT_SUPPORT(cost, SELF_DTYPE_SUPPORT_LIST, return false);
     // 检查p的数据类型是否在Sinkhorn算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(p, SELF_DTYPE_SUPPORT_LIST, return false);
+    // 检查p的数据类型是否与cost的数据类型一致
+    OP_CHECK_DTYPE_NOT_SAME(cost, p, return false);
 
     return true;
 }
@@ -95,20 +96,14 @@ static bool CheckShape(const aclTensor* cost, const aclTensor* p)
     OP_CHECK_WRONG_DIMENSION(p, IO_DIM_LEN, return false);
     OP_CHECK_SHAPE_NOT_EQUAL(cost, p, return false);
 
-    int32_t col = cost->GetViewShape().GetDim(COST_COL_DIM);
-    int32_t row = cost->GetViewShape().GetDim(COST_ROW_DIM);
+    int64_t col = cost->GetViewShape().GetDim(COST_COL_DIM);
+    int64_t row = cost->GetViewShape().GetDim(COST_ROW_DIM);
     if (col > MAX_COST_COL) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "the column number of cost is %d, it cannot be larger than %d.", col,
-                MAX_COST_COL);
+        OP_LOGE_FOR_INVALID_VALUE("aclnnSinkhorn", "cost", std::to_string(col), "column number not larger than 4096");
         return false;
     }
     if (row > MAX_COST_ROW) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "the row number of cost is %d, it cannot be larger than %d.", row,
-                MAX_COST_ROW);
-        return false;
-    }
-    if (row <= 0 || col <= 0) {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "the row %d and column %d of cost must be positive.", row, col);
+        OP_LOGE_FOR_INVALID_VALUE("aclnnSinkhorn", "cost", std::to_string(row), "row number not larger than 10000");
         return false;
     }
 

@@ -120,12 +120,6 @@ constexpr int PRINT_LEVEL = 0;
 #define DUMP_LT_0_3 DUMP_LT_0_0
 #endif
 
-// 多核汇总D1
-// 多核汇总可能会稍微快一点，但是测试时发现不稳定，有时极慢，不推荐
-#ifdef MULTI_CORE_SUM_FOR_D1
-#undef MULTI_CORE_SUM_FOR_D1
-#endif
-
 namespace AscendC {
 
 #if __NPU_ARCH__ == 3510
@@ -168,14 +162,8 @@ __simd_vf__ inline void SinkhornFloatToHalfVF(__ubuf__ half* dst, __ubuf__ float
 // 为2会导致一个tiling数据量下降，对性能没有提升，不推荐
 constexpr uint32_t COST_BUFFER_NUM = 1;
 
-constexpr uint32_t SHAPEOUT_SIZE = 2;
-constexpr uint32_t BIT_NUM_PER_BYTE = 8;
-constexpr uint32_t HEADER_BLOCK_SIZE = 64;
 constexpr uint32_t HEADER_SIZE_IN_INT64 = 8;
 
-constexpr uint32_t OFFSET_SHIFT_BITS = 3;     // offset偏移量移位输，<<3 等价于 *8
-constexpr uint32_t INT64_LENGTH_IN_INT32 = 2; // INT64 相当于 2个int32长
-constexpr uint32_t GATHER_RESULT_STRIDE = 8;
 constexpr uint64_t LOOP_FLAG_INDEX = 0;
 constexpr uint32_t CPU_SUM_GROUP_SIZE = 16;
 constexpr uint32_t CPU_SUM_LEVELS = 4;
@@ -218,19 +206,14 @@ private:
     __aicore__ inline T CpuCascadeRowSum(LocalTensor<T> srcLocal, uint32_t size);
     __aicore__ inline void ComputeD1CpuPartials();
     __aicore__ inline void ReduceD1CpuPartials();
-    // 计算每个Tile的d1   torch.sum(d0.unsqueeze(1) * cost, 1)
-    __aicore__ inline void ComputeD1(uint32_t row, LocalTensor<T> costSrcLocal, LocalTensor<T> d0OutLocal);
-    __aicore__ inline void CopyInD1BlockInWS(DataCopyExtParams copyParams, DataCopyPadExtParams<T> padParams);
-    __aicore__ inline void SumD1Block(DataCopyExtParams copyParams);
     __aicore__ inline void UpdateD0();
-    __aicore__ inline void SumD1(int block);
     __aicore__ inline void UpdateD1();
     __aicore__ inline void DataCacheClean(GlobalTensor<T> global);
 
 private:
     // 输入
     GlobalTensor<IT> costGlobal; // Exp计算前使用，后期切勿再使用
-    float tol;
+    float tol = 0.0f;
 
     // 输出
     GlobalTensor<IT> pGlobal;
@@ -278,7 +261,7 @@ private:
 
     uint16_t rowLengthAligned;
 
-    static constexpr float eps = 0.00000001f;
+    static constexpr float EPS = 0.00000001f;
 };
 
 } // namespace AscendC

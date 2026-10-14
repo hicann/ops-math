@@ -46,7 +46,7 @@
       <td>
         <ul>
           <li>表示成本张量，公式中的。<code>cost</code>，Device侧的aclTensor。</li>
-          <li>输入为二维矩阵且列数不超过4096。</li>
+          <li>输入为二维矩阵，shape固定为2维，行数不超过10000，列数不超过4096。</li>
           <li>支持<a href="../../docs/zh/context/non_contiguous_tensor.md">非连续的Tensor</a>。</li>
         </ul>
       </td>
@@ -71,7 +71,6 @@
       <td>
         <ul>
           <li>表示最优传输张量，公式中的<code>p</code>，Device侧的aclTensor。</li>
-          <li>如果传入空指针，则tol取0.0001。</li>
           <li>shape维度为2，不支持<a href="../../docs/zh/context/non_contiguous_tensor.md">非连续的Tensor</a>。</li>
           <li>数据类型和shape与入参<code>cost</code>的数据类型和shape一致。</li>
         </ul>
@@ -83,7 +82,10 @@
 
 ## 约束说明
 
-无
+- `tol` 必须为正的有限值（大于 0），否则报错；传入空指针时默认取 0.0001。
+- 当 `cost` 或 `p` 为空 tensor 时，不执行计算，直接返回。
+- `cost` 取值建议在 [0, 1] 范围内，超出范围时 `exp(cost)` 可能溢出。
+- 内部迭代最多执行 10000 次，达到上限后即使误差尚未收敛至 `tol` 也会结束计算。
 
 ## 调用说明
 

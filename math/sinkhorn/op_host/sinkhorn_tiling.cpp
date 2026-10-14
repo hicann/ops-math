@@ -29,6 +29,11 @@ constexpr static uint32_t WORKSPACE_HEADER_SIZE = 64; // 64B对齐
 constexpr static uint32_t CPU_SUM_GROUP_SIZE = 16;
 constexpr static uint32_t NARROW_COL_THRESHOLD = 16;
 constexpr static uint32_t NARROW_COL_ROWS_PER_CORE = 512;
+constexpr static uint32_t IO_DIM = 2;
+constexpr static uint64_t MAX_COST_ROW = 10000;
+constexpr static uint64_t MAX_COST_COL = 4096;
+constexpr static uint32_t BATCH_MODE_SCHEDULE = 1; // SetScheduleMode 调度模式：全核 batch 启动，配合 kernel 侧 SyncAll
+constexpr static uint32_t WORKSPACE_BLOCK_NUM = 1; // GetWorkspaceSizes 申请的 workspace 块数
 } // namespace
 
 namespace optiling {
@@ -91,13 +96,34 @@ private:
 
 ge::graphStatus SinkhornTiling::Init()
 {
-    OP_LOGD(tilingContext, "Tiling init start.");
+    OP_LOGD(tilingContext, "Tiling initialization starts.");
 
     auto costShape = tilingContext->GetInputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, costShape);
     auto costStorageShape = costShape->GetStorageShape();
+    // 防御校验：aclnn 直连通路下 tiling 侧独立把关，避免非法形状进入分块计算（blockLen uint16 截断等风险）
+    if (costStorageShape.GetDimNum() != IO_DIM) {
+        OP_LOGE_FOR_INVALID_SHAPEDIM(tilingContext->GetNodeName(), "cost",
+                                     std::to_string(costStorageShape.GetDimNum()) + "D", "2D");
+        return ge::GRAPH_FAILED;
+    }
     totalRow = costStorageShape.GetDim(0);
     totalCol = costStorageShape.GetDim(1);
+    if (totalRow == 0 || totalCol == 0) {
+        OP_LOGE_FOR_INVALID_SHAPESIZE(tilingContext->GetNodeName(), "cost",
+                                      std::to_string(totalRow) + "x" + std::to_string(totalCol), "non-empty 2D");
+        return ge::GRAPH_FAILED;
+    }
+    if (totalRow > MAX_COST_ROW) {
+        OP_LOGE_FOR_INVALID_SHAPEDIM(tilingContext->GetNodeName(), "cost", "row=" + std::to_string(totalRow),
+                                     "<= 10000");
+        return ge::GRAPH_FAILED;
+    }
+    if (totalCol > MAX_COST_COL) {
+        OP_LOGE_FOR_INVALID_SHAPEDIM(tilingContext->GetNodeName(), "cost", "col=" + std::to_string(totalCol),
+                                     "<= 4096");
+        return ge::GRAPH_FAILED;
+    }
 
     auto attrs = tilingContext->GetAttrs();
     if (attrs != nullptr && attrs->GetAttrNum() != 0) {
@@ -131,8 +157,8 @@ ge::graphStatus SinkhornTiling::Init()
     // UB可以容纳的行                costIn         costOut       4 * d0
     tileRow = usableUbSize / ((totalColAligned + totalColAligned + 4) * sizeOfDataType);
 
-    // 去除4*d1空间
-    tileRow -= 4;
+    // 去除4*d1空间（保护：tileRow 不小于 1，避免无符号回绕与后续除零）
+    tileRow = (tileRow > 4) ? (tileRow - 4) : 1;
 
     // 保护处理， 数据复制时，blockCount最大为4095，向下对齐到 127 * 32
     if (tileRow > MAX_TILE_ROW) {
@@ -156,7 +182,7 @@ ge::graphStatus SinkhornTiling::Init()
     InitTiling();
     InitWS();
 
-    OP_LOGD(tilingContext, "Tiling inited.");
+    OP_LOGD(tilingContext, "Tiling initialization finished.");
     return ge::GRAPH_SUCCESS;
 }
 
@@ -211,7 +237,13 @@ inline ge::graphStatus SinkhornTiling::InitWS()
 
 ge::graphStatus SinkhornTiling::RunKernelTiling()
 {
-    OP_LOGD(tilingContext, "Tiling start.");
+    OP_LOGD(tilingContext, "Tiling calculation starts.");
+
+    // 内核侧使用 SyncAll 全核同步，需设置 BATCH_MODE_SCHEDULE 调度模式，避免多流场景卡死
+    if (tilingContext->SetScheduleMode(BATCH_MODE_SCHEDULE) != ge::GRAPH_SUCCESS) {
+        OP_LOGE(tilingContext, "SetScheduleMode failed.");
+        return ge::GRAPH_FAILED;
+    }
 
     // context传递
     tilingContext->SetTilingKey(tilingKey);
@@ -247,7 +279,7 @@ ge::graphStatus SinkhornTiling::RunKernelTiling()
     tilingContext->GetRawTilingData()->SetDataSize(tiling.GetDataSize());
 
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(
-        1); // 通过框架获取workspace的指针，GetWorkspaces入参所需workspace的块数。当前限制使用一块。
+        WORKSPACE_BLOCK_NUM); // 通过框架获取workspace的指针，GetWorkspaces入参所需workspace的块数。当前限制使用一块。
     auto compileInfo = reinterpret_cast<const SinkhornCompileInfo*>(tilingContext->GetCompileInfo());
     currentWorkspace[0] = userWorkspaceSize +
                           compileInfo
@@ -255,7 +287,7 @@ ge::graphStatus SinkhornTiling::RunKernelTiling()
 
     OP_LOGD(tilingContext, "userWorkspaceSize: %lu.", userWorkspaceSize);
     TilingDataPrint();
-    OP_LOGD(tilingContext, "Tiling end.");
+    OP_LOGD(tilingContext, "Tiling calculation ends.");
     return ge::GRAPH_SUCCESS;
 }
 
