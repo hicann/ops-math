@@ -30,7 +30,7 @@
 | ----------- | ------------------- | --------- | --------- | --------- |
 | [aclnnAbs](../../math/abs/docs/aclnnAbs.md)     | 实现张量的绝对值运算。    | 默认确定性实现| 默认确定性实现| 默认确定性实现|
 | [aclnnAcos&aclnnInplaceAcos](../../math/acos/docs/aclnnAcos&aclnnInplaceAcos.md) | 对输入矩阵的每个元素进行反余弦操作后输出。                   | 默认确定性实现| 默认确定性实现| 默认确定性实现 |
-| [aclnnAcosh&aclnnInplaceAcosh](../../math/acosh/docs/aclnnAcosh&aclnnInplaceAcosh.md) | 对输入Tensor中的每个元素进行反双曲余弦操作后输出。           | 默认确定性实现| 默认确定性实现| 默认确定性实现 |
+| [aclnnAcosh&aclnnInplaceAcosh](../../math/acosh/docs/aclnnAcosh&aclnnInplaceAcosh.md) | 对输入Tensor中的每个元素进行反双曲余弦操作后输出。           | 默认确定性实现| 默认确定性实现| - |
 | [aclnnAdd&aclnnInplaceAdd](../../math/add/docs/aclnnAdd&aclnnInplaceAdd.md) | 完成加法计算。        | 默认确定性实现| 默认确定性实现| 默认确定性实现 |
 | [aclnnAddcdiv&aclnnInplaceAddcdiv](../../math/addcdiv/docs/aclnnAddcdiv&aclnnInplaceAddcdiv.md) | 完成加法计算。                                               | 默认确定性实现| 默认确定性实现| 默认确定性实现 |
 | [aclnnAddcmul&aclnnInplaceAddcmul](../../math/addcmul/docs/aclnnAddcmul&aclnnInplaceAddcmul.md) | 执行tensor1与tensor2的逐元素乘法，将结果乘以标量值value并与输入self/selfRef做逐元素加法。 | 默认确定性实现| 默认确定性实现| 默认确定性实现 |
@@ -53,10 +53,10 @@
 | [aclnnArgMin](../../math/arg_min/docs/aclnnArgMin.md)           | 返回tensor中指定轴的最小值索引，并保存到out中。              | 默认确定性实现| 默认确定性实现| 默认确定性实现|
 | [aclnnArgsort](../../math/sort/docs/aclnnArgsort.md)           | 将输入tensor中的元素根据某个维度进行升序/降序排序，返回对应的index值。              | 默认确定性实现| 默认确定性实现| 默认确定性实现  |
 | [aclnnAsin&aclnnInplaceAsin](../../math/asin/docs/aclnnAsin&aclnnInplaceAsin.md) | 对输入矩阵的每个元素进行反正弦操作后输出。                   | 默认确定性实现| 默认确定性实现| 默认确定性实现 |
-| [aclnnAsinh&aclnnInplaceAsinh](../../math/asinh/docs/aclnnAsinh&aclnnInplaceAsinh.md) | 对输入Tensor中的每个元素进行反双曲正弦操作后输出。           | 默认确定性实现| 默认确定性实现| 默认确定性实现 |
+| [aclnnAsinh&aclnnInplaceAsinh](../../math/asinh/docs/aclnnAsinh&aclnnInplaceAsinh.md) | 对输入Tensor中的每个元素进行反双曲正弦操作后输出。           | 默认确定性实现| 默认确定性实现| - |
 | [aclnnAtan&aclnnInplaceAtan](../../math/atan/docs/aclnnAtan&aclnnInplaceAtan.md) | 对输入矩阵的每个元素进行反正切操作后输出。                   | 默认确定性实现| 默认确定性实现| 默认确定性实现|
 | [aclnnAtan2&aclnnInplaceAtan2](../../math/atan2/docs/aclnnAtan2&aclnnInplaceAtan2.md) | 对输入张量self和other进行逐元素的反正切运算。                | 默认确定性实现| 默认确定性实现| 默认确定性实现  |
-| [aclnnAtanh&aclnnInplaceAtanh](../../math/atanh/docs/aclnnAtanh&aclnnInplaceAtanh.md) | 对输入Tensor中的每个元素进行反双曲正切操作后输出。           | 默认确定性实现| 默认确定性实现| 默认确定性实现 |
+| [aclnnAtanh&aclnnInplaceAtanh](../../math/atanh/docs/aclnnAtanh&aclnnInplaceAtanh.md) | 对输入Tensor中的每个元素进行反双曲正切操作后输出。           | 默认确定性实现| 默认确定性实现| - |
 | [aclnnBatchNormStats](../../math/reduce_std_with_mean/docs/aclnnBatchNormStats.md) | 计算单卡输入数据的均值和标准差的倒数。                       | 默认确定性实现| 默认确定性实现| 默认确定性实现|
 | [aclnnBernoulli&aclnnInplaceBernoulli](../../random/stateless_bernoulli/docs/aclnnBernoulli&aclnnInplaceBernoulli.md) | 从伯努利分布中提取二进制随机数（0或1），prob为生成二进制随机数的概率，输入的张量用于指定shape。  | 默认确定性实现| 默认确定性实现|  默认确定性实现 |
 | [aclnnBernoulliTensor&aclnnInplaceBernoulliTensor](../../random/stateless_bernoulli/docs/aclnnBernoulliTensor&aclnnInplaceBernoulliTensor.md) | 从伯努利分布中提取二进制随机数（0或1），prob为生成二进制随机数的概率，输入的张量用于指定shape。   | 默认确定性实现| 默认确定性实现| 默认确定性实现 |
@@ -93,7 +93,7 @@
 | [aclnnConfusionTranspose](../../conversion/confusion_transpose_d/docs/aclnnConfusionTranspose.md) | 融合reshape和transpose运算。 | -| -| 默认确定性实现 |
 | [aclnnConstantPadNd](../../conversion/pad_v3/docs/aclnnConstantPadNd.md) | 对输入的张量self，以pad参数为基准进行数据填充，填充值为value。 | 默认确定性实现| 默认确定性实现| 默认确定性实现|
 | [aclnnCos&aclnnInplaceCos](../../math/cos/docs/aclnnCos&aclnnInplaceCos.md) | 对输入矩阵的每个元素进行余弦操作后输出。                     | 默认确定性实现| 默认确定性实现| 默认确定性实现 |
-| [aclnnCosh&aclnnInplaceCosh](../../math/cosh/docs/aclnnCosh&aclnnInplaceCosh.md) | 双曲函数，根据公式返回一个新的tensor。结果的形状与输入tensor相同。 | 默认确定性实现| 默认确定性实现| 默认确定性实现 |
+| [aclnnCosh&aclnnInplaceCosh](../../math/cosh/docs/aclnnCosh&aclnnInplaceCosh.md) | 双曲函数，根据公式返回一个新的tensor。结果的形状与输入tensor相同。 | 默认确定性实现| 默认确定性实现| - |
 | [aclnnCummax](../../math/cummax/docs/aclnnCummax.md)            | 计算self中的累积最大值，并返回最大值以及对应的索引。         | 默认确定性实现| 默认确定性实现| - |
 | [aclnnCummin](../../math/cummin/docs/aclnnCummin.md)            | 计算self中的累积最小值，并返回最小值以及对应的索引。         | 默认确定性实现| 默认确定性实现| 默认确定性实现  |
 | [aclnnCumprod&aclnnInplaceCumprod](../../math/cumprod/docs/aclnnCumprod&aclnnInplaceCumprod.md) | 新增aclnnCumprod接口，cumprod函数用于计算输入张量在指定维度上的累积乘积。 | 默认确定性实现| 默认确定性实现| - |
