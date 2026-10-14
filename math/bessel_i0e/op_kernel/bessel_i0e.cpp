@@ -19,11 +19,6 @@
  *   - 小区间 |x|≤3.75: Horner 7 项 P(t²) 逼近 I0，除以 exp(|x|)
  *   - 大区间 |x|>3.75: Horner 9 项 Q(s) 逼近，除以 sqrt(|x|)
  *   - 取 min(i0e_before, i0e_after) 保证上界
- *
- * 迭代二变更：
- *   - 增加 FP16/BF16 模板实例化（TilingKey 0 和 2）
- *   - FP16/BF16 路径：Cast T→FP32 → FP32 计算 → Cast FP32→T
- *   - 中间计算统一在 FP32 精度下进行
  */
 
 #include "kernel_operator.h"
@@ -233,9 +228,6 @@ __aicore__ inline void BesselI0eKernel<T>::Process()
     int64_t loopCount = (blockLength_ + ubLength_ - 1) / ubLength_;
 
     if constexpr (std::is_same_v<T, float>) {
-        // ============================================================
-        // FP32 路径：直接计算，无需 Cast
-        // ============================================================
         for (int64_t i = 0; i < loopCount; i++) {
             int64_t currentNum = (i == (loopCount - 1)) ? (blockLength_ - ubLength_ * i) : ubLength_;
             CopyIn(i, currentNum);
@@ -249,34 +241,24 @@ __aicore__ inline void BesselI0eKernel<T>::Process()
             CopyOut(i, currentNum);
         }
     } else {
-        // ============================================================
-        // FP16/BF16 路径：Cast T→FP32 → FP32 计算 → Cast FP32→T
-        // ============================================================
         for (int64_t i = 0; i < loopCount; i++) {
             int64_t currentNum = (i == (loopCount - 1)) ? (blockLength_ - ubLength_ * i) : ubLength_;
             CopyIn(i, currentNum);
 
-            // 1. DeQue 输入 (T: half 或 bfloat16_t)
             LocalTensor<T> xInput = inputQueue.template DeQue<T>();
 
-            // 2. Cast T → float（升精度，CAST_NONE 无舍入）
             LocalTensor<float> xFp32 = castInBuf.Get<float>();
             Cast<float, T>(xFp32, xInput, RoundMode::CAST_NONE, currentNum);
 
-            // 3. FP32 精度下计算
             LocalTensor<float> resultFp32 = resultFp32Buf.Get<float>();
             Compute(xFp32, resultFp32, currentNum);
 
-            // 4. 分配输出 (T)
             LocalTensor<T> yOutput = outputQueue.template AllocTensor<T>();
 
-            // 5. Cast float → T（降精度，CAST_ROUND 舍入到最近偶数）
             Cast<T, float>(yOutput, resultFp32, RoundMode::CAST_ROUND, currentNum);
 
-            // 6. EnQue 输出
             outputQueue.template EnQue<T>(yOutput);
 
-            // 7. 释放输入
             inputQueue.FreeTensor(xInput);
 
             CopyOut(i, currentNum);
@@ -286,15 +268,17 @@ __aicore__ inline void BesselI0eKernel<T>::Process()
 
 } // namespace NsBesselI0e
 
-// ============================================================================
-// Kernel 入口函数
-// ============================================================================
-template <typename D_T_X>
+// Kernel 入口函数：dtype 由构建系统按 op_def DataType 列表注入 DTYPE_X 宏，
+// TilingKey 仅剩单值占位轴 schMode，不编码算子 dtype
+template <uint32_t schMode>
 __global__ __aicore__ void bessel_i0e(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
+    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     REGISTER_TILING_DEFAULT(BesselI0eTilingData);
     GET_TILING_DATA_WITH_STRUCT(BesselI0eTilingData, tilingData, tiling);
-    NsBesselI0e::BesselI0eKernel<D_T_X> op;
+    (void)workspace;
+    (void)schMode;
+    NsBesselI0e::BesselI0eKernel<DTYPE_X> op;
     op.Init(x, y, &tilingData);
     op.Process();
 }

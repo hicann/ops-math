@@ -66,6 +66,12 @@ static ge::graphStatus GetPlatformInfo(gert::TilingContext* context, uint64_t* u
     return ge::GRAPH_SUCCESS;
 }
 
+static bool IsPrivateFormat(ge::Format format)
+{
+    return format == ge::FORMAT_NC1HWC0 || format == ge::FORMAT_FRACTAL_Z || format == ge::FORMAT_NDC1HWC0 ||
+           format == ge::FORMAT_FRACTAL_Z_3D || format == ge::FORMAT_FRACTAL_NZ || format == ge::FORMAT_NC1HWC0_C04;
+}
+
 // 获取输入 shape 和 dtype 信息
 static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t* totalIdx, ge::DataType* dataType)
 {
@@ -75,17 +81,28 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t* 
     *totalIdx = inputShapeX.GetShapeSize();
 
     OP_CHECK_IF(inputShapeX.GetDimNum() > MAX_DIM_NUM,
-                OP_LOGE(context, "BesselI0e: x dim num %zu must be less than or equal to 8.", inputShapeX.GetDimNum()),
+                OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), "x",
+                                                         std::to_string(inputShapeX.GetDimNum()).c_str(),
+                                                         "The dim num of x must be less than or equal to 8"),
                 return ge::GRAPH_FAILED);
 
     auto inputDesc = context->GetInputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputDesc);
+
+    const ge::Format inputOriginFormat = inputDesc->GetOriginFormat();
+    const ge::Format inputStorageFormat = inputDesc->GetStorageFormat();
+    OP_CHECK_IF(IsPrivateFormat(inputOriginFormat) || IsPrivateFormat(inputStorageFormat) ||
+                    inputStorageFormat != ge::FORMAT_ND,
+                OP_LOGE(context->GetNodeName(), "The format of x must be ND, origin=%d, storage=%d",
+                        static_cast<int32_t>(inputOriginFormat), static_cast<int32_t>(inputStorageFormat)),
+                return ge::GRAPH_FAILED);
+
     *dataType = inputDesc->GetDataType();
 
     const std::set<ge::DataType> supportedDtypes = {ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_BF16};
     OP_CHECK_IF(supportedDtypes.count(*dataType) == 0,
-                OP_LOGE(context, "BesselI0e: x has incorrect dtype %s. It should be DT_FLOAT16, DT_FLOAT, DT_BF16.",
-                        ToString(*dataType).c_str()),
+                OP_LOGE_WITH_INVALID_INPUT_DTYPE(context->GetNodeName(), "x", ToString(*dataType).c_str(),
+                                                 "DT_FLOAT16, DT_FLOAT, DT_BF16"),
                 return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
@@ -104,23 +121,19 @@ static ge::graphStatus GetWorkspaceSize(gert::TilingContext* context)
 static ge::graphStatus BesselI0eTilingFunc(gert::TilingContext* context)
 {
     OP_LOGD(context->GetNodeName(), "Begin the tiling process for Arch35 architecture");
-    // 1. 获取平台运行信息
     uint64_t ubSize;
     int64_t coreNum;
     OP_CHECK_IF(GetPlatformInfo(context, &ubSize, &coreNum) != ge::GRAPH_SUCCESS,
                 OP_LOGE(context, "GetPlatformInfo error"), return ge::GRAPH_FAILED);
 
-    // 2. 获取 shape、属性信息
     int64_t totalIdx = 0;
     ge::DataType dataType = ge::DT_FLOAT;
     OP_CHECK_IF(GetShapeAttrsInfo(context, &totalIdx, &dataType) != ge::GRAPH_SUCCESS,
                 OP_LOGE(context, "GetShapeAttrsInfo error"), return ge::GRAPH_FAILED);
 
-    // 3. 设置 workspace = 0
     OP_CHECK_IF(GetWorkspaceSize(context) != ge::GRAPH_SUCCESS, OP_LOGE(context, "GetWorkspaceSize error"),
                 return ge::GRAPH_FAILED);
 
-    // 4. 设置 tiling 信息
     BesselI0eTilingData* tiling = context->GetTilingData<BesselI0eTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(context, tiling);
     OP_CHECK_IF(memset_s(tiling, sizeof(BesselI0eTilingData), 0, sizeof(BesselI0eTilingData)) != EOK,
@@ -129,7 +142,7 @@ static ge::graphStatus BesselI0eTilingFunc(gert::TilingContext* context)
     // 空 Tensor 检查
     if (totalIdx == 0) {
         context->SetBlockDim(1);
-        ASCENDC_TPL_SEL_PARAM(context, static_cast<uint32_t>(dataType));
+        ASCENDC_TPL_SEL_PARAM(context, BESSEL_I0E_TPL_SCH_MODE_0);
         return ge::GRAPH_SUCCESS;
     }
 
@@ -137,6 +150,7 @@ static ge::graphStatus BesselI0eTilingFunc(gert::TilingContext* context)
 
     // 多核切分：将总元素按核数均分，按 UB 块大小对齐
     int64_t ubBlockSize = GetUbBlockSize(context);
+    OP_CHECK_IF(ubBlockSize == 0, OP_LOGE(context, "ubBlockSize is 0"), return ge::GRAPH_FAILED);
     tiling->blockFactor = CeilAlign(CeilDiv(totalIdx, coreNum), ubBlockSize);
     int64_t usedCoreNum = CeilDiv(totalIdx, tiling->blockFactor);
 
@@ -148,10 +162,9 @@ static ge::graphStatus BesselI0eTilingFunc(gert::TilingContext* context)
 
     context->SetBlockDim(usedCoreNum);
 
-    // 5. 设置 TilingKey（根据 dtype 选择模板）
-    // TilingKey 0: float16, TilingKey 1: float32, TilingKey 2: bfloat16
-    uint32_t dTypeX = static_cast<uint32_t>(dataType);
-    ASCENDC_TPL_SEL_PARAM(context, dTypeX);
+    // TilingKey 不编码 dtype：dtype 由构建系统按 def DataType 列表注入 DTYPE_X 宏，
+    // Host 侧 dtype 白名单校验已在上方完成
+    ASCENDC_TPL_SEL_PARAM(context, BESSEL_I0E_TPL_SCH_MODE_0);
     OP_LOGI(context->GetNodeName(), "[TilingData] totalNum=%ld, blockFactor=%ld, ubFactor=%ld", tiling->totalNum,
             tiling->blockFactor, tiling->ubFactor);
     return ge::GRAPH_SUCCESS;

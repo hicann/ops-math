@@ -43,14 +43,14 @@ $$y = e^{-|x|} \cdot I_0(x)$$
       <td>x</td>
       <td>输入</td>
       <td>待进行BesselI0e计算的入参，公式中的x。</td>
-      <td>FLOAT16、FLOAT、BF16</td>
+      <td>FLOAT16、FLOAT、BFLOAT16</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>y</td>
       <td>输出</td>
       <td>待进行BesselI0e计算的出参，公式中的y。</td>
-      <td>FLOAT16、FLOAT、BF16</td>
+      <td>FLOAT16、FLOAT、BFLOAT16</td>
       <td>ND</td>
     </tr>
   </tbody>
@@ -59,7 +59,10 @@ $$y = e^{-|x|} \cdot I_0(x)$$
 ## 约束说明
 
 - 输入与输出的数据类型和形状必须一致。
-- 仅支持图模式调用，不支持aclnn接口。
+- 支持动态shape与动态rank（shape维度可运行时确定，rank支持0~8维）。
+- 支持空Tensor（元素数为0时输出为空Tensor）。
+- 输入与输出仅支持 ND 数据格式（非 ND 格式在 Host 侧 Tiling 显式拒绝）。
+- 仅支持 GE 图模式调用，不提供 aclnn 算子接口。
 
 ## 调用说明
 

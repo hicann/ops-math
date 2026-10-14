@@ -266,7 +266,7 @@ TEST_F(BesselI0eTilingTest, tiling_fp32_tilingkey_verify)
     bool success = ExecuteTiling(tilingContextPara, tilingInfo);
     ASSERT_TRUE(success) << "Tiling should succeed for FP32";
 
-    EXPECT_EQ(tilingInfo.tilingKey, 0ULL) << "FP32 TilingKey should be 0";
+    EXPECT_EQ(tilingInfo.tilingKey, 0ULL) << "FP32 TilingKey should be 0 (dtype not encoded in TilingKey)";
 
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(BesselI0eTilingData));
     auto* tilingData = reinterpret_cast<const BesselI0eTilingData*>(tilingInfo.tilingData.get());
@@ -298,7 +298,7 @@ TEST_F(BesselI0eTilingTest, tiling_fp16_tilingkey_verify)
     bool success = ExecuteTiling(tilingContextPara, tilingInfo);
     ASSERT_TRUE(success) << "Tiling should succeed for FP16";
 
-    EXPECT_EQ(tilingInfo.tilingKey, 1ULL) << "FP16 TilingKey should be 1";
+    EXPECT_EQ(tilingInfo.tilingKey, 0ULL) << "FP16 TilingKey should be 0 (dtype not encoded in TilingKey)";
 
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(BesselI0eTilingData));
     auto* tilingData = reinterpret_cast<const BesselI0eTilingData*>(tilingInfo.tilingData.get());
@@ -330,7 +330,7 @@ TEST_F(BesselI0eTilingTest, tiling_bf16_tilingkey_verify)
     bool success = ExecuteTiling(tilingContextPara, tilingInfo);
     ASSERT_TRUE(success) << "Tiling should succeed for BF16";
 
-    EXPECT_EQ(tilingInfo.tilingKey, 27ULL) << "BF16 TilingKey should be 27";
+    EXPECT_EQ(tilingInfo.tilingKey, 0ULL) << "BF16 TilingKey should be 0 (dtype not encoded in TilingKey)";
 
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(BesselI0eTilingData));
     auto* tilingData = reinterpret_cast<const BesselI0eTilingData*>(tilingInfo.tilingData.get());
@@ -362,7 +362,7 @@ TEST_F(BesselI0eTilingTest, tiling_fp16_multidim)
     bool success = ExecuteTiling(tilingContextPara, tilingInfo);
     ASSERT_TRUE(success) << "Tiling should succeed for FP16 multi-dim";
 
-    EXPECT_EQ(tilingInfo.tilingKey, 1ULL);
+    EXPECT_EQ(tilingInfo.tilingKey, 0ULL);
 
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(BesselI0eTilingData));
     auto* tilingData = reinterpret_cast<const BesselI0eTilingData*>(tilingInfo.tilingData.get());
@@ -391,7 +391,7 @@ TEST_F(BesselI0eTilingTest, tiling_bf16_multidim)
     bool success = ExecuteTiling(tilingContextPara, tilingInfo);
     ASSERT_TRUE(success) << "Tiling should succeed for BF16 multi-dim";
 
-    EXPECT_EQ(tilingInfo.tilingKey, 27ULL);
+    EXPECT_EQ(tilingInfo.tilingKey, 0ULL);
 
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(BesselI0eTilingData));
     auto* tilingData = reinterpret_cast<const BesselI0eTilingData*>(tilingInfo.tilingData.get());
@@ -420,7 +420,7 @@ TEST_F(BesselI0eTilingTest, tiling_fp16_empty_tensor)
     bool success = ExecuteTiling(tilingContextPara, tilingInfo);
     ASSERT_TRUE(success) << "Tiling should succeed for FP16 empty tensor";
 
-    EXPECT_EQ(tilingInfo.tilingKey, 1ULL);
+    EXPECT_EQ(tilingInfo.tilingKey, 0ULL);
 
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(BesselI0eTilingData));
     auto* tilingData = reinterpret_cast<const BesselI0eTilingData*>(tilingInfo.tilingData.get());
@@ -449,7 +449,7 @@ TEST_F(BesselI0eTilingTest, tiling_bf16_empty_tensor)
     bool success = ExecuteTiling(tilingContextPara, tilingInfo);
     ASSERT_TRUE(success) << "Tiling should succeed for BF16 empty tensor";
 
-    EXPECT_EQ(tilingInfo.tilingKey, 27ULL);
+    EXPECT_EQ(tilingInfo.tilingKey, 0ULL);
 
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(BesselI0eTilingData));
     auto* tilingData = reinterpret_cast<const BesselI0eTilingData*>(tilingInfo.tilingData.get());
@@ -478,7 +478,7 @@ TEST_F(BesselI0eTilingTest, tiling_fp16_scalar)
     bool success = ExecuteTiling(tilingContextPara, tilingInfo);
     ASSERT_TRUE(success) << "Tiling should succeed for FP16 scalar";
 
-    EXPECT_EQ(tilingInfo.tilingKey, 1ULL);
+    EXPECT_EQ(tilingInfo.tilingKey, 0ULL);
 
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(BesselI0eTilingData));
     auto* tilingData = reinterpret_cast<const BesselI0eTilingData*>(tilingInfo.tilingData.get());
@@ -506,7 +506,7 @@ TEST_F(BesselI0eTilingTest, tiling_bf16_scalar)
     bool success = ExecuteTiling(tilingContextPara, tilingInfo);
     ASSERT_TRUE(success) << "Tiling should succeed for BF16 scalar";
 
-    EXPECT_EQ(tilingInfo.tilingKey, 27ULL);
+    EXPECT_EQ(tilingInfo.tilingKey, 0ULL);
 
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(BesselI0eTilingData));
     auto* tilingData = reinterpret_cast<const BesselI0eTilingData*>(tilingInfo.tilingData.get());
@@ -534,7 +534,7 @@ TEST_F(BesselI0eTilingTest, tiling_fp16_large)
     bool success = ExecuteTiling(tilingContextPara, tilingInfo);
     ASSERT_TRUE(success) << "Tiling should succeed for FP16 large input";
 
-    EXPECT_EQ(tilingInfo.tilingKey, 1ULL);
+    EXPECT_EQ(tilingInfo.tilingKey, 0ULL);
 
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(BesselI0eTilingData));
     auto* tilingData = reinterpret_cast<const BesselI0eTilingData*>(tilingInfo.tilingData.get());
@@ -567,7 +567,7 @@ TEST_F(BesselI0eTilingTest, tiling_bf16_large)
     bool success = ExecuteTiling(tilingContextPara, tilingInfo);
     ASSERT_TRUE(success) << "Tiling should succeed for BF16 large input";
 
-    EXPECT_EQ(tilingInfo.tilingKey, 27ULL);
+    EXPECT_EQ(tilingInfo.tilingKey, 0ULL);
 
     ASSERT_GE(tilingInfo.tilingDataSize, sizeof(BesselI0eTilingData));
     auto* tilingData = reinterpret_cast<const BesselI0eTilingData*>(tilingInfo.tilingData.get());
@@ -641,9 +641,9 @@ TEST_F(BesselI0eTilingTest, tiling_all_dtypes_consistency)
     EXPECT_EQ(fp32Data->blockFactor, fp16Data->blockFactor);
     EXPECT_EQ(fp16Data->blockFactor, bf16Data->blockFactor);
 
-    EXPECT_NE(fp32Info.tilingKey, fp16Info.tilingKey) << "FP32 and FP16 should have different TilingKeys";
-    EXPECT_NE(fp32Info.tilingKey, bf16Info.tilingKey) << "FP32 and BF16 should have different TilingKeys";
-    EXPECT_NE(fp16Info.tilingKey, bf16Info.tilingKey) << "FP16 and BF16 should have different TilingKeys";
+    EXPECT_EQ(fp32Info.tilingKey, 0ULL) << "TilingKey should be schMode 0 for all dtypes (dtype not encoded)";
+    EXPECT_EQ(fp16Info.tilingKey, 0ULL) << "TilingKey should be schMode 0 for all dtypes (dtype not encoded)";
+    EXPECT_EQ(bf16Info.tilingKey, 0ULL) << "TilingKey should be schMode 0 for all dtypes (dtype not encoded)";
 }
 
 TEST_F(BesselI0eTilingTest, tiling_unsupported_int32)
@@ -678,6 +678,24 @@ TEST_F(BesselI0eTilingTest, tiling_unsupported_int64)
     TilingInfo tilingInfo;
     bool success = ExecuteTiling(tilingContextPara, tilingInfo);
     EXPECT_FALSE(success) << "Tiling should fail for unsupported dtype DT_INT64";
+}
+
+TEST_F(BesselI0eTilingTest, tiling_unsupported_format)
+{
+    for (const ge::Format format : {ge::FORMAT_FRACTAL_Z, ge::FORMAT_NC1HWC0, ge::FORMAT_NCHW, ge::FORMAT_NHWC}) {
+        BesselI0eCompileInfo compileInfo;
+        gert::TilingContextPara tilingContextPara(OP_NAME,
+                                                  {
+                                                      {{{1024}, {1024}}, ge::DT_FLOAT, format},
+                                                  },
+                                                  {
+                                                      {{{1024}, {1024}}, ge::DT_FLOAT, format},
+                                                  },
+                                                  &compileInfo, 64, 262144, 4096);
+        TilingInfo tilingInfo;
+        bool success = ExecuteTiling(tilingContextPara, tilingInfo);
+        EXPECT_FALSE(success) << "Tiling should fail for unsupported format " << static_cast<int32_t>(format);
+    }
 }
 
 } // namespace BesselI0eUT
