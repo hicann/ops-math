@@ -2,7 +2,6 @@
 
 <!-- codespell:ignore outWeight -->
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/weight_quant_preprocess)
 
 ## 产品支持情况
 

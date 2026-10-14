@@ -1,6 +1,5 @@
 # aclnnTransformBiasRescaleQkv
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/transform_bias_rescale_qkv)
 
 ## 产品支持情况
 

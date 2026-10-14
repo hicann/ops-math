@@ -1,6 +1,5 @@
 # aclnnTriu&aclnnInplaceTriu
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/triu)
 
 ## 产品支持情况
 

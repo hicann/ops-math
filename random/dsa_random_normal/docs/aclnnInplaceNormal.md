@@ -1,6 +1,5 @@
 # aclnnInplaceNormal
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/random/dsa_random_normal)
 
 ## 产品支持情况
 

@@ -1,6 +1,5 @@
 # aclnnAddrV2&aclnnInplaceAddrV2
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/experimental/math/addr_v2)
 
 ## 产品支持情况
 

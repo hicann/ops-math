@@ -1,6 +1,5 @@
 # aclnnMaskedSelect
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/masked_select_v3)
 
 ## 产品支持情况
 

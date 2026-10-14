@@ -1,6 +1,5 @@
 # aclnnReplicationPad1d
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/pad_v3)
 
 ## 产品支持情况
 

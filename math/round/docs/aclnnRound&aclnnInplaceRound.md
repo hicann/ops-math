@@ -1,6 +1,5 @@
 # aclnnRound&aclnnInplaceRound
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/round)
 
 ## 产品支持情况
 

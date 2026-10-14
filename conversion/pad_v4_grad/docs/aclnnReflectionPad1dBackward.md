@@ -1,6 +1,5 @@
 # aclnnReflectionPad1dBackward
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/pad_v4_grad)
 
 ## 产品支持情况
 

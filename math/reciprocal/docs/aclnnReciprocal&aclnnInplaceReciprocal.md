@@ -1,6 +1,5 @@
 # aclnnReciprocal&aclnnInplaceReciprocal
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/reciprocal)
 
 ## 产品支持情况
 

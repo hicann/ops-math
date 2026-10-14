@@ -1,6 +1,5 @@
 # aclnnAddLora
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/add_lora)
 
 ## 产品支持情况
 

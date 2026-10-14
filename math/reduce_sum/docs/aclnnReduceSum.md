@@ -1,6 +1,5 @@
 # aclnnReduceSum
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/reduce_sum)
 
 ## 产品支持情况
 

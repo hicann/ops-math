@@ -1,6 +1,5 @@
 # aclnnStridedSlice
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/strided_slice)
 
 ## 产品支持情况
 

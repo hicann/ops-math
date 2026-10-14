@@ -1,6 +1,5 @@
 # aclnnCdist
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/cdist)
 
 ## 产品支持情况
 

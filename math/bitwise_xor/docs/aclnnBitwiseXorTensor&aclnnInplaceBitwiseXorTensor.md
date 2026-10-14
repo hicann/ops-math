@@ -1,6 +1,5 @@
 # aclnnBitwiseXorTensor&aclnnInplaceBitwiseXorTensor
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/bitwise_xor)
 
 ## 产品支持情况
 

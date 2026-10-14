@@ -1,6 +1,5 @@
 # aclnnCircularPad3dBackward
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/circular_pad_grad)
 
 ## 产品支持情况
 

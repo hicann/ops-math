@@ -1,6 +1,5 @@
 # aclnnMaxDim
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/arg_max_with_value)
 
 ## 产品支持情况
 

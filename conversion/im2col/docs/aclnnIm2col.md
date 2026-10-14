@@ -1,6 +1,5 @@
 # aclnnIm2col
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/conversion/im2col)
 
 ## 产品支持情况
 

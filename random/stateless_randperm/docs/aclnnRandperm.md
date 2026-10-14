@@ -1,6 +1,5 @@
 # aclnnRandperm
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/random/stateless_randperm)
 
 ## 产品支持情况
 

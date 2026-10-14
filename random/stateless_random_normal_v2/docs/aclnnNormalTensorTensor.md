@@ -1,6 +1,5 @@
 # aclnnNormalTensorTensor
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/random/stateless_random_normal_v2)
 
 ## 产品支持情况
 

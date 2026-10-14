@@ -1,6 +1,5 @@
 # aclnnOneHot
 
-[📄 查看源码](https://gitcode.com/cann/ops-math/tree/master/math/one_hot)
 
 ## 产品支持情况
 
