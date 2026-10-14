@@ -13,7 +13,7 @@
 
 ## 功能说明
 
-- 算子功能：计算Fresnel余弦积分 C(x) = integral_0^x cos(pi*t^2/2) dt。
+- 算子功能：计算Fresnel余弦积分C(x) = integral_0^x cos(pi*t^2/2) dt。
 
 - 计算公式：
 
@@ -55,7 +55,11 @@ $$C(x) = \int_{0}^{x} \cos\left(\frac{\pi}{2} t^{2}\right) \mathrm{d}t$$
 
 ## 约束说明
 
-- 不支持DOUBLE（FP64）数据类型。
+- 仅支持 BFLOAT16、FLOAT16、FLOAT 三种数据类型。
+- x的维度数（rank）范围为0~8，支持0维标量输入。
+- 支持空Tensor（0元素）输入：Host侧Tiling短路直接返回，输出为同shape空Tensor（自动处理）。
+- 支持非连续Tensor输入（Host侧自动处理）。
+- 动态shape支持情况：支持动态shape与动态rank（-1未知维度 / -2未知rank）。
 
 ## 调用说明
 

@@ -222,7 +222,7 @@ TEST_F(FresnelCosTilingTest, tiling_data_bf16_4d)
 }
 
 // =============================================================================
-// Workspace test: workspace = sizeof(FresnelCosTilingData) + sinTmpSize
+// Workspace test: workspace = sizeof(FresnelCosTilingData)
 // =============================================================================
 TEST_F(FresnelCosTilingTest, workspace_size)
 {
@@ -306,6 +306,35 @@ TEST_F(FresnelCosTilingTest, invalid_dtype_int32)
 }
 
 // =============================================================================
+// Invalid format: non-ND should fail
+// =============================================================================
+TEST_F(FresnelCosTilingTest, invalid_format_nchw)
+{
+    FresnelCosTestParam p = {"invalid_fmt_nchw",
+                             {128},
+                             ge::DT_FLOAT,
+                             ge::FORMAT_NCHW,
+                             {128},
+                             ge::DT_FLOAT,
+                             ge::FORMAT_NCHW,
+                             ge::GRAPH_FAILED,
+                             0,
+                             {},
+                             64,
+                             262144,
+                             4096};
+    gert::StorageShape xShape = {p.xShape, p.xShape};
+    gert::StorageShape yShape = {p.yShape, p.yShape};
+    std::vector<gert::TilingContextPara::TensorDescription> inputDesc({{xShape, p.xDtype, p.xFormat}});
+    std::vector<gert::TilingContextPara::TensorDescription> outputDesc({{yShape, p.yDtype, p.yFormat}});
+    gert::TilingContextPara tilingPara(OP_NAME, inputDesc, outputDesc, &compileInfo, p.maxAIVNum, p.ubSize,
+                                       p.tilingDataMaxSize);
+    TilingInfo info;
+    bool ok = ExecuteTiling(tilingPara, info);
+    EXPECT_FALSE(ok);
+}
+
+// =============================================================================
 // Large shape: 8*16*32*64 = 262144 elements
 // =============================================================================
 TEST_F(FresnelCosTilingTest, large_shape_fp32)
@@ -347,77 +376,6 @@ TEST_F(FresnelCosTilingTest, tiling_consistency)
     EXPECT_GE(td->blockFormer * td->blockNum, td->dim0);
     // ubFormer should be positive
     EXPECT_GT(td->ubFormer, 0);
-    // ubLoopOfFormerBlock should be positive
-    EXPECT_GT(td->ubLoopOfFormerBlock, 0);
-    // ubTailOfFormerBlock should be positive and <= ubFormer
-    EXPECT_GT(td->ubTailOfFormerBlock, 0);
-    EXPECT_LE(td->ubTailOfFormerBlock, td->ubFormer);
-}
-
-// =============================================================================
-// UB loop/tail consistency for various shapes
-// =============================================================================
-TEST_F(FresnelCosTilingTest, ub_loop_tail_consistency_fp32)
-{
-    FresnelCosTestParam p = {"ub_loop_fp32",
-                             {5000},
-                             ge::DT_FLOAT,
-                             ge::FORMAT_ND,
-                             {5000},
-                             ge::DT_FLOAT,
-                             ge::FORMAT_ND,
-                             ge::GRAPH_SUCCESS,
-                             0,
-                             {0},
-                             64,
-                             262144,
-                             4096};
-    TilingInfo info;
-    ASSERT_TRUE(RunTiling(p, info));
-    ASSERT_GE(info.tilingDataSize, sizeof(FresnelCosTilingData));
-    const FresnelCosTilingData* td = reinterpret_cast<const FresnelCosTilingData*>(info.tilingData.get());
-    // For former block: (ubLoop-1)*ubFormer + ubTail == blockFormer
-    int64_t formerCovered = (td->ubLoopOfFormerBlock - 1) * td->ubFormer + td->ubTailOfFormerBlock;
-    EXPECT_EQ(formerCovered, td->blockFormer);
-}
-
-TEST_F(FresnelCosTilingTest, ub_loop_tail_consistency_fp16)
-{
-    FresnelCosTestParam p = {"ub_loop_fp16",
-                             {3000},
-                             ge::DT_FLOAT16,
-                             ge::FORMAT_ND,
-                             {3000},
-                             ge::DT_FLOAT16,
-                             ge::FORMAT_ND,
-                             ge::GRAPH_SUCCESS,
-                             0,
-                             {0},
-                             64,
-                             262144,
-                             4096};
-    TilingInfo info;
-    ASSERT_TRUE(RunTiling(p, info));
-    ASSERT_GE(info.tilingDataSize, sizeof(FresnelCosTilingData));
-    const FresnelCosTilingData* td = reinterpret_cast<const FresnelCosTilingData*>(info.tilingData.get());
-    int64_t formerCovered = (td->ubLoopOfFormerBlock - 1) * td->ubFormer + td->ubTailOfFormerBlock;
-    EXPECT_EQ(formerCovered, td->blockFormer);
-}
-
-// =============================================================================
-// Sin/Cos tmp size: should be 0 (using 3-param Sin/Cos, no tmp needed)
-// =============================================================================
-TEST_F(FresnelCosTilingTest, sin_cos_tmp_size_zero)
-{
-    FresnelCosTestParam p = {
-        "sc_tmp", {2048}, ge::DT_FLOAT, ge::FORMAT_ND, {2048}, ge::DT_FLOAT, ge::FORMAT_ND, ge::GRAPH_SUCCESS,
-        0,        {0},    64,           262144,        4096};
-    TilingInfo info;
-    ASSERT_TRUE(RunTiling(p, info));
-    ASSERT_GE(info.tilingDataSize, sizeof(FresnelCosTilingData));
-    const FresnelCosTilingData* td = reinterpret_cast<const FresnelCosTilingData*>(info.tilingData.get());
-    // sinTmpSize should be 0 (3-param Sin/Cos doesn't need temporary space)
-    EXPECT_EQ(td->sinTmpSize, 0u);
 }
 
 // =============================================================================

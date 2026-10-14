@@ -22,7 +22,7 @@ namespace NsFresnelCos {
 
 using namespace AscendC;
 
-// ====== Cephes Fresnel Cos Coefficients ======
+// Cephes Fresnel Cos Coefficients.
 // Source: Cephes fresnl.c / TensorFlow special_math_op_misc_impl.h
 // All arrays in Horner (descending degree) order: [0] = highest degree
 
@@ -117,8 +117,10 @@ private:
     TQue<QuePosition::VECOUT, 1> qOut;
     TQue<QuePosition::VECCALC, 1> calcQ[NUM_CALC_BUFFERS];
     TQue<QuePosition::VECCALC, 1> maskQ;
-    GlobalTensor<T> xGM, yGM;
-    int64_t blkLen_ = 0, ubLen_ = 0;
+    GlobalTensor<T> xGM;
+    GlobalTensor<T> yGM;
+    int64_t blkLen_ = 0;
+    int64_t ubLen_ = 0;
 };
 
 template <typename T>
@@ -141,6 +143,10 @@ __aicore__ inline void FresnelCosKernel<T>::Init(GM_ADDR x, GM_ADDR y, GM_ADDR w
 template <typename T>
 __aicore__ inline void FresnelCosKernel<T>::Process()
 {
+    // Empty tensor short-circuit: blkLen_<=0 (or ubLen_<=0) means no work on this core
+    if (blkLen_ <= 0 || ubLen_ <= 0) {
+        return;
+    }
     // CompareScalar requires 256-byte alignment: float32->64 elems, float16/bf16->128 elems
     constexpr int64_t CMP_ALIGN = (sizeof(T) == 4) ? CMP_ALIGN_FP32 : CMP_ALIGN_FP16;
     int64_t loops = (blkLen_ + ubLen_ - 1) / ubLen_;
@@ -149,8 +155,9 @@ __aicore__ inline void FresnelCosKernel<T>::Process()
         // Round up to CompareScalar alignment for compute APIs
         int64_t computeN = ((n + CMP_ALIGN - 1) / CMP_ALIGN) * CMP_ALIGN;
         // computeN must not exceed ubLen_ (which is already aligned to CMP_ALIGN by tiling)
-        if (computeN > ubLen_)
+        if (computeN > ubLen_) {
             computeN = ubLen_;
+        }
 
         auto xL = qIn.AllocTensor<T>();
         // Use DataCopyPad for non-aligned sizes (padding with 0)
@@ -303,6 +310,10 @@ __aicore__ inline void FresnelCosKernel<T>::HandleSpecialAndOutput(
     LocalTensor<float> b4, LocalTensor<float> b5, LocalTensor<uint8_t> mask, LocalTensor<uint8_t> maskPInf,
     LocalTensor<uint8_t> maskInf, LocalTensor<uint8_t> maskSign, uint32_t cN)
 {
+    // Explicit interval-3 truncation: |x| > 36974.0 -> +/- 0.5 (asymptotic limit)
+    CompareScalar(mask, b1, ASYM_THRESH, CMPMODE::LE, cN);
+    Duplicate(b4, HALF_VAL, cN);
+    Select(b3, mask, b3, b4, SELMODE::VSEL_TENSOR_TENSOR_MODE, cN);
     Duplicate(b4, NEG_ONE_VAL, cN);
     Mul(b4, b3, b4, cN);
     Select(b3, maskSign, b4, b3, SELMODE::VSEL_TENSOR_TENSOR_MODE, cN);
@@ -322,7 +333,7 @@ __aicore__ inline void FresnelCosKernel<T>::HandleSpecialAndOutput(
     if constexpr (std::is_same_v<T, float>) {
         DataCopy(yL, b3, cN);
     } else {
-        Cast(yL, b3, RoundMode::CAST_ROUND, cN);
+        Cast(yL, b3, RoundMode::CAST_RINT, cN);
     }
 }
 

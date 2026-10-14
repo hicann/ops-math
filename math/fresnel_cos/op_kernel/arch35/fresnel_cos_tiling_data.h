@@ -14,7 +14,8 @@
  * \file fresnel_cos_tiling_data.h
  * \brief FresnelCos TilingData 结构体定义（arch35 / DAV_3510 / RegBase）
  *
- * 基于 EleWise Tiling 模板，扩展 Sin/Cos 临时空间字段。
+ * 多核切分 + UB 切分字段。UB 循环次数/尾部大小由 Kernel 侧按 blkLen/ubLen
+ * 自行计算；Sin/Cos 为 3 参形式（无 sharedTmpBuffer），无需临时空间字段。
  */
 
 #ifndef _FRESNEL_COS_TILING_DATA_H_
@@ -23,22 +24,11 @@
 #include <cstdint>
 
 struct FresnelCosTilingData {
-    // === 多核切分字段 ===
     int64_t dim0 = 0;        // 元素总数量（所有维度乘积）
     int32_t coreNum = 0;     // 实际使用的核数
     int64_t blockFormer = 0; // 每个核的基础元素数（512 元素对齐）
     int64_t blockNum = 0;    // 虚拟 block 数量
-
-    // === UB 切分字段 ===
-    int64_t ubFormer = 0;            // UB 块基础大小（256B 对齐）
-    int64_t ubLoopOfFormerBlock = 0; // 首 block UB 循环次数
-    int64_t ubTailOfFormerBlock = 0; // 首 block 尾部大小（元素数）
-    int64_t ubLoopOfTailBlock = 0;   // 尾 block UB 循环次数
-    int64_t ubTailOfTailBlock = 0;   // 尾 block 尾部大小（元素数）
-
-    // === Sin/Cos 临时空间 ===
-    uint32_t sinTmpSize = 0; // Sin 独立临时空间大小（bytes）
-    uint32_t cosTmpSize = 0; // Cos 独立临时空间大小（bytes）
+    int64_t ubFormer = 0;    // UB 块基础大小（256B 对齐）
 };
 
 #endif

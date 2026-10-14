@@ -15,9 +15,9 @@
  * \brief FresnelCos 算子 Host 侧 Tiling 计算（arch35 / DAV_3510）
  */
 
+#include <graph/utils/type_utils.h>
 #include "register/op_def_registry.h"
 #include "op_common/log/log.h"
-#include "op_common/op_host/util/math_util.h"
 #include "op_common/op_host/util/platform_util.h"
 #include "../../op_kernel/arch35/fresnel_cos_tiling_data.h"
 
@@ -43,10 +43,6 @@
 #endif
 
 namespace optiling {
-
-using Ops::Base::CeilDiv;
-using Ops::Base::FloorAlign;
-using Ops::Base::FloorDiv;
 
 constexpr int64_t MIN_TILING_BITS = 32768; // 4KB in bits
 constexpr int64_t ELEM_ALIGN = 512;        // multi-core element alignment
@@ -118,6 +114,12 @@ static ge::graphStatus GetShapeDtypeInfo(gert::TilingContext* ctx, int64_t* tota
         OP_LOGE_WITH_INVALID_INPUT_DTYPE(ctx->GetNodeName(), "x", "unsupported", "DT_FLOAT, DT_FLOAT16, DT_BF16"),
         return ge::GRAPH_FAILED);
 
+    auto inFormat = inDesc->GetFormat().GetStorageFormat();
+    OP_CHECK_IF(inFormat != ge::FORMAT_ND,
+                OP_LOGE_FOR_INVALID_FORMAT(ctx->GetNodeName(), "x",
+                                           ge::TypeUtils::FormatToSerialString(inFormat).c_str(), "ND"),
+                return ge::GRAPH_FAILED);
+
     return ge::GRAPH_SUCCESS;
 }
 
@@ -135,8 +137,9 @@ static void ComputeMultiCoreSplit(int64_t total, int64_t coreNum, int64_t elemBy
     int32_t availCoreNum = static_cast<int32_t>(coreNum);
     int32_t calcCoreNum = static_cast<int32_t>((total * minDtypeBits + MIN_TILING_BITS - 1) / MIN_TILING_BITS);
     td->coreNum = (calcCoreNum < availCoreNum) ? calcCoreNum : availCoreNum;
-    if (td->coreNum < MIN_CORE_NUM)
+    if (td->coreNum < MIN_CORE_NUM) {
         td->coreNum = MIN_CORE_NUM;
+    }
 
     td->blockFormer = ((total + td->coreNum - 1) / td->coreNum + ELEM_ALIGN - 1) / ELEM_ALIGN * ELEM_ALIGN;
     td->blockNum = (total + td->blockFormer - 1) / td->blockFormer;
@@ -163,40 +166,22 @@ static void ComputeUBSplit(uint64_t ubSize, int64_t elemBytes, FresnelCosTilingD
     }
 }
 
-static void ComputeLoopTail(int64_t total, FresnelCosTilingData* td)
-{
-    td->ubLoopOfFormerBlock = (td->blockFormer + td->ubFormer - 1) / td->ubFormer;
-    td->ubTailOfFormerBlock = td->blockFormer - (td->ubLoopOfFormerBlock - 1) * td->ubFormer;
-
-    int64_t blockTail = total - (td->blockNum - 1) * td->blockFormer;
-    td->ubLoopOfTailBlock = (blockTail + td->ubFormer - 1) / td->ubFormer;
-    td->ubTailOfTailBlock = blockTail - (td->ubLoopOfTailBlock - 1) * td->ubFormer;
-
-    // sinTmpSize/cosTmpSize no longer needed (3-param Sin/Cos)
-    td->sinTmpSize = 0;
-    td->cosTmpSize = 0;
-}
-
 static ge::graphStatus FresnelCosTilingFunc(gert::TilingContext* ctx)
 {
     OP_LOGD(ctx, "Begin the tiling process for Arch35 architecture");
-    // 1. platform info
     uint64_t ubSize;
     int64_t coreNum;
     OP_CHECK_IF(GetPlatformInfo(ctx, &ubSize, &coreNum) != ge::GRAPH_SUCCESS, OP_LOGE(ctx, "GetPlatformInfo error"),
                 return ge::GRAPH_FAILED);
 
-    // 2. shape / dtype
     int64_t total;
     ge::DataType dt;
     OP_CHECK_IF(GetShapeDtypeInfo(ctx, &total, &dt) != ge::GRAPH_SUCCESS, OP_LOGE(ctx, "GetShapeDtypeInfo error"),
                 return ge::GRAPH_FAILED);
 
-    // 3. workspace slot
     OP_CHECK_IF(GetWorkspaceSizes(ctx) != ge::GRAPH_SUCCESS, OP_LOGE(ctx, "GetWorkspaceSizes error"),
                 return ge::GRAPH_FAILED);
 
-    // 4. init tiling
     auto* td = ctx->GetTilingData<FresnelCosTilingData>();
     OP_CHECK_NULL_WITH_CONTEXT(ctx, td);
     OP_CHECK_IF(memset_s(td, sizeof(FresnelCosTilingData), 0, sizeof(FresnelCosTilingData)) != EOK,
@@ -213,18 +198,13 @@ static ge::graphStatus FresnelCosTilingFunc(gert::TilingContext* ctx)
     td->dim0 = total;
     int64_t elemBytes = GetElemBytes(dt);
 
-    // 5. multi-core split
     ComputeMultiCoreSplit(total, coreNum, elemBytes, td);
 
-    // 6. UB split
     ComputeUBSplit(ubSize, elemBytes, td);
 
-    // 7. loop / tail
-    ComputeLoopTail(total, td);
     OP_LOGI(ctx, "[TilingData] dim0: %ld, coreNum: %d, blockFormer: %ld, blockNum: %ld, ubFormer: %ld", td->dim0,
             td->coreNum, td->blockFormer, td->blockNum, td->ubFormer);
 
-    // 8. set block dim
     ctx->SetBlockDim(td->blockNum);
 
     return ge::GRAPH_SUCCESS;

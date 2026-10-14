@@ -11,7 +11,7 @@
  */
 
 /*!
- * \file fresnel_cos_apt.cpp
+ * \file fresnel_cos.cpp
  * \brief FresnelCos 算子 kernel 入口（arch35 架构，DAV_3510）
  *
  * def 驱动 dtype 模式：无模板参数，dtype 由 DTYPE_X 宏自动注入。
