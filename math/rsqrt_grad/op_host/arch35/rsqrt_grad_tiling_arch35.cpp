@@ -32,7 +32,7 @@ using namespace RsqrtGradOp;
 namespace optiling {
 using namespace Ops::Base;
 
-const int64_t ASCEND_WORKSPACE = static_cast<int64_t>(16) * 1024 * 1024;
+const int64_t ASCEND_WORKSPACE = 0;
 
 class RsqrtGradTiling {
 public:

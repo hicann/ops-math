@@ -23,7 +23,7 @@
 
 namespace optiling {
 using namespace Ops::Base;
-const int64_t ASCEND_WORKSPACE = 16 * 1024 * 1024;
+const int64_t ASCEND_WORKSPACE = 0;
 
 ge::graphStatus TruncTiling::SetTilingData()
 {

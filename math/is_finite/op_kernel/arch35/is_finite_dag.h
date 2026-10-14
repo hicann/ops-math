@@ -28,8 +28,8 @@ using namespace Ops::Base;
 constexpr uint64_t TILING_KEY_FP16 = 101UL;
 constexpr uint64_t TILING_KEY_BF16 = 102UL;
 constexpr uint64_t TILING_KEY_FP32 = 103UL;
-constexpr int64_t ASCEND_API_BUFFER = 122880;  // 120K
-constexpr int64_t ASCEND_WORKSPACE = 16777216; // 16M
+constexpr int64_t ASCEND_API_BUFFER = 122880; // 120K
+constexpr int64_t ASCEND_WORKSPACE = 0;
 constexpr int32_t CAST_MODE_NONE = 0;
 constexpr int32_t CMP_MODE_LT = 0;
 constexpr int32_t SEL_MODE_TS = 1; // tensor scalar mode

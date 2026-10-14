@@ -24,15 +24,9 @@ using namespace std;
 
 class AssignSubTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "AssignSubTilingTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "AssignSubTilingTest SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "AssignSubTilingTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "AssignSubTilingTest TearDown" << std::endl; }
 };
 
 TEST_F(AssignSubTilingTest, test_assign_sub_tiling_exception_dtype_001)
@@ -49,7 +43,7 @@ TEST_F(AssignSubTilingTest, test_assign_sub_tiling_exception_dtype_001)
         },
         {gert::TilingContextPara::OpAttr("use_locking", Ops::Math::AnyValue::CreateFrom<bool>(false))}, &compileInfo);
     uint64_t expectTilingKey = 105;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -67,7 +61,7 @@ TEST_F(AssignSubTilingTest, test_assign_sub_tiling_exception_dtype_0002)
         },
         {gert::TilingContextPara::OpAttr("use_locking", Ops::Math::AnyValue::CreateFrom<bool>(false))}, &compileInfo);
     uint64_t expectTilingKey = 104;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -85,7 +79,7 @@ TEST_F(AssignSubTilingTest, test_assign_sub_tiling_exception_dtype_0003)
         },
         {gert::TilingContextPara::OpAttr("use_locking", Ops::Math::AnyValue::CreateFrom<bool>(false))}, &compileInfo);
     uint64_t expectTilingKey = 2660;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
 }
 
@@ -103,6 +97,6 @@ TEST_F(AssignSubTilingTest, test_assign_sub_tiling_exception_dtype_0004)
         },
         {gert::TilingContextPara::OpAttr("use_locking", Ops::Math::AnyValue::CreateFrom<bool>(false))}, &compileInfo);
     uint64_t expectTilingKey = 2660;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
 }

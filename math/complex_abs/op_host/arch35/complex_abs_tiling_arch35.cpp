@@ -27,7 +27,7 @@ using namespace ComplexAbsNs;
 
 namespace optiling {
 constexpr uint64_t COMPLEX_ABS_TILING_KEY_ELEMENTWISE_COMPLEX = 101;
-constexpr uint64_t COMPLEX_ABS_WORKSPACE_RESERVE_BYTE = 8 * 1024;
+constexpr uint64_t COMPLEX_ABS_WORKSPACE_RESERVE_BYTE = 0;
 
 ge::graphStatus ComplexAbsTiling::SetTilingData()
 {

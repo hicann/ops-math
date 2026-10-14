@@ -22,92 +22,84 @@
 using namespace AscendC;
 using namespace MaskedScaleOp;
 extern "C" __global__ __aicore__ void masked_scale(GM_ADDR x, GM_ADDR mask, GM_ADDR y, GM_ADDR workspace,
-                                                   GM_ADDR tiling) {
-  if (workspace == nullptr) {
-      return;
-  }
-
-  SetSysWorkspace(workspace);
-  GM_ADDR userWS = GetUserWorkspace(workspace);
-  if (userWS == nullptr) {
-      return;
-  }
-  KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
-  REGISTER_TILING_DEFAULT(MaskedScaleNs::MaskedScaleTilingData);
-  GET_TILING_DATA_WITH_STRUCT(MaskedScaleNs::MaskedScaleTilingData, tilingData, tiling);
-  TPipe pipe;
-  if (TILING_KEY_IS(11UL)) {
-      ElementwiseSch<0UL, MaskedScaleMaskCastTwo<half, uint8_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
-      sch.SetVar<float, 0>(tilingData.scale);
-      sch.Init(x, mask, y);
-      sch.Process();
-      return;
-  } else if (TILING_KEY_IS(12UL)) {
-      ElementwiseSch<0UL, MaskedScaleMaskCastTwo<bfloat16_t, uint8_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
-      sch.SetVar<float, 0>(tilingData.scale);
-      sch.Init(x, mask, y);
-      sch.Process();
-      return;
-  } else if (TILING_KEY_IS(13UL)) {
-      ElementwiseSch<0UL, MaskedScaleMaskCastTwo<float, uint8_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
-      sch.SetVar<float, 0>(tilingData.scale);
-      sch.Init(x, mask, y);
-      sch.Process();
-      return;
-  } else if (TILING_KEY_IS(21UL)) {
-      ElementwiseSch<0UL, MaskedScaleMaskCastTwo<half, int8_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
-      sch.SetVar<float, 0>(tilingData.scale);
-      sch.Init(x, mask, y);
-      sch.Process();
-      return;
-  } else if (TILING_KEY_IS(22UL)) {
-      ElementwiseSch<0UL, MaskedScaleMaskCastTwo<bfloat16_t, int8_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
-      sch.SetVar<float, 0>(tilingData.scale);
-      sch.Init(x, mask, y);
-      sch.Process();
-      return;
-  } else if (TILING_KEY_IS(23UL)) {
-      ElementwiseSch<0UL, MaskedScaleMaskCastTwo<float, int8_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
-      sch.SetVar<float, 0>(tilingData.scale);
-      sch.Init(x, mask, y);
-      sch.Process();
-      return;
-  } else if (TILING_KEY_IS(31UL)) {
-      ElementwiseSch<0UL, MaskedScaleMaskCastOne<half, half>::OpDag> sch(&(tilingData.baseTiling), &pipe);
-      sch.SetVar<float, 0>(tilingData.scale);
-      sch.Init(x, mask, y);
-      sch.Process();
-      return;
-  } else if (TILING_KEY_IS(32UL)) {
-      ElementwiseSch<0UL, MaskedScaleMaskCastOne<bfloat16_t, half>::OpDag> sch(&(tilingData.baseTiling), &pipe);
-      sch.SetVar<float, 0>(tilingData.scale);
-      sch.Init(x, mask, y);
-      sch.Process();
-      return;
-  } else if (TILING_KEY_IS(33UL)) {
-      ElementwiseSch<0UL, MaskedScaleMaskCastOne<float, half>::OpDag> sch(&(tilingData.baseTiling), &pipe);
-      sch.SetVar<float, 0>(tilingData.scale);
-      sch.Init(x, mask, y);
-      sch.Process();
-      return;
-  } else if (TILING_KEY_IS(41UL)) {
-      ElementwiseSch<0UL, MaskedScaleMaskCastOne<half, float>::OpDag> sch(&(tilingData.baseTiling), &pipe);
-      sch.SetVar<float, 0>(tilingData.scale);
-      sch.Init(x, mask, y);
-      sch.Process();
-      return;
-  } else if (TILING_KEY_IS(42UL)) {
-      ElementwiseSch<0UL, MaskedScaleMaskCastOne<bfloat16_t, float>::OpDag> sch(&(tilingData.baseTiling), &pipe);
-      sch.SetVar<float, 0>(tilingData.scale);
-      sch.Init(x, mask, y);
-      sch.Process();
-      return;
-  } else if (TILING_KEY_IS(43UL)) {
-      ElementwiseSch<0UL, MaskedScaleMaskCastOne<float, float>::OpDag> sch(&(tilingData.baseTiling), &pipe);
-      sch.SetVar<float, 0>(tilingData.scale);
-      sch.Init(x, mask, y);
-      sch.Process();
-      return;
-  }
-  return;
+                                                   GM_ADDR tiling)
+{
+    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
+    REGISTER_TILING_DEFAULT(MaskedScaleNs::MaskedScaleTilingData);
+    GET_TILING_DATA_WITH_STRUCT(MaskedScaleNs::MaskedScaleTilingData, tilingData, tiling);
+    TPipe pipe;
+    if (TILING_KEY_IS(11UL)) {
+        ElementwiseSch<0UL, MaskedScaleMaskCastTwo<half, uint8_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        sch.SetVar<float, 0>(tilingData.scale);
+        sch.Init(x, mask, y);
+        sch.Process();
+        return;
+    } else if (TILING_KEY_IS(12UL)) {
+        ElementwiseSch<0UL, MaskedScaleMaskCastTwo<bfloat16_t, uint8_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        sch.SetVar<float, 0>(tilingData.scale);
+        sch.Init(x, mask, y);
+        sch.Process();
+        return;
+    } else if (TILING_KEY_IS(13UL)) {
+        ElementwiseSch<0UL, MaskedScaleMaskCastTwo<float, uint8_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        sch.SetVar<float, 0>(tilingData.scale);
+        sch.Init(x, mask, y);
+        sch.Process();
+        return;
+    } else if (TILING_KEY_IS(21UL)) {
+        ElementwiseSch<0UL, MaskedScaleMaskCastTwo<half, int8_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        sch.SetVar<float, 0>(tilingData.scale);
+        sch.Init(x, mask, y);
+        sch.Process();
+        return;
+    } else if (TILING_KEY_IS(22UL)) {
+        ElementwiseSch<0UL, MaskedScaleMaskCastTwo<bfloat16_t, int8_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        sch.SetVar<float, 0>(tilingData.scale);
+        sch.Init(x, mask, y);
+        sch.Process();
+        return;
+    } else if (TILING_KEY_IS(23UL)) {
+        ElementwiseSch<0UL, MaskedScaleMaskCastTwo<float, int8_t>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        sch.SetVar<float, 0>(tilingData.scale);
+        sch.Init(x, mask, y);
+        sch.Process();
+        return;
+    } else if (TILING_KEY_IS(31UL)) {
+        ElementwiseSch<0UL, MaskedScaleMaskCastOne<half, half>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        sch.SetVar<float, 0>(tilingData.scale);
+        sch.Init(x, mask, y);
+        sch.Process();
+        return;
+    } else if (TILING_KEY_IS(32UL)) {
+        ElementwiseSch<0UL, MaskedScaleMaskCastOne<bfloat16_t, half>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        sch.SetVar<float, 0>(tilingData.scale);
+        sch.Init(x, mask, y);
+        sch.Process();
+        return;
+    } else if (TILING_KEY_IS(33UL)) {
+        ElementwiseSch<0UL, MaskedScaleMaskCastOne<float, half>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        sch.SetVar<float, 0>(tilingData.scale);
+        sch.Init(x, mask, y);
+        sch.Process();
+        return;
+    } else if (TILING_KEY_IS(41UL)) {
+        ElementwiseSch<0UL, MaskedScaleMaskCastOne<half, float>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        sch.SetVar<float, 0>(tilingData.scale);
+        sch.Init(x, mask, y);
+        sch.Process();
+        return;
+    } else if (TILING_KEY_IS(42UL)) {
+        ElementwiseSch<0UL, MaskedScaleMaskCastOne<bfloat16_t, float>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        sch.SetVar<float, 0>(tilingData.scale);
+        sch.Init(x, mask, y);
+        sch.Process();
+        return;
+    } else if (TILING_KEY_IS(43UL)) {
+        ElementwiseSch<0UL, MaskedScaleMaskCastOne<float, float>::OpDag> sch(&(tilingData.baseTiling), &pipe);
+        sch.SetVar<float, 0>(tilingData.scale);
+        sch.Init(x, mask, y);
+        sch.Process();
+        return;
+    }
+    return;
 }

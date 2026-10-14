@@ -21,139 +21,126 @@ using namespace std;
 
 class SqrtGradTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "SqrtGradTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "SqrtGradTiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "SqrtGradTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "SqrtGradTiling TearDown" << std::endl; }
 };
 
 TEST_F(SqrtGradTiling, test_tiling_failed_dtype_input_diff_004)
 {
     optiling::SqrtGradCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "SqrtGrad",
-        {
-            {{{0}, {0}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{0}, {0}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("SqrtGrad",
+                                              {
+                                                  {{{0}, {0}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{0}, {0}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 103;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
 }
 
 TEST_F(SqrtGradTiling, test_tiling_failed_dtype_input_output_diff_005)
 {
     optiling::SqrtGradCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "SqrtGrad",
-        {
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{0}, {0}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("SqrtGrad",
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{0}, {0}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 103;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
 }
 
 TEST_F(SqrtGradTiling, test_tiling_failed_shape_input_diff_006)
 {
     optiling::SqrtGradCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "SqrtGrad",
-        {
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("SqrtGrad",
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 103;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
 }
 
 TEST_F(SqrtGradTiling, test_tiling_failed_shape_input_output_diff_007)
 {
     optiling::SqrtGradCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "SqrtGrad",
-        {
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("SqrtGrad",
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 103;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
 }
 
 TEST_F(SqrtGradTiling, test_tiling_failed_empty_tensor_008)
 {
     optiling::SqrtGradCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "SqrtGrad",
-        {
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("SqrtGrad",
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 103;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
 }
 
 TEST_F(SqrtGradTiling, test_tiling_failed_unsupport_input_009)
 {
     optiling::SqrtGradCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "SqrtGrad",
-        {
-            {{{0}, {0}}, ge::DT_DOUBLE, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_DOUBLE, ge::FORMAT_ND},
-        },
-        {
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("SqrtGrad",
+                                              {
+                                                  {{{0}, {0}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 103;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
 }
 
 TEST_F(SqrtGradTiling, test_tiling_failed_unsupport_output_010)
 {
     optiling::SqrtGradCompileInfo compileInfo = {64, 262144};
-    gert::TilingContextPara tilingContextPara(
-        "SqrtGrad",
-        {
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("SqrtGrad",
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{0}, {0}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 103;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
 }

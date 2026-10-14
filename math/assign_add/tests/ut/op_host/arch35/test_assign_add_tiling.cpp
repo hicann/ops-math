@@ -23,15 +23,9 @@ using namespace std;
 
 class AssignAddTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "AssignAddTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "AssignAddTiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "AssignAddTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "AssignAddTiling TearDown" << std::endl; }
 };
 
 TEST_F(AssignAddTiling, BiasAdd_tiling1)
@@ -48,7 +42,7 @@ TEST_F(AssignAddTiling, BiasAdd_tiling1)
         },
         {gert::TilingContextPara::OpAttr("use_locking", Ops::Math::AnyValue::CreateFrom<bool>(false))}, &compileInfo);
     uint64_t expectTilingKey = 3;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -66,7 +60,7 @@ TEST_F(AssignAddTiling, test_assign_add_tiling_bf16_002)
         },
         {gert::TilingContextPara::OpAttr("use_locking", Ops::Math::AnyValue::CreateFrom<bool>(false))}, &compileInfo);
     uint64_t expectTilingKey = 3;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -84,7 +78,7 @@ TEST_F(AssignAddTiling, test_assign_add_tiling_fp32_003)
         },
         {gert::TilingContextPara::OpAttr("use_locking", Ops::Math::AnyValue::CreateFrom<bool>(false))}, &compileInfo);
     uint64_t expectTilingKey = 3;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -102,7 +96,7 @@ TEST_F(AssignAddTiling, test_assign_add_tiling_fp32_004)
         },
         {gert::TilingContextPara::OpAttr("use_locking", Ops::Math::AnyValue::CreateFrom<bool>(false))}, &compileInfo);
     uint64_t expectTilingKey = 3;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -120,7 +114,7 @@ TEST_F(AssignAddTiling, test_assign_add_tiling_int8_005)
         },
         {gert::TilingContextPara::OpAttr("use_locking", Ops::Math::AnyValue::CreateFrom<bool>(false))}, &compileInfo);
     uint64_t expectTilingKey = 3;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -138,7 +132,7 @@ TEST_F(AssignAddTiling, test_assign_add_tiling_int32_006)
         },
         {gert::TilingContextPara::OpAttr("use_locking", Ops::Math::AnyValue::CreateFrom<bool>(false))}, &compileInfo);
     uint64_t expectTilingKey = 3;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -156,7 +150,7 @@ TEST_F(AssignAddTiling, test_assign_add_tiling_int64_007)
         },
         {gert::TilingContextPara::OpAttr("use_locking", Ops::Math::AnyValue::CreateFrom<bool>(false))}, &compileInfo);
     uint64_t expectTilingKey = 3;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -174,7 +168,7 @@ TEST_F(AssignAddTiling, test_assign_add_tiling_uint8_008)
         },
         {gert::TilingContextPara::OpAttr("use_locking", Ops::Math::AnyValue::CreateFrom<bool>(false))}, &compileInfo);
     uint64_t expectTilingKey = 3;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -192,7 +186,7 @@ TEST_F(AssignAddTiling, test_assign_add_tiling_exception_dtype_009)
         },
         {gert::TilingContextPara::OpAttr("use_locking", Ops::Math::AnyValue::CreateFrom<bool>(false))}, &compileInfo);
     uint64_t expectTilingKey = 2660;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
 }
 
@@ -210,7 +204,7 @@ TEST_F(AssignAddTiling, test_assign_add_tiling_exception_dtype_010)
         },
         {gert::TilingContextPara::OpAttr("use_locking", Ops::Math::AnyValue::CreateFrom<bool>(false))}, &compileInfo);
     uint64_t expectTilingKey = 3;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -228,7 +222,7 @@ TEST_F(AssignAddTiling, test_assign_add_tiling_exception_shape_011)
         },
         {gert::TilingContextPara::OpAttr("use_locking", Ops::Math::AnyValue::CreateFrom<bool>(false))}, &compileInfo);
     uint64_t expectTilingKey = 2660;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
 }
 
@@ -246,6 +240,6 @@ TEST_F(AssignAddTiling, test_assign_add_tiling_mix_fp32_fp16_001)
         },
         {gert::TilingContextPara::OpAttr("use_locking", Ops::Math::AnyValue::CreateFrom<bool>(false))}, &compileInfo);
     uint64_t expectTilingKey = 3;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }

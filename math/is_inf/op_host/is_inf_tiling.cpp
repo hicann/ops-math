@@ -26,15 +26,14 @@ constexpr uint64_t TILING_KEY_HALF = 1;
 constexpr uint64_t TILING_KEY_FLOAT = 2;
 constexpr uint64_t TILING_KEY_BFLOAT16 = 3;
 
-constexpr uint64_t WORK_SPACE_SIZE = 32 * 1024 * 1024;
+constexpr uint64_t WORK_SPACE_SIZE = 0;
 constexpr uint32_t BYTE_LEN_4 = 4;
 constexpr uint32_t BYTE_LEN_2 = 2;
 constexpr uint32_t MAX_DIM = 8;
 
 constexpr uint8_t UB_DIVIDER_FOR_TEMP_CASTING = 10;
 
-class IsInfTiling
-{
+class IsInfTiling {
 public:
     explicit IsInfTiling(gert::TilingContext* context) : tilingContext(context) {};
     ge::graphStatus RunBigKernelTiling();
@@ -85,8 +84,10 @@ ge::graphStatus IsInfTiling::RunBigKernelTiling()
     uint16_t dimNumOfShape = 0;
     if (shape != nullptr) {
         dimNumOfShape = shape->GetStorageShape().GetDimNum();
-        if (dimNumOfShape > MAX_DIM){
-            OP_LOGW("IsInfTilingDimCheck","Input shape has %u dimensions, which exceeds the recommended maximum of %u dimensions.",dimNumOfShape,MAX_DIM);
+        if (dimNumOfShape > MAX_DIM) {
+            OP_LOGW("IsInfTilingDimCheck",
+                    "Input shape has %u dimensions, which exceeds the recommended maximum of %u dimensions.",
+                    dimNumOfShape, MAX_DIM);
         }
     }
     for (uint16_t i = 0; i < dimNumOfShape; i++) {
@@ -206,13 +207,17 @@ static ge::graphStatus TilingIsInfTiling(gert::TilingContext* context)
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfoPtr);
 
         uint32_t coreNum = ascendcPlatform.GetCoreNumAiv();
-        OP_CHECK_IF(
-            (static_cast<int32_t>(coreNum) <= 0), OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "core_num", std::to_string(coreNum), "Failed to get core num"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF((static_cast<int32_t>(coreNum) <= 0),
+                    OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "core_num", std::to_string(coreNum),
+                                                          "Failed to get core num"),
+                    return ge::GRAPH_FAILED);
 
         uint64_t ubSize = 0;
         ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSize);
-        OP_CHECK_IF(
-            (static_cast<int64_t>(ubSize) <= 0), OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ub_size", std::to_string(ubSize), "Failed to get ub size"), return ge::GRAPH_FAILED);
+        OP_CHECK_IF((static_cast<int64_t>(ubSize) <= 0),
+                    OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ub_size", std::to_string(ubSize),
+                                                          "Failed to get ub size"),
+                    return ge::GRAPH_FAILED);
 
         IsInfRegbaseTiling IsInfRegbaseTiling(context);
         return IsInfRegbaseTiling.RunTiling();

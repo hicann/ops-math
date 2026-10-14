@@ -25,7 +25,7 @@ using namespace IsFiniteNs;
 
 namespace optiling {
 
-constexpr uint64_t WORK_SPACE_SIZE = 32 * 1024 * 1024;
+constexpr uint64_t WORK_SPACE_SIZE = 0;
 
 static ge::graphStatus TilingPrepare4IsFiniteArch22(gert::TilingParseContext* context)
 {

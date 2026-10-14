@@ -15,28 +15,25 @@
 #include "tiling_case_executor.h"
 
 class TanhTilingTest : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "TanhTilingTest SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() { std::cout << "TanhTilingTest SetUp" << std::endl; }
 
-  static void TearDownTestCase() {
-    std::cout << "TanhTilingTest TearDown" << std::endl;
-  }
+    static void TearDownTestCase() { std::cout << "TanhTilingTest TearDown" << std::endl; }
 };
 
 TEST_F(TanhTilingTest, test_tiling_fp16_001)
 {
     Ops::Base::ElewiseCompileInfo compileInfo = {64, 262144};
     gert::TilingContextPara tilingContextPara("Tanh",
-    {
-        {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-    },
-    {
-        {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-    }, &compileInfo);
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 3;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -44,14 +41,15 @@ TEST_F(TanhTilingTest, test_tiling_bf16_002)
 {
     Ops::Base::ElewiseCompileInfo compileInfo = {64, 262144};
     gert::TilingContextPara tilingContextPara("Tanh",
-    {
-        {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
-    },
-    {
-        {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
-    }, &compileInfo);
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 5;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -59,14 +57,15 @@ TEST_F(TanhTilingTest, test_tiling_fp32_003)
 {
     Ops::Base::ElewiseCompileInfo compileInfo = {64, 262144};
     gert::TilingContextPara tilingContextPara("Tanh",
-    {
-        {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    },
-    {
-        {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    }, &compileInfo);
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 7;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
@@ -74,12 +73,13 @@ TEST_F(TanhTilingTest, test_tiling_failed_dtype_input_output_diff_005)
 {
     Ops::Base::ElewiseCompileInfo compileInfo = {64, 262144};
     gert::TilingContextPara tilingContextPara("Tanh",
-    {
-        {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    },
-    {
-        {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
-    }, &compileInfo);
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
@@ -87,12 +87,13 @@ TEST_F(TanhTilingTest, test_tiling_failed_shape_input_output_diff_007)
 {
     Ops::Base::ElewiseCompileInfo compileInfo = {64, 262144};
     gert::TilingContextPara tilingContextPara("Tanh",
-    {
-        {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    },
-    {
-        {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    }, &compileInfo);
+                                              {
+                                                  {{{1, 64, 2, 64}, {1, 64, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
@@ -100,35 +101,40 @@ TEST_F(TanhTilingTest, test_tiling_failed_empty_tensor_008)
 {
     Ops::Base::ElewiseCompileInfo compileInfo = {64, 262144};
     gert::TilingContextPara tilingContextPara("Tanh",
-    {
-        {{{1, 0, 2, 64}, {1, 0, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    },
-    {
-        {{{1, 0, 2, 64}, {1, 0, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    }, &compileInfo);
+                                              {
+                                                  {{{1, 0, 2, 64}, {1, 0, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 0, 2, 64}, {1, 0, 2, 64}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
-TEST_F(TanhTilingTest, test_tiling_failed_unsupport_input_009) {
+TEST_F(TanhTilingTest, test_tiling_failed_unsupport_input_009)
+{
     Ops::Base::ElewiseCompileInfo compileInfo = {64, 262144};
     gert::TilingContextPara tilingContextPara("Tanh",
-    {
-        {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_DOUBLE, ge::FORMAT_ND},
-    },
-    {
-        {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    }, &compileInfo);
+                                              {
+                                                  {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
-TEST_F(TanhTilingTest, test_tiling_failed_unsupport_output_010) {
+TEST_F(TanhTilingTest, test_tiling_failed_unsupport_output_010)
+{
     Ops::Base::ElewiseCompileInfo compileInfo = {64, 262144};
     gert::TilingContextPara tilingContextPara("Tanh",
-    {
-        {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
-    },
-    {
-        {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_DOUBLE, ge::FORMAT_ND},
-    }, &compileInfo);
+                                              {
+                                                  {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{1, 64, 2, 32}, {1, 64, 2, 32}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }

@@ -25,7 +25,7 @@
 using namespace IsNegInfOp;
 
 namespace optiling {
-const int64_t ASCEND_WORKSPACE = 16 * 1024 * 1024;
+const int64_t ASCEND_WORKSPACE = 0;
 constexpr int64_t MAX_DIM_NUM = 8;
 
 ge::graphStatus IsNegInfRegbaseTiling::CalcInputDtype()

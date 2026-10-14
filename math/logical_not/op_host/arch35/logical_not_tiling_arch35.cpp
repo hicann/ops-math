@@ -51,10 +51,7 @@ ge::graphStatus LogicalNotTiling::RunTiling()
     // set workspace/tilingkey/blockdim
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
-    auto platformInfo = tilingContext->GetPlatformInfo();
-    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, platformInfo);
-    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
-    currentWorkspace[0] = ascendcPlatform.GetLibApiWorkSpaceSize();
+    currentWorkspace[0] = 0;
 
     tilingContext->SetTilingKey(101UL);
     tilingContext->SetBlockDim(elewiseBaseTiling.GetBlockDim());

@@ -32,7 +32,7 @@ using namespace AssignAddOp;
 using namespace AssignAddDag;
 
 namespace optiling {
-const size_t SYS_WORKSPACE_SIZE = 16777216;
+const size_t SYS_WORKSPACE_SIZE = 0;
 
 class AssignAddTiling {
 public:

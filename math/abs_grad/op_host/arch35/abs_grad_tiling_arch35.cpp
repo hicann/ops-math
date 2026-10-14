@@ -27,7 +27,7 @@ using namespace AbsGradNs;
 
 namespace optiling {
 constexpr uint64_t ABS_GRAD_TILING_KEY_ELEMENTWISE = 101;
-constexpr uint64_t ABS_GRAD_WORKSPACE_RESERVE_BYTE = 8 * 1024;
+constexpr uint64_t ABS_GRAD_WORKSPACE_RESERVE_BYTE = 0;
 ge::graphStatus AbsGradTiling::SetTilingData()
 {
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);

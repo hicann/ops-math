@@ -20,31 +20,24 @@
 using namespace std;
 class AddNTiling : public ::testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "AddNTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "AddNTiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "AddNTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "AddNTiling TearDown" << std::endl; }
 };
 
 TEST_F(AddNTiling, add_n_tiling)
 {
     optiling::AddNCompileInfo compileInfo = {64, 253952};
-    gert::TilingContextPara tilingContextPara(
-        "AddN",
-        {
-            {{{1, 1024, 6912}, {1, 1024, 6912}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1, 1024, 6912}, {1, 1024, 6912}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("AddN",
+                                              {
+                                                  {{{1, 1024, 6912}, {1, 1024, 6912}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1, 1024, 6912}, {1, 1024, 6912}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 7;
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
 }

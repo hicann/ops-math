@@ -26,7 +26,7 @@
 
 namespace optiling {
 
-const int64_t ASCEND_WORKSPACE = static_cast<int64_t>(16) * 1024 * 1024;
+const int64_t ASCEND_WORKSPACE = 0;
 const uint64_t RSQRT_KEY_FP16 = 101UL;
 const uint64_t RSQRT_KEY_BF16 = 102UL;
 const uint64_t RSQRT_KEY_FP32 = 103UL;

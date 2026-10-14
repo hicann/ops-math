@@ -24,7 +24,7 @@
 
 using namespace Ops::Base;
 namespace optiling {
-const int64_t ASCEND_WORKSPACE = static_cast<int64_t>(16) * 1024 * 1024;
+const int64_t ASCEND_WORKSPACE = 0;
 
 ge::graphStatus Log1pTiling::SetTilingData(const ElewiseBaseTiling& elewiseBaseTiling)
 {

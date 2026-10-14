@@ -26,7 +26,7 @@ const uint64_t ASSIGN_SUB_KEY_INT8 = 104UL;
 const uint64_t ASSIGN_SUB_KEY_INT32 = 105UL;
 const uint64_t ASSIGN_SUB_KEY_INT64 = 106UL;
 const uint64_t ASSIGN_SUB_KEY_UINT8 = 107UL;
-const size_t SYS_WORKSPACE_SIZE = 16777216;
+const size_t SYS_WORKSPACE_SIZE = 0;
 const uint32_t DIM_NUM_9 = 9;
 
 void AssignSubTiling::SetTilingData()

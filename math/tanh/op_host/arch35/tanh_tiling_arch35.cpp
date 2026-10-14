@@ -27,10 +27,7 @@ ge::graphStatus TanhTiling::SetTilingData()
 {
     size_t* currentWorkspace = tilingContext->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(tilingContext, currentWorkspace);
-    auto platformInfo = tilingContext->GetPlatformInfo();
-    OP_CHECK_NULL_WITH_CONTEXT(tilingContext, platformInfo);
-    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
-    currentWorkspace[0] = ascendcPlatform.GetLibApiWorkSpaceSize();
+    currentWorkspace[0] = 0;
 
     const uint64_t tilingKey = GET_TPL_TILING_KEY(static_cast<uint64_t>(tiling->baseTiling.scheMode), dType);
     OP_LOGD(tilingContext->GetNodeName(), "[TilingData] : tilingKey=%lu", tilingKey);

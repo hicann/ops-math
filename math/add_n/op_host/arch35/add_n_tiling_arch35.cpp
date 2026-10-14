@@ -17,7 +17,7 @@
 #include <iostream>
 
 namespace optiling {
-constexpr int64_t ASCEND_WORKSPACE = 16 * 1024 * 1024;
+constexpr int64_t ASCEND_WORKSPACE = 0;
 constexpr int64_t ADDN_BUFFER_NUM = 6; // db: 2 input + 1 output
 constexpr int64_t GROUP_SIZE = 8;
 constexpr int64_t ALINE_SIZE = 32;
