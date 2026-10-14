@@ -129,13 +129,13 @@ aclnnStatus aclnnInplaceTril(
     </tr>
     <tr>
       <td>out (aclTensor*)</td>
-      <td>输入</td>
+      <td>输出</td>
       <td>表示输出张量。</td>
       <td>-</td>
       <td>DOUBLE、FLOAT、FLOAT16、INT16、INT32、INT64、INT8、UINT16、UINT32、UINT64、UINT8、BOOL、BFLOAT16、COMPLEX32、COMPLEX64</td>
       <td>-</td>
       <td>2-8</td>
-      <td>-</td>
+      <td>√</td>
     </tr>
       <tr>
       <td>workspaceSize (uint64_t*)</td>

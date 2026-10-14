@@ -115,7 +115,7 @@ aclnnStatus aclnnInplaceTriu(
       <td>UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16、COMPLEX32、COMPLEX64</td>
       <td>ND、NCHW、NHWC、HWCN、NDHWC、NCDHW</td>
       <td>2-8维和0维</td>
-      <td>-</td>
+      <td>√</td>
     </tr>
     <tr>
       <td>diagonal (int64_t)</td>
@@ -135,7 +135,7 @@ aclnnStatus aclnnInplaceTriu(
       <td>UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16、COMPLEX32、COMPLEX64</td>
       <td>ND、NCHW、NHWC、HWCN、NDHWC、NCDHW</td>
       <td>2-8维和0维</td>
-      <td>-</td>
+      <td>√</td>
     </tr>
     <tr>
       <td>workspaceSize (uint64_t*)</td>
@@ -288,7 +288,7 @@ aclnnStatus aclnnInplaceTriu(
       <td>UINT64、INT64、UINT32、 INT32、UINT16、INT16、UINT8、 INT8、FLOAT16、FLOAT32、DOUBLE、BOOL、BFLOAT16、COMPLEX32、COMPLEX64</td>
       <td>ND、NCHW、NHWC、HWCN、NDHWC、NCDHW</td>
       <td>2-8</td>
-      <td>-</td>
+      <td>√</td>
     </tr>
     <tr>
       <td>diagonal (int64_t)</td>
