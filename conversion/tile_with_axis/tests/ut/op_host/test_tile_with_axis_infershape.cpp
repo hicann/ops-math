@@ -33,27 +33,17 @@ static const string OP_NAME = "TileWithAxis";
 // ============================================================================
 // Helper: create InfershapeContextPara with axis/tiles attributes
 // ============================================================================
-static InfershapeContextPara MakeInfershapePara(
-    const string& caseName,
-    initializer_list<int64_t> xShape,
-    DataType dtype,
-    int64_t axis,
-    int64_t tiles)
+static InfershapeContextPara MakeInfershapePara(const string& caseName, initializer_list<int64_t> xShape,
+                                                DataType dtype, int64_t axis, int64_t tiles)
 {
     StorageShape inputShape = {xShape, xShape};
     // Output placeholder: unknown shape
     StorageShape outputPlaceholder = {{}, {}};
 
-    vector<InfershapeContextPara::TensorDescription> inputs = {
-        {inputShape, dtype, FORMAT_ND}
-    };
-    vector<InfershapeContextPara::TensorDescription> outputs = {
-        {outputPlaceholder, dtype, FORMAT_ND}
-    };
-    vector<InfershapeContextPara::OpAttr> attrs = {
-        {"axis",  Ops::Math::AnyValue::CreateFrom<int64_t>(axis)},
-        {"tiles", Ops::Math::AnyValue::CreateFrom<int64_t>(tiles)}
-    };
+    vector<InfershapeContextPara::TensorDescription> inputs = {{inputShape, dtype, FORMAT_ND}};
+    vector<InfershapeContextPara::TensorDescription> outputs = {{outputPlaceholder, dtype, FORMAT_ND}};
+    vector<InfershapeContextPara::OpAttr> attrs = {{"axis", Ops::Math::AnyValue::CreateFrom<int64_t>(axis)},
+                                                   {"tiles", Ops::Math::AnyValue::CreateFrom<int64_t>(tiles)}};
 
     return InfershapeContextPara(OP_NAME, inputs, outputs, attrs);
 }
@@ -155,6 +145,18 @@ TEST(TileWithAxisInfershape, four_dim_axis1)
     auto para = MakeInfershapePara("4d_axis1", {5, 10, 20, 30}, DT_FLOAT16, 1, 2);
     vector<vector<int64_t>> expected = {{5, 20, 20, 30}};
     ExecuteTestCase(para, GRAPH_SUCCESS, expected);
+}
+
+TEST(TileWithAxisInfershape, invalid_axis_positive_is_rejected)
+{
+    auto para = MakeInfershapePara("invalid_axis_positive", {2, 3, 4}, DT_FLOAT16, 3, 2);
+    ExecuteTestCase(para, GRAPH_FAILED);
+}
+
+TEST(TileWithAxisInfershape, invalid_axis_negative_is_rejected)
+{
+    auto para = MakeInfershapePara("invalid_axis_negative", {2, 3, 4}, DT_FLOAT16, -4, 2);
+    ExecuteTestCase(para, GRAPH_FAILED);
 }
 
 } // namespace TileWithAxisUT
