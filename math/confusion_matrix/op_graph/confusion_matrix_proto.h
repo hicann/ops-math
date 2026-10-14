@@ -37,10 +37,12 @@ namespace ge {
 *@li dtype: Data type of the confusion matrix. \n
 
 *@par Outputs:
-*y: A Tensor. 1D. Has format ND. Has the same type and format as input "labels" . \n
+*y: A Tensor. 2D with shape (num_classes, num_classes). Has format ND. The data type is decided by
+*the "dtype" attribute (float32/int32/int8/float16/uint8). \n
 
 *@attention Constraints:
 *@li "weights", "labels", and "predictions" are 1D tensors.
+*@li The dtype of "weights" must be the same as the output dtype (the "dtype" attribute).
 *@li The output is with shape (num_classes, num_classes),
 *where, 1 <= num_classes <= 4096 . \n
 

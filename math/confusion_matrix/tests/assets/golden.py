@@ -20,7 +20,8 @@
 | e2e    | ❌   | torch_npu 无绑定（无 aclnn 接口 → 无可调用入口） |
 
 int8/uint8 输出：整型计数语义、差 1 就是错 → binary_equal（非量化场景，输入含整型，
-不适用 quant 的浮点输入前提）。int8/uint8 中间累加用 int32 防 scatter_add 回绕。
+不适用 quant 的浮点输入前提）。int8/uint8 以 int32 中转累加、末端窄回：纯加法下
+模 2^n 环同态，与 NPU 窄整型逐窄回绕累加等价（div 类算子才需每步窄回，本算子无除法）。
 """
 
 __spec__ = {
@@ -42,6 +43,10 @@ _DTYPE_MAP = {
 _TOL = {
     "float32": {"standard": "cross_check", "level": "L1"},
     "float16": {"standard": "cross_check", "level": "L1"},
+    # 整型输出：计数语义、差 1 就是错，逐 bit 相等（与上文说明一致，显式落地防默认容差漂移）
+    "int32": {"standard": "binary_equal"},
+    "int8": {"standard": "binary_equal"},
+    "uint8": {"standard": "binary_equal"},
 }
 
 
@@ -126,7 +131,9 @@ class _Compose:
 
     参数名与 proto REG_OP 注册名逐字一致（labels/predictions/weights/num_classes/dtype）。
     实现与 _compute 同为 torch.scatter_add 拼接（本算子即竞品拼接型，无更高层 API）。
-    浮点输出 cast 回 NPU 输出 dtype（防 ratio 失真）。
+    按 NPU 加宽行为同步：NPU 浮点窄累加不宽 → 三方腿直接在声明 dtype 上计算，
+    出口无需 cast（ratio 由「同为窄精度独立实现」的双标杆结构保证）；
+    int8/uint8 以 int32 中转累加后窄回，与 NPU 窄宽回绕等价。
     """
 
     def __init__(self, **kwargs):
@@ -162,18 +169,18 @@ class ConfusionMatrixKernelSpec:
     参数名照 op_host/confusion_matrix_def.cpp（labels/predictions/weights + num_classes/dtype）。
     """
 
+    @staticmethod
     def golden(*inputs, **kwargs):
+        """出口零 cast：_compute 已按 TTK 下发的 output_dtypes（Promote 后的值）
+        决定累加/窄回精度，torch 转 numpy 时 dtype 随身携带。原先按 output_dtypes
+        二次 astype 在 Promote 下是 no-op、且隐式依赖 TTK 传递行为，去除后
+        「浮点+三方」场景字面满足入口出口零 cast，整型窄回仍由 _compute 完成。"""
         t = [
             torch.from_numpy(np.ascontiguousarray(a)) if a is not None else None
             for a in inputs
         ]
         outs = _compute(*t, **kwargs)
-        od = kwargs.get("output_dtypes") or []
-        od = [d[0] if isinstance(d, (list, tuple)) else str(d) for d in od]
-        return [
-            o.numpy().astype(od[i]) if i < len(od) else o.numpy()
-            for i, o in enumerate(outs)
-        ]
+        return [o.numpy() for o in outs]
 
     third_party = {"torch": _Compose}
     tolerance = _TOL

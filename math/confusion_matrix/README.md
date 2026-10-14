@@ -64,7 +64,7 @@
     <tr>
       <td>weights</td>
       <td>输入</td>
-      <td>每个样本的权重，可为空。shape与labels一致。</td>
+      <td>每个样本的权重，可为空。shape与labels一致；非空时dtype必须与输出y的dtype一致（即与dtype属性相同）。</td>
       <td>FLOAT、FLOAT16、INT32、INT8、UINT8</td>
       <td>ND</td>
      </tr>
@@ -95,9 +95,11 @@
 
 - labels和predictions的shape必须一致。
 - labels和predictions的dtype必须一致。
-- weights不为空时，其shape必须与labels一致。
+- weights不为空时，其shape必须与labels一致，且dtype必须与输出y的dtype（即dtype属性）一致。
 - labels和predictions中的值必须在[0, num_classes)范围内。
 - num_classes取值范围为[1, 4096]。
+- labels和predictions为1维tensor，支持的数据类型为FLOAT、FLOAT16、INT32、INT8、UINT8。
+- 精度约束：输出为FLOAT16时，计数在fp16整数精确表示范围（≤2048）内为精确值；单桶计数超出该范围后存在精度损失（累加在输出精度上进行），大计数场景建议使用float32或int32输出。
 
 ## 调用说明
 

@@ -119,6 +119,10 @@ __aicore__ inline void ConfusionMatrixSimtBatchLoad<LABEL_TYPE, Y_TYPE>::Process
 template <typename LABEL_TYPE, typename Y_TYPE>
 __aicore__ inline void ConfusionMatrixSimtBatchLoad<LABEL_TYPE, Y_TYPE>::ResetBins()
 {
+    if (this->blockIdx_ >= this->resetBinsCoreNum_) {
+        return;
+    }
+
     int64_t resetBinsHeadIndex = this->blockIdx_ * this->resetBinsLength_;
     int64_t resetBinsDataLength = (this->blockIdx_ == this->resetBinsCoreNum_ - 1) ? this->resetBinsTailLength_ :
                                                                                      this->resetBinsLength_;

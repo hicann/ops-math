@@ -188,6 +188,99 @@ TEST_F(ConfusionMatrixTilingTest, confusion_matrix_tiling_uint8_with_weights)
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
 }
 
+// 空 weights（shape [0]）视同缺省：dtype 与输出不一致也不拒绝（README R3 约束仅作用于非空 weights）
+// 结构与 float32_no_weights 完全一致，仅 weights dtype 改为 INT32（≠输出 FLOAT32）
+TEST_F(ConfusionMatrixTilingTest, confusion_matrix_tiling_empty_weights_dtype_exempt)
+{
+    optiling::AscendCConfusionMatrixCompileInfo compileInfo = {64, 262144};
+    gert::TilingContextPara tilingContextPara("ConfusionMatrix",
+                                              {
+                                                  {{{100}, {100}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{100}, {100}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{0}, {0}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{5, 5}, {5, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  MakeNumClassesAttr(5),
+                                                  MakeDtypeAttr("float32"),
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
+}
+
+// 非空 weights 且 dtype 与输出不一致 -> 拒绝（公开契约：非空时 dtype 必须与输出一致）
+TEST_F(ConfusionMatrixTilingTest, confusion_matrix_tiling_weights_dtype_mismatch)
+{
+    optiling::AscendCConfusionMatrixCompileInfo compileInfo = {64, 262144};
+    gert::TilingContextPara tilingContextPara("ConfusionMatrix",
+                                              {
+                                                  {{{100}, {100}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{100}, {100}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{100}, {100}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{5, 5}, {5, 5}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  MakeNumClassesAttr(5),
+                                                  MakeDtypeAttr("int32"),
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
+}
+
+// labels/predictions dtype 不一致 -> tiling 门禁独立拒绝（门禁独立性 INFER-EXC-001）
+TEST_F(ConfusionMatrixTilingTest, confusion_matrix_tiling_input_dtype_mismatch)
+{
+    optiling::AscendCConfusionMatrixCompileInfo compileInfo = {64, 262144};
+    gert::TilingContextPara tilingContextPara("ConfusionMatrix",
+                                              {
+                                                  {{{100}, {100}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{100}, {100}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{0}, {0}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{5, 5}, {5, 5}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  MakeNumClassesAttr(5),
+                                                  MakeDtypeAttr("int32"),
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
+}
+
+// labels 为不支持的 dtype（bfloat16）-> tiling 门禁独立拒绝
+TEST_F(ConfusionMatrixTilingTest, confusion_matrix_tiling_input_dtype_unsupported)
+{
+    optiling::AscendCConfusionMatrixCompileInfo compileInfo = {64, 262144};
+    gert::TilingContextPara tilingContextPara("ConfusionMatrix",
+                                              {
+                                                  {{{100}, {100}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                                  {{{100}, {100}}, ge::DT_DOUBLE, ge::FORMAT_ND},
+                                                  {{{0}, {0}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{5, 5}, {5, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  MakeNumClassesAttr(5),
+                                                  MakeDtypeAttr("float32"),
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 0;
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectTilingKey, expectWorkspaces);
+}
+
 TEST_F(ConfusionMatrixTilingTest, confusion_matrix_tiling_large_num_classes)
 {
     optiling::AscendCConfusionMatrixCompileInfo compileInfo = {64, 262144};

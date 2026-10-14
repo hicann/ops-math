@@ -13,7 +13,9 @@
  * \brief confusion_matrix_tiling file
  */
 
+#include <algorithm>
 #include <iostream>
+#include <vector>
 #include <cstring>
 #include <string>
 #include "register/op_impl_registry.h"
@@ -110,6 +112,37 @@ ge::graphStatus ConfusionMatrixTiling::CheckDtype()
     auto attrs = context_->GetAttrs();
     OP_CHECK_NULL_WITH_CONTEXT(context_, attrs);
 
+    // 门禁独立性：labels/predictions 输入 dtype 在 tiling 门禁独立校验
+    // （InferDataType 已拒绝非法/不一致组合，tiling 侧不依赖前置门禁结果独立复核）
+    static const std::vector<ge::DataType> supportedInputDtypes = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT32,
+                                                                   ge::DT_INT8, ge::DT_UINT8};
+    auto labelsDesc = context_->GetInputDesc(INPUT_IDX_LABELS);
+    OP_CHECK_NULL_WITH_CONTEXT(context_, labelsDesc);
+    auto predictionsDesc = context_->GetInputDesc(INPUT_IDX_PREDICTIONS);
+    OP_CHECK_NULL_WITH_CONTEXT(context_, predictionsDesc);
+    ge::DataType labelsInputDtype = labelsDesc->GetDataType();
+    ge::DataType predictionsInputDtype = predictionsDesc->GetDataType();
+    OP_CHECK_IF(std::find(supportedInputDtypes.begin(), supportedInputDtypes.end(), labelsInputDtype) ==
+                    supportedInputDtypes.end(),
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                    context_->GetNodeName(), "labels", std::to_string(static_cast<int>(labelsInputDtype)).c_str(),
+                    "labels dtype must be one of: float32, float16, int32, int8, uint8."),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(
+        std::find(supportedInputDtypes.begin(), supportedInputDtypes.end(), predictionsInputDtype) ==
+            supportedInputDtypes.end(),
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context_->GetNodeName(), "predictions", std::to_string(static_cast<int>(predictionsInputDtype)).c_str(),
+            "predictions dtype must be one of: float32, float16, int32, int8, uint8."),
+        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(labelsInputDtype != predictionsInputDtype,
+                OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context_->GetNodeName(), "labels/predictions",
+                                                      (std::to_string(static_cast<int>(labelsInputDtype)) + " and " +
+                                                       std::to_string(static_cast<int>(predictionsInputDtype)))
+                                                          .c_str(),
+                                                      "The dtypes of labels and predictions must be the same."),
+                return ge::GRAPH_FAILED);
+
     const char* dtypePtr = attrs->GetAttrPointer<char>(ATTR_IDX_DTYPE);
     OP_CHECK_NULL_WITH_CONTEXT(context_, dtypePtr);
     std::string dtypeStr(dtypePtr);
@@ -133,6 +166,40 @@ ge::graphStatus ConfusionMatrixTiling::CheckDtype()
         OP_LOGE_FOR_INVALID_VALUE(context_->GetNodeName(), "dtype", dtypeStr.c_str(),
                                   "float32, int32, float16, int8 or uint8");
         return ge::GRAPH_FAILED;
+    }
+
+    // 公开契约 R3：weights 非空时 dtype 必须与输出 dtype（dtype 属性）一致；
+    // 空 weights（shape size 为 0）视同缺省，不校验（与 InferShape/ComputeTiling 的空判定一致）。
+    ge::DataType expectedOutputDtype = ge::DT_UNDEFINED;
+    if (outputDtype_ == OUTPUT_DTYPE_FLOAT) {
+        expectedOutputDtype = ge::DT_FLOAT;
+    } else if (outputDtype_ == OUTPUT_DTYPE_INT32) {
+        expectedOutputDtype = ge::DT_INT32;
+    } else if (outputDtype_ == OUTPUT_DTYPE_FLOAT16) {
+        expectedOutputDtype = ge::DT_FLOAT16;
+    } else if (outputDtype_ == OUTPUT_DTYPE_INT8) {
+        expectedOutputDtype = ge::DT_INT8;
+    } else if (outputDtype_ == OUTPUT_DTYPE_UINT8) {
+        expectedOutputDtype = ge::DT_UINT8;
+    }
+    auto weightsDesc = context_->GetOptionalInputDesc(INPUT_IDX_WEIGHTS);
+    if (weightsDesc != nullptr && expectedOutputDtype != ge::DT_UNDEFINED) {
+        auto weightsShape = context_->GetInputShape(INPUT_IDX_WEIGHTS);
+        int64_t weightsShapeSize = 0;
+        if (weightsShape != nullptr) {
+            weightsShapeSize = weightsShape->GetStorageShape().GetShapeSize();
+        }
+        if (weightsShapeSize != 0) {
+            ge::DataType weightsDtype = weightsDesc->GetDataType();
+            OP_CHECK_IF(weightsDtype != expectedOutputDtype,
+                        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+                            context_->GetNodeName(), "weights",
+                            (std::to_string(static_cast<int>(weightsDtype)) + " and " +
+                             std::to_string(static_cast<int>(expectedOutputDtype)))
+                                .c_str(),
+                            "The dtype of weights must be the same as the output dtype when weights is not empty."),
+                        return ge::GRAPH_FAILED);
+        }
     }
 
     return ge::GRAPH_SUCCESS;

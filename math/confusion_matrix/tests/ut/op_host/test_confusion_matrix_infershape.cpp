@@ -36,7 +36,8 @@ TEST_F(confusion_matrix, confusion_matrix_infershape_test1)
         {
             gert::InfershapeContextPara::OpAttr("num_classes",
                                                 Ops::Math::AnyValue::CreateFrom<int64_t>(static_cast<int64_t>(5))),
-        });
+        },
+        {1, 1, 1}, {1});
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {5, 5},
     };
@@ -131,4 +132,65 @@ TEST_F(confusion_matrix, confusion_matrix_infershape_unknown_shape)
         {5, 5},
     };
     ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
+}
+
+// Test case 6: labels/predictions shape 不一致（README R2）-> GRAPH_FAILED
+TEST_F(confusion_matrix, confusion_matrix_infershape_shape_mismatch)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "ConfusionMatrix",
+        {
+            gert::InfershapeContextPara::TensorDescription({{100}, {100}}, ge::DT_INT32, ge::FORMAT_ND),
+            gert::InfershapeContextPara::TensorDescription({{62}, {62}}, ge::DT_INT32, ge::FORMAT_ND),
+            gert::InfershapeContextPara::TensorDescription({{100}, {100}}, ge::DT_FLOAT, ge::FORMAT_ND),
+        },
+        {
+            gert::InfershapeContextPara::TensorDescription({{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND),
+        },
+        {
+            gert::InfershapeContextPara::OpAttr("num_classes",
+                                                Ops::Math::AnyValue::CreateFrom<int64_t>(static_cast<int64_t>(5))),
+        });
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, {});
+}
+
+// Test case 7: 输入为 rank-2（README 声明 1D）-> GRAPH_FAILED
+TEST_F(confusion_matrix, confusion_matrix_infershape_rank2_rejected)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "ConfusionMatrix",
+        {
+            gert::InfershapeContextPara::TensorDescription({{1, 1}, {1, 1}}, ge::DT_INT32, ge::FORMAT_ND),
+            gert::InfershapeContextPara::TensorDescription({{1, 1}, {1, 1}}, ge::DT_INT32, ge::FORMAT_ND),
+            gert::InfershapeContextPara::TensorDescription({{1, 1}, {1, 1}}, ge::DT_FLOAT, ge::FORMAT_ND),
+        },
+        {
+            gert::InfershapeContextPara::TensorDescription({{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND),
+        },
+        {
+            gert::InfershapeContextPara::OpAttr("num_classes",
+                                                Ops::Math::AnyValue::CreateFrom<int64_t>(static_cast<int64_t>(5))),
+        });
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, {});
+}
+
+// Test case 8: weights 非空但 shape 与 labels 不一致（README R3）-> GRAPH_FAILED
+TEST_F(confusion_matrix, confusion_matrix_infershape_weights_shape_mismatch)
+{
+    gert::InfershapeContextPara infershapeContextPara(
+        "ConfusionMatrix",
+        {
+            gert::InfershapeContextPara::TensorDescription({{100}, {100}}, ge::DT_INT32, ge::FORMAT_ND),
+            gert::InfershapeContextPara::TensorDescription({{100}, {100}}, ge::DT_INT32, ge::FORMAT_ND),
+            gert::InfershapeContextPara::TensorDescription({{3}, {3}}, ge::DT_FLOAT, ge::FORMAT_ND),
+        },
+        {
+            gert::InfershapeContextPara::TensorDescription({{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND),
+        },
+        {
+            gert::InfershapeContextPara::OpAttr("num_classes",
+                                                Ops::Math::AnyValue::CreateFrom<int64_t>(static_cast<int64_t>(5))),
+        },
+        {1, 1, 1}, {1});
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, {});
 }
