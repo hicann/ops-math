@@ -15,7 +15,7 @@
 #include "log_matrix_determinant.h"
 #include "aclnn_kernels/reshape.h"
 
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -28,7 +28,8 @@
 
 using namespace op;
 
-static inline bool CheckNotNull(const aclTensor *self, const aclTensor *signOut, const aclTensor *logOut) {
+static inline bool CheckNotNull(const aclTensor* self, const aclTensor* signOut, const aclTensor* logOut)
+{
     OP_CHECK_NULL(self, return false);
     OP_CHECK_NULL(signOut, return false);
     OP_CHECK_NULL(logOut, return false);
@@ -39,7 +40,8 @@ static inline bool CheckNotNull(const aclTensor *self, const aclTensor *signOut,
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_DOUBLE, op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128};
 
-static bool CheckDtypeValid(const aclTensor *self, const aclTensor *signOut, const aclTensor *logOut) {
+static bool CheckDtypeValid(const aclTensor* self, const aclTensor* signOut, const aclTensor* logOut)
+{
     OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST, return false);
     OP_CHECK_DTYPE_NOT_SUPPORT(signOut, DTYPE_SUPPORT_LIST, return false);
     OP_CHECK_DTYPE_NOT_SUPPORT(logOut, DTYPE_SUPPORT_LIST, return false);
@@ -60,7 +62,8 @@ static bool CheckDtypeValid(const aclTensor *self, const aclTensor *signOut, con
     return true;
 }
 
-static bool CheckShape(const aclTensor *self, const aclTensor *signOut, const aclTensor *logOut) {
+static bool CheckShape(const aclTensor* self, const aclTensor* signOut, const aclTensor* logOut)
+{
     // 1、self >= 2维；2、shape是一组方阵（最后两维相等）3、signOut和logOut是self去掉最后两维
     auto dim = self->GetViewShape().GetDimNum();
     // self >= 2维
@@ -92,7 +95,8 @@ static bool CheckShape(const aclTensor *self, const aclTensor *signOut, const ac
     return true;
 }
 
-static aclnnStatus CheckParams(const aclTensor *self, const aclTensor *signOut, const aclTensor *logOut) {
+static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* signOut, const aclTensor* logOut)
+{
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, signOut, logOut), ACLNN_ERR_PARAM_NULLPTR);
 
@@ -105,8 +109,9 @@ static aclnnStatus CheckParams(const aclTensor *self, const aclTensor *signOut, 
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus ReshapeDim(const aclTensor *self, op::Shape &selfBatchShape, const aclTensor *&selfReshapeOut,
-                              aclOpExecutor *executor) {
+static aclnnStatus ReshapeDim(const aclTensor* self, op::Shape& selfBatchShape, const aclTensor*& selfReshapeOut,
+                              aclOpExecutor* executor)
+{
     auto selfOriginalShape = self->GetViewShape();
     auto dim = self->GetViewShape().GetDimNum();
     auto lastDim = self->GetViewShape().GetDim(dim - 1);
@@ -126,8 +131,9 @@ static aclnnStatus ReshapeDim(const aclTensor *self, op::Shape &selfBatchShape, 
 extern "C" {
 #endif
 
-aclnnStatus aclnnSlogdetGetWorkspaceSize(const aclTensor *self, aclTensor *signOut, aclTensor *logOut,
-                                         uint64_t *workspaceSize, aclOpExecutor **executor) {
+aclnnStatus aclnnSlogdetGetWorkspaceSize(const aclTensor* self, aclTensor* signOut, aclTensor* logOut,
+                                         uint64_t* workspaceSize, aclOpExecutor** executor)
+{
     L2_DFX_PHASE_1(aclnnSlogdet, DFX_IN(self), DFX_OUT(signOut, logOut));
     // 参数检查
     auto ret = CheckParams(self, signOut, logOut);
@@ -146,7 +152,7 @@ aclnnStatus aclnnSlogdetGetWorkspaceSize(const aclTensor *self, aclTensor *signO
     auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
     CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    const aclTensor *selfReshapeOut = nullptr;
+    const aclTensor* selfReshapeOut = nullptr;
     auto selfOriginalShape = self->GetViewShape();
     auto dim = selfOriginalShape.GetDimNum();
     op::Shape selfBatchShape;
@@ -165,8 +171,8 @@ aclnnStatus aclnnSlogdetGetWorkspaceSize(const aclTensor *self, aclTensor *signO
     CHECK_RET(logValue != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 8维以上需要reshape
-    const aclTensor *signReshapeOut = nullptr;
-    const aclTensor *logReshapeOut = nullptr;
+    const aclTensor* signReshapeOut = nullptr;
+    const aclTensor* logReshapeOut = nullptr;
     if (dim > MAX_SUPPORT_DIMS_NUMS) {
         signReshapeOut = l0op::Reshape(signValue, selfBatchShape, uniqueExecutor.get());
         CHECK_RET(signReshapeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -188,12 +194,13 @@ aclnnStatus aclnnSlogdetGetWorkspaceSize(const aclTensor *self, aclTensor *signO
     CHECK_RET(logCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
     // 固定写法，获取计算过程中需要使用的workspace大小
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();
-    uniqueExecutor.ReleaseTo(executor);  // 需要把 uniqueExecutor持有executor转移给executor
+    uniqueExecutor.ReleaseTo(executor); // 需要把 uniqueExecutor持有executor转移给executor
 
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnSlogdet(void *workspace, uint64_t workspaceSize, aclOpExecutor *executor, aclrtStream stream) {
+aclnnStatus aclnnSlogdet(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+{
     L2_DFX_PHASE_2(aclnnSlogdet);
     // 固定写法，调用框架能力，完成计算
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

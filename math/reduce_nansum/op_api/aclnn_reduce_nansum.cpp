@@ -26,7 +26,7 @@
 #include "conversion/fill/op_api/fill.h"
 #include "math/reduce_any/op_api/reduce_any.h"
 #include "math/reduce_sum/op_api/reduce_sum_op.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "op_api/aclnn_check.h"
 
 using namespace op;
@@ -79,9 +79,8 @@ static bool CheckDtypeValid(const aclTensor* self, aclDataType dtype, const aclT
     OP_CHECK_DTYPE_NOT_SUPPORT(self, supportList, return false);
     // 检查dtype指定的数据类型是否支持
     if (!CheckType(op::ToOpDataType(dtype), supportList)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "type %s should be in dtype support list [%s].",
-            op::ToString(op::ToOpDataType(dtype)).GetString(), op::ToString(supportList).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "type %s should be in dtype support list [%s].",
+                op::ToString(op::ToOpDataType(dtype)).GetString(), op::ToString(supportList).GetString());
         return false;
     }
     OP_CHECK_DTYPE_NOT_SUPPORT(out, supportList, return false);
@@ -119,9 +118,8 @@ static bool CheckDimValid(const aclTensor* self, const aclIntArray* dim)
 
     for (size_t i = 0; i < dim->Size(); i++) {
         if ((*dim)[i] >= selfDimNum || (*dim)[i] < (-selfDimNum)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "Provided dim %ld must be in the range of [%ld, %ld].", (*dim)[i], -selfDimNum,
-                selfDimNum - 1);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Provided dim %ld must be in the range of [%ld, %ld].", (*dim)[i],
+                    -selfDimNum, selfDimNum - 1);
             return false;
         }
         uint64_t index = GetPosDim((*dim)[i], selfDimNum);
@@ -184,9 +182,9 @@ static aclnnStatus FillScalar(aclTensor* out, float val, aclOpExecutor* executor
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnReduceNansumGetWorkspaceSize(
-    const aclTensor* self, const aclIntArray* dim, bool keepDim, aclDataType dtype, aclTensor* out,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnReduceNansumGetWorkspaceSize(const aclTensor* self, const aclIntArray* dim, bool keepDim,
+                                              aclDataType dtype, aclTensor* out, uint64_t* workspaceSize,
+                                              aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnReduceNansum, DFX_IN(self, dim, keepDim, dtype), DFX_OUT(out));
 

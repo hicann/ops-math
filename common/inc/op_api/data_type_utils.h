@@ -13,7 +13,7 @@
 
 #include "opdev/data_type_utils.h"
 #include "opdev/op_log.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 
 namespace op {
 
@@ -69,8 +69,7 @@ inline DataType CombineCategoriesWithComplex(const DataType higher, const DataTy
 }
 
 // 双输入类型推导，维度相同则标准提升，维度不同则混合推导
-inline DataType BinaryOpTypePromote(
-    const aclTensor* self, const aclTensor* other, bool promoteInt2Float = false)
+inline DataType BinaryOpTypePromote(const aclTensor* self, const aclTensor* other, bool promoteInt2Float = false)
 {
     if (self == nullptr || other == nullptr) {
         OP_LOGE(ACLNN_ERR_PARAM_NULLPTR, "self or other is nullptr");
@@ -102,15 +101,15 @@ inline DataType BinaryOpTypePromote(
 // 判断有符号整型
 inline bool IsSignedIntegerType(const DataType dtype)
 {
-    return dtype == DataType::DT_INT8 || dtype == DataType::DT_INT16 ||
-           dtype == DataType::DT_INT32 || dtype == DataType::DT_INT64;
+    return dtype == DataType::DT_INT8 || dtype == DataType::DT_INT16 || dtype == DataType::DT_INT32 ||
+           dtype == DataType::DT_INT64;
 }
 
 // 判断无符号整型
 inline bool IsUnsignedIntegerType(const DataType dtype)
 {
-    return dtype == DataType::DT_UINT8 || dtype == DataType::DT_UINT16 ||
-           dtype == DataType::DT_UINT32 || dtype == DataType::DT_UINT64;
+    return dtype == DataType::DT_UINT8 || dtype == DataType::DT_UINT16 || dtype == DataType::DT_UINT32 ||
+           dtype == DataType::DT_UINT64;
 }
 
 // 获取数据类型位宽

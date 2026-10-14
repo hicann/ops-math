@@ -21,7 +21,7 @@
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
-#include "op_api/level2_base.h"
+#include "op_api/level2_base_math.h"
 #include "op_api/aclnn_check.h"
 
 using namespace op;
@@ -38,11 +38,11 @@ static const std::initializer_list<DataType> ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST
     DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_INT8,  DataType::DT_INT16,
     DataType::DT_INT32, DataType::DT_INT64,   DataType::DT_BOOL,   DataType::DT_UINT8, DataType::DT_BF16};
 
-static const std::initializer_list<DataType> OUTPUT_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_BF16};
+static const std::initializer_list<DataType> OUTPUT_DTYPE_SUPPORT_LIST = {DataType::DT_FLOAT, DataType::DT_FLOAT16,
+                                                                          DataType::DT_DOUBLE, DataType::DT_BF16};
 
-static const std::initializer_list<DataType> ASCEND910_DTYPE_SELFREF_LIST = {
-    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE};
+static const std::initializer_list<DataType> ASCEND910_DTYPE_SELFREF_LIST = {DataType::DT_FLOAT, DataType::DT_FLOAT16,
+                                                                             DataType::DT_DOUBLE};
 
 static bool CheckInplaceDtypeValid(const aclTensor* selfRef)
 {
@@ -76,8 +76,8 @@ static aclnnStatus CheckInplaceParamsAtan(aclTensor* selfRef)
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus ExecAtanGetWorkspaceSize(
-    const aclTensor* input, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus ExecAtanGetWorkspaceSize(const aclTensor* input, aclTensor* out, uint64_t* workspaceSize,
+                                            aclOpExecutor** executor)
 {
     CHECK_NOT_NULL(input, out);
     // 创建OpExecutor
@@ -123,8 +123,8 @@ static aclnnStatus ExecAtanGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnAtanGetWorkspaceSize(
-    const aclTensor* input, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnAtanGetWorkspaceSize(const aclTensor* input, aclTensor* out, uint64_t* workspaceSize,
+                                      aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnAtan, DFX_IN(input), DFX_OUT(out));
     return ExecAtanGetWorkspaceSize(input, out, workspaceSize, executor);

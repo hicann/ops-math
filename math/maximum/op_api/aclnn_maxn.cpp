@@ -14,7 +14,7 @@
 #include "opdev/make_op_executor.h"
 #include "opdev/op_dfx.h"
 #include "opdev/op_executor.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "op_api/aclnn_check.h"
 
@@ -96,9 +96,8 @@ static inline bool CheckInAndOutShape(const aclTensorList* tensors, const aclTen
     op::Shape broadcastShape = (*tensors)[0]->GetViewShape();
     for (uint64_t i = 1; i < tensors->Size(); i++) {
         if (!BroadcastInferShape((*tensors)[i]->GetViewShape(), broadcastShape, broadcastShape)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "the size of tensor %s must match the size of tensor %s.",
-                op::ToString((*tensors)[i]->GetViewShape()).GetString(), op::ToString(broadcastShape).GetString());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "the size of tensor %s must match the size of tensor %s.",
+                    op::ToString((*tensors)[i]->GetViewShape()).GetString(), op::ToString(broadcastShape).GetString());
             return false;
         }
     }
@@ -124,8 +123,8 @@ static aclnnStatus CheckParams(const aclTensorList* tensors, const aclTensor* ou
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnMaxNGetWorkspaceSize(
-    const aclTensorList* tensors, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnMaxNGetWorkspaceSize(const aclTensorList* tensors, aclTensor* out, uint64_t* workspaceSize,
+                                      aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnMaxN, DFX_IN(tensors), DFX_OUT(out));
 

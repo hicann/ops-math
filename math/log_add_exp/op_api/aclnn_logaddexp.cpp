@@ -21,7 +21,7 @@
 #include "opdev/op_log.h"
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
-#include "op_api/level2_base_caculation.h"
+#include "op_api/level2_base_caculation_math.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -33,8 +33,8 @@ const float LOG_SCALE = 1.0f;
 const float LOG_SHIFT = 0.0f;
 
 // 根据API定义，需要列出所能支持的所有dtype
-static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT};
+static const std::initializer_list<op::DataType> ASCEND910_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT16,
+                                                                                 op::DataType::DT_FLOAT};
 
 static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BF16};
@@ -43,22 +43,21 @@ static const std::initializer_list<op::DataType> ASCEND950_DTYPE_SUPPORT_LIST = 
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BF16};
 
 static const std::initializer_list<op::DataType> INPUT_DTYPE_SUPPORT_LIST_910 = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE,
-    op::DataType::DT_INT8, op::DataType::DT_UINT8, op::DataType::DT_INT16,
-    op::DataType::DT_UINT16, op::DataType::DT_INT32, op::DataType::DT_UINT32,
-    op::DataType::DT_INT64, op::DataType::DT_UINT64, op::DataType::DT_BOOL};
+    op::DataType::DT_FLOAT,  op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE, op::DataType::DT_INT8,
+    op::DataType::DT_UINT8,  op::DataType::DT_INT16,   op::DataType::DT_UINT16, op::DataType::DT_INT32,
+    op::DataType::DT_UINT32, op::DataType::DT_INT64,   op::DataType::DT_UINT64, op::DataType::DT_BOOL};
 
 static const std::initializer_list<op::DataType> INPUT_DTYPE_SUPPORT_LIST_910B = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE,
-    op::DataType::DT_INT8, op::DataType::DT_UINT8, op::DataType::DT_INT16,
-    op::DataType::DT_UINT16, op::DataType::DT_INT32, op::DataType::DT_UINT32,
-    op::DataType::DT_INT64, op::DataType::DT_UINT64, op::DataType::DT_BOOL, op::DataType::DT_BF16};
+    op::DataType::DT_FLOAT,  op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE, op::DataType::DT_INT8,
+    op::DataType::DT_UINT8,  op::DataType::DT_INT16,   op::DataType::DT_UINT16, op::DataType::DT_INT32,
+    op::DataType::DT_UINT32, op::DataType::DT_INT64,   op::DataType::DT_UINT64, op::DataType::DT_BOOL,
+    op::DataType::DT_BF16};
 
 static const std::initializer_list<op::DataType> INPUT_DTYPE_SUPPORT_LIST_950 = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE,
-    op::DataType::DT_INT8, op::DataType::DT_UINT8, op::DataType::DT_INT16,
-    op::DataType::DT_UINT16, op::DataType::DT_INT32, op::DataType::DT_UINT32,
-    op::DataType::DT_INT64, op::DataType::DT_UINT64, op::DataType::DT_BOOL, op::DataType::DT_BF16};
+    op::DataType::DT_FLOAT,  op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE, op::DataType::DT_INT8,
+    op::DataType::DT_UINT8,  op::DataType::DT_INT16,   op::DataType::DT_UINT16, op::DataType::DT_INT32,
+    op::DataType::DT_UINT32, op::DataType::DT_INT64,   op::DataType::DT_UINT64, op::DataType::DT_BOOL,
+    op::DataType::DT_BF16};
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const aclTensor* out)
 {
@@ -68,10 +67,8 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const
         OP_CHECK_DTYPE_NOT_SUPPORT(other, INPUT_DTYPE_SUPPORT_LIST_950, return false);
         OP_CHECK_DTYPE_NOT_SUPPORT(out, ASCEND950_DTYPE_SUPPORT_LIST, return false);
     } else {
-        auto outDtypeSupportList = GetDtypeSupportListV1(ASCEND910B_DTYPE_SUPPORT_LIST,
-            ASCEND910_DTYPE_SUPPORT_LIST);
-        auto inputDtypeSupportList = GetDtypeSupportListV2(INPUT_DTYPE_SUPPORT_LIST_910B,
-            INPUT_DTYPE_SUPPORT_LIST_910);
+        auto outDtypeSupportList = GetDtypeSupportListV1(ASCEND910B_DTYPE_SUPPORT_LIST, ASCEND910_DTYPE_SUPPORT_LIST);
+        auto inputDtypeSupportList = GetDtypeSupportListV2(INPUT_DTYPE_SUPPORT_LIST_910B, INPUT_DTYPE_SUPPORT_LIST_910);
         OP_CHECK_DTYPE_NOT_SUPPORT(self, inputDtypeSupportList, return false);
         OP_CHECK_DTYPE_NOT_SUPPORT(other, inputDtypeSupportList, return false);
         OP_CHECK_DTYPE_NOT_SUPPORT(out, outDtypeSupportList, return false);
@@ -102,7 +99,8 @@ static bool CheckBroadcastLogAddExp(const aclTensor* self, const aclTensor* othe
     return true;
 }
 
-static bool CheckShape(const aclTensor* self, const aclTensor* other) {
+static bool CheckShape(const aclTensor* self, const aclTensor* other)
+{
     OP_CHECK_MAX_DIM(self, MAX_SUPPORT_DIMS_NUMS, return false);
     OP_CHECK_MAX_DIM(other, MAX_SUPPORT_DIMS_NUMS, return false);
     return true;
@@ -111,16 +109,14 @@ static bool CheckShape(const aclTensor* self, const aclTensor* other) {
 static bool CheckFormat(const aclTensor* self, const aclTensor* other, const aclTensor* out)
 {
     if (self->GetStorageFormat() != out->GetStorageFormat()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Format of self and output should be equal. self [%s], out [%s].",
-            ToString(self->GetStorageFormat()).GetString(), ToString(out->GetStorageFormat()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format of self and output should be equal. self [%s], out [%s].",
+                ToString(self->GetStorageFormat()).GetString(), ToString(out->GetStorageFormat()).GetString());
         return false;
     }
 
     if (other->GetStorageFormat() != out->GetStorageFormat()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Format of other and output should be equal. other [%s], out [%s].",
-            ToString(other->GetStorageFormat()).GetString(), ToString(out->GetStorageFormat()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format of other and output should be equal. other [%s], out [%s].",
+                ToString(other->GetStorageFormat()).GetString(), ToString(out->GetStorageFormat()).GetString());
         return false;
     }
 
@@ -141,7 +137,8 @@ static void WarnFormat(const aclTensor* self, const aclTensor* target)
     }
 }
 
-static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other, const aclTensor* out) {
+static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other, const aclTensor* out)
+{
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull3Tensor(self, other, out), ACLNN_ERR_PARAM_NULLPTR);
 
@@ -162,7 +159,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other, co
 }
 
 aclnnStatus aclnnLogAddExpGetWorkspaceSize(const aclTensor* self, const aclTensor* other, aclTensor* out,
-                                           uint64_t* workspaceSize, aclOpExecutor** executor) {
+                                           uint64_t* workspaceSize, aclOpExecutor** executor)
+{
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
     L2_DFX_PHASE_1(aclnnLogAddExp, DFX_IN(self, other), DFX_OUT(out));
@@ -212,11 +210,12 @@ aclnnStatus aclnnLogAddExpGetWorkspaceSize(const aclTensor* self, const aclTenso
 
     // 固定写法，获取计算过程中需要使用的workspace大小
     *workspaceSize = uniqueExecutor->GetWorkspaceSize();
-    uniqueExecutor.ReleaseTo(executor);  // 需要把uniqueExecutor持有executor转移给executor
+    uniqueExecutor.ReleaseTo(executor); // 需要把uniqueExecutor持有executor转移给executor
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnLogAddExp(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream) {
+aclnnStatus aclnnLogAddExp(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+{
     L2_DFX_PHASE_2(aclnnLogAddExp);
     // 固定写法，调用框架能力，完成计算
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

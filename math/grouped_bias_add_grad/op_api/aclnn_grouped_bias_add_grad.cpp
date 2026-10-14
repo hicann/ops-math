@@ -10,7 +10,7 @@
 
 #include "grouped_bias_add_grad.h"
 #include "aclnn_kernels/contiguous.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -80,39 +80,32 @@ static bool CheckShapeValid(const aclTensor* gradY, const aclTensor* groupIdxOpt
     } else {
         int64_t groupIdxDimNum = groupIdxOptional->GetViewShape().GetDimNum();
         if (gradYDimNum != GRAD_Y_SHAPE_WITH_GROUP_IDX || groupIdxDimNum != GROUP_INDEX_SHAPE) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID,
-                "the gradY of input should be 2D tensor when groupIdxOptional is not null \
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "the gradY of input should be 2D tensor when groupIdxOptional is not null \
                                     and groupIdxOptional must be 1D tensor.");
             return false;
         }
 
         auto groupIdxSize = groupIdxOptional->GetViewShape().GetDim(0);
-        OP_CHECK(
-            groupIdxSize <= INPUT_MAX_GROUP,
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "input group_idx shape not support more than %ld, but got %ld.",
-                INPUT_MAX_GROUP, groupIdxSize),
-            return false);
+        OP_CHECK(groupIdxSize <= INPUT_MAX_GROUP,
+                 OP_LOGE(ACLNN_ERR_PARAM_INVALID, "input group_idx shape not support more than %ld, but got %ld.",
+                         INPUT_MAX_GROUP, groupIdxSize),
+                 return false);
 
         hNum = gradY->GetViewShape().GetDim(GRAD_Y_SHAPE_WITH_GROUP_IDX - 1);
         groupNum = groupIdxSize;
     }
 
     auto outDimNum = out->GetViewShape().GetDimNum();
-    OP_CHECK(
-        outDimNum == GRAD_BIAS_SHAPE_SIZE,
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The dimensions of output should be two, but got %lu.", outDimNum),
-        return false);
+    OP_CHECK(outDimNum == GRAD_BIAS_SHAPE_SIZE,
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The dimensions of output should be two, but got %lu.", outDimNum),
+             return false);
 
     auto outGroupNum = out->GetViewShape().GetDim(0);
     auto outHNum = out->GetViewShape().GetDim(1);
-    OP_CHECK(
-        outDimNum == GRAD_BIAS_SHAPE_SIZE && outGroupNum == groupNum && outHNum == hNum,
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "The shape of out should be [%ld, %ld], but got [%ld, %ld].", groupNum, hNum,
-            outGroupNum, outHNum),
-        return false);
+    OP_CHECK(outDimNum == GRAD_BIAS_SHAPE_SIZE && outGroupNum == groupNum && outHNum == hNum,
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The shape of out should be [%ld, %ld], but got [%ld, %ld].", groupNum,
+                     hNum, outGroupNum, outHNum),
+             return false);
 
     return true;
 }
@@ -128,16 +121,18 @@ static bool checkAttrValid(int64_t groupIdxType)
 
 static void CheckFormatNZ(const aclTensor* x)
 {
-    if (x == nullptr) { return; }
+    if (x == nullptr) {
+        return;
+    }
     op::Format format = x->GetStorageFormat();
     if (format == Format::FORMAT_FRACTAL_NZ) {
         OP_LOGW("Format of input gets [%s], this format may lead to precision failure",
-        op::ToString(format).GetString());
+                op::ToString(format).GetString());
     }
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* gradY, const aclTensor* groupIdxOptional, int64_t groupIdxType, const aclTensor* out)
+static aclnnStatus CheckParams(const aclTensor* gradY, const aclTensor* groupIdxOptional, int64_t groupIdxType,
+                               const aclTensor* out)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(gradY, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -157,9 +152,9 @@ static aclnnStatus CheckParams(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus ExecGroupedBiasAddGradGetWorkspaceSize(
-    const aclTensor* gradY, const aclTensor* groupIdxOptional, int64_t groupIdxType, aclTensor* out,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus ExecGroupedBiasAddGradGetWorkspaceSize(const aclTensor* gradY, const aclTensor* groupIdxOptional,
+                                                   int64_t groupIdxType, aclTensor* out, uint64_t* workspaceSize,
+                                                   aclOpExecutor** executor)
 {
     // 固定写法，参数检查
     auto ret = CheckParams(gradY, groupIdxOptional, groupIdxType, out);
@@ -181,13 +176,14 @@ aclnnStatus ExecGroupedBiasAddGradGetWorkspaceSize(
     CHECK_RET(gradYContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 固定写法，将输入groupIdxOptional转换成连续的tensor
-    auto groupIdxOptionalContiguous =
-        groupIdxOptional == nullptr ? nullptr : l0op::Contiguous(groupIdxOptional, uniqueExecutor.get());
+    auto groupIdxOptionalContiguous = groupIdxOptional == nullptr ?
+                                          nullptr :
+                                          l0op::Contiguous(groupIdxOptional, uniqueExecutor.get());
     CHECK_RET(groupIdxOptional == nullptr || groupIdxOptionalContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 调用l0算子GroupedBiasAddGrad行计算
-    auto gradBias =
-        l0op::GroupedBiasAddGrad(gradYContiguous, groupIdxOptionalContiguous, groupIdxType, uniqueExecutor.get());
+    auto gradBias = l0op::GroupedBiasAddGrad(gradYContiguous, groupIdxOptionalContiguous, groupIdxType,
+                                             uniqueExecutor.get());
     CHECK_RET(gradBias != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 如果出参out是非连续Tensor，需要把计算完的连续Tensor转非连续
@@ -200,32 +196,31 @@ aclnnStatus ExecGroupedBiasAddGradGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnGroupedBiasAddGradGetWorkspaceSize(
-    const aclTensor* gradY, const aclTensor* groupIdxOptional, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnGroupedBiasAddGradGetWorkspaceSize(const aclTensor* gradY, const aclTensor* groupIdxOptional,
+                                                    aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnGroupedBiasAddGrad, DFX_IN(gradY, groupIdxOptional), DFX_OUT(out));
     return ExecGroupedBiasAddGradGetWorkspaceSize(gradY, groupIdxOptional, 0, out, workspaceSize, executor);
 }
 
-aclnnStatus aclnnGroupedBiasAddGradV2GetWorkspaceSize(
-    const aclTensor* gradY, const aclTensor* groupIdxOptional, int64_t groupIdxType, aclTensor* out,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnGroupedBiasAddGradV2GetWorkspaceSize(const aclTensor* gradY, const aclTensor* groupIdxOptional,
+                                                      int64_t groupIdxType, aclTensor* out, uint64_t* workspaceSize,
+                                                      aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnGroupedBiasAddGradV2, DFX_IN(gradY, groupIdxOptional, groupIdxType), DFX_OUT(out));
     return ExecGroupedBiasAddGradGetWorkspaceSize(gradY, groupIdxOptional, groupIdxType, out, workspaceSize, executor);
 }
 
-aclnnStatus aclnnGroupedBiasAddGrad(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+aclnnStatus aclnnGroupedBiasAddGrad(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                    aclrtStream stream)
 {
     // 固定写法，调用框架能力，完成计算
     L2_DFX_PHASE_2(aclnnGroupedBiasAddGrad);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnGroupedBiasAddGradV2(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+aclnnStatus aclnnGroupedBiasAddGradV2(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                      aclrtStream stream)
 {
     // 固定写法，调用框架能力，完成计算
     L2_DFX_PHASE_2(aclnnGroupedBiasAddGradV2);

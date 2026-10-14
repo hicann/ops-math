@@ -22,7 +22,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/platform.h"
 #include "conversion/fill/op_api/fill.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "op_api/aclnn_check.h"
 
 using namespace op;
@@ -149,9 +149,8 @@ static bool IsNonContiguousSupport(const aclTensor* self, const aclIntArray* dim
     return true;
 }
 
-aclnnStatus aclnnAnyGetWorkspaceSize(
-    const aclTensor* self, const aclIntArray* dim, bool keepdim, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnAnyGetWorkspaceSize(const aclTensor* self, const aclIntArray* dim, bool keepdim, aclTensor* out,
+                                     uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnAny, DFX_IN(self, dim, keepdim), DFX_OUT(out));
 
@@ -176,8 +175,8 @@ aclnnStatus aclnnAnyGetWorkspaceSize(
     }
     if (IsNonContiguousSupport(self, dim)) {
         OP_LOGI("Entering NonContiguous Reduce Any");
-        auto selfContiguous = uniqueExecutor.get()->CreateView(
-            self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
+        auto selfContiguous = uniqueExecutor.get()->CreateView(self, self->GetViewShape(), self->GetStorageShape(),
+                                                               self->GetViewStrides(), self->GetViewOffset());
         CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto anyResult = l0op::ReduceAny(selfContiguous, dim, keepdim, uniqueExecutor.get());
         CHECK_RET(anyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
@@ -197,8 +196,11 @@ aclnnStatus aclnnAnyGetWorkspaceSize(
         CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
         auto selfCasted = selfContiguous;
-        if (!((selfContiguous->GetDataType() == op::DataType::DT_FLOAT16 || selfContiguous->GetDataType() == op::DataType::DT_BF16 || selfContiguous->GetDataType() == op::DataType::DT_FLOAT) &&
-                (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B || GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93))) {
+        if (!((selfContiguous->GetDataType() == op::DataType::DT_FLOAT16 ||
+               selfContiguous->GetDataType() == op::DataType::DT_BF16 ||
+               selfContiguous->GetDataType() == op::DataType::DT_FLOAT) &&
+              (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+               GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93))) {
             // 将输入self的数据类型转换成隐式数据类型，根据具体算子语义按需调用
             selfCasted = l0op::Cast(selfContiguous, DataType::DT_BOOL, uniqueExecutor.get());
             CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);

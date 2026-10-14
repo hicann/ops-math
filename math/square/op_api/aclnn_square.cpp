@@ -18,7 +18,7 @@
 #include "opdev/make_op_executor.h"
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "op_api/aclnn_check.h"
 
 using namespace op;
@@ -59,9 +59,9 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     // 当前level2接口仅支持910D
-    OP_CHECK(
-        IsRegBase(),
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "not implemented for %s", op::ToString(socVersion).GetString()), return false);
+    OP_CHECK(IsRegBase(),
+             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "not implemented for %s", op::ToString(socVersion).GetString()),
+             return false);
 
     // self和out数据类型必须一样
     OP_CHECK_DTYPE_NOT_MATCH(self, out->GetDataType(), return false);
@@ -77,9 +77,8 @@ static bool CheckFormat(const aclTensor* self, const aclTensor* out)
 {
     // 输入输出的格式需要一致
     if (self->GetStorageFormat() != out->GetStorageFormat()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Format of input and output should be equal. self [%s], out [%s].",
-            ToString(self->GetStorageFormat()).GetString(), ToString(out->GetStorageFormat()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format of input and output should be equal. self [%s], out [%s].",
+                ToString(self->GetStorageFormat()).GetString(), ToString(out->GetStorageFormat()).GetString());
         return false;
     }
 
@@ -118,8 +117,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out)
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnSquareGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnSquareGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                        aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnSquare, DFX_IN(self), DFX_OUT(out));
 

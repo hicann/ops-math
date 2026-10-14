@@ -26,7 +26,7 @@
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/make_op_executor.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -56,11 +56,11 @@ static bool CheckNotNull(const aclTensor* selfRef, const aclScalar* fillValue)
 static bool CheckDtypeValid(const aclTensor* selfRef)
 {
     // 根据芯片类型获取数据类型支持列表
-    bool isAscend910BSocVersion =
-        (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-         GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E);
-    const std::initializer_list<op::DataType> dtypeSupportList =
-        isAscend910BSocVersion ? ASCEND910B_DTYPE_SUPPORT_LIST : ASCEND910_DTYPE_SUPPORT_LIST;
+    bool isAscend910BSocVersion = (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
+                                   GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E);
+    const std::initializer_list<op::DataType> dtypeSupportList = isAscend910BSocVersion ?
+                                                                     ASCEND910B_DTYPE_SUPPORT_LIST :
+                                                                     ASCEND910_DTYPE_SUPPORT_LIST;
 
     // 检查selfRef的数据类型是否在FillDiagonal算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(selfRef, dtypeSupportList, return false);
@@ -88,10 +88,9 @@ static bool CheckShapeValid(const aclTensor* selfRef)
 
     // 检查selfRef维度是否大于2且各维度长度相等
     if (selfRef->GetViewShape().GetDimNum() > MIN_DIM_LEN && !IsSameDimLength(selfRef)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "Dim of selfRef[%zu] greater than %zu, all dimensions of input must be of equal length.",
-            selfRef->GetViewShape().GetDimNum(), MIN_DIM_LEN);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "Dim of selfRef[%zu] greater than %zu, all dimensions of input must be of equal length.",
+                selfRef->GetViewShape().GetDimNum(), MIN_DIM_LEN);
         return false;
     }
     return true;
@@ -150,13 +149,11 @@ static bool CheckNotOverflow(const aclTensor* selfRef, const aclScalar* fillValu
     }
 
     if ((overFlowFlag >> floatFlag) == 1) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "value cannot be converted to type %s without overflow : %lf.",
-            op::ToString(dataType).GetString(), fillValue->ToDouble());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "value cannot be converted to type %s without overflow : %lf.",
+                op::ToString(dataType).GetString(), fillValue->ToDouble());
     } else if ((overFlowFlag >> intFlag) == 1) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "value cannot be converted to type %s without overflow : %ld.",
-            op::ToString(dataType).GetString(), fillValue->ToInt64());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "value cannot be converted to type %s without overflow : %ld.",
+                op::ToString(dataType).GetString(), fillValue->ToInt64());
     }
     return overFlowFlag == 1;
 }
@@ -166,7 +163,7 @@ static void CheckFormat(const aclTensor* x)
     op::Format format = x->GetStorageFormat();
     if (format == Format::FORMAT_FRACTAL_NZ) {
         OP_LOGW("Format of input gets [%s], this format mat lead to precision failure",
-        op::ToString(format).GetString());
+                op::ToString(format).GetString());
     }
 }
 
@@ -191,8 +188,8 @@ static aclnnStatus CheckParams(const aclTensor* selfRef, const aclScalar* fillVa
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceFillDiagonalGetWorkspaceSize(
-    aclTensor* selfRef, const aclScalar* fillValue, bool wrap, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceFillDiagonalGetWorkspaceSize(aclTensor* selfRef, const aclScalar* fillValue, bool wrap,
+                                                     uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
@@ -232,8 +229,8 @@ aclnnStatus aclnnInplaceFillDiagonalGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceFillDiagonal(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+aclnnStatus aclnnInplaceFillDiagonal(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                     aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnInplaceFillDiagonal);
     // 固定写法，调用框架能力，完成计算
