@@ -98,6 +98,139 @@ TEST_F(StridedSliceAssignTiling, strided_slice_assign_tiling_float32_1)
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
+// 1 维 var + shrink → 0 维 scalar input_value（GEIR/TTK 物化为 storage [1]），回归 EZ0012 误报
+TEST_F(StridedSliceAssignTiling, strided_slice_assign_tiling_scalar_shrink_1d_5)
+{
+    struct StridedSliceAssignCompileInfo {
+    } compileInfo;
+    vector<int64_t> beginValue = {2};
+    vector<int64_t> endValue = {3};
+    vector<int64_t> stridesValue = {1};
+    gert::TilingContextPara tilingContextPara(
+        "StridedSliceAssign",
+        {
+            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},                            // var
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, beginValue.data()},   // begin (const)
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, endValue.data()},     // end (const)
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, stridesValue.data()}, // strides (const)
+            {{{}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND}, // input_value: rank-0 scalar, storage [1]
+        },
+        {
+            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output var
+        },
+        {
+            gert::TilingContextPara::OpAttr("begin_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
+            gert::TilingContextPara::OpAttr("end_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
+            gert::TilingContextPara::OpAttr("ellipsis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
+            gert::TilingContextPara::OpAttr("new_axis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
+            gert::TilingContextPara::OpAttr("shrink_axis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),
+        },
+        &compileInfo);
+    uint64_t expectTilingKey = 0;
+    string expectTilingData = "1 1 1 1 2 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+}
+
+// 2 维 var + 两维全 shrink → 0 维 scalar input_value（storage [1]）
+TEST_F(StridedSliceAssignTiling, strided_slice_assign_tiling_scalar_shrink_2d_6)
+{
+    struct StridedSliceAssignCompileInfo {
+    } compileInfo;
+    vector<int64_t> beginValue = {1, 2};
+    vector<int64_t> endValue = {2, 3};
+    vector<int64_t> stridesValue = {1, 1};
+    gert::TilingContextPara tilingContextPara(
+        "StridedSliceAssign",
+        {
+            {{{4, 5}, {4, 5}}, ge::DT_FLOAT16, ge::FORMAT_ND},                    // var
+            {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, beginValue.data()},   // begin (const)
+            {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, endValue.data()},     // end (const)
+            {{{2}, {2}}, ge::DT_INT64, ge::FORMAT_ND, true, stridesValue.data()}, // strides (const)
+            {{{}, {1}}, ge::DT_FLOAT16, ge::FORMAT_ND}, // input_value: rank-0 scalar, storage [1]
+        },
+        {
+            {{{4, 5}, {4, 5}}, ge::DT_FLOAT16, ge::FORMAT_ND}, // output var
+        },
+        {
+            gert::TilingContextPara::OpAttr("begin_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
+            gert::TilingContextPara::OpAttr("end_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
+            gert::TilingContextPara::OpAttr("ellipsis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
+            gert::TilingContextPara::OpAttr("new_axis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
+            gert::TilingContextPara::OpAttr("shrink_axis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(3)),
+        },
+        &compileInfo);
+    uint64_t expectTilingKey = 0;
+    string expectTilingData = "2 1 1 1 1 2 0 0 0 0 0 0 1 1 0 0 0 0 0 0 1 1 0 0 0 0 0 0 5 1 0 0 0 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+}
+
+// 负向：final rank 为 0 但 input_value 为 (2,)，非 scalar 物化，必须报错
+TEST_F(StridedSliceAssignTiling, strided_slice_assign_tiling_scalar_rank_mismatch_fail_7)
+{
+    struct StridedSliceAssignCompileInfo {
+    } compileInfo;
+    vector<int64_t> beginValue = {2};
+    vector<int64_t> endValue = {3};
+    vector<int64_t> stridesValue = {1};
+    gert::TilingContextPara tilingContextPara(
+        "StridedSliceAssign",
+        {
+            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},                            // var
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, beginValue.data()},   // begin (const)
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, endValue.data()},     // end (const)
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, stridesValue.data()}, // strides (const)
+            {{{2}, {2}}, ge::DT_FLOAT, ge::FORMAT_ND}, // input_value: (2,) 与 scalar 终态不匹配
+        },
+        {
+            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output var
+        },
+        {
+            gert::TilingContextPara::OpAttr("begin_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
+            gert::TilingContextPara::OpAttr("end_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
+            gert::TilingContextPara::OpAttr("ellipsis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
+            gert::TilingContextPara::OpAttr("new_axis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
+            gert::TilingContextPara::OpAttr("shrink_axis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),
+        },
+        &compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
+
+// begin_mask 与 shrink 同位：TF 语义下 shrink 不使用 begin_mask，begin 取 spec 原值 5
+TEST_F(StridedSliceAssignTiling, strided_slice_assign_tiling_shrink_ignores_begin_mask_8)
+{
+    struct StridedSliceAssignCompileInfo {
+    } compileInfo;
+    vector<int64_t> beginValue = {5};
+    vector<int64_t> endValue = {6};
+    vector<int64_t> stridesValue = {1};
+    gert::TilingContextPara tilingContextPara(
+        "StridedSliceAssign",
+        {
+            {{{10}, {10}}, ge::DT_FLOAT, ge::FORMAT_ND},                          // var
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, beginValue.data()},   // begin (const)
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, endValue.data()},     // end (const)
+            {{{1}, {1}}, ge::DT_INT64, ge::FORMAT_ND, true, stridesValue.data()}, // strides (const)
+            {{{}, {1}}, ge::DT_FLOAT, ge::FORMAT_ND}, // input_value: rank-0 scalar, storage [1]
+        },
+        {
+            {{{10}, {10}}, ge::DT_FLOAT, ge::FORMAT_ND}, // output var
+        },
+        {
+            gert::TilingContextPara::OpAttr("begin_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),
+            gert::TilingContextPara::OpAttr("end_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
+            gert::TilingContextPara::OpAttr("ellipsis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
+            gert::TilingContextPara::OpAttr("new_axis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
+            gert::TilingContextPara::OpAttr("shrink_axis_mask", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),
+        },
+        &compileInfo);
+    uint64_t expectTilingKey = 0;
+    string expectTilingData = "1 1 1 1 5 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+}
+
 TEST_F(StridedSliceAssignTiling, strided_slice_assign_tiling_bfloat16_2)
 {
     struct StridedSliceAssignCompileInfo {

@@ -186,15 +186,19 @@ static ge::graphStatus ValidateShape(gert::TilingContext* context, const SliceAt
                                                       "dense spec length must not exceed var dimNum"),
                 return ge::GRAPH_FAILED);
     // input_value dimNum == final rank = n - shrink 置位数 + new_axis 置位数
+    // rank-0 scalar 的 input_value 在 GEIR/TTK 通路会被物化为 storage shape [1]（origin shape 仍为 ()），
+    // 此时 storage dimNum 为 1 但语义 rank 为 0，放行
     int64_t finalRank = static_cast<int64_t>(dimNum) - shrinkBits + newAxisBits;
     auto valueShape = context->GetInputShape(kInputValueIdx);
     OP_CHECK_NULL_WITH_CONTEXT(context, valueShape);
-    OP_CHECK_IF(
-        static_cast<int64_t>(valueShape->GetStorageShape().GetDimNum()) != finalRank,
-        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
-            context->GetNodeName(), "input_value", std::to_string(valueShape->GetStorageShape().GetDimNum()).c_str(),
-            "input_value rank must equal final slice rank (var dimNum - shrink bits + new_axis bits)"),
-        return ge::GRAPH_FAILED);
+    auto valueStorage = valueShape->GetStorageShape();
+    int64_t valueDimNum = static_cast<int64_t>(valueStorage.GetDimNum());
+    bool rankMatch = (valueDimNum == finalRank) || (finalRank == 0 && valueDimNum == 1 && valueStorage.GetDim(0) == 1);
+    OP_CHECK_IF(!rankMatch,
+                OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(
+                    context->GetNodeName(), "input_value", std::to_string(valueDimNum).c_str(),
+                    "input_value rank must equal final slice rank (var dimNum - shrink bits + new_axis bits)"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -286,13 +290,14 @@ static ge::graphStatus ExpandOneSpecDim(gert::TilingContext* context, const Slic
                 OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "strides", std::to_string(s).c_str(),
                                                       "strides[i] must be > 0"),
                 return ge::GRAPH_FAILED);
-    b = ((attrs.beginMask >> i) & 1) ? 0 : specB;
-    e = ((attrs.endMask >> i) & 1) ? dim : specE;
     if ((attrs.shrinkAxisMask >> i) & 1) {
+        // shrink 位不使用 begin/end mask，直接取 spec 的 begin 值（对齐 TF ValidateStridedSliceOp：
+        // shrink 分支不走 canonical()，mask 对其不生效）
         OP_CHECK_IF(s != 1,
                     OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "strides", std::to_string(s).c_str(),
                                                           "shrink axis requires stride 1"),
                     return ge::GRAPH_FAILED);
+        b = specB;
         if (b < 0) {
             b += dim;
         }
@@ -302,8 +307,8 @@ static ge::graphStatus ExpandOneSpecDim(gert::TilingContext* context, const Slic
                     return ge::GRAPH_FAILED);
         e = b + 1;
     } else {
-        b = NormalizeAndClamp(b, dim);
-        e = NormalizeAndClamp(e, dim);
+        b = NormalizeAndClamp(((attrs.beginMask >> i) & 1) ? 0 : specB, dim);
+        e = NormalizeAndClamp(((attrs.endMask >> i) & 1) ? dim : specE, dim);
     }
     return ge::GRAPH_SUCCESS;
 }
