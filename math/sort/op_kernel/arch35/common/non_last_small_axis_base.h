@@ -16,10 +16,13 @@
 #ifndef NON_LAST_SMALL_AXIS_BASE_H
 #define NON_LAST_SMALL_AXIS_BASE_H
 
+#include <cmath>
+#include <cstdint>
 #include <type_traits>
 
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
+#include "op_kernel/math_util.h"
 #include "op_kernel/platform_util.h"
 #include "simt_api/asc_simt.h"
 #include "signed_zero_sort_utils.h"
@@ -239,6 +242,11 @@ protected:
     __aicore__ inline void TransposeTileByGather(uint32_t curInnerChunk)
     {
         constexpr uint16_t vlSize = static_cast<uint16_t>(Ops::Base::GetVRegSize() / sizeof(CastType));
+        // Host tiling limits axisLen_ to 2048 and curInnerChunk to at most 64.
+        // Count vector blocks so an unaligned axis keeps its final masked iteration.
+        const uint16_t axisRepeats = static_cast<uint16_t>(
+            Ops::Base::CeilDiv(this->axisLen_, static_cast<uint32_t>(vlSize)));
+        const uint16_t innerCount = static_cast<uint16_t>(curInnerChunk);
         __ubuf__ T* inputAddr = (__ubuf__ T*)this->inputTile_.GetPhyAddr();
         __ubuf__ T* outputAddr = (__ubuf__ T*)(IsBf16Merge ? this->inputCast_.GetPhyAddr() :
                                                              this->sortInput_.GetPhyAddr());
@@ -252,15 +260,15 @@ protected:
 
             AscendC::Reg::Arange(baseIdxReg, 0);
             AscendC::Reg::Muls(baseIdxReg, baseIdxReg, ToRangeScalar(this->inputRowElems_), idxMask);
-            for (uint16_t axisBase = 0; axisBase < this->axisLen_;
-                 axisBase = static_cast<uint16_t>(axisBase + vlSize)) {
+            for (uint16_t axisRepeat = 0; axisRepeat < axisRepeats; ++axisRepeat) {
+                uint32_t axisBase = static_cast<uint32_t>(axisRepeat) * vlSize;
                 uint32_t curCount = this->axisLen_ - axisBase;
                 if (curCount > vlSize) {
                     curCount = vlSize;
                 }
                 AscendC::Reg::MaskReg dataMask = AscendC::Reg::UpdateMask<CastType>(curCount);
                 AscendC::Reg::Adds(idxReg, baseIdxReg, ToRangeScalar(axisBase * this->inputRowElems_), idxMask);
-                for (uint16_t inner = 0; inner < curInnerChunk; ++inner) {
+                for (uint16_t inner = 0; inner < innerCount; ++inner) {
                     // Gather: read data from inputAddr using transpose indices in idxReg
                     AscendC::Reg::Gather(dataReg, inputAddr + inner, (AscendC::Reg::RegTensor<IdxType>&)idxReg,
                                          dataMask);

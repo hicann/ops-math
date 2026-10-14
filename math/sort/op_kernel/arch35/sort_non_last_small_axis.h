@@ -11,10 +11,12 @@
 #ifndef SORT_NON_LAST_SMALL_AXIS_H
 #define SORT_NON_LAST_SMALL_AXIS_H
 
+#include <cstdint>
 #include <type_traits>
 
 #include "kernel_operator.h"
 #include "kernel_tiling/kernel_tiling.h"
+#include "op_kernel/math_util.h"
 #include "op_kernel/platform_util.h"
 #include "simt_api/asc_simt.h"
 #include "sort_tiling_data.h"
@@ -270,7 +272,8 @@ template <typename T, typename OutIdxT, bool IsDescend, bool UseMergeSort>
 __aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>::BuildOutputIndicesVector(
     uint32_t curInnerChunk)
 {
-    uint32_t axisLen = this->axisLen_;
+    // The non-last small-axis route is limited to 2048 elements by host tiling.
+    const uint16_t axisLen = static_cast<uint16_t>(this->axisLen_);
     uint32_t innerChunk = curInnerChunk;
     uint32_t indexAxisElems = this->indexAxisElems_;
     uint32_t outputIndexRowElems = outputIndexRowElems_;
@@ -319,6 +322,8 @@ __aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>
 {
     __ubuf__ T* sortedValueAddr = (__ubuf__ T*)this->sortedValue_.GetPhyAddr();
     __ubuf__ T* outputValueAddr = (__ubuf__ T*)this->inputTile_.GetPhyAddr();
+    // The non-last small-axis route is limited to 2048 elements by host tiling.
+    const uint16_t axisLen = static_cast<uint16_t>(this->axisLen_);
 
     // Reuse inputTile_ as the output value tile after sorting. This transpose
     // restores [inner, axis] sorted rows back to [axis, inner] copy-out rows.
@@ -331,7 +336,7 @@ __aicore__ inline void SortNonLastSmallAxis<T, OutIdxT, IsDescend, UseMergeSort>
 
         AscendC::Reg::Arange(valueIdxReg, 0);
         AscendC::Reg::Muls(valueIdxReg, valueIdxReg, static_cast<RangeType_>(this->valueAxisElems_), valueIdxMask);
-        for (uint16_t axis = 0; axis < this->axisLen_; ++axis) {
+        for (uint16_t axis = 0; axis < axisLen; ++axis) {
             AscendC::Reg::Gather(valueReg, sortedValueAddr + axis, (AscendC::Reg::RegTensor<IdxType_>&)valueIdxReg,
                                  valueMask);
             if constexpr (sizeof(T) != 1) {
