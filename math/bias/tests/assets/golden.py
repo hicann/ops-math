@@ -14,6 +14,11 @@ import typing
 import numpy as np
 import torch
 
+try:
+    import ml_dtypes as _ml_dtypes
+except ImportError:
+    _ml_dtypes = None
+
 __spec__ = {
     "bias": "BiasKernelSpec",
 }
@@ -23,6 +28,20 @@ _TOL = {
     "float32": {"standard": "cross_check", "level": "L1"},
     "float16": {"standard": "cross_check", "level": "L1"},
     "bfloat16": {"standard": "cross_check", "level": "L1"},
+}
+
+_TORCH_DTYPE = {
+    "float64": torch.float64,
+    "float32": torch.float32,
+    "float16": torch.float16,
+    "bfloat16": torch.bfloat16,
+}
+
+_NP_DTYPE = {
+    "float64": np.float64,
+    "float32": np.float32,
+    "float16": np.float16,
+    "bfloat16": np.float32,
 }
 
 
@@ -42,13 +61,13 @@ def _attr(kwargs, name, default):
     return v
 
 
-def _to_torch_dtype(dtype_str):
-    dtype_str = str(dtype_str)
-    if "bfloat16" in dtype_str:
-        return torch.bfloat16
-    if "float16" in dtype_str:
-        return torch.float16
-    return torch.float32
+def _np_to_torch(arr):
+    arr = np.ascontiguousarray(arr)
+    if arr.dtype == np.uint16:
+        return torch.from_numpy(arr.copy()).view(torch.bfloat16)
+    if _ml_dtypes is not None and arr.dtype == _ml_dtypes.bfloat16:
+        return torch.from_numpy(arr.view(np.uint16).copy()).view(torch.bfloat16)
+    return torch.from_numpy(arr)
 
 
 def _bias_reshape_shape(x, bias, axis, num_axes, bias_from_blob):
@@ -77,7 +96,16 @@ def _compute(*tensors, **kwargs):
     bias_from_blob = _attr(kwargs, "bias_from_blob", True)
     reshape_shape = _bias_reshape_shape(x, bias, axis, num_axes, bias_from_blob)
     bias_reshaped = bias.reshape(reshape_shape)
+    if x.dtype in (torch.float16, torch.bfloat16):
+        return [torch.add(x.float(), bias_reshaped.float())]
     return [torch.add(x, bias_reshaped)]
+
+
+def _torch_to_np(t, np_dt):
+    if t.dtype == torch.bfloat16:
+        t = t.float()
+    arr = t.detach().cpu().numpy()
+    return arr if arr.dtype == np_dt else arr.astype(np_dt)
 
 
 class _Compose:
@@ -94,6 +122,8 @@ class _Compose:
             x, bias, self.axis, self.num_axes, self.bias_from_blob
         )
         bias_reshaped = bias.reshape(reshape_shape)
+        if x.dtype in (torch.float16, torch.bfloat16):
+            return [torch.add(x.float(), bias_reshaped.float()).to(x.dtype)]
         return [torch.add(x, bias_reshaped)]
 
 
@@ -101,31 +131,23 @@ class BiasKernelSpec:
     """kernel + geir 共用。golden 收 numpy.ndarray，返 numpy.ndarray。"""
 
     def golden(*inputs, **kwargs):
-        t = []
+        tensors = []
         for arr in inputs:
             if isinstance(arr, np.ndarray):
-                if arr.dtype.kind == "f" and arr.dtype != np.float64:
-                    arr = arr.astype(np.float32)
-                elif arr.dtype.kind != "f":
-                    arr = arr.astype(np.float32)
-                arr = np.ascontiguousarray(arr)
-                t.append(torch.from_numpy(arr))
-        outs = _compute(*t, **kwargs)
+                tensors.append(_np_to_torch(arr))
+            else:
+                tensors.append(arr)
+        outs = _compute(*tensors, **kwargs)
         od = kwargs.get("output_dtypes") or []
         od = [d[0] if isinstance(d, (list, tuple)) else str(d) for d in od]
-        _NP_DTYPE = {
-            "float32": np.float32,
-            "float16": np.float16,
-            "bfloat16": np.float32,
-        }
         result = []
         for i, o in enumerate(outs):
             if i < len(od):
-                target_dtype = _to_torch_dtype(od[i])
-                o = o.to(target_dtype)
-            np_arr = o.to(torch.float32).cpu().numpy()
-            np_dt = _NP_DTYPE.get(od[i] if i < len(od) else "float32", np.float32)
-            result.append(np_arr.astype(np_dt))
+                target = _TORCH_DTYPE.get(od[i])
+                if target is not None:
+                    o = o.to(target)
+            np_dt = _NP_DTYPE.get(od[i] if i < len(od) else "", np.float32)
+            result.append(_torch_to_np(o, np_dt))
         return result
 
     third_party: typing.ClassVar[dict] = {"torch": _Compose}

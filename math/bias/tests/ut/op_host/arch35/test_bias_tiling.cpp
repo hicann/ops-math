@@ -100,6 +100,25 @@ TEST_F(BiasTilingTest, bias_test_tiling_scalar_broadcast)
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, 1, EMPTY_EXPECT_TILING_DATA, {16777216});
 }
 
+TEST_F(BiasTilingTest, tiling_invalid_num_axes_zero_bias_elems)
+{
+    Ops::Base::BroadcastCompileInfo compileInfo = {true, 36, 253952};
+    gert::TilingContextPara tilingContextPara(
+        "Bias",
+        {
+            {{{7, 11, 13}, {7, 11, 13}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+            {{{4}, {4}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        {
+            {{{7, 11, 13}, {7, 11, 13}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        {gert::TilingContextPara::OpAttr("axis", Ops::Math::AnyValue::CreateFrom<int64_t>(1)),
+         gert::TilingContextPara::OpAttr("num_axes", Ops::Math::AnyValue::CreateFrom<int64_t>(0)),
+         gert::TilingContextPara::OpAttr("bias_from_blob", Ops::Math::AnyValue::CreateFrom<bool>(true))},
+        &compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, 0, "", {0});
+}
+
 TEST_F(BiasTilingTest, bias_test_tiling_bias_from_blob_false)
 {
     Ops::Base::BroadcastCompileInfo compileInfo = {true, 36, 253952};

@@ -137,10 +137,10 @@ bool InferBiasShape(gert::TilingContext* context, std::vector<gert::Shape>& inpu
                     OP_LOGE_FOR_INVALID_SHAPEDIM(context->GetNodeName(), "bias", std::to_string(biasDimNum).c_str(),
                                                  std::to_string(xDimNum - axis).c_str()),
                     return false);
-        OP_CHECK_IF(
-            numAxes == 0 && biasDimNum != 1,
-            OP_LOGE_FOR_INVALID_SHAPEDIM(context->GetNodeName(), "bias", std::to_string(biasDimNum).c_str(), "1"),
-            return false);
+        OP_CHECK_IF(numAxes == 0 && (biasDimNum != 1 || biasShape.GetDim(0) != 1),
+                    OP_LOGE_FOR_INVALID_SHAPEDIM(context->GetNodeName(), "bias",
+                                                 std::to_string(biasShape.GetShapeSize()).c_str(), "1"),
+                    return false);
         OP_CHECK_IF(numAxes > 0 && axis + numAxes > xDimNum,
                     OP_LOGE_FOR_INVALID_VALUE(context->GetNodeName(), "num_axes", std::to_string(numAxes).c_str(),
                                               "axis + num_axes <= rank(x)"),
