@@ -53,6 +53,7 @@ public:
             .ExtendCfgInfo("opFile.value", "adds_apt"); // 对应 kernel 入口文件名
         this->AICore().AddConfig("ascend950", aicoreConfig950);
         this->AICore().AddConfig("ascend350", aicoreConfig950);
+        this->AICore().AddConfig("ascend960dt", aicoreConfig950);
     }
 };
 

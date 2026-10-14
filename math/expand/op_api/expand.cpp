@@ -35,37 +35,35 @@ static const std::initializer_list<DataType> ASCEND910B_AICORE_DTYPE_SUPPORT_LIS
 static bool IsAiCoreSupport(const aclTensor* self)
 {
     auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
-    if ((curArch == NpuArch::DAV_2201) || (curArch == NpuArch::DAV_3510)) {
+    if ((curArch == NpuArch::DAV_2201) || (curArch == NpuArch::DAV_3510) || (curArch == NpuArch::DAV_9201)) {
         return CheckType(self->GetDataType(), ASCEND910B_AICORE_DTYPE_SUPPORT_LIST);
     }
     return CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
 }
 
 // AICORE算子kernel
-static const aclTensor* ExpandAiCore(
-    const aclTensor* self, const aclTensor* shape, const aclTensor* expandOut, aclOpExecutor* executor)
+static const aclTensor* ExpandAiCore(const aclTensor* self, const aclTensor* shape, const aclTensor* expandOut,
+                                     aclOpExecutor* executor)
 {
     L0_DFX(ExpandAiCore, self, shape, expandOut);
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICORE，将AiCore Expand算子加入任务队列
     auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Expand, OP_INPUT(self, shape), OP_OUTPUT(expandOut));
-    OP_CHECK(
-        ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ExpandAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-        return nullptr);
+    OP_CHECK(ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ExpandAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
+             return nullptr);
     return expandOut;
 }
 
 // AICPU算子kernel
-static const aclTensor* ExpandAiCpu(
-    const aclTensor* self, const aclTensor* shape, const aclTensor* expandOut, aclOpExecutor* executor)
+static const aclTensor* ExpandAiCpu(const aclTensor* self, const aclTensor* shape, const aclTensor* expandOut,
+                                    aclOpExecutor* executor)
 {
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICPU，将AiCpu Expand算子加入任务队列
     L0_DFX(ExpandAiCpu, self, shape);
 
     static internal::AicpuTaskSpace space("Expand");
     auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Expand, OP_ATTR_NAMES(), OP_INPUT(self, shape), OP_OUTPUT(expandOut));
-    OP_CHECK(
-        ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ExpandAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
-        return nullptr);
+    OP_CHECK(ret == ACL_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "ExpandAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
+             return nullptr);
     return expandOut;
 }
 

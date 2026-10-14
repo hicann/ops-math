@@ -51,7 +51,8 @@ static const inline std::initializer_list<DataType>& GetSupportDtypeList(NpuArch
 {
     static const std::map<NpuArch, std::initializer_list<DataType>> dataTypeSupportedMap = {
         {NpuArch::DAV_2201, ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST},
-        {NpuArch::DAV_3510, ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST}};
+        {NpuArch::DAV_3510, ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST},
+        {NpuArch::DAV_9201, ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST}};
     auto found = dataTypeSupportedMap.find(arch);
     if (found == dataTypeSupportedMap.end()) {
         return ASCEND910_DTYPE_DTYPE_SUPPORT_LIST;

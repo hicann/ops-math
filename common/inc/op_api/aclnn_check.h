@@ -95,9 +95,9 @@
 
 namespace op {
 // 检查1个输入和1个输出的数据类型是否在算子的支持列表内
-[[maybe_unused]] static bool CheckDtypeWithEachList(
-    const aclTensor* self, const aclTensor* out, const std::initializer_list<op::DataType>& dtypeSelfList,
-    const std::initializer_list<op::DataType>& dtypeOutList)
+[[maybe_unused]] static bool CheckDtypeWithEachList(const aclTensor* self, const aclTensor* out,
+                                                    const std::initializer_list<op::DataType>& dtypeSelfList,
+                                                    const std::initializer_list<op::DataType>& dtypeOutList)
 {
     OP_CHECK_DTYPE_NOT_SUPPORT(self, dtypeSelfList, return false);
     // 检查输出的数据类型是否在算子的支持列表内
@@ -106,8 +106,8 @@ namespace op {
     return true;
 }
 
-[[maybe_unused]] static bool CheckDtypeWithSameList(
-    const aclTensor* self, const aclTensor* out, const std::initializer_list<op::DataType>& dtypeSelfList)
+[[maybe_unused]] static bool CheckDtypeWithSameList(const aclTensor* self, const aclTensor* out,
+                                                    const std::initializer_list<op::DataType>& dtypeSelfList)
 {
     OP_CHECK_DTYPE_NOT_SUPPORT(self, dtypeSelfList, return false);
     // 检查输出的数据类型是否在算子的支持列表内
@@ -126,9 +126,8 @@ namespace op {
     if (t0Shape.GetShapeSize() == 1 && t1Shape.GetShapeSize() == 1) {
         return true;
     }
-    OP_LOGE(
-        ACLNN_ERR_PARAM_INVALID, "The tensor's shape[%s] is not equal with shape[%s].",
-        op::ToString(t0Shape).GetString(), op::ToString(t1Shape).GetString());
+    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "The tensor's shape[%s] is not equal with shape[%s].",
+            op::ToString(t0Shape).GetString(), op::ToString(t1Shape).GetString());
     return false;
 }
 
@@ -196,13 +195,13 @@ inline bool IsReduceNonContiguousSupport(const aclTensor* x, const aclIntArray* 
 
 static inline bool IsRegBase(NpuArch arch)
 {
-    const static std::set<NpuArch> regbaseArch = {NpuArch::DAV_3510};
+    const static std::set<NpuArch> regbaseArch = {NpuArch::DAV_3510, NpuArch::DAV_9201, NpuArch::DAV_9202};
     return regbaseArch.find(arch) != regbaseArch.end();
 }
 
 static inline bool IsRegBase()
 {
-    const static std::set<NpuArch> regbaseArch = {NpuArch::DAV_3510};
+    const static std::set<NpuArch> regbaseArch = {NpuArch::DAV_3510, NpuArch::DAV_9201, NpuArch::DAV_9202};
     auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
     return regbaseArch.find(curArch) != regbaseArch.end();
 }
