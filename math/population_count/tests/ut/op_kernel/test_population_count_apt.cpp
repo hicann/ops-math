@@ -20,7 +20,7 @@
 
 // Skip tiling_key.h (host-only macros) when compiling kernel UT
 #define POPULATION_COUNT_TILING_KEY_H_
-#include "../../../op_kernel/population_count_apt.cpp"
+#include "../../../op_kernel/population_count.cpp"
 
 using namespace std;
 

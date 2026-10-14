@@ -41,8 +41,6 @@ IMPLEMT_VERIFIER(PopulationCount, VerifyPopulationCount)
         if (op.GetName(opName) == GRAPH_SUCCESS && opName.GetString() != nullptr) {
             entityName = opName.GetString();
         }
-        OP_LOGE(entityName, "PopulationCount: current input dtype of x = %s, which is not supported",
-                inputDtypeStr.c_str());
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
             entityName, "x", inputDtypeStr.c_str(),
             "only integer dtypes are supported; the Ascend950 AICore implementation supports "

@@ -37,7 +37,7 @@ public:
             .DynamicShapeSupportFlag(true)
             .NeedCheckSupportFlag(false)
             .PrecisionReduceFlag(false)
-            .ExtendCfgInfo("opFile.value", "population_count_apt");
+            .ExtendCfgInfo("opFile.value", "population_count");
         this->AICore().AddConfig("ascend950", aiCoreConfig);
         this->AICore().AddConfig("ascend350", aiCoreConfig);
     }

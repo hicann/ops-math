@@ -15,6 +15,7 @@
 #include "op_common/log/log.h"
 #include "op_common/op_host/util/math_util.h"
 #include "op_common/op_host/util/platform_util.h"
+#include "util/shape_util.h"
 #include "../../op_kernel/arch35/population_count_tiling_data.h"
 #include "../../op_kernel/arch35/population_count_tiling_key.h"
 
@@ -34,12 +35,12 @@ constexpr int64_t UB_BYTES_PER_ELEM_SINGLE = 5;
 // 双 buffer: 4(input×2buf) + 2(output×2buf) + 2(tmp) = 8
 constexpr int64_t UB_BYTES_PER_ELEM_DOUBLE = 8;
 
-static const gert::Shape g_vec_1_shape = {1};
+static const gert::Shape G_VEC_1_SHAPE = {1};
 
 static inline const gert::Shape EnsureNotScalar(const gert::Shape& in_shape)
 {
     if (in_shape.GetDimNum() == 0) {
-        return g_vec_1_shape;
+        return G_VEC_1_SHAPE;
     }
     return in_shape;
 }
@@ -62,6 +63,16 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
     OP_CHECK_NULL_WITH_CONTEXT(context, inputX);
     auto inputShapeX = EnsureNotScalar(inputX->GetStorageShape());
 
+    auto outputY = context->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, outputY);
+    const gert::Shape outputShapeY = EnsureNotScalar(outputY->GetStorageShape());
+    OP_CHECK_IF(inputShapeX != outputShapeY,
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                    context->GetNodeName(), "x, y",
+                    (Ops::Base::ToString(inputShapeX) + ", " + Ops::Base::ToString(outputShapeY)).c_str(),
+                    "The shapes of x and y must be the same"),
+                return ge::GRAPH_FAILED);
+
     totalIdx = inputShapeX.GetShapeSize();
 
     const std::set<ge::DataType> supportedDtype = {ge::DT_INT16, ge::DT_UINT16};
@@ -74,6 +85,12 @@ static ge::graphStatus GetShapeAttrsInfo(gert::TilingContext* context, int64_t& 
                                               "only DT_INT16/DT_UINT16 are supported");
         return ge::GRAPH_FAILED;
     }
+
+    auto inputFormat = inputDesc->GetFormat().GetStorageFormat();
+    OP_CHECK_IF(
+        inputFormat != ge::FORMAT_ND,
+        OP_LOGE(context->GetNodeName(), "The format of x must be ND, got %d", static_cast<int32_t>(inputFormat)),
+        return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 

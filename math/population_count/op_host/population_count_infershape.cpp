@@ -34,36 +34,29 @@ namespace ops {
 
 static ge::graphStatus InferShape4PopulationCount(gert::InferShapeContext* context)
 {
-    const gert::Shape* input_shape = context->GetInputShape(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, input_shape);
+    const gert::Shape* inputShape = context->GetInputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, inputShape);
 
     // 输入 dtype 白名单校验：以 CANN 预定义错误码 EZ0020（参数 dtype 错误）上报并拦截
-    const gert::Tensor* input_tensor = context->GetInputTensor(0);
-    if (input_tensor != nullptr) {
-        const ge::DataType input_dtype = input_tensor->GetDataType();
-        const std::string inputDtypeStr = ge::TypeUtils::DataTypeToSerialString(input_dtype);
-        OP_LOGI(context->GetNodeName(), "[InferShape] current input dtype of x = %s", inputDtypeStr.c_str());
-        static const std::set<ge::DataType> supportedDtypes = {ge::DT_INT8,   ge::DT_INT16, ge::DT_INT32,
-                                                               ge::DT_INT64,  ge::DT_UINT8, ge::DT_UINT16,
-                                                               ge::DT_UINT32, ge::DT_UINT64};
-        if (supportedDtypes.count(input_dtype) == 0) {
-            OP_LOGE(context->GetNodeName(), "PopulationCount: current input dtype of x = %s, which is not supported",
-                    inputDtypeStr.c_str());
-            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-                context->GetNodeName(), "x", inputDtypeStr.c_str(),
-                "only integer dtypes are supported; the Ascend950 AICore implementation supports "
-                "DT_INT16/DT_UINT16");
-            return ge::GRAPH_FAILED;
-        }
+    const ge::DataType inputDtype = context->GetInputDesc(0)->GetDataType();
+    const std::string inputDtypeStr = ge::TypeUtils::DataTypeToSerialString(inputDtype);
+    OP_LOGI(context->GetNodeName(), "[InferShape] current input dtype of x = %s", inputDtypeStr.c_str());
+    static const std::set<ge::DataType> supportedDtypes = {ge::DT_INT16, ge::DT_UINT16};
+    if (supportedDtypes.count(inputDtype) == 0) {
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+            context->GetNodeName(), "x", inputDtypeStr.c_str(),
+            "only integer dtypes are supported; the Ascend950 AICore implementation supports "
+            "DT_INT16/DT_UINT16");
+        return ge::GRAPH_FAILED;
     }
 
-    gert::Shape* output_shape = context->GetOutputShape(0);
-    OP_CHECK_NULL_WITH_CONTEXT(context, output_shape);
+    gert::Shape* outputShape = context->GetOutputShape(0);
+    OP_CHECK_NULL_WITH_CONTEXT(context, outputShape);
 
     // Shape passthrough: y.shape = x.shape
-    *output_shape = *input_shape;
+    *outputShape = *inputShape;
 
-    OP_LOGI(context->GetNodeName(), "[InferShape] output shape=%s", Ops::Base::ToString(*output_shape).c_str());
+    OP_LOGI(context->GetNodeName(), "[InferShape] output shape=%s", Ops::Base::ToString(*outputShape).c_str());
     return ge::GRAPH_SUCCESS;
 }
 

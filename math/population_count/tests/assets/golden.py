@@ -31,6 +31,11 @@ import numpy as np
 
 __golden__ = {"kernel": {"population_count": "population_count_golden"}}
 
+# Golden 标杆元信息（规则 g/b/c）：本算子为整数位计数（非计算类、非量化），
+# 输出 dtype 固定 uint8，逐元素 bitwise_equal 验收，无容差。
+third_party = {"tensorflow": "tf.raw_ops.PopulationCount"}
+tolerance = {"uint8": {"standard": "binary_equal"}}
+
 
 _GOLDEN_PYTHON_ENV = "POPULATION_COUNT_GOLDEN_PYTHON"
 _TF_SCRIPT = r"""

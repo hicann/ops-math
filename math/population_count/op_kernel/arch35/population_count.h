@@ -53,6 +53,11 @@ namespace NsPopulationCount {
 
 using namespace AscendC;
 
+constexpr uint16_t SWAR_MASK_EVEN_BITS = 0x5555;
+constexpr uint16_t SWAR_MASK_LOW_TWO_BITS = 0x3333;
+constexpr uint16_t SWAR_MASK_LOW_NIBBLE = 0x0F0F;
+constexpr uint16_t SWAR_MASK_LOW_BYTE = 0x00FF;
+
 template <typename T, uint32_t BUFFER_MODE>
 class PopulationCount {
     static constexpr int32_t BUFFER_NUM = BUFFER_MODE ? 2 : 1;
@@ -145,21 +150,21 @@ __aicore__ inline void PopulationCount<T, BUFFER_MODE>::Compute(int64_t currentN
 
     const int32_t count = static_cast<int32_t>(currentNum);
 
-    // SWAR step 1: u = u - ((u >> 1) & 0x5555)
+    // SWAR step 1: u = u - ((u >> 1) & SWAR_MASK_EVEN_BITS)
     AscendC::ShiftRight(tmp, u, static_cast<uint16_t>(1), count);
-    AscendC::Ands(tmp, tmp, static_cast<uint16_t>(0x5555), count);
+    AscendC::Ands(tmp, tmp, SWAR_MASK_EVEN_BITS, count);
     AscendC::Sub(u, u, tmp, count);
 
-    // SWAR step 2: u = (u & 0x3333) + ((u >> 2) & 0x3333)
+    // SWAR step 2: u = (u & SWAR_MASK_LOW_TWO_BITS) + ((u >> 2) & SWAR_MASK_LOW_TWO_BITS)
     AscendC::ShiftRight(tmp, u, static_cast<uint16_t>(2), count);
-    AscendC::Ands(tmp, tmp, static_cast<uint16_t>(0x3333), count);
-    AscendC::Ands(u, u, static_cast<uint16_t>(0x3333), count);
+    AscendC::Ands(tmp, tmp, SWAR_MASK_LOW_TWO_BITS, count);
+    AscendC::Ands(u, u, SWAR_MASK_LOW_TWO_BITS, count);
     AscendC::Add(u, u, tmp, count);
 
-    // SWAR step 3: u = (u + (u >> 4)) & 0x0F0F
+    // SWAR step 3: u = (u + (u >> 4)) & SWAR_MASK_LOW_NIBBLE
     AscendC::ShiftRight(tmp, u, static_cast<uint16_t>(4), count);
     AscendC::Add(u, u, tmp, count);
-    AscendC::Ands(u, u, static_cast<uint16_t>(0x0F0F), count);
+    AscendC::Ands(u, u, SWAR_MASK_LOW_NIBBLE, count);
 
     // SWAR step 4: u = u + (u >> 8)  (low byte holds popcount [0..16])
     AscendC::ShiftRight(tmp, u, static_cast<uint16_t>(8), count);
@@ -172,7 +177,7 @@ __aicore__ inline void PopulationCount<T, BUFFER_MODE>::Compute(int64_t currentN
     //   this mask, every non-zero popcount element saturates to 0xFF.
     //   Verified on NPU by probe_uint16_small / probe_int16_dbuf /
     //   probe_unaligned_tail (2026-04-20).
-    AscendC::Ands(u, u, static_cast<uint16_t>(0x00FF), count);
+    AscendC::Ands(u, u, SWAR_MASK_LOW_BYTE, count);
 
     // Cast uint16 -> uint8 (CAST_NONE). After the 0x00FF mask above, u in [0,16]
     // so the Cast is exact and saturation-safe.

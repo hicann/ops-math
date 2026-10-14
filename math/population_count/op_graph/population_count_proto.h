@@ -19,14 +19,13 @@
 
 #include "graph/operator_reg.h"
 
-namespace ge
-{
+namespace ge {
 /**
 *@brief Computes the number of 1-bits in each element of a tensor.
 
 * @par Inputs:
-* x: A ND Tensor, Must be one of the following types:
-* int32, uint8, int16, int8, int64, uint16, uint32, uint64. \n
+ * x: A ND Tensor, Must be one of the following types:
+ * int32, uint8, int16, int8, int64, uint16, uint32, uint64. \n
 
 * @par Outputs:
 * y: A ND Tensor of type uint8. \n

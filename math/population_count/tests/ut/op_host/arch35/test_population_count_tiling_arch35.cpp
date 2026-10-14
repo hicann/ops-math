@@ -138,3 +138,12 @@ TEST_F(PopulationCountTilingTest, tiling_invalid_dtype_bool_rejected)
                                               {{{{8, 16}, {8, 16}}, ge::DT_UINT8, ge::FORMAT_ND}}, &g_compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
+
+// L2 exception case 003: NCHW format must be rejected (only FORMAT_ND supported)
+TEST_F(PopulationCountTilingTest, tiling_invalid_format_nchw_rejected)
+{
+    gert::TilingContextPara tilingContextPara(
+        "PopulationCount", {{{{2, 2, 4, 8}, {2, 2, 4, 8}}, ge::DT_INT16, ge::FORMAT_NCHW}},
+        {{{{2, 2, 4, 8}, {2, 2, 4, 8}}, ge::DT_UINT8, ge::FORMAT_NCHW}}, &g_compileInfo);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
+}
