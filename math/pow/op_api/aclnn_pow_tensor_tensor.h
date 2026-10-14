@@ -21,14 +21,14 @@ extern "C" {
  * @brief aclnnPowTensorTensor的第一段接口，根据具体的计算流程，计算workspace大小。
  * @domain aclnn_math
  * @param [in] self: npu device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16、DOUBLE、INT32、INT64、
- * INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128，且数据类型需要与other构成互相推导关系，shape需要与other满足broadcast关系。
- * 支持非连续的Tensor，数据格式支持ND，且数据格式需要与other一致。
+ * INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128，且数据类型需要与exponent构成互相推导关系，shape需要与exponent满足broadcast关系。
+ * 支持非连续的Tensor，数据格式支持ND，且数据格式需要与exponent一致。
  * @param [in] exponent: npu device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16、DOUBLE、INT32、
  * INT64、INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128，且数据类型需要与self构成互相推导关系，shape需要与self满足broadcast关系。
  * 支持非连续的Tensor，数据格式支持ND，且数据格式需要与self一致。
  * @param [in] out: npu device侧的aclTensor，数据类型支持FLOAT、FLOAT16、BFLOAT16、DOUBLE、INT32、INT64、
- * INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128，且数据类型需要是self与other推导之后可转换的数据类型，
- * shape为self与other两者broadcast之后的shape，数据格式支持ND，且数据格式需要与self一致。
+ * INT16、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128，且数据类型需要是self与exponent推导之后可转换的数据类型，
+ * shape为self与exponent两者broadcast之后的shape，数据格式支持ND，且数据格式需要与self一致。
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。

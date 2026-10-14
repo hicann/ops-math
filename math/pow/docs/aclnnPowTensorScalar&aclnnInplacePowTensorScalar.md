@@ -30,7 +30,7 @@
 - 计算公式：
 
   $$
-  out_i = self_i^{exponent_i}
+  out_i = self_i^{exponent}
   $$
 
 ## 函数原型
@@ -130,7 +130,7 @@ aclnnStatus aclnnInplacePowTensorScalar(
       <td>FLOAT、FLOAT16、DOUBLE、BOOL、INT16、INT32、INT64、INT8、UINT8、COMPLEX64、COMPLEX128、BFLOAT16、UINT16、UINT32、UINT64</td>
       <td>ND</td>
       <td>-</td>
-      <td>-</td>
+      <td>√</td>
     </tr>
     <tr>
       <td>workspaceSize（uint64_t*）</td>

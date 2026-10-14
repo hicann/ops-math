@@ -27,10 +27,10 @@ namespace ge {
 * Two inputs, including:
 * @li x1: A ND Tensor. Must be one of the following types:
 *     bfloat16, float16, float32, int32, int64, int8, int16, uint8, double, complex64, complex128.
-* @li x2: A ND Tensor of the same dtype as "x1". \n
+* @li x2: A ND Tensor. Supports the same dtype set as "x1"; its dtype may differ from "x1". \n
 
 * @par Outputs:
-* y: A ND Tensor. Has the same dtype as "x1". \n
+* y: A ND Tensor. Its dtype is inferred by promoting the dtypes of "x1" and "x2". \n
 
 * @par Third-party framework compatibility
 * Compatible with the TensorFlow operator Pow.

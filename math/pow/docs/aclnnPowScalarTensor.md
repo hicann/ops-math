@@ -25,12 +25,12 @@
 
 ## 功能说明
 
-- 接口功能：exponent每个元素作为input对应元素的幂完成计算。
+- 接口功能：以标量self为底数，逐元素计算self的exponent次幂。
 
 - 计算公式：
 
 $$
-out_i = x_i^{exponent_i}
+out_i = self^{exponent_i}
 $$
 
 - 算子约束：INT32整型计算在如下范围以外的场景，会出现超时。
@@ -93,7 +93,7 @@ aclnnStatus aclnnPowScalarTensor(
       <tr>
         <td>self（aclScalar*）</td>
         <td>输入</td>
-        <td>pow运算中的底数，公式中的x</td>
+        <td>pow运算中的标量底数，公式中的self</td>
         <td>数据类型与exponent满足<a href ="../../../docs/zh/context/deduction_relationship.md">TensorScalar互推导关系</a>。</td>
         <td>FLOAT、FLOAT16、DOUBLE、INT16、INT32、INT64、INT8、UINT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16</td>
         <td>-</td>
@@ -111,7 +111,7 @@ aclnnStatus aclnnPowScalarTensor(
         <td>√</td>
       </tr>
       <tr>
-        <td>out（aclTensor*）</td>
+        <td>out（const aclTensor*）</td>
         <td>输出</td>
         <td>pow运算中的指数输出，公式中的out</td>
         <td>数据类型需要是self的数据类型与exponent的数据类型推导之后可转换的数据类型（参见<a href ="../../../docs/zh/context/conversion_relationship.md">互转换关系</a>）。</td>
