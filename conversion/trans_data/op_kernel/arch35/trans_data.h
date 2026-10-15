@@ -28,7 +28,7 @@ using namespace TRSD;
 #define TILING_MODE_SIMT_LARGE_SHAPE 21001
 #define TILING_MODE_SIMT_NZ_TO_ND 21002
 
-__aicore__ void inline trans_data_impl(GM_ADDR src, GM_ADDR dst, GM_ADDR workspace, GM_ADDR tiling)
+static __aicore__ void inline trans_data_impl(GM_ADDR src, GM_ADDR dst, GM_ADDR workspace, GM_ADDR tiling)
 {
     if (workspace == nullptr) {
         return;
@@ -67,4 +67,4 @@ __aicore__ void inline trans_data_impl(GM_ADDR src, GM_ADDR dst, GM_ADDR workspa
     }
 }
 
-#endif  // TRANS_DATA_HEAD_FILE__H_
+#endif // TRANS_DATA_HEAD_FILE__H_
