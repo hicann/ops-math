@@ -26,9 +26,8 @@ static ge::graphStatus InferShape4Broadcast(gert::InferShapeContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, in_shape2);
     auto out_shape = context->GetOutputShape(0);
     OP_CHECK_NULL_WITH_CONTEXT(context, out_shape);
-    OP_CHECK_IF(
-        !Ops::Base::BroadcastShape(in_shape1, in_shape2, out_shape),
-        OP_LOGE(context->GetNodeName(), "cannot broadcast"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(!Ops::Base::BroadcastShape(in_shape1, in_shape2, out_shape),
+                OP_LOGE(context->GetNodeName(), "cannot broadcast"), return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }

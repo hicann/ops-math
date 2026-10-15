@@ -27,8 +27,7 @@ namespace optiling {
 
 class MaximumTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit MaximumTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit MaximumTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
 protected:
     bool IsCapable() override;

@@ -24,30 +24,23 @@ using namespace ge;
 
 class LessEqualTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "LessEqualTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "LessEqualTiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "LessEqualTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "LessEqualTiling TearDown" << std::endl; }
 };
 
 TEST_F(LessEqualTiling, less_equal_test_0)
 {
     optiling::LessEqualCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara tilingContextPara(
-        "LessEqual",
-        {
-            {{{1, 1, 1, 1, 1}, {1, 1, 1, 1, 1}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BOOL, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("LessEqual",
+                                              {
+                                                  {{{1, 1, 1, 1, 1}, {1, 1, 1, 1, 1}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                  {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "2048 281483566645760 ";
     std::vector<size_t> expectWorkspaces = {16777216};

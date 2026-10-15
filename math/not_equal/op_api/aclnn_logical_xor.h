@@ -75,4 +75,4 @@ ACLNN_API aclnnStatus aclnnLogicalXor(void* workspace, uint64_t workspaceSize, a
 }
 #endif
 
-#endif  // OP_API_INC_LogicalXor_H_
+#endif // OP_API_INC_LogicalXor_H_

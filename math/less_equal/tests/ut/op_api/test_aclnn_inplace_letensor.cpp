@@ -27,15 +27,9 @@ using namespace std;
 
 class l2_inplace_le_tensor_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "le_tensor_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "le_tensor_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "le_tensor_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "le_tensor_test TearDown" << endl; }
 };
 
 // 入参为self为null场景
@@ -43,8 +37,9 @@ TEST_F(l2_inplace_le_tensor_test, test_inplace_le_tensor_self_is_null)
 {
     auto tensor_self = nullptr;
 
-    auto tensor_other =
-        TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{3, 4, 5, 6, 7, 8});
+    auto tensor_other = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                            .ValueRange(-10, 10)
+                            .Value(vector<float>{3, 4, 5, 6, 7, 8});
 
     auto ut = OP_API_UT(aclnnInplaceLeTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
@@ -57,8 +52,9 @@ TEST_F(l2_inplace_le_tensor_test, test_inplace_le_tensor_self_is_null)
 // 入参为other为null场景
 TEST_F(l2_inplace_le_tensor_test, test_inplace_le_tensor_other_is_null)
 {
-    auto tensor_self =
-        TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{3, 4, 5, 6, 7, 8});
+    auto tensor_self = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<float>{3, 4, 5, 6, 7, 8});
 
     auto tensor_other = nullptr;
 
@@ -75,8 +71,9 @@ TEST_F(l2_inplace_le_tensor_test, test_inplace_le_tensor_self_dtype_invalid)
 {
     auto tensor_self = TensorDesc({2, 3}, ACL_STRING, ACL_FORMAT_ND).ValueRange(-10, 10);
 
-    auto tensor_other =
-        TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{3, 4, 5, 6, 7, 8});
+    auto tensor_other = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                            .ValueRange(-10, 10)
+                            .Value(vector<float>{3, 4, 5, 6, 7, 8});
 
     auto ut = OP_API_UT(aclnnInplaceLeTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
@@ -94,8 +91,9 @@ TEST_F(l2_inplace_le_tensor_test, test_inplace_le_tensor_other_dtype_invalid)
 {
     auto tensor_self = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10);
 
-    auto tensor_other =
-        TensorDesc({2, 3}, ACL_STRING, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{3, 4, 5, 6, 7, 8});
+    auto tensor_other = TensorDesc({2, 3}, ACL_STRING, ACL_FORMAT_ND)
+                            .ValueRange(-10, 10)
+                            .Value(vector<float>{3, 4, 5, 6, 7, 8});
 
     auto ut = OP_API_UT(aclnnInplaceLeTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
@@ -140,11 +138,13 @@ TEST_F(l2_inplace_le_tensor_test, test_inplace_le_tensor_input_cannot_broadcast)
 // complex64 不支持
 TEST_F(l2_inplace_le_tensor_test, test_inplace_le_tensor_not_support_complex64)
 {
-    auto tensor_self =
-        TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{3, 4, 9, 6, 7, 11});
+    auto tensor_self = TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<float>{3, 4, 9, 6, 7, 11});
 
-    auto tensor_other =
-        TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{3, 4, 9, 6, 7, 11});
+    auto tensor_other = TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND)
+                            .ValueRange(-10, 10)
+                            .Value(vector<float>{3, 4, 9, 6, 7, 11});
 
     auto ut = OP_API_UT(aclnnInplaceLeTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 

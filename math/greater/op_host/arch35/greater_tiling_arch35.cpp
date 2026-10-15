@@ -23,15 +23,9 @@ using namespace Ops::Base;
 
 constexpr static uint64_t GREATER_COMMON_TILING_PRIORITY = 0;
 
-bool GreaterTiling::IsCapable()
-{
-    return true;
-}
+bool GreaterTiling::IsCapable() { return true; }
 
-ge::graphStatus GreaterTiling::GetShapeAttrsInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus GreaterTiling::GetShapeAttrsInfo() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus GreaterTiling::DoOpTiling()
 {
@@ -44,8 +38,8 @@ ge::graphStatus GreaterTiling::DoOpTiling()
     if (greaterInput0DType != greaterInput1DType) {
         std::string dtypesStr = ge::TypeUtils::DataTypeToSerialString(greaterInput0DType) + " and " +
                                 ge::TypeUtils::DataTypeToSerialString(greaterInput1DType);
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1 and x2",
-            dtypesStr.c_str(), "The dtypes of x1 and x2 must be the same");
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1 and x2", dtypesStr.c_str(),
+                                               "The dtypes of x1 and x2 must be the same");
         return ge::GRAPH_FAILED;
     }
 
@@ -81,37 +75,22 @@ ge::graphStatus GreaterTiling::DoOpTiling()
     } else {
         std::string dtypeStr = ge::TypeUtils::DataTypeToSerialString(greaterInput0DType);
         OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1", dtypeStr.c_str(),
-            "fp16, bf16, fp32, uint64, int64, int32, uint8, int8 or bool");
+                                  "fp16, bf16, fp32, uint64, int64, int32, uint8, int8 or bool");
         return ge::GRAPH_FAILED;
     }
 
     return ret;
 }
 
-ge::graphStatus GreaterTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus GreaterTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t GreaterTiling::GetTilingKey() const
-{
-    return tilingKey;
-}
+uint64_t GreaterTiling::GetTilingKey() const { return tilingKey; }
 
-ge::graphStatus GreaterTiling::GetWorkspaceSize()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus GreaterTiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus GreaterTiling::PostTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus GreaterTiling::PostTiling() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus GreaterTiling::GetPlatformInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus GreaterTiling::GetPlatformInfo() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus TilingForGreater(gert::TilingContext* context)
 {
@@ -130,10 +109,8 @@ ge::graphStatus TilingPrepareForGreater([[maybe_unused]] gert::TilingParseContex
     return ge::GRAPH_SUCCESS;
 }
 
-IMPL_OP_OPTILING(Greater)
-    .Tiling(TilingForGreater)
-    .TilingParse<BroadcastCompileInfo>(TilingPrepareForGreater);
+IMPL_OP_OPTILING(Greater).Tiling(TilingForGreater).TilingParse<BroadcastCompileInfo>(TilingPrepareForGreater);
 
 REGISTER_OPS_TILING_TEMPLATE(Greater, GreaterTiling, GREATER_COMMON_TILING_PRIORITY);
 
-}   // namespace optiling
+} // namespace optiling

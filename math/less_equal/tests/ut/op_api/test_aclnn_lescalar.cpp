@@ -25,15 +25,9 @@
 
 class l2_le_scalar_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "le_scalar_test SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "le_scalar_test SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "le_scalar_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "le_scalar_test TearDown" << std::endl; }
 };
 
 TEST_F(l2_le_scalar_test, test_le_scalar_notsupport_complex64)

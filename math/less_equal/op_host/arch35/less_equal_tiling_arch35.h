@@ -18,7 +18,6 @@
 
 #include "op_host/tiling_base_class.h"
 
-
 namespace optiling {
 
 struct LessEqualCompileInfo {
@@ -28,8 +27,7 @@ struct LessEqualCompileInfo {
 
 class LessEqualTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit LessEqualTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit LessEqualTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
 protected:
     bool IsCapable() override;

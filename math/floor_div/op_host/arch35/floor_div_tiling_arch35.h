@@ -18,7 +18,6 @@
 
 #include "op_host/tiling_base_class.h"
 
-
 namespace optiling {
 
 struct FloorDivCompileInfo {
@@ -28,8 +27,7 @@ struct FloorDivCompileInfo {
 
 class FloorDivTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit FloorDivTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit FloorDivTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
 protected:
     bool IsCapable() override;

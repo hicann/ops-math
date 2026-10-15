@@ -22,15 +22,9 @@ using namespace std;
 
 class inplaceGtScalar_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "inplaceGtScalar_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "inplaceGtScalar_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "inplaceGtScalar_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "inplaceGtScalar_test TearDown" << endl; }
 };
 
 TEST_F(inplaceGtScalar_test, case_norm_float32)

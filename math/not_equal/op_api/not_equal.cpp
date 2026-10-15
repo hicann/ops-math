@@ -30,87 +30,86 @@ static const std::initializer_list<op::DataType> AICORE910_DTYPE_SUPPORT_LIST = 
     op::DataType::DT_INT8,  op::DataType::DT_UINT8, op::DataType::DT_BOOL,  op::DataType::DT_BF16};
 
 static const std::initializer_list<op::DataType> ASCEND950_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_FLOAT16,
-    op::DataType::DT_INT8,  op::DataType::DT_UINT8, op::DataType::DT_BOOL, op::DataType::DT_BF16,
-    op::DataType::DT_UINT64};
+    op::DataType::DT_FLOAT,   op::DataType::DT_INT32, op::DataType::DT_INT64,
+    op::DataType::DT_FLOAT16, op::DataType::DT_INT8,  op::DataType::DT_UINT8,
+    op::DataType::DT_BOOL,    op::DataType::DT_BF16,  op::DataType::DT_UINT64};
 
 // AICPU TF
-static const std::initializer_list<op::DataType> AICPU_TF_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_COMPLEX64,
-    op::DataType::DT_COMPLEX128};
+static const std::initializer_list<op::DataType> AICPU_TF_DTYPE_SUPPORT_LIST = {op::DataType::DT_COMPLEX64,
+                                                                                op::DataType::DT_COMPLEX128};
 
 // 根据芯片类型、dtype判断算子是否支持走aicore
-static bool IsAiCoreSupport(const aclTensor *self) {
-  if (IsRegBase()) {
-    return CheckType(self->GetDataType(), ASCEND950_DTYPE_SUPPORT_LIST);
-  }
-  return CheckType(self->GetDataType(), AICORE910_DTYPE_SUPPORT_LIST);
+static bool IsAiCoreSupport(const aclTensor* self)
+{
+    if (IsRegBase()) {
+        return CheckType(self->GetDataType(), ASCEND950_DTYPE_SUPPORT_LIST);
+    }
+    return CheckType(self->GetDataType(), AICORE910_DTYPE_SUPPORT_LIST);
 }
 
 // AICORE算子kernel
-static const aclTensor *NotEqualAiCore(const aclTensor *self, const aclTensor *other,
-                                       aclTensor *neOut, aclOpExecutor *executor) {
-  L0_DFX(NotEqualAiCore, self, other, neOut);
-  // 使用框架宏 ADD_TO_LAUNCHER_LIST_AICORE，将NotEqual算子加入任务队列
-  auto ret = ADD_TO_LAUNCHER_LIST_AICORE(NotEqual,
-                                         OP_INPUT(self, other),
-                                         OP_OUTPUT(neOut));
-  OP_CHECK(ret ==  ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "NotEqualAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-    return nullptr);
-  return neOut;
+static const aclTensor* NotEqualAiCore(const aclTensor* self, const aclTensor* other, aclTensor* neOut,
+                                       aclOpExecutor* executor)
+{
+    L0_DFX(NotEqualAiCore, self, other, neOut);
+    // 使用框架宏 ADD_TO_LAUNCHER_LIST_AICORE，将NotEqual算子加入任务队列
+    auto ret = ADD_TO_LAUNCHER_LIST_AICORE(NotEqual, OP_INPUT(self, other), OP_OUTPUT(neOut));
+    OP_CHECK(ret == ACLNN_SUCCESS,
+             OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "NotEqualAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."), return nullptr);
+    return neOut;
 }
 
 // AICPU算子kernel
-static const aclTensor *NotEqualAiCpu(const aclTensor *self, const aclTensor *other,
-                                      aclTensor *neOut, aclOpExecutor *executor) {
-  L0_DFX(NotEqualAiCpu, self, other);
+static const aclTensor* NotEqualAiCpu(const aclTensor* self, const aclTensor* other, aclTensor* neOut,
+                                      aclOpExecutor* executor)
+{
+    L0_DFX(NotEqualAiCpu, self, other);
 
-  static internal::AicpuTaskSpace space("NotEqual");
-  // 使用框架宏ADD_TO_LAUNCHER_LIST_AICPU，将NotEqual算子加入任务队列
-  auto ret = ADD_TO_LAUNCHER_LIST_AICPU(NotEqual, OP_ATTR_NAMES(), OP_INPUT(self, other), OP_OUTPUT(neOut));
-  CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
+    static internal::AicpuTaskSpace space("NotEqual");
+    // 使用框架宏ADD_TO_LAUNCHER_LIST_AICPU，将NotEqual算子加入任务队列
+    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(NotEqual, OP_ATTR_NAMES(), OP_INPUT(self, other), OP_OUTPUT(neOut));
+    CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
 
-  return neOut;
+    return neOut;
 }
 
 // AICPU算子 TF
-static const aclTensor *NotEqualAiCpuTf(const aclTensor *self, const aclTensor *other,
-                                        aclTensor *neOut, aclOpExecutor *executor) {
-  L0_DFX(NotEqualAiCpuTf, self, other);
+static const aclTensor* NotEqualAiCpuTf(const aclTensor* self, const aclTensor* other, aclTensor* neOut,
+                                        aclOpExecutor* executor)
+{
+    L0_DFX(NotEqualAiCpuTf, self, other);
 
-  // 走TF
-  static internal::AicpuTaskSpace space("NotEqual", ge::DEPEND_IN_SHAPE, true);
+    // 走TF
+    static internal::AicpuTaskSpace space("NotEqual", ge::DEPEND_IN_SHAPE, true);
 
-  // 使用框架宏ADD_TO_LAUNCHER_LIST_AICPU，将NotEqual算子加入任务队列
-  auto ret = ADD_TO_LAUNCHER_LIST_AICPU(NotEqual,
-                                        OP_ATTR_NAMES({"T", "incompatible_shape_error"}),
-                                        OP_INPUT(self, other),
-                                        OP_OUTPUT(neOut),
-                                        OP_ATTR(self->GetDataType(), true));
-  CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
+    // 使用框架宏ADD_TO_LAUNCHER_LIST_AICPU，将NotEqual算子加入任务队列
+    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(NotEqual, OP_ATTR_NAMES({"T", "incompatible_shape_error"}),
+                                          OP_INPUT(self, other), OP_OUTPUT(neOut), OP_ATTR(self->GetDataType(), true));
+    CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
 
-  return neOut;
+    return neOut;
 }
 
-const aclTensor *NotEqual(const aclTensor *self, const aclTensor *other, aclOpExecutor *executor) {
-  op::Shape outShape;
-  if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), outShape)) {
-    OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
-            op::ToString(other->GetViewShape()).GetString());
-    return nullptr;
-  }
-
-  auto neOut = executor->AllocTensor(outShape, op::DataType::DT_BOOL, op::Format::FORMAT_ND);
-
-  if (IsAiCoreSupport(self) && IsAiCoreSupport(other)) {
-    return NotEqualAiCore(self, other, neOut, executor);
-  } else {
-    if (CheckType(self->GetDataType(), AICPU_TF_DTYPE_SUPPORT_LIST) ||
-      CheckType(other->GetDataType(), AICPU_TF_DTYPE_SUPPORT_LIST)) {
-      return NotEqualAiCpuTf(self, other, neOut, executor);
-    } else {
-      return NotEqualAiCpu(self, other, neOut, executor);
+const aclTensor* NotEqual(const aclTensor* self, const aclTensor* other, aclOpExecutor* executor)
+{
+    op::Shape outShape;
+    if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), outShape)) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
+                op::ToString(other->GetViewShape()).GetString());
+        return nullptr;
     }
-  }
+
+    auto neOut = executor->AllocTensor(outShape, op::DataType::DT_BOOL, op::Format::FORMAT_ND);
+
+    if (IsAiCoreSupport(self) && IsAiCoreSupport(other)) {
+        return NotEqualAiCore(self, other, neOut, executor);
+    } else {
+        if (CheckType(self->GetDataType(), AICPU_TF_DTYPE_SUPPORT_LIST) ||
+            CheckType(other->GetDataType(), AICPU_TF_DTYPE_SUPPORT_LIST)) {
+            return NotEqualAiCpuTf(self, other, neOut, executor);
+        } else {
+            return NotEqualAiCpu(self, other, neOut, executor);
+        }
+    }
 }
-}  // namespace l0op
+} // namespace l0op

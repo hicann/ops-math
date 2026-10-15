@@ -77,4 +77,4 @@ ACLNN_API aclnnStatus aclnnInplaceNeScalar(void* workspace, uint64_t workspaceSi
 }
 #endif
 
-#endif  // OP_API_INC_LEVEL2_ACLNN_NE_SCALAR_H_
+#endif // OP_API_INC_LEVEL2_ACLNN_NE_SCALAR_H_

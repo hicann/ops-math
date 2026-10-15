@@ -46,8 +46,8 @@ extern "C" {
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnLtTensorGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnLtTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                                    uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief aclnnLtTensor的第二段接口，用于执行计算。
@@ -72,8 +72,8 @@ ACLNN_API aclnnStatus aclnnLtTensorGetWorkspaceSize(
  * @param [in] executor: op执行器，包含了算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus
-aclnnLtTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
+ACLNN_API aclnnStatus aclnnLtTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                    aclrtStream stream);
 
 /**
  * @brief aclnnInplaceLtTensorGetWorkspaceSize的第一段接口，根据具体的计算流程，计算workspace大小。
@@ -104,8 +104,8 @@ aclnnLtTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, 
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnInplaceLtTensorGetWorkspaceSize(
-    const aclTensor* selfRef, const aclTensor* other, uint64_t* workspaceSize, aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnInplaceLtTensorGetWorkspaceSize(const aclTensor* selfRef, const aclTensor* other,
+                                                           uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief aclnnInplaceLtTensor的第二段接口，用于执行计算。
@@ -131,8 +131,8 @@ ACLNN_API aclnnStatus aclnnInplaceLtTensorGetWorkspaceSize(
  * @param [in] executor: op执行器，包含了算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus
-aclnnInplaceLtTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
+ACLNN_API aclnnStatus aclnnInplaceLtTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                           aclrtStream stream);
 
 #ifdef __cplusplus
 }

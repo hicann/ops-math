@@ -24,30 +24,23 @@ using namespace ge;
 
 class LessTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "LessTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "LessTiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "LessTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "LessTiling TearDown" << std::endl; }
 };
 
 TEST_F(LessTiling, less_test_0)
 {
     optiling::LessCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara tilingContextPara(
-        "Less",
-        {
-            {{{1, 1, 1, 1, 1}, {1, 1, 1, 1, 1}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BOOL, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("Less",
+                                              {
+                                                  {{{1, 1, 1, 1, 1}, {1, 1, 1, 1, 1}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                  {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "2048 281483566645760 ";
     std::vector<size_t> expectWorkspaces = {16777216};

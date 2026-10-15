@@ -22,15 +22,9 @@ using namespace std;
 
 class l2_floor_divide_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "div_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "div_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "div_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "div_test TearDown" << endl; }
 };
 
 // 测试ACL_BOOL类型支持

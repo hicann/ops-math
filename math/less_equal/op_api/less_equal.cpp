@@ -1,5 +1,5 @@
 /**
-  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -54,21 +54,20 @@ static bool IsAiCoreSupport(const aclTensor* self)
 }
 
 // AICORE算子kernel
-static const aclTensor* LessEqualAiCore(
-    const aclTensor* self, const aclTensor* other, aclTensor* leOut, aclOpExecutor* executor)
+static const aclTensor* LessEqualAiCore(const aclTensor* self, const aclTensor* other, aclTensor* leOut,
+                                        aclOpExecutor* executor)
 {
     L0_DFX(LessEqualAiCore, self, other, leOut);
     // 使用框架宏 ADD_TO_LAUNCHER_LIST_AICORE，将LessEqual算子加入任务队列
     auto ret = ADD_TO_LAUNCHER_LIST_AICORE(LessEqual, OP_INPUT(self, other), OP_OUTPUT(leOut));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "LessEqualAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-        return nullptr);
+    OP_CHECK(ret == ACLNN_SUCCESS,
+             OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "LessEqualAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."), return nullptr);
     return leOut;
 }
 
 // AICPU算子 TF
-static const aclTensor* LessEqualAiCpuTf(
-    const aclTensor* self, const aclTensor* other, aclTensor* leOut, aclOpExecutor* executor)
+static const aclTensor* LessEqualAiCpuTf(const aclTensor* self, const aclTensor* other, aclTensor* leOut,
+                                         aclOpExecutor* executor)
 {
     L0_DFX(LessEqualAiCpuTf, self, other);
 
@@ -76,12 +75,10 @@ static const aclTensor* LessEqualAiCpuTf(
     static internal::AicpuTaskSpace space("LessEqual", ge::DEPEND_IN_SHAPE, true);
 
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICPU，将LessEqual算子加入任务队列
-    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(
-        LessEqual, OP_ATTR_NAMES({"T", "incompatible_shape_error"}), OP_INPUT(self, other), OP_OUTPUT(leOut),
-        OP_ATTR(self->GetDataType(), true));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "LessEqualAiCpuTf ADD_TO_LAUNCHER_LIST_AICPU failed."),
-        return nullptr);
+    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(LessEqual, OP_ATTR_NAMES({"T", "incompatible_shape_error"}),
+                                          OP_INPUT(self, other), OP_OUTPUT(leOut), OP_ATTR(self->GetDataType(), true));
+    OP_CHECK(ret == ACLNN_SUCCESS,
+             OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "LessEqualAiCpuTf ADD_TO_LAUNCHER_LIST_AICPU failed."), return nullptr);
     return leOut;
 }
 
@@ -89,9 +86,8 @@ const aclTensor* LessEqual(const aclTensor* self, const aclTensor* other, aclOpE
 {
     op::Shape outShape;
     if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), outShape)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
-            op::ToString(other->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
+                op::ToString(other->GetViewShape()).GetString());
         return nullptr;
     }
 

@@ -1,5 +1,5 @@
 /**
-  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -13,8 +13,8 @@
 #include "opdev/op_executor.h"
 
 namespace l0op {
-  const aclTensor* FloorDiv(const aclTensor* self, const aclTensor* other, aclOpExecutor* executor);
-  const aclTensor* FloorDiv(const aclTensor* self, const aclTensor* other, bool isScalar, aclOpExecutor* executor);
-}
+const aclTensor* FloorDiv(const aclTensor* self, const aclTensor* other, aclOpExecutor* executor);
+const aclTensor* FloorDiv(const aclTensor* self, const aclTensor* other, bool isScalar, aclOpExecutor* executor);
+} // namespace l0op
 
 #endif // PTA_NPU_OP_API_INC_LEVEL0_OP_FLOOR_DIV_OP_H_

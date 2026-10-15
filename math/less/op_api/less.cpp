@@ -50,31 +50,29 @@ static bool IsAiCoreSupport(const aclTensor* self)
 }
 
 // AICORE算子kernel
-static const aclTensor* LessAiCore(
-    const aclTensor* self, const aclTensor* other, aclTensor* ltOut, aclOpExecutor* executor)
+static const aclTensor* LessAiCore(const aclTensor* self, const aclTensor* other, aclTensor* ltOut,
+                                   aclOpExecutor* executor)
 {
     L0_DFX(LessAiCore, self, other, ltOut);
     // 使用框架宏ADD_TO_KERNEL_OBJ_LIST，将Less算子加入任务队列
     // op::OP_TYPE_Less是算子的OpType，self、other是算子的输入，lt_out是算子的输出
     auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Less, OP_INPUT(self, other), OP_OUTPUT(ltOut));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "LessAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
-        return nullptr);
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "LessAiCore ADD_TO_LAUNCHER_LIST_AICORE failed."),
+             return nullptr);
     return ltOut;
 }
 
 // AICPU算子kernel
-static const aclTensor* LessAiCpu(
-    const aclTensor* self, const aclTensor* other, aclTensor* ltOut, aclOpExecutor* executor)
+static const aclTensor* LessAiCpu(const aclTensor* self, const aclTensor* other, aclTensor* ltOut,
+                                  aclOpExecutor* executor)
 {
     // 使用框架宏ADD_TO_LAUNCHER_LIST_AICPU，将Less算子加入任务队列
     L0_DFX(LessAiCpu, self, other, ltOut);
 
     static internal::AicpuTaskSpace space("Less");
     auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Less, OP_ATTR_NAMES(), OP_INPUT(self, other), OP_OUTPUT(ltOut));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "LessAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
-        return nullptr);
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "LessAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
+             return nullptr);
     return ltOut;
 }
 
@@ -84,9 +82,8 @@ const aclTensor* Less(const aclTensor* self, const aclTensor* other, aclOpExecut
     // 不同算子语义不同，推导的逻辑也不同，需要根据算子具体功能实现推导逻辑
     op::Shape broadcastShape;
     if (!BroadcastInferShape(self->GetViewShape(), other->GetViewShape(), broadcastShape)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
-            op::ToString(other->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Broadcast %s and %s failed.", op::ToString(self->GetViewShape()).GetString(),
+                op::ToString(other->GetViewShape()).GetString());
         return nullptr;
     }
 

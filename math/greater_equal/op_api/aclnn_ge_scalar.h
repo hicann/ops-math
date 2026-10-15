@@ -82,4 +82,4 @@ ACLNN_API aclnnStatus aclnnInplaceGeScalar(void* workspace, uint64_t workspaceSi
 }
 #endif
 
-#endif  // OP_API_INC_LEVEL2_ACLNN_GESCALAR_H_
+#endif // OP_API_INC_LEVEL2_ACLNN_GESCALAR_H_

@@ -96,10 +96,10 @@ static bool CheckDtypeValid(const aclTensor* self, const aclScalar* other, const
 {
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     bool is910bSocVersion = (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch));
-    const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST =
-        is910bSocVersion ? DTYPE_SUPPORT_910B_LIST : DTYPE_SUPPORT_910_LIST;
-    const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_LIST =
-        is910bSocVersion ? OUT_DTYPE_SUPPORT_910B_LIST : OUT_DTYPE_SUPPORT_910_LIST;
+    const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = is910bSocVersion ? DTYPE_SUPPORT_910B_LIST :
+                                                                                      DTYPE_SUPPORT_910_LIST;
+    const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_LIST = is910bSocVersion ? OUT_DTYPE_SUPPORT_910B_LIST :
+                                                                                          OUT_DTYPE_SUPPORT_910_LIST;
     // 检查数据类型是否在支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST, return false);
     OP_CHECK_DTYPE_NOT_SUPPORT(other, DTYPE_SUPPORT_LIST, return false);
@@ -193,9 +193,8 @@ static bool CheckPromoteType(const aclTensor* self, const aclScalar* other, cons
     }
 
     if (promoteType == DataType::DT_UNDEFINED) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
-            ToString(self->GetDataType()).GetString(), ToString(other->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
+                ToString(self->GetDataType()).GetString(), ToString(other->GetDataType()).GetString());
         return false;
     }
 
@@ -212,8 +211,8 @@ static bool CheckShape(const aclTensor* self, const aclTensor* out)
     return true;
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* self, const aclScalar* other, const aclTensor* out, DataType& promoteType)
+static aclnnStatus CheckParams(const aclTensor* self, const aclScalar* other, const aclTensor* out,
+                               DataType& promoteType)
 {
     // 1. 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, other, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -230,8 +229,8 @@ static aclnnStatus CheckParams(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnGtScalarCommon(
-    const aclTensor* self, const aclScalar* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnGtScalarCommon(const aclTensor* self, const aclScalar* other, aclTensor* out, uint64_t* workspaceSize,
+                                aclOpExecutor** executor)
 {
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -251,8 +250,8 @@ aclnnStatus aclnnGtScalarCommon(
 
     const aclTensor* selfProcessed = nullptr;
     if (self->GetDataType() == promoteType && l0op::IsGreaterSupportNonContiguous(self)) {
-        selfProcessed = uniqueExecutor.get()->CreateView(
-            self, self->GetViewShape(), self->GetStorageShape(), self->GetViewStrides(), self->GetViewOffset());
+        selfProcessed = uniqueExecutor.get()->CreateView(self, self->GetViewShape(), self->GetStorageShape(),
+                                                         self->GetViewStrides(), self->GetViewOffset());
     } else {
         // self如果非连续，需要转连续
         auto selfContiguous = l0op::Contiguous(self, uniqueExecutor.get());
@@ -286,8 +285,8 @@ aclnnStatus aclnnGtScalarCommon(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnGtScalarGetWorkspaceSize(
-    const aclTensor* self, const aclScalar* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnGtScalarGetWorkspaceSize(const aclTensor* self, const aclScalar* other, aclTensor* out,
+                                          uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnGtScalar, DFX_IN(self, other), DFX_OUT(out));
     return aclnnGtScalarCommon(self, other, out, workspaceSize, executor);
@@ -300,8 +299,8 @@ aclnnStatus aclnnGtScalar(void* workspace, uint64_t workspaceSize, aclOpExecutor
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnInplaceGtScalarGetWorkspaceSize(
-    aclTensor* selfRef, const aclScalar* other, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceGtScalarGetWorkspaceSize(aclTensor* selfRef, const aclScalar* other, uint64_t* workspaceSize,
+                                                 aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceGtScalar, DFX_IN(selfRef, other), DFX_OUT(selfRef));
     return aclnnGtScalarCommon(selfRef, other, selfRef, workspaceSize, executor);

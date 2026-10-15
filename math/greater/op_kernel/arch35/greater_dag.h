@@ -11,35 +11,34 @@
 #ifndef GREATER_DAG_H
 #define GREATER_DAG_H
 
-
 #include "atvoss/util/dag.h"
 #include "atvoss/util/vec.h"
 #include "atvoss/util/placeholder.h"
 
 namespace GreaterOp {
-    using namespace AscendC;
-    using namespace Ops::Base;
-    constexpr int GREATER_CMP_MODE = 1;
-    constexpr int GREATER_SEL_MODE = 2;
+using namespace AscendC;
+using namespace Ops::Base;
+constexpr int GREATER_CMP_MODE = 1;
+constexpr int GREATER_SEL_MODE = 2;
 
-    template <typename T>
-    struct GreaterCompute {
-        using InputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
-        using InputX2 = Bind<Vec::CopyInBrc<T>, Placeholder::In1<T>>;
+template <typename T>
+struct GreaterCompute {
+    using InputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
+    using InputX2 = Bind<Vec::CopyInBrc<T>, Placeholder::In1<T>>;
 
-        using CompareRes = Bind<Vec::Compare<uint8_t, T, GREATER_CMP_MODE>, InputX1, InputX2>;
+    using CompareRes = Bind<Vec::Compare<uint8_t, T, GREATER_CMP_MODE>, InputX1, InputX2>;
 
-        using ConstZero = MAKE_CONST(uint8_t, 0);
-        using DupZero = Bind<Vec::Duplicate<uint8_t>, ConstZero>;
-        using ConstOne = MAKE_CONST(uint8_t, 1);
-        using DupOne = Bind<Vec::Duplicate<uint8_t>, ConstOne>;
-        using SelectRes = Bind<Vec::Select<uint8_t, uint8_t, GREATER_SEL_MODE>, CompareRes, DupOne, DupZero>;
+    using ConstZero = MAKE_CONST(uint8_t, 0);
+    using DupZero = Bind<Vec::Duplicate<uint8_t>, ConstZero>;
+    using ConstOne = MAKE_CONST(uint8_t, 1);
+    using DupOne = Bind<Vec::Duplicate<uint8_t>, ConstOne>;
+    using SelectRes = Bind<Vec::Select<uint8_t, uint8_t, GREATER_SEL_MODE>, CompareRes, DupOne, DupZero>;
 
-        using OpCopyOut = Bind<Vec::CopyOut<uint8_t>, Placeholder::Out0<uint8_t>, SelectRes>;
-        using Outputs = Elems<OpCopyOut>;
-        using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
-        using OpDag = DAGSch<Outputs, void, MemCfg>;
-    };
-}
+    using OpCopyOut = Bind<Vec::CopyOut<uint8_t>, Placeholder::Out0<uint8_t>, SelectRes>;
+    using Outputs = Elems<OpCopyOut>;
+    using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
+    using OpDag = DAGSch<Outputs, void, MemCfg>;
+};
+} // namespace GreaterOp
 
 #endif // GREATER_DAG_H

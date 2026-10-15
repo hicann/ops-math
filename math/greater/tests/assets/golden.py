@@ -11,21 +11,18 @@
 # ----------------------------------------------------------------------------
 import numpy
 
-__golden__ = {
-  	"kernel": {
-  	    "greater": "greater_golden"
-  	}
-}
+__golden__ = {"kernel": {"greater": "greater_golden"}}
+
 
 def greater_golden(x1, x2, **kwargs):
-    '''
+    """
     Kernel golden for greater.
     All the parameters follow @greater_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
     kwargs may contain: short_soc_version, input_ori_shapes, output_ori_shapes,
-	    input_formats, output_formats, input_ori_formats, output_ori_formats,
-	    input_dtypes, output_dtypes.
-    '''
+            input_formats, output_formats, input_ori_formats, output_ori_formats,
+            input_dtypes, output_dtypes.
+    """
     if "bfloat16" in str(x1.dtype):
         x1 = x1.astype("float32")
     if "bfloat16" in str(x2.dtype):

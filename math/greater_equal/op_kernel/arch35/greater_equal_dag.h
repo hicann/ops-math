@@ -16,29 +16,29 @@
 #include "atvoss/util/placeholder.h"
 
 namespace GreaterEqualOp {
-    using namespace AscendC;
-    using namespace Ops::Base;
-    constexpr int GREATER_EQUAL_CMP_MODE = 4;
-    constexpr int GREATER_EQUAL_SEL_MODE = 2;
+using namespace AscendC;
+using namespace Ops::Base;
+constexpr int GREATER_EQUAL_CMP_MODE = 4;
+constexpr int GREATER_EQUAL_SEL_MODE = 2;
 
-    template <typename T>
-    struct GreaterEqualCompute {
-        using InputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
-        using InputX2 = Bind<Vec::CopyInBrc<T>, Placeholder::In1<T>>;
+template <typename T>
+struct GreaterEqualCompute {
+    using InputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
+    using InputX2 = Bind<Vec::CopyInBrc<T>, Placeholder::In1<T>>;
 
-        using CompareRes = Bind<Vec::Compare<uint8_t, T, GREATER_EQUAL_CMP_MODE>, InputX1, InputX2>;
+    using CompareRes = Bind<Vec::Compare<uint8_t, T, GREATER_EQUAL_CMP_MODE>, InputX1, InputX2>;
 
-        using ConstZero = MAKE_CONST(uint8_t, 0);
-        using DupZero = Bind<Vec::Duplicate<uint8_t>, ConstZero>;
-        using ConstOne = MAKE_CONST(uint8_t, 1);
-        using DupOne = Bind<Vec::Duplicate<uint8_t>, ConstOne>;
-        using SelectRes = Bind<Vec::Select<uint8_t, uint8_t, GREATER_EQUAL_SEL_MODE>, CompareRes, DupOne, DupZero>;
+    using ConstZero = MAKE_CONST(uint8_t, 0);
+    using DupZero = Bind<Vec::Duplicate<uint8_t>, ConstZero>;
+    using ConstOne = MAKE_CONST(uint8_t, 1);
+    using DupOne = Bind<Vec::Duplicate<uint8_t>, ConstOne>;
+    using SelectRes = Bind<Vec::Select<uint8_t, uint8_t, GREATER_EQUAL_SEL_MODE>, CompareRes, DupOne, DupZero>;
 
-        using OpCopyOut = Bind<Vec::CopyOut<uint8_t>, Placeholder::Out0<uint8_t>, SelectRes>;
-        using Outputs = Elems<OpCopyOut>;
-        using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
-        using OpDag = DAGSch<Outputs, void, MemCfg>;
-    };
-}
+    using OpCopyOut = Bind<Vec::CopyOut<uint8_t>, Placeholder::Out0<uint8_t>, SelectRes>;
+    using Outputs = Elems<OpCopyOut>;
+    using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
+    using OpDag = DAGSch<Outputs, void, MemCfg>;
+};
+} // namespace GreaterEqualOp
 
 #endif // GREATER_EQUAL_DAG_H

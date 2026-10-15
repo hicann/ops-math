@@ -1,5 +1,5 @@
 /**
-  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@ extern "C" {
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnLeTensorGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnLeTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                                    uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief aclnnLeTensor的第二段接口，用于执行计算。
@@ -45,8 +45,8 @@ ACLNN_API aclnnStatus aclnnLeTensorGetWorkspaceSize(
  * @param [in] executor: op执行器，包含了算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus
-aclnnLeTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
+ACLNN_API aclnnStatus aclnnLeTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                    aclrtStream stream);
 
 /**
  * @brief aclnnInplaceLeTensor的第一段接口，根据具体的计算流程，计算workspace大小。
@@ -61,8 +61,8 @@ aclnnLeTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, 
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnInplaceLeTensorGetWorkspaceSize(
-    aclTensor* selfRef, const aclTensor* other, uint64_t* workspaceSize, aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnInplaceLeTensorGetWorkspaceSize(aclTensor* selfRef, const aclTensor* other,
+                                                           uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief aclnnInplaceLeTensor的第二段接口，用于执行计算。
@@ -73,8 +73,8 @@ ACLNN_API aclnnStatus aclnnInplaceLeTensorGetWorkspaceSize(
  * @param [in] stream: acl stream流。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus
-aclnnInplaceLeTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
+ACLNN_API aclnnStatus aclnnInplaceLeTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                           aclrtStream stream);
 
 #ifdef __cplusplus
 }

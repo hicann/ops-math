@@ -38,15 +38,12 @@ namespace ge {
 * Compatible with the TensorFlow operator FloorDiv.
 */
 REG_OP(FloorDiv)
-    .INPUT(
-        x1, TensorType(
-                {DT_FLOAT16, DT_FLOAT, DT_INT8, DT_INT32, DT_UINT8, DT_INT64, DT_INT16, DT_UINT16, DT_DOUBLE, DT_BF16}))
-    .INPUT(
-        x2, TensorType(
-                {DT_FLOAT16, DT_FLOAT, DT_INT8, DT_INT32, DT_UINT8, DT_INT64, DT_INT16, DT_UINT16, DT_DOUBLE, DT_BF16}))
-    .OUTPUT(
-        y, TensorType(
-               {DT_FLOAT16, DT_FLOAT, DT_INT8, DT_INT32, DT_UINT8, DT_INT64, DT_INT16, DT_UINT16, DT_DOUBLE, DT_BF16}))
+    .INPUT(x1, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT8, DT_INT32, DT_UINT8, DT_INT64, DT_INT16, DT_UINT16, DT_DOUBLE,
+                           DT_BF16}))
+    .INPUT(x2, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT8, DT_INT32, DT_UINT8, DT_INT64, DT_INT16, DT_UINT16, DT_DOUBLE,
+                           DT_BF16}))
+    .OUTPUT(y, TensorType({DT_FLOAT16, DT_FLOAT, DT_INT8, DT_INT32, DT_UINT8, DT_INT64, DT_INT16, DT_UINT16, DT_DOUBLE,
+                           DT_BF16}))
     .OP_END_FACTORY_REG(FloorDiv)
 
 } // namespace ge

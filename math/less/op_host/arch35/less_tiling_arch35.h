@@ -18,7 +18,6 @@
 
 #include "op_host/tiling_base_class.h"
 
-
 namespace optiling {
 
 struct LessCompileInfo {
@@ -28,8 +27,7 @@ struct LessCompileInfo {
 
 class LessTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit LessTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit LessTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
 protected:
     bool IsCapable() override;

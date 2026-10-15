@@ -17,15 +17,9 @@
 
 class l2_isin_scalar_tensor_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "l2_isin_scalar_tensor_test SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "l2_isin_scalar_tensor_test SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "l2_isin_scalar_tensor_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "l2_isin_scalar_tensor_test TearDown" << std::endl; }
 };
 
 TEST_F(l2_isin_scalar_tensor_test, case_nullptr)

@@ -751,10 +751,10 @@ TEST_F(l2_minimum_test, aclnnMinimum_026_1_aclnnMinimum_ascend950_out_dtype_comp
     aclDataType outDtype = ACL_INT32;
     aclFormat outFormat = ACL_FORMAT_ND;
 
-    auto selfTensorDesc =
-        TensorDesc(selfShape, selfDtype, selfFormat).Value(vector<float>{1.2, -3.4, 5.6, 7.8, -9.1, 2.3});
-    auto otherTensorDesc =
-        TensorDesc(otherShape, otherDtype, otherFormat).Value(vector<float>{0.5, -4.5, 6.1, 7.2, -8.8, 3.9});
+    auto selfTensorDesc = TensorDesc(selfShape, selfDtype, selfFormat)
+                              .Value(vector<float>{1.2, -3.4, 5.6, 7.8, -9.1, 2.3});
+    auto otherTensorDesc = TensorDesc(otherShape, otherDtype, otherFormat)
+                               .Value(vector<float>{0.5, -4.5, 6.1, 7.2, -8.8, 3.9});
     auto outTensorDesc = TensorDesc(outShape, outDtype, outFormat);
 
     auto ut = OP_API_UT(aclnnMinimum, INPUT(selfTensorDesc, otherTensorDesc), OUTPUT(outTensorDesc));

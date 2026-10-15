@@ -21,24 +21,20 @@ using namespace std;
 
 class l2_inplace_ge_tensor_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "ge_tensor_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "ge_tensor_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "ge_tensor_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "ge_tensor_test TearDown" << endl; }
 };
 
 TEST_F(l2_inplace_ge_tensor_test, test_inplace_ge_tensor_normal_support_uint88)
 {
-    auto tensor_self =
-        TensorDesc({2, 3}, ACL_UINT8, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<uint64_t>{3, 4, 9, 6, 7, 6});
+    auto tensor_self = TensorDesc({2, 3}, ACL_UINT8, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<uint64_t>{3, 4, 9, 6, 7, 6});
 
-    auto tensor_other =
-        TensorDesc({2, 3}, ACL_UINT8, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<uint64_t>{3, 4, 4, 6, 7, 6});
+    auto tensor_other = TensorDesc({2, 3}, ACL_UINT8, ACL_FORMAT_ND)
+                            .ValueRange(-10, 10)
+                            .Value(vector<uint64_t>{3, 4, 4, 6, 7, 6});
 
     auto ut = OP_API_UT(aclnnInplaceGeTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 }
@@ -54,8 +50,9 @@ TEST_F(l2_inplace_ge_tensor_test, test_inplace_ge_tensor_normal_out_int8)
 
 TEST_F(l2_inplace_ge_tensor_test, test_inplace_ge_tensor_normal_input_float)
 {
-    auto tensor_self =
-        TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{3.000001, 4, 9, 6, 7, 11});
+    auto tensor_self = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<float>{3.000001, 4, 9, 6, 7, 11});
 
     auto tensor_other = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
                             .ValueRange(-10, 10)
@@ -102,22 +99,24 @@ TEST_F(l2_inplace_ge_tensor_test, test_inplace_ge_tensor_normal_out_int16)
 
 TEST_F(l2_inplace_ge_tensor_test, test_inplace_ge_tensor_normal_out_float16)
 {
-    auto tensor_self =
-        TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<int8_t>{3, 4, 9, 6, 7, 11});
+    auto tensor_self = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<int8_t>{3, 4, 9, 6, 7, 11});
 
-    auto tensor_other =
-        TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<int8_t>{3, 4, 5, 6, 7, 8});
+    auto tensor_other = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND)
+                            .ValueRange(-10, 10)
+                            .Value(vector<int8_t>{3, 4, 5, 6, 7, 8});
 
     auto ut = OP_API_UT(aclnnInplaceGeTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 }
 
 TEST_F(l2_inplace_ge_tensor_test, test_inplace_ge_tensor_normal_input_bool)
 {
-    auto tensor_self =
-        TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{true, true, true, false, false, false});
+    auto tensor_self = TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND)
+                           .Value(vector<bool>{true, true, true, false, false, false});
 
-    auto tensor_other =
-        TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<int8_t>{false, false, false, true, true, true});
+    auto tensor_other = TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND)
+                            .Value(vector<int8_t>{false, false, false, true, true, true});
 
     auto ut = OP_API_UT(aclnnInplaceGeTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 }
@@ -136,8 +135,9 @@ TEST_F(l2_inplace_ge_tensor_test, test_inplace_ge_tensor_self_is_null)
 {
     auto tensor_self = nullptr;
 
-    auto tensor_other =
-        TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{3, 4, 5, 6, 7, 8});
+    auto tensor_other = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                            .ValueRange(-10, 10)
+                            .Value(vector<float>{3, 4, 5, 6, 7, 8});
 
     auto ut = OP_API_UT(aclnnInplaceGeTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
@@ -151,8 +151,9 @@ TEST_F(l2_inplace_ge_tensor_test, test_inplace_ge_tensor_self_is_null)
 // 入参为other为null场景
 TEST_F(l2_inplace_ge_tensor_test, test_inplace_ge_tensor_other_is_null)
 {
-    auto tensor_self =
-        TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{3, 4, 5, 6, 7, 8});
+    auto tensor_self = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<float>{3, 4, 5, 6, 7, 8});
 
     auto tensor_other = nullptr;
 
@@ -186,8 +187,9 @@ TEST_F(l2_inplace_ge_tensor_test, test_inplace_ge_tensor_self_dtype_invalid)
 {
     auto tensor_self = TensorDesc({2, 3}, ACL_STRING, ACL_FORMAT_ND).ValueRange(-10, 10);
 
-    auto tensor_other =
-        TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{3, 4, 5, 6, 7, 8});
+    auto tensor_other = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                            .ValueRange(-10, 10)
+                            .Value(vector<float>{3, 4, 5, 6, 7, 8});
 
     auto ut = OP_API_UT(aclnnInplaceGeTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
@@ -203,8 +205,9 @@ TEST_F(l2_inplace_ge_tensor_test, test_inplace_ge_tensor_other_dtype_invalid)
 {
     auto tensor_self = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10);
 
-    auto tensor_other =
-        TensorDesc({2, 3}, ACL_STRING, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{3, 4, 5, 6, 7, 8});
+    auto tensor_other = TensorDesc({2, 3}, ACL_STRING, ACL_FORMAT_ND)
+                            .ValueRange(-10, 10)
+                            .Value(vector<float>{3, 4, 5, 6, 7, 8});
 
     auto ut = OP_API_UT(aclnnInplaceGeTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
@@ -249,11 +252,13 @@ TEST_F(l2_inplace_ge_tensor_test, test_inplace_ge_tensor_input_cannot_broadcast)
 // complex64 不支持
 TEST_F(l2_inplace_ge_tensor_test, test_inplace_ge_tensor_not_support_complex64)
 {
-    auto tensor_self =
-        TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{3, 4, 9, 6, 7, 11});
+    auto tensor_self = TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<float>{3, 4, 9, 6, 7, 11});
 
-    auto tensor_other =
-        TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{3, 4, 9, 6, 7, 11});
+    auto tensor_other = TensorDesc({2, 3}, ACL_COMPLEX64, ACL_FORMAT_ND)
+                            .ValueRange(-10, 10)
+                            .Value(vector<float>{3, 4, 9, 6, 7, 11});
 
     auto ut = OP_API_UT(aclnnInplaceGeTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
@@ -266,11 +271,11 @@ TEST_F(l2_inplace_ge_tensor_test, test_inplace_ge_tensor_not_support_complex64)
 // 非连续
 TEST_F(l2_inplace_ge_tensor_test, test_inplace_ge_tensor_to_contiguous)
 {
-    auto tensor_self =
-        TensorDesc({2, 4}, ACL_FLOAT, ACL_FORMAT_ND, {1, 2}, 0, {4, 2}).Value(vector<float>{3, 4, 9, 6, 7, 11, 5, 89});
+    auto tensor_self = TensorDesc({2, 4}, ACL_FLOAT, ACL_FORMAT_ND, {1, 2}, 0, {4, 2})
+                           .Value(vector<float>{3, 4, 9, 6, 7, 11, 5, 89});
 
-    auto tensor_other =
-        TensorDesc({2, 4}, ACL_FLOAT, ACL_FORMAT_ND, {1, 2}, 0, {4, 2}).Value(vector<float>{3, 4, 8, 6, 5, 11, 5, 80});
+    auto tensor_other = TensorDesc({2, 4}, ACL_FLOAT, ACL_FORMAT_ND, {1, 2}, 0, {4, 2})
+                            .Value(vector<float>{3, 4, 8, 6, 5, 11, 5, 80});
 
     auto ut = OP_API_UT(aclnnInplaceGeTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
@@ -282,17 +287,15 @@ TEST_F(l2_inplace_ge_tensor_test, test_inplace_ge_tensor_to_contiguous)
 // 数据范围[-1,1]
 TEST_F(l2_inplace_ge_tensor_test, test_inplace_ge_tensor_date_range_f1_1)
 {
-    auto tensor_self =
-        TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
-            .ValueRange(-1, 1)
-            .Value(vector<float>{
-                -6.75468990e-01, 7.37894118e-01, -7.84537017e-01, 9.64608252e-01, 9.09311235e-01, -9.51533616e-01});
+    auto tensor_self = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                           .ValueRange(-1, 1)
+                           .Value(vector<float>{-6.75468990e-01, 7.37894118e-01, -7.84537017e-01, 9.64608252e-01,
+                                                9.09311235e-01, -9.51533616e-01});
 
-    auto tensor_other =
-        TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
-            .ValueRange(-1, 1)
-            .Value(vector<float>{
-                -6.75468990e-01, 7.37894118e-01, -7.94537017e-01, 9.64608252e-01, 9.09211235e-01, -9.51533616e-01});
+    auto tensor_other = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                            .ValueRange(-1, 1)
+                            .Value(vector<float>{-6.75468990e-01, 7.37894118e-01, -7.94537017e-01, 9.64608252e-01,
+                                                 9.09211235e-01, -9.51533616e-01});
 
     auto ut = OP_API_UT(aclnnInplaceGeTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 

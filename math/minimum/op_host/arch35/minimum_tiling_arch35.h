@@ -27,8 +27,7 @@ namespace optiling {
 
 class MinimumTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit MinimumTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit MinimumTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
 protected:
     bool IsCapable() override;

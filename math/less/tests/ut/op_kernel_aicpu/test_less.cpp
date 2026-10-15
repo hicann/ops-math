@@ -70,9 +70,8 @@ void CalcExpectWithDiffShape(const NodeDef& node_def, bool expect_out[])
         .Output({"y", data_types[2], shapes[2], datas[2]})
 
 template <typename T1, typename T2, typename T3>
-void RunLessKernel(
-    vector<DataType> data_types, vector<vector<int64_t>>& shapes, const T1* input1_data, const T2* input2_data,
-    const T3* output_exp_data)
+void RunLessKernel(vector<DataType> data_types, vector<vector<int64_t>>& shapes, const T1* input1_data,
+                   const T2* input2_data, const T3* output_exp_data)
 {
     uint64_t input1_size = CalTotalElements(shapes, 0);
     T1* input1 = new T1[input1_size];

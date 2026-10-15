@@ -25,8 +25,7 @@ namespace optiling {
 using namespace Ops::Base;
 class EqualTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit EqualTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit EqualTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
 protected:
     bool IsCapable();

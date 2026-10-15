@@ -22,22 +22,17 @@ using namespace op;
 
 class l2_inplace_ne_scalar_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "inplace_ne_scalar_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "inplace_ne_scalar_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "inplace_ne_scalar_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "inplace_ne_scalar_test TearDown" << endl; }
 };
 
 // 正常场景 int8
 TEST_F(l2_inplace_ne_scalar_test, test_inplace_ne_scalar_support_int8)
 {
-    auto tensor_self_ref =
-        TensorDesc({2, 3}, ACL_INT8, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<int8_t>{3, 4, 9, 6, 7, 11});
+    auto tensor_self_ref = TensorDesc({2, 3}, ACL_INT8, ACL_FORMAT_ND)
+                               .ValueRange(-10, 10)
+                               .Value(vector<int8_t>{3, 4, 9, 6, 7, 11});
 
     auto scalar_ohter = ScalarDesc(3.0f);
 
@@ -52,8 +47,9 @@ TEST_F(l2_inplace_ne_scalar_test, test_inplace_ne_scalar_support_int8)
 // 正常场景 uint8
 TEST_F(l2_inplace_ne_scalar_test, test_inplace_ne_scalar_support_uint8)
 {
-    auto tensor_self_ref =
-        TensorDesc({2, 3}, ACL_UINT8, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<uint8_t>{3, 4, 9, 6, 7, 11});
+    auto tensor_self_ref = TensorDesc({2, 3}, ACL_UINT8, ACL_FORMAT_ND)
+                               .ValueRange(-10, 10)
+                               .Value(vector<uint8_t>{3, 4, 9, 6, 7, 11});
 
     auto scalar_ohter = ScalarDesc(3.0f);
 
@@ -83,8 +79,9 @@ TEST_F(l2_inplace_ne_scalar_test, test_inplace_ne_scalar_support_uint8)
 // 正常场景 int32
 TEST_F(l2_inplace_ne_scalar_test, test_inplace_ne_scalar_support_int32)
 {
-    auto tensor_self_ref =
-        TensorDesc({2, 3}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<int32_t>{3, 4, 9, 6, 7, 11});
+    auto tensor_self_ref = TensorDesc({2, 3}, ACL_INT32, ACL_FORMAT_ND)
+                               .ValueRange(-10, 10)
+                               .Value(vector<int32_t>{3, 4, 9, 6, 7, 11});
 
     auto scalar_ohter = ScalarDesc(3.0f);
     auto ut = OP_API_UT(aclnnInplaceNeScalar, INPUT(tensor_self_ref, scalar_ohter), OUTPUT());
@@ -98,8 +95,9 @@ TEST_F(l2_inplace_ne_scalar_test, test_inplace_ne_scalar_support_int32)
 // 正常场景 int64
 TEST_F(l2_inplace_ne_scalar_test, test_inplace_ne_scalar_support_int64)
 {
-    auto tensor_self_ref =
-        TensorDesc({2, 3}, ACL_INT64, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<int64_t>{3, 4, 9, 6, 7, 11});
+    auto tensor_self_ref = TensorDesc({2, 3}, ACL_INT64, ACL_FORMAT_ND)
+                               .ValueRange(-10, 10)
+                               .Value(vector<int64_t>{3, 4, 9, 6, 7, 11});
 
     auto scalar_ohter = ScalarDesc(3.0f);
 
@@ -114,8 +112,9 @@ TEST_F(l2_inplace_ne_scalar_test, test_inplace_ne_scalar_support_int64)
 // 正常场景 float16
 TEST_F(l2_inplace_ne_scalar_test, test_inplace_ne_scalar_support_float16)
 {
-    auto tensor_self_ref =
-        TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{3, 4, 9, 6, 7, 11});
+    auto tensor_self_ref = TensorDesc({2, 3}, ACL_FLOAT16, ACL_FORMAT_ND)
+                               .ValueRange(-10, 10)
+                               .Value(vector<float>{3, 4, 9, 6, 7, 11});
 
     auto scalar_ohter = ScalarDesc(3.0f);
 
@@ -130,8 +129,9 @@ TEST_F(l2_inplace_ne_scalar_test, test_inplace_ne_scalar_support_float16)
 // 正常场景 float
 TEST_F(l2_inplace_ne_scalar_test, test_inplace_ne_scalar_support_float)
 {
-    auto tensor_self_ref =
-        TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{3, 4, 9, 6, 7, 11});
+    auto tensor_self_ref = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                               .ValueRange(-10, 10)
+                               .Value(vector<float>{3, 4, 9, 6, 7, 11});
 
     auto scalar_ohter = ScalarDesc(3.0f);
 
@@ -146,8 +146,9 @@ TEST_F(l2_inplace_ne_scalar_test, test_inplace_ne_scalar_support_float)
 // 正常场景910B SocVersion bf16
 TEST_F(l2_inplace_ne_scalar_test, ascend910B2_support_bf16_910B)
 {
-    auto tensor_self_ref =
-        TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<double>{3, 4, 9, 6, 7, 11});
+    auto tensor_self_ref = TensorDesc({2, 3}, ACL_BF16, ACL_FORMAT_ND)
+                               .ValueRange(-10, 10)
+                               .Value(vector<double>{3, 4, 9, 6, 7, 11});
 
     auto scalar_ohter = ScalarDesc(3.0f);
 
@@ -163,8 +164,8 @@ TEST_F(l2_inplace_ne_scalar_test, ascend910B2_support_bf16_910B)
 // 正常场景 bool
 TEST_F(l2_inplace_ne_scalar_test, test_inplace_ne_scalar_support_bool)
 {
-    auto tensor_self_ref =
-        TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{false, true, false, true, false, false});
+    auto tensor_self_ref = TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND)
+                               .Value(vector<bool>{false, true, false, true, false, false});
 
     auto scalar_ohter = ScalarDesc(3.0f);
 
@@ -179,8 +180,9 @@ TEST_F(l2_inplace_ne_scalar_test, test_inplace_ne_scalar_support_bool)
 // 正常场景 format_not_equal   HWCN
 TEST_F(l2_inplace_ne_scalar_test, test_inplace_ne_scalar_format_notequal)
 {
-    auto tensor_self_ref =
-        TensorDesc({2, 3}, ACL_INT8, ACL_FORMAT_NCHW).ValueRange(-10, 10).Value(vector<int8_t>{3, 4, 9, 6, 7, 11});
+    auto tensor_self_ref = TensorDesc({2, 3}, ACL_INT8, ACL_FORMAT_NCHW)
+                               .ValueRange(-10, 10)
+                               .Value(vector<int8_t>{3, 4, 9, 6, 7, 11});
 
     auto scalar_ohter = ScalarDesc(3.0f);
 
@@ -280,8 +282,9 @@ TEST_F(l2_inplace_ne_scalar_test, test_inplace_ne_scalar_support_NCHW)
 // 入参self&other都为空tensor的场景
 TEST_F(l2_inplace_ne_scalar_test, test_inplace_ne_scalar_emptytensor)
 {
-    auto tensor_self_ref =
-        TensorDesc({2, 0}, ACL_INT8, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<int8_t>{3, 4, 9, 6, 7, 11});
+    auto tensor_self_ref = TensorDesc({2, 0}, ACL_INT8, ACL_FORMAT_ND)
+                               .ValueRange(-10, 10)
+                               .Value(vector<int8_t>{3, 4, 9, 6, 7, 11});
 
     auto scalar_ohter = ScalarDesc(3.0f);
 

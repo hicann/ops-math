@@ -27,15 +27,9 @@ using namespace std;
 
 class inplaceLeScalar_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "inplaceLeScalar_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "inplaceLeScalar_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "inplaceLeScalar_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "inplaceLeScalar_test TearDown" << endl; }
 };
 
 TEST_F(inplaceLeScalar_test, case_nullptr_self)

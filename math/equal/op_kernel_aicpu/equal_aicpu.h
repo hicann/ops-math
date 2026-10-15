@@ -18,9 +18,9 @@ namespace aicpu {
 
 class EqualCpuKernel : public CpuKernel {
 public:
-   EqualCpuKernel() = default;
-   ~EqualCpuKernel() override = default;
-   uint32_t Compute(CpuKernelContext &ctx) override;
+    EqualCpuKernel() = default;
+    ~EqualCpuKernel() override = default;
+    uint32_t Compute(CpuKernelContext& ctx) override;
 };
-}  // namespace aicpu
+} // namespace aicpu
 #endif // AICPU_KERNELS_EQUAL_H_

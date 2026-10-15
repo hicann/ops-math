@@ -24,30 +24,23 @@ using namespace ge;
 
 class FloorDivTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "FloorDivTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "FloorDivTiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "FloorDivTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "FloorDivTiling TearDown" << std::endl; }
 };
 
 TEST_F(FloorDivTiling, floor_div_test_0)
 {
     optiling::FloorDivCompileInfo compileInfo = {64, 245760};
-    gert::TilingContextPara tilingContextPara(
-        "FloorDiv",
-        {
-            {{{1, 1, 1, 1, 1}, {1, 1, 1, 1, 1}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("FloorDiv",
+                                              {
+                                                  {{{1, 1, 1, 1, 1}, {1, 1, 1, 1, 1}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                  {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "2048 281492156580096 ";
     std::vector<size_t> expectWorkspaces = {16777216};

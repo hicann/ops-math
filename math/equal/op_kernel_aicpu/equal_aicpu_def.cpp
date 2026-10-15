@@ -17,9 +17,9 @@ public:
     explicit Equal(const char* name) : OpDef(name)
     {
         this->Input("x1").DataType({ge::DT_DOUBLE, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT16, ge::DT_INT32,
-                                     ge::DT_INT64, ge::DT_INT8, ge::DT_UINT8, ge::DT_BOOL});
+                                    ge::DT_INT64, ge::DT_INT8, ge::DT_UINT8, ge::DT_BOOL});
         this->Input("x2").DataType({ge::DT_DOUBLE, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_INT16, ge::DT_INT32,
-                                     ge::DT_INT64, ge::DT_INT8, ge::DT_UINT8, ge::DT_BOOL});
+                                    ge::DT_INT64, ge::DT_INT8, ge::DT_UINT8, ge::DT_BOOL});
         this->Output("y").DataType({ge::DT_BOOL});
 
         ApplyMathAicpuDefaultCfg(*this);

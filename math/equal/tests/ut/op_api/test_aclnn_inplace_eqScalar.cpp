@@ -24,15 +24,9 @@ using namespace std;
 
 class l2_inplace_eq_scalar_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "inplace_eq_scalar_test SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "inplace_eq_scalar_test SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "inplace_eq_scalar_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "inplace_eq_scalar_test TearDown" << std::endl; }
 };
 
 // int8
@@ -122,8 +116,8 @@ TEST_F(l2_inplace_eq_scalar_test, test_inplace_eq_scalar_input_float)
 // bool
 TEST_F(l2_inplace_eq_scalar_test, test_inplace_eq_scalar_input_bool)
 {
-    auto self_tensor_desc =
-        TensorDesc({1, 2, 3}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{true, false, false, false, true, false});
+    auto self_tensor_desc = TensorDesc({1, 2, 3}, ACL_BOOL, ACL_FORMAT_ND)
+                                .Value(vector<bool>{true, false, false, false, true, false});
     auto other_scalar_desc = ScalarDesc(static_cast<int64_t>(2));
 
     auto ut = OP_API_UT(aclnnInplaceEqScalar, INPUT(self_tensor_desc, other_scalar_desc), OUTPUT());
@@ -192,8 +186,8 @@ TEST_F(l2_inplace_eq_scalar_test, test_inplace_eq_scalar_NC1HWC0)
     float value = 10;
     auto other_scalar_desc = ScalarDesc(value);
 
-    auto out_tensor_desc =
-        TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{false, false, false, false, false, false});
+    auto out_tensor_desc = TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND)
+                               .Value(vector<bool>{false, false, false, false, false, false});
 
     auto ut = OP_API_UT(aclnnInplaceEqScalar, INPUT(self_tensor_desc, other_scalar_desc), OUTPUT());
 

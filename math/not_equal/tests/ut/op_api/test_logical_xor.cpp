@@ -23,15 +23,9 @@ using namespace op;
 
 class l2_logical_xor_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "logical_xor_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "logical_xor_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "logical_xor_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "logical_xor_test TearDown" << endl; }
 };
 
 TEST_F(l2_logical_xor_test, aclnnLogicalXor_19_6_5_float_nd_1_1_5_float_nd_testcase001)
@@ -780,10 +774,10 @@ TEST_F(l2_logical_xor_test, aclnnLogicalXor_5_4_float32_not_contiguous_testcase0
     aclDataType outDtype = ACL_FLOAT;
     aclFormat outFormat = ACL_FORMAT_ND;
 
-    auto selfTensorDesc =
-        TensorDesc(selfShape, selfDtype, selfFormat, selfViewDim, selfOffset, selfStorageDim).ValueRange(-2, 2);
-    auto otherTensorDesc =
-        TensorDesc(otherShape, otherDtype, otherFormat, otherViewDim, otherOffset, otherStorageDim).ValueRange(-2, 2);
+    auto selfTensorDesc = TensorDesc(selfShape, selfDtype, selfFormat, selfViewDim, selfOffset, selfStorageDim)
+                              .ValueRange(-2, 2);
+    auto otherTensorDesc = TensorDesc(otherShape, otherDtype, otherFormat, otherViewDim, otherOffset, otherStorageDim)
+                               .ValueRange(-2, 2);
     auto outTensorDesc = TensorDesc(outShape, outDtype, outFormat).Precision(0.0001, 0.0001);
 
     auto ut = OP_API_UT(aclnnLogicalXor, INPUT(selfTensorDesc, otherTensorDesc), OUTPUT(outTensorDesc));

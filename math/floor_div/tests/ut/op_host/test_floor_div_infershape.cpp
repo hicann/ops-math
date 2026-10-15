@@ -23,28 +23,21 @@ using namespace ge;
 // ----------------FloorDivInfershape-------------------
 class FloorDivInfershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "FloorDivInfershape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "FloorDivInfershape SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "FloorDivInfershape TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "FloorDivInfershape TearDown" << std::endl; }
 };
 
 TEST_F(FloorDivInfershape, floor_div_infershape_test_0)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "FloorDiv",
-        {
-            {{{2, 2, 1}, {2, 2, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{2, 2, 3}, {2, 2, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("FloorDiv",
+                                                      {
+                                                          {{{2, 2, 1}, {2, 2, 1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{2, 2, 3}, {2, 2, 3}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {2, 2, 3},
     };

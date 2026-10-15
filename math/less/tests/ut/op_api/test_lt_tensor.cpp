@@ -339,8 +339,9 @@ TEST_F(l2_lt_tensor_test, aclnnLtTensor_023_error_shape)
 {
     auto self_tensor_desc = TensorDesc({10, 5, 5, 10}, ACL_FLOAT, ACL_FORMAT_NHWC).ValueRange(-10, 10);
     auto other_tensor_desc = TensorDesc({10, 5, 5, 10}, ACL_FLOAT, ACL_FORMAT_NHWC).ValueRange(-10, 10);
-    auto out_tensor_desc =
-        TensorDesc({10, 5, 10, 5}, ACL_BOOL, ACL_FORMAT_NHWC).ValueRange(-10, 10).Precision(0.0001, 0.0001);
+    auto out_tensor_desc = TensorDesc({10, 5, 10, 5}, ACL_BOOL, ACL_FORMAT_NHWC)
+                               .ValueRange(-10, 10)
+                               .Precision(0.0001, 0.0001);
 
     auto ut_2 = OP_API_UT(aclnnLtTensor, INPUT(self_tensor_desc, other_tensor_desc), OUTPUT(out_tensor_desc));
 
@@ -354,13 +355,14 @@ TEST_F(l2_lt_tensor_test, aclnnLtTensor_023_error_shape)
 // 入参为other为null场景
 TEST_F(l2_lt_tensor_test, test_lt_tensor_other_is_null)
 {
-    auto tensor_self =
-        TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{9, 3, 1, 1, 2, 3});
+    auto tensor_self = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<float>{9, 3, 1, 1, 2, 3});
 
     auto tensor_other = nullptr;
 
-    auto out_tensor_desc =
-        TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{false, false, false, false, false, false});
+    auto out_tensor_desc = TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND)
+                               .Value(vector<bool>{false, false, false, false, false, false});
 
     auto ut = OP_API_UT(aclnnLtTensor, INPUT(tensor_self, tensor_other), OUTPUT(out_tensor_desc));
 
@@ -428,11 +430,12 @@ TEST_F(l2_lt_tensor_test, test_lt_tensor_self_dtype_invalid)
 {
     auto tensor_self = TensorDesc({2, 3}, ACL_STRING, ACL_FORMAT_ND).ValueRange(-10, 10);
 
-    auto tensor_other =
-        TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{9, 3, 1, 1, 2, 3});
+    auto tensor_other = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                            .ValueRange(-10, 10)
+                            .Value(vector<float>{9, 3, 1, 1, 2, 3});
 
-    auto out_tensor_desc =
-        TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{false, false, false, false, false, false});
+    auto out_tensor_desc = TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND)
+                               .Value(vector<bool>{false, false, false, false, false, false});
 
     auto ut = OP_API_UT(aclnnLtTensor, INPUT(tensor_self, tensor_other), OUTPUT(out_tensor_desc));
 
@@ -450,8 +453,8 @@ TEST_F(l2_lt_tensor_test, test_lt_tensor_regbase_bool_tensor_bool_scalar)
         op::SetPlatformSocVersion(op::SocVersion::ASCEND950);
     }
 
-    auto tensor_self =
-        TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{true, false, true, false, true, false});
+    auto tensor_self = TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND)
+                           .Value(vector<bool>{true, false, true, false, true, false});
     auto tensor_other = TensorDesc({}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{true});
     auto out_tensor_desc = TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND);
 
@@ -512,11 +515,12 @@ TEST_F(l2_lt_tensor_test, test_lt_tensor_other_dtype_invalid)
 {
     auto tensor_self = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10);
 
-    auto tensor_other =
-        TensorDesc({2, 3}, ACL_STRING, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{9, 3, 1, 1, 2, 3});
+    auto tensor_other = TensorDesc({2, 3}, ACL_STRING, ACL_FORMAT_ND)
+                            .ValueRange(-10, 10)
+                            .Value(vector<float>{9, 3, 1, 1, 2, 3});
 
-    auto out_tensor_desc =
-        TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{false, false, false, false, false, false});
+    auto out_tensor_desc = TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND)
+                               .Value(vector<bool>{false, false, false, false, false, false});
 
     auto ut = OP_API_UT(aclnnLtTensor, INPUT(tensor_self, tensor_other), OUTPUT(out_tensor_desc));
 

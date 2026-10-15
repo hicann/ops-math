@@ -22,27 +22,22 @@ using namespace std;
 
 class l2_eq_scalar_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "eq_scalar_test SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "eq_scalar_test SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "eq_scalar_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "eq_scalar_test TearDown" << std::endl; }
 };
 
 // 正常场景
 TEST_F(l2_eq_scalar_test, test_eq_scalar_normal01)
 {
-    auto tensor_self =
-        TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{3, 4, 9, 6, 7, 11});
+    auto tensor_self = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<float>{3, 4, 9, 6, 7, 11});
 
     auto scalar_desc = ScalarDesc(1.0f);
 
-    auto out_tensor_desc =
-        TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{false, false, false, false, false, false});
+    auto out_tensor_desc = TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND)
+                               .Value(vector<bool>{false, false, false, false, false, false});
 
     auto ut = OP_API_UT(aclnnEqScalar, INPUT(tensor_self, scalar_desc), OUTPUT(out_tensor_desc));
 
@@ -54,13 +49,14 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal01)
 
 TEST_F(l2_eq_scalar_test, test_eq_scalar_normal01_with_double)
 {
-    auto tensor_self =
-        TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{3, 4, 9, 6, 7, 11});
+    auto tensor_self = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<float>{3, 4, 9, 6, 7, 11});
 
     auto scalar_desc = ScalarDesc(static_cast<double>(1.0));
 
-    auto out_tensor_desc =
-        TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{false, false, false, false, false, false});
+    auto out_tensor_desc = TensorDesc({2, 3}, ACL_BOOL, ACL_FORMAT_ND)
+                               .Value(vector<bool>{false, false, false, false, false, false});
 
     auto ut = OP_API_UT(aclnnEqScalar, INPUT(tensor_self, scalar_desc), OUTPUT(out_tensor_desc));
 
@@ -73,14 +69,15 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal01_with_double)
 // 正常场景 做dtype cast,self:float16 & other:float
 TEST_F(l2_eq_scalar_test, test_eq_scalar_normal06)
 {
-    auto tensor_self =
-        TensorDesc({2, 3, 1}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<int32_t>{1, 2, 3, 1, 2, 3});
+    auto tensor_self = TensorDesc({2, 3, 1}, ACL_FLOAT16, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<int32_t>{1, 2, 3, 1, 2, 3});
 
     int64_t value = 10;
     auto scalar_desc = ScalarDesc(value);
 
-    auto out_tensor_desc =
-        TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{false, false, false, false, false, false});
+    auto out_tensor_desc = TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND)
+                               .Value(vector<bool>{false, false, false, false, false, false});
 
     auto ut = OP_API_UT(aclnnEqScalar, INPUT(tensor_self, scalar_desc), OUTPUT(out_tensor_desc));
 
@@ -92,13 +89,14 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal06)
 
 TEST_F(l2_eq_scalar_test, test_eq_scalar_normal06_with_double)
 {
-    auto tensor_self =
-        TensorDesc({2, 3, 1}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<int32_t>{1, 2, 3, 1, 2, 3});
+    auto tensor_self = TensorDesc({2, 3, 1}, ACL_FLOAT16, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<int32_t>{1, 2, 3, 1, 2, 3});
 
     auto scalar_desc = ScalarDesc(static_cast<double>(10.0));
 
-    auto out_tensor_desc =
-        TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{false, false, false, false, false, false});
+    auto out_tensor_desc = TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND)
+                               .Value(vector<bool>{false, false, false, false, false, false});
 
     auto ut = OP_API_UT(aclnnEqScalar, INPUT(tensor_self, scalar_desc), OUTPUT(out_tensor_desc));
 
@@ -111,14 +109,15 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal06_with_double)
 // 正常场景 做dtype cast,self:bfloat16 & other:int
 TEST_F(l2_eq_scalar_test, test_eq_scalar_normal08)
 {
-    auto tensor_self =
-        TensorDesc({2, 3, 1}, ACL_BF16, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<int32_t>{1, 2, 3, 1, 2, 3});
+    auto tensor_self = TensorDesc({2, 3, 1}, ACL_BF16, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<int32_t>{1, 2, 3, 1, 2, 3});
 
     float value = 10;
     auto scalar_desc = ScalarDesc(value);
 
-    auto out_tensor_desc =
-        TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{false, false, false, false, false, false});
+    auto out_tensor_desc = TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND)
+                               .Value(vector<bool>{false, false, false, false, false, false});
 
     auto ut = OP_API_UT(aclnnEqScalar, INPUT(tensor_self, scalar_desc), OUTPUT(out_tensor_desc));
     // SAMPLE: only test GetWorkspaceSize
@@ -136,13 +135,14 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal08)
 // 正常场景 做dtype cast, self:int32 & other:float
 TEST_F(l2_eq_scalar_test, test_eq_scalar_normal02)
 {
-    auto tensor_self =
-        TensorDesc({2, 3, 1}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<int32_t>{1, 2, 3, 1, 2, 3});
+    auto tensor_self = TensorDesc({2, 3, 1}, ACL_INT32, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<int32_t>{1, 2, 3, 1, 2, 3});
 
     auto scalar_desc = ScalarDesc(1.0f);
 
-    auto out_tensor_desc =
-        TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{false, false, false, false, false, false});
+    auto out_tensor_desc = TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND)
+                               .Value(vector<bool>{false, false, false, false, false, false});
 
     auto ut = OP_API_UT(aclnnEqScalar, INPUT(tensor_self, scalar_desc), OUTPUT(out_tensor_desc));
 
@@ -155,13 +155,14 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal02)
 // 正常场景 做dtype cast, self:int64 & other:float
 TEST_F(l2_eq_scalar_test, test_eq_scalar_normal03)
 {
-    auto tensor_self =
-        TensorDesc({2, 3, 1}, ACL_INT64, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<int32_t>{1, 2, 3, 1, 2, 3});
+    auto tensor_self = TensorDesc({2, 3, 1}, ACL_INT64, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<int32_t>{1, 2, 3, 1, 2, 3});
 
     auto scalar_desc = ScalarDesc(1.0f);
 
-    auto out_tensor_desc =
-        TensorDesc({2, 3, 1}, ACL_INT32, ACL_FORMAT_ND).Value(vector<bool>{false, false, false, false, false, false});
+    auto out_tensor_desc = TensorDesc({2, 3, 1}, ACL_INT32, ACL_FORMAT_ND)
+                               .Value(vector<bool>{false, false, false, false, false, false});
 
     auto ut = OP_API_UT(aclnnEqScalar, INPUT(tensor_self, scalar_desc), OUTPUT(out_tensor_desc));
 
@@ -174,14 +175,15 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal03)
 // 正常场景 做dtype cast, self:int8 & other:float
 TEST_F(l2_eq_scalar_test, test_eq_scalar_normal11)
 {
-    auto tensor_self =
-        TensorDesc({2, 3, 1}, ACL_INT8, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<int32_t>{1, 2, 3, 1, 2, 3});
+    auto tensor_self = TensorDesc({2, 3, 1}, ACL_INT8, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<int32_t>{1, 2, 3, 1, 2, 3});
 
     int64_t value = 3;
     auto scalar_desc = ScalarDesc(value);
 
-    auto out_tensor_desc =
-        TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{false, false, false, false, false, false});
+    auto out_tensor_desc = TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND)
+                               .Value(vector<bool>{false, false, false, false, false, false});
 
     auto ut = OP_API_UT(aclnnEqScalar, INPUT(tensor_self, scalar_desc), OUTPUT(out_tensor_desc));
 
@@ -194,14 +196,15 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal11)
 // 正常场景 做dtype cast, self:uint8 & other:float
 TEST_F(l2_eq_scalar_test, test_eq_scalar_normal05)
 {
-    auto tensor_self =
-        TensorDesc({2, 3, 1}, ACL_UINT8, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<int8_t>{1, 2, 3, 1, 2, 3});
+    auto tensor_self = TensorDesc({2, 3, 1}, ACL_UINT8, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<int8_t>{1, 2, 3, 1, 2, 3});
 
     int64_t value = 3;
     auto scalar_desc = ScalarDesc(value);
 
-    auto out_tensor_desc =
-        TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{false, false, false, false, false, false});
+    auto out_tensor_desc = TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND)
+                               .Value(vector<bool>{false, false, false, false, false, false});
 
     auto ut = OP_API_UT(aclnnEqScalar, INPUT(tensor_self, scalar_desc), OUTPUT(out_tensor_desc));
 
@@ -214,14 +217,14 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal05)
 // 正常场景 做dtype cast,self:bool & other:int
 TEST_F(l2_eq_scalar_test, test_eq_scalar_normal07)
 {
-    auto tensor_self =
-        TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<int32_t>{false, false, false, false, false, false});
+    auto tensor_self = TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND)
+                           .Value(vector<int32_t>{false, false, false, false, false, false});
 
     int64_t value = 10;
     auto scalar_desc = ScalarDesc(value);
 
-    auto out_tensor_desc =
-        TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{false, false, false, false, false, false});
+    auto out_tensor_desc = TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND)
+                               .Value(vector<bool>{false, false, false, false, false, false});
 
     auto ut = OP_API_UT(aclnnEqScalar, INPUT(tensor_self, scalar_desc), OUTPUT(out_tensor_desc));
 
@@ -234,13 +237,14 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal07)
 // 正常场景 做dtype cast, self:uint32 & other:float
 TEST_F(l2_eq_scalar_test, test_eq_scalar_normal12)
 {
-    auto tensor_self =
-        TensorDesc({2, 3, 1}, ACL_UINT32, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<int32_t>{1, 2, 3, 1, 2, 3});
+    auto tensor_self = TensorDesc({2, 3, 1}, ACL_UINT32, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<int32_t>{1, 2, 3, 1, 2, 3});
 
     auto scalar_desc = ScalarDesc(uint32_t(1));
 
-    auto out_tensor_desc =
-        TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{false, false, false, false, false, false});
+    auto out_tensor_desc = TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND)
+                               .Value(vector<bool>{false, false, false, false, false, false});
 
     auto ut = OP_API_UT(aclnnEqScalar, INPUT(tensor_self, scalar_desc), OUTPUT(out_tensor_desc));
 
@@ -257,14 +261,15 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_normal12)
 // 正常场景 做dtype cast, self:uint64 & other:uint64
 TEST_F(l2_eq_scalar_test, test_eq_scalar_normal04)
 {
-    auto tensor_self =
-        TensorDesc({2, 3, 1}, ACL_UINT64, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<uint64_t>{1, 2, 3, 1, 2, 3});
+    auto tensor_self = TensorDesc({2, 3, 1}, ACL_UINT64, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<uint64_t>{1, 2, 3, 1, 2, 3});
 
     uint64_t value = 3;
     auto scalar_desc = ScalarDesc(value);
 
-    auto out_tensor_desc =
-        TensorDesc({2, 3, 1}, ACL_INT32, ACL_FORMAT_ND).Value(vector<bool>{false, false, false, false, false, false});
+    auto out_tensor_desc = TensorDesc({2, 3, 1}, ACL_INT32, ACL_FORMAT_ND)
+                               .Value(vector<bool>{false, false, false, false, false, false});
 
     auto ut = OP_API_UT(aclnnEqScalar, INPUT(tensor_self, scalar_desc), OUTPUT(out_tensor_desc));
 
@@ -304,8 +309,8 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_abnormal01)
     int64_t value = 10;
     auto scalar_desc = ScalarDesc(value);
 
-    auto out_tensor_desc =
-        TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{false, false, false, false, false, false});
+    auto out_tensor_desc = TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND)
+                               .Value(vector<bool>{false, false, false, false, false, false});
 
     auto ut = OP_API_UT(aclnnEqScalar, INPUT(tensor_self, scalar_desc), OUTPUT(out_tensor_desc));
 
@@ -318,8 +323,9 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_abnormal01)
 // 异常场景 空指针
 TEST_F(l2_eq_scalar_test, test_eq_scalar_abnormal02)
 {
-    auto tensor_self =
-        TensorDesc({2, 3, 1}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<int32_t>{1, 2, 3, 1, 2, 3});
+    auto tensor_self = TensorDesc({2, 3, 1}, ACL_FLOAT16, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<int32_t>{1, 2, 3, 1, 2, 3});
 
     int64_t value = 10;
     auto scalar_desc = ScalarDesc(value);
@@ -362,8 +368,8 @@ TEST_F(l2_eq_scalar_test, test_eq_scalar_abnormal05)
     float value = 10;
     auto scalar_desc = ScalarDesc(value);
 
-    auto out_tensor_desc =
-        TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND).Value(vector<bool>{false, false, false, false, false, false});
+    auto out_tensor_desc = TensorDesc({2, 3, 1}, ACL_BOOL, ACL_FORMAT_ND)
+                               .Value(vector<bool>{false, false, false, false, false, false});
 
     auto ut = OP_API_UT(aclnnEqScalar, INPUT(tensor_self, scalar_desc), OUTPUT(out_tensor_desc));
 

@@ -10,29 +10,27 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # ----------------------------------------------------------------------------
 
-import numpy as np
 import torch
 from atk.configs.dataset_config import InputDataset
-from atk.configs.results_config import TaskResult
 from atk.tasks.api_execute import register
 from atk.tasks.api_execute.base_api import BaseApi
-from atk.tasks.dataset.base_dataset import OpsDataset
 from atk.tasks.backends.lib_interface.acl_wrapper import AclFormat
 from atk.tasks.api_execute.aclnn_base_api import AclnnBaseApi
-from atk.tasks.backends.lib_interface.acl_wrapper import TensorPtr
 
 
 @register("function_aclnn_minimum")
 class FunctionApi(BaseApi):
     def __call__(self, input_data: InputDataset, with_output: bool = False):
         if self.device == "cpu":
-            output = torch.minimum(input_data.kwargs["self"], input_data.kwargs["other"])
+            output = torch.minimum(
+                input_data.kwargs["self"], input_data.kwargs["other"]
+            )
         return output
 
 
 @register("aclnn_minimum")
 class exec_minimum(AclnnBaseApi):
-    def get_format(self, input_data:InputDataset, index=None, name=None):
+    def get_format(self, input_data: InputDataset, index=None, name=None):
         if input_data.kwargs["format"] == "NCL":
             return AclFormat.ACL_FORMAT_NCL
         if input_data.kwargs["format"] == "NCHW":

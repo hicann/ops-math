@@ -41,4 +41,3 @@ REG_OP(GreaterEqual)
 } // namespace ge
 
 #endif // OPS_OP_PROTO_INC_GREATER_EQUAL_H_
-

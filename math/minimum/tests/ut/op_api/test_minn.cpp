@@ -17,15 +17,9 @@
 
 class l2_minn_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "l2_minn_test SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "l2_minn_test SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "l2_minn_test TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "l2_minn_test TearDown" << std::endl; }
 };
 
 // 输入为空指针

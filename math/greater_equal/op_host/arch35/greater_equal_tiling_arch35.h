@@ -37,6 +37,6 @@ private:
     uint64_t tilingKey = 0;
 };
 
-}  // namespace optiling
+} // namespace optiling
 
 #endif // OPS_BUILD_IN_OP_TILING_RUNTIME_GREATER_EQUAL_TILING_H

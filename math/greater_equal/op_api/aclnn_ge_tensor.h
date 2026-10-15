@@ -84,4 +84,4 @@ ACLNN_API aclnnStatus aclnnInplaceGeTensor(void* workspace, uint64_t workspaceSi
 }
 #endif
 
-#endif  // OP_API_INC_LEVEL2_ACLNN_GETENSOR_H_
+#endif // OP_API_INC_LEVEL2_ACLNN_GETENSOR_H_

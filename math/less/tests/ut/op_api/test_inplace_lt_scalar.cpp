@@ -21,15 +21,9 @@ using namespace std;
 
 class l2_inplace_lt_scalar_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "lt_scalar_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "lt_scalar_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "lt_scalar_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "lt_scalar_test TearDown" << endl; }
 };
 
 // aclnnInplaceLtScalar_001:lt.Scalar_out输入支持BOOL
@@ -79,8 +73,9 @@ TEST_F(l2_inplace_lt_scalar_test, aclnnInplaceLtScalar_003_input_empty_tensor)
 // aclnnInplaceLtScalar_004:lt.Scalar_out支持输入为非连续Tensor
 TEST_F(l2_inplace_lt_scalar_test, aclnnInplaceLtScalar_004_input_not_contiguous)
 {
-    auto tensor_self =
-        TensorDesc({5, 4}, ACL_FLOAT, ACL_FORMAT_ND, {1, 5}, 0, {4, 5}).ValueRange(-10, 10).Precision(0.0001, 0.0001);
+    auto tensor_self = TensorDesc({5, 4}, ACL_FLOAT, ACL_FORMAT_ND, {1, 5}, 0, {4, 5})
+                           .ValueRange(-10, 10)
+                           .Precision(0.0001, 0.0001);
     auto scalar_other = ScalarDesc(1.2f);
 
     auto ut = OP_API_UT(aclnnInplaceLtScalar, INPUT(tensor_self, scalar_other), OUTPUT());
@@ -108,8 +103,9 @@ TEST_F(l2_inplace_lt_scalar_test, aclnnInplaceLtScalar_005_null_pointer)
 // 入参为other为null场景
 TEST_F(l2_inplace_lt_scalar_test, aclnnInplaceLtScalar_006_test_lt_scalar_other_is_null)
 {
-    auto tensor_self =
-        TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{9, 3, 1, 1, 2, 3});
+    auto tensor_self = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<float>{9, 3, 1, 1, 2, 3});
 
     auto ut = OP_API_UT(aclnnInplaceLtScalar, INPUT(tensor_self, nullptr), OUTPUT());
 

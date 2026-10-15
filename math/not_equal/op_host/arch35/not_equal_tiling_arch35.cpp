@@ -24,15 +24,9 @@ namespace optiling {
 using namespace ge;
 static constexpr uint64_t NOT_EQUAL_COMMON_TILING_PRIORITY = 0;
 
-ge::graphStatus NotEqualTiling::GetShapeAttrsInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus NotEqualTiling::GetShapeAttrsInfo() { return ge::GRAPH_SUCCESS; }
 
-bool NotEqualTiling::IsCapable()
-{
-    return true;
-}
+bool NotEqualTiling::IsCapable() { return true; }
 
 ge::graphStatus NotEqualTiling::DoOpTiling()
 {
@@ -45,8 +39,8 @@ ge::graphStatus NotEqualTiling::DoOpTiling()
     ge::DataType input1DType = input1Desc->GetDataType();
     if (inputDType != input1DType) {
         std::string dtypeMsg = Ops::Base::ToString(inputDType) + " and " + Ops::Base::ToString(input1DType);
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            context_->GetNodeName(), "x1 and x2", dtypeMsg.c_str(), "The dtypes of x1 and x2 must be the same");
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1 and x2", dtypeMsg.c_str(),
+                                               "The dtypes of x1 and x2 must be the same");
         return ge::GRAPH_FAILED;
     }
 
@@ -80,39 +74,23 @@ ge::graphStatus NotEqualTiling::DoOpTiling()
         ret = brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(
-            context_->GetNodeName(), "x1", Ops::Base::ToString(inputDType).c_str(),
-            "uint64, int64, int32, float16, bf16, fp32, uint8, int8 or bool");
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1", Ops::Base::ToString(inputDType).c_str(),
+                                  "uint64, int64, int32, float16, bf16, fp32, uint8, int8 or bool");
         return ge::GRAPH_FAILED;
     }
 
     return ret;
 }
 
-ge::graphStatus NotEqualTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus NotEqualTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t NotEqualTiling::GetTilingKey() const
-{
-    return tilingKey;
-}
+uint64_t NotEqualTiling::GetTilingKey() const { return tilingKey; }
 
-ge::graphStatus NotEqualTiling::GetWorkspaceSize()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus NotEqualTiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus NotEqualTiling::PostTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus NotEqualTiling::PostTiling() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus NotEqualTiling::GetPlatformInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus NotEqualTiling::GetPlatformInfo() { return ge::GRAPH_SUCCESS; }
 
 ge::graphStatus TilingForNotEqual(gert::TilingContext* context)
 {

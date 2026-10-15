@@ -62,9 +62,8 @@ int32_t GenTensorData(const vector<int64_t>& shapes, const vector<T>& values, Te
         return FAILED;
     }
 
-    tensor = Tensor(
-        tensor_desc, reinterpret_cast<const uint8_t*>(values.data()),
-        values.size() * sizeof(typename vector<T>::value_type));
+    tensor = Tensor(tensor_desc, reinterpret_cast<const uint8_t*>(values.data()),
+                    values.size() * sizeof(typename vector<T>::value_type));
     return SUCCESS;
 }
 
@@ -135,9 +134,8 @@ int VerifyOutput(const vector<Tensor>& output_tensors)
     for (int64_t i = 0; i < element_count; ++i) {
         printf("result[%ld] is: %u\n", i, static_cast<unsigned int>(result_data[i]));
         if (result_data[i] != expected[i]) {
-            printf(
-                "GreaterEqual output mismatch at index %ld, expect %u but got %u\n", i,
-                static_cast<unsigned int>(expected[i]), static_cast<unsigned int>(result_data[i]));
+            printf("GreaterEqual output mismatch at index %ld, expect %u but got %u\n", i,
+                   static_cast<unsigned int>(expected[i]), static_cast<unsigned int>(result_data[i]));
             return FAILED;
         }
     }

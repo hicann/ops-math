@@ -19,14 +19,10 @@ using namespace std;
 using namespace ge;
 
 class GreaterEqualTilingTest : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "GreaterEqualTilingTest SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() { std::cout << "GreaterEqualTilingTest SetUp" << std::endl; }
 
-  static void TearDownTestCase() {
-    std::cout << "GreaterEqualTilingTest TearDown" << std::endl;
-  }
+    static void TearDownTestCase() { std::cout << "GreaterEqualTilingTest TearDown" << std::endl; }
 };
 
 TEST_F(GreaterEqualTilingTest, greater_equal_test_tiling_float)
@@ -36,10 +32,14 @@ TEST_F(GreaterEqualTilingTest, greater_equal_test_tiling_float)
     compileInfo.ubSize = 253952;
 
     gert::TilingContextPara tilingContextPara("GreaterEqual",
-        {{{{4, 2}, {4, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
-         {{{4, 2}, {4, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},},
-        {{{{4, 2}, {4, 2}}, ge::DT_BOOL, ge::FORMAT_ND},},
-         &compileInfo);
+                                              {
+                                                  {{{4, 2}, {4, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{4, 2}, {4, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 2}, {4, 2}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "8 4294967808 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -53,10 +53,14 @@ TEST_F(GreaterEqualTilingTest, greater_equal_tiling_float16)
     compileInfo.ubSize = 253952;
 
     gert::TilingContextPara tilingContextPara("GreaterEqual",
-        {{{{4, 2}, {4, 2}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-         {{{4, 2}, {4, 2}}, ge::DT_FLOAT16, ge::FORMAT_ND},},
-        {{{{4, 2}, {4, 2}}, ge::DT_BOOL, ge::FORMAT_ND},},
-         &compileInfo);
+                                              {
+                                                  {{{4, 2}, {4, 2}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                  {{{4, 2}, {4, 2}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 2}, {4, 2}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "8 4294967808 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -70,10 +74,14 @@ TEST_F(GreaterEqualTilingTest, greater_equal_tiling_int64)
     compileInfo.ubSize = 253952;
 
     gert::TilingContextPara tilingContextPara("GreaterEqual",
-        {{{{4, 2}, {4, 2}}, ge::DT_INT64, ge::FORMAT_ND},
-         {{{4, 2}, {4, 2}}, ge::DT_INT64, ge::FORMAT_ND},},
-        {{{{4, 2}, {4, 2}}, ge::DT_BOOL, ge::FORMAT_ND},},
-         &compileInfo);
+                                              {
+                                                  {{{4, 2}, {4, 2}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                  {{{4, 2}, {4, 2}}, ge::DT_INT64, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 2}, {4, 2}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "8 4294967808 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -87,10 +95,14 @@ TEST_F(GreaterEqualTilingTest, greater_equal_tiling_int32)
     compileInfo.ubSize = 253952;
 
     gert::TilingContextPara tilingContextPara("GreaterEqual",
-        {{{{4, 2}, {4, 2}}, ge::DT_INT32, ge::FORMAT_ND},
-         {{{4, 2}, {4, 2}}, ge::DT_INT32, ge::FORMAT_ND},},
-        {{{{4, 2}, {4, 2}}, ge::DT_BOOL, ge::FORMAT_ND},},
-         &compileInfo);
+                                              {
+                                                  {{{4, 2}, {4, 2}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{4, 2}, {4, 2}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 2}, {4, 2}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "8 4294967808 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -104,10 +116,14 @@ TEST_F(GreaterEqualTilingTest, greater_equal_tiling_int8)
     compileInfo.ubSize = 253952;
 
     gert::TilingContextPara tilingContextPara("GreaterEqual",
-        {{{{4, 2}, {4, 2}}, ge::DT_INT8, ge::FORMAT_ND},
-         {{{4, 2}, {4, 2}}, ge::DT_INT8, ge::FORMAT_ND},},
-        {{{{4, 2}, {4, 2}}, ge::DT_BOOL, ge::FORMAT_ND},},
-         &compileInfo);
+                                              {
+                                                  {{{4, 2}, {4, 2}}, ge::DT_INT8, ge::FORMAT_ND},
+                                                  {{{4, 2}, {4, 2}}, ge::DT_INT8, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 2}, {4, 2}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "8 4294967808 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -121,10 +137,14 @@ TEST_F(GreaterEqualTilingTest, greater_equal_tiling_uint8)
     compileInfo.ubSize = 253952;
 
     gert::TilingContextPara tilingContextPara("GreaterEqual",
-        {{{{4, 2}, {4, 2}}, ge::DT_UINT8, ge::FORMAT_ND},
-         {{{4, 2}, {4, 2}}, ge::DT_UINT8, ge::FORMAT_ND},},
-        {{{{4, 2}, {4, 2}}, ge::DT_BOOL, ge::FORMAT_ND},},
-         &compileInfo);
+                                              {
+                                                  {{{4, 2}, {4, 2}}, ge::DT_UINT8, ge::FORMAT_ND},
+                                                  {{{4, 2}, {4, 2}}, ge::DT_UINT8, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 2}, {4, 2}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "8 4294967808 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -138,10 +158,14 @@ TEST_F(GreaterEqualTilingTest, greater_equal_tiling_uint64)
     compileInfo.ubSize = 253952;
 
     gert::TilingContextPara tilingContextPara("GreaterEqual",
-        {{{{4, 2}, {4, 2}}, ge::DT_UINT64, ge::FORMAT_ND},
-         {{{4, 2}, {4, 2}}, ge::DT_UINT64, ge::FORMAT_ND},},
-        {{{{4, 2}, {4, 2}}, ge::DT_BOOL, ge::FORMAT_ND},},
-         &compileInfo);
+                                              {
+                                                  {{{4, 2}, {4, 2}}, ge::DT_UINT64, ge::FORMAT_ND},
+                                                  {{{4, 2}, {4, 2}}, ge::DT_UINT64, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 2}, {4, 2}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "8 4294967808 ";
     std::vector<size_t> expectWorkspaces = {16777216};
@@ -155,10 +179,14 @@ TEST_F(GreaterEqualTilingTest, greater_equal_tiling_valid_dtype)
     compileInfo.ubSize = 253952;
 
     gert::TilingContextPara tilingContextPara("GreaterEqual",
-        {{{{4, 2}, {4, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
-         {{{4, 2}, {4, 2}}, ge::DT_FLOAT16, ge::FORMAT_ND},},
-        {{{{4, 2}, {4, 2}}, ge::DT_BOOL, ge::FORMAT_ND},},
-         &compileInfo);
+                                              {
+                                                  {{{4, 2}, {4, 2}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{4, 2}, {4, 2}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 2}, {4, 2}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "8 4294967808 ";
     std::vector<size_t> expectWorkspaces = {16777216};

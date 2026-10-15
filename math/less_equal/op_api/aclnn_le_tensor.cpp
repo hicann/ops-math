@@ -1,5 +1,5 @@
 /**
-  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -104,9 +104,8 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     auto outSupportList = IsRegBase(npuArch) ? GetOutDtypeSupportList() : supportList;
     if ((!CheckType(outType, outSupportList)) && (outType != DataType::DT_BOOL)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Out dtype %s should be in dtype support list [%s].",
-            op::ToString(out->GetDataType()).GetString(), op::ToString(outSupportList).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Out dtype %s should be in dtype support list [%s].",
+                op::ToString(out->GetDataType()).GetString(), op::ToString(outSupportList).GetString());
         return false;
     }
     return true;
@@ -122,9 +121,8 @@ static bool CheckPromoteType(const aclTensor* self, const aclTensor* other, cons
         promoteType = op::PromoteType(self->GetDataType(), other->GetDataType());
     }
     if (promoteType == DataType::DT_UNDEFINED) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s and other dtype %s can not promote dtype.",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(other->GetDataType()).GetString());
         return false;
     }
     if (IsRegBase(npuArch)) {
@@ -132,9 +130,8 @@ static bool CheckPromoteType(const aclTensor* self, const aclTensor* other, cons
         auto inputSupportList = GetDtypeSupportList();
         // 检查self的数据类型是否在LessEqual算子的支持列表内
         if (!CheckType(promoteType, inputSupportList)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "promote dtype %s should be in dtype support list [%s].",
-                op::ToString(promoteType).GetString(), op::ToString(inputSupportList).GetString());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "promote dtype %s should be in dtype support list [%s].",
+                    op::ToString(promoteType).GetString(), op::ToString(inputSupportList).GetString());
             return false;
         }
         // check self和other能否转换为promoteType
@@ -157,16 +154,15 @@ static bool CheckOutShape(const aclTensor* self, const aclTensor* other, const a
     OP_CHECK_BROADCAST_AND_INFER_SHAPE(self, other, outShape, return false);
 
     if (outShape != out->GetViewShape()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "BroadcastShape %s is not equal out's shape %s.",
-            op::ToString(outShape).GetString(), op::ToString(out->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "BroadcastShape %s is not equal out's shape %s.",
+                op::ToString(outShape).GetString(), op::ToString(out->GetViewShape()).GetString());
         return false;
     }
     return true;
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* self, const aclTensor* other, const aclTensor* out, DataType& promoteType)
+static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* other, const aclTensor* out,
+                               DataType& promoteType)
 {
     // 1. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
     CHECK_RET(CheckDtypeValid(self, other, out), ACLNN_ERR_PARAM_INVALID);
@@ -180,8 +176,8 @@ static aclnnStatus CheckParams(
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus aclnnLeTensorCommon(
-    const aclTensor* self, const aclTensor* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus aclnnLeTensorCommon(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                       uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -239,8 +235,8 @@ static aclnnStatus aclnnLeTensorCommon(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnLeTensorGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnLeTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                          uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnLeTensor, DFX_IN(self, other), DFX_OUT(out));
     return aclnnLeTensorCommon(self, other, out, workspaceSize, executor);
@@ -253,8 +249,8 @@ aclnnStatus aclnnLeTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnInplaceLeTensorGetWorkspaceSize(
-    aclTensor* selfRef, const aclTensor* other, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceLeTensorGetWorkspaceSize(aclTensor* selfRef, const aclTensor* other, uint64_t* workspaceSize,
+                                                 aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceLeTensor, DFX_IN(selfRef, other), DFX_OUT(selfRef));
     return aclnnLeTensorCommon(selfRef, other, selfRef, workspaceSize, executor);

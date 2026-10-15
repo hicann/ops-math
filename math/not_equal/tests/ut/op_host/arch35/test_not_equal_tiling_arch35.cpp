@@ -24,15 +24,9 @@ using namespace ge;
 
 class NotEqualTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "NotEqualTilingTest SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "NotEqualTilingTest SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "NotEqualTilingTest TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "NotEqualTilingTest TearDown" << std::endl; }
 };
 
 TEST_F(NotEqualTilingTest, not_equal_test_0)
@@ -40,16 +34,15 @@ TEST_F(NotEqualTilingTest, not_equal_test_0)
     optiling::BroadcastCompileInfo compileInfo;
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 245760;
-    gert::TilingContextPara tilingContextPara(
-        "NotEqual",
-        {
-            {{{1, 1, 1, 1, 1}, {1, 1, 1, 1, 1}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BF16, ge::FORMAT_ND},
-        },
-        {
-            {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BOOL, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("NotEqual",
+                                              {
+                                                  {{{1, 1, 1, 1, 1}, {1, 1, 1, 1, 1}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                  {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BF16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{16, 1, 4, 4, 8}, {16, 1, 4, 4, 8}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
@@ -120,16 +113,15 @@ TEST_F(NotEqualTilingTest, not_equal_test_4)
     optiling::BroadcastCompileInfo compileInfo;
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 245760;
-    gert::TilingContextPara tilingContextPara(
-        "NotEqual",
-        {
-            {{{15, 5}, {15, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-            {{{1, 5}, {1, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{15, 5}, {15, 5}}, ge::DT_BOOL, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("NotEqual",
+                                              {
+                                                  {{{15, 5}, {15, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                                  {{{1, 5}, {1, 5}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{15, 5}, {15, 5}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
@@ -160,16 +152,15 @@ TEST_F(NotEqualTilingTest, not_equal_test_6)
     optiling::BroadcastCompileInfo compileInfo;
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 245760;
-    gert::TilingContextPara tilingContextPara(
-        "NotEqual",
-        {
-            {{{1, 1, 1}, {1, 1, 1}}, ge::DT_INT32, ge::FORMAT_ND},
-            {{{15, 2, 1}, {15, 2, 1}}, ge::DT_INT32, ge::FORMAT_ND},
-        },
-        {
-            {{{15, 2, 1}, {15, 2, 1}}, ge::DT_BOOL, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("NotEqual",
+                                              {
+                                                  {{{1, 1, 1}, {1, 1, 1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                                  {{{15, 2, 1}, {15, 2, 1}}, ge::DT_INT32, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{15, 2, 1}, {15, 2, 1}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
@@ -200,16 +191,15 @@ TEST_F(NotEqualTilingTest, not_equal_test_8)
     optiling::BroadcastCompileInfo compileInfo;
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 245760;
-    gert::TilingContextPara tilingContextPara(
-        "NotEqual",
-        {
-            {{{4, 14, 6, 1}, {4, 14, 6, 1}}, ge::DT_UINT8, ge::FORMAT_ND},
-            {{{1, 1, 1, 4}, {1, 1, 1, 4}}, ge::DT_UINT8, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 14, 6, 4}, {4, 14, 6, 4}}, ge::DT_BOOL, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("NotEqual",
+                                              {
+                                                  {{{4, 14, 6, 1}, {4, 14, 6, 1}}, ge::DT_UINT8, ge::FORMAT_ND},
+                                                  {{{1, 1, 1, 4}, {1, 1, 1, 4}}, ge::DT_UINT8, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 14, 6, 4}, {4, 14, 6, 4}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 0;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
@@ -240,16 +230,15 @@ TEST_F(NotEqualTilingTest, not_equal_test_10)
     optiling::BroadcastCompileInfo compileInfo;
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 245760;
-    gert::TilingContextPara tilingContextPara(
-        "NotEqual",
-        {
-            {{{1}, {1}}, ge::DT_INT8, ge::FORMAT_ND},
-            {{{18}, {18}}, ge::DT_INT8, ge::FORMAT_ND},
-        },
-        {
-            {{{18}, {18}}, ge::DT_BOOL, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("NotEqual",
+                                              {
+                                                  {{{1}, {1}}, ge::DT_INT8, ge::FORMAT_ND},
+                                                  {{{18}, {18}}, ge::DT_INT8, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{18}, {18}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
@@ -280,16 +269,15 @@ TEST_F(NotEqualTilingTest, not_equal_test_12)
     optiling::BroadcastCompileInfo compileInfo;
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 245760;
-    gert::TilingContextPara tilingContextPara(
-        "NotEqual",
-        {
-            {{{14, 16}, {14, 16}}, ge::DT_INT64, ge::FORMAT_ND},
-            {{{14, 16}, {14, 16}}, ge::DT_INT64, ge::FORMAT_ND},
-        },
-        {
-            {{{14, 16}, {14, 16}}, ge::DT_BOOL, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("NotEqual",
+                                              {
+                                                  {{{14, 16}, {14, 16}}, ge::DT_INT64, ge::FORMAT_ND},
+                                                  {{{14, 16}, {14, 16}}, ge::DT_INT64, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{14, 16}, {14, 16}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
@@ -320,16 +308,15 @@ TEST_F(NotEqualTilingTest, not_equal_test_14)
     optiling::BroadcastCompileInfo compileInfo;
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 245760;
-    gert::TilingContextPara tilingContextPara(
-        "NotEqual",
-        {
-            {{{1, 1, 1, 1}, {1, 1, 1, 1}}, ge::DT_UINT64, ge::FORMAT_ND},
-            {{{9, 3, 9, 16}, {9, 3, 9, 16}}, ge::DT_UINT64, ge::FORMAT_ND},
-        },
-        {
-            {{{9, 3, 9, 16}, {9, 3, 9, 16}}, ge::DT_BOOL, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("NotEqual",
+                                              {
+                                                  {{{1, 1, 1, 1}, {1, 1, 1, 1}}, ge::DT_UINT64, ge::FORMAT_ND},
+                                                  {{{9, 3, 9, 16}, {9, 3, 9, 16}}, ge::DT_UINT64, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{9, 3, 9, 16}, {9, 3, 9, 16}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 8;
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectWorkspaces);
@@ -400,16 +387,15 @@ TEST_F(NotEqualTilingTest, not_equal_test_failed_different_dtype)
     optiling::BroadcastCompileInfo compileInfo;
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 245760;
-    gert::TilingContextPara tilingContextPara(
-        "NotEqual",
-        {
-            {{{1, 17, 1, 12}, {1, 17, 1, 12}}, ge::DT_BF16, ge::FORMAT_ND},
-            {{{1, 1, 1, 12}, {1, 1, 1, 12}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 17, 1, 12}, {4, 17, 1, 12}}, ge::DT_BOOL, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("NotEqual",
+                                              {
+                                                  {{{1, 17, 1, 12}, {1, 17, 1, 12}}, ge::DT_BF16, ge::FORMAT_ND},
+                                                  {{{1, 1, 1, 12}, {1, 1, 1, 12}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 17, 1, 12}, {4, 17, 1, 12}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
@@ -418,15 +404,14 @@ TEST_F(NotEqualTilingTest, not_equal_test_failed_invalid_dtype)
     optiling::BroadcastCompileInfo compileInfo;
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 245760;
-    gert::TilingContextPara tilingContextPara(
-        "NotEqual",
-        {
-            {{{1, 17, 1, 12}, {1, 17, 1, 12}}, ge::DT_INT16, ge::FORMAT_ND},
-            {{{1, 1, 1, 12}, {1, 1, 1, 12}}, ge::DT_INT16, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 17, 1, 12}, {4, 17, 1, 12}}, ge::DT_BOOL, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("NotEqual",
+                                              {
+                                                  {{{1, 17, 1, 12}, {1, 17, 1, 12}}, ge::DT_INT16, ge::FORMAT_ND},
+                                                  {{{1, 1, 1, 12}, {1, 1, 1, 12}}, ge::DT_INT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 17, 1, 12}, {4, 17, 1, 12}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }

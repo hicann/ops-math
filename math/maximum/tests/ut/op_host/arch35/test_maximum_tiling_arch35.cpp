@@ -19,14 +19,10 @@ using namespace std;
 using namespace ge;
 
 class MaximumTiling : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "MaximumTiling SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() { std::cout << "MaximumTiling SetUp" << std::endl; }
 
-  static void TearDownTestCase() {
-    std::cout << "MaximumTiling TearDown" << std::endl;
-  }
+    static void TearDownTestCase() { std::cout << "MaximumTiling TearDown" << std::endl; }
 };
 
 TEST_F(MaximumTiling, maximum_test_tiling_001)
@@ -35,13 +31,15 @@ TEST_F(MaximumTiling, maximum_test_tiling_001)
     compileInfo.coreNum = 64;
     compileInfo.ubSize = 253952;
 
-    gert::TilingContextPara tilingContextPara("Maximum",
-        {{{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-         {{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND}},
-        {{{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},},
-         &compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "Maximum",
+        {{{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND}, {{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND}},
+        {
+            {{{8, 8}, {8, 8}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+        },
+        &compileInfo);
     uint64_t expectTilingKey = 8;
     string expectTilingData = "64 4294967552 ";
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
-}                
+}

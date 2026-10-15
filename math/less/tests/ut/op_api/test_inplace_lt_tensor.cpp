@@ -21,23 +21,18 @@ using namespace std;
 
 class l2_inplace_lt_tensor_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "inplace_lt_tensor_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "inplace_lt_tensor_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "inplace_lt_tensor_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "inplace_lt_tensor_test TearDown" << endl; }
 };
 
 // aclnnInplaceLtTensor_001:lt.Tensor_out输入支持INT16
 // 走AICPU
 TEST_F(l2_inplace_lt_tensor_test, aclnnInplaceLtTensor_001_int16_HWCN)
 {
-    auto tensor_self =
-        TensorDesc({2, 3, 4, 5}, ACL_INT16, ACL_FORMAT_HWCN).ValueRange(-10, 10).Precision(0.0001, 0.0001);
+    auto tensor_self = TensorDesc({2, 3, 4, 5}, ACL_INT16, ACL_FORMAT_HWCN)
+                           .ValueRange(-10, 10)
+                           .Precision(0.0001, 0.0001);
     auto tensor_other = TensorDesc({2, 3, 4, 5}, ACL_INT16, ACL_FORMAT_HWCN).ValueRange(-10, 10);
 
     auto ut = OP_API_UT(aclnnInplaceLtTensor, INPUT(tensor_self, tensor_other), OUTPUT());
@@ -81,8 +76,9 @@ TEST_F(l2_inplace_lt_tensor_test, aclnnInplaceLtTensor_003_double)
 // aclnnInplaceLtTensor_004:lt.Tensor_out支持输入类型不一致
 TEST_F(l2_inplace_lt_tensor_test, aclnnInplaceLtTensor_004_float16_float_NHWC)
 {
-    auto tensor_self =
-        TensorDesc({2, 3, 4, 5}, ACL_FLOAT16, ACL_FORMAT_NHWC).ValueRange(-10, 10).Precision(0.001, 0.001);
+    auto tensor_self = TensorDesc({2, 3, 4, 5}, ACL_FLOAT16, ACL_FORMAT_NHWC)
+                           .ValueRange(-10, 10)
+                           .Precision(0.001, 0.001);
     auto tensor_other = TensorDesc({2, 3, 4, 5}, ACL_FLOAT, ACL_FORMAT_NHWC).ValueRange(-10, 10);
 
     auto ut = OP_API_UT(aclnnInplaceLtTensor, INPUT(tensor_self, tensor_other), OUTPUT());
@@ -96,8 +92,9 @@ TEST_F(l2_inplace_lt_tensor_test, aclnnInplaceLtTensor_004_float16_float_NHWC)
 // aclnnInplaceLtTensor_005:lt.Tensor_out支持输入类型不一致
 TEST_F(l2_inplace_lt_tensor_test, aclnnInplaceLtTensor_005_int32_float16_ND)
 {
-    auto tensor_self =
-        TensorDesc({7, 9, 11, 3, 4, 6}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-10, 10).Precision(0.0001, 0.0001);
+    auto tensor_self = TensorDesc({7, 9, 11, 3, 4, 6}, ACL_INT32, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Precision(0.0001, 0.0001);
     auto tensor_other = TensorDesc({7, 9, 11, 3, 4, 6}, ACL_FLOAT16, ACL_FORMAT_ND).ValueRange(-10, 10);
 
     auto ut = OP_API_UT(aclnnInplaceLtTensor, INPUT(tensor_self, tensor_other), OUTPUT());
@@ -111,8 +108,9 @@ TEST_F(l2_inplace_lt_tensor_test, aclnnInplaceLtTensor_005_int32_float16_ND)
 // aclnnInplaceLtTensor_006:lt.Tensor_out支持输入的类型不一致
 TEST_F(l2_inplace_lt_tensor_test, aclnnInplaceLtTensor_006_float_int32_bool_broadcast_ND)
 {
-    auto tensor_self =
-        TensorDesc({7, 9, 11, 3, 4, 6, 9}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10).Precision(0.0001, 0.0001);
+    auto tensor_self = TensorDesc({7, 9, 11, 3, 4, 6, 9}, ACL_FLOAT, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Precision(0.0001, 0.0001);
     auto tensor_other = TensorDesc({7, 9, 11, 3, 4, 6, 9}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-10, 10);
 
     auto ut = OP_API_UT(aclnnInplaceLtTensor, INPUT(tensor_self, tensor_other), OUTPUT());
@@ -141,8 +139,9 @@ TEST_F(l2_inplace_lt_tensor_test, aclnnInplaceLtTensor_007_input_empty_tensor)
 // aclnnInplaceLtTensor_008:lt.Tensor_out支持输入为非连续Tensor
 TEST_F(l2_inplace_lt_tensor_test, aclnnInplaceLtTensor_008_input_not_contiguous)
 {
-    auto tensor_self =
-        TensorDesc({5, 4}, ACL_FLOAT, ACL_FORMAT_ND, {1, 5}, 0, {4, 5}).ValueRange(-10, 10).Precision(0.0001, 0.0001);
+    auto tensor_self = TensorDesc({5, 4}, ACL_FLOAT, ACL_FORMAT_ND, {1, 5}, 0, {4, 5})
+                           .ValueRange(-10, 10)
+                           .Precision(0.0001, 0.0001);
     auto tensor_other = TensorDesc({5, 4}, ACL_FLOAT, ACL_FORMAT_ND, {1, 5}, 0, {4, 5}).ValueRange(-10, 10);
 
     auto ut = OP_API_UT(aclnnInplaceLtTensor, INPUT(tensor_self, tensor_other), OUTPUT());
@@ -171,8 +170,9 @@ TEST_F(l2_inplace_lt_tensor_test, aclnnInplaceLtTensor_009_output_not_contiguous
 // 入参为other为null场景
 TEST_F(l2_inplace_lt_tensor_test, aclnnInplaceLtTensor_010_test_lt_tensor_other_is_null)
 {
-    auto tensor_self =
-        TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{9, 3, 1, 1, 2, 3});
+    auto tensor_self = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                           .ValueRange(-10, 10)
+                           .Value(vector<float>{9, 3, 1, 1, 2, 3});
 
     auto ut = OP_API_UT(aclnnInplaceLtTensor, INPUT(tensor_self, (aclTensor*)nullptr), OUTPUT());
 
@@ -230,8 +230,9 @@ TEST_F(l2_inplace_lt_tensor_test, aclnnInplaceLtTensor_014_test_lt_tensor_self_d
 {
     auto tensor_self = TensorDesc({2, 3}, ACL_STRING, ACL_FORMAT_ND).ValueRange(-10, 10);
 
-    auto tensor_other =
-        TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{9, 3, 1, 1, 2, 3});
+    auto tensor_other = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND)
+                            .ValueRange(-10, 10)
+                            .Value(vector<float>{9, 3, 1, 1, 2, 3});
 
     auto ut = OP_API_UT(aclnnInplaceLtTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 
@@ -247,8 +248,9 @@ TEST_F(l2_inplace_lt_tensor_test, aclnnInplaceLtTensor_015_test_lt_tensor_other_
 {
     auto tensor_self = TensorDesc({2, 3}, ACL_FLOAT, ACL_FORMAT_ND).ValueRange(-10, 10);
 
-    auto tensor_other =
-        TensorDesc({2, 3}, ACL_STRING, ACL_FORMAT_ND).ValueRange(-10, 10).Value(vector<float>{9, 3, 1, 1, 2, 3});
+    auto tensor_other = TensorDesc({2, 3}, ACL_STRING, ACL_FORMAT_ND)
+                            .ValueRange(-10, 10)
+                            .Value(vector<float>{9, 3, 1, 1, 2, 3});
 
     auto ut = OP_API_UT(aclnnInplaceLtTensor, INPUT(tensor_self, tensor_other), OUTPUT());
 

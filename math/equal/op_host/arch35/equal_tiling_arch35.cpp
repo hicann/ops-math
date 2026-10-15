@@ -24,15 +24,9 @@ namespace optiling {
 using namespace ge;
 static constexpr uint64_t EQUAL_COMMON_TILING_PRIORITY = 0;
 
-ge::graphStatus EqualTiling::GetShapeAttrsInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus EqualTiling::GetShapeAttrsInfo() { return ge::GRAPH_SUCCESS; }
 
-bool EqualTiling::IsCapable()
-{
-    return true;
-}
+bool EqualTiling::IsCapable() { return true; }
 
 ge::graphStatus EqualTiling::DoOpTiling()
 {
@@ -49,13 +43,13 @@ ge::graphStatus EqualTiling::DoOpTiling()
     if (inputDType != input1DType) {
         std::string dtypeMsg = ge::TypeUtils::DataTypeToSerialString(inputDType) + " and " +
                                ge::TypeUtils::DataTypeToSerialString(input1DType);
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            context_->GetNodeName(), "x1 and x2", dtypeMsg.c_str(), "The dtypes of x1, x2 must be the same");
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(context_->GetNodeName(), "x1 and x2", dtypeMsg.c_str(),
+                                               "The dtypes of x1, x2 must be the same");
         return ge::GRAPH_FAILED;
     }
     if (outputDtype != ge::DT_BOOL) {
-        OP_LOGE_FOR_INVALID_DTYPE(
-            context_->GetNodeName(), "y", ge::TypeUtils::DataTypeToSerialString(outputDtype).c_str(), "BOOL");
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "y",
+                                  ge::TypeUtils::DataTypeToSerialString(outputDtype).c_str(), "BOOL");
         return ge::GRAPH_FAILED;
     }
 
@@ -93,39 +87,24 @@ ge::graphStatus EqualTiling::DoOpTiling()
         ret = brcBaseTiling.DoTiling();
         tilingKey = GET_TPL_TILING_KEY(brcBaseTiling.GetSchMode());
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(
-            context_->GetNodeName(), "x1", ge::TypeUtils::DataTypeToSerialString(inputDType).c_str(),
-            "uint64, int64, int32, float16, bf16, fp32, uint8, int8, bool and double");
+        OP_LOGE_FOR_INVALID_DTYPE(context_->GetNodeName(), "x1",
+                                  ge::TypeUtils::DataTypeToSerialString(inputDType).c_str(),
+                                  "uint64, int64, int32, float16, bf16, fp32, uint8, int8, bool and double");
         return ge::GRAPH_FAILED;
     }
 
     return ret;
 }
 
-ge::graphStatus EqualTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus EqualTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
-uint64_t EqualTiling::GetTilingKey() const
-{
-    return tilingKey;
-}
+uint64_t EqualTiling::GetTilingKey() const { return tilingKey; }
 
-ge::graphStatus EqualTiling::GetWorkspaceSize()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus EqualTiling::GetWorkspaceSize() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus EqualTiling::PostTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus EqualTiling::PostTiling() { return ge::GRAPH_SUCCESS; }
 
-ge::graphStatus EqualTiling::GetPlatformInfo()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus EqualTiling::GetPlatformInfo() { return ge::GRAPH_SUCCESS; }
 
 static ge::graphStatus TilingForEqual(gert::TilingContext* context)
 {

@@ -205,9 +205,8 @@ ADD_CASE(std::complex<double>, DT_COMPLEX128)
 ADD_CASE_WITH_BROADCAST(int32_t, DT_INT32)
 
 template <typename T>
-void EqualBroadcast(
-    DataType dtype0, DataType dtype1, DataType output_dtype, vector<vector<int64_t>>& shapes, const T* input0_data,
-    const T* input1_data, const bool* output_exp_data)
+void EqualBroadcast(DataType dtype0, DataType dtype1, DataType output_dtype, vector<vector<int64_t>>& shapes,
+                    const T* input0_data, const T* input1_data, const bool* output_exp_data)
 {
     uint64_t input_size = CalTotalElements(shapes, 0);
     T* input0 = new T[input_size];

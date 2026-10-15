@@ -22,28 +22,21 @@ using namespace ge;
 
 class LessEqualInfershape : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "LessEqualInfershape SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "LessEqualInfershape SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "LessEqualInfershape TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "LessEqualInfershape TearDown" << std::endl; }
 };
 
 TEST_F(LessEqualInfershape, less_equal_infer_shape_fp16)
 {
-    gert::InfershapeContextPara infershapeContextPara(
-        "LessEqual",
-        {
-            {{{-1}, {-1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-            {{{-1}, {-1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
-        },
-        {
-            {{{}, {}}, ge::DT_BOOL, ge::FORMAT_ND},
-        });
+    gert::InfershapeContextPara infershapeContextPara("LessEqual",
+                                                      {
+                                                          {{{-1}, {-1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                          {{{-1}, {-1}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                                      },
+                                                      {
+                                                          {{{}, {}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                                      });
     std::vector<std::vector<int64_t>> expectOutputShape = {
         {-1},
     };

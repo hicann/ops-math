@@ -17,11 +17,11 @@
 namespace aicpu {
 
 class NotEqualCpuKernel : public CpuKernel {
- public:
-  NotEqualCpuKernel() = default;
-  ~NotEqualCpuKernel() override = default;
+public:
+    NotEqualCpuKernel() = default;
+    ~NotEqualCpuKernel() override = default;
 
-  uint32_t Compute(CpuKernelContext &ctx) override;
+    uint32_t Compute(CpuKernelContext& ctx) override;
 };
-}  // namespace aicpu
+} // namespace aicpu
 #endif
