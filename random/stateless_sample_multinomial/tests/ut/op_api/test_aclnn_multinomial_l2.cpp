@@ -19,15 +19,9 @@ using namespace std;
 
 class l2_multinomial_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "l2_multinomial_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "l2_multinomial_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "l2_multinomial_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "l2_multinomial_test TearDown" << endl; }
 };
 
 TEST_F(l2_multinomial_test, aclnnMultinomial_6000_float_false_2000_nd)
@@ -48,8 +42,8 @@ TEST_F(l2_multinomial_test, aclnnMultinomial_6000_float_false_2000_nd)
     auto self_tensor_desc = TensorDesc(self_shape, self_dtype, self_format).ValueRange(1, 5);
     auto out_tensor_desc = TensorDesc(out_shape, out_dtype, out_format);
 
-    auto ut = OP_API_UT(
-        aclnnMultinomial, INPUT(self_tensor_desc, numsamples, replacement, seed, offset), OUTPUT(out_tensor_desc));
+    auto ut = OP_API_UT(aclnnMultinomial, INPUT(self_tensor_desc, numsamples, replacement, seed, offset),
+                        OUTPUT(out_tensor_desc));
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
@@ -74,10 +68,104 @@ TEST_F(l2_multinomial_test, aclnnMultinomial_6000_float_false_1_nd)
     auto self_tensor_desc = TensorDesc(self_shape, self_dtype, self_format).ValueRange(1, 5);
     auto out_tensor_desc = TensorDesc(out_shape, out_dtype, out_format);
 
-    auto ut = OP_API_UT(
-        aclnnMultinomial, INPUT(self_tensor_desc, numsamples, replacement, seed, offset), OUTPUT(out_tensor_desc));
+    auto ut = OP_API_UT(aclnnMultinomial, INPUT(self_tensor_desc, numsamples, replacement, seed, offset),
+                        OUTPUT(out_tensor_desc));
 
     uint64_t workspace_size = 0;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// 新增：self shape=[0]，nCategories=0，replacement=true，预期参数非法报错
+TEST_F(l2_multinomial_test, aclnnMultinomial_empty_cat_1d_true)
+{
+    const vector<int64_t>& self_shape = {0};
+    aclDataType self_dtype = ACL_FLOAT;
+    aclFormat self_format = ACL_FORMAT_ND;
+    int64_t numsamples = 2;
+    bool replacement = true;
+    int64_t seed = 0;
+    int64_t offset = 0;
+    const vector<int64_t>& out_shape = {2};
+    aclDataType out_dtype = ACL_INT64;
+    aclFormat out_format = ACL_FORMAT_ND;
+    auto self_tensor_desc = TensorDesc(self_shape, self_dtype, self_format);
+    auto out_tensor_desc = TensorDesc(out_shape, out_dtype, out_format);
+    auto ut = OP_API_UT(aclnnMultinomial, INPUT(self_tensor_desc, numsamples, replacement, seed, offset),
+                        OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    // 期望返回参数非法 ACLNN_ERR_PARAM_INVALID
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
+
+// 新增：self shape=[3,0] 二维，batch=3，nCategories=0，replacement=true，预期参数非法报错
+TEST_F(l2_multinomial_test, aclnnMultinomial_empty_cat_2d_true)
+{
+    const vector<int64_t>& self_shape = {3, 0};
+    aclDataType self_dtype = ACL_FLOAT;
+    aclFormat self_format = ACL_FORMAT_ND;
+    int64_t numsamples = 2;
+    bool replacement = true;
+    int64_t seed = 0;
+    int64_t offset = 0;
+    const vector<int64_t>& out_shape = {3, 2};
+    aclDataType out_dtype = ACL_INT64;
+    aclFormat out_format = ACL_FORMAT_ND;
+    auto self_tensor_desc = TensorDesc(self_shape, self_dtype, self_format);
+    auto out_tensor_desc = TensorDesc(out_shape, out_dtype, out_format);
+    auto ut = OP_API_UT(aclnnMultinomial, INPUT(self_tensor_desc, numsamples, replacement, seed, offset),
+                        OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
+
+// 新增【正向合法空batch用例，不能报错】：self shape=[0,5]，batch=0，类别数=5，replacement=true，预期成功
+// 用来保护合法空batch场景不被误杀，区分“类别为0”和“batch为0”
+TEST_F(l2_multinomial_test, aclnnMultinomial_empty_batch_2d_true)
+{
+    const vector<int64_t>& self_shape = {0, 5};
+    aclDataType self_dtype = ACL_FLOAT;
+    aclFormat self_format = ACL_FORMAT_ND;
+    int64_t numsamples = 2;
+    bool replacement = true;
+    int64_t seed = 0;
+    int64_t offset = 0;
+    const vector<int64_t>& out_shape = {0, 2};
+    aclDataType out_dtype = ACL_INT64;
+    aclFormat out_format = ACL_FORMAT_ND;
+    auto self_tensor_desc = TensorDesc(self_shape, self_dtype, self_format).ValueRange(1, 5);
+    auto out_tensor_desc = TensorDesc(out_shape, out_dtype, out_format);
+    auto ut = OP_API_UT(aclnnMultinomial, INPUT(self_tensor_desc, numsamples, replacement, seed, offset),
+                        OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// Tensor版本接口：self=[0],nCategories=0，预期报错ACLNN_ERR_PARAM_INVALID
+TEST_F(l2_multinomial_test, aclnnMultinomialTensor_empty_cat_1d_true)
+{
+    const vector<int64_t>& self_shape = {0};
+    aclDataType self_dtype = ACL_FLOAT;
+    aclFormat self_format = ACL_FORMAT_ND;
+    int64_t numsamples = 2;
+    bool replacement = true;
+    int64_t offset = 0;
+    const vector<int64_t>& seed_shape = {};
+    const vector<int64_t>& offset_tensor_shape = {};
+    const vector<int64_t>& out_shape = {2};
+    aclDataType out_dtype = ACL_INT64;
+    aclFormat out_format = ACL_FORMAT_ND;
+    auto self_tensor_desc = TensorDesc(self_shape, self_dtype, self_format);
+    auto seed_tensor_desc = TensorDesc(seed_shape, ACL_INT64, ACL_FORMAT_ND).ValueRange(1, 100);
+    auto offset_tensor_desc = TensorDesc(offset_tensor_shape, ACL_INT64, ACL_FORMAT_ND).ValueRange(0, 100);
+    auto out_tensor_desc = TensorDesc(out_shape, out_dtype, out_format);
+    auto ut = OP_API_UT(aclnnMultinomialTensor,
+                        INPUT(self_tensor_desc, numsamples, replacement, seed_tensor_desc, offset_tensor_desc, offset),
+                        OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }

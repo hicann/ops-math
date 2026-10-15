@@ -189,6 +189,11 @@ static bool CheckValueRange(const aclTensor* self, int64_t numsamples, bool repl
     }
     auto dimNum = self->GetViewShape().GetDimNum();
     auto nCategories = self->GetViewShape().GetDim(dimNum - 1);
+
+    if (nCategories == 0) {
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "number of categories cannot be zero, got %ld.", nCategories);
+        return false;
+    }
     if (!replacement && (numsamples > nCategories)) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID,
                 "numsamples %ld must be no more than the size of last dim %ld without replacement", numsamples,
