@@ -23,6 +23,56 @@ namespace SquareSumAllGpuAligned {
 using namespace AscendC;
 constexpr uint32_t REDUCTION_LANE_COUNT = 64;
 
+// Retain the rounding residual of each addition in the final partial merge.
+// Partial sums are nonnegative. Clear the residual for Inf/NaN so that Inf-Inf
+// in TwoSum cannot turn a valid overflowing square sum into NaN.
+__simd_callee__ inline void AddCompensated(Reg::RegTensor<float>& sum, Reg::RegTensor<float>& correction,
+                                           Reg::RegTensor<float>& value, Reg::MaskReg mask)
+{
+    Reg::RegTensor<float> rounded;
+    Reg::RegTensor<float> recovered;
+    Reg::RegTensor<float> error;
+    Reg::RegTensor<float> temp;
+    Reg::RegTensor<float> zero;
+    Reg::MaskReg finiteMask;
+    Reg::Add(rounded, sum, value, mask);
+    Reg::Sub(recovered, rounded, sum, mask);
+    Reg::Sub(error, value, recovered, mask);
+    Reg::Sub(temp, rounded, recovered, mask);
+    Reg::Sub(temp, sum, temp, mask);
+    Reg::Add(error, error, temp, mask);
+    Reg::Add(correction, correction, error, mask);
+    Reg::Duplicate(zero, 0.0f, mask);
+    Reg::CompareScalar<float, CMPMODE::LE>(finiteMask, rounded, 3.4028234663852886e38f, mask);
+    Reg::Select(correction, correction, zero, finiteMask);
+    Reg::Copy(sum, rounded, mask);
+}
+
+__simd_callee__ inline void ReduceCompensated64(Reg::RegTensor<float>& dst, Reg::RegTensor<float>& sum,
+                                                Reg::RegTensor<float>& correction)
+{
+    Reg::RegTensor<uint32_t> baseIndex;
+    Reg::RegTensor<uint32_t> gatherIndex;
+    Reg::RegTensor<uint32_t> validIndexMask;
+    Reg::RegTensor<float> gathered;
+    Reg::RegTensor<float> gatheredCorrection;
+    Reg::MaskReg indexMask = Reg::CreateMask<uint32_t, Reg::MaskPattern::ALL>();
+    Reg::Arange((Reg::RegTensor<int32_t>&)baseIndex, static_cast<int32_t>(0));
+    Reg::Duplicate(validIndexMask, REDUCTION_LANE_COUNT - 1, indexMask);
+    for (uint16_t offset = REDUCTION_LANE_COUNT / 2; offset > 0; offset >>= 1) {
+        Reg::Adds(gatherIndex, baseIndex, static_cast<uint32_t>(offset), indexMask);
+        Reg::And(gatherIndex, gatherIndex, validIndexMask, indexMask);
+        Reg::Gather(gathered, sum, gatherIndex);
+        Reg::Gather(gatheredCorrection, correction, gatherIndex);
+        uint32_t activeElements = offset;
+        Reg::MaskReg reduceMask = Reg::UpdateMask<float>(activeElements);
+        Reg::Add(correction, correction, gatheredCorrection, reduceMask);
+        AddCompensated(sum, correction, gathered, reduceMask);
+    }
+    Reg::MaskReg oneMask = Reg::CreateMask<float, Reg::MaskPattern::VL1>();
+    Reg::Add(dst, sum, correction, oneMask);
+}
+
 // Reproduce the empirically best-matching 64-lane high-half reduction order explicitly:
 // (0+32, 1+33, ...), then +16, +8, +4, +2 and +1.
 __simd_callee__ inline void ReduceHighHalf64(Reg::RegTensor<float>& dst, Reg::RegTensor<float>& src)
@@ -338,6 +388,8 @@ private:
             Reg::RegTensor<float> current;
             Reg::RegTensor<float> low;
             Reg::RegTensor<float> high;
+            Reg::RegTensor<float> lowCorrection;
+            Reg::RegTensor<float> highCorrection;
             Reg::RegTensor<float> reduced;
             Reg::RegTensor<int32_t> gatherIndex;
             Reg::MaskReg allMask = Reg::CreateMask<float, Reg::MaskPattern::ALL>();
@@ -345,18 +397,21 @@ private:
             Reg::MaskReg oneMask = Reg::CreateMask<float, Reg::MaskPattern::VL1>();
             Reg::Duplicate(low, 0.0f, allMask);
             Reg::Duplicate(high, 0.0f, allMask);
+            Reg::Duplicate(lowCorrection, 0.0f, allMask);
+            Reg::Duplicate(highCorrection, 0.0f, allMask);
             Reg::Arange(gatherIndex, static_cast<int32_t>(0));
             Reg::Muls(gatherIndex, gatherIndex, static_cast<int32_t>(FLOATS_PER_BLOCK), indexMask);
             for (uint16_t group = 0; group < groupCount; ++group) {
                 const int64_t offset = static_cast<int64_t>(group) * CUDA_BLOCK_ELEMENTS * FLOATS_PER_BLOCK;
                 Reg::Gather(current, partialAddress + offset, (Reg::RegTensor<uint32_t>&)gatherIndex, allMask);
-                Reg::Add(low, low, current, allMask);
+                AddCompensated(low, lowCorrection, current, allMask);
                 Reg::Gather(current, partialAddress + offset + VECTOR_ELEMENTS * FLOATS_PER_BLOCK,
                             (Reg::RegTensor<uint32_t>&)gatherIndex, allMask);
-                Reg::Add(high, high, current, allMask);
+                AddCompensated(high, highCorrection, current, allMask);
             }
-            Reg::Add(low, low, high, allMask);
-            ReduceHighHalf64(reduced, low);
+            Reg::Add(lowCorrection, lowCorrection, highCorrection, allMask);
+            AddCompensated(low, lowCorrection, high, allMask);
+            ReduceCompensated64(reduced, low, lowCorrection);
             Reg::StoreAlign<float, Reg::StoreDist::DIST_FIRST_ELEMENT_B32>(finalAddress + finalOffset, reduced,
                                                                            oneMask);
         }
