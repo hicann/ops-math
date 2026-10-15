@@ -299,7 +299,7 @@
 | [aclnnStridedSliceGrad](../../conversion/strided_slice_grad/docs/aclnnStridedSliceGrad.md) | StridedSlice的反向算子，将切片梯度张量dy映射回原始张量形状shape的对应位置，未被切片覆盖的位置填零。 | - | - | 默认确定性实现 |
 | [aclnnSub&aclnnInplaceSub](../../math/sub/docs/aclnnSub&aclnnInplaceSub.md) | 完成减法计算，被减数按alpha进行缩放。                        | 默认确定性实现| 默认确定性实现| 默认确定性实现 |
 | [aclnnSubs&aclnnInplaceSubs](../../math/sub/docs/aclnnSubs&aclnnInplaceSubs.md) | 完成减法计算，被减数按alpha进行缩放。                        | 默认确定性实现| 默认确定性实现| 默认确定性实现 |
-| [aclnnSum](../../math/accumulate_nv2/docs/aclnnSum.md)          | 返回输入tensors列表中每个输入tensor依次做add求和。           | 默认确定性实现| 默认确定性实现| 默认确定性实现 |
+| [aclnnSum](../../math/accumulate_nv2/docs/aclnnSum.md)          | 返回输入tensors列表中每个输入tensor依次做add求和。           | 默认确定性实现| 默认确定性实现| - |
 | [aclnnSvd](../../math/svd/docs/aclnnSvd.md)          | 计算一个或多个矩阵的奇异值分解。           | 默认确定性实现| 默认确定性实现| 默认确定性实现 |
 | [aclnnSWhere](../../math/select/docs/aclnnSWhere.md)            | 根据条件选取self或other中元素并返回（支持广播）。            | 默认确定性实现| 默认确定性实现| 默认确定性实现 |
 | [aclnnTan&aclnnInplaceTan](../../math/tan/docs/aclnnTan&aclnnInplaceTan.md) | 它计算输入张量self中每个元素的正切值，并将结果存储在输出张量out中。 | 默认确定性实现| 默认确定性实现| 默认确定性实现 |
