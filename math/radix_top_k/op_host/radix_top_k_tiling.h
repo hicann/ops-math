@@ -47,7 +47,7 @@ protected:
     // 7、保存Tiling数据
     ge::graphStatus PostTiling() override;
 
-    bool CalcLargeTilingParams(const uint64_t& dataNum);
+    bool CalcLargeTilingParams(const uint64_t& dataNum, const uint64_t& ubCoefPerTile);
     bool CalcTilingParams(const uint64_t& dataNum);
     void PrintTilingData();
 
@@ -63,6 +63,7 @@ private:
     uint32_t xDtypeSize_{0};
     uint64_t xAlign_{0};
     bool isLargeShape_{false};
+    bool isInt64Shape_{false};
     RadixTopKTilingData tilingData_{};
 
     void SetTilingData();

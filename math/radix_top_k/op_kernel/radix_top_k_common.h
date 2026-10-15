@@ -59,7 +59,7 @@ using namespace AscendC;
 #define PROCESS_ONE_TILE_TOPK_OR_SKIP(curTileKVal, vecIndexExpr)                                                       \
     if (curTileKVal > 0) {                                                                                             \
         auto xLocal = curBuf.template Get<T>();                                                                        \
-        auto cmpMaskTensor = tempBuf_.template Get<uint8_t>();                                                         \
+        auto cmpMaskTensor = this->tempBuf_.template Get<uint8_t>();                                                   \
         auto vecIndex = (vecIndexExpr);                                                                                \
         if constexpr (IsSameType<T, bfloat16_t>::value) {                                                              \
             auto xLocalFp32 = xLocal.template ReinterpretCast<float>();                                                \
@@ -68,6 +68,9 @@ using namespace AscendC;
                                                      cmpMaskTensor, vecIndex, tileOffset);                             \
         } else if constexpr (IsSameType<T, half>::value) {                                                             \
             auto xLocalHalf = xLocal[this->tileLen_];                                                                  \
+            if constexpr (largest) {                                                                                   \
+                this->CanonicalizeDataForLargest(curBuf, curTileLen);                                                  \
+            }                                                                                                          \
             this->template ProcessOneTileTopK<half>(xLocalHalf, curTileLen, curTileKVal, coreTopKOffset, maxIndexLen,  \
                                                     cmpMaskTensor, vecIndex, tileOffset);                              \
         }                                                                                                              \
@@ -101,7 +104,7 @@ protected:
                                                  const int32_t& tileHistBinStride, const int32_t& tileHistBinOffset,
                                                  const uint64_t& curTileLen);
 
-    __aicore__ inline void NegateDataForLargest(TBuf<TPosition::VECIN>& curBuf, const uint64_t& curTileLen);
+    __aicore__ inline void CanonicalizeDataForLargest(TBuf<TPosition::VECIN>& curBuf, const uint64_t& curTileLen);
 
     template <bool isInit>
     __aicore__ inline void CopyOut2Ws(const uint64_t& maskLen, const uint64_t& gmOffset);
@@ -142,6 +145,13 @@ protected:
 
     template <typename CT>
     __aicore__ inline CT ExtractBoundaryNumber();
+
+    /**
+     * @brief 边界值是否为 NaN（位模式判定，不做浮点自比较以免触发浮点相等告警）
+     *        NaN ⟺ 指数位全 1 且尾数非 0（对 ±NaN、任意 payload 都成立）
+     */
+    template <typename CT>
+    __aicore__ inline bool IsNaNValue(const CT& value);
 
     __aicore__ inline uint64_t CalcBlockOffset(uint64_t batchId);
 
@@ -271,6 +281,16 @@ __aicore__ inline void RadixTopKBaseKernel<T, largest>::TwiddleInB16(TBuf<TPosit
     Not(temp1, temp1, calcLen);
     PipeBarrier<PIPE_V>();
     And(xLocalInt16, xLocalInt16, temp1, calcLen);
+    if constexpr (!largest && (sizeof(T) == sizeof(int16_t))) {
+        // largest=false 的降序由键域取补承担：先做升序键（上面的 twiddle），再整体取补。
+        // 对全部 65536 个 16 位模式恒有 ~twiddle(x) == twiddle(bits(-x))，故除 NaN 外本步
+        // 与「先取反再 twiddle」逐位一致，序键语义不变；仅 NaN 受影响：
+        // CanonicalizeDataForLargest 已把 ±NaN 规范化为同一个正 NaN（实测 fp16 与 bf16 都是
+        // 0x7FFF，与输入 NaN 的符号无关），其升序键为 0xFFFF，取补后为 0x0000，低于 -Inf 的
+        // 0x007F(bf16)/0x03FF(fp16)，落到序键最底端 ⇒ 在计数相不被计入 k 槽、提取相也不会被选中。
+        PipeBarrier<PIPE_V>();
+        Not(xLocalInt16, xLocalInt16, calcLen);
+    }
 }
 
 /**
@@ -339,23 +359,49 @@ __aicore__ inline void RadixTopKBaseKernel<T, largest>::CalcCumsumHistogram16(
 }
 
 /**
- * @brief 当 largest=false 时对数据取反，将求最小值转为求最大值
+ * @brief ±NaN 规范化（两个方向都要做）：把 ±NaN 统一变成同一个正 NaN（16 位类型的原域），
+ *        使 TwiddleInB16 键域对 NaN 的记账与提取相的掩码口径一致；有限值与 ±Inf 逐位不变
+ *        （fp16/bf16 → fp32 → ×1 → 回 16 位是精确往返）。
+ *          - largest=false：规范化后 NaN 键为 0xFFFF，经 TwiddleInB16 末尾的键域取补落 0x0000
+ *            （低于 -Inf 的 0x007F/0x03FF）⇒ 计数相不计入 k 槽、提取相 <LT> 也不匹配
+ *            ⇒ NaN 不入选（与 torch 语义一致）。降序本身由该键域取补承担，故此处不取反。
+ *          - largest=true：规范化后 NaN 键为 0xFFFF（最大端）⇒ 计数相把 NaN 计入该 tile 的
+ *            k 配额，与提取相 NOT(LE) = (x > b) ∪ isNaN 口径一致 ⇒ NaN 必入选（与 torch 一致）。
+ *            **缺了这一步会丢 −NaN**：−NaN 原样 twiddle 后键为 ~0xFE00=0x01FF(fp16) /
+ *            ~0xFFC0=0x003F(bf16)，落在 −Inf 之下 ⇒ 直方图不计入配额，但提取掩码仍匹配
+ *            ⇒ rsvdCntV 超出该 tile 配额，被 SubTopKAndCopyOut 的 min(rsvdCntV, curTileK)
+ *            截断（GatherMask 按 lane 序保留靠前的匹配）⇒ −NaN 槽丢空、背景值顶替。
+ *            实测（S=1.2e7+4 / k=1001 / 尾块 8 个 ±NaN / largest=true）：fp16 只中 +NaN 半边、
+ *            −NaN 0/4、values 多重集错位 410/1001；bf16 同类（−NaN 0/4，错位 8/1001，量化粗
+ *            使错位值多为等值）。全 +NaN 输入（8/8、错位 0）与 largest=false（NaN 0 入选、
+ *            错位 0）是对照。
  * @param curBuf 当前数据缓冲区
  * @param curTileLen 当前 tile 数据长度
  */
 template <typename T, bool largest>
-__aicore__ inline void RadixTopKBaseKernel<T, largest>::NegateDataForLargest(TBuf<TPosition::VECIN>& curBuf,
-                                                                             const uint64_t& curTileLen)
+__aicore__ inline void RadixTopKBaseKernel<T, largest>::CanonicalizeDataForLargest(TBuf<TPosition::VECIN>& curBuf,
+                                                                                   const uint64_t& curTileLen)
 {
-    if constexpr (!largest) {
-        LocalTensor<T> xNgt = curBuf.Get<T>();
+    LocalTensor<T> xCanon = curBuf.Get<T>();
+    PipeBarrier<PIPE_V>();
+    if constexpr (IsSameType<T, bfloat16_t>::value) {
+        // bf16：Muls 不支持 bf16（编译报错），只能借 fp32 域做规范化 —— 实测该往返把 ±NaN 归成
+        // 0x7FFF，±Inf/±0/次正规码无损。
+        // 注意这里是乘 +1 而非 −1：降序由 TwiddleInB16 末尾的键域取补承担，本步只需把 ±NaN
+        // 统一成同一个正 NaN（否则 −NaN 取补后会落到序键顶端而被误选，即 q7 缺陷）。
+        // （坑位记录：当年 bf16 的取反是「把位模式 reinterpret 成 half 再乘 −1」，
+        //   |x|≥2^121 与 ±Inf/NaN 会落进 half 的非规格区退化为 NaN ⇒ D64/S2。）
+        LocalTensor<float> xFp32 = outValueBuf_.Get<float>();
+        Cast(xFp32, xCanon[tileLen_], RoundMode::CAST_NONE, curTileLen);
         PipeBarrier<PIPE_V>();
-        if constexpr (IsSameType<T, bfloat16_t>::value) {
-            Muls(xNgt[tileLen_].template ReinterpretCast<half>(), xNgt[tileLen_].template ReinterpretCast<half>(),
-                 (half)-1, curTileLen);
-        } else {
-            Muls(xNgt[tileLen_], xNgt[tileLen_], (T)-1, curTileLen);
-        }
+        Muls(xFp32, xFp32, (float)1, curTileLen);
+        PipeBarrier<PIPE_V>();
+        Cast(xCanon[tileLen_], xFp32, RoundMode::CAST_RINT, curTileLen);
+    } else if constexpr (IsSameType<T, half>::value) {
+        // fp16：原生同类型 Muls(x, 1)。实测：与「Cast→fp32→Muls(+1)→Cast 回」对
+        // ±NaN/±Inf/±0/次正规码等全部边界输入逐位一致（±NaN 都规范化成 0x7FFF）。
+        // 省掉 2 条向量指令与 2 次 PipeBarrier，也不再需要 fp32 暂存。
+        Muls(xCanon[tileLen_], xCanon[tileLen_], (half)1, curTileLen);
     }
 }
 
@@ -409,6 +455,23 @@ __aicore__ inline uint32_t RadixTopKBaseKernel<T, largest>::CreateVecIndex4TopK(
 
 /**
  * @brief 单个 tile 内按 cmpMode 提取匹配 boundaryNumber 的元素并输出
+ */
+template <typename T, bool largest>
+template <typename CT>
+__aicore__ inline bool RadixTopKBaseKernel<T, largest>::IsNaNValue(const CT& value)
+{
+    float valueFp32;
+    if constexpr (IsSameType<CT, float>::value) {
+        valueFp32 = value;
+    } else {
+        valueFp32 = static_cast<float>(value); // half -> fp32，NaN 语义保持
+    }
+    uint32_t bits = *reinterpret_cast<uint32_t*>(&valueFp32);
+    return (bits & 0x7FFFFFFFU) > 0x7F800000U; // 指数位全 1 且尾数非 0 ⇒ NaN
+}
+
+/**
+ * @brief 单个 tile 内按 cmpMode 提取匹配 boundaryNumber 的元素并输出
  *        先 Compares → GatherMask values/indices → CopyOutResult
  * @param xLocal tile 输入数据
  * @param boundaryNumber 边界值
@@ -438,7 +501,37 @@ __aicore__ inline void RadixTopKBaseKernel<T, largest>::SubTopKAndCopyOut(
     uint64_t curTileLenAlign = Ops::Base::CeilAlign(curTileLen, REPEAT_SIZE / sizeof(CT));
 
     PipeBarrier<PIPE_V>();
-    Compares<CT, uint8_t>(cmpMaskTensor, xLocal, boundaryNumber, cmpMode, curTileLenAlign);
+    if constexpr (largest && cmpMode != AscendC::CMPMODE::EQ &&
+                  (IsSameType<CT, float>::value || IsSameType<CT, half>::value)) {
+        if (IsNaNValue(boundaryNumber)) {
+            // 边界值本身就是 NaN：候选入选集合只有 NaN（key 域 0xFFFF 组，计数相已把 ±NaN 归入同一
+            // bin 并按 NaN 个数分配配额）。此时上式的 NOT(LE) 会退化成「全真」——x <= NaN 对**有限值
+            // 同样为 false**，取反后掩码全 1，GatherMask 于是把 tile 前 curTileK 个（有限的）元素当成
+            // 入选者拷出；实测混合数据 + largest=true 时表现为 top-k 里 NaN 只剩零星几个（1015 个 NaN
+            // 只选中 3 个，其余槽被背景元素顶替）。
+            // 改取 isNaN 掩码：NaN == NaN 恒为 false，Compare(x, x, EQ) 逐位取反即 isNaN，
+            // 对 ±NaN 与任意 payload 都成立，与计数相的配额口径完全一致。
+            Compare<CT, uint8_t>(cmpMaskTensor, xLocal, xLocal, AscendC::CMPMODE::EQ, curTileLenAlign);
+            PipeBarrier<PIPE_V>();
+            Not(cmpMaskTensor.template ReinterpretCast<int16_t>(), cmpMaskTensor.template ReinterpretCast<int16_t>(),
+                static_cast<uint32_t>((curTileLenAlign >> 3) / sizeof(int16_t)));
+        } else {
+            // largest=true 的「必然入选」通过：NaN 的序键在 twiddle 域位于最大端（key ∈ [0xFF81, 0xFFFF]），
+            // 直方图按 key 统计时已把 NaN 计入该 tile 的配额，但 x > b 对 NaN 恒为 false，
+            // 于是 NaN 不被拷出、配额反被背景元素顶替（S1：被顶替槽数精确等于注入的 NaN 数）。
+            // 这里不直接 Compares(GT)，而取 NOT(LE)：LE 对 NaN 恒为 false，逐位取反即为 true，
+            // 掩码 = (x > b) ∪ isNaN，与 key 域的配额统计口径一致（逐位运算，全值域有效）。
+            // largest=false 不加：key 域中 +NaN 不计入入选，且 torch 语义要求 NaN 不入选；
+            // 整型 CT 无 NaN，走下面的直通分支。
+            Compares<CT, uint8_t>(cmpMaskTensor, xLocal, boundaryNumber, AscendC::CMPMODE::LE, curTileLenAlign);
+            PipeBarrier<PIPE_V>();
+            Not(cmpMaskTensor.ReinterpretCast<int16_t>(), cmpMaskTensor.ReinterpretCast<int16_t>(),
+                static_cast<uint32_t>((curTileLenAlign >> 3) / sizeof(int16_t)));
+        }
+    } else {
+        PipeBarrier<PIPE_V>();
+        Compares<CT, uint8_t>(cmpMaskTensor, xLocal, boundaryNumber, cmpMode, curTileLenAlign);
+    }
     uint64_t rsvdCntV = 0, rsvdCntI = 0;
     WaitFlag<HardEvent::MTE3_V>(eventIDMTE3ToVForValue_);
     PipeBarrier<PIPE_V>();
@@ -467,7 +560,11 @@ __aicore__ inline void RadixTopKBaseKernel<T, largest>::SubTopKAndCopyOut(
                    {1, 1, 0, 0}, rsvdCntI);
     }
     VToSSync();
-    uint32_t count = (cmpMode != AscendC::CMPMODE::EQ) ? rsvdCntV : curTileK;
+    // 非 EQ 通过按 tile 配额封顶：NaN 掩码并入后 rsvdCntV 可能略多于直方图统计出的配额
+    // （例如混入 key 域未计入的 -NaN），封顶可避免拷出到 k 槽之外的越界写
+    uint64_t passRsvdCnt = (cmpMode != AscendC::CMPMODE::EQ) ? rsvdCntV : static_cast<uint64_t>(curTileK);
+    uint32_t count = static_cast<uint32_t>(
+        passRsvdCnt < static_cast<uint64_t>(curTileK) ? passRsvdCnt : static_cast<uint64_t>(curTileK));
     SToVSync();
     if constexpr (IsSameType<T, bfloat16_t>::value) {
         PipeBarrier<PIPE_V>();
@@ -493,12 +590,16 @@ __aicore__ inline void RadixTopKBaseKernel<T, largest>::CopyOutResult(const int3
 {
     LocalTensor<T> outValueLocal = outValueBuf_.Get<T>();
     LocalTensor<int32_t> outIndexLocal = outIndexBuf_.Get<int32_t>();
-
-    DataCopyPad(valueGm_[coreTopKOffset], outValueLocal,
-                DataCopyExtParams{static_cast<uint16_t>(1), static_cast<uint32_t>(sizeof(T) * count), 0, 0, 0});
+    if (count > 0) {
+        DataCopyPad(valueGm_[coreTopKOffset], outValueLocal,
+                    DataCopyExtParams{static_cast<uint16_t>(1), static_cast<uint32_t>(sizeof(T) * count), 0, 0, 0});
+    }
     SetFlag<HardEvent::MTE3_V>(eventIDMTE3ToVForValue_);
-    DataCopyPad(indexGm_[coreTopKOffset], outIndexLocal,
-                DataCopyExtParams{static_cast<uint16_t>(1), static_cast<uint32_t>(sizeof(int32_t) * count), 0, 0, 0});
+    if (count > 0) {
+        DataCopyPad(
+            indexGm_[coreTopKOffset], outIndexLocal,
+            DataCopyExtParams{static_cast<uint16_t>(1), static_cast<uint32_t>(sizeof(int32_t) * count), 0, 0, 0});
+    }
     SetFlag<HardEvent::MTE3_V>(eventIDMTE3ToVForIndex_);
 }
 

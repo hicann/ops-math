@@ -119,7 +119,7 @@ static bool IsAiCoreSupport(const aclTensor* self, int64_t k)
     return self->GetDataType() == op::DataType::DT_FLOAT16;
 }
 
-static bool IsRadixTopKSupport(const aclTensor* self, int64_t k)
+static bool IsRadixTopKSupport(const aclTensor* self, int64_t k, op::DataType indicesDType)
 {
     SocVersion version = GetCurrentPlatformInfo().GetSocVersion();
     auto inputShape = self->GetViewShape();
@@ -127,10 +127,13 @@ static bool IsRadixTopKSupport(const aclTensor* self, int64_t k)
     int64_t sortLen = inputShape.GetDim(dimNum - 1);
     bool socCheck = version == SocVersion::ASCEND910B || version == SocVersion::ASCEND910_93;
     bool dtypeCheck = CheckType(self->GetDataType(), {op::DataType::DT_FLOAT16, op::DataType::DT_BF16});
-    bool shapeCheck = false;
+    // sortLen 超 int32 上限 → int64 大 shape 模板：只要求 indices 为 int64 且 k > 0，
+    // 不套用下面的 k 比例门限，故此处直接判定
     if (sortLen > MAX_INT32_INPUTSIZE) {
-        shapeCheck = false;
-    } else if (sortLen >= RADIX_TOP_K_S_THRESHOLD_2) {
+        return socCheck && dtypeCheck && (indicesDType == op::DataType::DT_INT64) && k > 0;
+    }
+    bool shapeCheck = false;
+    if (sortLen >= RADIX_TOP_K_S_THRESHOLD_2) {
         shapeCheck = sortLen > RADIX_TOP_K_S_K_RATIO_2 * k;
     } else if (sortLen >= RADIX_TOP_K_S_THRESHOLD_1) {
         shapeCheck = sortLen > RADIX_TOP_K_S_K_RATIO_1 * k;
@@ -230,9 +233,13 @@ std::tuple<aclTensor*, aclTensor*> TopkCommon(const aclTensor* self, int64_t k, 
 
     // AICore执行路径
     if (IsAiCoreSupport(self, k)) {
+        int64_t topkDimNum = static_cast<int64_t>(self->GetViewShape().GetDimNum());
+        int64_t sortLen = self->GetViewShape().GetDim(topkDimNum - 1);
         aclTensor* indicesOut = nullptr;
         if (IsRegBase() && !IsSortWithIndex(self, k, sorted)) {
             indicesOut = executor->AllocTensor(outShape, indicesDType, self->GetStorageFormat());
+        } else if (sortLen > MAX_INT32_INPUTSIZE && indicesDType == op::DataType::DT_INT64) {
+            indicesOut = executor->AllocTensor(outShape, op::DataType::DT_INT64, self->GetStorageFormat());
         } else {
             indicesOut = executor->AllocTensor(outShape, op::DataType::DT_INT32, self->GetStorageFormat());
         }
@@ -243,7 +250,7 @@ std::tuple<aclTensor*, aclTensor*> TopkCommon(const aclTensor* self, int64_t k, 
             if (IsRegBase()) {
                 return TopkV2AiCoreForDavid(self, kTensor, dim, largest, sorted, valuesOut, indicesOut, indicesDType,
                                             sortPolicy, executor);
-            } else if (IsRadixTopKSupport(self, k)) {
+            } else if (IsRadixTopKSupport(self, k, indicesDType)) {
                 return RadixTopK(self, kTensor, dim, largest, sorted, valuesOut, indicesOut, indicesDType, executor);
             } else {
                 return TopkV2AiCore(self, kTensor, dim, largest, sorted, ge::DT_INT32, sortPolicy, valuesOut,

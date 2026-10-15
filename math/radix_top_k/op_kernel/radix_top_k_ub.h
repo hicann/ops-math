@@ -73,7 +73,7 @@ private:
 template <typename T, bool largest>
 __aicore__ inline void RadixTopKUb<T, largest>::Process()
 {
-    for (int32_t batchId = 0; batchId < this->batch_; batchId++) {
+    for (uint64_t batchId = 0; batchId < this->batch_; batchId++) {
         SubProcess(batchId);
         SyncAll();
     }
@@ -183,7 +183,7 @@ __aicore__ inline void RadixTopKUb<T, largest>::SubProcess(uint64_t batchId)
         for (int32_t tileId = 0; tileId < this->tileNum_; tileId++) {
             PINGPONG_TILE_BEGIN(tileId, blockOffset);
 
-            this->NegateDataForLargest(curBuf, curTileLen);
+            this->CanonicalizeDataForLargest(curBuf, curTileLen);
             this->TwiddleInB16(curBuf, curTileLen);
             this->DoAndMask(curBuf, curTileLen);
             LocalTensor<int32_t> tileHist = tempBuf_.Get<int32_t>();
@@ -294,6 +294,8 @@ __aicore__ inline void RadixTopKUb<T, largest>::HandleLastRoundBoundary(LocalTen
                                                                         LocalTensor<float>& tileHistFp32)
 {
     PipeBarrier<PIPE_V>();
+    // 覆盖两个分支：ReduceGlobalHist 末尾的 Scalar SetValue 写过 resTensor，
+    // 后续 V pipe 的 Sub(写 resTensor) 与 else 分支 Cast(写 tileHistFp32=resTensor) 均需 S->V 可见性
     SToVSync();
     if (this->boundaryBinPrev < this->numValue_) {
         Sub(resTensor, tileHist[this->boundaryBin * this->tileNumAlign_],
@@ -387,6 +389,13 @@ __aicore__ inline void RadixTopKUb<T, largest>::TileTopK(const uint64_t& batchId
     uint64_t firstLen = (firstId == this->tileNum_ - 1) ? this->tailTileLen_ : this->tileLen_;
     this->CopyIn(this->xBufPing_, firstLen, blockOffset + firstId * this->tileLen_);
     uint32_t maxIndexLen = CreateVecIndex4TopK();
+    // maxIndexLen == 0 表示 tempBuf_ 剩余空间放不下 512 个预生成索引，此时
+    // SubTopKAndCopyOut 会走「现算索引」兜底分支，vecIndex 不会被使用。
+    // 所以必须判空后再取句柄，0 时用 buffer 首地址占位。
+    LocalTensor<int32_t> vecIndexTopK = maxIndexLen > 0 ?
+                                            tempBuf_.GetWithOffset<int32_t>(
+                                                maxIndexLen, this->tileLen_ * sizeof(uint8_t) / BYTE_SIZE) :
+                                            tempBuf_.Get<int32_t>(); // 占位句柄，0 时不会被使用
 
     this->InitTopKEvent();
 
@@ -398,8 +407,7 @@ __aicore__ inline void RadixTopKUb<T, largest>::TileTopK(const uint64_t& batchId
 
         int32_t curTileK = tileTopK.GetValue(tileId);
         PipeBarrier<PIPE_V>();
-        PROCESS_ONE_TILE_TOPK_OR_SKIP(
-            curTileK, tempBuf_.GetWithOffset<int32_t>(maxIndexLen, this->tileLen_ * sizeof(uint8_t) / BYTE_SIZE));
+        PROCESS_ONE_TILE_TOPK_OR_SKIP(curTileK, vecIndexTopK);
 
         PINGPONG_TILE_END(tileId);
     }

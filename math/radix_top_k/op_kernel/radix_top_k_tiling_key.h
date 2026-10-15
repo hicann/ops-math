@@ -24,23 +24,18 @@
  *        sorted: 输出是否排序（0/1）
  *        largest: 是否求最大 k 值（0/1）
  *        isLargeShape: 是否大 shape 场景（0/1），用于选择 UB/WS 变体
+ *        isInt64Shape: sortLen 超过 int32 上限（0/1），选择 int64 变体（追加在最高位，
+ *        现有 3 参数 key 编码值不变）
  */
-ASCENDC_TPL_ARGS_DECL(RadixTopK,
-    ASCENDC_TPL_BOOL_DECL(sorted, 0, 1),
-    ASCENDC_TPL_BOOL_DECL(largest, 0, 1),
-    ASCENDC_TPL_BOOL_DECL(isLargeShape, 0, 1)
-);
+ASCENDC_TPL_ARGS_DECL(RadixTopK, ASCENDC_TPL_BOOL_DECL(sorted, 0, 1), ASCENDC_TPL_BOOL_DECL(largest, 0, 1),
+                      ASCENDC_TPL_BOOL_DECL(isLargeShape, 0, 1), ASCENDC_TPL_BOOL_DECL(isInt64Shape, 0, 1));
 
 /**
  * @brief 模板参数组合选择
  *        用于 GET_TPL_TILING_KEY 获取 TilingKey 时校验 TilingKey 合法性
  */
-ASCENDC_TPL_SEL(
-    ASCENDC_TPL_ARGS_SEL(
-        ASCENDC_TPL_BOOL_SEL(sorted, 0, 1),
-        ASCENDC_TPL_BOOL_SEL(largest, 0, 1),
-        ASCENDC_TPL_BOOL_SEL(isLargeShape, 0, 1)
-    ),
-);
+ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_BOOL_SEL(sorted, 0, 1), ASCENDC_TPL_BOOL_SEL(largest, 0, 1),
+                                     ASCENDC_TPL_BOOL_SEL(isLargeShape, 0, 1),
+                                     ASCENDC_TPL_BOOL_SEL(isInt64Shape, 0, 1)), );
 
 #endif // RADIX_TOP_K_TILING_KEY_H

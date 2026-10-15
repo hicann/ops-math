@@ -13,6 +13,8 @@
  * \brief
  */
 
+#include <cstdint>
+#include <limits>
 #include "tiling/tiling_api.h"
 #include "register/tilingdata_base.h"
 #include "register/op_def_registry.h"
@@ -31,6 +33,13 @@ static constexpr uint64_t MAX_TILE_LEN = 12032;
 static constexpr uint64_t LARGE_SORT_LEN = 1440000000;
 static constexpr uint64_t LARGE_TILE_LEN = 10496;
 static constexpr uint64_t MAX_TILE_NUM_IN_UB = 6144;
+// sortLen 超过 int32 上限时切换 int64 模板（索引值域与跨核计数可达 sortLen）
+static constexpr uint64_t INT32_SORT_LEN_MAX = static_cast<uint64_t>(std::numeric_limits<int32_t>::max());
+// checkUb 中 UB 占用按「每 tile 元素数 × 系数」估算：
+//   int32 索引：xBuf ping/pong(fp32) + outValue(fp32) + outIndex(int32) = 16 元素/tile；
+//   int64 索引：outIndexBuf 翻倍（int64），系数 16 -> 20。
+static constexpr uint64_t UB_COEF_PER_TILE = 16;
+static constexpr uint64_t UB_COEF_PER_TILE_I64 = 20;
 static constexpr uint64_t INPUT_X = 0;
 static constexpr uint64_t NUM_VALUE_2BIT = 4;
 static constexpr uint64_t BIT_PER_BYTE = 8;
@@ -79,6 +88,16 @@ ge::graphStatus RadixTopKTiling::GetShapeAttrsInfo()
     tilingData_.sorted = *attrs->GetAttrPointer<bool>(ATTR_INDEX_SORTED);
     tilingData_.largest = *attrs->GetAttrPointer<bool>(ATTR_INDEX_LARGEST);
     isLargeShape_ = tilingData_.sortLen > LARGE_SORT_LEN;
+    isInt64Shape_ = tilingData_.sortLen > INT32_SORT_LEN_MAX;
+    // int64 模板输出 int64 索引，防御性校验输出 dtype 匹配（int32 组合不允许超 int32 shape）
+    if (isInt64Shape_) {
+        auto indicesDesc = context_->GetOutputDesc(1);
+        OP_CHECK_NULL_WITH_CONTEXT(context_, indicesDesc);
+        OP_CHECK_IF((indicesDesc->GetDataType() != ge::DT_INT64),
+                    OP_LOGE(opName_, "RadixTopK sortLen [%lu] exceeds int32, indices output must be int64.",
+                            tilingData_.sortLen),
+                    return ge::GRAPH_FAILED);
+    }
 
     xDType_ = context_->GetInputDesc(INPUT_X)->GetDataType();
     xDtypeSize_ = ge::GetSizeByDataType(xDType_);
@@ -91,21 +110,30 @@ ge::graphStatus RadixTopKTiling::DoOpTiling()
 {
     OP_LOGD(opName_, "RadixTopKTiling DoOpTiling.");
     bool isCalcSuccess = false;
-    if (!isLargeShape_) {
+    if (isInt64Shape_) {
+        isCalcSuccess = CalcLargeTilingParams(tilingData_.sortLen, UB_COEF_PER_TILE_I64);
+    } else if (!isLargeShape_) {
         isCalcSuccess = CalcTilingParams(tilingData_.sortLen);
         if (!isCalcSuccess) {
             isLargeShape_ = true;
-            isCalcSuccess = CalcLargeTilingParams(tilingData_.sortLen);
+            isCalcSuccess = CalcLargeTilingParams(tilingData_.sortLen, UB_COEF_PER_TILE);
         }
     } else {
-        isCalcSuccess = CalcLargeTilingParams(tilingData_.sortLen);
+        isCalcSuccess = CalcLargeTilingParams(tilingData_.sortLen, UB_COEF_PER_TILE);
     }
     OP_CHECK_IF((!isCalcSuccess), OP_LOGE(opName_, "RadixTopK Tiling failed."), return ge::GRAPH_FAILED);
+    // int64 模板的 coreTopK/边界计数等 int32 通道要求 kValue 不超 int32 上限
+    OP_CHECK_IF((isInt64Shape_ && tilingData_.kValue > INT32_SORT_LEN_MAX),
+                OP_LOGE(opName_, "RadixTopK kValue [%lu] exceeds int32 limit for int64 shape.", tilingData_.kValue),
+                return ge::GRAPH_FAILED);
+    // per-core 直方图计数保持 int32：per-core 元素数须 < 2^31（S < 2^31*coreNum，物理内存内恒成立，防御性校验）
+    OP_CHECK_IF((isInt64Shape_ && tilingData_.formerTileNum * tilingData_.formerTileLen > INT32_SORT_LEN_MAX),
+                OP_LOGE(opName_, "RadixTopK per-core element num exceeds int32 limit."), return ge::GRAPH_FAILED);
 
     blockDim_ = tilingData_.formerCoreNum + tilingData_.tailCoreNum;
     tilingData_.coreNum = blockDim_;
-    // 仅 UB 变体可复用 indices 内存（WS 变体的 tileTopK/tileHist 与 CopyOutResult 跨 core 冲突）
-    if (isLargeShape_) {
+    // 仅 UB 变体可复用 indices 内存（WS/INT64 变体的 tileTopK/tileHist 与 CopyOutResult 跨 core 冲突）
+    if (isLargeShape_ || isInt64Shape_) {
         tilingData_.needWorkspace = true;
     } else {
         uint64_t wsInt32Cnt = tilingData_.coreNum * (NUM_VALUE_2BIT + 2);
@@ -124,10 +152,11 @@ uint64_t RadixTopKTiling::GetTilingKey() const
 {
     OP_LOGD(opName_, "RadixTopKTiling GetTilingKey.");
 
-    const uint64_t tilingKey = GET_TPL_TILING_KEY(tilingData_.sorted, tilingData_.largest, isLargeShape_);
+    const uint64_t tilingKey = GET_TPL_TILING_KEY(tilingData_.sorted, tilingData_.largest, isLargeShape_,
+                                                  isInt64Shape_);
     OP_LOGD(opName_, "tilingKey is: [%lu]", tilingKey);
-    OP_LOGD(opName_, "sorted, largest, isLargeShape is: [%d, %d, %d]", tilingData_.sorted, tilingData_.largest,
-            isLargeShape_);
+    OP_LOGD(opName_, "sorted, largest, isLargeShape, isInt64Shape is: [%d, %d, %d, %d]", tilingData_.sorted,
+            tilingData_.largest, isLargeShape_, isInt64Shape_);
 
     return tilingKey;
 }
@@ -139,7 +168,7 @@ ge::graphStatus RadixTopKTiling::GetWorkspaceSize()
         workspaceSize_ = 0;
         return ge::GRAPH_SUCCESS;
     }
-    if (isLargeShape_) {
+    if (isLargeShape_ || isInt64Shape_) {
         workspaceSize_ = (NUM_VALUE_2BIT * tilingData_.coreNum + tilingData_.coreNum + tilingData_.coreNum +
                           WS_INT32_PER_TILE * tilingData_.totalTileNum) *
                          sizeof(int32_t);
@@ -199,6 +228,7 @@ void RadixTopKTiling::PrintTilingData()
     OP_LOGD(opName_, "kValue:           %lu.", tilingData_.kValue);
     OP_LOGD(opName_, "largest:          %d.", tilingData_.largest);
     OP_LOGD(opName_, "sorted:           %d.", tilingData_.sorted);
+    OP_LOGD(opName_, "isInt64Shape:     %d.", isInt64Shape_);
     OP_LOGD(opName_, "needWorkspace:    %d.", tilingData_.needWorkspace);
 }
 
@@ -235,14 +265,19 @@ bool RadixTopKTiling::TryCalcTileDistribution(const uint64_t& dataNum, uint64_t 
     return false;
 }
 
-bool RadixTopKTiling::CalcLargeTilingParams(const uint64_t& dataNum)
+/**
+ * @brief 大 shape / int64 shape 的 tile 切分（两者仅 UB 系数不同，合并为一个带参函数）
+ * @param dataNum 单 core 处理的数据量
+ * @param ubCoefPerTile UB 占用中「每 tile 元素数」的系数（int32 索引 16、int64 索引 20）
+ */
+bool RadixTopKTiling::CalcLargeTilingParams(const uint64_t& dataNum, const uint64_t& ubCoefPerTile)
 {
     uint64_t dataAlign = CACHE_LINE / xDtypeSize_;
     uint64_t minTileLen = dataAlign;
 
-    auto checkUb = [this](uint64_t tileLen) -> bool {
+    auto checkUb = [this, ubCoefPerTile](uint64_t tileLen) -> bool {
         uint64_t cmpMaskSize = tileLen / 8;
-        uint64_t ubUsed = 16 * tileLen + cmpMaskSize + MAX_TILE_NUM_IN_UB * sizeof(int32_t) + BLOCK_SIZE;
+        uint64_t ubUsed = ubCoefPerTile * tileLen + cmpMaskSize + MAX_TILE_NUM_IN_UB * sizeof(int32_t) + BLOCK_SIZE;
         return ubUsed <= ubSize_;
     };
 

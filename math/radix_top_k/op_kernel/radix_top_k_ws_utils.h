@@ -131,6 +131,9 @@ __aicore__ inline void RadixTopKWs<T, largest>::CopyTileHistInWs(const uint32_t&
         DataCopyExtParams tileHistOutParams{static_cast<uint16_t>(1), static_cast<uint32_t>(sizeof(int32_t) * dataNum),
                                             0, 0, 0};
         DataCopyPad(tileHistGm_[dstOffset + i * MAX_TILE_NUM_IN_UB], tileHist, tileHistOutParams);
+        // 迭代间必须等 MTE3 搬完 UB 再发起下一块 MTE2（复用同一 UB 段），
+        // 否则下一迭代的 GM→UB 覆盖尚未搬走的头部数据，GM 目标段头部被后块源污染
+        // （i64 场景 tileNum>6144 进入多块循环才触发，实测 K=240000 出现 tile 级 ±1 配额错位）
         MTE3ToMTE2Sync();
     }
 }
