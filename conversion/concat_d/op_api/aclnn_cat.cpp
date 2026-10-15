@@ -606,6 +606,7 @@ aclnnStatus aclnnCatGetWorkspaceSize(const aclTensorList* tensors, int64_t dim, 
 
     aclTensorList* tensorList = EraseDim1EmptyTensor(tensors, uniqueExecutor.get());
     if (tensorList != nullptr && tensorList->Size() == 0) {
+        *workspaceSize = 0;
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
     }

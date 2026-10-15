@@ -233,6 +233,7 @@ aclnnStatus aclnnChunkCatGetWorkspaceSize(const aclTensorList* tensors, int64_t 
         return ACLNN_ERR_PARAM_NULLPTR;
     }
     if (tensors->Size() == 0) {
+        *workspaceSize = 0;
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
     }
