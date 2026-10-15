@@ -429,6 +429,7 @@ int main()
 ```
 
 > **说明**：
+>
 > - 其余 dtype 替换方式：float16 用 `aclDataType::ACL_FLOAT16`、bfloat16 用 `ACL_BF16`、uint8 用 `ACL_UINT8`、int16 用 `ACL_INT16`，并同步改对应标量/输出元素的 C++ 类型与 `sizeof`。
 > - `start`/`end`/`step`/`out` 四者 dtype 必须一致；`N = ceil((end-start)/step)` 由调用方保证（详见上文「约束说明 → 调用方前置约束」），算子侧不重新校验。
 > - UINT8 场景 `start`/`end`/`step` 均须非负且 `step>0`、`start<end`（uint8 不可表示负值）。

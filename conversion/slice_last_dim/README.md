@@ -18,7 +18,7 @@
 - 计算示例：
   - 输入 x shape = (2, 3, 10)，start = 0，end = 10，stride = 2
   - 输出 y shape = (2, 3, 5)
-  - y[i, j, k] = x[i, j, start + k * stride] = x[i, j, 2 * k]
+  - y[i, j, k] = x[i, j, start + k \* stride] = x[i, j, 2 \* k]
 
 - 计算公式：
   输出 y 的 shape 与输入 x 相同，仅最后一维变为：

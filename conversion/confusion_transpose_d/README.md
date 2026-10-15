@@ -75,4 +75,4 @@
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_confusion_transpose.cpp](./examples/test_aclnn_confusion_transpose.cpp) | 通过[aclnnConfusionTranspose](./docs/aclnnConfusionTranspose.md)接口方式调用ConfusionTransposeD算子。 |
+| aclnn调用 | [test_aclnn_confusion_transpose.cpp](examples/arch35/test_aclnn_confusion_transpose.cpp) | 通过[aclnnConfusionTranspose](./docs/aclnnConfusionTranspose.md)接口方式调用ConfusionTransposeD算子。 |

@@ -44,7 +44,6 @@ Atlas训练系列产品
 Ascend 950PR&950DT系列产品
 <!-- end id12 -->
 
-
 融合前后图结构如下：
 
 ![](../../../docs/zh/figures/PermuteFusionPass_2.png)

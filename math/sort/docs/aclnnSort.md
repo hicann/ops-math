@@ -1,6 +1,5 @@
 # aclnnSort
 
-
 ## 产品支持情况
 
 <!-- npu="950" id1 -->
@@ -29,11 +28,11 @@
 - 计算公式：
 
 $$
-valuesOut[\mathbf{i}_{\neg dim}, j] = \text{sort}_{dim}(self[\mathbf{i}_{\neg dim}, :])[j]
+valuesOut[\mathbf{i}_{\neg dim}, j] = \text{sort}_{dim}[self[\mathbf{i}_{\neg dim}, :]](j)
 $$
 
 $$
-indicesOut[\mathbf{i}_{\neg dim}, j] = \text{argsort}_{dim}(self[\mathbf{i}_{\neg dim}, :])[j]
+indicesOut[\mathbf{i}_{\neg dim}, j] = \text{argsort}_{dim}[self[\mathbf{i}_{\neg dim}, :]](j)
 $$
 
 ## 函数原型

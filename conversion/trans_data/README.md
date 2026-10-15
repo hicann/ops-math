@@ -137,4 +137,4 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| aclnn接口 | [test_aclnn_trans_matmul_weight](examples/test_aclnn_trans_matmul_weight.cpp) | 通过[aclnnTransMatmulWeight](docs/aclnnTransMatmulWeight.md)接口方式调用Pack算子。 |
+| aclnn接口 | [test_aclnn_trans_matmul_weight](examples/arch35/test_aclnn_trans_matmul_weight.cpp) | 通过[aclnnTransMatmulWeight](docs/aclnnTransMatmulWeight.md)接口方式调用Pack算子。 |

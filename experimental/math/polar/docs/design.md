@@ -12,7 +12,7 @@
 
 > 本算子**无 TBE 历史实现**（任务书："暂无 tbe 实现，和 `aclnn_polar.cpp` 对齐即可"），以**开源仓 l0 拼接参考实现**为对齐基准与性能基线。
 
-参考源码：`cann/ops-math` 仓 `math/complex/op_host/op_api/aclnn_polar.cpp`（https://gitcode.com/cann/ops-math ），依赖 l0 API `sin.h/cos.h/mul.h/complex.h`（`l0op::Complex` 为已注册设备算子）。系统 `libopapi.so` 已导出 `aclnnPolar`/`aclnnPolarGetWorkspaceSize`。
+参考源码：`cann/ops-math` 仓 `math/complex/op_host/op_api/aclnn_polar.cpp`（<https://gitcode.com/cann/ops-math> ），依赖 l0 API `sin.h/cos.h/mul.h/complex.h`（`l0op::Complex` 为已注册设备算子）。系统 `libopapi.so` 已导出 `aclnnPolar`/`aclnnPolarGetWorkspaceSize`。
 
 ### Polar 参考（l0）实现现状分析
 

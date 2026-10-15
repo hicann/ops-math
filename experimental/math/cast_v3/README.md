@@ -7,6 +7,7 @@
 | Atlas 310P 推理系列产品 | √ |
 
 ## 功能说明
+
 CastV3 对输入张量进行数据类型转换，输出与输入形状相同、数据类型为目标类型的张量。本算子为面向 Ascend 310P 优化的实现，是 cast 系列算子的 v3 版本（独立算子类型 `CastV3`，aclnn 接口为 `aclnnCastV3`）。
 
 ## 参数说明
@@ -59,7 +60,8 @@ kernel 入口据此分派到不同实现类：
 ## 调用说明
 
 ### 工程结构
-```
+
+```text
 ├── cast_v3                       // CastV3 算子
 │   ├── op_host                   // host 侧：算子定义 / infershape / tiling
 │   │   ├── cast_v3_def.cpp
@@ -85,6 +87,7 @@ kernel 入口据此分派到不同实现类：
 ```
 
 ### 编译与部署
+
 ```bash
 # 在 ops-math 仓库根目录执行（实验算子，目标 310P）
 bash build.sh --pkg --experimental --soc=ascend310p --ops=cast_v3
@@ -92,6 +95,7 @@ bash build.sh --pkg --experimental --soc=ascend310p --ops=cast_v3
 
 构建产物 `build_out/cann-ops-math-custom_linux-aarch64.run` 安装后，
 会在 `opp/vendors/custom_math/` 下生成：
+
 - `op_api/include/aclnn_cast_v3.h` — aclnn 接口声明
 - `op_api/lib/libcust_opapi.so` — 含 `aclnnCastV3` / `aclnnCastV3GetWorkspaceSize` 符号
 - `op_impl/ai_core/tbe/config/ascend310p/aic-ascend310p-ops-info.json` — CastV3 算子注册信息
@@ -121,6 +125,7 @@ aclrtSynchronizeStream(stream);
 ### 编译并运行示例
 
 需先安装自定义算子包（见编译与部署章节），然后使用 `cust` 模式编译 example：
+
 ```bash
 # 编译并执行 example（eager 模式 + 自定义算子包）
 bash build.sh --run_example cast_v3 eager cust --soc=ascend310p --experimental
@@ -130,6 +135,7 @@ bash build.sh --run_example cast_v3 eager cust --soc=ascend310p --experimental -
 ```
 
 调用前需确保已安装自定义算子包，并设置环境变量：
+
 ```bash
 export LD_LIBRARY_PATH=/usr/local/Ascend/cann-8.5.1/opp/vendors/custom_math/op_api/lib:${LD_LIBRARY_PATH}
 ```
