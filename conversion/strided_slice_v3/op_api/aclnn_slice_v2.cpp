@@ -157,7 +157,11 @@ static bool CheckShape(const aclTensor* self, const aclIntArray* starts, const a
         end = GetPosDim(ends->operator[](i), self->GetViewShape().GetDim(dim));
         step = steps->operator[](i);
         CalculateValuesSliceLowerForSliceV2(self, dim, start, end);
-        sliceNum = (end - start + step - 1) / step;
+        if (step >= end - start) {
+            sliceNum = (end > start) ? 1 : 0;
+        } else {
+            sliceNum = (end - start - 1) / step + 1; // (end - start + step - 1) / step 的防溢出写法
+        }
         sliceShape.SetDim(dim, sliceNum);
     }
     auto outShape = out->GetViewShape();
