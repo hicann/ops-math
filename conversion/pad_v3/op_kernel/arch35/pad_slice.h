@@ -234,7 +234,7 @@ extern "C" __aicore__ inline void PadSliceTwoDimSmallShapeProcess(GM_ADDR x, GM_
 // Slice 路径分发：按 tiling key 分发到各 PadSlice 实现（pad/mirror_pad/pad_v2/pad_v3 apt 入口共用）。
 // tiling key 定义见 pad_slice_tilingkey.h。
 // PAD_SLICE_KEY_SIMT 为空 tensor 场景，仅需解码 tiling，无后续处理。
-__aicore__ inline void RunPadSliceProcess(GM_ADDR x, GM_ADDR y, GM_ADDR tiling)
+static __aicore__ inline void RunPadSliceProcess(GM_ADDR x, GM_ADDR y, GM_ADDR tiling)
 {
     TPipe pipe;
     __gm__ uint8_t* offsets = nullptr;

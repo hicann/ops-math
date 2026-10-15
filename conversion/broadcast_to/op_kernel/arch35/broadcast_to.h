@@ -37,7 +37,7 @@ using namespace BrcTo;
 #define TILING_MODE_SINGLE_AXIS_BRC 11007
 
 // for other operator(ex: tile) to use
-__aicore__ void inline broadcast_to_impl(GM_ADDR x, GM_ADDR shape, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+static __aicore__ inline void broadcast_to_impl(GM_ADDR x, GM_ADDR shape, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     constexpr auto b8 = sizeof(uint8_t);
     constexpr auto b16 = sizeof(uint16_t);
