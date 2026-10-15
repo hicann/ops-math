@@ -16,8 +16,7 @@
 
 #include "graph/operator_reg.h"
 
-namespace ge
-{
+namespace ge {
 /**
 * @brief Extracts a strided slice of a tensor. Roughly speaking, this op
     extracts a slice of size (end-begin)/stride from the given input tensor.
@@ -29,7 +28,8 @@ namespace ge
 * @li x: A tensor. Must be one of the BasicType: complex128, complex64,
   double, float32, float16, int16, int32, int64, int8, qint16, qint32, qint8,
   quint16, quint8, uint16, uint32, uint64, uint8, bfloat16, complex32,
-  hifloat8, float8_e5m2, float8_e4m3fn.Supported format list ["ND"].
+  hifloat8, float8_e5m2, float8_e4m3fn, float4_e2m1, float4_e1m2.
+  Supported format list ["ND"].
 
 * @li begin: A tensor of IndexNumberType: int32 or int64,
   for the index of the first value to select.Supported format list ["ND"].
@@ -63,7 +63,7 @@ namespace ge
 * Compatible with the TensorFlow operator StridedSlice.
 */
 REG_OP(StridedSlice)
-    .INPUT(x, TensorType({BasicType(), DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN}))
+    .INPUT(x, TensorType({BasicType(), DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT4_E2M1, DT_FLOAT4_E1M2}))
     .INPUT(begin, TensorType::IndexNumberType())
     .INPUT(end, TensorType::IndexNumberType())
     .INPUT(strides, TensorType::IndexNumberType())
@@ -72,7 +72,7 @@ REG_OP(StridedSlice)
     .ATTR(ellipsis_mask, Int, 0)
     .ATTR(new_axis_mask, Int, 0)
     .ATTR(shrink_axis_mask, Int, 0)
-    .OUTPUT(y, TensorType({BasicType(), DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN}))
+    .OUTPUT(y, TensorType({BasicType(), DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT4_E2M1, DT_FLOAT4_E1M2}))
     .OP_END_FACTORY_REG(StridedSlice)
 
 } // namespace ge

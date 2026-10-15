@@ -190,7 +190,11 @@ __aicore__ inline void StridedSliceMoveAlignUb2Ub<T, U>::ProcessWithDataCopyGath
 
     auto inTensor = inOutQue_.AllocTensor<T>();
     SetLoopModePara(loopMode, DataCopyMVType::OUT_TO_UB);
+#if defined(__DAV_920R1__)
+    DataCopyPad<T>(inTensor, inputGM_[inGmAddr], copyInParam, padParams, true);
+#else
     DataCopyPad<T>(inTensor, inputGM_[inGmAddr], copyInParam, padParams);
+#endif
     ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
     inOutQue_.EnQue(inTensor);
     inTensor = inOutQue_.DeQue<T>();

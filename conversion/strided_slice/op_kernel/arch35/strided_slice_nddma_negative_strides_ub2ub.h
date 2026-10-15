@@ -110,7 +110,11 @@ __aicore__ inline void StridedSliceNDDMAUb2Ub<T, U>::ProcessWithDataCopyGather(
     const DataCopyExtParams& copyOutParam)
 {
     auto inTensor = inOutQue_.AllocTensor<T>();
+#if defined(__DAV_920R1__)
+    DataCopy<T, NDDMA_MAX_DIMS_NEG, nddmaConfig_>(inTensor, inputGM_[inGmAddr], nddmaParams, true);
+#else
     DataCopy<T, NDDMA_MAX_DIMS_NEG, nddmaConfig_>(inTensor, inputGM_[inGmAddr], nddmaParams);
+#endif
     inOutQue_.EnQue(inTensor);
     inTensor = inOutQue_.DeQue<T>();
 

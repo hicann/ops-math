@@ -22,8 +22,7 @@
 #include "op_kernel/math_util.h"
 #include "slice_struct.h"
 
-namespace Slice
-{
+namespace Slice {
 using namespace AscendC;
 
 #ifdef __DAV_FPGA__
@@ -70,18 +69,17 @@ constexpr uint32_t DOUBLE_BUFFER = 2;
 constexpr uint32_t VL_SIZE_BYTE = Ops::Base::GetVRegSize();
 
 template <typename T, typename U, typename V = int8_t>
-class SliceBase
-{
+class SliceBase {
 public:
     __aicore__ inline SliceBase(){};
-    __aicore__ inline void ParseBaseTilingData(GM_ADDR begin, const SliceBaseTilingData *tilingData, int64_t blockIdx);
+    __aicore__ inline void ParseBaseTilingData(GM_ADDR begin, const SliceBaseTilingData* tilingData, int64_t blockIdx);
     __aicore__ inline int64_t GetInputGmAddr(int64_t rowIdx) const;
     __aicore__ inline int64_t GetInputGmAddrWithoutLastDim(int64_t rowIdx) const;
     __aicore__ inline int64_t GetOutputGmAddr(int64_t rowIdx) const;
-    __aicore__ inline void GetProcessRowsOffset(int64_t &rowsOffset, int64_t blockIdx) const;
-    __aicore__ inline void CalcProcessLoopsNum(int64_t &curCoreLoopsNum, int64_t &ubSplitLoopNum, int64_t blockIdx);
-    __aicore__ inline void GetHandleRowsNum(int64_t &rowsNum, int64_t blockIdx) const;
-    __aicore__ inline void GetLastDimSplitLoopCnt(int64_t &loopCnt, int64_t blockIdx);
+    __aicore__ inline void GetProcessRowsOffset(int64_t& rowsOffset, int64_t blockIdx) const;
+    __aicore__ inline void CalcProcessLoopsNum(int64_t& curCoreLoopsNum, int64_t& ubSplitLoopNum, int64_t blockIdx);
+    __aicore__ inline void GetHandleRowsNum(int64_t& rowsNum, int64_t blockIdx) const;
+    __aicore__ inline void GetLastDimSplitLoopCnt(int64_t& loopCnt, int64_t blockIdx);
 
 protected:
     template <typename T1>
@@ -132,8 +130,8 @@ protected:
 };
 
 template <typename T, typename U, typename V>
-__aicore__ inline void SliceBase<T, U, V>::ParseBaseTilingData(GM_ADDR begin, const SliceBaseTilingData *tilingData,
-                                                                int64_t blockIdx)
+__aicore__ inline void SliceBase<T, U, V>::ParseBaseTilingData(GM_ADDR begin, const SliceBaseTilingData* tilingData,
+                                                               int64_t blockIdx)
 {
     ubSize_ = tilingData->ubSize;
     realCoreNum_ = tilingData->realCoreNum;
@@ -148,9 +146,8 @@ __aicore__ inline void SliceBase<T, U, V>::ParseBaseTilingData(GM_ADDR begin, co
         } else {
             begin_[i] = static_cast<int64_t>(((__gm__ U*)begin)[i]);
             if constexpr (IsSameType<V, fp4x2_e2m1_t>::value || IsSameType<V, fp4x2_e1m2_t>::value) {
-                ascendc_assert(
-                    !(begin_[inputDims_ - 1] & 1),
-                    "When the input dtype is fp4, the last dimension of offset must be even.\n");
+                ascendc_assert(!(begin_[inputDims_ - 1] & 1),
+                               "When the input dtype is fp4, the last dimension of offset must be even.\n");
                 begin_[inputDims_ - 1] /= 2;
             }
         }
@@ -171,7 +168,6 @@ __aicore__ inline void SliceBase<T, U, V>::ParseBaseTilingData(GM_ADDR begin, co
 
     ubInLoopSteps_ = tilingData->ubInLoopSteps;
 }
-
 
 /*
   从最内轴向最外轴扩展
@@ -215,7 +211,7 @@ __aicore__ inline int64_t SliceBase<T, U, V>::GetOutputGmAddr(int64_t rowIdx) co
 
 // 计算当前核处理的行的起始行号，即output中的第几行
 template <typename T, typename U, typename V>
-__aicore__ inline void SliceBase<T, U, V>::GetProcessRowsOffset(int64_t &rowsOffset, int64_t blockIdx) const
+__aicore__ inline void SliceBase<T, U, V>::GetProcessRowsOffset(int64_t& rowsOffset, int64_t blockIdx) const
 {
     // output: (6, 5, 4, 3)
     // blk切5，blkIndex=1, blkFactor=2;  blkSplitOutNum=ceil(5/2)=3
@@ -227,8 +223,8 @@ __aicore__ inline void SliceBase<T, U, V>::GetProcessRowsOffset(int64_t &rowsOff
 }
 
 template <typename T, typename U, typename V>
-__aicore__ inline void SliceBase<T, U, V>::CalcProcessLoopsNum(int64_t &curCoreLoopsNum, int64_t &ubSplitLoopNum,
-                                                                int64_t blockIdx)
+__aicore__ inline void SliceBase<T, U, V>::CalcProcessLoopsNum(int64_t& curCoreLoopsNum, int64_t& ubSplitLoopNum,
+                                                               int64_t blockIdx)
 {
     if ((blockIdx % blkSplitOutNum_ == blkSplitOutNum_ - 1) && (blkTailFactor_ != 0)) {
         curCoreLoopsNum = blkTailFactor_;
@@ -254,7 +250,7 @@ __aicore__ inline void SliceBase<T, U, V>::CalcProcessLoopsNum(int64_t &curCoreL
 
 // ub split last axis and blk split nlast axis
 template <typename T, typename U, typename V>
-__aicore__ inline void SliceBase<T, U, V>::GetHandleRowsNum(int64_t &rowsNum, int64_t blockIdx) const
+__aicore__ inline void SliceBase<T, U, V>::GetHandleRowsNum(int64_t& rowsNum, int64_t blockIdx) const
 {
     if ((blockIdx % blkSplitOutNum_ == blkSplitOutNum_ - 1) && (blkTailFactor_ != 0)) {
         rowsNum = blkTailFactor_;
@@ -269,7 +265,7 @@ __aicore__ inline void SliceBase<T, U, V>::GetHandleRowsNum(int64_t &rowsNum, in
 
 // ub and blk all split last axis
 template <typename T, typename U, typename V>
-__aicore__ inline void SliceBase<T, U, V>::GetLastDimSplitLoopCnt(int64_t &loopCnt, int64_t blockIdx)
+__aicore__ inline void SliceBase<T, U, V>::GetLastDimSplitLoopCnt(int64_t& loopCnt, int64_t blockIdx)
 {
     if ((blockIdx % blkSplitOutNum_ == blkSplitOutNum_ - 1) && (blkTailFactor_ != 0)) {
         // blk/ub all split last axis

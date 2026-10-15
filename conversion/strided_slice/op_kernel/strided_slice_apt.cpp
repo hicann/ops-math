@@ -22,16 +22,29 @@ using namespace StridedSlice;
 #define STRIDED_SLICE_KEY_NDDMA_LAST_DIM 103
 #define STRIDED_SLICE_KEY_MOVE_ALIGN_TWO_DIM 150
 #define STRIDED_SLICE_KEY_SIMT 200
-#define STRIDED_SLICE_KEY_SIMT_BIG_SHAPE 201
+#if defined(__DAV_920R1__)
+#define STRIDED_SLICE_KEY_SIMT_PACK_2B 201
+#define STRIDED_SLICE_KEY_SIMT_PACK_4B 202
+#define STRIDED_SLICE_KEY_SIMT_PACK_8B 203
+#define STRIDED_SLICE_KEY_SIMT_PACK_16B 204
+#endif
+#define STRIDED_SLICE_KEY_SIMT_BIG_SHAPE 210
+#if defined(__DAV_920R1__)
+#define STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_2B 211
+#define STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_4B 212
+#define STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_8B 213
+#define STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_16B 214
+#endif
 #define STRIDED_SLICE_KEY_MOVE_ALIGN_GATHER 300
 #define STRIDED_SLICE_KEY_MOVE_ALIGN_UB2UB 301
 #define STRIDED_SLICE_KEY_NDDMA_GATHER 302
 #define STRIDED_SLICE_KEY_NDDMA_UB2UB 303
 
-extern "C" __global__ __aicore__ void strided_slice(
-    GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+extern "C" __global__ __aicore__ void strided_slice(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y,
+                                                    GM_ADDR workspace, GM_ADDR tiling)
 {
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
+    REGISTER_TILING_DEFAULT(StridedSliceTilingData);
     if (TILING_KEY_IS(STRIDED_SLICE_KEY_MOVE_ALIGN)) {
         GET_TILING_DATA_WITH_STRUCT(StridedSliceMATilingData, tilingData, tiling);
         StridedSliceMoveAlignProcess(x, begin, end, strides, y, &tilingData);
@@ -50,9 +63,37 @@ extern "C" __global__ __aicore__ void strided_slice(
     } else if (TILING_KEY_IS(STRIDED_SLICE_KEY_SIMT)) {
         GET_TILING_DATA_WITH_STRUCT(StridedSliceSIMTTilingData, tilingData, tiling);
         StridedSliceSIMTProcess(x, begin, end, strides, y, tiling, &tilingData);
+#if defined(__DAV_920R1__)
+    } else if (TILING_KEY_IS(STRIDED_SLICE_KEY_SIMT_PACK_2B)) {
+        GET_TILING_DATA_WITH_STRUCT(StridedSliceSIMTTilingData, tilingData, tiling);
+        StridedSliceSIMTPack2BProcess(x, begin, end, strides, y, tiling, &tilingData);
+    } else if (TILING_KEY_IS(STRIDED_SLICE_KEY_SIMT_PACK_4B)) {
+        GET_TILING_DATA_WITH_STRUCT(StridedSliceSIMTTilingData, tilingData, tiling);
+        StridedSliceSIMTPack4BProcess(x, begin, end, strides, y, tiling, &tilingData);
+    } else if (TILING_KEY_IS(STRIDED_SLICE_KEY_SIMT_PACK_8B)) {
+        GET_TILING_DATA_WITH_STRUCT(StridedSliceSIMTTilingData, tilingData, tiling);
+        StridedSliceSIMTPack8BProcess(x, begin, end, strides, y, tiling, &tilingData);
+    } else if (TILING_KEY_IS(STRIDED_SLICE_KEY_SIMT_PACK_16B)) {
+        GET_TILING_DATA_WITH_STRUCT(StridedSliceSIMTTilingData, tilingData, tiling);
+        StridedSliceSIMTPack16BProcess(x, begin, end, strides, y, tiling, &tilingData);
+#endif
     } else if (TILING_KEY_IS(STRIDED_SLICE_KEY_SIMT_BIG_SHAPE)) {
         GET_TILING_DATA_WITH_STRUCT(StridedSliceSIMTTilingData, tilingData, tiling);
         StridedSliceSIMTBigShapeProcess(x, begin, end, strides, y, tiling, &tilingData);
+#if defined(__DAV_920R1__)
+    } else if (TILING_KEY_IS(STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_2B)) {
+        GET_TILING_DATA_WITH_STRUCT(StridedSliceSIMTTilingData, tilingData, tiling);
+        StridedSliceSIMTBigShapePack2BProcess(x, begin, end, strides, y, tiling, &tilingData);
+    } else if (TILING_KEY_IS(STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_4B)) {
+        GET_TILING_DATA_WITH_STRUCT(StridedSliceSIMTTilingData, tilingData, tiling);
+        StridedSliceSIMTBigShapePack4BProcess(x, begin, end, strides, y, tiling, &tilingData);
+    } else if (TILING_KEY_IS(STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_8B)) {
+        GET_TILING_DATA_WITH_STRUCT(StridedSliceSIMTTilingData, tilingData, tiling);
+        StridedSliceSIMTBigShapePack8BProcess(x, begin, end, strides, y, tiling, &tilingData);
+    } else if (TILING_KEY_IS(STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_16B)) {
+        GET_TILING_DATA_WITH_STRUCT(StridedSliceSIMTTilingData, tilingData, tiling);
+        StridedSliceSIMTBigShapePack16BProcess(x, begin, end, strides, y, tiling, &tilingData);
+#endif
     } else if (TILING_KEY_IS(STRIDED_SLICE_KEY_MOVE_ALIGN_GATHER)) {
         GET_TILING_DATA_WITH_STRUCT(StridedSliceMAGatherTilingData, tilingData, tiling);
         StridedSliceMoveAlignGatherProcess(x, begin, end, strides, y, &tilingData);

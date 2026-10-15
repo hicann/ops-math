@@ -29,17 +29,16 @@ public:
     __aicore__ inline void Process();
 
 private:
-    __aicore__ inline void ProcessPerBlock(const DataCopyExtParams &copyOutParamsMain,
-                                           const DataCopyExtParams &copyOutParamsTail);
+    __aicore__ inline void ProcessPerBlock(const DataCopyExtParams& copyOutParamsMain,
+                                           const DataCopyExtParams& copyOutParamsTail);
     __aicore__ inline void ParseCopyInTilingData(const StridedSliceMATilingData* tilingData);
-    __aicore__ inline void ParseLoopModeAndMoveAlignParams(LoopModeParams &loopMode,
-        DataCopyExtParams &extParams, const StridedSliceMATilingData* tilingData) const;
-    __aicore__ inline void SetCopyOutAlignParams(DataCopyExtParams &copyOutParams,
-                                                 const DataCopyExtParams &copyInParam,
-                                                 const LoopModeParams &loopMode);
+    __aicore__ inline void ParseLoopModeAndMoveAlignParams(LoopModeParams& loopMode, DataCopyExtParams& extParams,
+                                                           const StridedSliceMATilingData* tilingData) const;
+    __aicore__ inline void SetCopyOutAlignParams(DataCopyExtParams& copyOutParams, const DataCopyExtParams& copyInParam,
+                                                 const LoopModeParams& loopMode);
 
 private:
-    TPipe *pipe_;
+    TPipe* pipe_;
     TQueBind<TPosition::VECIN, TPosition::VECOUT, 1> vecQue_;
 
     GlobalTensor<T> inputGM_;
@@ -52,13 +51,13 @@ private:
     DataCopyExtParams copyInParam_;
     DataCopyExtParams copyInParamTail_;
 
-    DataCopyPadExtParams<T> padParams_ {false, 0, 0, 0};
+    DataCopyPadExtParams<T> padParams_{false, 0, 0, 0};
 };
 
 template <typename T, typename U>
 __aicore__ inline void StridedSliceMoveAlign<T, U>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
-                                                      GM_ADDR y, const StridedSliceMATilingData* tilingData,
-                                                      TPipe* pipeIn)
+                                                         GM_ADDR y, const StridedSliceMATilingData* tilingData,
+                                                         TPipe* pipeIn)
 {
     blockIdx_ = GetBlockIdx();
     pipe_ = pipeIn;
@@ -91,8 +90,8 @@ __aicore__ inline void StridedSliceMoveAlign<T, U>::Process()
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceMoveAlign<T, U>::ParseLoopModeAndMoveAlignParams(LoopModeParams &loopMode,
-    DataCopyExtParams &extParams, const StridedSliceMATilingData* tilingData) const
+__aicore__ inline void StridedSliceMoveAlign<T, U>::ParseLoopModeAndMoveAlignParams(
+    LoopModeParams& loopMode, DataCopyExtParams& extParams, const StridedSliceMATilingData* tilingData) const
 {
     loopMode.loop1Size = tilingData->moveAlignParams.loop1Size;
     loopMode.loop2Size = tilingData->moveAlignParams.loop2Size;
@@ -103,7 +102,8 @@ __aicore__ inline void StridedSliceMoveAlign<T, U>::ParseLoopModeAndMoveAlignPar
 
     extParams.blockCount = tilingData->moveAlignParams.blockCount;
     extParams.blockLen = tilingData->moveAlignParams.blockLen;
-    extParams.srcStride = tilingData->moveAlignParams.srcStride - extParams.blockLen; // DataCopyPad接口要求是尾和头的间隔
+    extParams.srcStride = tilingData->moveAlignParams.srcStride -
+                          extParams.blockLen; // DataCopyPad接口要求是尾和头的间隔
     extParams.dstStride = tilingData->moveAlignParams.dstStride;
 }
 
@@ -144,9 +144,9 @@ __aicore__ inline void StridedSliceMoveAlign<T, U>::ParseCopyInTilingData(const 
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceMoveAlign<T, U>::SetCopyOutAlignParams(DataCopyExtParams &copyOutParams,
-                                                                       const DataCopyExtParams &copyInParam,
-                                                                       const LoopModeParams &loopMode)
+__aicore__ inline void StridedSliceMoveAlign<T, U>::SetCopyOutAlignParams(DataCopyExtParams& copyOutParams,
+                                                                          const DataCopyExtParams& copyInParam,
+                                                                          const LoopModeParams& loopMode)
 {
     // blockCount 为uint16，不需要考虑越界。因为最后一根轴只有大于128B时才选择move_align_v2模板
     // MTE2 nburst * burstLen 要求Block对齐, 在ub内可能存在pad
@@ -158,8 +158,8 @@ __aicore__ inline void StridedSliceMoveAlign<T, U>::SetCopyOutAlignParams(DataCo
         copyOutParams.srcStride = 0;
     } else if ((copyInParam.blockCount * copyInParam.blockLen) % BLOCK_SIZE_BYTE == 0) {
         copyOutParams.blockCount = 1;
-        copyOutParams.blockLen = loopMode.loop1Size * loopMode.loop2Size *
-                                 copyInParam.blockCount * copyInParam.blockLen;
+        copyOutParams.blockLen = loopMode.loop1Size * loopMode.loop2Size * copyInParam.blockCount *
+                                 copyInParam.blockLen;
         copyOutParams.dstStride = 0;
         copyOutParams.srcStride = 0;
     } else {
@@ -171,8 +171,8 @@ __aicore__ inline void StridedSliceMoveAlign<T, U>::SetCopyOutAlignParams(DataCo
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceMoveAlign<T, U>::ProcessPerBlock(const DataCopyExtParams &copyOutParamsMain,
-                                                                 const DataCopyExtParams &copyOutParamsTail)
+__aicore__ inline void StridedSliceMoveAlign<T, U>::ProcessPerBlock(const DataCopyExtParams& copyOutParamsMain,
+                                                                    const DataCopyExtParams& copyOutParamsTail)
 {
     int64_t inputGmAddr = 0;
     int64_t outputGmAddr = 0;
@@ -193,8 +193,13 @@ __aicore__ inline void StridedSliceMoveAlign<T, U>::ProcessPerBlock(const DataCo
             // 3、注意：loop模式如果打开了，需要手动关闭，否则默认就全部都是开的
             LocalTensor<T> inputLocal = vecQue_.AllocTensor<T>();
             SetLoopModePara(loopMode_, DataCopyMVType::OUT_TO_UB);
+#if defined(__DAV_920R1__)
+            DataCopyPad<T, PaddingMode::Compact>(inputLocal, inputGM_[inputGmAddr + loops * this->ubInLoopSteps_],
+                                                 copyInParam_, padParams_, true);
+#else
             DataCopyPad<T, PaddingMode::Compact>(inputLocal, inputGM_[inputGmAddr + loops * this->ubInLoopSteps_],
                                                  copyInParam_, padParams_);
+#endif
             ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
 
             vecQue_.EnQue(inputLocal);
@@ -207,16 +212,22 @@ __aicore__ inline void StridedSliceMoveAlign<T, U>::ProcessPerBlock(const DataCo
         if (this->ubTailFactor_ > 0) {
             LocalTensor<T> inputLocal = vecQue_.AllocTensor<T>();
             SetLoopModePara(loopModeTail_, DataCopyMVType::OUT_TO_UB);
+#if defined(__DAV_920R1__)
+            DataCopyPad<T, PaddingMode::Compact>(inputLocal,
+                                                 inputGM_[inputGmAddr + ubSplitLoopsNum * this->ubInLoopSteps_],
+                                                 copyInParamTail_, padParams_, true);
+#else
             DataCopyPad<T, PaddingMode::Compact>(inputLocal,
                                                  inputGM_[inputGmAddr + ubSplitLoopsNum * this->ubInLoopSteps_],
                                                  copyInParamTail_, padParams_);
+#endif
             ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
 
             vecQue_.EnQue(inputLocal);
             inputLocal = vecQue_.DeQue<T>();
 
-            DataCopyPad(outputGM_[outputGmAddr + ubSplitLoopsNum * this->ubOutLoopSteps_],
-                        inputLocal, copyOutParamsTail);
+            DataCopyPad(outputGM_[outputGmAddr + ubSplitLoopsNum * this->ubOutLoopSteps_], inputLocal,
+                        copyOutParamsTail);
             vecQue_.FreeTensor(inputLocal);
         }
     }

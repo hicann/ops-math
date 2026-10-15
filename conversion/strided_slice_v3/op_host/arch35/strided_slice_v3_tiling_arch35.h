@@ -23,9 +23,9 @@
 
 namespace optiling {
 struct StridedSliceV3CompileInfo {
-  int32_t block_dim;
-  int32_t ub_size;
-  uint32_t cacheLineSize{0};
+    int32_t block_dim;
+    int32_t ub_size;
+    uint32_t cacheLineSize{0};
 };
 
 struct SliceParameters {
@@ -40,27 +40,13 @@ struct SliceParameters {
     std::string to_string() const;
 };
 
-REGISTER_TILING_DATA_CLASS(StridedSliceV3, StridedSliceTilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV3_100, StridedSliceMATilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV3_101, StridedSliceMALastDimTilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV3_102, StridedSliceNDDMATilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV3_103, StridedSliceNDDMATilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV3_302, StridedSliceNDDMATilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV3_303, StridedSliceNDDMATilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV3_150, StridedSliceMALast2DimTilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV3_200, StridedSliceSIMTTilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV3_201, StridedSliceSIMTTilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV3_300, StridedSliceMAGatherTilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV3_301, StridedSliceMAUB2UBTilingData)
-
 class StridedSliceV3Tiling : public StrideSliceTiling {
 public:
     explicit StridedSliceV3Tiling(gert::TilingContext* context) : StrideSliceTiling(context) {};
 };
 
 ge::graphStatus StridedSliceV3TilingForAscendC(gert::TilingContext* context, int64_t coreNum, int64_t ubSize,
-                                               int64_t cacheLineSize, SliceParameters& param,
-                                               const ge::DataType dtype);
+                                               int64_t cacheLineSize, SliceParameters& param, const ge::DataType dtype);
 
-}  // namespace optiling
-#endif  // AIR_CXX_RUNTIME_V2_OP_IMPL_STRIDED_SLICE_V3_RUNTIME2_H
+} // namespace optiling
+#endif // AIR_CXX_RUNTIME_V2_OP_IMPL_STRIDED_SLICE_V3_RUNTIME2_H

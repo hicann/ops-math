@@ -16,8 +16,7 @@
 
 #include "graph/operator_reg.h"
 
-namespace ge
-{
+namespace ge {
 /**
 * @brief Extracts a slice from a tensor.
 *       This operation extracts a slice of size "size" from a tensor "x"
@@ -43,10 +42,12 @@ namespace ge
 * Compatible with the TensorFlow operator Slice.
 */
 REG_OP(Slice)
-    .INPUT(x, TensorType({BasicType(), DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0, DT_FLOAT4_E2M1, DT_FLOAT4_E1M2}))
+    .INPUT(x, TensorType({BasicType(), DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0, DT_FLOAT4_E2M1,
+                          DT_FLOAT4_E1M2}))
     .INPUT(offsets, TensorType::IndexNumberType())
     .INPUT(size, TensorType::IndexNumberType())
-    .OUTPUT(y, TensorType({BasicType(), DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0, DT_FLOAT4_E2M1, DT_FLOAT4_E1M2}))
+    .OUTPUT(y, TensorType({BasicType(), DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0, DT_FLOAT4_E2M1,
+                           DT_FLOAT4_E1M2}))
     .OP_END_FACTORY_REG(Slice)
 
 } // namespace ge

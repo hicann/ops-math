@@ -37,6 +37,32 @@ public:
         ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
         ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
         ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
+
+    const std::vector<ge::DataType> baseDataType_91096 = {
+        ge::DT_INT8,          ge::DT_UINT8,         ge::DT_INT16,       ge::DT_UINT16,      ge::DT_INT32,
+        ge::DT_UINT32,        ge::DT_INT64,         ge::DT_UINT64,      ge::DT_FLOAT,       ge::DT_FLOAT16,
+        ge::DT_BF16,          ge::DT_BOOL,          ge::DT_COMPLEX32,   ge::DT_COMPLEX64,   ge::DT_HIFLOAT8,
+        ge::DT_FLOAT8_E5M2,   ge::DT_FLOAT8_E4M3FN, ge::DT_FLOAT4_E2M1, ge::DT_FLOAT4_E1M2, ge::DT_INT8,
+        ge::DT_UINT8,         ge::DT_INT16,         ge::DT_UINT16,      ge::DT_INT32,       ge::DT_UINT32,
+        ge::DT_INT64,         ge::DT_UINT64,        ge::DT_FLOAT,       ge::DT_FLOAT16,     ge::DT_BF16,
+        ge::DT_BOOL,          ge::DT_COMPLEX32,     ge::DT_COMPLEX64,   ge::DT_HIFLOAT8,    ge::DT_FLOAT8_E5M2,
+        ge::DT_FLOAT8_E4M3FN, ge::DT_FLOAT4_E2M1,   ge::DT_FLOAT4_E1M2};
+
+    const std::vector<ge::Format> baseFormat_91096 = {
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+
+    const std::vector<ge::DataType> attrDataType_91096 = {
+        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
+
     explicit StridedSlice(const char* name) : OpDef(name)
     {
         this->Input("x").ParamType(REQUIRED).DataType(baseDataType).Format(baseFormat).UnknownShapeFormat(baseFormat);
@@ -75,6 +101,43 @@ public:
 
         this->AICore().AddConfig("ascend950", aicore_config);
         this->AICore().AddConfig("ascend350", aicore_config);
+
+        OpAICoreConfig config91096;
+        config91096.Input("x")
+            .ParamType(REQUIRED)
+            .DataType(baseDataType_91096)
+            .Format(baseFormat_91096)
+            .UnknownShapeFormat(baseFormat_91096);
+        config91096.Input("begin")
+            .ParamType(REQUIRED)
+            .ValueDepend(OPTIONAL)
+            .DataType(attrDataType_91096)
+            .Format(baseFormat_91096)
+            .UnknownShapeFormat(baseFormat_91096);
+        config91096.Input("end")
+            .ParamType(REQUIRED)
+            .ValueDepend(OPTIONAL)
+            .DataType(attrDataType_91096)
+            .Format(baseFormat_91096)
+            .UnknownShapeFormat(baseFormat_91096);
+        config91096.Input("strides")
+            .ParamType(REQUIRED)
+            .ValueDepend(OPTIONAL)
+            .DataType(attrDataType_91096)
+            .Format(baseFormat_91096)
+            .UnknownShapeFormat(baseFormat_91096);
+        config91096.Output("y")
+            .ParamType(REQUIRED)
+            .DataType(baseDataType_91096)
+            .Format(baseFormat_91096)
+            .UnknownShapeFormat(baseFormat_91096);
+        config91096.DynamicCompileStaticFlag(true)
+            .DynamicFormatFlag(false)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .NeedCheckSupportFlag(false)
+            .ExtendCfgInfo("opFile.value", "strided_slice_apt");
+        this->AICore().AddConfig("ascend960dt", config91096);
     }
 };
 

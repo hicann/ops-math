@@ -317,7 +317,12 @@ __aicore__ inline void SliceMoveAlignGather<T, U, V>::ProcessPerBlock(const Data
         for (int64_t loops = 0; loops < ubSplitLoopsNum; loops++) {
             LocalTensor<T> inputLocal = inQue_.AllocTensor<T>();
             SetLoopModePara(loopMode_, DataCopyMVType::OUT_TO_UB);
+#if defined(__DAV_920R1__)
+            DataCopyPad(inputLocal, inputGM_[inputGmAddr + loops * this->ubInLoopSteps_], copyInParam_, padParams_,
+                        true);
+#else
             DataCopyPad(inputLocal, inputGM_[inputGmAddr + loops * this->ubInLoopSteps_], copyInParam_, padParams_);
+#endif
             ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
             inQue_.EnQue(inputLocal);
 
@@ -330,8 +335,13 @@ __aicore__ inline void SliceMoveAlignGather<T, U, V>::ProcessPerBlock(const Data
         if (this->ubTailFactor_ > 0) {
             LocalTensor<T> inputLocal = inQue_.AllocTensor<T>();
             SetLoopModePara(loopModeTail_, DataCopyMVType::OUT_TO_UB);
+#if defined(__DAV_920R1__)
+            DataCopyPad(inputLocal, inputGM_[inputGmAddr + ubSplitLoopsNum * this->ubInLoopSteps_], copyInParamTail_,
+                        padParams_, true);
+#else
             DataCopyPad(inputLocal, inputGM_[inputGmAddr + ubSplitLoopsNum * this->ubInLoopSteps_], copyInParamTail_,
                         padParams_);
+#endif
             ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
             inQue_.EnQue(inputLocal);
 

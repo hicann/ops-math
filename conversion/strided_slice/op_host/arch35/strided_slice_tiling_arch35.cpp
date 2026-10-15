@@ -22,6 +22,27 @@ constexpr int64_t NDDMA_CACHE_LINE_FACTOR = 2;
 constexpr int64_t DOUBLE_BUFFER = 2;
 constexpr int64_t UNCONST_BEGIN_VALUE = -10; // unconst场景下，用-10标识需要从kernel获取
 constexpr int64_t GATHER_MAX_IDX = 65536;
+constexpr int64_t SIMT_PACK_BYTES_16 = 16;
+constexpr int64_t SIMT_PACK_BYTES_8 = 8;
+constexpr int64_t SIMT_PACK_BYTES_4 = 4;
+constexpr int64_t SIMT_PACK_BYTES_2 = 2;
+// SIMT 线程数常量 (逐级折半: 2048→1024→512→256)
+constexpr int64_t SIMT_THREAD_MAX = 2048;
+constexpr int64_t SIMT_THREAD_HALF = 1024;
+constexpr int64_t SIMT_THREAD_QUARTER = 512;
+constexpr int64_t SIMT_THREAD_MIN = 256;
+// SIMT正常场景维度阈值: dim1-7用全量线程, dim8用一半
+constexpr int32_t SIMT_FULL_THREAD_MAX_DIM = 7;
+// BigShape场景线程分配维度阈值
+constexpr int32_t BIGSHAPE_DIM_FULL = 1; // dim==1 用 SIMT_THREAD_MAX
+constexpr int32_t BIGSHAPE_DIM_HALF = 2; // dim==2 用 SIMT_THREAD_HALF
+// BigShape场景: dim<=4用512线程, 超过用256
+constexpr int32_t BIGSHAPE_HALF_THREAD_MAX_DIM = 4;
+// SIMT key基础值 + 按合并字节数偏移
+constexpr int64_t SIMT_KEY_OFFSET_2B = 1;
+constexpr int64_t SIMT_KEY_OFFSET_4B = 2;
+constexpr int64_t SIMT_KEY_OFFSET_8B = 3;
+constexpr int64_t SIMT_KEY_OFFSET_16B = 4;
 
 static const int INDEX_X = 0;
 static const int INDEX_BEGIN = 1;
@@ -772,10 +793,175 @@ void StrideSliceTiling::SetNddmaTilingMode()
     }
 }
 
+// 线程数可选值: SIMT_THREAD_MAX→HALF→QUARTER→MIN，每级折半
+static int64_t PickThread(int64_t maxThread, int64_t blockSize)
+{
+    const int64_t candidates[] = {SIMT_THREAD_MAX, SIMT_THREAD_HALF, SIMT_THREAD_QUARTER, SIMT_THREAD_MIN};
+    for (auto t : candidates) {
+        if (t <= maxThread && t <= blockSize) {
+            return t;
+        }
+    }
+    return SIMT_THREAD_MIN;
+}
+
+// 根据 dim 数和是否 BigShape 返回最大线程数
+//   SIMT:         dim1-7→SIMT_THREAD_MAX  dim8→SIMT_THREAD_HALF
+//   BigShape:     dim1→SIMT_THREAD_MAX  dim2→SIMT_THREAD_HALF
+//                 dim3-4→SIMT_THREAD_QUARTER  dim5-8→SIMT_THREAD_MIN
+static int64_t GetMaxThread(bool isBigShape, int32_t dimNum)
+{
+    if (!isBigShape) {
+        return (dimNum <= SIMT_FULL_THREAD_MAX_DIM) ? SIMT_THREAD_MAX : SIMT_THREAD_HALF;
+    }
+    if (dimNum == BIGSHAPE_DIM_FULL) {
+        return SIMT_THREAD_MAX;
+    }
+    if (dimNum == BIGSHAPE_DIM_HALF) {
+        return SIMT_THREAD_HALF;
+    }
+    if (dimNum <= BIGSHAPE_HALF_THREAD_MAX_DIM) {
+        return SIMT_THREAD_QUARTER;
+    }
+    return SIMT_THREAD_MIN;
+}
+
+void StrideSliceTiling::CalcThreadNum()
+{
+    int64_t maxThread = GetMaxThread(isShapeExceedUint32_, dimNum_);
+    threadNum_ = static_cast<uint16_t>(PickThread(maxThread, mainBlockFactor_));
+}
+
+static bool CheckPackAlignment(SliceParametersRuntime2& sliceParam, const int64_t* inputShapeProd, int32_t dimNum,
+                               int64_t packFactor)
+{
+    int32_t lastAxis = dimNum - 1;
+    if (sliceParam.beginList.GetDim(lastAxis) % packFactor != 0) {
+        return false;
+    }
+    for (int32_t i = 0; i < lastAxis; i++) {
+        if ((sliceParam.beginList.GetDim(i) * inputShapeProd[i + 1]) % packFactor != 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void StrideSliceTiling::CalSimtPackFactor()
+{
+    simtPackFactor_ = 1;
+    if (isStrideNeg_ || lastOneStride_ != 1) {
+        return;
+    }
+
+    int64_t maxThread = GetMaxThread(isShapeExceedUint32_, dimNum_);
+    mainBlockFactor_ = Ops::Base::CeilDiv(outputShapeProd_[0], coreNum_);
+
+    // 收集所有有效合并级别: b16→b32→b64→b128
+    const int64_t targets[] = {SIMT_PACK_BYTES_2, SIMT_PACK_BYTES_4, SIMT_PACK_BYTES_8, SIMT_PACK_BYTES_16};
+    int64_t lastDimBytes = lastOneOutputDim_ * xDtypeSize_;
+    struct Level {
+        int64_t packFactor;
+        int64_t target;
+        int64_t mergedBlock;
+    };
+    Level levels[4];
+    int levelCnt = 0;
+
+    for (auto target : targets) {
+        if (xDtypeSize_ >= target) {
+            continue;
+        }
+        if (lastDimBytes % target != 0) {
+            continue;
+        }
+        int64_t p = target / xDtypeSize_;
+        if (!CheckPackAlignment(sliceParam_, inputShapeProd_, dimNum_, p)) {
+            continue;
+        }
+        int64_t block = Ops::Base::CeilDiv(outputShapeProd_[0] / p, coreNum_);
+        levels[levelCnt] = {p, target, block};
+        levelCnt++;
+    }
+
+    if (levelCnt == 0) {
+        return;
+    }
+
+    // L0 不合并判定
+    if (levels[0].mergedBlock <= 1) {
+        return;
+    }
+
+    // 只有 int8 才有 b16 这个中间层
+    bool hasB16 = (levels[0].target == SIMT_PACK_BYTES_2);
+
+    if (hasB16) {
+        // int8: L0=b16, L1=b32(无条件 base), L2+=升级需 block>=maxThread
+        if (levels[1].mergedBlock <= 1) {
+            simtPackFactor_ = levels[0].packFactor;
+            return;
+        }
+        simtPackFactor_ = levels[1].packFactor; // b32 base
+        for (int i = 2; i < levelCnt; i++) {
+            if (levels[i].mergedBlock >= maxThread) {
+                simtPackFactor_ = levels[i].packFactor;
+            }
+        }
+    } else {
+        // int16/int32/int64: L0=base, L1+=升级需 block>=maxThread
+        simtPackFactor_ = levels[0].packFactor;
+        for (int i = 1; i < levelCnt; i++) {
+            if (levels[i].mergedBlock >= maxThread) {
+                simtPackFactor_ = levels[i].packFactor;
+            }
+        }
+    }
+}
+
 void StrideSliceTiling::SetSIMTTilingMode()
 {
-    tilingKey_ = isShapeExceedUint32_ ? STRIDED_SLICE_KEY_SIMT_BIG_SHAPE : STRIDED_SLICE_KEY_SIMT;
     realCoreNum_ = coreNum_;
+    // key 映射: base(A6 编号，所有芯片一致) + 合并字节数偏移
+    int64_t base = isShapeExceedUint32_ ? STRIDED_SLICE_KEY_SIMT_BIG_SHAPE : STRIDED_SLICE_KEY_SIMT;
+
+    // simt pack 仅在 960DT(NpuArch::DAV_9201) 启用, 其余平台只用 base key
+    auto platformInfo = tilingContext_->GetPlatformInfo();
+    bool isSimtPackSupport = (platformInfo != nullptr) &&
+                             (platform_ascendc::PlatformAscendC(platformInfo).GetCurNpuArch() == NpuArch::DAV_9201);
+    if (!isSimtPackSupport) {
+        tilingKey_ = base;
+        return;
+    }
+
+    CalSimtPackFactor();
+
+    // 重新计算合并后的 mainBlockFactor_ 和 threadNum_
+    int64_t finalElements = outputShapeProd_[0] / simtPackFactor_;
+    mainBlockFactor_ = Ops::Base::CeilDiv(finalElements, coreNum_);
+    CalcThreadNum();
+    OP_LOGD(tilingContext_->GetNodeName(), "SIMT pack: p=%ld, threadNum=%u, finalElements=%ld", simtPackFactor_,
+            threadNum_, finalElements);
+
+    int64_t mergedBytes = simtPackFactor_ * xDtypeSize_;
+    int64_t offset = 0;
+    switch (mergedBytes) {
+        case SIMT_PACK_BYTES_2:
+            offset = SIMT_KEY_OFFSET_2B;
+            break;
+        case SIMT_PACK_BYTES_4:
+            offset = SIMT_KEY_OFFSET_4B;
+            break;
+        case SIMT_PACK_BYTES_8:
+            offset = SIMT_KEY_OFFSET_8B;
+            break;
+        case SIMT_PACK_BYTES_16:
+            offset = SIMT_KEY_OFFSET_16B;
+            break;
+        default:
+            break;
+    }
+    tilingKey_ = base + offset;
 }
 
 void StrideSliceTiling::MovAlignV2UbSplitLastOneDim()
@@ -1075,25 +1261,25 @@ void StrideSliceTiling::SetMovAlignV2TilingMode()
 
 void StrideSliceTiling::SetMoveAlignParams(StridedSliceMoveAlignParams& params, const MoveAlignV2Info& actInfo)
 {
-    params.set_blockCount(actInfo.blockCount);
-    params.set_blockLen(actInfo.blockLen);
-    params.set_srcStride(actInfo.srcStride);
-    params.set_dstStride(actInfo.dstStride);
-    params.set_loop1Size(actInfo.loop1Size);
-    params.set_loop2Size(actInfo.loop2Size);
-    params.set_loop1SrcStride(actInfo.loop1SrcStride);
-    params.set_loop1DstStride(actInfo.loop1DstStride);
-    params.set_loop2SrcStride(actInfo.loop2SrcStride);
-    params.set_loop2DstStride(actInfo.loop2DstStride);
+    params.blockCount = actInfo.blockCount;
+    params.blockLen = actInfo.blockLen;
+    params.srcStride = actInfo.srcStride;
+    params.dstStride = actInfo.dstStride;
+    params.loop1Size = actInfo.loop1Size;
+    params.loop2Size = actInfo.loop2Size;
+    params.loop1SrcStride = actInfo.loop1SrcStride;
+    params.loop1DstStride = actInfo.loop1DstStride;
+    params.loop2SrcStride = actInfo.loop2SrcStride;
+    params.loop2DstStride = actInfo.loop2DstStride;
 }
 
 void StrideSliceTiling::SetShortMoveAlignParams(StridedSliceShortMoveAlignParams& params,
                                                 const MoveAlignV2Info& actInfo)
 {
-    params.set_blockCount(actInfo.blockCount);
-    params.set_blockLen(actInfo.blockLen);
-    params.set_srcStride(actInfo.srcStride);
-    params.set_dstStride(actInfo.dstStride);
+    params.blockCount = actInfo.blockCount;
+    params.blockLen = actInfo.blockLen;
+    params.srcStride = actInfo.srcStride;
+    params.dstStride = actInfo.dstStride;
 }
 
 void StrideSliceTiling::SetRowsStepsParams(StridedSliceTilingData& tilingData)
@@ -1117,11 +1303,11 @@ void StrideSliceTiling::SetRowsStepsParams(StridedSliceTilingData& tilingData)
         inLoopSteps = ubFactor_ * strides_[ubIndex_];
         outLoopSteps = ubFactor_;
     }
-    tilingData.set_ubInLoopSteps(inLoopSteps);
-    tilingData.set_ubOutLoopSteps(outLoopSteps);
+    tilingData.ubInLoopSteps = inLoopSteps;
+    tilingData.ubOutLoopSteps = outLoopSteps;
 
-    tilingData.set_rowsOffsetSteps(rowsOffsetSteps_);
-    tilingData.set_inputSteps(inputSteps_);
+    std::copy(rowsOffsetSteps_, rowsOffsetSteps_ + MAX_AXIS_NUM_FOR_STRIDESLICE, tilingData.rowsOffsetSteps);
+    std::copy(inputSteps_, inputSteps_ + MAX_AXIS_NUM_FOR_STRIDESLICE, tilingData.inputSteps);
 }
 
 void StrideSliceTiling::CalStridedSliceRowsStepsParams()
@@ -1148,28 +1334,28 @@ void StrideSliceTiling::CalStridedSliceRowsStepsParams()
 void StrideSliceTiling::FillStridedSliceBaseTilingData(StridedSliceBaseTilingData& tilingData)
 {
     if (isStrideNeg_ || useGather_) {
-        tilingData.set_ubSize(ubSizeOutput_);
+        tilingData.ubSize = ubSizeOutput_;
     } else {
-        tilingData.set_ubSize(ubSize_);
+        tilingData.ubSize = ubSize_;
     }
-    tilingData.set_ubIndex(ubIndex_);
-    tilingData.set_ubFactor(ubFactor_);
-    tilingData.set_ubTailFactor(ubTailFactor_);
-    tilingData.set_ubTailTailFactor(ubTailTailFactor_);
-    tilingData.set_realCoreNum(realCoreNum_);
-    tilingData.set_inputDims(dimNum_);
-    tilingData.set_blkIndex(blkIndex_);
-    tilingData.set_blkFactor(blkFactor_);
-    tilingData.set_blkTailFactor(blkTailFactor_);
-    tilingData.set_begin(begin_);
-    tilingData.set_strides(strides_);
-    tilingData.set_outputShape(outputShape_);
+    tilingData.ubIndex = ubIndex_;
+    tilingData.ubFactor = ubFactor_;
+    tilingData.ubTailFactor = ubTailFactor_;
+    tilingData.ubTailTailFactor = ubTailTailFactor_;
+    tilingData.realCoreNum = realCoreNum_;
+    tilingData.inputDims = dimNum_;
+    tilingData.blkIndex = blkIndex_;
+    tilingData.blkFactor = blkFactor_;
+    tilingData.blkTailFactor = blkTailFactor_;
+    std::copy(begin_, begin_ + MAX_AXIS_NUM_FOR_STRIDESLICE, tilingData.begin);
+    std::copy(strides_, strides_ + MAX_AXIS_NUM_FOR_STRIDESLICE, tilingData.strides);
+    std::copy(outputShape_, outputShape_ + MAX_AXIS_NUM_FOR_STRIDESLICE, tilingData.outputShape);
 
     CalStridedSliceRowsStepsParams();
-    tilingData.set_ubInLoopSteps(inLoopSteps_);
-    tilingData.set_ubOutLoopSteps(outLoopSteps_);
-    tilingData.set_inputSteps(inputSteps_);
-    tilingData.set_rowsOffsetSteps(rowsOffsetSteps_);
+    tilingData.ubInLoopSteps = inLoopSteps_;
+    tilingData.ubOutLoopSteps = outLoopSteps_;
+    std::copy(inputSteps_, inputSteps_ + MAX_AXIS_NUM_FOR_STRIDESLICE, tilingData.inputSteps);
+    std::copy(rowsOffsetSteps_, rowsOffsetSteps_ + MAX_AXIS_NUM_FOR_STRIDESLICE, tilingData.rowsOffsetSteps);
 }
 
 void StrideSliceTiling::FillStridedSliceTilingData100()
@@ -1178,46 +1364,33 @@ void StrideSliceTiling::FillStridedSliceTilingData100()
     FillStridedSliceBaseTilingData(maTilingData_.stridedSliceBaseTilingData);
 
     SetMoveAlignParams(maTilingData_.moveAlignParams, mainMoveAlignV2Info_);
-    maTilingData_.SaveToBuffer(tilingContext_->GetRawTilingData()->GetData(),
-                               tilingContext_->GetRawTilingData()->GetCapacity());
-    tilingContext_->GetRawTilingData()->SetDataSize(maTilingData_.GetDataSize());
 }
 
 void StrideSliceTiling::FillStridedSliceTilingData101()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering FillTilingData101.");
     FillStridedSliceBaseTilingData(maLastDimTilingData_.stridedSliceBaseTilingData);
-
-    maLastDimTilingData_.SaveToBuffer(tilingContext_->GetRawTilingData()->GetData(),
-                                      tilingContext_->GetRawTilingData()->GetCapacity());
-    tilingContext_->GetRawTilingData()->SetDataSize(maLastDimTilingData_.GetDataSize());
 }
 
 void StrideSliceTiling::FillStridedSliceTilingDataNDDMA()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering FillTilingDataNDDMA.");
     FillStridedSliceBaseTilingData(nddmaTilingData_.stridedSliceBaseTilingData);
-    nddmaTilingData_.set_ubSizeInput(ubSizeInput_);
-    nddmaTilingData_.set_nddmaTotalNum(nddmaTotalNum_);
-    nddmaTilingData_.set_nddmaLoopSize(nddmaLoopSize_);
-    nddmaTilingData_.set_nddmaLoopSrcStride(nddmaLoopSrcStride_);
-    nddmaTilingData_.set_nddmaLoopDstStride(nddmaLoopDstStride_);
-
-    nddmaTilingData_.SaveToBuffer(tilingContext_->GetRawTilingData()->GetData(),
-                                  tilingContext_->GetRawTilingData()->GetCapacity());
-    tilingContext_->GetRawTilingData()->SetDataSize(nddmaTilingData_.GetDataSize());
+    nddmaTilingData_.ubSizeInput = ubSizeInput_;
+    nddmaTilingData_.nddmaTotalNum = nddmaTotalNum_;
+    std::copy(nddmaLoopSize_, nddmaLoopSize_ + MAX_NDDMA_UB_SPLIT_AXIS_NUM, nddmaTilingData_.nddmaLoopSize);
+    std::copy(nddmaLoopSrcStride_, nddmaLoopSrcStride_ + MAX_NDDMA_UB_SPLIT_AXIS_NUM,
+              nddmaTilingData_.nddmaLoopSrcStride);
+    std::copy(nddmaLoopDstStride_, nddmaLoopDstStride_ + MAX_NDDMA_UB_SPLIT_AXIS_NUM,
+              nddmaTilingData_.nddmaLoopDstStride);
 }
 
 void StrideSliceTiling::SetRowsStepsParamsFor150(StridedSliceMALast2DimTilingData& tilingData)
 {
     CalStridedSliceRowsStepsParams();
-    tilingData.set_ubInLoopSteps(inLoopSteps_);
-    tilingData.set_ubOutLoopSteps(outLoopSteps_);
-    int64_t inputSteps[NUMBER_TWO];
-    for (size_t i = 0; i < NUMBER_TWO; i++) {
-        inputSteps[i] = inputSteps_[i];
-    }
-    tilingData.set_inputSteps(inputSteps);
+    tilingData.ubInLoopSteps = inLoopSteps_;
+    tilingData.ubOutLoopSteps = outLoopSteps_;
+    std::copy(inputSteps_, inputSteps_ + NUMBER_TWO, tilingData.inputSteps);
 }
 
 void StrideSliceTiling::FillStridedSliceTilingData150()
@@ -1231,100 +1404,107 @@ void StrideSliceTiling::FillStridedSliceTilingData150()
         strides[i] = strides_[i];
         outputShape[i] = outputShape_[i];
     }
-    maLast2DimTilingData_.set_ubSize(ubSize_);
-    maLast2DimTilingData_.set_blkFactor(blkFactor_);
-    maLast2DimTilingData_.set_blkTailFactor(blkTailFactor_);
-    maLast2DimTilingData_.set_ubFactor(ubFactor_);
-    maLast2DimTilingData_.set_ubTailFactor(ubTailFactor_);
-    maLast2DimTilingData_.set_ubTailTailFactor(ubTailTailFactor_);
-    maLast2DimTilingData_.set_realCoreNum(realCoreNum_);
+    maLast2DimTilingData_.ubSize = ubSize_;
+    maLast2DimTilingData_.blkFactor = blkFactor_;
+    maLast2DimTilingData_.blkTailFactor = blkTailFactor_;
+    maLast2DimTilingData_.ubFactor = ubFactor_;
+    maLast2DimTilingData_.ubTailFactor = ubTailFactor_;
+    maLast2DimTilingData_.ubTailTailFactor = ubTailTailFactor_;
+    maLast2DimTilingData_.realCoreNum = realCoreNum_;
 
     SetShortMoveAlignParams(maLast2DimTilingData_.moveAlignParams, mainMoveAlignV2Info_);
-    maLast2DimTilingData_.set_begin(begin);
-    maLast2DimTilingData_.set_strides(strides);
-    maLast2DimTilingData_.set_outputShape(outputShape);
+    std::copy(begin, begin + NUMBER_TWO, maLast2DimTilingData_.begin);
+    std::copy(strides, strides + NUMBER_TWO, maLast2DimTilingData_.strides);
+    std::copy(outputShape, outputShape + NUMBER_TWO, maLast2DimTilingData_.outputShape);
     SetRowsStepsParamsFor150(maLast2DimTilingData_);
-    maLast2DimTilingData_.SaveToBuffer(tilingContext_->GetRawTilingData()->GetData(),
-                                       tilingContext_->GetRawTilingData()->GetCapacity());
-    tilingContext_->GetRawTilingData()->SetDataSize(maLast2DimTilingData_.GetDataSize());
 }
 
 void StrideSliceTiling::FillStridedSliceTilingDataSIMT()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering FillTilingDataSIMT.");
-    simtTilingData_.set_isEmptyTensor(isEmptyTensor_);
-    simtTilingData_.set_inputDims(dimNum_);
-    simtTilingData_.set_begin(begin_);
-    simtTilingData_.set_strides(strides_);
-    simtTilingData_.set_outputShapeProd(outputShapeProd_);
-    simtTilingData_.set_inputShapeProd(inputShapeProd_);
-    simtTilingData_.SaveToBuffer(tilingContext_->GetRawTilingData()->GetData(),
-                                 tilingContext_->GetRawTilingData()->GetCapacity());
-    tilingContext_->GetRawTilingData()->SetDataSize(simtTilingData_.GetDataSize());
+    simtTilingData_.isEmptyTensor = isEmptyTensor_;
+    simtTilingData_.inputDims = dimNum_;
+    simtTilingData_.threadNum = threadNum_;
+
+    if (simtPackFactor_ > 1) {
+        int64_t p = simtPackFactor_;
+        int32_t lastAxis = dimNum_ - 1;
+        int64_t packedBegin[MAX_AXIS_NUM_FOR_STRIDESLICE] = {0};
+        int64_t packedStrides[MAX_AXIS_NUM_FOR_STRIDESLICE] = {0};
+        int64_t packedOutputProd[MAX_SIMT_UB_SPLIT_AXIS_NUM] = {1, 1, 1, 1, 1, 1, 1, 1};
+        int64_t packedInputProd[MAX_SIMT_UB_SPLIT_AXIS_NUM] = {1, 1, 1, 1, 1, 1, 1, 1};
+        for (int32_t i = 0; i < dimNum_; i++) {
+            packedOutputProd[i] = outputShapeProd_[i] / p;
+            packedInputProd[i] = inputShapeProd_[i] / p;
+            packedBegin[i] = begin_[i];
+            packedStrides[i] = strides_[i];
+        }
+        packedBegin[lastAxis] = begin_[lastAxis] / p;
+        std::copy(packedBegin, packedBegin + MAX_AXIS_NUM_FOR_STRIDESLICE, simtTilingData_.begin);
+        std::copy(packedStrides, packedStrides + MAX_AXIS_NUM_FOR_STRIDESLICE, simtTilingData_.strides);
+        std::copy(packedOutputProd, packedOutputProd + MAX_SIMT_UB_SPLIT_AXIS_NUM, simtTilingData_.outputShapeProd);
+        std::copy(packedInputProd, packedInputProd + MAX_SIMT_UB_SPLIT_AXIS_NUM, simtTilingData_.inputShapeProd);
+    } else {
+        std::copy(begin_, begin_ + MAX_AXIS_NUM_FOR_STRIDESLICE, simtTilingData_.begin);
+        std::copy(strides_, strides_ + MAX_AXIS_NUM_FOR_STRIDESLICE, simtTilingData_.strides);
+        std::copy(outputShapeProd_, outputShapeProd_ + MAX_SIMT_UB_SPLIT_AXIS_NUM, simtTilingData_.outputShapeProd);
+        std::copy(inputShapeProd_, inputShapeProd_ + MAX_SIMT_UB_SPLIT_AXIS_NUM, simtTilingData_.inputShapeProd);
+    }
 }
 
 void StrideSliceTiling::FillStridedSliceTilingData300()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering FillTilingData300.");
     FillStridedSliceBaseTilingData(maGatherTilingData_.stridedSliceBaseTilingData);
-    maGatherTilingData_.set_ubSizeInput(ubSizeInput_);
+    maGatherTilingData_.ubSizeInput = ubSizeInput_;
     SetMoveAlignParams(maGatherTilingData_.moveAlignParams, mainMoveAlignV2Info_);
-    maGatherTilingData_.SaveToBuffer(tilingContext_->GetRawTilingData()->GetData(),
-                                     tilingContext_->GetRawTilingData()->GetCapacity());
-    tilingContext_->GetRawTilingData()->SetDataSize(maGatherTilingData_.GetDataSize());
 }
 
 void StrideSliceTiling::FillStridedSliceTilingData301()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering FillTilingData301.");
     FillStridedSliceBaseTilingData(maUB2UBTilingData_.stridedSliceBaseTilingData);
-    maUB2UBTilingData_.set_ubSizeInput(ubSizeInput_);
+    maUB2UBTilingData_.ubSizeInput = ubSizeInput_;
     SetMoveAlignParams(maUB2UBTilingData_.moveAlignParams, mainMoveAlignV2Info_);
-    maUB2UBTilingData_.SaveToBuffer(tilingContext_->GetRawTilingData()->GetData(),
-                                    tilingContext_->GetRawTilingData()->GetCapacity());
-    tilingContext_->GetRawTilingData()->SetDataSize(maUB2UBTilingData_.GetDataSize());
 }
 
 void StrideSliceTiling::FillStridedSliceTilingDataOther()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering other FillTilingData.");
     if (isStrideNeg_ || useGather_) {
-        tilingData_.set_ubSize(ubSizeOutput_);
-        tilingData_.set_ubSizeInput(ubSizeInput_);
+        tilingData_.ubSize = ubSizeOutput_;
+        tilingData_.ubSizeInput = ubSizeInput_;
     } else {
-        tilingData_.set_ubSize(ubSize_);
+        tilingData_.ubSize = ubSize_;
     }
-    tilingData_.set_coreNum(coreNum_);
-    tilingData_.set_ubIndex(ubIndex_);
-    tilingData_.set_ubFactor(ubFactor_);
-    tilingData_.set_ubTailFactor(ubTailFactor_);
-    tilingData_.set_ubTailTailFactor(ubTailTailFactor_);
-    tilingData_.set_realCoreNum(realCoreNum_);
-    tilingData_.set_inputDims(dimNum_);
-    tilingData_.set_blkIndex(blkIndex_);
-    tilingData_.set_blkFactor(blkFactor_);
-    tilingData_.set_blkTailFactor(blkTailFactor_);
-    tilingData_.set_xDtypeSize(xDtypeSize_);
-    tilingData_.set_tilingKey(tilingKey_);
-    tilingData_.set_nddmaTotalNum(nddmaTotalNum_);
-    tilingData_.set_nddmaLoopSize(nddmaLoopSize_);
-    tilingData_.set_nddmaLoopSrcStride(nddmaLoopSrcStride_);
-    tilingData_.set_nddmaLoopDstStride(nddmaLoopDstStride_);
-    tilingData_.set_outputShapeProd(outputShapeProd_);
-    tilingData_.set_inputShapeProd(inputShapeProd_);
-    tilingData_.set_isShapeExceedUint32(isShapeExceedUint32_);
-    tilingData_.set_isEmptyTensor(isEmptyTensor_);
+    tilingData_.coreNum = coreNum_;
+    tilingData_.ubIndex = ubIndex_;
+    tilingData_.ubFactor = ubFactor_;
+    tilingData_.ubTailFactor = ubTailFactor_;
+    tilingData_.ubTailTailFactor = ubTailTailFactor_;
+    tilingData_.realCoreNum = realCoreNum_;
+    tilingData_.inputDims = dimNum_;
+    tilingData_.blkIndex = blkIndex_;
+    tilingData_.blkFactor = blkFactor_;
+    tilingData_.blkTailFactor = blkTailFactor_;
+    tilingData_.xDtypeSize = xDtypeSize_;
+    tilingData_.tilingKey = tilingKey_;
+    tilingData_.nddmaTotalNum = nddmaTotalNum_;
+    std::copy(nddmaLoopSize_, nddmaLoopSize_ + MAX_NDDMA_UB_SPLIT_AXIS_NUM, tilingData_.nddmaLoopSize);
+    std::copy(nddmaLoopSrcStride_, nddmaLoopSrcStride_ + MAX_NDDMA_UB_SPLIT_AXIS_NUM, tilingData_.nddmaLoopSrcStride);
+    std::copy(nddmaLoopDstStride_, nddmaLoopDstStride_ + MAX_NDDMA_UB_SPLIT_AXIS_NUM, tilingData_.nddmaLoopDstStride);
+    std::copy(outputShapeProd_, outputShapeProd_ + MAX_SIMT_UB_SPLIT_AXIS_NUM, tilingData_.outputShapeProd);
+    std::copy(inputShapeProd_, inputShapeProd_ + MAX_SIMT_UB_SPLIT_AXIS_NUM, tilingData_.inputShapeProd);
+    tilingData_.isShapeExceedUint32 = isShapeExceedUint32_;
+    tilingData_.isEmptyTensor = isEmptyTensor_;
 
     SetMoveAlignParams(tilingData_.moveAlignParams, mainMoveAlignV2Info_);
 
-    tilingData_.set_begin(begin_);
-    tilingData_.set_strides(strides_);
-    tilingData_.set_outputShape(outputShape_);
+    std::copy(begin_, begin_ + MAX_AXIS_NUM_FOR_STRIDESLICE, tilingData_.begin);
+    std::copy(strides_, strides_ + MAX_AXIS_NUM_FOR_STRIDESLICE, tilingData_.strides);
+    std::copy(outputShape_, outputShape_ + MAX_AXIS_NUM_FOR_STRIDESLICE, tilingData_.outputShape);
 
     SetRowsStepsParams(tilingData_);
-    tilingData_.SaveToBuffer(tilingContext_->GetRawTilingData()->GetData(),
-                             tilingContext_->GetRawTilingData()->GetCapacity());
-    tilingContext_->GetRawTilingData()->SetDataSize(tilingData_.GetDataSize());
 }
 
 void StrideSliceTiling::FillTilingData()
@@ -1354,7 +1534,15 @@ void StrideSliceTiling::FillTilingData()
             FillStridedSliceTilingData150();
             break;
         case STRIDED_SLICE_KEY_SIMT:
+        case STRIDED_SLICE_KEY_SIMT_PACK_2B:
+        case STRIDED_SLICE_KEY_SIMT_PACK_4B:
+        case STRIDED_SLICE_KEY_SIMT_PACK_8B:
+        case STRIDED_SLICE_KEY_SIMT_PACK_16B:
         case STRIDED_SLICE_KEY_SIMT_BIG_SHAPE:
+        case STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_2B:
+        case STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_4B:
+        case STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_8B:
+        case STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_16B:
             FillStridedSliceTilingDataSIMT();
             break;
         case STRIDED_SLICE_KEY_MOVE_ALIGN_GATHER:
@@ -1388,7 +1576,15 @@ void StrideSliceTiling::PrintTilingData()
             PrintStridedSliceTilingData150();
             break;
         case STRIDED_SLICE_KEY_SIMT:
+        case STRIDED_SLICE_KEY_SIMT_PACK_2B:
+        case STRIDED_SLICE_KEY_SIMT_PACK_4B:
+        case STRIDED_SLICE_KEY_SIMT_PACK_8B:
+        case STRIDED_SLICE_KEY_SIMT_PACK_16B:
         case STRIDED_SLICE_KEY_SIMT_BIG_SHAPE:
+        case STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_2B:
+        case STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_4B:
+        case STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_8B:
+        case STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_16B:
             PrintStridedSliceTilingDataSIMT();
             break;
         case STRIDED_SLICE_KEY_MOVE_ALIGN_GATHER:
@@ -1410,15 +1606,13 @@ void StrideSliceTiling::PrintStridedSliceBaseTilingData(StridedSliceBaseTilingDa
             blkIndex:%d, blkFactor:%ld, blkTailFactor:%ld, \
             begin:%s, end:%s, stride:%s, inputShape:%s, outputShape:%s, \
             rowsOffsetSteps:%s, inputSteps:%s, outputSteps:%s, ubInLoopSteps:%ld, ubOutLoopSteps:%ld",
-            isStrideNeg_, tilingData.get_ubSize(), tilingData.get_realCoreNum(), tilingData.get_ubIndex(),
-            tilingData.get_ubFactor(), tilingData.get_ubTailFactor(), tilingData.get_ubTailTailFactor(),
-            tilingData.get_blkIndex(), tilingData.get_blkFactor(), tilingData.get_blkTailFactor(),
-            ArrayToStr(tilingData.get_begin(), dimNum_).c_str(), ArrayToStr(end_, dimNum_).c_str(),
-            ArrayToStr(tilingData.get_strides(), dimNum_).c_str(), ArrayToStr(inputShape_, dimNum_).c_str(),
-            ArrayToStr(tilingData.get_outputShape(), dimNum_).c_str(),
-            ArrayToStr(tilingData.get_rowsOffsetSteps(), dimNum_).c_str(),
-            ArrayToStr(tilingData.get_inputSteps(), dimNum_).c_str(), ArrayToStr(outputSteps_, dimNum_).c_str(),
-            tilingData.get_ubInLoopSteps(), tilingData.get_ubOutLoopSteps());
+            isStrideNeg_, tilingData.ubSize, tilingData.realCoreNum, tilingData.ubIndex, tilingData.ubFactor,
+            tilingData.ubTailFactor, tilingData.ubTailTailFactor, tilingData.blkIndex, tilingData.blkFactor,
+            tilingData.blkTailFactor, ArrayToStr(tilingData.begin, dimNum_).c_str(), ArrayToStr(end_, dimNum_).c_str(),
+            ArrayToStr(tilingData.strides, dimNum_).c_str(), ArrayToStr(inputShape_, dimNum_).c_str(),
+            ArrayToStr(tilingData.outputShape, dimNum_).c_str(),
+            ArrayToStr(tilingData.rowsOffsetSteps, dimNum_).c_str(), ArrayToStr(tilingData.inputSteps, dimNum_).c_str(),
+            ArrayToStr(outputSteps_, dimNum_).c_str(), tilingData.ubInLoopSteps, tilingData.ubOutLoopSteps);
 }
 
 void StrideSliceTiling::PrintStridedSliceTilingData100()
@@ -1446,10 +1640,10 @@ void StrideSliceTiling::PrintStridedSliceTilingDataNDDMA()
     PrintStridedSliceBaseTilingData(nddmaTilingData_.stridedSliceBaseTilingData);
     OP_LOGI(tilingContext_->GetNodeName(), "StridedSliceNDDMATilingData is  ubSizeInput:%d\
     nddmaTotalNum:%ld, nddmaLoopSize:%s, nddmaLoopSrcStride: %s, nddmaLoopDstStride: %s",
-            nddmaTilingData_.get_ubSizeInput(), nddmaTilingData_.get_nddmaTotalNum(),
-            ArrayToStr(nddmaTilingData_.get_nddmaLoopSize(), MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
-            ArrayToStr(nddmaTilingData_.get_nddmaLoopSrcStride(), MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
-            ArrayToStr(nddmaTilingData_.get_nddmaLoopDstStride(), MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str());
+            nddmaTilingData_.ubSizeInput, nddmaTilingData_.nddmaTotalNum,
+            ArrayToStr(nddmaTilingData_.nddmaLoopSize, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
+            ArrayToStr(nddmaTilingData_.nddmaLoopSrcStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
+            ArrayToStr(nddmaTilingData_.nddmaLoopDstStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str());
 }
 
 void StrideSliceTiling::PrintStridedSliceTilingData150()
@@ -1460,16 +1654,14 @@ void StrideSliceTiling::PrintStridedSliceTilingData150()
             begin:%s, end:%s, inputShape:%s, outputShape:%s, \
             inputSteps:%s, outputSteps:%s, ubInLoopSteps:%ld, ubOutLoopSteps:%ld, \
             moveAlignInfo: blockCount:%u blockLen:%u srcStride:%u dstStride:%u",
-            maLast2DimTilingData_.get_ubSize(), maLast2DimTilingData_.get_realCoreNum(),
-            maLast2DimTilingData_.get_ubFactor(), maLast2DimTilingData_.get_ubTailFactor(),
-            maLast2DimTilingData_.get_ubTailTailFactor(), maLast2DimTilingData_.get_blkFactor(),
-            maLast2DimTilingData_.get_blkTailFactor(), ArrayToStr(maLast2DimTilingData_.get_begin(), dimNum_).c_str(),
+            maLast2DimTilingData_.ubSize, maLast2DimTilingData_.realCoreNum, maLast2DimTilingData_.ubFactor,
+            maLast2DimTilingData_.ubTailFactor, maLast2DimTilingData_.ubTailTailFactor, maLast2DimTilingData_.blkFactor,
+            maLast2DimTilingData_.blkTailFactor, ArrayToStr(maLast2DimTilingData_.begin, dimNum_).c_str(),
             ArrayToStr(end_, dimNum_).c_str(), ArrayToStr(inputShape_, dimNum_).c_str(),
-            ArrayToStr(maLast2DimTilingData_.get_outputShape(), dimNum_).c_str(),
-            ArrayToStr(maLast2DimTilingData_.get_inputSteps(), dimNum_).c_str(),
-            ArrayToStr(outputSteps_, dimNum_).c_str(), maLast2DimTilingData_.get_ubInLoopSteps(),
-            maLast2DimTilingData_.get_ubOutLoopSteps(), mainMoveAlignV2Info_.blockCount, mainMoveAlignV2Info_.blockLen,
-            mainMoveAlignV2Info_.srcStride, mainMoveAlignV2Info_.dstStride);
+            ArrayToStr(maLast2DimTilingData_.outputShape, dimNum_).c_str(),
+            ArrayToStr(maLast2DimTilingData_.inputSteps, dimNum_).c_str(), ArrayToStr(outputSteps_, dimNum_).c_str(),
+            maLast2DimTilingData_.ubInLoopSteps, maLast2DimTilingData_.ubOutLoopSteps, mainMoveAlignV2Info_.blockCount,
+            mainMoveAlignV2Info_.blockLen, mainMoveAlignV2Info_.srcStride, mainMoveAlignV2Info_.dstStride);
 }
 
 void StrideSliceTiling::PrintStridedSliceTilingDataSIMT()
@@ -1477,10 +1669,10 @@ void StrideSliceTiling::PrintStridedSliceTilingDataSIMT()
     OP_LOGI(tilingContext_->GetNodeName(),
             "StridedSliceSIMTTilingData is isStrideNeg_:%d, isEmptyTensor:%d, begin:%s, stride:%s \
             outputShapeProd:%s, inputShapeProd:%s",
-            isStrideNeg_, simtTilingData_.get_isEmptyTensor(), ArrayToStr(simtTilingData_.get_begin(), dimNum_).c_str(),
-            ArrayToStr(simtTilingData_.get_strides(), dimNum_).c_str(),
-            ArrayToStr(simtTilingData_.get_outputShapeProd(), MAX_SIMT_UB_SPLIT_AXIS_NUM).c_str(),
-            ArrayToStr(simtTilingData_.get_inputShapeProd(), MAX_SIMT_UB_SPLIT_AXIS_NUM).c_str());
+            isStrideNeg_, simtTilingData_.isEmptyTensor, ArrayToStr(simtTilingData_.begin, dimNum_).c_str(),
+            ArrayToStr(simtTilingData_.strides, dimNum_).c_str(),
+            ArrayToStr(simtTilingData_.outputShapeProd, MAX_SIMT_UB_SPLIT_AXIS_NUM).c_str(),
+            ArrayToStr(simtTilingData_.inputShapeProd, MAX_SIMT_UB_SPLIT_AXIS_NUM).c_str());
 }
 
 void StrideSliceTiling::PrintStridedSliceTilingData300()
@@ -1490,7 +1682,7 @@ void StrideSliceTiling::PrintStridedSliceTilingData300()
     OP_LOGI(tilingContext_->GetNodeName(), "StridedSliceMAGatherTilingData is ubSizeInput:%d \
     moveAlignInfo: blockCount:%u blockLen:%u srcStride:%u dstStride:%u loop1Size:%u \
     loop2Size:%u loop1SrcStride:%u loop1DstStride:%u loop2SrcStride:%u loop2DstStride:%u",
-            maGatherTilingData_.get_ubSizeInput(), mainMoveAlignV2Info_.blockCount, mainMoveAlignV2Info_.blockLen,
+            maGatherTilingData_.ubSizeInput, mainMoveAlignV2Info_.blockCount, mainMoveAlignV2Info_.blockLen,
             mainMoveAlignV2Info_.srcStride, mainMoveAlignV2Info_.dstStride, mainMoveAlignV2Info_.loop1Size,
             mainMoveAlignV2Info_.loop2Size, mainMoveAlignV2Info_.loop1SrcStride, mainMoveAlignV2Info_.loop1DstStride,
             mainMoveAlignV2Info_.loop2SrcStride, mainMoveAlignV2Info_.loop2DstStride);
@@ -1503,7 +1695,7 @@ void StrideSliceTiling::PrintStridedSliceTilingData301()
     OP_LOGI(tilingContext_->GetNodeName(), "StridedSliceMAUB2UBTilingData is ubSizeInput:%d \
     moveAlignInfo: blockCount:%u blockLen:%u srcStride:%u dstStride:%u loop1Size:%u \
     loop2Size:%u loop1SrcStride:%u loop1DstStride:%u loop2SrcStride:%u loop2DstStride:%u",
-            maUB2UBTilingData_.get_ubSizeInput(), mainMoveAlignV2Info_.blockCount, mainMoveAlignV2Info_.blockLen,
+            maUB2UBTilingData_.ubSizeInput, mainMoveAlignV2Info_.blockCount, mainMoveAlignV2Info_.blockLen,
             mainMoveAlignV2Info_.srcStride, mainMoveAlignV2Info_.dstStride, mainMoveAlignV2Info_.loop1Size,
             mainMoveAlignV2Info_.loop2Size, mainMoveAlignV2Info_.loop1SrcStride, mainMoveAlignV2Info_.loop1DstStride,
             mainMoveAlignV2Info_.loop2SrcStride, mainMoveAlignV2Info_.loop2DstStride);
@@ -1517,37 +1709,89 @@ void StrideSliceTiling::PrintStridedSliceTilingDataOther()
           blkIndex:%ld, blkFactor:%ld, blkTailFactor:%ld, xDtypeSize:%ld, tilingKey:%ld, isShapeExceedUint32:%d, \
           isEmptyTensor:%d, begin:%s, end:%s, stride:%s, inputShape:%s, outputShape:%s, \
           rowsOffsetSteps:%s, inputSteps:%s, outputSteps:%s",
-            isStrideNeg_, tilingData_.get_ubSize(), ubSizeInput_, coreNum_, tilingData_.get_realCoreNum(),
-            tilingData_.get_ubIndex(), tilingData_.get_ubFactor(), tilingData_.get_ubTailFactor(),
-            tilingData_.get_ubTailTailFactor(), tilingData_.get_blkIndex(), tilingData_.get_blkFactor(),
-            tilingData_.get_blkTailFactor(), tilingData_.get_xDtypeSize(), tilingData_.get_tilingKey(),
-            tilingData_.get_isShapeExceedUint32(), tilingData_.get_isEmptyTensor(),
-            ArrayToStr(tilingData_.get_begin(), dimNum_).c_str(), ArrayToStr(end_, dimNum_).c_str(),
-            ArrayToStr(tilingData_.get_strides(), dimNum_).c_str(), ArrayToStr(inputShape_, dimNum_).c_str(),
-            ArrayToStr(tilingData_.get_outputShape(), dimNum_).c_str(),
-            ArrayToStr(tilingData_.get_rowsOffsetSteps(), dimNum_).c_str(),
-            ArrayToStr(tilingData_.get_inputSteps(), dimNum_).c_str(), ArrayToStr(outputSteps_, dimNum_).c_str());
+            isStrideNeg_, tilingData_.ubSize, ubSizeInput_, coreNum_, tilingData_.realCoreNum, tilingData_.ubIndex,
+            tilingData_.ubFactor, tilingData_.ubTailFactor, tilingData_.ubTailTailFactor, tilingData_.blkIndex,
+            tilingData_.blkFactor, tilingData_.blkTailFactor, tilingData_.xDtypeSize, tilingData_.tilingKey,
+            tilingData_.isShapeExceedUint32, tilingData_.isEmptyTensor, ArrayToStr(tilingData_.begin, dimNum_).c_str(),
+            ArrayToStr(end_, dimNum_).c_str(), ArrayToStr(tilingData_.strides, dimNum_).c_str(),
+            ArrayToStr(inputShape_, dimNum_).c_str(), ArrayToStr(tilingData_.outputShape, dimNum_).c_str(),
+            ArrayToStr(tilingData_.rowsOffsetSteps, dimNum_).c_str(),
+            ArrayToStr(tilingData_.inputSteps, dimNum_).c_str(), ArrayToStr(outputSteps_, dimNum_).c_str());
 
     OP_LOGI(tilingContext_->GetNodeName(), "tilingData is nddmaTotalNum:%ld nddmaLoopSize:%s, nddmaLoopSrcStride: %s, \
           nddmaLoopDstStride: %s, moveAlignInfo: blockCount:%u blockLen:%u srcStride:%u dstStride:%u loop1Size:%u \
           loop2Size:%u loop1SrcStride:%u loop1DstStride:%u loop2SrcStride:%u loop2DstStride:%u outputShapeProd: %s \
           inputShapeProd: %s Tiling4StrideSlice ends.",
-            tilingData_.get_nddmaTotalNum(),
-            ArrayToStr(tilingData_.get_nddmaLoopSize(), MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
-            ArrayToStr(tilingData_.get_nddmaLoopSrcStride(), MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
-            ArrayToStr(tilingData_.get_nddmaLoopDstStride(), MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
+            tilingData_.nddmaTotalNum, ArrayToStr(tilingData_.nddmaLoopSize, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
+            ArrayToStr(tilingData_.nddmaLoopSrcStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
+            ArrayToStr(tilingData_.nddmaLoopDstStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
             mainMoveAlignV2Info_.blockCount, mainMoveAlignV2Info_.blockLen, mainMoveAlignV2Info_.srcStride,
             mainMoveAlignV2Info_.dstStride, mainMoveAlignV2Info_.loop1Size, mainMoveAlignV2Info_.loop2Size,
             mainMoveAlignV2Info_.loop1SrcStride, mainMoveAlignV2Info_.loop1DstStride,
             mainMoveAlignV2Info_.loop2SrcStride, mainMoveAlignV2Info_.loop2DstStride,
-            ArrayToStr(tilingData_.get_outputShapeProd(), MAX_SIMT_UB_SPLIT_AXIS_NUM).c_str(),
-            ArrayToStr(tilingData_.get_inputShapeProd(), MAX_SIMT_UB_SPLIT_AXIS_NUM).c_str());
+            ArrayToStr(tilingData_.outputShapeProd, MAX_SIMT_UB_SPLIT_AXIS_NUM).c_str(),
+            ArrayToStr(tilingData_.inputShapeProd, MAX_SIMT_UB_SPLIT_AXIS_NUM).c_str());
 }
 
 void StrideSliceTiling::SetBlockDimAndTilingKey()
 {
     tilingContext_->SetBlockDim(realCoreNum_);
     tilingContext_->SetTilingKey(tilingKey_);
+
+    switch (tilingKey_) {
+        case STRIDED_SLICE_KEY_MOVE_ALIGN: {
+            auto* data = tilingContext_->GetTilingData<StridedSliceMATilingData>();
+            *data = maTilingData_;
+            break;
+        }
+        case STRIDED_SLICE_KEY_MOVE_ALIGN_LAST_DIM: {
+            auto* data = tilingContext_->GetTilingData<StridedSliceMALastDimTilingData>();
+            *data = maLastDimTilingData_;
+            break;
+        }
+        case STRIDED_SLICE_KEY_NDDMA:
+        case STRIDED_SLICE_KEY_NDDMA_LAST_DIM:
+        case STRIDED_SLICE_KEY_NDDMA_GATHER:
+        case STRIDED_SLICE_KEY_NDDMA_UB2UB: {
+            auto* data = tilingContext_->GetTilingData<StridedSliceNDDMATilingData>();
+            *data = nddmaTilingData_;
+            break;
+        }
+        case STRIDED_SLICE_KEY_MOVE_ALIGN_TWO_DIM: {
+            auto* data = tilingContext_->GetTilingData<StridedSliceMALast2DimTilingData>();
+            *data = maLast2DimTilingData_;
+            break;
+        }
+        case STRIDED_SLICE_KEY_SIMT:
+        case STRIDED_SLICE_KEY_SIMT_PACK_2B:
+        case STRIDED_SLICE_KEY_SIMT_PACK_4B:
+        case STRIDED_SLICE_KEY_SIMT_PACK_8B:
+        case STRIDED_SLICE_KEY_SIMT_PACK_16B:
+        case STRIDED_SLICE_KEY_SIMT_BIG_SHAPE:
+        case STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_2B:
+        case STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_4B:
+        case STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_8B:
+        case STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_16B: {
+            auto* data = tilingContext_->GetTilingData<StridedSliceSIMTTilingData>();
+            *data = simtTilingData_;
+            break;
+        }
+        case STRIDED_SLICE_KEY_MOVE_ALIGN_GATHER: {
+            auto* data = tilingContext_->GetTilingData<StridedSliceMAGatherTilingData>();
+            *data = maGatherTilingData_;
+            break;
+        }
+        case STRIDED_SLICE_KEY_MOVE_ALIGN_UB2UB: {
+            auto* data = tilingContext_->GetTilingData<StridedSliceMAUB2UBTilingData>();
+            *data = maUB2UBTilingData_;
+            break;
+        }
+        default: {
+            auto* data = tilingContext_->GetTilingData<StridedSliceTilingData>();
+            *data = tilingData_;
+            break;
+        }
+    }
 }
 
 std::string StrideSliceTiling::ArrayToStr(const int64_t* arr, size_t aSize) const
@@ -1864,6 +2108,69 @@ static void MakeSameDims(SliceParametersRuntime2* parametersPtr)
     }
 }
 
+static ge::graphStatus CheckInputForFp4(gert::TilingContext* context, SliceParametersRuntime2& sliceParam)
+{
+    int32_t inDimNum = sliceParam.inputShape.GetDimNum();
+    int32_t outDimNum = sliceParam.outputShape.GetDimNum();
+    if (inDimNum <= 0) {
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context->GetNodeName(), "dim num of input", std::to_string(inDimNum),
+                                               "Dim num of input must be greater than 0 for fp4 input.");
+        return ge::GRAPH_FAILED;
+    }
+    if (outDimNum < inDimNum || static_cast<int32_t>(sliceParam.beginList.GetDimNum()) < inDimNum ||
+        static_cast<int32_t>(sliceParam.endList.GetDimNum()) < inDimNum ||
+        static_cast<int32_t>(sliceParam.strideList.GetDimNum()) < inDimNum) {
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(
+            context->GetNodeName(), "dim num of output, begin, end, strides",
+            std::to_string(outDimNum) + ", " + std::to_string(sliceParam.beginList.GetDimNum()) + ", " +
+                std::to_string(sliceParam.endList.GetDimNum()) + ", " +
+                std::to_string(sliceParam.strideList.GetDimNum()),
+            "Dim num of output/begin/end/strides must be greater than or equal to that of input for fp4 input.");
+        return ge::GRAPH_FAILED;
+    }
+
+    if (sliceParam.inputShape[inDimNum - 1] & 1) {
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context->GetNodeName(), "last dimension of input",
+                                               Ops::Base::ToString(sliceParam.inputShape).c_str(),
+                                               "Expected last dimension of input to be even for fp4 input.");
+        return ge::GRAPH_FAILED;
+    }
+    sliceParam.inputShape[inDimNum - 1] /= NUMBER_TWO;
+
+    if (sliceParam.outputShape[outDimNum - 1] & 1) {
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context->GetNodeName(), "last dimension of output",
+                                               Ops::Base::ToString(sliceParam.outputShape).c_str(),
+                                               "Expected last dimension of output to be even for fp4 input.");
+        return ge::GRAPH_FAILED;
+    }
+    sliceParam.outputShape[outDimNum - 1] /= NUMBER_TWO;
+
+    if (sliceParam.beginList[inDimNum - 1] & 1) {
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context->GetNodeName(), "last dimension of begin",
+                                               Ops::Base::ToString(sliceParam.beginList).c_str(),
+                                               "Expected last dimension of begin to be even for fp4 input.");
+        return ge::GRAPH_FAILED;
+    }
+    sliceParam.beginList[inDimNum - 1] /= NUMBER_TWO;
+
+    if (sliceParam.endList[inDimNum - 1] & 1) {
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context->GetNodeName(), "last dimension of end",
+                                               Ops::Base::ToString(sliceParam.endList).c_str(),
+                                               "Expected last dimension of end to be even for fp4 input.");
+        return ge::GRAPH_FAILED;
+    }
+    sliceParam.endList[inDimNum - 1] /= NUMBER_TWO;
+
+    if (sliceParam.strideList[inDimNum - 1] != 1) {
+        OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context->GetNodeName(), "last dimension of strides",
+                                               Ops::Base::ToString(sliceParam.strideList).c_str(),
+                                               "Expected last dimension of strides to be 1 for fp4 input.");
+        return ge::GRAPH_FAILED;
+    }
+
+    return ge::GRAPH_SUCCESS;
+}
+
 ge::graphStatus StrideSliceTilingForAscendC(gert::TilingContext* tilingContext, int64_t coreNum, int64_t ubSize,
                                             int64_t cachelineSize, SliceParametersRuntime2& sliceParam,
                                             const ge::DataType& dtype)
@@ -1958,17 +2265,34 @@ ge::graphStatus Tiling4StridedSlice(gert::TilingContext* context)
     // align slice param dims.
     MakeSameDims(&sliceParam);
     OP_LOGI(context->GetNodeName(), "align slice params: %s", sliceParam.to_string().c_str());
-    // optimize formance slice param
-    MakePerformanceParams(sliceParam, true);
-    OP_LOGI(context->GetNodeName(), "perf slice params: %s", sliceParam.to_string().c_str());
 
     // infer tiling mode
     auto xDesc = context->GetInputDesc(INDEX_X);
     OP_CHECK_NULL_WITH_CONTEXT(context, xDesc);
+    ge::DataType inputDtype = xDesc->GetDataType();
+
+    // For fp4 input, reinterpret as int8 by halving the last packed dim.
+    // Must be done before MakePerformanceParams, otherwise perf may merge/reverse
+    // the packed dim and strideList, which would break the halving logic.
+    if (inputDtype == ge::DT_FLOAT4_E2M1 || inputDtype == ge::DT_FLOAT4_E1M2) {
+        if (!compileInfo->isAscendc) {
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "x", Ops::Base::ToString(inputDtype).c_str(),
+                                                  "fp4 input is only supported on ascendc path.");
+            return ge::GRAPH_FAILED;
+        }
+        if (CheckInputForFp4(context, sliceParam) != ge::GRAPH_SUCCESS) {
+            return ge::GRAPH_FAILED;
+        }
+        inputDtype = ge::DT_INT8;
+    }
+
+    // optimize formance slice param
+    MakePerformanceParams(sliceParam, true);
+    OP_LOGI(context->GetNodeName(), "perf slice params: %s", sliceParam.to_string().c_str());
 
     if (compileInfo->isAscendc) {
         return StrideSliceTilingForAscendC(context, compileInfo->coreNum, compileInfo->ubSize,
-                                           compileInfo->cacheLineSize, sliceParam, xDesc->GetDataType());
+                                           compileInfo->cacheLineSize, sliceParam, inputDtype);
     }
 
     return ge::GRAPH_SUCCESS;

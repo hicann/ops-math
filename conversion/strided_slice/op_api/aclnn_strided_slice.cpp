@@ -28,11 +28,11 @@ static constexpr size_t ARRAY_SIZE = 0;
 
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT16,   op::DataType::DT_FLOAT,     op::DataType::DT_INT32,    op::DataType::DT_UINT8,
-    op::DataType::DT_BOOL,      op::DataType::DT_INT8,      op::DataType::DT_INT16,    op::DataType::DT_INT64,
-    op::DataType::DT_UINT16,    op::DataType::DT_UINT32,    op::DataType::DT_UINT64,   op::DataType::DT_BF16,
-    op::DataType::DT_COMPLEX32, op::DataType::DT_COMPLEX64, op::DataType::DT_HIFLOAT8, op::DataType::DT_FLOAT8_E5M2,
-    ge::DT_FLOAT8_E4M3FN};
+    op::DataType::DT_FLOAT16,   op::DataType::DT_FLOAT,       op::DataType::DT_INT32,      op::DataType::DT_UINT8,
+    op::DataType::DT_BOOL,      op::DataType::DT_INT8,        op::DataType::DT_INT16,      op::DataType::DT_INT64,
+    op::DataType::DT_UINT16,    op::DataType::DT_UINT32,      op::DataType::DT_UINT64,     op::DataType::DT_BF16,
+    op::DataType::DT_COMPLEX32, op::DataType::DT_COMPLEX64,   op::DataType::DT_HIFLOAT8,   op::DataType::DT_FLOAT8_E5M2,
+    ge::DT_FLOAT8_E4M3FN,       op::DataType::DT_FLOAT4_E2M1, op::DataType::DT_FLOAT4_E1M2};
 
 static inline bool CheckNotNull(const aclTensor* self, const aclIntArray* begin, const aclIntArray* end,
                                 const aclIntArray* strides, aclTensor* out)
@@ -55,7 +55,7 @@ static bool CheckDtypeValid(const aclTensor* self, aclTensor* out)
         // 检查out和输入的数据类型是否一致
         OP_CHECK_DTYPE_NOT_SAME(self, out, return false);
     } else {
-        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "aclnnStridedSlice only supports ASCEND950.");
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "aclnnStridedSlice supports ASCEND950 and ASCEND960");
         return false;
     }
 

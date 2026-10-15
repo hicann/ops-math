@@ -41,13 +41,11 @@ struct FastDivParam {
 };
 
 template <typename T, typename U>
-class StridedSliceSIMTBigShape : public StridedSliceBase<T, U>
-{
+class StridedSliceSIMTBigShape : public StridedSliceBase<T, U> {
 public:
     __aicore__ inline StridedSliceSIMTBigShape(){};
-    __aicore__ inline void Init(
-        GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y, const StridedSliceSIMTTilingData* tilingData,
-        TPipe* pipeIn);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y,
+                                const StridedSliceSIMTTilingData* tilingData, TPipe* pipeIn);
     __aicore__ inline void Process(GM_ADDR tiling);
 
 private:
@@ -67,12 +65,12 @@ private:
 };
 
 template <typename T, int Dim>
-__simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__ void StridedSliceDim1B64Compute(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, const uint64_t outputSize, const int32_t begin0,
-    const int32_t strides0, int32_t blockIdx, int32_t blockNums)
+__simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__
+    void StridedSliceDim1B64Compute(__gm__ T* inputGM, __gm__ volatile T* outputGM, const uint64_t outputSize,
+                                    const int32_t begin0, const int32_t strides0, int32_t blockIdx, int32_t blockNums)
 {
-    for (uint32_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNums * blockDim.x) {
+    for (uint32_t idx = blockIdx * Simt::GetThreadNum() + Simt::GetThreadIdx(); idx < outputSize;
+         idx += blockNums * Simt::GetThreadNum()) {
         int32_t outputIndex[Dim] = {0};
         uint32_t dstIdx = idx;
         outputIndex[Dim - 1] = dstIdx;
@@ -84,13 +82,14 @@ __simt_vf__ LAUNCH_BOUND(THREAD_DIM) __aicore__ void StridedSliceDim1B64Compute(
 }
 
 template <typename T, int Dim>
-__simt_vf__ LAUNCH_BOUND(HALF_THREAD_DIM) __aicore__ void StridedSliceDim2B64Compute(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, const uint64_t outputSize, int32_t blockIdx,
-    int32_t blockNums, __ubuf__ uint64_t* fastDivBuf, int64_t begin0, int64_t begin1)
+__simt_vf__ LAUNCH_BOUND(HALF_THREAD_DIM) __aicore__
+    void StridedSliceDim2B64Compute(__gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling,
+                                    const uint64_t outputSize, int32_t blockIdx, int32_t blockNums,
+                                    __ubuf__ uint64_t* fastDivBuf, int64_t begin0, int64_t begin1)
 {
     GET_TILING_DATA_PTR_WITH_STRUCT(StridedSliceSIMTTilingData, tdGmPtr, tiling);
-    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNums * blockDim.x) {
+    for (uint64_t idx = blockIdx * Simt::GetThreadNum() + Simt::GetThreadIdx(); idx < outputSize;
+         idx += blockNums * Simt::GetThreadNum()) {
         int64_t outputIndex[Dim] = {0};
         uint64_t dstIdx = idx;
         outputIndex[DIM0_INDEX] = Simt::UintDiv(dstIdx, fastDivBuf[DIM0_INDEX], fastDivBuf[DIM0_INDEX + DIM7_INDEX]);
@@ -108,13 +107,14 @@ __simt_vf__ LAUNCH_BOUND(HALF_THREAD_DIM) __aicore__ void StridedSliceDim2B64Com
 }
 
 template <typename T, int Dim>
-__simt_vf__ LAUNCH_BOUND(QUARTER_THREAD_DIM) __aicore__ void StridedSliceDim3B64Compute(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, const uint64_t outputSize, int32_t blockIdx,
-    int32_t blockNums, __ubuf__ uint64_t* fastDivBuf, int64_t begin0, int64_t begin1, int64_t begin2)
+__simt_vf__ LAUNCH_BOUND(QUARTER_THREAD_DIM) __aicore__
+    void StridedSliceDim3B64Compute(__gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling,
+                                    const uint64_t outputSize, int32_t blockIdx, int32_t blockNums,
+                                    __ubuf__ uint64_t* fastDivBuf, int64_t begin0, int64_t begin1, int64_t begin2)
 {
     GET_TILING_DATA_PTR_WITH_STRUCT(StridedSliceSIMTTilingData, tdGmPtr, tiling);
-    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNums * blockDim.x) {
+    for (uint64_t idx = blockIdx * Simt::GetThreadNum() + Simt::GetThreadIdx(); idx < outputSize;
+         idx += blockNums * Simt::GetThreadNum()) {
         int64_t outputIndex[Dim] = {0};
         uint64_t dstIdx = idx;
 
@@ -136,13 +136,15 @@ __simt_vf__ LAUNCH_BOUND(QUARTER_THREAD_DIM) __aicore__ void StridedSliceDim3B64
 }
 
 template <typename T, int Dim>
-__simt_vf__ LAUNCH_BOUND(QUARTER_THREAD_DIM) __aicore__ void StridedSliceDim4B64Compute(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, const uint64_t outputSize, int32_t blockIdx,
-    int32_t blockNums, __ubuf__ uint64_t* fastDivBuf, int64_t begin0, int64_t begin1, int64_t begin2, int64_t begin3)
+__simt_vf__ LAUNCH_BOUND(QUARTER_THREAD_DIM) __aicore__
+    void StridedSliceDim4B64Compute(__gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling,
+                                    const uint64_t outputSize, int32_t blockIdx, int32_t blockNums,
+                                    __ubuf__ uint64_t* fastDivBuf, int64_t begin0, int64_t begin1, int64_t begin2,
+                                    int64_t begin3)
 {
     GET_TILING_DATA_PTR_WITH_STRUCT(StridedSliceSIMTTilingData, tdGmPtr, tiling);
-    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNums * blockDim.x) {
+    for (uint64_t idx = blockIdx * Simt::GetThreadNum() + Simt::GetThreadIdx(); idx < outputSize;
+         idx += blockNums * Simt::GetThreadNum()) {
         int64_t outputIndex[Dim] = {0};
         uint64_t dstIdx = idx;
 
@@ -168,14 +170,15 @@ __simt_vf__ LAUNCH_BOUND(QUARTER_THREAD_DIM) __aicore__ void StridedSliceDim4B64
 }
 
 template <typename T, int Dim>
-__simt_vf__ LAUNCH_BOUND(AN_EIGHTH_THREAD_DIM) __aicore__ void StridedSliceDim5B64Compute(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, const uint64_t outputSize, int32_t blockIdx,
-    int32_t blockNums, __ubuf__ uint64_t* fastDivBuf, int64_t begin0, int64_t begin1, int64_t begin2,
-    int64_t begin3, int64_t begin4)
+__simt_vf__ LAUNCH_BOUND(AN_EIGHTH_THREAD_DIM) __aicore__
+    void StridedSliceDim5B64Compute(__gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling,
+                                    const uint64_t outputSize, int32_t blockIdx, int32_t blockNums,
+                                    __ubuf__ uint64_t* fastDivBuf, int64_t begin0, int64_t begin1, int64_t begin2,
+                                    int64_t begin3, int64_t begin4)
 {
     GET_TILING_DATA_PTR_WITH_STRUCT(StridedSliceSIMTTilingData, tdGmPtr, tiling);
-    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNums * blockDim.x) {
+    for (uint64_t idx = blockIdx * Simt::GetThreadNum() + Simt::GetThreadIdx(); idx < outputSize;
+         idx += blockNums * Simt::GetThreadNum()) {
         int64_t outputIndex[Dim] = {0};
         uint64_t dstIdx = idx;
 
@@ -205,14 +208,15 @@ __simt_vf__ LAUNCH_BOUND(AN_EIGHTH_THREAD_DIM) __aicore__ void StridedSliceDim5B
 }
 
 template <typename T, int Dim>
-__simt_vf__ LAUNCH_BOUND(AN_EIGHTH_THREAD_DIM) __aicore__ void StridedSliceDim6B64Compute(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, const uint64_t outputSize, int32_t blockIdx,
-    int32_t blockNums, __ubuf__ uint64_t* fastDivBuf, int64_t begin0, int64_t begin1, int64_t begin2,
-    int64_t begin3, int64_t begin4, int64_t begin5)
+__simt_vf__ LAUNCH_BOUND(AN_EIGHTH_THREAD_DIM) __aicore__
+    void StridedSliceDim6B64Compute(__gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling,
+                                    const uint64_t outputSize, int32_t blockIdx, int32_t blockNums,
+                                    __ubuf__ uint64_t* fastDivBuf, int64_t begin0, int64_t begin1, int64_t begin2,
+                                    int64_t begin3, int64_t begin4, int64_t begin5)
 {
     GET_TILING_DATA_PTR_WITH_STRUCT(StridedSliceSIMTTilingData, tdGmPtr, tiling);
-    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNums * blockDim.x) {
+    for (uint64_t idx = blockIdx * Simt::GetThreadNum() + Simt::GetThreadIdx(); idx < outputSize;
+         idx += blockNums * Simt::GetThreadNum()) {
         int64_t outputIndex[Dim] = {0};
         uint64_t dstIdx = idx;
 
@@ -246,14 +250,15 @@ __simt_vf__ LAUNCH_BOUND(AN_EIGHTH_THREAD_DIM) __aicore__ void StridedSliceDim6B
 }
 
 template <typename T, int Dim>
-__simt_vf__ LAUNCH_BOUND(AN_EIGHTH_THREAD_DIM) __aicore__ void StridedSliceDim7B64Compute(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, const uint64_t outputSize, int32_t blockIdx,
-    int32_t blockNums, __ubuf__ uint64_t* fastDivBuf, int64_t begin0, int64_t begin1, int64_t begin2,
-    int64_t begin3, int64_t begin4, int64_t begin5, int64_t begin6)
+__simt_vf__ LAUNCH_BOUND(AN_EIGHTH_THREAD_DIM) __aicore__
+    void StridedSliceDim7B64Compute(__gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling,
+                                    const uint64_t outputSize, int32_t blockIdx, int32_t blockNums,
+                                    __ubuf__ uint64_t* fastDivBuf, int64_t begin0, int64_t begin1, int64_t begin2,
+                                    int64_t begin3, int64_t begin4, int64_t begin5, int64_t begin6)
 {
     GET_TILING_DATA_PTR_WITH_STRUCT(StridedSliceSIMTTilingData, tdGmPtr, tiling);
-    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNums * blockDim.x) {
+    for (uint64_t idx = blockIdx * Simt::GetThreadNum() + Simt::GetThreadIdx(); idx < outputSize;
+         idx += blockNums * Simt::GetThreadNum()) {
         int64_t outputIndex[Dim] = {0};
         uint64_t dstIdx = idx;
 
@@ -291,14 +296,15 @@ __simt_vf__ LAUNCH_BOUND(AN_EIGHTH_THREAD_DIM) __aicore__ void StridedSliceDim7B
 }
 
 template <typename T, int Dim>
-__simt_vf__ LAUNCH_BOUND(AN_EIGHTH_THREAD_DIM) __aicore__ void StridedSliceDim8B64Compute(
-    __gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling, const uint64_t outputSize, int32_t blockIdx,
-    int32_t blockNums, __ubuf__ uint64_t* fastDivBuf, int64_t begin0, int64_t begin1, int64_t begin2,
-    int64_t begin3, int64_t begin4, int64_t begin5, int64_t begin6, int64_t begin7)
+__simt_vf__ LAUNCH_BOUND(AN_EIGHTH_THREAD_DIM) __aicore__
+    void StridedSliceDim8B64Compute(__gm__ T* inputGM, __gm__ volatile T* outputGM, GM_ADDR tiling,
+                                    const uint64_t outputSize, int32_t blockIdx, int32_t blockNums,
+                                    __ubuf__ uint64_t* fastDivBuf, int64_t begin0, int64_t begin1, int64_t begin2,
+                                    int64_t begin3, int64_t begin4, int64_t begin5, int64_t begin6, int64_t begin7)
 {
     GET_TILING_DATA_PTR_WITH_STRUCT(StridedSliceSIMTTilingData, tdGmPtr, tiling);
-    for (uint64_t idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize;
-         idx += blockNums * blockDim.x) {
+    for (uint64_t idx = blockIdx * Simt::GetThreadNum() + Simt::GetThreadIdx(); idx < outputSize;
+         idx += blockNums * Simt::GetThreadNum()) {
         int64_t outputIndex[Dim] = {0};
         uint64_t dstIdx = idx;
 
@@ -340,9 +346,9 @@ __simt_vf__ LAUNCH_BOUND(AN_EIGHTH_THREAD_DIM) __aicore__ void StridedSliceDim8B
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceSIMTBigShape<T, U>::Init(
-    GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y, const StridedSliceSIMTTilingData* tilingData,
-    TPipe* pipeIn)
+__aicore__ inline void StridedSliceSIMTBigShape<T, U>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
+                                                            GM_ADDR y, const StridedSliceSIMTTilingData* tilingData,
+                                                            TPipe* pipeIn)
 {
     pipe_ = pipeIn;
     tilingData_ = tilingData;
@@ -355,9 +361,10 @@ __aicore__ inline void StridedSliceSIMTBigShape<T, U>::Init(
         } else {
             int64_t realIdx = UNCONST_BEGIN_VALUE - tilingData_->begin[i];
             begin_[i] = static_cast<int64_t>(((__gm__ U*)begin)[realIdx]);
-            int64_t curInShape = (i == tilingData_->inputDims - 1) ? tilingData_->inputShapeProd[i] :
-                (tilingData_->inputShapeProd[i] / tilingData_->inputShapeProd[i + 1]);
-            begin_[i] = begin_[i] < 0 ? (begin_[i] + curInShape): begin_[i];
+            int64_t curInShape = (i == tilingData_->inputDims - 1) ?
+                                     tilingData_->inputShapeProd[i] :
+                                     (tilingData_->inputShapeProd[i] / tilingData_->inputShapeProd[i + 1]);
+            begin_[i] = begin_[i] < 0 ? (begin_[i] + curInShape) : begin_[i];
             if (begin_[i] < 0) {
                 begin_[i] = 0;
             } else if (begin_[i] >= curInShape) {
@@ -371,25 +378,25 @@ __aicore__ inline void StridedSliceSIMTBigShape<T, U>::Init(
 }
 
 template <typename T, typename U>
-__aicore__ inline void StridedSliceSIMTBigShape<T, U>::SetSimtDivMagic(
-    LocalTensor<uint64_t>& simtParamLocal, uint32_t inputDims)
+__aicore__ inline void StridedSliceSIMTBigShape<T, U>::SetSimtDivMagic(LocalTensor<uint64_t>& simtParamLocal,
+                                                                       uint32_t inputDims)
 {
     FastDivParam<uint64_t> fastDivParam;
     if (inputDims == DIMS_8) {
-        GetUintDivMagicAndShift(
-            fastDivParam.magic0, fastDivParam.shift0, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM1_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic1, fastDivParam.shift1, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM2_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic2, fastDivParam.shift2, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM3_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic3, fastDivParam.shift3, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM4_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic4, fastDivParam.shift4, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM5_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic5, fastDivParam.shift5, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM6_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic6, fastDivParam.shift6, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM7_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic0, fastDivParam.shift0,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM1_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic1, fastDivParam.shift1,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM2_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic2, fastDivParam.shift2,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM3_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic3, fastDivParam.shift3,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM4_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic4, fastDivParam.shift4,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM5_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic5, fastDivParam.shift5,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM6_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic6, fastDivParam.shift6,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM7_INDEX]));
         simtParamLocal.SetValue(DIM0_INDEX, fastDivParam.magic0);
         simtParamLocal.SetValue(DIM1_INDEX, fastDivParam.magic1);
         simtParamLocal.SetValue(DIM2_INDEX, fastDivParam.magic2);
@@ -405,18 +412,18 @@ __aicore__ inline void StridedSliceSIMTBigShape<T, U>::SetSimtDivMagic(
         simtParamLocal.SetValue(DIM5_INDEX + DIM7_INDEX, fastDivParam.shift5);
         simtParamLocal.SetValue(DIM6_INDEX + DIM7_INDEX, fastDivParam.shift6);
     } else if (inputDims == DIMS_7) {
-        GetUintDivMagicAndShift(
-            fastDivParam.magic0, fastDivParam.shift0, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM1_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic1, fastDivParam.shift1, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM2_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic2, fastDivParam.shift2, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM3_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic3, fastDivParam.shift3, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM4_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic4, fastDivParam.shift4, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM5_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic5, fastDivParam.shift5, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM6_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic0, fastDivParam.shift0,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM1_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic1, fastDivParam.shift1,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM2_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic2, fastDivParam.shift2,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM3_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic3, fastDivParam.shift3,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM4_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic4, fastDivParam.shift4,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM5_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic5, fastDivParam.shift5,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM6_INDEX]));
         simtParamLocal.SetValue(DIM0_INDEX, fastDivParam.magic0);
         simtParamLocal.SetValue(DIM1_INDEX, fastDivParam.magic1);
         simtParamLocal.SetValue(DIM2_INDEX, fastDivParam.magic2);
@@ -430,16 +437,16 @@ __aicore__ inline void StridedSliceSIMTBigShape<T, U>::SetSimtDivMagic(
         simtParamLocal.SetValue(DIM4_INDEX + DIM7_INDEX, fastDivParam.shift4);
         simtParamLocal.SetValue(DIM5_INDEX + DIM7_INDEX, fastDivParam.shift5);
     } else if (inputDims == DIMS_6) {
-        GetUintDivMagicAndShift(
-            fastDivParam.magic0, fastDivParam.shift0, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM1_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic1, fastDivParam.shift1, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM2_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic2, fastDivParam.shift2, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM3_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic3, fastDivParam.shift3, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM4_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic4, fastDivParam.shift4, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM5_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic0, fastDivParam.shift0,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM1_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic1, fastDivParam.shift1,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM2_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic2, fastDivParam.shift2,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM3_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic3, fastDivParam.shift3,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM4_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic4, fastDivParam.shift4,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM5_INDEX]));
         simtParamLocal.SetValue(DIM0_INDEX, fastDivParam.magic0);
         simtParamLocal.SetValue(DIM1_INDEX, fastDivParam.magic1);
         simtParamLocal.SetValue(DIM2_INDEX, fastDivParam.magic2);
@@ -451,14 +458,14 @@ __aicore__ inline void StridedSliceSIMTBigShape<T, U>::SetSimtDivMagic(
         simtParamLocal.SetValue(DIM3_INDEX + DIM7_INDEX, fastDivParam.shift3);
         simtParamLocal.SetValue(DIM4_INDEX + DIM7_INDEX, fastDivParam.shift4);
     } else if (inputDims == DIMS_5) {
-        GetUintDivMagicAndShift(
-            fastDivParam.magic0, fastDivParam.shift0, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM1_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic1, fastDivParam.shift1, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM2_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic2, fastDivParam.shift2, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM3_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic3, fastDivParam.shift3, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM4_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic0, fastDivParam.shift0,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM1_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic1, fastDivParam.shift1,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM2_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic2, fastDivParam.shift2,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM3_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic3, fastDivParam.shift3,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM4_INDEX]));
         simtParamLocal.SetValue(DIM0_INDEX, fastDivParam.magic0);
         simtParamLocal.SetValue(DIM1_INDEX, fastDivParam.magic1);
         simtParamLocal.SetValue(DIM2_INDEX, fastDivParam.magic2);
@@ -468,12 +475,12 @@ __aicore__ inline void StridedSliceSIMTBigShape<T, U>::SetSimtDivMagic(
         simtParamLocal.SetValue(DIM2_INDEX + DIM7_INDEX, fastDivParam.shift2);
         simtParamLocal.SetValue(DIM3_INDEX + DIM7_INDEX, fastDivParam.shift3);
     } else if (inputDims == DIMS_4) {
-        GetUintDivMagicAndShift(
-            fastDivParam.magic0, fastDivParam.shift0, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM1_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic1, fastDivParam.shift1, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM2_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic2, fastDivParam.shift2, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM3_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic0, fastDivParam.shift0,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM1_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic1, fastDivParam.shift1,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM2_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic2, fastDivParam.shift2,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM3_INDEX]));
         simtParamLocal.SetValue(DIM0_INDEX, fastDivParam.magic0);
         simtParamLocal.SetValue(DIM1_INDEX, fastDivParam.magic1);
         simtParamLocal.SetValue(DIM2_INDEX, fastDivParam.magic2);
@@ -481,17 +488,17 @@ __aicore__ inline void StridedSliceSIMTBigShape<T, U>::SetSimtDivMagic(
         simtParamLocal.SetValue(DIM1_INDEX + DIM7_INDEX, fastDivParam.shift1);
         simtParamLocal.SetValue(DIM2_INDEX + DIM7_INDEX, fastDivParam.shift2);
     } else if (inputDims == DIMS_3) {
-        GetUintDivMagicAndShift(
-            fastDivParam.magic0, fastDivParam.shift0, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM1_INDEX]));
-        GetUintDivMagicAndShift(
-            fastDivParam.magic1, fastDivParam.shift1, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM2_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic0, fastDivParam.shift0,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM1_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic1, fastDivParam.shift1,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM2_INDEX]));
         simtParamLocal.SetValue(DIM0_INDEX, fastDivParam.magic0);
         simtParamLocal.SetValue(DIM1_INDEX, fastDivParam.magic1);
         simtParamLocal.SetValue(DIM0_INDEX + DIM7_INDEX, fastDivParam.shift0);
         simtParamLocal.SetValue(DIM1_INDEX + DIM7_INDEX, fastDivParam.shift1);
     } else if (inputDims == DIMS_2) {
-        GetUintDivMagicAndShift(
-            fastDivParam.magic0, fastDivParam.shift0, static_cast<uint64_t>(tilingData_->outputShapeProd[DIM1_INDEX]));
+        GetUintDivMagicAndShift(fastDivParam.magic0, fastDivParam.shift0,
+                                static_cast<uint64_t>(tilingData_->outputShapeProd[DIM1_INDEX]));
         simtParamLocal.SetValue(DIM0_INDEX, fastDivParam.magic0);
         simtParamLocal.SetValue(DIM0_INDEX + DIM7_INDEX, fastDivParam.shift0);
     }
@@ -504,50 +511,51 @@ __aicore__ inline void StridedSliceSIMTBigShape<T, U>::ProcessBigShape(GM_ADDR t
     LocalTensor<uint64_t> simtParamLocal = simtParamBuf_.Get<uint64_t>();
     uint64_t outputSize = tilingData_->outputShapeProd[0];
 
-    SetSimtDivMagic(simtParamLocal, inputDims);    
+    SetSimtDivMagic(simtParamLocal, inputDims);
     DataSyncBarrier<MemDsbT::UB>();
 
     if (inputDims == DIMS_1) {
-        asc_vf_call<StridedSliceDim1B64Compute<T, DIMS_1>>(
-            dim3(THREAD_DIM), (__gm__ T*)(inputGM_.GetPhyAddr()), (__gm__ volatile T*)(outputGM_.GetPhyAddr()),
-            outputSize, begin_[0], tilingData_->strides[0], blockIdx_, blockNums_);
+        Simt::VF_CALL<StridedSliceDim1B64Compute<T, DIMS_1>>(STRIDED_SLICE_SIMT_LAUNCH_THREADS(THREAD_DIM, tilingData_),
+                                                             (__gm__ T*)(inputGM_.GetPhyAddr()),
+                                                             (__gm__ volatile T*)(outputGM_.GetPhyAddr()), outputSize,
+                                                             begin_[0], tilingData_->strides[0], blockIdx_, blockNums_);
     } else if (inputDims == DIMS_2) {
-        asc_vf_call<StridedSliceDim2B64Compute<T, DIMS_2>>(
-            dim3(HALF_THREAD_DIM), (__gm__ T*)(inputGM_.GetPhyAddr()),
+        Simt::VF_CALL<StridedSliceDim2B64Compute<T, DIMS_2>>(
+            STRIDED_SLICE_SIMT_LAUNCH_THREADS(HALF_THREAD_DIM, tilingData_), (__gm__ T*)(inputGM_.GetPhyAddr()),
             (__gm__ volatile T*)(outputGM_.GetPhyAddr()), tiling, outputSize, blockIdx_, blockNums_,
             (__ubuf__ uint64_t*)(simtParamLocal.GetPhyAddr()), begin_[0], begin_[1]);
     } else if (inputDims == DIMS_3) {
-        asc_vf_call<StridedSliceDim3B64Compute<T, DIMS_3>>(
-            dim3(QUARTER_THREAD_DIM), (__gm__ T*)(inputGM_.GetPhyAddr()),
+        Simt::VF_CALL<StridedSliceDim3B64Compute<T, DIMS_3>>(
+            STRIDED_SLICE_SIMT_LAUNCH_THREADS(QUARTER_THREAD_DIM, tilingData_), (__gm__ T*)(inputGM_.GetPhyAddr()),
             (__gm__ volatile T*)(outputGM_.GetPhyAddr()), tiling, outputSize, blockIdx_, blockNums_,
             (__ubuf__ uint64_t*)(simtParamLocal.GetPhyAddr()), begin_[0], begin_[1], begin_[DIM2_INDEX]);
     } else if (inputDims == DIMS_4) {
-        asc_vf_call<StridedSliceDim4B64Compute<T, DIMS_4>>(
-            dim3(QUARTER_THREAD_DIM), (__gm__ T*)(inputGM_.GetPhyAddr()),
+        Simt::VF_CALL<StridedSliceDim4B64Compute<T, DIMS_4>>(
+            STRIDED_SLICE_SIMT_LAUNCH_THREADS(QUARTER_THREAD_DIM, tilingData_), (__gm__ T*)(inputGM_.GetPhyAddr()),
             (__gm__ volatile T*)(outputGM_.GetPhyAddr()), tiling, outputSize, blockIdx_, blockNums_,
             (__ubuf__ uint64_t*)(simtParamLocal.GetPhyAddr()), begin_[0], begin_[1], begin_[DIM2_INDEX],
             begin_[DIM3_INDEX]);
     } else if (inputDims == DIMS_5) {
-        asc_vf_call<StridedSliceDim5B64Compute<T, DIMS_5>>(
-            dim3(AN_EIGHTH_THREAD_DIM), (__gm__ T*)(inputGM_.GetPhyAddr()),
+        Simt::VF_CALL<StridedSliceDim5B64Compute<T, DIMS_5>>(
+            STRIDED_SLICE_SIMT_LAUNCH_THREADS(AN_EIGHTH_THREAD_DIM, tilingData_), (__gm__ T*)(inputGM_.GetPhyAddr()),
             (__gm__ volatile T*)(outputGM_.GetPhyAddr()), tiling, outputSize, blockIdx_, blockNums_,
             (__ubuf__ uint64_t*)(simtParamLocal.GetPhyAddr()), begin_[0], begin_[1], begin_[DIM2_INDEX],
             begin_[DIM3_INDEX], begin_[DIM4_INDEX]);
     } else if (inputDims == DIMS_6) {
-        asc_vf_call<StridedSliceDim6B64Compute<T, DIMS_6>>(
-            dim3(AN_EIGHTH_THREAD_DIM), (__gm__ T*)(inputGM_.GetPhyAddr()),
+        Simt::VF_CALL<StridedSliceDim6B64Compute<T, DIMS_6>>(
+            STRIDED_SLICE_SIMT_LAUNCH_THREADS(AN_EIGHTH_THREAD_DIM, tilingData_), (__gm__ T*)(inputGM_.GetPhyAddr()),
             (__gm__ volatile T*)(outputGM_.GetPhyAddr()), tiling, outputSize, blockIdx_, blockNums_,
             (__ubuf__ uint64_t*)(simtParamLocal.GetPhyAddr()), begin_[0], begin_[1], begin_[DIM2_INDEX],
             begin_[DIM3_INDEX], begin_[DIM4_INDEX], begin_[DIM5_INDEX]);
     } else if (inputDims == DIMS_7) {
-        asc_vf_call<StridedSliceDim7B64Compute<T, DIMS_7>>(
-            dim3(AN_EIGHTH_THREAD_DIM), (__gm__ T*)(inputGM_.GetPhyAddr()),
+        Simt::VF_CALL<StridedSliceDim7B64Compute<T, DIMS_7>>(
+            STRIDED_SLICE_SIMT_LAUNCH_THREADS(AN_EIGHTH_THREAD_DIM, tilingData_), (__gm__ T*)(inputGM_.GetPhyAddr()),
             (__gm__ volatile T*)(outputGM_.GetPhyAddr()), tiling, outputSize, blockIdx_, blockNums_,
             (__ubuf__ uint64_t*)(simtParamLocal.GetPhyAddr()), begin_[0], begin_[1], begin_[DIM2_INDEX],
             begin_[DIM3_INDEX], begin_[DIM4_INDEX], begin_[DIM5_INDEX], begin_[DIM6_INDEX]);
     } else if (inputDims == DIMS_8) {
-        asc_vf_call<StridedSliceDim8B64Compute<T, DIMS_8>>(
-            dim3(AN_EIGHTH_THREAD_DIM), (__gm__ T*)(inputGM_.GetPhyAddr()),
+        Simt::VF_CALL<StridedSliceDim8B64Compute<T, DIMS_8>>(
+            STRIDED_SLICE_SIMT_LAUNCH_THREADS(AN_EIGHTH_THREAD_DIM, tilingData_), (__gm__ T*)(inputGM_.GetPhyAddr()),
             (__gm__ volatile T*)(outputGM_.GetPhyAddr()), tiling, outputSize, blockIdx_, blockNums_,
             (__ubuf__ uint64_t*)(simtParamLocal.GetPhyAddr()), begin_[0], begin_[1], begin_[DIM2_INDEX],
             begin_[DIM3_INDEX], begin_[DIM4_INDEX], begin_[DIM5_INDEX], begin_[DIM6_INDEX], begin_[DIM7_INDEX]);

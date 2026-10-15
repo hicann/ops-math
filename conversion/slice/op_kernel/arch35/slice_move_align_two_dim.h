@@ -17,13 +17,11 @@
 
 #include "slice_base.h"
 
-namespace Slice
-{
+namespace Slice {
 using namespace AscendC;
 
 template <typename T, typename U, typename V = int8_t>
-class SliceMoveAlignTwoDim
-{
+class SliceMoveAlignTwoDim {
 public:
     __aicore__ inline SliceMoveAlignTwoDim(){};
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y,
@@ -31,7 +29,7 @@ public:
     __aicore__ inline void Process();
 
 private:
-    TPipe *pipe_;
+    TPipe* pipe_;
     TQueBind<TPosition::VECIN, TPosition::VECOUT, 1> vecQue_;
     GlobalTensor<T> inputGM_;
     GlobalTensor<T> outputGM_;
@@ -43,8 +41,9 @@ private:
 
 template <typename T, typename U, typename V>
 __aicore__ inline void SliceMoveAlignTwoDim<T, U, V>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
-                                                            GM_ADDR y, const SliceMoveAlignLast2DimTilingData* tilingData,
-                                                            TPipe* pipeIn)
+                                                           GM_ADDR y,
+                                                           const SliceMoveAlignLast2DimTilingData* tilingData,
+                                                           TPipe* pipeIn)
 {
     blockIdx_ = GetBlockIdx();
     pipe_ = pipeIn;
@@ -59,9 +58,8 @@ __aicore__ inline void SliceMoveAlignTwoDim<T, U, V>::Init(GM_ADDR x, GM_ADDR be
         } else {
             begin_[i] = static_cast<int64_t>(((__gm__ U*)begin)[i]);
             if constexpr (IsSameType<V, fp4x2_e2m1_t>::value || IsSameType<V, fp4x2_e1m2_t>::value) {
-                ascendc_assert(
-                    !(begin_[NUM_TWO - 1] & 1),
-                    "When the input dtype is fp4, the last dimension of offset must be even.\n");
+                ascendc_assert(!(begin_[NUM_TWO - 1] & 1),
+                               "When the input dtype is fp4, the last dimension of offset must be even.\n");
                 begin_[NUM_TWO - 1] /= 2;
             }
         }
@@ -77,12 +75,12 @@ __aicore__ inline void SliceMoveAlignTwoDim<T, U, V>::Process()
         return;
     }
 
-    int64_t ubSplitLoopsNum = ((blockIdx_ == tilingData_->realCoreNum - 1) && (tilingData_->blkTailFactor != 0))
-                                  ? tilingData_->blkTailFactor / tilingData_->ubFactor
-                                  : tilingData_->blkFactor / tilingData_->ubFactor;
+    int64_t ubSplitLoopsNum = ((blockIdx_ == tilingData_->realCoreNum - 1) && (tilingData_->blkTailFactor != 0)) ?
+                                  tilingData_->blkTailFactor / tilingData_->ubFactor :
+                                  tilingData_->blkFactor / tilingData_->ubFactor;
 
     int64_t rowsOffsetOutput = blockIdx_ * tilingData_->blkFactor;
-    int64_t inputGmAddr = begin_[1] + (begin_[0] + rowsOffsetOutput ) * tilingData_->inputSteps[1];
+    int64_t inputGmAddr = begin_[1] + (begin_[0] + rowsOffsetOutput) * tilingData_->inputSteps[1];
     int64_t outputGmAddr = rowsOffsetOutput * tilingData_->outputShape[1];
 
     DataCopyExtParams copyInParam{uint16_t(tilingData_->moveAlignParams.blockCount),
@@ -95,8 +93,13 @@ __aicore__ inline void SliceMoveAlignTwoDim<T, U, V>::Process()
 
     for (int64_t loops = 0; loops < ubSplitLoopsNum; loops++) {
         LocalTensor<T> inputLocal = vecQue_.AllocTensor<T>();
+#if defined(__DAV_920R1__)
+        DataCopyPad<T, PaddingMode::Compact>(inputLocal, inputGM_[inputGmAddr + loops * tilingData_->ubInLoopSteps],
+                                             copyInParam, padParams, true);
+#else
         DataCopyPad<T, PaddingMode::Compact>(inputLocal, inputGM_[inputGmAddr + loops * tilingData_->ubInLoopSteps],
                                              copyInParam, padParams);
+#endif
 
         vecQue_.EnQue(inputLocal);
         inputLocal = vecQue_.DeQue<T>();
@@ -105,14 +108,20 @@ __aicore__ inline void SliceMoveAlignTwoDim<T, U, V>::Process()
         vecQue_.FreeTensor(inputLocal);
     }
 
-    int64_t ubTailFactor_ = ((blockIdx_ == tilingData_->realCoreNum - 1) && (tilingData_->blkTailFactor != 0))
-                                ? tilingData_->ubTailTailFactor
-                                : tilingData_->ubTailFactor;
+    int64_t ubTailFactor_ = ((blockIdx_ == tilingData_->realCoreNum - 1) && (tilingData_->blkTailFactor != 0)) ?
+                                tilingData_->ubTailTailFactor :
+                                tilingData_->ubTailFactor;
     if (ubTailFactor_ > 0) {
         copyInParam.blockCount = ubTailFactor_;
         LocalTensor<T> inputLocal = vecQue_.AllocTensor<T>();
+#if defined(__DAV_920R1__)
+        DataCopyPad<T, PaddingMode::Compact>(inputLocal,
+                                             inputGM_[inputGmAddr + ubSplitLoopsNum * tilingData_->ubInLoopSteps],
+                                             copyInParam, padParams, true);
+#else
         DataCopyPad<T, PaddingMode::Compact>(
             inputLocal, inputGM_[inputGmAddr + ubSplitLoopsNum * tilingData_->ubInLoopSteps], copyInParam, padParams);
+#endif
         vecQue_.EnQue(inputLocal);
         inputLocal = vecQue_.DeQue<T>();
 
@@ -123,6 +132,6 @@ __aicore__ inline void SliceMoveAlignTwoDim<T, U, V>::Process()
         vecQue_.FreeTensor(inputLocal);
     }
 }
-}  // namespace Slice
+} // namespace Slice
 
-#endif  // SLICE_MOVE_ALIGN_TWO_DIM_H
+#endif // SLICE_MOVE_ALIGN_TWO_DIM_H

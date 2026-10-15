@@ -13,8 +13,7 @@
 
 #include "graph/operator_reg.h"
 
-namespace ge
-{
+namespace ge {
 /**
 * @brief Extracts a strided slice of a tensor. Roughly speaking, this op
     extracts a slice of size (end-begin)/stride from the given input tensor.
@@ -25,9 +24,10 @@ namespace ge
 * Five inputs, including:
 * @li x: A Tensor. 1-8 dimensions. Must be one of the following types: float32, float64, int32, uint8, int16, int8,
 *     complex64, int64, qint8, quint8, qint32, qint16, quint16, uint16,
-*     complex128, float16, bfloat16, uint32, uint64, bool, hifloat8, float8_e5m2, float8_e4m3fn, float8_e8m0.
+*     complex128, float16, bfloat16, uint32, uint64, bool, hifloat8, float8_e5m2, float8_e4m3fn, float8_e8m0,
+*     float4_e2m1, float4_e1m2.
 * @li begin: A Tensor of type int32 or int64, for the index of the first value to select.
-*     Elements in begin with negative values are interpreted as indices from the end of the dimension. 
+*     Elements in begin with negative values are interpreted as indices from the end of the dimension.
 *     Negative indices are clamped to the valid range after conversion.
 *     If the length of begin is less than the number of axes, the missing values default to 0. \n
 * @li end: A Tensor of type int32 or int64, for the index of the last value to select.
@@ -51,12 +51,14 @@ namespace ge
 * Warning: THIS FUNCTION IS EXPERIMENTAL.  Please do not use.
 */
 REG_OP(StridedSliceV3)
-    .INPUT(x, TensorType({BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0}))
+    .INPUT(x, TensorType({BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0,
+                          DT_FLOAT4_E2M1, DT_FLOAT4_E1M2}))
     .INPUT(begin, TensorType::IndexNumberType())
     .INPUT(end, TensorType::IndexNumberType())
     .OPTIONAL_INPUT(axes, TensorType::IndexNumberType())
     .OPTIONAL_INPUT(strides, TensorType::IndexNumberType())
-    .OUTPUT(y, TensorType({BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0}))
+    .OUTPUT(y, TensorType({BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0,
+                           DT_FLOAT4_E2M1, DT_FLOAT4_E1M2}))
     .OP_END_FACTORY_REG(StridedSliceV3)
 } // namespace ge
 #endif // OP_PROTO_STRIDED_SLICE_V3_H_

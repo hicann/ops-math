@@ -15,6 +15,7 @@
 #ifndef STRIDED_SLICE_H
 #define STRIDED_SLICE_H
 
+#include "strided_slice_struct.h"
 #include "strided_slice_base.h"
 #include "strided_slice_move_align.h"
 #include "strided_slice_move_align_two_dim.h"
@@ -30,8 +31,8 @@
 
 using namespace StridedSlice;
 
-extern "C" __aicore__ inline void StridedSliceMoveAlignProcess(
-    GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y, const StridedSliceMATilingData* tilingData)
+extern "C" __aicore__ inline void StridedSliceMoveAlignProcess(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
+                                                               GM_ADDR y, const StridedSliceMATilingData* tilingData)
 {
     TPipe pipe;
     // ub不切最后一根轴
@@ -56,8 +57,9 @@ extern "C" __aicore__ inline void StridedSliceMoveAlignProcess(
     }
 }
 
-extern "C" __aicore__ inline void StridedSliceMoveAlignLastDimProcess(
-    GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y, const StridedSliceMALastDimTilingData* tilingData)
+extern "C" __aicore__ inline void StridedSliceMoveAlignLastDimProcess(GM_ADDR x, GM_ADDR begin, GM_ADDR end,
+                                                                      GM_ADDR strides, GM_ADDR y,
+                                                                      const StridedSliceMALastDimTilingData* tilingData)
 {
     TPipe pipe;
     // ub切最后一根轴 or 纯搬运模板
@@ -82,8 +84,8 @@ extern "C" __aicore__ inline void StridedSliceMoveAlignLastDimProcess(
     }
 }
 
-extern "C" __aicore__ inline void StridedSliceNDDMAProcess(
-    GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y, const StridedSliceNDDMATilingData* tilingData)
+extern "C" __aicore__ inline void StridedSliceNDDMAProcess(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
+                                                           GM_ADDR y, const StridedSliceNDDMATilingData* tilingData)
 {
     TPipe pipe;
     // complex32/uint32/int32/float32
@@ -107,8 +109,9 @@ extern "C" __aicore__ inline void StridedSliceNDDMAProcess(
     }
 }
 
-extern "C" __aicore__ inline void StridedSliceNDDMALastDimProcess(
-    GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y, const StridedSliceNDDMATilingData* tilingData)
+extern "C" __aicore__ inline void StridedSliceNDDMALastDimProcess(GM_ADDR x, GM_ADDR begin, GM_ADDR end,
+                                                                  GM_ADDR strides, GM_ADDR y,
+                                                                  const StridedSliceNDDMATilingData* tilingData)
 {
     TPipe pipe;
     // ub切最后一根轴
@@ -133,8 +136,9 @@ extern "C" __aicore__ inline void StridedSliceNDDMALastDimProcess(
     }
 }
 
-extern "C" __aicore__ inline void StridedSliceMoveAlignTwoDimProcess(
-    GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y, const StridedSliceMALast2DimTilingData* tilingData)
+extern "C" __aicore__ inline void StridedSliceMoveAlignTwoDimProcess(GM_ADDR x, GM_ADDR begin, GM_ADDR end,
+                                                                     GM_ADDR strides, GM_ADDR y,
+                                                                     const StridedSliceMALast2DimTilingData* tilingData)
 {
     TPipe pipe;
     if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
@@ -156,9 +160,9 @@ extern "C" __aicore__ inline void StridedSliceMoveAlignTwoDimProcess(
     }
 }
 
-extern "C" __aicore__ inline void StridedSliceSIMTProcess(
-    GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y, GM_ADDR tiling,
-    const StridedSliceSIMTTilingData* tilingData)
+extern "C" __aicore__ inline void StridedSliceSIMTProcess(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
+                                                          GM_ADDR y, GM_ADDR tiling,
+                                                          const StridedSliceSIMTTilingData* tilingData)
 {
     if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
         StridedSlice::StridedSliceSIMT<int32_t, DTYPE_BEGIN> op;
@@ -180,9 +184,9 @@ extern "C" __aicore__ inline void StridedSliceSIMTProcess(
     }
 }
 
-extern "C" __aicore__ inline void StridedSliceSIMTBigShapeProcess(
-    GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y, GM_ADDR tiling,
-    const StridedSliceSIMTTilingData* tilingData)
+extern "C" __aicore__ inline void StridedSliceSIMTBigShapeProcess(GM_ADDR x, GM_ADDR begin, GM_ADDR end,
+                                                                  GM_ADDR strides, GM_ADDR y, GM_ADDR tiling,
+                                                                  const StridedSliceSIMTTilingData* tilingData)
 {
     TPipe pipe;
     if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
@@ -205,8 +209,88 @@ extern "C" __aicore__ inline void StridedSliceSIMTBigShapeProcess(
     }
 }
 
-extern "C" __aicore__ inline void StridedSliceMoveAlignGatherProcess(
-    GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y, const StridedSliceMAGatherTilingData* tilingData)
+// 960DT 专用：末轴按 packFactor 合并为 2B/4B/8B/16B 宽元素后复用同一套 SIMT kernel
+#if defined(__DAV_920R1__)
+extern "C" __aicore__ inline void StridedSliceSIMTPack2BProcess(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
+                                                                GM_ADDR y, GM_ADDR tiling,
+                                                                const StridedSliceSIMTTilingData* tilingData)
+{
+    StridedSlice::StridedSliceSIMT<int16_t, DTYPE_BEGIN> op;
+    op.Init(x, begin, end, strides, y, tilingData);
+    op.Process(tiling);
+}
+
+extern "C" __aicore__ inline void StridedSliceSIMTPack4BProcess(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
+                                                                GM_ADDR y, GM_ADDR tiling,
+                                                                const StridedSliceSIMTTilingData* tilingData)
+{
+    StridedSlice::StridedSliceSIMT<int32_t, DTYPE_BEGIN> op;
+    op.Init(x, begin, end, strides, y, tilingData);
+    op.Process(tiling);
+}
+
+extern "C" __aicore__ inline void StridedSliceSIMTPack8BProcess(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
+                                                                GM_ADDR y, GM_ADDR tiling,
+                                                                const StridedSliceSIMTTilingData* tilingData)
+{
+    StridedSlice::StridedSliceSIMT<int64_t, DTYPE_BEGIN> op;
+    op.Init(x, begin, end, strides, y, tilingData);
+    op.Process(tiling);
+}
+
+extern "C" __aicore__ inline void StridedSliceSIMTPack16BProcess(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
+                                                                 GM_ADDR y, GM_ADDR tiling,
+                                                                 const StridedSliceSIMTTilingData* tilingData)
+{
+    StridedSlice::StridedSliceSIMT<floatx4, DTYPE_BEGIN> op;
+    op.Init(x, begin, end, strides, y, tilingData);
+    op.Process(tiling);
+}
+
+extern "C" __aicore__ inline void StridedSliceSIMTBigShapePack2BProcess(GM_ADDR x, GM_ADDR begin, GM_ADDR end,
+                                                                        GM_ADDR strides, GM_ADDR y, GM_ADDR tiling,
+                                                                        const StridedSliceSIMTTilingData* tilingData)
+{
+    TPipe pipe;
+    StridedSlice::StridedSliceSIMTBigShape<int16_t, DTYPE_BEGIN> op;
+    op.Init(x, begin, end, strides, y, tilingData, &pipe);
+    op.Process(tiling);
+}
+
+extern "C" __aicore__ inline void StridedSliceSIMTBigShapePack4BProcess(GM_ADDR x, GM_ADDR begin, GM_ADDR end,
+                                                                        GM_ADDR strides, GM_ADDR y, GM_ADDR tiling,
+                                                                        const StridedSliceSIMTTilingData* tilingData)
+{
+    TPipe pipe;
+    StridedSlice::StridedSliceSIMTBigShape<int32_t, DTYPE_BEGIN> op;
+    op.Init(x, begin, end, strides, y, tilingData, &pipe);
+    op.Process(tiling);
+}
+
+extern "C" __aicore__ inline void StridedSliceSIMTBigShapePack8BProcess(GM_ADDR x, GM_ADDR begin, GM_ADDR end,
+                                                                        GM_ADDR strides, GM_ADDR y, GM_ADDR tiling,
+                                                                        const StridedSliceSIMTTilingData* tilingData)
+{
+    TPipe pipe;
+    StridedSlice::StridedSliceSIMTBigShape<int64_t, DTYPE_BEGIN> op;
+    op.Init(x, begin, end, strides, y, tilingData, &pipe);
+    op.Process(tiling);
+}
+
+extern "C" __aicore__ inline void StridedSliceSIMTBigShapePack16BProcess(GM_ADDR x, GM_ADDR begin, GM_ADDR end,
+                                                                         GM_ADDR strides, GM_ADDR y, GM_ADDR tiling,
+                                                                         const StridedSliceSIMTTilingData* tilingData)
+{
+    TPipe pipe;
+    StridedSlice::StridedSliceSIMTBigShape<floatx4, DTYPE_BEGIN> op;
+    op.Init(x, begin, end, strides, y, tilingData, &pipe);
+    op.Process(tiling);
+}
+#endif // __DAV_920R1__
+
+extern "C" __aicore__ inline void StridedSliceMoveAlignGatherProcess(GM_ADDR x, GM_ADDR begin, GM_ADDR end,
+                                                                     GM_ADDR strides, GM_ADDR y,
+                                                                     const StridedSliceMAGatherTilingData* tilingData)
 {
     TPipe pipe;
     if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
@@ -228,8 +312,9 @@ extern "C" __aicore__ inline void StridedSliceMoveAlignGatherProcess(
     }
 }
 
-extern "C" __aicore__ inline void StridedSliceMoveAlignUb2UbProcess(
-    GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y, const StridedSliceMAUB2UBTilingData* tilingData)
+extern "C" __aicore__ inline void StridedSliceMoveAlignUb2UbProcess(GM_ADDR x, GM_ADDR begin, GM_ADDR end,
+                                                                    GM_ADDR strides, GM_ADDR y,
+                                                                    const StridedSliceMAUB2UBTilingData* tilingData)
 {
     TPipe pipe;
     if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
@@ -251,8 +336,9 @@ extern "C" __aicore__ inline void StridedSliceMoveAlignUb2UbProcess(
     }
 }
 
-extern "C" __aicore__ inline void StridedSliceNDDMAGatherProcess(
-    GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y, const StridedSliceNDDMATilingData* tilingData)
+extern "C" __aicore__ inline void StridedSliceNDDMAGatherProcess(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
+                                                                 GM_ADDR y,
+                                                                 const StridedSliceNDDMATilingData* tilingData)
 {
     TPipe pipe;
     if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {
@@ -274,8 +360,9 @@ extern "C" __aicore__ inline void StridedSliceNDDMAGatherProcess(
     }
 }
 
-extern "C" __aicore__ inline void StridedSliceNDDMAUb2UbProcess(
-    GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides, GM_ADDR y, const StridedSliceNDDMATilingData* tilingData)
+extern "C" __aicore__ inline void StridedSliceNDDMAUb2UbProcess(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
+                                                                GM_ADDR y,
+                                                                const StridedSliceNDDMATilingData* tilingData)
 {
     TPipe pipe;
     if constexpr (sizeof(DTYPE_X) == sizeof(int32_t)) {

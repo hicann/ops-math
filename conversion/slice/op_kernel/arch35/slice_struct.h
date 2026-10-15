@@ -17,10 +17,10 @@
 
 #include <cstdint>
 
-constexpr int64_t MAX_AXIS_NUM_FOR_STRIDESLICE = 8;
-constexpr int64_t MAX_NDDMA_UB_SPLIT_AXIS_NUM = 5;
-constexpr int64_t MAX_SIMT_UB_SPLIT_AXIS_NUM = 8;
-constexpr int64_t NUMBER_TWO = 2;
+constexpr int64_t SLICE_MAX_AXIS_NUM = 8;
+constexpr int64_t SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM = 5;
+constexpr int64_t SLICE_MAX_SIMT_UB_SPLIT_AXIS_NUM = 8;
+constexpr int64_t SLICE_NUMBER_TWO = 2;
 
 struct SliceBaseTilingData {
     int8_t isBeginConst;
@@ -35,10 +35,10 @@ struct SliceBaseTilingData {
     int16_t inputDims;
     int16_t blkIndex;
     int16_t ubIndex;
-    int64_t outputShape[MAX_AXIS_NUM_FOR_STRIDESLICE];
-    int64_t begin[MAX_AXIS_NUM_FOR_STRIDESLICE];
-    int64_t inputSteps[MAX_AXIS_NUM_FOR_STRIDESLICE];
-    int64_t rowsOffsetSteps[MAX_AXIS_NUM_FOR_STRIDESLICE];
+    int64_t outputShape[SLICE_MAX_AXIS_NUM];
+    int64_t begin[SLICE_MAX_AXIS_NUM];
+    int64_t inputSteps[SLICE_MAX_AXIS_NUM];
+    int64_t rowsOffsetSteps[SLICE_MAX_AXIS_NUM];
 };
 
 struct StridedSliceMoveAlignParams2 {
@@ -77,9 +77,9 @@ struct SliceMoveAlignLast2DimTilingData {
     int16_t realCoreNum;
     int8_t isBeginConst;
     SliceMoveAlignParams moveAlignParams;
-    int64_t outputShape[NUMBER_TWO];
-    int64_t begin[NUMBER_TWO];
-    int64_t inputSteps[NUMBER_TWO];
+    int64_t outputShape[SLICE_NUMBER_TWO];
+    int64_t begin[SLICE_NUMBER_TWO];
+    int64_t inputSteps[SLICE_NUMBER_TWO];
 };
 
 struct SliceMoveAlignGatherTilingData {
@@ -114,16 +114,16 @@ struct StridedSliceTilingData2 {
     uint32_t isEmptyTensor;
     int8_t isBeginConst;
     StridedSliceMoveAlignParams2 moveAlignParams;
-    int64_t outputShape[MAX_AXIS_NUM_FOR_STRIDESLICE];
-    int64_t begin[MAX_AXIS_NUM_FOR_STRIDESLICE];
-    int64_t strides[MAX_AXIS_NUM_FOR_STRIDESLICE];
-    int64_t rowsOffsetSteps[MAX_AXIS_NUM_FOR_STRIDESLICE];
-    int64_t inputSteps[MAX_AXIS_NUM_FOR_STRIDESLICE];
-    int64_t nddmaLoopSize[MAX_NDDMA_UB_SPLIT_AXIS_NUM];
-    int64_t nddmaLoopSrcStride[MAX_NDDMA_UB_SPLIT_AXIS_NUM];
-    int64_t nddmaLoopDstStride[MAX_NDDMA_UB_SPLIT_AXIS_NUM];
-    int64_t outputShapeProd[MAX_SIMT_UB_SPLIT_AXIS_NUM];
-    int64_t inputShapeProd[MAX_SIMT_UB_SPLIT_AXIS_NUM];
+    int64_t outputShape[SLICE_MAX_AXIS_NUM];
+    int64_t begin[SLICE_MAX_AXIS_NUM];
+    int64_t strides[SLICE_MAX_AXIS_NUM];
+    int64_t rowsOffsetSteps[SLICE_MAX_AXIS_NUM];
+    int64_t inputSteps[SLICE_MAX_AXIS_NUM];
+    int64_t nddmaLoopSize[SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM];
+    int64_t nddmaLoopSrcStride[SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM];
+    int64_t nddmaLoopDstStride[SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM];
+    int64_t outputShapeProd[SLICE_MAX_SIMT_UB_SPLIT_AXIS_NUM];
+    int64_t inputShapeProd[SLICE_MAX_SIMT_UB_SPLIT_AXIS_NUM];
 };
 
 struct SliceTilingData {
@@ -141,16 +141,16 @@ struct SliceNDDMATilingData {
 
     int64_t ubOutLoopSteps;
     int64_t nddmaTotalNum;
-    int64_t nddmaLoopSize[MAX_NDDMA_UB_SPLIT_AXIS_NUM];
-    int64_t nddmaLoopSrcStride[MAX_NDDMA_UB_SPLIT_AXIS_NUM];
-    int64_t nddmaLoopDstStride[MAX_NDDMA_UB_SPLIT_AXIS_NUM];
+    int64_t nddmaLoopSize[SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM];
+    int64_t nddmaLoopSrcStride[SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM];
+    int64_t nddmaLoopDstStride[SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM];
 };
 
 struct SliceNDDMALastDimTilingData {
     SliceBaseTilingData sliceBaseTilingData;
 
-    int64_t nddmaLoopSrcStride[MAX_NDDMA_UB_SPLIT_AXIS_NUM];
-    int64_t nddmaLoopDstStride[MAX_NDDMA_UB_SPLIT_AXIS_NUM];
+    int64_t nddmaLoopSrcStride[SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM];
+    int64_t nddmaLoopDstStride[SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM];
 };
 
 struct SliceTwoDimSmallSapeTilingData {

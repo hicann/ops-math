@@ -22,24 +22,11 @@
 #include "../../../strided_slice/op_host/arch35/strided_slice_tiling_arch35.h"
 
 namespace optiling {
-REGISTER_TILING_DATA_CLASS(StridedSliceV2, StridedSliceTilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV2_100, StridedSliceMATilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV2_101, StridedSliceMALastDimTilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV2_102, StridedSliceNDDMATilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV2_103, StridedSliceNDDMATilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV2_302, StridedSliceNDDMATilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV2_303, StridedSliceNDDMATilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV2_150, StridedSliceMALast2DimTilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV2_200, StridedSliceSIMTTilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV2_201, StridedSliceSIMTTilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV2_300, StridedSliceMAGatherTilingData)
-REGISTER_TILING_DATA_CLASS(StridedSliceV2_301, StridedSliceMAUB2UBTilingData)
-
 struct StridedSliceV2CompileInfo {
-    int32_t blockDim {-1};
-    int32_t ubSize {0};
-    int32_t coreNum {0};
-    uint32_t cacheLineSize {0};
+    int32_t blockDim{-1};
+    int32_t ubSize{0};
+    int32_t coreNum{0};
+    uint32_t cacheLineSize{0};
     std::string to_string() const
     {
         std::string str = "blockDim: " + std::to_string(blockDim);
@@ -49,9 +36,9 @@ struct StridedSliceV2CompileInfo {
 };
 
 class StridedSliceV2Tiling : public StrideSliceTiling {
-    public:
-        explicit StridedSliceV2Tiling(gert::TilingContext* context) : StrideSliceTiling(context) {};
+public:
+    explicit StridedSliceV2Tiling(gert::TilingContext* context) : StrideSliceTiling(context) {};
 };
-}
+} // namespace optiling
 
 #endif // CANN_OPS_BUILT_IN_OP_TILING_RUNTIME_STRIDED_SLICE_V2_TILING_H_

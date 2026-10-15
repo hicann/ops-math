@@ -37,6 +37,14 @@ constexpr int32_t QUARTER_THREAD_DIM = 512;
 constexpr int32_t AN_EIGHTH_THREAD_DIM = 256;
 #endif
 
+// 960DT 上 SIMT 启动线程数由 tiling 运行期下发（tilingData->threadNum，随合并因子变化）；
+// 其余芯片沿用编译期线程常量，行为与历史版本保持一致。
+#ifdef __DAV_920R1__
+#define STRIDED_SLICE_SIMT_LAUNCH_THREADS(dimConst, tilingData) Simt::Dim3((tilingData)->threadNum)
+#else
+#define STRIDED_SLICE_SIMT_LAUNCH_THREADS(dimConst, tilingData) dim3(dimConst)
+#endif
+
 constexpr int64_t STRIDED_SLICE_MAX_AXIS_NUM = 8;
 constexpr int64_t MOVE_ALIGN_V2_MAX_DIMS = 4;
 constexpr int64_t NDDMA_MAX_DIMS = 5;

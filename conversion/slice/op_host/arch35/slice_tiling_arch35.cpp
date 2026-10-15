@@ -25,8 +25,8 @@ void SliceTiling::CalMaxSplitDim()
                            dimNum_ <= NUMBER_FOUR &&
                            (lastTwoInputDim_ - lastTwoOutputDim_) * lastOneInputDim_ * xDtypeSize_ <= MAX_UINT32_NUM &&
                            lastOneInputDim_ * lastTwoInputDim_ * lastThreeInputDim_ * xDtypeSize_ <= MAX_UINT32_NUM;
-    if (dimNum_ == NUMBER_TWO && lastOneOutputDim_ * xDtypeSize_ < VL_SIZE && lastTwoOutputDim_ == lastTwoInputDim_ &&
-        VL_SIZE * lastTwoInputDim_ < coreNum_ * ubSize_ / NUMBER_FOUR &&
+    if (dimNum_ == SLICE_NUMBER_TWO && lastOneOutputDim_ * xDtypeSize_ < VL_SIZE &&
+        lastTwoOutputDim_ == lastTwoInputDim_ && VL_SIZE * lastTwoInputDim_ < coreNum_ * ubSize_ / NUMBER_FOUR &&
         (lastOneOutputDim_ != 1 || lastTwoOutputDim_ <= LAST_DIM_MIN_DATA_SIZE)) {
         // 针对2维，仅尾轴切分的小shape场景的性能特化模板
         // 尾轴输入大于等于1个VL长度或者尾轴输入小于1个VL长度，且尾轴为偏移0时，才进入本模板
@@ -56,7 +56,7 @@ void SliceTiling::CalMaxSplitDim()
         maxSplitDim_ = MAX_SLICE_GATHER_UB_SPLIT_AXIS_NUM;
         isSliceGather_ = true;
     } else {
-        maxSplitDim_ = MAX_NDDMA_UB_SPLIT_AXIS_NUM;
+        maxSplitDim_ = SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM;
     }
 }
 
@@ -119,7 +119,7 @@ void SliceTiling::SetSliceGatherTilingMode()
         tilingKey_ = STRIDED_SLICE_KEY_MOVE_ALIGN_GATHER;
     }
     // ubfactor切-2轴
-    if (ubIndex_ == shapeSize - NUMBER_TWO) {
+    if (ubIndex_ == shapeSize - SLICE_NUMBER_TWO) {
         SliceGatherUbSplitLastTwoDim();
         return;
     }
@@ -201,7 +201,7 @@ void SliceTiling::CalSliceRowsStepsParams()
     rowsOffsetSteps_[dimNum_ - 1] = 1;
     inputSteps_[dimNum_ - 1] = inputShape_[dimNum_ - 1];
     outputSteps_[dimNum_ - 1] = outputShape_[dimNum_ - 1];
-    for (int32_t i = dimNum_ - static_cast<int32_t>(NUMBER_TWO); i >= 0; i--) {
+    for (int32_t i = dimNum_ - static_cast<int32_t>(SLICE_NUMBER_TWO); i >= 0; i--) {
         rowsOffsetSteps_[i] = outputShape_[i] * rowsOffsetSteps_[i + 1];
         inputSteps_[i] = inputShape_[i] * inputSteps_[i + 1];
         outputSteps_[i] = outputShape_[i] * outputSteps_[i + 1];
@@ -222,7 +222,7 @@ void SliceTiling::SetRowsStepsParamsFor150(SliceMoveAlignLast2DimTilingData& til
     CalSliceRowsStepsParams();
     tilingData.ubInLoopSteps = inLoopSteps_;
     tilingData.ubOutLoopSteps = outLoopSteps_;
-    for (size_t i = 0; i < NUMBER_TWO; i++) {
+    for (size_t i = 0; i < SLICE_NUMBER_TWO; i++) {
         tilingData.inputSteps[i] = inputSteps_[i];
     }
 }
@@ -254,7 +254,7 @@ void SliceTiling::SetRowsStepsParamsSlice(StridedSliceTilingData2& tilingData)
     rowsOffsetSteps_[dimNum_ - 1] = 1;
     inputSteps_[dimNum_ - 1] = inputShape_[dimNum_ - 1];
     outputSteps_[dimNum_ - 1] = outputShape_[dimNum_ - 1];
-    for (int32_t i = dimNum_ - NUMBER_TWO; i >= 0; i--) {
+    for (int32_t i = dimNum_ - SLICE_NUMBER_TWO; i >= 0; i--) {
         rowsOffsetSteps_[i] = outputShape_[i] * rowsOffsetSteps_[i + 1];
         tilingData.rowsOffsetSteps[i] = rowsOffsetSteps_[i];
         inputSteps_[i] = inputShape_[i] * inputSteps_[i + 1];
@@ -280,7 +280,7 @@ void SliceTiling::FillSliceTilingData150()
 {
     size_t tilingDataSize = sizeof(SliceMoveAlignLast2DimTilingData);
     OP_LOGD(tilingContext_->GetNodeName(), "Entering FillTilingData150.");
-    for (size_t i = 0; i < NUMBER_TWO; i++) {
+    for (size_t i = 0; i < SLICE_NUMBER_TWO; i++) {
         sliceMoveAlignLast2DimTilingData_.begin[i] = begin_[i];
         sliceMoveAlignLast2DimTilingData_.outputShape[i] = outputShape_[i];
     }
@@ -317,7 +317,7 @@ void SliceTiling::FillSliceBaseTilingData(SliceBaseTilingData& tilingData)
     tilingData.blkIndex = blkIndex_;
     tilingData.blkFactor = blkFactor_;
     tilingData.blkTailFactor = blkTailFactor_;
-    for (int i = 0; i < MAX_AXIS_NUM_FOR_STRIDESLICE; ++i) {
+    for (int i = 0; i < SLICE_MAX_AXIS_NUM; ++i) {
         tilingData.begin[i] = begin_[i];
         tilingData.outputShape[i] = outputShape_[i];
     }
@@ -325,7 +325,7 @@ void SliceTiling::FillSliceBaseTilingData(SliceBaseTilingData& tilingData)
     tilingData.isBeginConst = isConstBegin;
     CalSliceRowsStepsParams();
     tilingData.ubInLoopSteps = inLoopSteps_;
-    for (int i = 0; i < MAX_AXIS_NUM_FOR_STRIDESLICE; ++i) {
+    for (int i = 0; i < SLICE_MAX_AXIS_NUM; ++i) {
         tilingData.inputSteps[i] = inputSteps_[i];
         tilingData.rowsOffsetSteps[i] = rowsOffsetSteps_[i];
     }
@@ -368,7 +368,7 @@ void SliceTiling::FillSliceTilingData102()
 
     sliceNDDMATilingData_.ubOutLoopSteps = outLoopSteps_;
     sliceNDDMATilingData_.nddmaTotalNum = nddmaTotalNum_;
-    for (int i = 0; i < MAX_NDDMA_UB_SPLIT_AXIS_NUM; ++i) {
+    for (int i = 0; i < SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM; ++i) {
         sliceNDDMATilingData_.nddmaLoopSize[i] = nddmaLoopSize_[i];
         sliceNDDMATilingData_.nddmaLoopSrcStride[i] = nddmaLoopSrcStride_[i];
         sliceNDDMATilingData_.nddmaLoopDstStride[i] = nddmaLoopDstStride_[i];
@@ -386,7 +386,7 @@ void SliceTiling::FillSliceTilingData103()
     OP_LOGD(tilingContext_->GetNodeName(), "Entering FillTilingData103.");
     FillSliceBaseTilingData(sliceNDDMALastDimTilingData_.sliceBaseTilingData);
 
-    for (int i = 0; i < MAX_NDDMA_UB_SPLIT_AXIS_NUM; ++i) {
+    for (int i = 0; i < SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM; ++i) {
         sliceNDDMALastDimTilingData_.nddmaLoopSrcStride[i] = nddmaLoopSrcStride_[i];
         sliceNDDMALastDimTilingData_.nddmaLoopDstStride[i] = nddmaLoopDstStride_[i];
     }
@@ -459,7 +459,7 @@ void SliceTiling::FillSliceTilingDataOther()
     sliceTilingData_.stridedSliceTilingData.xDtypeSize = xDtypeSize_;
     sliceTilingData_.stridedSliceTilingData.tilingKey = tilingKey_;
     sliceTilingData_.stridedSliceTilingData.nddmaTotalNum = nddmaTotalNum_;
-    for (int i = 0; i < MAX_NDDMA_UB_SPLIT_AXIS_NUM; ++i) {
+    for (int i = 0; i < SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM; ++i) {
         sliceTilingData_.stridedSliceTilingData.nddmaLoopSize[i] = nddmaLoopSize_[i];
         sliceTilingData_.stridedSliceTilingData.nddmaLoopSrcStride[i] = nddmaLoopSrcStride_[i];
         sliceTilingData_.stridedSliceTilingData.nddmaLoopDstStride[i] = nddmaLoopDstStride_[i];
@@ -545,15 +545,15 @@ void SliceTiling::PrintSliceTilingDataOther()
             nddmaLoopDstStride: %s, moveAlignInfo: blockCount:%u blockLen:%u srcStride:%u dstStride:%u loop1Size:%u \
             loop2Size:%u loop1SrcStride:%u loop1DstStride:%u loop2SrcStride:%u loop2DstStride:%u outputShapeProd: %s \
             inputShapeProd: %s Tiling4StrideSlice ends.",
-            tilingData.nddmaTotalNum, ArrayToStr(tilingData.nddmaLoopSize, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
-            ArrayToStr(tilingData.nddmaLoopSrcStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
-            ArrayToStr(tilingData.nddmaLoopDstStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
+            tilingData.nddmaTotalNum, ArrayToStr(tilingData.nddmaLoopSize, SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
+            ArrayToStr(tilingData.nddmaLoopSrcStride, SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
+            ArrayToStr(tilingData.nddmaLoopDstStride, SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
             mainMoveAlignV2Info_.blockCount, mainMoveAlignV2Info_.blockLen, mainMoveAlignV2Info_.srcStride,
             mainMoveAlignV2Info_.dstStride, mainMoveAlignV2Info_.loop1Size, mainMoveAlignV2Info_.loop2Size,
             mainMoveAlignV2Info_.loop1SrcStride, mainMoveAlignV2Info_.loop1DstStride,
             mainMoveAlignV2Info_.loop2SrcStride, mainMoveAlignV2Info_.loop2DstStride,
-            ArrayToStr(tilingData.outputShapeProd, MAX_SIMT_UB_SPLIT_AXIS_NUM).c_str(),
-            ArrayToStr(tilingData.inputShapeProd, MAX_SIMT_UB_SPLIT_AXIS_NUM).c_str());
+            ArrayToStr(tilingData.outputShapeProd, SLICE_MAX_SIMT_UB_SPLIT_AXIS_NUM).c_str(),
+            ArrayToStr(tilingData.inputShapeProd, SLICE_MAX_SIMT_UB_SPLIT_AXIS_NUM).c_str());
 }
 
 void SliceTiling::PrintTilingData()
@@ -648,9 +648,9 @@ void SliceTiling::PrintSliceTilingData102()
     OP_LOGI(tilingContext_->GetNodeName(), "SliceNDDMATilingData is ubOutLoopSteps:%ld, \
     nddmaTotalNum:%ld, nddmaLoopSize:%s, nddmaLoopSrcStride: %s, nddmaLoopDstStride: %s",
             sliceNDDMATilingData_.ubOutLoopSteps, sliceNDDMATilingData_.nddmaTotalNum,
-            ArrayToStr(sliceNDDMATilingData_.nddmaLoopSize, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
-            ArrayToStr(sliceNDDMATilingData_.nddmaLoopSrcStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
-            ArrayToStr(sliceNDDMATilingData_.nddmaLoopDstStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str());
+            ArrayToStr(sliceNDDMATilingData_.nddmaLoopSize, SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
+            ArrayToStr(sliceNDDMATilingData_.nddmaLoopSrcStride, SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
+            ArrayToStr(sliceNDDMATilingData_.nddmaLoopDstStride, SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str());
 }
 
 void SliceTiling::PrintSliceTilingData103()
@@ -659,8 +659,8 @@ void SliceTiling::PrintSliceTilingData103()
     PrintSliceBaseTilingData(sliceNDDMALastDimTilingData_.sliceBaseTilingData);
     OP_LOGI(tilingContext_->GetNodeName(),
             "SliceNDDMALastDimTilingData is nddmaLoopSrcStride: %s, nddmaLoopDstStride: %s",
-            ArrayToStr(sliceNDDMALastDimTilingData_.nddmaLoopSrcStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
-            ArrayToStr(sliceNDDMALastDimTilingData_.nddmaLoopDstStride, MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str());
+            ArrayToStr(sliceNDDMALastDimTilingData_.nddmaLoopSrcStride, SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str(),
+            ArrayToStr(sliceNDDMALastDimTilingData_.nddmaLoopDstStride, SLICE_MAX_NDDMA_UB_SPLIT_AXIS_NUM).c_str());
 }
 
 void SliceTiling::PrintSliceTilingData300()

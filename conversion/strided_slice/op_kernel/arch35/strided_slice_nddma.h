@@ -157,8 +157,13 @@ __aicore__ inline void StridedSliceNDDMA<T, U>::ProcessPerBlock()
 
         for (int64_t loops = 0; loops < ubSplitLoopsNum_; loops++) {
             LocalTensor<T> inputLocal = vecQue_.AllocTensor<T>();
+#if defined(__DAV_920R1__)
+            DataCopy<T, NDDMA_MAX_DIMS, nddmaConfig_>(inputLocal, inputGM_[inputGmAddr + loops * this->ubInLoopSteps_],
+                                                      paramsMain, true);
+#else
             DataCopy<T, NDDMA_MAX_DIMS, nddmaConfig_>(inputLocal, inputGM_[inputGmAddr + loops * this->ubInLoopSteps_],
                                                       paramsMain);
+#endif
             vecQue_.EnQue(inputLocal);
             inputLocal = vecQue_.DeQue<T>();
             DataCopyPad(outputGM_[outputGmAddr + loops * this->ubOutLoopSteps_], inputLocal, copyOutParamsMain);
@@ -166,8 +171,13 @@ __aicore__ inline void StridedSliceNDDMA<T, U>::ProcessPerBlock()
         }
         if (this->ubTailFactor_ > 0) {
             LocalTensor<T> inputLocal = vecQue_.AllocTensor<T>();
+#if defined(__DAV_920R1__)
+            DataCopy<T, NDDMA_MAX_DIMS, nddmaConfig_>(
+                inputLocal, inputGM_[inputGmAddr + ubSplitLoopsNum_ * this->ubInLoopSteps_], paramsTail, true);
+#else
             DataCopy<T, NDDMA_MAX_DIMS, nddmaConfig_>(
                 inputLocal, inputGM_[inputGmAddr + ubSplitLoopsNum_ * this->ubInLoopSteps_], paramsTail);
+#endif
             vecQue_.EnQue(inputLocal);
             inputLocal = vecQue_.DeQue<T>();
             DataCopyPad(outputGM_[outputGmAddr + ubSplitLoopsNum_ * this->ubOutLoopSteps_], inputLocal,

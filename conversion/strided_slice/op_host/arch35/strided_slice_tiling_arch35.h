@@ -28,14 +28,12 @@
 #include "op_host/tiling_base_util.h"
 #include "op_api/op_util.h"
 #include "../strided_slice_util.h"
+#include "../../op_kernel/arch35/strided_slice_struct.h"
 
 namespace optiling {
 constexpr int64_t MAX_TWO_DIM_UB_SPLIT_AXIS_NUM = 2;
-constexpr int64_t MAX_AXIS_NUM_FOR_STRIDESLICE = 8;
 constexpr int64_t MAX_MOV_ALIGN_V2_UB_SPLIT_AXIS_NUM = 4;
 constexpr int64_t MAX_NDDMA_UB_SPLIT_AXIS_NUM_NEG = 4;
-constexpr int64_t MAX_NDDMA_UB_SPLIT_AXIS_NUM = 5;
-constexpr int64_t MAX_SIMT_UB_SPLIT_AXIS_NUM = 8;
 constexpr int64_t MAX_SLICE_GATHER_UB_SPLIT_AXIS_NUM = 5;
 constexpr int64_t DATA_SPARSITY_THRESHOLD = 10;
 constexpr int64_t DATA_COPY_SPARSITY_THRESHOLD = 5;
@@ -46,7 +44,6 @@ constexpr int64_t INIT_INDEX_SIZE = 512; // 因为只考虑搬入连续的倒数
 constexpr int64_t BLOCK_SIZE = 32;
 constexpr int64_t VL_SIZE = 256;
 constexpr int64_t MIN_MOVE_ALIGN_LEN = 128;
-constexpr int64_t NUMBER_TWO = 2;
 constexpr int64_t NUMBER_THREE = 3;
 constexpr int64_t NUMBER_FOUR = 4;
 constexpr int64_t NUMBER_SIX = 6;
@@ -62,7 +59,15 @@ constexpr int64_t STRIDED_SLICE_KEY_NDDMA_GATHER = 302;
 constexpr int64_t STRIDED_SLICE_KEY_NDDMA_UB2UB = 303;
 
 constexpr int64_t STRIDED_SLICE_KEY_SIMT = 200;
-constexpr int64_t STRIDED_SLICE_KEY_SIMT_BIG_SHAPE = 201;
+constexpr int64_t STRIDED_SLICE_KEY_SIMT_PACK_2B = 201;
+constexpr int64_t STRIDED_SLICE_KEY_SIMT_PACK_4B = 202;
+constexpr int64_t STRIDED_SLICE_KEY_SIMT_PACK_8B = 203;
+constexpr int64_t STRIDED_SLICE_KEY_SIMT_PACK_16B = 204;
+constexpr int64_t STRIDED_SLICE_KEY_SIMT_BIG_SHAPE = 210;
+constexpr int64_t STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_2B = 211;
+constexpr int64_t STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_4B = 212;
+constexpr int64_t STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_8B = 213;
+constexpr int64_t STRIDED_SLICE_KEY_SIMT_BIG_SHAPE_PACK_16B = 214;
 constexpr int64_t RESERVE_LAST_DIM_SIZE = 64;
 constexpr int64_t RESERVE_HALF_LAST_DIM_SIZE = 32;
 constexpr int64_t LAST_DIM_MIN_DATA_SIZE = 1024;
@@ -126,154 +131,6 @@ struct MoveAlignV2Info {
     uint16_t loop2DstStride = 0;
 };
 
-BEGIN_TILING_DATA_DEF(StridedSliceMoveAlignParams)
-TILING_DATA_FIELD_DEF(uint16_t, blockCount);
-TILING_DATA_FIELD_DEF(uint32_t, blockLen);
-TILING_DATA_FIELD_DEF(uint32_t, srcStride);
-TILING_DATA_FIELD_DEF(uint32_t, dstStride);
-TILING_DATA_FIELD_DEF(uint16_t, loop1Size);
-TILING_DATA_FIELD_DEF(uint16_t, loop2Size);
-TILING_DATA_FIELD_DEF(uint32_t, loop1SrcStride);
-TILING_DATA_FIELD_DEF(uint16_t, loop1DstStride);
-TILING_DATA_FIELD_DEF(uint32_t, loop2SrcStride);
-TILING_DATA_FIELD_DEF(uint16_t, loop2DstStride);
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(StridedSliceMoveAlignParamsOp, StridedSliceMoveAlignParams) // 注册中间结构体
-
-BEGIN_TILING_DATA_DEF(StridedSliceShortMoveAlignParams)
-TILING_DATA_FIELD_DEF(uint16_t, blockCount);
-TILING_DATA_FIELD_DEF(uint32_t, blockLen);
-TILING_DATA_FIELD_DEF(uint32_t, srcStride);
-TILING_DATA_FIELD_DEF(uint32_t, dstStride);
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(StridedSliceShortMoveAlignParamsOp, StridedSliceShortMoveAlignParams) // 注册中间结构体
-
-BEGIN_TILING_DATA_DEF(StridedSliceBaseTilingData)
-TILING_DATA_FIELD_DEF(int64_t, blkFactor);
-TILING_DATA_FIELD_DEF(int64_t, blkTailFactor);
-TILING_DATA_FIELD_DEF(int64_t, ubInLoopSteps);
-TILING_DATA_FIELD_DEF(int64_t, ubOutLoopSteps);
-TILING_DATA_FIELD_DEF(int32_t, ubSize);
-TILING_DATA_FIELD_DEF(int32_t, ubFactor);
-TILING_DATA_FIELD_DEF(int32_t, ubTailFactor);
-TILING_DATA_FIELD_DEF(int32_t, ubTailTailFactor);
-TILING_DATA_FIELD_DEF(int16_t, realCoreNum);
-TILING_DATA_FIELD_DEF(int16_t, inputDims);
-TILING_DATA_FIELD_DEF(int16_t, blkIndex);
-TILING_DATA_FIELD_DEF(int16_t, ubIndex);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_AXIS_NUM_FOR_STRIDESLICE, outputShape);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_AXIS_NUM_FOR_STRIDESLICE, begin);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_AXIS_NUM_FOR_STRIDESLICE, strides);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_AXIS_NUM_FOR_STRIDESLICE, inputSteps);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_AXIS_NUM_FOR_STRIDESLICE, rowsOffsetSteps);
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(StridedSliceBaseTilingDataOp, StridedSliceBaseTilingData)
-
-BEGIN_TILING_DATA_DEF(StridedSliceMATilingData)
-TILING_DATA_FIELD_DEF_STRUCT(StridedSliceBaseTilingData, stridedSliceBaseTilingData);
-TILING_DATA_FIELD_DEF_STRUCT(StridedSliceMoveAlignParams, moveAlignParams);
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(StridedSlice_100, StridedSliceMATilingData)
-
-BEGIN_TILING_DATA_DEF(StridedSliceMALastDimTilingData)
-TILING_DATA_FIELD_DEF_STRUCT(StridedSliceBaseTilingData, stridedSliceBaseTilingData);
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(StridedSlice_101, StridedSliceMALastDimTilingData)
-
-BEGIN_TILING_DATA_DEF(StridedSliceNDDMATilingData)
-TILING_DATA_FIELD_DEF_STRUCT(StridedSliceBaseTilingData, stridedSliceBaseTilingData);
-
-TILING_DATA_FIELD_DEF(int64_t, nddmaTotalNum);
-TILING_DATA_FIELD_DEF(int32_t, ubSizeInput);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_NDDMA_UB_SPLIT_AXIS_NUM, nddmaLoopSize);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_NDDMA_UB_SPLIT_AXIS_NUM, nddmaLoopSrcStride);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_NDDMA_UB_SPLIT_AXIS_NUM, nddmaLoopDstStride);
-
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(StridedSlice_102, StridedSliceNDDMATilingData)
-REGISTER_TILING_DATA_CLASS(StridedSlice_103, StridedSliceNDDMATilingData)
-REGISTER_TILING_DATA_CLASS(StridedSlice_302, StridedSliceNDDMATilingData)
-REGISTER_TILING_DATA_CLASS(StridedSlice_303, StridedSliceNDDMATilingData)
-
-BEGIN_TILING_DATA_DEF(StridedSliceMALast2DimTilingData)
-TILING_DATA_FIELD_DEF(int64_t, blkFactor);
-TILING_DATA_FIELD_DEF(int64_t, blkTailFactor);
-TILING_DATA_FIELD_DEF(int64_t, ubInLoopSteps);
-TILING_DATA_FIELD_DEF(int64_t, ubOutLoopSteps);
-TILING_DATA_FIELD_DEF(int32_t, ubSize);
-TILING_DATA_FIELD_DEF(int32_t, ubFactor);
-TILING_DATA_FIELD_DEF(int32_t, ubTailFactor);
-TILING_DATA_FIELD_DEF(int32_t, ubTailTailFactor);
-TILING_DATA_FIELD_DEF(int16_t, realCoreNum);
-TILING_DATA_FIELD_DEF_STRUCT(StridedSliceShortMoveAlignParams, moveAlignParams);
-TILING_DATA_FIELD_DEF_ARR(int64_t, NUMBER_TWO, outputShape);
-TILING_DATA_FIELD_DEF_ARR(int64_t, NUMBER_TWO, begin);
-TILING_DATA_FIELD_DEF_ARR(int64_t, NUMBER_TWO, strides);
-TILING_DATA_FIELD_DEF_ARR(int64_t, NUMBER_TWO, inputSteps);
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(StridedSlice_150, StridedSliceMALast2DimTilingData)
-
-BEGIN_TILING_DATA_DEF(StridedSliceSIMTTilingData)
-TILING_DATA_FIELD_DEF(uint16_t, isEmptyTensor);
-TILING_DATA_FIELD_DEF(int16_t, inputDims);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_AXIS_NUM_FOR_STRIDESLICE, begin);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_AXIS_NUM_FOR_STRIDESLICE, strides);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_SIMT_UB_SPLIT_AXIS_NUM, outputShapeProd);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_SIMT_UB_SPLIT_AXIS_NUM, inputShapeProd);
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(StridedSlice_200, StridedSliceSIMTTilingData)
-REGISTER_TILING_DATA_CLASS(StridedSlice_201, StridedSliceSIMTTilingData)
-
-BEGIN_TILING_DATA_DEF(StridedSliceMAGatherTilingData)
-TILING_DATA_FIELD_DEF_STRUCT(StridedSliceBaseTilingData, stridedSliceBaseTilingData);
-TILING_DATA_FIELD_DEF_STRUCT(StridedSliceMoveAlignParams, moveAlignParams);
-TILING_DATA_FIELD_DEF(int32_t, ubSizeInput);
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(StridedSlice_300, StridedSliceMAGatherTilingData)
-
-BEGIN_TILING_DATA_DEF(StridedSliceMAUB2UBTilingData)
-TILING_DATA_FIELD_DEF_STRUCT(StridedSliceBaseTilingData, stridedSliceBaseTilingData);
-TILING_DATA_FIELD_DEF_STRUCT(StridedSliceMoveAlignParams, moveAlignParams);
-TILING_DATA_FIELD_DEF(int32_t, ubSizeInput);
-END_TILING_DATA_DEF;
-REGISTER_TILING_DATA_CLASS(StridedSlice_301, StridedSliceMAUB2UBTilingData)
-
-BEGIN_TILING_DATA_DEF(StridedSliceTilingData)
-TILING_DATA_FIELD_DEF(int8_t, isBeginConst);
-TILING_DATA_FIELD_DEF(int64_t, ubSize);
-TILING_DATA_FIELD_DEF(int64_t, ubSizeInput); // stride为负时使用
-TILING_DATA_FIELD_DEF(int64_t, coreNum);
-TILING_DATA_FIELD_DEF(int64_t, ubIndex);
-TILING_DATA_FIELD_DEF(int64_t, ubFactor);
-TILING_DATA_FIELD_DEF(int64_t, ubTailFactor);
-TILING_DATA_FIELD_DEF(int64_t, ubTailTailFactor);
-TILING_DATA_FIELD_DEF(int64_t, realCoreNum);
-TILING_DATA_FIELD_DEF(int64_t, inputDims);
-TILING_DATA_FIELD_DEF(int64_t, blkIndex);
-TILING_DATA_FIELD_DEF(int64_t, blkFactor);
-TILING_DATA_FIELD_DEF(int64_t, blkTailFactor);
-TILING_DATA_FIELD_DEF(int64_t, xDtypeSize);
-TILING_DATA_FIELD_DEF(int64_t, tilingKey);
-TILING_DATA_FIELD_DEF(int64_t, nddmaTotalNum);
-TILING_DATA_FIELD_DEF(int64_t, ubInLoopSteps);
-TILING_DATA_FIELD_DEF(int64_t, ubOutLoopSteps);
-TILING_DATA_FIELD_DEF(uint32_t, isShapeExceedUint32);
-TILING_DATA_FIELD_DEF(uint32_t, isEmptyTensor);
-TILING_DATA_FIELD_DEF_STRUCT(StridedSliceMoveAlignParams, moveAlignParams);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_AXIS_NUM_FOR_STRIDESLICE, outputShape);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_AXIS_NUM_FOR_STRIDESLICE, begin);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_AXIS_NUM_FOR_STRIDESLICE, strides);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_AXIS_NUM_FOR_STRIDESLICE, rowsOffsetSteps);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_AXIS_NUM_FOR_STRIDESLICE, inputSteps);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_NDDMA_UB_SPLIT_AXIS_NUM, nddmaLoopSize);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_NDDMA_UB_SPLIT_AXIS_NUM, nddmaLoopSrcStride);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_NDDMA_UB_SPLIT_AXIS_NUM, nddmaLoopDstStride);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_SIMT_UB_SPLIT_AXIS_NUM, outputShapeProd);
-TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_SIMT_UB_SPLIT_AXIS_NUM, inputShapeProd);
-END_TILING_DATA_DEF;
-
-REGISTER_TILING_DATA_CLASS(StridedSlice, StridedSliceTilingData)
-
 class StrideSliceTiling {
 public:
     explicit StrideSliceTiling(gert::TilingContext* tilingContext) : tilingContext_(tilingContext) {};
@@ -336,6 +193,8 @@ private:
     void MovAlignV2UbSplitLastThreeDim();
     void MovAlignV2UbSplitLastFourDim();
     void SetSIMTTilingMode();
+    void CalSimtPackFactor();
+    void CalcThreadNum();
     void ResetMovAlignV2Para(int64_t newUbfactor);
     void CalInputOutputSize();
 
@@ -412,6 +271,9 @@ protected:
 
     int64_t tilingKey_ = -1L;
     int64_t totalOutputSize_ = 1;
+    int64_t simtPackFactor_ = 1;
+    int64_t mainBlockFactor_ = 0;
+    uint16_t threadNum_ = 2048;
 
     int64_t lastOneOutputDim_ = 0;
     int64_t lastTwoOutputDim_ = 0;

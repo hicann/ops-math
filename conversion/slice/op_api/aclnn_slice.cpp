@@ -33,8 +33,9 @@ constexpr int64_t MAX_DIM_LEN = 8;
 
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_INT64, op::DataType::DT_INT8,
-    op::DataType::DT_INT32, op::DataType::DT_UINT8,   op::DataType::DT_BOOL,  op::DataType::DT_BF16};
+    op::DataType::DT_FLOAT,       op::DataType::DT_FLOAT16,    op::DataType::DT_INT64, op::DataType::DT_INT8,
+    op::DataType::DT_INT32,       op::DataType::DT_UINT8,      op::DataType::DT_BOOL,  op::DataType::DT_BF16,
+    op::DataType::DT_FLOAT4_E2M1, op::DataType::DT_FLOAT4_E1M2};
 
 static inline bool CheckSocVersionIsSupportBf16(void)
 {

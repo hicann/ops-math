@@ -33,7 +33,7 @@ private:
     __aicore__ inline void ProcessPerBlockNLastDim();
 
 private:
-    TPipe *pipe_;
+    TPipe* pipe_;
     TQueBind<TPosition::VECIN, TPosition::VECOUT, 1> vecQue_;
 
     GlobalTensor<T> inputGM_;
@@ -41,14 +41,16 @@ private:
 
     int64_t blockIdx_ = 0;
 
-    DataCopyPadExtParams<T> padParams_ {false, 0, 0, 0};
-    DataCopyExtParams copyParamsMain_ {1, 0, 0, 0, 0};
-    DataCopyExtParams copyParamsTail_ {1, 0, 0, 0, 0};
+    DataCopyPadExtParams<T> padParams_{false, 0, 0, 0};
+    DataCopyExtParams copyParamsMain_{1, 0, 0, 0, 0};
+    DataCopyExtParams copyParamsTail_{1, 0, 0, 0, 0};
 };
 
 template <typename T, typename U, typename V>
 __aicore__ inline void SliceMoveAlignLastDim<T, U, V>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR end, GM_ADDR strides,
-                                                      GM_ADDR y, const SliceMoveAlignLastDimTilingData* tilingData, TPipe* pipeIn)
+                                                            GM_ADDR y,
+                                                            const SliceMoveAlignLastDimTilingData* tilingData,
+                                                            TPipe* pipeIn)
 {
     blockIdx_ = GetBlockIdx();
 
@@ -101,7 +103,11 @@ __aicore__ inline void SliceMoveAlignLastDim<T, U, V>::ProcessPerBlockInLastDim(
     copyParamsMain_.blockLen = this->ubFactor_ * sizeof(T);
     for (int64_t idx = 0; idx < loopCnt; idx++) {
         LocalTensor<T> inputLocal = vecQue_.AllocTensor<T>();
+#if defined(__DAV_920R1__)
+        DataCopyPad(inputLocal, inputGM_[inputGmAddr + idx * this->ubFactor_], copyParamsMain_, padParams_, true);
+#else
         DataCopyPad(inputLocal, inputGM_[inputGmAddr + idx * this->ubFactor_], copyParamsMain_, padParams_);
+#endif
 
         vecQue_.EnQue(inputLocal);
         inputLocal = vecQue_.DeQue<T>();
@@ -113,7 +119,11 @@ __aicore__ inline void SliceMoveAlignLastDim<T, U, V>::ProcessPerBlockInLastDim(
     if (this->ubTailFactor_ != 0) {
         LocalTensor<T> inputLocal = vecQue_.AllocTensor<T>();
         copyParamsTail_.blockLen = this->ubTailFactor_ * sizeof(T);
+#if defined(__DAV_920R1__)
+        DataCopyPad(inputLocal, inputGM_[inputGmAddr + loopCnt * this->ubFactor_], copyParamsTail_, padParams_, true);
+#else
         DataCopyPad(inputLocal, inputGM_[inputGmAddr + loopCnt * this->ubFactor_], copyParamsTail_, padParams_);
+#endif
 
         vecQue_.EnQue(inputLocal);
         inputLocal = vecQue_.DeQue<T>();
@@ -143,7 +153,11 @@ __aicore__ inline void SliceMoveAlignLastDim<T, U, V>::ProcessPerBlockNLastDim()
         outputGmAddr = this->GetOutputGmAddr(curCoreRowsOffset + idx);
         for (int64_t ubCnt = 0; ubCnt < ubSplitOutNum; ubCnt++) {
             LocalTensor<T> inputLocal = vecQue_.AllocTensor<T>();
+#if defined(__DAV_920R1__)
+            DataCopyPad(inputLocal, inputGM_[inputGmAddr + ubCnt * this->ubFactor_], copyParamsMain_, padParams_, true);
+#else
             DataCopyPad(inputLocal, inputGM_[inputGmAddr + ubCnt * this->ubFactor_], copyParamsMain_, padParams_);
+#endif
 
             vecQue_.EnQue(inputLocal);
             inputLocal = vecQue_.DeQue<T>();
@@ -154,8 +168,13 @@ __aicore__ inline void SliceMoveAlignLastDim<T, U, V>::ProcessPerBlockNLastDim()
 
         if (this->ubTailFactor_ != 0) {
             LocalTensor<T> inputLocal = vecQue_.AllocTensor<T>();
-            DataCopyPad(inputLocal, inputGM_[inputGmAddr + ubSplitOutNum * this->ubFactor_],
-                        copyParamsTail_, padParams_);
+#if defined(__DAV_920R1__)
+            DataCopyPad(inputLocal, inputGM_[inputGmAddr + ubSplitOutNum * this->ubFactor_], copyParamsTail_,
+                        padParams_, true);
+#else
+            DataCopyPad(inputLocal, inputGM_[inputGmAddr + ubSplitOutNum * this->ubFactor_], copyParamsTail_,
+                        padParams_);
+#endif
 
             vecQue_.EnQue(inputLocal);
             inputLocal = vecQue_.DeQue<T>();

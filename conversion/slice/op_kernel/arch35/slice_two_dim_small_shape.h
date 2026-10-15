@@ -17,17 +17,15 @@
 
 #include "slice_base.h"
 
-namespace Slice
-{
+namespace Slice {
 using namespace AscendC;
 
 template <typename T, typename U, typename V = int8_t>
-class SliceTwoDimSmallShape
-{
+class SliceTwoDimSmallShape {
 public:
     __aicore__ inline SliceTwoDimSmallShape(){};
-    __aicore__ inline void Init(GM_ADDR x, GM_ADDR begin, GM_ADDR y,
-        const SliceTwoDimSmallSapeTilingData* tilingData, TPipe* pipeIn);
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR begin, GM_ADDR y, const SliceTwoDimSmallSapeTilingData* tilingData,
+                                TPipe* pipeIn);
     __aicore__ inline void Process();
 
 private:
@@ -43,7 +41,8 @@ private:
 
 template <typename T, typename U, typename V>
 __aicore__ inline void SliceTwoDimSmallShape<T, U, V>::Init(GM_ADDR x, GM_ADDR begin, GM_ADDR y,
-                                                      const SliceTwoDimSmallSapeTilingData* tilingData, TPipe* pipeIn)
+                                                            const SliceTwoDimSmallSapeTilingData* tilingData,
+                                                            TPipe* pipeIn)
 {
     inputGM_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x));
     outputGM_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(y));
@@ -55,8 +54,8 @@ __aicore__ inline void SliceTwoDimSmallShape<T, U, V>::Init(GM_ADDR x, GM_ADDR b
     } else {
         lastDimBegin_ = static_cast<int64_t>(((__gm__ U*)begin)[1]);
         if constexpr (IsSameType<V, fp4x2_e2m1_t>::value || IsSameType<V, fp4x2_e1m2_t>::value) {
-            ascendc_assert(
-                !(lastDimBegin_ & 1), "When the input dtype is fp4, the last dimension of offset must be even.\n");
+            ascendc_assert(!(lastDimBegin_ & 1),
+                           "When the input dtype is fp4, the last dimension of offset must be even.\n");
             lastDimBegin_ /= 2;
         }
     }
@@ -96,16 +95,21 @@ __aicore__ inline void SliceTwoDimSmallShape<T, U, V>::Process()
     DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
 
     LocalTensor<T> inputLocal = vecQue_.AllocTensor<T>();
-    DataCopyPad(inputLocal, inputGM_[dataOffset * tilingData_->lastOneInputDim + lastDimBegin_],
-                copyInParam, padParams);
+#if defined(__DAV_920R1__)
+    DataCopyPad(inputLocal, inputGM_[dataOffset * tilingData_->lastOneInputDim + lastDimBegin_], copyInParam, padParams,
+                true);
+#else
+    DataCopyPad(inputLocal, inputGM_[dataOffset * tilingData_->lastOneInputDim + lastDimBegin_], copyInParam,
+                padParams);
+#endif
     vecQue_.EnQue(inputLocal);
     inputLocal = vecQue_.DeQue<T>();
     uint32_t outBurstLen = tilingData_->lastOneOutputDim * sizeof(T);
     DataCopyExtParams copyOutParams{static_cast<uint16_t>(nburst), static_cast<uint32_t>(outBurstLen),
-                                (inputDstStride - outBurstLen) / BLOCK_SIZE_BYTE, 0, 0};
+                                    (inputDstStride - outBurstLen) / BLOCK_SIZE_BYTE, 0, 0};
     DataCopyPad(outputGM_[dataOffset * tilingData_->lastOneOutputDim], inputLocal, copyOutParams);
     vecQue_.FreeTensor(inputLocal);
 }
-}  // namespace Slice
+} // namespace Slice
 
-#endif  // SLICE_TWO_DIM_SMALL_SHAPE_H
+#endif // SLICE_TWO_DIM_SMALL_SHAPE_H

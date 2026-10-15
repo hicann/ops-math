@@ -32,6 +32,17 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_910D 
     op::DataType::DT_COMPLEX32, op::DataType::DT_COMPLEX64, op::DataType::DT_HIFLOAT8, op::DataType::DT_FLOAT8_E5M2,
     ge::DT_FLOAT8_E4M3FN};
 
+// 960dt float16,float,int32,uint8,bool,int8,int16,int64,uint16,uint32,uint64,bfloat16,complex32,complex64,
+// hifloat8,float8_e5m2,float8_e4m3fn,float4_e2m1,float4_e1m2,
+static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_960dt = {
+    op::DataType::DT_FLOAT16,     op::DataType::DT_FLOAT,         op::DataType::DT_INT32,
+    op::DataType::DT_UINT8,       op::DataType::DT_BOOL,          op::DataType::DT_INT8,
+    op::DataType::DT_INT16,       op::DataType::DT_INT64,         op::DataType::DT_UINT16,
+    op::DataType::DT_UINT32,      op::DataType::DT_UINT64,        op::DataType::DT_BF16,
+    op::DataType::DT_COMPLEX32,   op::DataType::DT_COMPLEX64,     op::DataType::DT_HIFLOAT8,
+    op::DataType::DT_FLOAT8_E5M2, op::DataType::DT_FLOAT8_E4M3FN, op::DataType::DT_FLOAT4_E2M1,
+    op::DataType::DT_FLOAT4_E1M2};
+
 // 910B float16,float,int32,uint8,bool,int8,int64,int16,uint16,uint32,uint64,bfloat16,complex32,complex64,
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_910B = {
     op::DataType::DT_FLOAT16,   op::DataType::DT_FLOAT,    op::DataType::DT_INT32,  op::DataType::DT_UINT8,
@@ -52,30 +63,33 @@ static bool IsAiCoreSupport(const aclTensor* self)
     auto curArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     if (curArch == NpuArch::DAV_2201) {
         return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_910B);
-    } else if (op::IsRegBase(curArch)) {
+    } else if (curArch == NpuArch::DAV_3510) {
         return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_910D);
+    } else if (curArch == NpuArch::DAV_9201) {
+        return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_960dt);
     }
     return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST);
 }
 
-const aclTensor* StridedSliceAiCore(
-    const aclTensor* x, const aclTensor* y, const aclTensor* begin, const aclTensor* end, const aclTensor* strides,
-    const aclScalar* beginMask, const aclScalar* endMask, const aclScalar* ellipsisMask, const aclScalar* newAxisMask,
-    const aclScalar* shrinkAxisMask, aclOpExecutor* executor)
+const aclTensor* StridedSliceAiCore(const aclTensor* x, const aclTensor* y, const aclTensor* begin,
+                                    const aclTensor* end, const aclTensor* strides, const aclScalar* beginMask,
+                                    const aclScalar* endMask, const aclScalar* ellipsisMask,
+                                    const aclScalar* newAxisMask, const aclScalar* shrinkAxisMask,
+                                    aclOpExecutor* executor)
 {
     L0_DFX(StridedSliceAiCore, x, y, begin, end, strides);
     auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(
         StridedSlice, OP_INPUT(x, begin, end, strides), OP_OUTPUT(y),
         OP_ATTR(beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask));
-    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
-        retAicore != ACLNN_SUCCESS, return nullptr, "StridedSlice ADD_TO_LAUNCHER_LIST_AICORE failed.");
+    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(retAicore != ACLNN_SUCCESS, return nullptr,
+                                         "StridedSlice ADD_TO_LAUNCHER_LIST_AICORE failed.");
     return y;
 }
 
-const aclTensor* StridedSliceAiCpu(
-    const aclTensor* x, const aclTensor* y, const aclTensor* begin, const aclTensor* end, const aclTensor* strides,
-    const aclScalar* beginMask, const aclScalar* endMask, const aclScalar* ellipsisMask, const aclScalar* newAxisMask,
-    const aclScalar* shrinkAxisMask, aclOpExecutor* executor)
+const aclTensor* StridedSliceAiCpu(const aclTensor* x, const aclTensor* y, const aclTensor* begin, const aclTensor* end,
+                                   const aclTensor* strides, const aclScalar* beginMask, const aclScalar* endMask,
+                                   const aclScalar* ellipsisMask, const aclScalar* newAxisMask,
+                                   const aclScalar* shrinkAxisMask, aclOpExecutor* executor)
 {
     L0_DFX(StridedSliceAiCpu, x, y, begin, end, strides);
     static op::internal::AicpuTaskSpace space("StridedSlice", ge::DEPEND_CONST_VALUE, true);
@@ -83,29 +97,27 @@ const aclTensor* StridedSliceAiCpu(
         StridedSlice,
         OP_ATTR_NAMES({"T", "Index", "begin_mask", "end_mask", "ellipsis_mask", "new_axis_mask", "shrink_axis_mask"}),
         OP_INPUT(x, begin, end, strides), OP_OUTPUT(y),
-        OP_ATTR(
-            x->GetDataType(), begin->GetDataType(), beginMask->ToInt64(), endMask->ToInt64(), ellipsisMask->ToInt64(),
-            newAxisMask->ToInt64(), shrinkAxisMask->ToInt64()));
+        OP_ATTR(x->GetDataType(), begin->GetDataType(), beginMask->ToInt64(), endMask->ToInt64(),
+                ellipsisMask->ToInt64(), newAxisMask->ToInt64(), shrinkAxisMask->ToInt64()));
     CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
     return y;
 }
 
-const aclTensor* StridedSlice(
-    const aclTensor* x, const aclTensor* y, const aclTensor* begin, const aclTensor* end, const aclTensor* strides,
-    const aclScalar* beginMask, const aclScalar* endMask, const aclScalar* ellipsisMask, const aclScalar* newAxisMask,
-    const aclScalar* shrinkAxisMask, aclOpExecutor* executor)
+const aclTensor* StridedSlice(const aclTensor* x, const aclTensor* y, const aclTensor* begin, const aclTensor* end,
+                              const aclTensor* strides, const aclScalar* beginMask, const aclScalar* endMask,
+                              const aclScalar* ellipsisMask, const aclScalar* newAxisMask,
+                              const aclScalar* shrinkAxisMask, aclOpExecutor* executor)
 {
     if (IsAiCoreSupport(x)) {
-        return StridedSliceAiCore(
-            x, y, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask, executor);
+        return StridedSliceAiCore(x, y, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask,
+                                  shrinkAxisMask, executor);
     }
-    return StridedSliceAiCpu(
-        x, y, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask, executor);
+    return StridedSliceAiCpu(x, y, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask,
+                             executor);
 }
 
-const aclTensor* StridedSlice(
-    const aclTensor* x, const aclTensor* y, const aclTensor* begin, const aclTensor* end, const aclTensor* strides,
-    aclOpExecutor* executor)
+const aclTensor* StridedSlice(const aclTensor* x, const aclTensor* y, const aclTensor* begin, const aclTensor* end,
+                              const aclTensor* strides, aclOpExecutor* executor)
 {
     int64_t default_mask = 0;
     auto beginMask = executor->AllocScalar(default_mask);
@@ -113,82 +125,77 @@ const aclTensor* StridedSlice(
     auto ellipsisMask = executor->AllocScalar(default_mask);
     auto newAxisMask = executor->AllocScalar(default_mask);
     auto shrinkAxisMask = executor->AllocScalar(default_mask);
-    return StridedSlice(
-        x, y, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask, executor);
+    return StridedSlice(x, y, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask,
+                        executor);
 }
 
-const aclTensor* StridedSlice(
-    aclTensor* x, const aclIntArray* begin, const aclIntArray* end, const aclIntArray* strides,
-    const aclScalar* beginMask, const aclScalar* endMask, const aclScalar* ellipsisMask, const aclScalar* newAxisMask,
-    const aclScalar* shrinkAxisMask, aclOpExecutor* executor)
+const aclTensor* StridedSlice(aclTensor* x, const aclIntArray* begin, const aclIntArray* end,
+                              const aclIntArray* strides, const aclScalar* beginMask, const aclScalar* endMask,
+                              const aclScalar* ellipsisMask, const aclScalar* newAxisMask,
+                              const aclScalar* shrinkAxisMask, aclOpExecutor* executor)
 {
     auto out = executor->AllocTensor(x->GetDataType(), x->GetStorageFormat(), x->GetOriginalFormat());
     auto beginTensor = executor->ConvertToTensor(begin, op::ToOpDataType(ACL_INT64));
     auto endTensor = executor->ConvertToTensor(end, op::ToOpDataType(ACL_INT64));
     auto stridesTensor = executor->ConvertToTensor(strides, op::ToOpDataType(ACL_INT64));
 
-    INFER_SHAPE(
-        StridedSlice, OP_INPUT(x, beginTensor, endTensor, stridesTensor), OP_OUTPUT(out),
-        OP_ATTR(beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask));
-    return StridedSlice(
-        x, out, beginTensor, endTensor, stridesTensor, beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask,
-        executor);
+    INFER_SHAPE(StridedSlice, OP_INPUT(x, beginTensor, endTensor, stridesTensor), OP_OUTPUT(out),
+                OP_ATTR(beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask));
+    return StridedSlice(x, out, beginTensor, endTensor, stridesTensor, beginMask, endMask, ellipsisMask, newAxisMask,
+                        shrinkAxisMask, executor);
 }
 
-const aclTensor* StridedSliceAiCore(
-    const aclTensor* self, const aclTensor* out, const aclTensor* begin, const aclTensor* end, const aclTensor* strides,
-    int64_t beginMask, int64_t endMask, int64_t ellipsisMask, int64_t newAxisMask, int64_t shrinkAxisMask,
-    aclOpExecutor* executor)
+const aclTensor* StridedSliceAiCore(const aclTensor* self, const aclTensor* out, const aclTensor* begin,
+                                    const aclTensor* end, const aclTensor* strides, int64_t beginMask, int64_t endMask,
+                                    int64_t ellipsisMask, int64_t newAxisMask, int64_t shrinkAxisMask,
+                                    aclOpExecutor* executor)
 {
-    L0_DFX(
-        StridedSliceAiCore, self, out, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask,
-        shrinkAxisMask);
+    L0_DFX(StridedSliceAiCore, self, out, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask,
+           shrinkAxisMask);
     auto retAicore = ADD_TO_LAUNCHER_LIST_AICORE(
         StridedSlice, OP_INPUT(self, begin, end, strides), OP_OUTPUT(out),
         OP_ATTR(beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask));
-    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(
-        retAicore != ACLNN_SUCCESS, return nullptr, "StridedSlice ADD_TO_LAUNCHER_LIST_AICORE failed.");
+    OP_CHECK_ADD_TO_LAUNCHER_LIST_AICORE(retAicore != ACLNN_SUCCESS, return nullptr,
+                                         "StridedSlice ADD_TO_LAUNCHER_LIST_AICORE failed.");
     return out;
 }
 
-const aclTensor* StridedSliceAiCpu(
-    const aclTensor* self, const aclTensor* out, const aclTensor* begin, const aclTensor* end, const aclTensor* strides,
-    int64_t beginMask, int64_t endMask, int64_t ellipsisMask, int64_t newAxisMask, int64_t shrinkAxisMask,
-    aclOpExecutor* executor)
+const aclTensor* StridedSliceAiCpu(const aclTensor* self, const aclTensor* out, const aclTensor* begin,
+                                   const aclTensor* end, const aclTensor* strides, int64_t beginMask, int64_t endMask,
+                                   int64_t ellipsisMask, int64_t newAxisMask, int64_t shrinkAxisMask,
+                                   aclOpExecutor* executor)
 {
-    L0_DFX(
-        StridedSliceAiCpu, self, out, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask,
-        shrinkAxisMask);
+    L0_DFX(StridedSliceAiCpu, self, out, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask,
+           shrinkAxisMask);
     static op::internal::AicpuTaskSpace space("StridedSlice", ge::DEPEND_CONST_VALUE, true);
     auto ret = ADD_TO_LAUNCHER_LIST_AICPU(
         StridedSlice,
         OP_ATTR_NAMES({"T", "Index", "begin_mask", "end_mask", "ellipsis_mask", "new_axis_mask", "shrink_axis_mask"}),
         OP_INPUT(self, begin, end, strides), OP_OUTPUT(out),
-        OP_ATTR(
-            self->GetDataType(), begin->GetDataType(), beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask));
+        OP_ATTR(self->GetDataType(), begin->GetDataType(), beginMask, endMask, ellipsisMask, newAxisMask,
+                shrinkAxisMask));
     CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
     return out;
 }
 
-const aclTensor* StridedSlice(
-    const aclTensor* self, const aclTensor* begin, const aclTensor* end, const aclTensor* strides, int64_t beginMask,
-    int64_t endMask, int64_t ellipsisMask, int64_t newAxisMask, int64_t shrinkAxisMask, aclOpExecutor* executor)
+const aclTensor* StridedSlice(const aclTensor* self, const aclTensor* begin, const aclTensor* end,
+                              const aclTensor* strides, int64_t beginMask, int64_t endMask, int64_t ellipsisMask,
+                              int64_t newAxisMask, int64_t shrinkAxisMask, aclOpExecutor* executor)
 {
     auto out = executor->AllocTensor(self->GetDataType(), self->GetStorageFormat(), self->GetOriginalFormat());
 
-    auto ret = INFER_SHAPE(
-        StridedSlice, OP_INPUT(self, begin, end, strides), OP_OUTPUT(out),
-        OP_ATTR(beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask));
+    auto ret = INFER_SHAPE(StridedSlice, OP_INPUT(self, begin, end, strides), OP_OUTPUT(out),
+                           OP_ATTR(beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask));
     if (ret != ACLNN_SUCCESS) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "StridedSlice InferShape failed.");
         return nullptr;
     }
 
     if (IsAiCoreSupport(self)) {
-        return StridedSliceAiCore(
-            self, out, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask, executor);
+        return StridedSliceAiCore(self, out, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask,
+                                  shrinkAxisMask, executor);
     }
-    return StridedSliceAiCpu(
-        self, out, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask, shrinkAxisMask, executor);
+    return StridedSliceAiCpu(self, out, begin, end, strides, beginMask, endMask, ellipsisMask, newAxisMask,
+                             shrinkAxisMask, executor);
 }
 } // namespace l0op
