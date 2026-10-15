@@ -275,6 +275,16 @@ static bool IsNonContiguousSupport(const op::FVector<const aclTensor*>& tensors,
     if (shape0Dtype == DataType::DT_COMPLEX128) {
         return false;
     }
+    // 直通路径的中间结果(CreateView/ConcatD/Cast)均继承输入 format, 最终 ViewCopy 要求
+    // 非 ND 输入与 out 的 storage format 一致, 否则整个调用硬失败(如输入 NCL/输出 NCHW 时
+    // 报 "input tensor's format NCL should be same with output's format NCHW"); 常规路径的
+    // Pack 输出固定为 ND, 天然豁免该校验。非 ND 输入须在门控拦截, 回退常规 Contiguous+Pack 路径
+    for (uint64_t i = 0; i < tensors.size(); i++) {
+        if (tensors[i]->GetStorageFormat() != op::Format::FORMAT_ND ||
+            tensors[i]->GetViewFormat() != op::Format::FORMAT_ND) {
+            return false;
+        }
+    }
     if (realDim < 0) {
         return false;
     }
