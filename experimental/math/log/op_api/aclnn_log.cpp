@@ -23,7 +23,7 @@
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
-#include "op_api/level2_base.h"
+#include "op_api/level2_base_math.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -79,10 +79,10 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out)
     CHECK_RET(CheckNotNull2Tensor(self, out), ACLNN_ERR_PARAM_NULLPTR);
 
     // 2. 检查输入的数据类型是否在API支持的数据类型范围之内，需要根据api定义校验
-    auto inputSupportList =
-        GetDtypeSupportListV2(ASCEND910B_INPUT_DTYPE_SUPPORT_LIST, ASCEND910_INPUT_DTYPE_SUPPORT_LIST);
-    auto outputSupportList =
-        GetDtypeSupportListV2(ASCEND910B_OUTPUT_DTYPE_SUPPORT_LIST, ASCEND910_OUTPUT_DTYPE_SUPPORT_LIST);
+    auto inputSupportList = GetDtypeSupportListV2(ASCEND910B_INPUT_DTYPE_SUPPORT_LIST,
+                                                  ASCEND910_INPUT_DTYPE_SUPPORT_LIST);
+    auto outputSupportList = GetDtypeSupportListV2(ASCEND910B_OUTPUT_DTYPE_SUPPORT_LIST,
+                                                   ASCEND910_OUTPUT_DTYPE_SUPPORT_LIST);
     CHECK_RET(CheckDtypeValid1In1Out(self, out, inputSupportList, outputSupportList), ACLNN_ERR_PARAM_INVALID);
 
     // 3. 检查self的数据类型能否转换为输出数据类型
@@ -94,8 +94,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out)
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnLogGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnLogGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                     aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnLog, DFX_IN(self, out), DFX_OUT());
 
@@ -138,8 +138,8 @@ aclnnStatus aclnnLogGetWorkspaceSize(
 
 static inline aclnnStatus CheckInplace(const aclTensor* selfRef)
 {
-    auto outputSupportList =
-        GetDtypeSupportListV2(ASCEND910B_OUTPUT_DTYPE_SUPPORT_LIST, ASCEND910_OUTPUT_DTYPE_SUPPORT_LIST);
+    auto outputSupportList = GetDtypeSupportListV2(ASCEND910B_OUTPUT_DTYPE_SUPPORT_LIST,
+                                                   ASCEND910_OUTPUT_DTYPE_SUPPORT_LIST);
     OP_CHECK_NULL(selfRef, return ACLNN_ERR_PARAM_NULLPTR);
     OP_CHECK_DTYPE_NOT_SUPPORT(selfRef, outputSupportList, return ACLNN_ERR_PARAM_INVALID);
     OP_CHECK_MAX_DIM(selfRef, MAX_DIM_LEN, return ACLNN_ERR_PARAM_INVALID);

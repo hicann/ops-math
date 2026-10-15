@@ -16,7 +16,7 @@
 #include "aclnn_kernels/reshape.h"
 #include "aclnn_kernels/common/op_error_check.h"
 
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"
@@ -141,8 +141,8 @@ static aclnnStatus LogdetExecImpl(const aclTensor* self, aclTensor* out, aclOpEx
 extern "C" {
 #endif
 
-aclnnStatus aclnnLogdetGetWorkspaceSize(const aclTensor* self, aclTensor* out,
-                                         uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnLogdetGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                        aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
     L2_DFX_PHASE_1(aclnnLogdet, DFX_IN(self), DFX_OUT(out));

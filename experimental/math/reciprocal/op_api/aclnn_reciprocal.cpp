@@ -9,7 +9,7 @@
  */
 #include "aclnn_reciprocal.h"
 
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -85,15 +85,13 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
     bool bf16Flag = CheckSocVersionIsSupportBf16();
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     if (!bf16Flag && self->GetDataType() == op::DataType::DT_BF16) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s is unsupported by the current SOC version [%s].",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(socVersion).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s is unsupported by the current SOC version [%s].",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(socVersion).GetString());
         return false;
     }
     if (!bf16Flag && out->GetDataType() == op::DataType::DT_BF16) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Out dtype %s is unsupported by the current SOC version [%s].",
-            op::ToString(out->GetDataType()).GetString(), op::ToString(socVersion).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Out dtype %s is unsupported by the current SOC version [%s].",
+                op::ToString(out->GetDataType()).GetString(), op::ToString(socVersion).GetString());
         return false;
     }
 
@@ -123,9 +121,8 @@ static bool CheckFormat(const aclTensor* self, const aclTensor* out)
 {
     // 需要根据算子实际情况添加校验
     if (self->GetStorageFormat() != out->GetStorageFormat()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Format of input and output should be equal, self [%s], out [%s].",
-            op::ToString(self->GetStorageFormat()).GetString(), op::ToString(out->GetStorageFormat()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Format of input and output should be equal, self [%s], out [%s].",
+                op::ToString(self->GetStorageFormat()).GetString(), op::ToString(out->GetStorageFormat()).GetString());
         return false;
     }
 
@@ -169,8 +166,8 @@ static aclnnStatus CheckInplaceParams(const aclTensor* selfRef)
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnReciprocalGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnReciprocalGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                            aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnReciprocal, DFX_IN(self), DFX_OUT(out));
     // 固定写法，创建OpExecutor
@@ -217,8 +214,8 @@ aclnnStatus aclnnReciprocalGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceReciprocalGetWorkspaceSize(
-    const aclTensor* selfRef, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceReciprocalGetWorkspaceSize(const aclTensor* selfRef, uint64_t* workspaceSize,
+                                                   aclOpExecutor** executor)
 {
     auto out = const_cast<aclTensor*>(selfRef);
     auto ret = CheckInplaceParams(selfRef);

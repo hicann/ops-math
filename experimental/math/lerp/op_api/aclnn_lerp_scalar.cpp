@@ -28,13 +28,13 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "op_api/aclnn_check.h"
 
 using namespace op;
 
-static const std::initializer_list<DataType> Ascend910_input_dtype_support_list = {
-    op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT};
+static const std::initializer_list<DataType> Ascend910_input_dtype_support_list = {op::DataType::DT_FLOAT16,
+                                                                                   op::DataType::DT_FLOAT};
 
 static const std::initializer_list<DataType> Ascend910B_input_dtype_support_list = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BF16};
@@ -99,9 +99,8 @@ static bool CheckShape(const aclTensor* self, const aclTensor* end, const aclTen
     }
 
     if (broadcastShape != y->GetViewShape()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
-            op::ToString(broadcastShape).GetString(), op::ToString(y->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
+                op::ToString(broadcastShape).GetString(), op::ToString(y->GetViewShape()).GetString());
         return false;
     }
 
@@ -117,8 +116,8 @@ static bool CheckShape(const aclTensor* self, const aclTensor* end, const aclTen
     return true;
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* self, const aclTensor* end, const aclScalar* weight, const aclTensor* out)
+static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* end, const aclScalar* weight,
+                               const aclTensor* out)
 {
     // 检查参数是否为空指针
     CHECK_COND(CheckNotNull(self, end, weight, out), ACLNN_ERR_PARAM_NULLPTR, "CheckNotNull failed!");
@@ -140,8 +139,8 @@ static inline op::DataType InferScalarTensorDtype(const aclTensor* self)
     return self->GetDataType();
 }
 
-static aclnnStatus CalculateResult(
-    const aclTensor* self, const aclTensor* end, const aclScalar* weight, aclTensor* out, aclOpExecutor* executor)
+static aclnnStatus CalculateResult(const aclTensor* self, const aclTensor* end, const aclScalar* weight, aclTensor* out,
+                                   aclOpExecutor* executor)
 {
     // 固定写法，参数检查
     auto ret = CheckParams(self, end, weight, out);
@@ -183,9 +182,8 @@ static aclnnStatus CalculateResult(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnLerpsGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* end, const aclScalar* weight, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnLerpsGetWorkspaceSize(const aclTensor* self, const aclTensor* end, const aclScalar* weight,
+                                       aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
     L2_DFX_PHASE_1(aclnnLerps, DFX_IN(self, end, weight), DFX_OUT(out));
@@ -203,9 +201,8 @@ aclnnStatus aclnnLerpsGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceLerpsGetWorkspaceSize(
-    aclTensor* selfRef, const aclTensor* end, const aclScalar* weight, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnInplaceLerpsGetWorkspaceSize(aclTensor* selfRef, const aclTensor* end, const aclScalar* weight,
+                                              uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
     L2_DFX_PHASE_1(aclnnInplaceLerps, DFX_IN(selfRef, end, weight), DFX_OUT(selfRef));
@@ -230,8 +227,8 @@ aclnnStatus aclnnLerps(void* workspace, uint64_t workspaceSize, aclOpExecutor* e
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnInplaceLerps(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
+aclnnStatus aclnnInplaceLerps(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                              const aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnInplaceLerps);
     // 固定写法，调用框架能力，完成计算

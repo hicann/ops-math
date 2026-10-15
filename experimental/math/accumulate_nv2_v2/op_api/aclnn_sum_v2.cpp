@@ -27,16 +27,16 @@
 #include "opdev/op_executor.h"
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 
 using namespace op;
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_INT8, op::DataType::DT_INT32,
-    op::DataType::DT_UINT8};
+static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT,
+                                                                       op::DataType::DT_INT8, op::DataType::DT_INT32,
+                                                                       op::DataType::DT_UINT8};
 
 static bool CheckNotNull(const aclTensorList* tensors, const aclTensor* out)
 {
@@ -55,9 +55,8 @@ static bool CheckDtypeValid(const aclTensorList* tensors, const aclTensor* out)
 {
     for (uint64_t i = 0; i < tensors->Size(); i++) {
         if (!CheckType((*tensors)[i]->GetDataType(), DTYPE_SUPPORT_LIST)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "tensor %lu not implemented for %s.", i,
-                op::ToString((*tensors)[i]->GetDataType()).GetString());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "tensor %lu not implemented for %s.", i,
+                    op::ToString((*tensors)[i]->GetDataType()).GetString());
             return false;
         }
     }
@@ -81,9 +80,8 @@ static bool CheckShape(const aclTensorList* tensors, const aclTensor* out)
     for (uint64_t i = 0; i < tensors->Size(); ++i) {
         auto dimNum = (*tensors)[i]->GetViewShape().GetDimNum();
         if (dimNum > MAX_SUPPORT_DIMS_NUMS) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "Dim of tensor %lu is %zu, can't be greater than %zu.", i, dimNum,
-                MAX_SUPPORT_DIMS_NUMS);
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Dim of tensor %lu is %zu, can't be greater than %zu.", i, dimNum,
+                    MAX_SUPPORT_DIMS_NUMS);
             return false;
         }
     }
@@ -106,9 +104,8 @@ static aclnnStatus CheckParams(const aclTensorList* tensors, const aclTensor* ou
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus SplitToSumN(
-    const aclTensorList* tensors, const aclIntArray* broadcastShapeArray, const aclTensor** sumOut,
-    aclOpExecutor* executor, bool promoteFp16)
+static aclnnStatus SplitToSumN(const aclTensorList* tensors, const aclIntArray* broadcastShapeArray,
+                               const aclTensor** sumOut, aclOpExecutor* executor, bool promoteFp16)
 {
     size_t MAX_TENSOR_SIZE = 16;
     op::FVector<const aclTensor*> tensorList;
@@ -127,8 +124,8 @@ static aclnnStatus SplitToSumN(
     while (tensorList.size() >= MAX_TENSOR_SIZE) {
         op::FVector<const aclTensor*> tensorListOnes;
         tensorListOnes.assign(tensorList.end() - MAX_TENSOR_SIZE, tensorList.end());
-        auto onesComputeOut =
-            l0op::AccumulateNv2V2(executor->AllocTensorList(tensorListOnes.data(), tensorListOnes.size()), executor);
+        auto onesComputeOut = l0op::AccumulateNv2V2(
+            executor->AllocTensorList(tensorListOnes.data(), tensorListOnes.size()), executor);
         CHECK_RET(onesComputeOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
         tensorList.erase(tensorList.end() - MAX_TENSOR_SIZE, tensorList.end());
         tensorList.push_back(onesComputeOut);
@@ -159,8 +156,8 @@ static aclTensorList* SumAdaptInputZeroDimTensor(const aclTensorList* tensors, a
     return executor->AllocTensorList(fTensorList.data(), fTensorList.size());
 }
 
-aclnnStatus aclnnSumV2GetWorkspaceSize(
-    const aclTensorList* tensors, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnSumV2GetWorkspaceSize(const aclTensorList* tensors, aclTensor* out, uint64_t* workspaceSize,
+                                       aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 

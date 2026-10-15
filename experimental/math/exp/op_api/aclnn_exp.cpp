@@ -22,7 +22,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
-#include "op_api/level2_base.h"
+#include "op_api/level2_base_math.h"
 #include "op_api/aclnn_check.h"
 
 using namespace op;
@@ -52,8 +52,8 @@ static inline bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
     auto npuArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
     bool is910BSocVersion = (npuArch == NpuArch::DAV_2201 || IsRegBase(npuArch));
-    const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_CURRENT =
-        is910BSocVersion ? DTYPE_SUPPORT_LIST_910B : DTYPE_SUPPORT_LIST_910;
+    const std::initializer_list<DataType> DTYPE_SUPPORT_LIST_CURRENT = is910BSocVersion ? DTYPE_SUPPORT_LIST_910B :
+                                                                                          DTYPE_SUPPORT_LIST_910;
 
     // 检查数据类型是否在Exp算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST_CURRENT, return false);
@@ -99,8 +99,8 @@ static aclnnStatus CheckInplaceParamsExp(aclTensor* selfRef)
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus GetWorkspaceSizeCommon(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus GetWorkspaceSizeCommon(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                          aclOpExecutor** executor)
 {
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -147,8 +147,8 @@ static aclnnStatus GetWorkspaceSizeCommon(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnExpGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnExpGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                     aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnExp, DFX_IN(self), DFX_OUT(out));
     return GetWorkspaceSizeCommon(self, out, workspaceSize, executor);

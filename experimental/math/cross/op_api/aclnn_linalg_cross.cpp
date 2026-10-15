@@ -15,7 +15,7 @@
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/op_dfx.h"
 #include "conversion/broadcast_to/op_api/broadcast_to.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -74,10 +74,9 @@ static bool CheckBroadcastShape(const aclTensor* self, const aclTensor* other, c
 
     // self和other的broadcast shape必须与out的shape一致
     if (broadcastShape != out->GetViewShape()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "expected consistent tensor shape for the broadcast shape and out, but got %s and %s respectively.",
-            op::ToString(broadcastShape).GetString(), op::ToString(out->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "expected consistent tensor shape for the broadcast shape and out, but got %s and %s respectively.",
+                op::ToString(broadcastShape).GetString(), op::ToString(out->GetViewShape()).GetString());
         return false;
     }
 
@@ -89,9 +88,8 @@ static bool CheckDim(const aclTensor* self, int64_t dim)
     // dim的值必须在[-self的维度数量，self的维度数量-1]范围内
     auto dimSize = static_cast<int64_t>(self->GetViewShape().GetDimNum());
     if (dim >= dimSize || dim < -1 * dimSize) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Dimension out of range(expected to be in range of [%ld, %ld], but got %ld.",
-            -1 * dimSize, dimSize - 1, dim);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Dimension out of range(expected to be in range of [%ld, %ld], but got %ld.",
+                -1 * dimSize, dimSize - 1, dim);
         return false;
     }
 
@@ -123,15 +121,14 @@ inline static aclTensor* BroadcastTensor(const op::Shape dstShape, const aclTens
 {
     auto dstTensor = executor->AllocTensor(dstShape, src->GetDataType());
     op::FVector<int64_t, op::MAX_DIM_NUM> broadcastDims = op::ToShapeVector(dstShape);
-    auto shape =
-        executor->ConvertToTensor(broadcastDims.data(), broadcastDims.size(), static_cast<op::DataType>(ACL_INT64));
+    auto shape = executor->ConvertToTensor(broadcastDims.data(), broadcastDims.size(),
+                                           static_cast<op::DataType>(ACL_INT64));
     auto result = l0op::BroadcastTo(src, dstTensor, shape, executor);
     return const_cast<aclTensor*>(result);
 }
 
-static aclnnStatus ExecLinalgCrossGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, int64_t dim, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+static aclnnStatus ExecLinalgCrossGetWorkspaceSize(const aclTensor* self, const aclTensor* other, int64_t dim,
+                                                   aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -220,9 +217,8 @@ static aclnnStatus ExecLinalgCrossGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnLinalgCrossGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, int64_t dim, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnLinalgCrossGetWorkspaceSize(const aclTensor* self, const aclTensor* other, int64_t dim, aclTensor* out,
+                                             uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 

@@ -22,8 +22,8 @@
 #include "opdev/op_log.h"
 #include "opdev/platform.h"
 #include "opdev/tensor_view_utils.h"
-#include "common/inc/op_api/op_api_def.h"
-#include "common/inc/op_api/level2_base.h"
+#include "common/inc/op_api/op_api_def_math.h"
+#include "common/inc/op_api/level2_base_math.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -58,13 +58,14 @@ static const std::initializer_list<DataType> NEED_CAST_DTYPE_LIST = {DataType::D
 static bool CheckDtypeValid(const aclTensor* input, const aclTensor* out)
 {
     // 获取芯片类型，判断芯片是否为Ascend910B
-    bool isAscend910BSocVersion =
-        (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201 ||
-         GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510);
-    const std::initializer_list<op::DataType> CURRENT_INPUT_DTYPE_SUPPORT_LIST =
-        isAscend910BSocVersion ? ASCEND910B_INPUT_DTYPE_SUPPORT_LIST : ASCEND910_INPUT_DTYPE_SUPPORT_LIST;
-    const std::initializer_list<op::DataType> CURRENT_OUTPUT_DTYPE_SUPPORT_LIST =
-        isAscend910BSocVersion ? ASCEND910B_OUTPUT_DTYPE_SUPPORT_LIST : ASCEND910_OUTPUT_DTYPE_SUPPORT_LIST;
+    bool isAscend910BSocVersion = (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_2201 ||
+                                   GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510);
+    const std::initializer_list<op::DataType>
+        CURRENT_INPUT_DTYPE_SUPPORT_LIST = isAscend910BSocVersion ? ASCEND910B_INPUT_DTYPE_SUPPORT_LIST :
+                                                                    ASCEND910_INPUT_DTYPE_SUPPORT_LIST;
+    const std::initializer_list<op::DataType>
+        CURRENT_OUTPUT_DTYPE_SUPPORT_LIST = isAscend910BSocVersion ? ASCEND910B_OUTPUT_DTYPE_SUPPORT_LIST :
+                                                                     ASCEND910_OUTPUT_DTYPE_SUPPORT_LIST;
 
     // 检查输入的数据类型是否在算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(input, CURRENT_INPUT_DTYPE_SUPPORT_LIST, return false);
@@ -77,8 +78,8 @@ static bool CheckDtypeValid(const aclTensor* input, const aclTensor* out)
 
 static bool CheckInplaceDtypeValid(aclTensor* selfRef)
 {
-    auto inplaceSupportList =
-        GetDtypeSupportListV2(ASCEND910B_OUTPUT_DTYPE_SUPPORT_LIST, ASCEND910_OUTPUT_DTYPE_SUPPORT_LIST);
+    auto inplaceSupportList = GetDtypeSupportListV2(ASCEND910B_OUTPUT_DTYPE_SUPPORT_LIST,
+                                                    ASCEND910_OUTPUT_DTYPE_SUPPORT_LIST);
     // 检查selfRef的数据类型是否在inplace cos算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(selfRef, inplaceSupportList, return false);
 
@@ -105,8 +106,8 @@ static aclnnStatus CheckInplaceParamsCos(aclTensor* selfRef)
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus ExecCosGetWorkspaceSize(
-    const aclTensor* input, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus ExecCosGetWorkspaceSize(const aclTensor* input, aclTensor* out, uint64_t* workspaceSize,
+                                           aclOpExecutor** executor)
 {
     // 创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -151,8 +152,8 @@ static aclnnStatus ExecCosGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnCosGetWorkspaceSize(
-    const aclTensor* input, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnCosGetWorkspaceSize(const aclTensor* input, aclTensor* out, uint64_t* workspaceSize,
+                                     aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnCos, DFX_IN(input), DFX_OUT(out));
     return ExecCosGetWorkspaceSize(input, out, workspaceSize, executor);

@@ -16,7 +16,7 @@
 #include "opdev/make_op_executor.h"
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
-#include "op_api/level2_base.h"
+#include "op_api/level2_base_math.h"
 
 using namespace op;
 
@@ -36,11 +36,10 @@ static const std::initializer_list<DataType> ASCEND910B_DTYPE_SELFREF_LIST = {
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
     // 获取芯片类型,判断是否为910B
-    bool is910BSocVersion =
-        (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93);
-    const std::initializer_list<DataType> DTYPE_SUPPORT_LIST =
-        is910BSocVersion ? DTYPE_SUPPORT_LIST_910B : DTYPE_SUPPORT_LIST_910;
+    bool is910BSocVersion = (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+                             GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93);
+    const std::initializer_list<DataType> DTYPE_SUPPORT_LIST = is910BSocVersion ? DTYPE_SUPPORT_LIST_910B :
+                                                                                  DTYPE_SUPPORT_LIST_910;
 
     // 检查self的数据类型是否在支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST, return false);
@@ -90,8 +89,8 @@ static aclnnStatus CheckInplaceParamsErf(aclTensor* selfRef)
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus GetWorkspaceSizeCommon(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus GetWorkspaceSizeCommon(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                          aclOpExecutor** executor)
 {
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -135,8 +134,8 @@ static aclnnStatus GetWorkspaceSizeCommon(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnErfGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnErfGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                     aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnErf, DFX_IN(self), DFX_OUT(out));
     return GetWorkspaceSizeCommon(self, out, workspaceSize, executor);

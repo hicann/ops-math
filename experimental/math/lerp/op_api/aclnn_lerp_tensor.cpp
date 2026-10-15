@@ -17,7 +17,7 @@
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/reshape.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -33,8 +33,8 @@
 
 using namespace op;
 
-static const std::initializer_list<DataType> Ascend910_dtype_support_list = {
-    op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT};
+static const std::initializer_list<DataType> Ascend910_dtype_support_list = {op::DataType::DT_FLOAT16,
+                                                                             op::DataType::DT_FLOAT};
 
 static const std::initializer_list<DataType> Ascend910B_dtype_support_list = {
     op::DataType::DT_FLOAT16, op::DataType::DT_FLOAT, op::DataType::DT_BF16};
@@ -89,9 +89,8 @@ static bool CheckShape(const aclTensor* self, const aclTensor* end, const aclTen
     }
 
     if (outBroadcastShape != y->GetViewShape()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
-            op::ToString(outBroadcastShape).GetString(), op::ToString(y->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
+                op::ToString(outBroadcastShape).GetString(), op::ToString(y->GetViewShape()).GetString());
         return false;
     }
 
@@ -108,8 +107,8 @@ static bool CheckShape(const aclTensor* self, const aclTensor* end, const aclTen
     return true;
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* self, const aclTensor* end, const aclTensor* weight, const aclTensor* out)
+static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* end, const aclTensor* weight,
+                               const aclTensor* out)
 {
     // 检查参数是否为空指针
     CHECK_RET(CheckNotNull(self, end, weight, out), ACLNN_ERR_PARAM_NULLPTR);
@@ -122,8 +121,8 @@ static aclnnStatus CheckParams(
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus CalculateResult(
-    const aclTensor* self, const aclTensor* end, const aclTensor* weight, aclTensor* out, aclOpExecutor* executor)
+static aclnnStatus CalculateResult(const aclTensor* self, const aclTensor* end, const aclTensor* weight, aclTensor* out,
+                                   aclOpExecutor* executor)
 {
     // 固定写法，参数检查
     auto ret = CheckParams(self, end, weight, out);
@@ -161,9 +160,8 @@ static aclnnStatus CalculateResult(
 
     return ACLNN_SUCCESS;
 }
-aclnnStatus aclnnLerpGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* end, const aclTensor* weight, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnLerpGetWorkspaceSize(const aclTensor* self, const aclTensor* end, const aclTensor* weight,
+                                      aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 
@@ -182,9 +180,8 @@ aclnnStatus aclnnLerpGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceLerpGetWorkspaceSize(
-    aclTensor* selfRef, const aclTensor* end, const aclTensor* weight, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnInplaceLerpGetWorkspaceSize(aclTensor* selfRef, const aclTensor* end, const aclTensor* weight,
+                                             uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     OP_CHECK_COMM_INPUT(workspaceSize, executor);
 

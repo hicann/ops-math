@@ -22,7 +22,7 @@
 #include "aclnn_kernels/transdata.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/common/op_error_check.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "conversion/broadcast_to/op_api/broadcast_to.h"
 #include "clip_by_value.h"
 
@@ -122,8 +122,8 @@ static const std::initializer_list<DataType>& GetDtypeSupportList()
     }
 }
 
-static bool CheckNotNull(
-    const aclTensor* self, const aclScalar* clipValueMin, const aclScalar* clipValueMax, const aclTensor* out)
+static bool CheckNotNull(const aclTensor* self, const aclScalar* clipValueMin, const aclScalar* clipValueMax,
+                         const aclTensor* out)
 {
     OP_CHECK_NULL(self, return false);
     OP_CHECK_NULL(out, return false);
@@ -135,8 +135,8 @@ static bool CheckNotNull(
     return true;
 }
 
-static bool CheckNotNull(
-    const aclTensor* self, const aclTensor* clipValueMin, const aclTensor* clipValueMax, const aclTensor* out)
+static bool CheckNotNull(const aclTensor* self, const aclTensor* clipValueMin, const aclTensor* clipValueMax,
+                         const aclTensor* out)
 {
     OP_CHECK_NULL(self, return false);
     OP_CHECK_NULL(out, return false);
@@ -166,8 +166,8 @@ static bool CheckShape(const aclTensor* self, const aclTensor* out)
     return true;
 }
 
-static bool CheckShape(
-    const aclTensor* self, const aclTensor* clipValueMin, const aclTensor* clipValueMax, const aclTensor* out)
+static bool CheckShape(const aclTensor* self, const aclTensor* clipValueMin, const aclTensor* clipValueMax,
+                       const aclTensor* out)
 {
     OP_CHECK_MAX_DIM(self, MAX_SUPPORT_DIMS_NUMS, return false);
     OP_CHECK_MAX_DIM(out, MAX_SUPPORT_DIMS_NUMS, return false);
@@ -180,8 +180,8 @@ static bool CheckShape(
     return true;
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* self, const aclScalar* clipValueMin, const aclScalar* clipValueMax, const aclTensor* out)
+static aclnnStatus CheckParams(const aclTensor* self, const aclScalar* clipValueMin, const aclScalar* clipValueMax,
+                               const aclTensor* out)
 {
     CHECK_RET(CheckNotNull(self, clipValueMin, clipValueMax, out), ACLNN_ERR_PARAM_NULLPTR);
     CHECK_RET(CheckDtypeValid(self, out), ACLNN_ERR_PARAM_INVALID);
@@ -190,8 +190,8 @@ static aclnnStatus CheckParams(
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* self, const aclTensor* clipValueMin, const aclTensor* clipValueMax, const aclTensor* out)
+static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* clipValueMin, const aclTensor* clipValueMax,
+                               const aclTensor* out)
 {
     CHECK_RET(CheckNotNull(self, clipValueMin, clipValueMax, out), ACLNN_ERR_PARAM_NULLPTR);
     CHECK_RET(CheckDtypeValid(self, out), ACLNN_ERR_PARAM_INVALID);
@@ -203,9 +203,8 @@ static aclnnStatus CheckParams(
 static inline aclnnStatus CheckReformat(const aclTensor* input)
 {
     input = l0op::ReFormat(input, static_cast<op::Format>(ACL_FORMAT_ND));
-    OP_CHECK(
-        input != nullptr, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "The input tensor with TransData return nullptr."),
-        return ACLNN_ERR_INNER_NULLPTR);
+    OP_CHECK(input != nullptr, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "The input tensor with TransData return nullptr."),
+             return ACLNN_ERR_INNER_NULLPTR);
     return ACLNN_SUCCESS;
 }
 
@@ -213,9 +212,8 @@ static bool CheckSelfCanCastOut(const aclTensor* self, const aclTensor* out)
 {
     // 检查self的数据类型是否可以转化成out
     if (!CanCast(self->GetDataType(), out->GetDataType())) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "self type %s can't be cast to the output type %s.",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(out->GetDataType()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self type %s can't be cast to the output type %s.",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(out->GetDataType()).GetString());
         return false;
     }
     return true;
@@ -295,8 +293,8 @@ const aclTensor* NormalizeMinTensor(const aclTensor* valueMin, const op::DataTyp
     return executor->ConvertToTensor(scalar, dataType);
 }
 
-static bool ClampPromoteType(
-    const aclScalar* clipValueMin, const aclScalar* clipValueMax, const aclTensor* out, op::DataType& promoteType)
+static bool ClampPromoteType(const aclScalar* clipValueMin, const aclScalar* clipValueMax, const aclTensor* out,
+                             op::DataType& promoteType)
 {
     if ((clipValueMin != nullptr) && (clipValueMax != nullptr)) {
         auto clipValueMinDtype = GetScalarDefaultDtype(clipValueMin->GetDataType());
@@ -318,9 +316,8 @@ static bool ClampPromoteType(
 
     auto supportList = GetDtypeSupportList();
     if (!CheckType(promoteType, supportList)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "%s not implemented for %s, should be in dtype support list %s.", "promote dtype",
-            op::ToString(promoteType).GetString(), op::ToString(supportList).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "%s not implemented for %s, should be in dtype support list %s.",
+                "promote dtype", op::ToString(promoteType).GetString(), op::ToString(supportList).GetString());
         return false;
     }
     OP_LOGI("clamp tensor scalar process with promote dtype %s.", op::ToString(promoteType).GetString());
@@ -328,9 +325,8 @@ static bool ClampPromoteType(
     return true;
 }
 
-aclnnStatus aclnnClampCommon(
-    const aclTensor* self, const aclScalar* clipValueMin, const aclScalar* clipValueMax, aclTensor* out,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnClampCommon(const aclTensor* self, const aclScalar* clipValueMin, const aclScalar* clipValueMax,
+                             aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
@@ -382,9 +378,9 @@ aclnnStatus aclnnClampCommon(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnClampGetWorkspaceSize(
-    const aclTensor* self, const aclScalar* clipValueMin, const aclScalar* clipValueMax, aclTensor* out,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnClampGetWorkspaceSize(const aclTensor* self, const aclScalar* clipValueMin,
+                                       const aclScalar* clipValueMax, aclTensor* out, uint64_t* workspaceSize,
+                                       aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnClamp, DFX_IN(self, clipValueMin, clipValueMax), DFX_OUT(out));
     return aclnnClampCommon(self, clipValueMin, clipValueMax, out, workspaceSize, executor);
@@ -397,9 +393,8 @@ aclnnStatus aclnnClamp(void* workspace, uint64_t workspaceSize, aclOpExecutor* e
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnClampMinGetWorkspaceSize(
-    const aclTensor* self, const aclScalar* clipValueMin, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnClampMinGetWorkspaceSize(const aclTensor* self, const aclScalar* clipValueMin, aclTensor* out,
+                                          uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnClampMin, DFX_IN(self, clipValueMin), DFX_OUT(out));
     OP_CHECK_NULL(clipValueMin, return ACLNN_ERR_PARAM_NULLPTR);
@@ -425,63 +420,56 @@ const aclTensor* AddBroadcastNode(const op::Shape& broadcastShape, const aclTens
     }
     op::FVector<int64_t, op::MAX_DIM_NUM> broadcastDims = op::ToShapeVector(broadcastShape);
     auto broadcastDstTensor = executor->AllocTensor(broadcastShape, clipValue->GetDataType());
-    auto shape =
-        executor->ConvertToTensor(broadcastDims.data(), broadcastDims.size(), static_cast<op::DataType>(ACL_INT64));
+    auto shape = executor->ConvertToTensor(broadcastDims.data(), broadcastDims.size(),
+                                           static_cast<op::DataType>(ACL_INT64));
     return l0op::BroadcastTo(clipValue, broadcastDstTensor, shape, executor);
 }
 
-bool ClampTensorPromoteShape(
-    const aclTensor* self, const aclTensor* clipValueMin, const aclTensor* clipValueMax, const aclTensor* out,
-    op::Shape& broadcastShape)
+bool ClampTensorPromoteShape(const aclTensor* self, const aclTensor* clipValueMin, const aclTensor* clipValueMax,
+                             const aclTensor* out, op::Shape& broadcastShape)
 {
     if (clipValueMin != nullptr && clipValueMax != nullptr) {
         op::Shape broadcastShapeMin;
         if (!BroadcastInferShape(self->GetViewShape(), clipValueMin->GetViewShape(), broadcastShapeMin)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "the size of tensor %s %s must match the size of tensor %s %s.", "self",
-                op::ToString(self->GetViewShape()).GetString(), "min",
-                op::ToString(clipValueMin->GetViewShape()).GetString());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "the size of tensor %s %s must match the size of tensor %s %s.", "self",
+                    op::ToString(self->GetViewShape()).GetString(), "min",
+                    op::ToString(clipValueMin->GetViewShape()).GetString());
             return false;
         }
         if (!BroadcastInferShape(clipValueMax->GetViewShape(), broadcastShapeMin, broadcastShape)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "the size of tensor %s %s must match the size of tensor %s %s.", "self/min",
-                op::ToString(broadcastShapeMin).GetString(), "max",
-                op::ToString(clipValueMax->GetViewShape()).GetString());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "the size of tensor %s %s must match the size of tensor %s %s.",
+                    "self/min", op::ToString(broadcastShapeMin).GetString(), "max",
+                    op::ToString(clipValueMax->GetViewShape()).GetString());
             return false;
         }
     } else if (clipValueMin != nullptr) {
         if (!BroadcastInferShape(self->GetViewShape(), clipValueMin->GetViewShape(), broadcastShape)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "the size of tensor %s %s must match the size of tensor %s %s.", "self",
-                op::ToString(self->GetViewShape()).GetString(), "min",
-                op::ToString(clipValueMin->GetViewShape()).GetString());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "the size of tensor %s %s must match the size of tensor %s %s.", "self",
+                    op::ToString(self->GetViewShape()).GetString(), "min",
+                    op::ToString(clipValueMin->GetViewShape()).GetString());
             return false;
         }
     } else {
         if (!BroadcastInferShape(self->GetViewShape(), clipValueMax->GetViewShape(), broadcastShape)) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "the size of tensor %s %s must match the size of tensor %s %s.", "self",
-                op::ToString(self->GetViewShape()).GetString(), "max",
-                op::ToString(clipValueMax->GetViewShape()).GetString());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "the size of tensor %s %s must match the size of tensor %s %s.", "self",
+                    op::ToString(self->GetViewShape()).GetString(), "max",
+                    op::ToString(clipValueMax->GetViewShape()).GetString());
             return false;
         }
     }
     if (broadcastShape != out->GetViewShape()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID,
-            "expected tensor for %s to have same size as tensor for %s, but %s does not "
-            "equal %s.",
-            "out", "broadcast", op::ToString(out->GetViewShape()).GetString(),
-            op::ToString(broadcastShape).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                "expected tensor for %s to have same size as tensor for %s, but %s does not "
+                "equal %s.",
+                "out", "broadcast", op::ToString(out->GetViewShape()).GetString(),
+                op::ToString(broadcastShape).GetString());
         return false;
     }
     return true;
 }
 
-bool ClampTensorPromoteType(
-    const aclTensor* self, const aclTensor* clipValueMin, const aclTensor* clipValueMax, const aclTensor* out,
-    op::DataType& promoteType)
+bool ClampTensorPromoteType(const aclTensor* self, const aclTensor* clipValueMin, const aclTensor* clipValueMax,
+                            const aclTensor* out, op::DataType& promoteType)
 {
     promoteType = self->GetDataType();
     if (clipValueMin != nullptr) {
@@ -497,9 +485,8 @@ bool ClampTensorPromoteType(
     OP_CHECK_RESULT_DTYPE_CAST_FAILED(promoteType, out->GetDataType(), return false);
     auto supportList = GetDtypeSupportList();
     if (!CheckType(promoteType, supportList)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "%s not implemented for %s, should be in dtype support list %s.", "promote dtype",
-            op::ToString(promoteType).GetString(), op::ToString(supportList).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "%s not implemented for %s, should be in dtype support list %s.",
+                "promote dtype", op::ToString(promoteType).GetString(), op::ToString(supportList).GetString());
         return false;
     }
     OP_LOGI("clamp process with promote dtype %s.", op::ToString(promoteType).GetString());
@@ -509,9 +496,8 @@ bool ClampTensorPromoteType(
     return true;
 }
 
-aclnnStatus aclnnClampTensorCommon(
-    const aclTensor* self, const aclTensor* clipValueMin, const aclTensor* clipValueMax, aclTensor* out,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnClampTensorCommon(const aclTensor* self, const aclTensor* clipValueMin, const aclTensor* clipValueMax,
+                                   aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     auto uniqueExecutor = CREATE_EXECUTOR();
     CHECK_RET(uniqueExecutor.get() != nullptr, ACLNN_ERR_INNER_CREATE_EXECUTOR);
@@ -558,8 +544,8 @@ aclnnStatus aclnnClampTensorCommon(
     auto maxTensorCastedBrc = AddBroadcastNode(promoteShape, maxTensorCasted, uniqueExecutor.get());
     CHECK_RET(maxTensorCastedBrc != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
-    auto ceilResult =
-        l0op::ClipByValueV2(selfTensorCastedBrc, minTensorCastedBrc, maxTensorCastedBrc, uniqueExecutor.get());
+    auto ceilResult = l0op::ClipByValueV2(selfTensorCastedBrc, minTensorCastedBrc, maxTensorCastedBrc,
+                                          uniqueExecutor.get());
     CHECK_RET(ceilResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     auto castOut = l0op::Cast(ceilResult, out->GetDataType(), uniqueExecutor.get());
@@ -576,9 +562,9 @@ aclnnStatus aclnnClampTensorCommon(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnClampTensorGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* clipValueMin, const aclTensor* clipValueMax, aclTensor* out,
-    uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnClampTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* clipValueMin,
+                                             const aclTensor* clipValueMax, aclTensor* out, uint64_t* workspaceSize,
+                                             aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnClampTensor, DFX_IN(self, clipValueMin, clipValueMax), DFX_OUT(out));
     return aclnnClampTensorCommon(self, clipValueMin, clipValueMax, out, workspaceSize, executor);
@@ -591,42 +577,40 @@ aclnnStatus aclnnClampTensor(void* workspace, uint64_t workspaceSize, aclOpExecu
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnClampMinTensorGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* clipValueMin, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnClampMinTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* clipValueMin, aclTensor* out,
+                                                uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnClampMinTensor, DFX_IN(self, clipValueMin), DFX_OUT(out));
     OP_CHECK_NULL(clipValueMin, return ACLNN_ERR_PARAM_NULLPTR);
     return aclnnClampTensorCommon(self, clipValueMin, nullptr, out, workspaceSize, executor);
 }
 
-aclnnStatus aclnnClampMinTensor(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
+aclnnStatus aclnnClampMinTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                const aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnClampMinTensor);
 
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnInplaceClampMinTensorGetWorkspaceSize(
-    aclTensor* selfRef, const aclTensor* clipValueMin, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceClampMinTensorGetWorkspaceSize(aclTensor* selfRef, const aclTensor* clipValueMin,
+                                                       uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceClampMinTensor, DFX_IN(selfRef, clipValueMin), DFX_OUT(selfRef));
     OP_CHECK_NULL(clipValueMin, return ACLNN_ERR_PARAM_NULLPTR);
     return aclnnClampTensorCommon(selfRef, clipValueMin, nullptr, selfRef, workspaceSize, executor);
 }
 
-aclnnStatus aclnnInplaceClampMinTensor(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
+aclnnStatus aclnnInplaceClampMinTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                       const aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnInplaceClampMinTensor);
 
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnClampMaxGetWorkspaceSize(
-    const aclTensor* self, const aclScalar* clipValueMax, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnClampMaxGetWorkspaceSize(const aclTensor* self, const aclScalar* clipValueMax, aclTensor* out,
+                                          uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnClampMax, DFX_IN(self, clipValueMax), DFX_OUT(out));
     OP_CHECK_NULL(clipValueMax, return ACLNN_ERR_PARAM_NULLPTR);
@@ -640,8 +624,8 @@ aclnnStatus aclnnClampMax(void* workspace, uint64_t workspaceSize, aclOpExecutor
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnInplaceClampMaxGetWorkspaceSize(
-    const aclTensor* selfRef, const aclScalar* clipValueMax, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceClampMaxGetWorkspaceSize(const aclTensor* selfRef, const aclScalar* clipValueMax,
+                                                 uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceClampMax, DFX_IN(selfRef, clipValueMax), DFX_OUT(selfRef));
     auto out = const_cast<aclTensor*>(selfRef);
@@ -656,24 +640,24 @@ aclnnStatus aclnnInplaceClampMax(void* workspace, uint64_t workspaceSize, aclOpE
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnInplaceClampMaxTensorGetWorkspaceSize(
-    aclTensor* selfRef, const aclTensor* max, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceClampMaxTensorGetWorkspaceSize(aclTensor* selfRef, const aclTensor* max,
+                                                       uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceClampMaxTensor, DFX_IN(selfRef, max), DFX_OUT(selfRef));
     OP_CHECK_NULL(max, return ACLNN_ERR_PARAM_NULLPTR);
     return aclnnClampTensorCommon(selfRef, nullptr, max, selfRef, workspaceSize, executor);
 }
 
-aclnnStatus aclnnInplaceClampMaxTensor(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
+aclnnStatus aclnnInplaceClampMaxTensor(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                       aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnInplaceClampMaxTensor);
 
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnClampMaxTensorGetWorkspaceSize(
-    const aclTensor* self, const aclTensor* max, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnClampMaxTensorGetWorkspaceSize(const aclTensor* self, const aclTensor* max, aclTensor* out,
+                                                uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnClampMaxTensor, DFX_IN(self, max), DFX_OUT(out));
     OP_CHECK_NULL(max, return ACLNN_ERR_PARAM_NULLPTR);

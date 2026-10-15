@@ -21,7 +21,7 @@
 #include "opdev/op_log.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
-#include "op_api/level2_base.h"
+#include "op_api/level2_base_math.h"
 #include "op_api/aclnn_check.h"
 
 using namespace op;
@@ -64,8 +64,8 @@ static bool CheckInplaceDtypeValid(aclTensor* selfRef)
 static aclnnStatus CheckParamsAsinh(const aclTensor* input, const aclTensor* out)
 {
     // 检查输入和输出的数据类型是否满足约束，需要根据api定义校验
-    auto supportList =
-        GetDtypeSupportListV2(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST_ASIN, ASCEND910_DTYPE_DTYPE_SUPPORT_LIST_ASIN);
+    auto supportList = GetDtypeSupportListV2(ASCEND910B_DTYPE_DTYPE_SUPPORT_LIST_ASIN,
+                                             ASCEND910_DTYPE_DTYPE_SUPPORT_LIST_ASIN);
     CHECK_RET(CheckDtypeValid1In1Out(input, out, supportList, OUTPUT_DTYPE_SUPPORT_LIST_ASIN), ACLNN_ERR_PARAM_INVALID);
     // 检查输入和输出的shape是否满足约束
     CHECK_RET(CheckSameShape1In1Out(input, out), ACLNN_ERR_PARAM_INVALID);
@@ -81,8 +81,8 @@ static aclnnStatus CheckInplaceParamsAsinh(aclTensor* selfRef)
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus ExecAsinhGetWorkspaceSize(
-    const aclTensor* input, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus ExecAsinhGetWorkspaceSize(const aclTensor* input, aclTensor* out, uint64_t* workspaceSize,
+                                             aclOpExecutor** executor)
 {
     CHECK_NOT_NULL(input, out);
     // 创建OpExecutor
@@ -130,8 +130,8 @@ static aclnnStatus ExecAsinhGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnAsinhGetWorkspaceSize(
-    const aclTensor* input, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnAsinhGetWorkspaceSize(const aclTensor* input, aclTensor* out, uint64_t* workspaceSize,
+                                       aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnAsinh, DFX_IN(input), DFX_OUT(out));
     return ExecAsinhGetWorkspaceSize(input, out, workspaceSize, executor);

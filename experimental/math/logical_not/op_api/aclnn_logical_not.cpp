@@ -12,7 +12,7 @@
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/reshape.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
@@ -112,8 +112,8 @@ static aclnnStatus CalculateResult(const aclTensor* self, aclTensor* out, aclOpE
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnLogicalNotGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnLogicalNotGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                            aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnLogicalNot, DFX_IN(self), DFX_OUT(out));
 
@@ -130,8 +130,8 @@ aclnnStatus aclnnLogicalNotGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnInplaceLogicalNotGetWorkspaceSize(
-    aclTensor* selfRef, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceLogicalNotGetWorkspaceSize(aclTensor* selfRef, uint64_t* workspaceSize,
+                                                   aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceLogicalNot, DFX_IN(selfRef), DFX_OUT(selfRef));
 

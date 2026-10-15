@@ -22,7 +22,7 @@
 #include "opdev/make_op_executor.h"
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "op_api/aclnn_check.h"
 
 using namespace op;
@@ -50,11 +50,11 @@ static bool CheckNotNull(const aclTensor* self)
 static bool CheckDtypeValid(const aclTensor* self)
 {
     // 检查self的数据类型是否在支持列表内
-    bool isAscend910BSocVersion =
-        (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
-         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase());
-    const std::initializer_list<op::DataType> CURRENT_DTYPE_SUPPORT_LIST =
-        isAscend910BSocVersion ? ASCEND910B_DTYPE_SUPPORT_LIST : ASCEND910_DTYPE_SUPPORT_LIST;
+    bool isAscend910BSocVersion = (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
+                                   GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93 || IsRegBase());
+    const std::initializer_list<op::DataType> CURRENT_DTYPE_SUPPORT_LIST = isAscend910BSocVersion ?
+                                                                               ASCEND910B_DTYPE_SUPPORT_LIST :
+                                                                               ASCEND910_DTYPE_SUPPORT_LIST;
 
     OP_CHECK_DTYPE_NOT_SUPPORT(self, CURRENT_DTYPE_SUPPORT_LIST, return false);
     return true;

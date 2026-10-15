@@ -25,8 +25,8 @@
 #include "opdev/platform.h"
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
-#include "op_api/op_api_def.h"
-#include "op_api/level2_base_caculation.h"
+#include "op_api/op_api_def_math.h"
+#include "op_api/level2_base_caculation_math.h"
 
 using namespace op;
 
@@ -36,9 +36,8 @@ extern "C" {
 
 // 1971中对bf16的支持在下方校验，对bool的支持转成int32计算
 static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST = {
-    DataType::DT_DOUBLE, DataType::DT_FLOAT,     DataType::DT_FLOAT16,    DataType::DT_INT16,
-    DataType::DT_INT32,  DataType::DT_INT64,     DataType::DT_COMPLEX64,  DataType::DT_COMPLEX128,
-    DataType::DT_BOOL};
+    DataType::DT_DOUBLE, DataType::DT_FLOAT,     DataType::DT_FLOAT16,    DataType::DT_INT16, DataType::DT_INT32,
+    DataType::DT_INT64,  DataType::DT_COMPLEX64, DataType::DT_COMPLEX128, DataType::DT_BOOL};
 
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* result)
 {
@@ -47,19 +46,17 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* result)
         auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
         switch (curArch) {
             case NpuArch::DAV_1001: {
-                OP_LOGE(
-                    ACLNN_ERR_PARAM_INVALID, "On Ascend910 self dtype [%s] should be in dtype support list [%s].",
-                    op::ToString(self->GetDataType()).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
+                OP_LOGE(ACLNN_ERR_PARAM_INVALID, "On Ascend910 self dtype [%s] should be in dtype support list [%s].",
+                        op::ToString(self->GetDataType()).GetString(), op::ToString(DTYPE_SUPPORT_LIST).GetString());
                 return false;
             }
             case NpuArch::DAV_2201:
             case NpuArch::DAV_3510: {
                 if (self->GetDataType() != op::DataType::DT_BF16) {
-                    OP_LOGE(
-                        ACLNN_ERR_PARAM_INVALID,
-                        "On %s, self dtype [%s] should be in dtype support list [%s] or be BF16.",
-                        op::ToString(socVersion).GetString(), op::ToString(self->GetDataType()).GetString(),
-                        op::ToString(DTYPE_SUPPORT_LIST).GetString());
+                    OP_LOGE(ACLNN_ERR_PARAM_INVALID,
+                            "On %s, self dtype [%s] should be in dtype support list [%s] or be BF16.",
+                            op::ToString(socVersion).GetString(), op::ToString(self->GetDataType()).GetString(),
+                            op::ToString(DTYPE_SUPPORT_LIST).GetString());
                     return false;
                 }
                 break;
@@ -69,9 +66,8 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* result)
         }
     } else {
         if (self->GetDataType() != result->GetDataType()) {
-            OP_LOGE(
-                ACLNN_ERR_PARAM_INVALID, "Self dtype should be same as result dtype. self [%s], result [%s]",
-                op::ToString(self->GetDataType()).GetString(), op::ToString(result->GetDataType()).GetString());
+            OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype should be same as result dtype. self [%s], result [%s]",
+                    op::ToString(self->GetDataType()).GetString(), op::ToString(result->GetDataType()).GetString());
             return false;
         }
     }
@@ -99,8 +95,8 @@ static aclIntArray* GetTensorShapeActivation(const aclTensor* x, aclOpExecutor* 
     return perm;
 }
 
-static const aclTensor* ReshapeLongTensorActivation(
-    const aclTensor* x, aclOpExecutor* executor, int originalDimSize, aclIntArray* valuePerm = nullptr)
+static const aclTensor* ReshapeLongTensorActivation(const aclTensor* x, aclOpExecutor* executor, int originalDimSize,
+                                                    aclIntArray* valuePerm = nullptr)
 {
     int64_t dimSize = x->GetViewShape().GetDimNum();
     if (static_cast<int64_t>(originalDimSize) == dimSize && dimSize <= static_cast<int64_t>(MAX_SUPPORT_DIMS_NUMS)) {
@@ -127,8 +123,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* result)
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnSignGetWorkspaceSize(
-    const aclTensor* self, aclTensor* result, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnSignGetWorkspaceSize(const aclTensor* self, aclTensor* result, uint64_t* workspaceSize,
+                                      aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnSign, DFX_IN(self), DFX_OUT(result));
     // 固定写法，创建OpExecutor

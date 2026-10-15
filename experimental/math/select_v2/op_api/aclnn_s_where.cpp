@@ -24,7 +24,7 @@
 #include "opdev/shape_utils.h"
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
-#include "op_api/level2_base.h"
+#include "op_api/level2_base_math.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -45,14 +45,14 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_910B_LIST = {
     op::DataType::DT_INT8,      op::DataType::DT_UINT8,      op::DataType::DT_DOUBLE, op::DataType::DT_BOOL,
     op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128, op::DataType::DT_BF16};
 
-static const std::initializer_list<op::DataType> CONDITION_DTYPE_SUPPORT = {
-    op::DataType::DT_BOOL, op::DataType::DT_UINT8};
+static const std::initializer_list<op::DataType> CONDITION_DTYPE_SUPPORT = {op::DataType::DT_BOOL,
+                                                                            op::DataType::DT_UINT8};
 
-static bool CheckDtypeValid(
-    const aclTensor* self, const aclTensor* other, const aclTensor* condition, const aclTensor* out)
+static bool CheckDtypeValid(const aclTensor* self, const aclTensor* other, const aclTensor* condition,
+                            const aclTensor* out)
 {
-    const std::initializer_list<op::DataType> dtypeSupportList =
-        GetDtypeSupportListV3(DTYPE_SUPPORT_910B_LIST, DTYPE_SUPPORT_910_LIST);
+    const std::initializer_list<op::DataType> dtypeSupportList = GetDtypeSupportListV3(DTYPE_SUPPORT_910B_LIST,
+                                                                                       DTYPE_SUPPORT_910_LIST);
 
     // 检查self的数据类型是否在支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(self, dtypeSupportList, return false);
@@ -80,17 +80,16 @@ static bool CheckShape(const aclTensor* self, const aclTensor* other, const aclT
     }
 
     if (broadcastShape != out->GetViewShape()) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
-            op::ToString(broadcastShape).GetString(), op::ToString(out->GetViewShape()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Shape of out should be %s, but current is %s.",
+                op::ToString(broadcastShape).GetString(), op::ToString(out->GetViewShape()).GetString());
         return false;
     }
 
     return true;
 }
 
-static aclnnStatus CheckParams(
-    const aclTensor* self, const aclTensor* condition, const aclTensor* other, const aclTensor* out)
+static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* condition, const aclTensor* other,
+                               const aclTensor* out)
 {
     // 错误码等DFX方案细化后刷新，错误日志在check接口内打印
     // 1. 检查参数是否为空指针
@@ -105,9 +104,8 @@ static aclnnStatus CheckParams(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnSWhereGetWorkspaceSize(
-    const aclTensor* condition, const aclTensor* self, const aclTensor* other, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnSWhereGetWorkspaceSize(const aclTensor* condition, const aclTensor* self, const aclTensor* other,
+                                        aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnSWhere, DFX_IN(condition, self, other), DFX_OUT(out));
     // 固定写法，创建OpExecutor
@@ -146,12 +144,12 @@ aclnnStatus aclnnSWhereGetWorkspaceSize(
     const aclTensor* selRes = nullptr;
     if (selfContiguous->GetDataType() == DataType::DT_BOOL && otherContiguous->GetDataType() == DataType::DT_BOOL) {
         // 创建输入输出的View，并将数据类型设置为int8
-        auto selfView = uniqueExecutor.get()->CreateView(
-            selfContiguous, selfContiguous->GetViewShape(), selfContiguous->GetViewOffset());
+        auto selfView = uniqueExecutor.get()->CreateView(selfContiguous, selfContiguous->GetViewShape(),
+                                                         selfContiguous->GetViewOffset());
         CHECK_RET(selfView != nullptr, ACLNN_ERR_INNER_NULLPTR);
         selfView->SetDataType(DataType::DT_INT8);
-        auto otherView = uniqueExecutor.get()->CreateView(
-            otherContiguous, otherContiguous->GetViewShape(), otherContiguous->GetViewOffset());
+        auto otherView = uniqueExecutor.get()->CreateView(otherContiguous, otherContiguous->GetViewShape(),
+                                                          otherContiguous->GetViewOffset());
         CHECK_RET(otherView != nullptr, ACLNN_ERR_INNER_NULLPTR);
         otherView->SetDataType(DataType::DT_INT8);
         // 调用SelectV2算子计算

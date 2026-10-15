@@ -21,7 +21,7 @@
 #include "opdev/tensor_view_utils.h"
 #include <cmath>
 #include "aclnn_kernels/common/op_error_check.h"
-#include "op_api/level2_base.h"
+#include "op_api/level2_base_math.h"
 #include "aclnn_log10.h"
 
 using namespace op;
@@ -92,8 +92,8 @@ static aclnnStatus CheckInplaceParams(aclTensor* selfRef)
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnLog10GetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnLog10GetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                       aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnLog10, DFX_IN(self), DFX_OUT(out));
 

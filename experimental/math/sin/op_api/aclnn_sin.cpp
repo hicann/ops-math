@@ -15,7 +15,7 @@
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/op_dfx.h"
 #include "opdev/platform.h"
-#include "common/inc/op_api/level2_base.h"
+#include "common/inc/op_api/level2_base_math.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -51,9 +51,8 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
     bool bf16flag = CheckSocVersionIsSupportBf16();
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
     if (!bf16flag && self->GetDataType() == op::DataType::DT_BF16) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Self dtype %s is unsupported by the current SOC version [%s].",
-            op::ToString(self->GetDataType()).GetString(), op::ToString(socVersion).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Self dtype %s is unsupported by the current SOC version [%s].",
+                op::ToString(self->GetDataType()).GetString(), op::ToString(socVersion).GetString());
         return false;
     }
     return true;
@@ -92,8 +91,8 @@ static aclnnStatus CheckInplaceParamsSin(aclTensor* selfRef)
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus ExecSinGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus ExecSinGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                           aclOpExecutor** executor)
 {
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -141,8 +140,8 @@ static aclnnStatus ExecSinGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnSinGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnSinGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                     aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnSin, DFX_IN(self), DFX_OUT(out));
     return ExecSinGetWorkspaceSize(self, out, workspaceSize, executor);

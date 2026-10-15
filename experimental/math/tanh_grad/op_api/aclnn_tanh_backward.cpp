@@ -25,7 +25,7 @@
 #include "opdev/make_op_executor.h"
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "op_api/aclnn_check.h"
 
 using namespace op;
@@ -111,9 +111,8 @@ static aclnnStatus CheckParams(const aclTensor* gradOutput, const aclTensor* out
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnTanhBackwardGetWorkspaceSize(
-    const aclTensor* gradOutput, const aclTensor* output, aclTensor* gradInput, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnTanhBackwardGetWorkspaceSize(const aclTensor* gradOutput, const aclTensor* output,
+                                              aclTensor* gradInput, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnTanhBackward, DFX_IN(gradOutput, output), DFX_OUT(gradInput));
 
@@ -166,8 +165,8 @@ aclnnStatus aclnnTanhBackwardGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnTanhBackward(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
+aclnnStatus aclnnTanhBackward(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                              const aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnTanhBackward);
     // 固定写法，调用框架能力，完成计算

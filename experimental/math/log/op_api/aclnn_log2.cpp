@@ -22,7 +22,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
-#include "op_api/level2_base.h"
+#include "op_api/level2_base_math.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -67,13 +67,13 @@ static const std::initializer_list<op::DataType> ASCEND910B_OUTPUT_DTYPE_SUPPORT
 static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
     // 获取芯片类型,判断是1971还是1980
-    bool is910bSocVersion =
-        (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
-         GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E);
-    const std::initializer_list<op::DataType> CURRENT_DTYPE_SUPPORT_LIST =
-        is910bSocVersion ? DTYPE_SUPPORT_LIST_910B : DTYPE_SUPPORT_LIST_910;
-    const std::initializer_list<op::DataType> OUTPUT_DTYPE_SUPPORT_LIST =
-        is910bSocVersion ? ASCEND910B_OUTPUT_DTYPE_SUPPORT_LIST : ASCEND910_OUTPUT_DTYPE_SUPPORT_LIST;
+    bool is910bSocVersion = (GetCurrentPlatformInfo().GetSocVersion() >= SocVersion::ASCEND910B &&
+                             GetCurrentPlatformInfo().GetSocVersion() <= SocVersion::ASCEND910E);
+    const std::initializer_list<op::DataType> CURRENT_DTYPE_SUPPORT_LIST = is910bSocVersion ? DTYPE_SUPPORT_LIST_910B :
+                                                                                              DTYPE_SUPPORT_LIST_910;
+    const std::initializer_list<op::DataType> OUTPUT_DTYPE_SUPPORT_LIST = is910bSocVersion ?
+                                                                              ASCEND910B_OUTPUT_DTYPE_SUPPORT_LIST :
+                                                                              ASCEND910_OUTPUT_DTYPE_SUPPORT_LIST;
 
     // 检查self的数据类型是否在log算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(self, CURRENT_DTYPE_SUPPORT_LIST, return false);
@@ -84,8 +84,8 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 
 static bool CheckInplaceDtypeValid(const aclTensor* selfRef)
 {
-    auto inplaceSupportList =
-        GetDtypeSupportListV2(ASCEND910B_OUTPUT_DTYPE_SUPPORT_LIST, ASCEND910_OUTPUT_DTYPE_SUPPORT_LIST);
+    auto inplaceSupportList = GetDtypeSupportListV2(ASCEND910B_OUTPUT_DTYPE_SUPPORT_LIST,
+                                                    ASCEND910_OUTPUT_DTYPE_SUPPORT_LIST);
     // 检查selfRef的数据类型是否在inplace log2算子的支持列表内
     OP_CHECK_DTYPE_NOT_SUPPORT(selfRef, inplaceSupportList, return false);
 
@@ -124,8 +124,8 @@ static aclnnStatus CheckInplaceParams(const aclTensor* selfRef)
     return ACLNN_SUCCESS;
 }
 
-static aclnnStatus aclnnLog2Common(
-    const aclTensor* self, const aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus aclnnLog2Common(const aclTensor* self, const aclTensor* out, uint64_t* workspaceSize,
+                                   aclOpExecutor** executor)
 {
     // 固定写法，参数检查
     auto ret = CheckParams(self, out);
@@ -164,8 +164,8 @@ static aclnnStatus aclnnLog2Common(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnLog2GetWorkspaceSize(
-    const aclTensor* self, const aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnLog2GetWorkspaceSize(const aclTensor* self, const aclTensor* out, uint64_t* workspaceSize,
+                                      aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnLog2, DFX_IN(self), DFX_OUT(out));
 
@@ -179,8 +179,8 @@ aclnnStatus aclnnLog2(void* workspace, uint64_t workspaceSize, aclOpExecutor* ex
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);
 }
 
-aclnnStatus aclnnInplaceLog2GetWorkspaceSize(
-    const aclTensor* selfRef, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceLog2GetWorkspaceSize(const aclTensor* selfRef, uint64_t* workspaceSize,
+                                             aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceLog2, DFX_IN(selfRef), DFX_OUT(selfRef));
 

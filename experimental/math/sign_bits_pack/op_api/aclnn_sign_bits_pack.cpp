@@ -20,7 +20,7 @@
 #include "opdev/tensor_view_utils.h"
 #include "opdev/framework_op.h"
 #include "op_api/aclnn_check.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/make_op_executor.h"
 #include "aclnn_kernels/contiguous.h"
@@ -34,8 +34,8 @@ static const int64_t DIM_NUM_1D = 1;
 static const int64_t DIM_NUM_2D = 2;
 static const int64_t PACK_SIZE = 8;
 
-static const std::initializer_list<op::DataType> SELF_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16};
+static const std::initializer_list<op::DataType> SELF_DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT,
+                                                                            op::DataType::DT_FLOAT16};
 
 static const std::initializer_list<op::DataType> OUT_DTYPE_SUPPORT_LIST = {op::DataType::DT_UINT8};
 
@@ -58,9 +58,8 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
     bool isSupport = CheckSocVersionIsSupport();
     if (!isSupport) {
         auto socVersion = GetCurrentPlatformInfo().GetSocVersion();
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "SignBitsPack is unsupported by the current SOC version [%s]",
-            op::ToString(socVersion).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "SignBitsPack is unsupported by the current SOC version [%s]",
+                op::ToString(socVersion).GetString());
         return false;
     }
     // 检查self的数据类型是否在支持列表内
@@ -75,24 +74,22 @@ static bool CheckFormat(const aclTensor* self, const aclTensor* out)
 {
     // 检查self的format是否为ND
     if (self->GetStorageFormat() != Format::FORMAT_ND) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "self format should be ND. Actual: self is [%s].",
-            op::ToString(self->GetStorageFormat()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "self format should be ND. Actual: self is [%s].",
+                op::ToString(self->GetStorageFormat()).GetString());
         return false;
     }
 
     // 检查out的format是否为ND
     if (out->GetStorageFormat() != Format::FORMAT_ND) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "out format should be ND. Actual: out is [%s].",
-            op::ToString(out->GetStorageFormat()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "out format should be ND. Actual: out is [%s].",
+                op::ToString(out->GetStorageFormat()).GetString());
         return false;
     }
 
     // 如果输入格式是私有格式，记录日志，直接报错
     if (op::IsPrivateFormat(self->GetStorageFormat())) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "Not support format [%s].", op::ToString(self->GetStorageFormat()).GetString());
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Not support format [%s].",
+                op::ToString(self->GetStorageFormat()).GetString());
         return false;
     }
 
@@ -158,8 +155,8 @@ static aclnnStatus CheckParams(const aclTensor* self, int64_t size, aclTensor* o
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnSignBitsPackGetWorkspaceSize(
-    const aclTensor* self, int64_t size, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnSignBitsPackGetWorkspaceSize(const aclTensor* self, int64_t size, aclTensor* out,
+                                              uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnSignBitsPack, DFX_IN(self, size), DFX_OUT(out));
 

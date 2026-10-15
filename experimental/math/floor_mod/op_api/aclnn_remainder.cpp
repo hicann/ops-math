@@ -18,7 +18,7 @@
 #include "conversion/unsqueeze/op_host/op_api/unsqueeze.h"
 #include "floor_mod.h"
 #include "op_api/aclnn_check.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "opdev/op_dfx.h"
 #include "opdev/op_executor.h"
 

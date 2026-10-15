@@ -15,7 +15,7 @@
 #include "opdev/op_dfx.h"
 #include "opdev/make_op_executor.h"
 #include "opdev/platform.h"
-#include "op_api/level2_base.h"
+#include "op_api/level2_base_math.h"
 #include "op_api/aclnn_check.h"
 
 using namespace op;
@@ -68,9 +68,8 @@ static void CheckFormat(const aclTensor* self)
     }
 }
 
-static aclnnStatus ExecNanToNumGetWorkspaceSize(
-    const aclTensor* self, float nan, float posinf, float neginf, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+static aclnnStatus ExecNanToNumGetWorkspaceSize(const aclTensor* self, float nan, float posinf, float neginf,
+                                                aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -117,16 +116,15 @@ static aclnnStatus ExecNanToNumGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnNanToNumGetWorkspaceSize(
-    const aclTensor* self, float nan, float posinf, float neginf, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnNanToNumGetWorkspaceSize(const aclTensor* self, float nan, float posinf, float neginf, aclTensor* out,
+                                          uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnNanToNum, DFX_IN(self, nan, posinf, neginf), DFX_OUT(out));
     return ExecNanToNumGetWorkspaceSize(self, nan, posinf, neginf, out, workspaceSize, executor);
 }
 
-aclnnStatus aclnnInplaceNanToNumGetWorkspaceSize(
-    aclTensor* selfRef, float nan, float posinf, float neginf, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceNanToNumGetWorkspaceSize(aclTensor* selfRef, float nan, float posinf, float neginf,
+                                                 uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceNanToNum, DFX_IN(selfRef, nan, posinf, neginf), DFX_OUT(selfRef));
 
