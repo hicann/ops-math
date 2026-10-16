@@ -25,11 +25,13 @@
 #define NOTFIRST_ALIGN_SAME_BITWIDTH_2 2112
 #define NOTFIRST_ALIGN_SAME_BITWIDTH_4 2114
 #define NOTFIRST_ALIGN_SAME_BITWIDTH_8 2118
+#define NOTFIRST_ALIGN_SAME_BITWIDTH_16 21116
 
 #define NOTFIRST_ALIGN_DIFF_BITWIDTH_1 2121
 #define NOTFIRST_ALIGN_DIFF_BITWIDTH_2 2122
 #define NOTFIRST_ALIGN_DIFF_BITWIDTH_4 2124
 #define NOTFIRST_ALIGN_DIFF_BITWIDTH_8 2128
+#define NOTFIRST_ALIGN_DIFF_BITWIDTH_16 21216
 
 #define NOTFIRST_NALIGN_SAME_COPY_BITWIDTH_1 2211
 #define NOTFIRST_NALIGN_SAME_COPY_BITWIDTH_2 2212
@@ -48,11 +50,13 @@
 #define SPLIT_CORE_DIM0_NOTFIRST_ALIGN_SAME_BITWIDTH_2 12112
 #define SPLIT_CORE_DIM0_NOTFIRST_ALIGN_SAME_BITWIDTH_4 12114
 #define SPLIT_CORE_DIM0_NOTFIRST_ALIGN_SAME_BITWIDTH_8 12118
+#define SPLIT_CORE_DIM0_NOTFIRST_ALIGN_SAME_BITWIDTH_16 12116
 
 #define SPLIT_CORE_DIM0_NOTFIRST_ALIGN_DIFF_BITWIDTH_1 12121
 #define SPLIT_CORE_DIM0_NOTFIRST_ALIGN_DIFF_BITWIDTH_2 12122
 #define SPLIT_CORE_DIM0_NOTFIRST_ALIGN_DIFF_BITWIDTH_4 12124
 #define SPLIT_CORE_DIM0_NOTFIRST_ALIGN_DIFF_BITWIDTH_8 12128
+#define SPLIT_CORE_DIM0_NOTFIRST_ALIGN_DIFF_BITWIDTH_16 12126
 
 #define SPLIT_CORE_DIM0_NOTFIRST_NALIGN_SAME_COPY_BITWIDTH_1 12211
 #define SPLIT_CORE_DIM0_NOTFIRST_NALIGN_SAME_COPY_BITWIDTH_2 12212
@@ -114,6 +118,7 @@
 #define SIMT_TILINGKEY_2 30002
 #define SIMT_TILINGKEY_4 30004
 #define SIMT_TILINGKEY_8 30008
+#define SIMT_TILINGKEY_16 30016
 
 using namespace Concat;
 
@@ -632,6 +637,52 @@ extern "C" __global__ __aicore__ void concat(GM_ADDR dim, GM_ADDR x, GM_ADDR y, 
 #elif TILING_KEY_VAR == PURE_COPY_SPLIT_DIM1_COMPACT_TILINGKEY
     GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataCompact, tilingData, tiling);
     Concat::OneAxisConcatPureCopy<ConcatTilingDataCompact> op(tilingData, pipe);
+    op.Init(x, y);
+    op.Process();
+#endif
+#endif
+
+#if ORIG_DTYPE_X == DT_COMPLEX128
+    TILING_KEY_IS(NOTFIRST_ALIGN_SAME_BITWIDTH_16);
+    TILING_KEY_IS(NOTFIRST_ALIGN_DIFF_BITWIDTH_16);
+    TILING_KEY_IS(SPLIT_CORE_DIM0_NOTFIRST_ALIGN_SAME_BITWIDTH_16);
+    TILING_KEY_IS(SPLIT_CORE_DIM0_NOTFIRST_ALIGN_DIFF_BITWIDTH_16);
+    TILING_KEY_IS(SIMT_TILINGKEY_16);
+    TILING_KEY_IS(PURE_COPY_NO_SPLIT_DIM1_TILINGKEY);
+    TILING_KEY_IS(PURE_COPY_SPLIT_DIM1_TILINGKEY);
+#if TILING_KEY_VAR == SIMT_TILINGKEY_16
+    GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataForSimt, tilingData, tiling);
+    Concat::OneAxisConcatSimt<uint8_t> op(tilingData);
+    op.ProcessForSimt(x, y);
+    return;
+#elif TILING_KEY_VAR == NOTFIRST_ALIGN_SAME_BITWIDTH_16
+    GET_TILING_DATA_WITH_STRUCT(ConcatTilingData, tilingData, tiling);
+    Concat::OneAxisConcatAllAlign<int8_t, true> op(tilingData, pipe);
+    op.Init(x, y);
+    op.Process();
+#elif TILING_KEY_VAR == NOTFIRST_ALIGN_DIFF_BITWIDTH_16
+    GET_TILING_DATA_WITH_STRUCT(ConcatTilingData, tilingData, tiling);
+    Concat::OneAxisConcatAllAlign<int8_t, false> op(tilingData, pipe);
+    op.Init(x, y);
+    op.Process();
+#elif TILING_KEY_VAR == SPLIT_CORE_DIM0_NOTFIRST_ALIGN_SAME_BITWIDTH_16
+    GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataNoArray, tilingData, tiling);
+    Concat::OneAxisConcatAllAlign<int8_t, true, ConcatTilingDataNoArray> op(tilingData, pipe);
+    op.Init(x, y);
+    op.Process();
+#elif TILING_KEY_VAR == SPLIT_CORE_DIM0_NOTFIRST_ALIGN_DIFF_BITWIDTH_16
+    GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataNoArray, tilingData, tiling);
+    Concat::OneAxisConcatAllAlign<int8_t, false, ConcatTilingDataNoArray> op(tilingData, pipe);
+    op.Init(x, y);
+    op.Process();
+#elif TILING_KEY_VAR == PURE_COPY_NO_SPLIT_DIM1_TILINGKEY
+    GET_TILING_DATA_WITH_STRUCT(ConcatTilingDataNoArray, tilingData, tiling);
+    Concat::OneAxisConcatPureCopy<ConcatTilingDataNoArray> op(tilingData, pipe);
+    op.Init(x, y);
+    op.Process();
+#elif TILING_KEY_VAR == PURE_COPY_SPLIT_DIM1_TILINGKEY
+    GET_TILING_DATA_WITH_STRUCT(ConcatTilingData, tilingData, tiling);
+    Concat::OneAxisConcatPureCopy<ConcatTilingData> op(tilingData, pipe);
     op.Init(x, y);
     op.Process();
 #endif

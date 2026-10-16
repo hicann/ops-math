@@ -20,6 +20,8 @@
 #include "op_common/op_host/util/shape_util.h"
 #include "op_common/op_host/util/platform_util.h"
 #include "op_api/op_util.h"
+#include "platform/platform_infos_def.h"
+#include "platform/platform_ascendc.h"
 #include <algorithm>
 #include <limits>
 
@@ -38,6 +40,7 @@ constexpr int64_t DIM1 = 1;
 constexpr int64_t DIM2 = 2;
 constexpr int64_t HALF = 2;
 constexpr int64_t BLOCK_SIZE = 32;
+constexpr int64_t TWO_BLOCK_SIZE = 64;
 constexpr int64_t DIM1_ALIGN_THRESHOLD = 128;
 constexpr int64_t BUFFER_NUM = 2;
 constexpr int64_t MIN_RESERVED_SIZE = 2048; // 2k
@@ -51,6 +54,7 @@ constexpr int64_t COMPACT_THRESHOLD = std::numeric_limits<int32_t>::max();
 constexpr int64_t LEAST_ROWS = 64; // ub切分的最小行数
 constexpr int64_t LEAST_COLS = 256;
 constexpr bool ENABLE_DB = true;
+constexpr int64_t B128_BYTES = 16;
 constexpr int64_t B64_BYTES = 8;
 constexpr int64_t B32_BYTES = 4;
 constexpr int64_t B16_BYTES = 2;
@@ -450,7 +454,7 @@ inline static bool IsEnablePureCopyTemplate(const ConcatTilingParam& param, int6
 
 inline static void GenTilingKey(ConcatTilingParam& param)
 {
-    // tilingKey按5位设计：个位->字节数(1/2/4/8),十位->input shape相同/不相同(1/2)
+    // tilingKey按5位设计：个位->字节数(1/2/4/8/16),十位->input shape相同/不相同(1/2)
     // 百位->输入cat部分全对齐/不对齐/不对齐gather模板(1/2/3),千位->首轴cat/非首轴cat(1/2),万位->tilingData类型
     //   万位 0=原始有数组, 1=原始无数组, 2=compact无数组, 3=compact有数组
     if (param.isEmpty) {
@@ -602,6 +606,14 @@ static ge::graphStatus TilingUbForNosplitDim1(gert::TilingContext* context, int6
         param.ubFactorDim0 <= 0,
         OP_LOGE(context->GetNodeName(), "ubFactorDim0 must be greater than 0, ubFactorDim0: %ld", param.ubFactorDim0),
         return ge::GRAPH_FAILED);
+    auto platformInfo = context->GetPlatformInfo();
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    if (ascendcPlatform.GetCurNpuArch() == NpuArch::DAV_9201) {
+        if (((param.ubFactorDim0 * param.dtypeSize + BLOCK_SIZE - 1) / BLOCK_SIZE * BLOCK_SIZE) % TWO_BLOCK_SIZE !=
+            BLOCK_SIZE) {
+            param.ubFactorDim0 = param.ubFactorDim0 - (BLOCK_SIZE / param.dtypeSize);
+        }
+    }
     param.uoDim0 = (param.catDim0 + param.ubFactorDim0 - 1) / param.ubFactorDim0;
     param.uoDim1 = 1;
     param.ubFactorDim1 = param.catDim1;
@@ -1009,6 +1021,72 @@ inline static void CalcTensorList(ConcatTilingParam& param, int64_t everyCoreDat
     DupTensor(param.endTensorOffset, param.blockEndTensorOffset, rowsUsedCoreNum);
 }
 
+static int64_t CalcDtypeImprove(ConcatTilingParam& param)
+{
+    int64_t dtypeSize = param.dtypeSize;
+    int64_t lastAxisBytes = param.sameShapeTensorDim1 * dtypeSize;
+
+    if ((dtypeSize < B128_BYTES) && (lastAxisBytes % B128_BYTES == 0)) {
+        OP_LOGD("[Concat]", "CalcDtypeImprove lastAxisBytes %ld, improve to B128_BYTES", lastAxisBytes);
+        return B128_BYTES;
+    }
+
+    if ((dtypeSize < B64_BYTES) && (lastAxisBytes % B64_BYTES == 0)) {
+        OP_LOGD("[Concat]", "CalcDtypeImprove lastAxisBytes %ld, improve to B64_BYTES", lastAxisBytes);
+        return B64_BYTES;
+    }
+
+    if ((dtypeSize < B32_BYTES) && (lastAxisBytes % B32_BYTES == 0)) {
+        OP_LOGD("[Concat]", "CalcDtypeImprove lastAxisBytes %ld, improve to B32_BYTES", lastAxisBytes);
+        return B32_BYTES;
+    }
+
+    if ((dtypeSize < B16_BYTES) && (lastAxisBytes % B16_BYTES == 0)) {
+        OP_LOGD("[Concat]", "CalcDtypeImprove lastAxisBytes %ld, improve to B16_BYTES", lastAxisBytes);
+        return B16_BYTES;
+    }
+
+    return dtypeSize;
+}
+
+static ge::graphStatus DoDtypeImprove(ConcatTilingParam& param)
+{
+    if (param.isAllTensorAlign == 1 || param.inputShapeSame != 1) {
+        return ge::GRAPH_SUCCESS;
+    }
+
+    int64_t improveDtypeSize = CalcDtypeImprove(param);
+    if (improveDtypeSize <= param.dtypeSize) {
+        return ge::GRAPH_SUCCESS;
+    }
+
+    int64_t ratio = improveDtypeSize / param.dtypeSize;
+    param.dtypeSize = improveDtypeSize;
+    param.leastCopyNumber = MIN_RESERVED_SIZE / param.dtypeSize;
+    param.everyBlockNumber = BLOCK_SIZE / param.dtypeSize;
+    param.sameShapeTensorDim1 /= ratio;
+    param.catDim1 /= ratio;
+
+    for (auto& tensorSize : param.tensorListDim1) {
+        tensorSize /= ratio;
+    }
+    for (auto& tensorSize : param.mergeTensorList) {
+        tensorSize[1] /= ratio;
+    }
+
+    if (param.isNonContiguous) {
+        for (int16_t i = 0; i < param.tensorNum; ++i) {
+            param.strideList[i] /= ratio;
+        }
+    }
+
+    param.isAllTensorAlign = CheckCatDimAlign(param.mergeTensorList, param.dtypeSize) ? 1 : 0;
+    param.isDim1AllAlign = CheckDim1Align(param.mergeTensorList, param.dtypeSize) ? 1 : 0;
+    CalcNoAlignTensorNum(param, param.dtypeSize);
+
+    return ge::GRAPH_SUCCESS;
+}
+
 inline static bool IsEnableb8ToB16(const ConcatTilingParam& param)
 {
     // b8 dim1为偶数 不对齐场景可升为b16处理
@@ -1225,9 +1303,17 @@ static inline void PrintSimtTilingData(ConcatTilingDataForSimt& tilingData)
 
 static ge::graphStatus TilingForConcatDSimt(gert::TilingContext* context, ConcatTilingParam& param)
 {
+    auto platformInfo = context->GetPlatformInfo();
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    if (ascendcPlatform.GetCurNpuArch() == NpuArch::DAV_9201) {
+        // 数据类型提升计算
+        OP_CHECK_IF(DoDtypeImprove(param) != ge::GRAPH_SUCCESS,
+                    OP_LOGE(context->GetNodeName(), "DoDtypeImprove failed"), return ge::GRAPH_FAILED);
+    }
     ConcatTilingDataForSimt tilingData;
     int64_t dtypeSize = param.dtypeSize;
     int64_t catDim1 = static_cast<int64_t>(param.catDim1);
+    int64_t orgDtypeSize = dtypeSize;
     // 大于B64的数据类型使用B64类型计算,concat轴数据总量不变，数据个数需翻倍
     catDim1 = dtypeSize > B64_BYTES ? (dtypeSize / B64_BYTES) * catDim1 : catDim1;
     dtypeSize = dtypeSize > B64_BYTES ? B64_BYTES : dtypeSize;
@@ -1235,7 +1321,13 @@ static ge::graphStatus TilingForConcatDSimt(gert::TilingContext* context, Concat
     // 计算simt模板使用的核数，每核处理的tensor个数，计算tilingKey
     param.usedCoreNum = std::min(static_cast<int64_t>(param.tensorNum), param.totalCoreNum);
     param.tensorNumPerCore = (static_cast<int64_t>(param.tensorNum) + param.usedCoreNum - 1) / param.usedCoreNum;
-    param.tilingKey = SIMT_TILINGKEY_PREFIX + dtypeSize;
+    if (ascendcPlatform.GetCurNpuArch() == NpuArch::DAV_9201) {
+        // B128使用独立的tilingKey
+        param.tilingKey = orgDtypeSize >= B128_BYTES ? SIMT_TILINGKEY_PREFIX + B128_BYTES :
+                                                       SIMT_TILINGKEY_PREFIX + dtypeSize;
+    } else {
+        param.tilingKey = SIMT_TILINGKEY_PREFIX + dtypeSize;
+    }
 
     // 计算每个tensor行方向上的偏移
     CalcTensorColsOffset(param);

@@ -11,6 +11,6 @@
 add_all_modules_sources(
         OPTYPE batch_to_space_nd
         ACLNNTYPE aclnn_exclude
-        COMPUTE_UNIT ascend950 ascend350
-        TILING_DIR arch35 arch35
+        COMPUTE_UNIT ascend950 ascend350 ascend960dt ascend960pr
+        TILING_DIR arch35 arch35 arch35 arch35
 )

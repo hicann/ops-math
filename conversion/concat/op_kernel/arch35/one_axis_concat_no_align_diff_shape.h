@@ -682,8 +682,13 @@ __aicore__ inline void OneAxisConcatNoAlignDiffShape<T, U, TILINGDATA>::CopyInNo
         DataCopyExtParams copyInParam = {static_cast<uint16_t>(rows), static_cast<uint32_t>(dim1 * sizeof(T)),
                                          static_cast<int64_t>((dim0stride - dim1) * sizeof(T)), 0, 0};
         srcGlobal.SetGlobalBuffer(GetTensorAddr(i, blockOffset_ * dim0stride));
+#if defined(__DAV_920R1__)
+        DataCopyPad<T, PaddingMode::Compact>(srcLocal[tensorStride], srcGlobal[srcRowsOffset * dim0stride], copyInParam,
+                                             padParams, true);
+#else
         DataCopyPad<T, PaddingMode::Compact>(srcLocal[tensorStride], srcGlobal[srcRowsOffset * dim0stride], copyInParam,
                                              padParams);
+#endif
         ComputeSplitDim1(dstLocal, srcLocal[tensorStride], rows, dim1, curDim1Offset, curLoopHandleCols);
         curDim1Offset += dim1;
         tensorStride += (rows * dim1 + numPerBlock_ - 1) / numPerBlock_ * numPerBlock_;
@@ -1093,7 +1098,11 @@ __aicore__ inline void OneAxisConcatNoAlignDiffShape<T, U, TILINGDATA>::LegacyBa
                                      static_cast<int64_t>((dim0stride - copyCols) * sizeof(T)),
                                      static_cast<int64_t>(copyCols * sizeof(T)), 0};
     srcGlobal.SetGlobalBuffer(GetTensorAddr(tensorIdx, srcRowBase * dim0stride + colsOffset));
+#if defined(__DAV_920R1__)
+    DataCopyPad<T, PaddingMode::Compact>(srcLocal[tensorStride], srcGlobal, copyInParam, padParams, true);
+#else
     DataCopyPad<T, PaddingMode::Compact>(srcLocal[tensorStride], srcGlobal, copyInParam, padParams);
+#endif
     ComputeSplitDim1(dstLocal, srcLocal[tensorStride], rows, copyCols, totalCopyCols, curLoopHandleCols);
 }
 
