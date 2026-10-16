@@ -46,6 +46,8 @@ public:
             .PrecisionReduceFlag(true)
             .ExtendCfgInfo("opFile.value", "clip_by_value_v2_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend960dt", aicoreConfig);
+        this->AICore().AddConfig("ascend960pr", aicoreConfig);
         this->AICore().AddConfig("ascend350", aicoreConfig);
     }
 };
