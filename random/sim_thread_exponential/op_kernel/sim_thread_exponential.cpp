@@ -13,12 +13,13 @@
  * \brief kernel entry for sim_thread_exponential operator
  */
 
-#if defined(__CCE_AICORE__) && __CCE_AICORE__ == 310
-// 950 chip: SIMT implementation
+#if (defined(__CCE_AICORE__) && __CCE_AICORE__ == 310) || \
+    (defined(__NPU_ARCH__) && (__NPU_ARCH__ == 9201 || __NPU_ARCH__ == 9202))
+// 950/960dt/960pr chip: SIMT implementation
 #include "arch35/sim_thread_exponential_simt.h"
 
-extern "C" __global__ __aicore__ void sim_thread_exponential(
-    GM_ADDR self, GM_ADDR self_ref, GM_ADDR workspace, GM_ADDR tiling)
+extern "C" __global__ __aicore__ void sim_thread_exponential(GM_ADDR self, GM_ADDR self_ref, GM_ADDR workspace,
+                                                             GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(RandomUnifiedSimtTilingDataStruct);
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
@@ -37,8 +38,8 @@ extern "C" __global__ __aicore__ void sim_thread_exponential(
 // 910b and other chips: SIMD implementation (original)
 #include "sim_thread_exponential.h"
 
-extern "C" __global__ __aicore__ void sim_thread_exponential(
-    GM_ADDR self, GM_ADDR self_ref, GM_ADDR workspace, GM_ADDR tiling)
+extern "C" __global__ __aicore__ void sim_thread_exponential(GM_ADDR self, GM_ADDR self_ref, GM_ADDR workspace,
+                                                             GM_ADDR tiling)
 {
     GET_TILING_DATA(tiling_data, tiling);
     AscendC::TPipe pipe;
