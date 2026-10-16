@@ -10,6 +10,7 @@
 
 cmake_minimum_required(VERSION 3.16)
 include(cmake/fetch_cann_cmake.cmake)
+include(cmake/soc_arch_variables.cmake)
 set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ${RULE_LAUNCH})
 set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ${RULE_LAUNCH})
 

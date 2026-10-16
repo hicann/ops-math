@@ -46,7 +46,7 @@ call_write_scripts() {
   if [ ${#inner_properties[@]} -eq 0 ]; then
     op_compile_option="{\"$op_type\": {}}"
   fi
-  
+
   local op_cfg_path="${topdir}/build/tbe/config"
   local op_cfg_name="aic-${soc_version_lower}-ops-info.ini"
   local op_cfg_file="${op_cfg_path}/${op_cfg_name}"
@@ -115,7 +115,7 @@ function get_kernel_option_config_file() {
 }
 
 main() {
-  echo "[INFO]excute file: $0 $*"
+  echo "[INFO]execute file: $0 $*"
   local all_pairs=("$@")
   if [ ${#all_pairs[@]} -eq 0 ]; then
     echo "[WARNING] No op pairs provided"
@@ -126,17 +126,19 @@ main() {
   local binary_param_dir=${topdir}/build/tbe
   for pair in "${all_pairs[@]}"; do
     if [[ "$pair" != *:* ]]; then
-      echo "[ERROR] Invaild format: '$pair'. Expected: op_type:compute_unit"
+      echo "[ERROR] Invalid format: '$pair'. Expected: op_type:compute_unit"
       continue
     fi
     local op_type="${pair%%:*}"
     local soc_version="${pair#*:}"
+    local arch=$(cmake -P ${topdir}/cmake/query.cmake Func get_npu_arch_by_soc_version ${soc_version} 2>&1)
+
     local soc_version_lower=${soc_version,,}
 
     local ascendc_config_file="${topdir}/scripts/kernel/binary_config/ascendc_config.json"
     local key_word_in_list="\"name\":\s*\"${op_type}\""
-    local ascendc_op_conf=$(grep ${key_word_in_list} ${ascendc_config_file} | grep -w $soc_version_lower)
-
+    local ascendc_op_conf=$(grep ${key_word_in_list} ${ascendc_config_file} | grep -E "$arch|$soc_version_lower")
+    ascendc_op_conf=${ascendc_op_conf//$arch/$soc_version_lower}
     json_line=$(echo "$ascendc_op_conf" | tr -d '\n\r')
 
     local kernel_config_file=$(get_kernel_option_config_file ${workdir} ${soc_version_lower})
@@ -207,6 +209,7 @@ main() {
         }
       }')
     fi
+    echo $compile_options
 
     call_write_scripts "$op_type" "$soc_version_lower" "$auto_sync" "$compute_units" "$compile_options"
   done

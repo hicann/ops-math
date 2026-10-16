@@ -12,18 +12,12 @@
 
 get_simulator_chip_version() {
   local soc=$1
-  case "$soc" in
-    ascend910) echo "dav_1001" ;;
-    ascend910_93|ascend910b) echo "dav_2201" ;;
-    ascend310p) echo "dav_2002" ;;
-    ascend310b) echo "dav_3002" ;;
-    ascend950) echo "dav_3510" ;;
-    ascend350) echo "dav_3510" ;;
-    *)
-      echo "[ERROR] Unsupported soc version for simulator: $soc" >&2
-      return 1
-      ;;
-  esac
+  local arch=$(cmake -P ${BASE_PATH}/cmake/query.cmake Func get_npu_arch_by_soc_version ${soc} 2>&1)
+  if [[ -z "${arch}" ]]; then
+    echo "[ERROR] Unsupported soc version for simulator: $soc" >&2
+    return 1
+  fi
+  echo "${arch}"
 }
 
 get_simulator_args() {

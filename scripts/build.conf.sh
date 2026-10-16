@@ -11,7 +11,14 @@
 # Global config: variables, paths, utility functions shared across all build scripts.
 
 RELEASE_TARGETS=("ophost" "opapi" "opgraph" "opkernel" "opkernel_aicpu" "onnxplugin" "tfplugin")
-SUPPORT_COMPUTE_UNIT_SHORT=("ascend910b" "ascend910_93" "ascend350" "ascend950" "ascend310p" "ascend910" "ascend310b" "ascend630" "ascend610lite" "ascend031" "ascend035" "kirinx90" "kirin9030" "mc62" "ascend5162a" "ascend960dt")
+
+if [[ -z "${BASE_PATH}" ]]; then
+  export BASE_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+fi
+
+SUPPORT_COMPUTE_UNIT_SHORT=($(cmake -P ${BASE_PATH}/cmake/query.cmake Value ASCEND_ALL_COMPUTE_UNIT 2>&1))
+# 对SUPPORT_COMPUTE_UNIT_SHORT按字符串长度从长到短排序，避免前缀匹配时出错
+SUPPORT_COMPUTE_UNIT_SHORT=($(printf '%s\n' "${SUPPORT_COMPUTE_UNIT_SHORT[@]}" | awk '{print length($0) " " $0}' | sort -rn | cut -d ' ' -f2-))
 SUPPORTED_SHORT_OPTS="hj:vO:uf:-:"
 
 SUPPORTED_LONG_OPTS=(
