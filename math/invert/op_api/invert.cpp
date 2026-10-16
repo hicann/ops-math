@@ -24,8 +24,8 @@ using namespace op;
 namespace l0op {
 OP_TYPE_REGISTER(Invert);
 
-static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_INT16, op::DataType::DT_UINT16};
+static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {op::DataType::DT_INT16,
+                                                                              op::DataType::DT_UINT16};
 
 static const std::initializer_list<op::DataType> REGBASE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT8,  op::DataType::DT_INT16,  op::DataType::DT_INT32,  op::DataType::DT_INT64,
@@ -50,9 +50,8 @@ static const aclTensor* InvertAiCore(const aclTensor* self, const aclTensor* out
     // 使用框架宏ADD_TO_LAUNCHER_LIST，将Aicore Invert算子加入任务队列
     // Invert是算子的Optype，self是算子的输入，out是算子的输出
     auto ret = ADD_TO_LAUNCHER_LIST_AICORE(Invert, OP_INPUT(self), OP_OUTPUT(out));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "Invert ADD_TO_LAUNCHER_LIST_AICORE failed."),
-        return nullptr);
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "Invert ADD_TO_LAUNCHER_LIST_AICORE failed."),
+             return nullptr);
     return out;
 }
 
@@ -64,9 +63,8 @@ static const aclTensor* InvertAiCpu(const aclTensor* self, aclTensor* out, aclOp
     L0_DFX(InvertAiCpu);
     static internal::AicpuTaskSpace space("Invert", ge::DEPEND_IN_SHAPE, true);
     auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Invert, OP_ATTR_NAMES(), OP_INPUT(self), OP_OUTPUT(out));
-    OP_CHECK(
-        ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "InvertAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
-        return nullptr);
+    OP_CHECK(ret == ACLNN_SUCCESS, OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "InvertAiCpu ADD_TO_LAUNCHER_LIST_AICPU failed."),
+             return nullptr);
     return out;
 }
 
