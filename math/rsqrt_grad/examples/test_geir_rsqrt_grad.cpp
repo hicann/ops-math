@@ -27,7 +27,7 @@
 
 #include "experiment_ops.h"
 #include "nn_other.h"
-#include "../op_graph/sqrt_grad_proto.h"
+#include "../op_graph/rsqrt_grad_proto.h"
 
 #define FAILED -1
 #define SUCCESS 0
@@ -57,7 +57,7 @@ using std::vector;
     placeholder##intputIndex.update_input_desc_x(placeholder##intputIndex##_desc);                                  \
     input.push_back(tensor_placeholder##intputIndex);                                                               \
     graph.AddOp(placeholder##intputIndex);                                                                          \
-    sqrtGrad.set_input_##intputName(placeholder##intputIndex);                                                      \
+    rsqrtGrad.set_input_##intputName(placeholder##intputIndex);                                                      \
     inputs.push_back(placeholder##intputIndex)
 
 #define ADD_CONST_INPUT(intputIndex, intputName, intputDtype, inputShape)                                           \
@@ -77,13 +77,13 @@ using std::vector;
     placeholder##intputIndex.SetAttr("value", tensor_placeholder##intputIndex);                                     \
     placeholder##intputIndex.update_output_desc_y(placeholder##intputIndex##_desc);                                 \
     graph.AddOp(placeholder##intputIndex);                                                                          \
-    sqrtGrad.set_input_##intputName(placeholder##intputIndex);                                                      \
-    sqrtGrad.update_input_desc_##intputName(placeholder##intputIndex##_desc);                                       \
+    rsqrtGrad.set_input_##intputName(placeholder##intputIndex);                                                      \
+    rsqrtGrad.update_input_desc_##intputName(placeholder##intputIndex##_desc);                                       \
     inputs.push_back(placeholder##intputIndex)
 
 #define ADD_OUTPUT(outputIndex, outputName, outputDtype, outputShape)                                       \
     TensorDesc outputName##outputIndex##_desc = TensorDesc(ge::Shape(outputShape), FORMAT_ND, outputDtype); \
-    sqrtGrad.update_output_desc_##outputName(outputName##outputIndex##_desc)
+    rsqrtGrad.update_output_desc_##outputName(outputName##outputIndex##_desc)
 
 #define LOG_PRINT(message, ...) printf(message, ##__VA_ARGS__)
 
@@ -176,14 +176,14 @@ int CreateOppInGraph(DataType inDtype, std::vector<ge::Tensor>& input, std::vect
 {
     Status ret = SUCCESS;
     // 自定义代码：添加单算子定义到图中
-    auto sqrtGrad = op::SqrtGrad("sqrt_grad");
+    auto rsqrtGrad = op::RsqrtGrad("rsqrt_grad");
 
     std::vector<int64_t> xShape = {4};
     ADD_INPUT(1, y, inDtype, xShape);
     ADD_INPUT(2, dy, inDtype, xShape);
     ADD_OUTPUT(1, z, inDtype, xShape);
 
-    outputs.push_back(sqrtGrad);
+    outputs.push_back(rsqrtGrad);
     // 添加完毕
     return SUCCESS;
 }
@@ -283,7 +283,7 @@ void ProcessIOData(std::vector<ge::Tensor>& input, std::vector<ge::Tensor>& outp
 int main(int argc, char* argv[])
 {
     // 1、创建图对象
-    const char* graph_name = "tc_ge_irrun_sqrt_grad_test";
+    const char* graph_name = "tc_ge_irrun_rsqrt_grad_test";
     Graph graph(graph_name);
     std::vector<ge::Tensor> input;
 

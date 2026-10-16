@@ -1,10 +1,10 @@
-# SqrtGrad
+# RsqrtGrad
 
 ## 产品支持情况
 
 | 产品                                                         | 是否支持 |
 | :----------------------------------------------------------- | :------: |
-| <term>Ascend 950PR&950DT系列产品</term>                             |    ×     |
+| <term>Ascend 950PR&950DT系列产品</term>                             |    √     |
 | <term>Atlas A3系列产品</term>     |    √     |
 | <term>Atlas A2系列产品</term> |    √     |
 | <term>Atlas 200I/500 A2推理产品</term>                      |    ×     |
@@ -13,13 +13,15 @@
 
 ## 功能说明
 
-- 算子功能：完成梯度平方根计算。
+- 算子功能：Rsqrt算子的反向梯度计算。
 
 - 计算公式：
 
 $$
-z = dy * 0.5 / y
+z = -0.5 \times dy \times y^{3}
 $$
+
+其中y为Rsqrt算子的前向输出。
 
 ## 参数说明
 
@@ -42,22 +44,22 @@ $$
     <tr>
       <td>y</td>
       <td>输入</td>
-      <td>待进行sqrt_grad计算的入参，公式中的y。</td>
-      <td>DT_FLOAT,DT_FLOAT_16,DT_COMPLEX128,DT_COMPLEX64,DT_DOUBLE</td>
+      <td>Rsqrt算子的前向输出，公式中的y。</td>
+      <td>BFLOAT16、FLOAT16、FLOAT、INT8、INT32</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>dy</td>
       <td>输入</td>
-      <td>待进行sqrt_grad计算的入参，公式中的dy。</td>
-      <td>DT_FLOAT,DT_FLOAT_16,DT_COMPLEX128,DT_COMPLEX64,DT_DOUBLE</td>
+      <td>输出梯度，公式中的dy。</td>
+      <td>BFLOAT16、FLOAT16、FLOAT、INT8、INT32</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>z</td>
       <td>输出</td>
-      <td>待进行sqrt_grad计算的出参，公式中的z。</td>
-      <td>DT_FLOAT,DT_FLOAT_16,DT_COMPLEX128,DT_COMPLEX64,DT_DOUBLE</td>
+      <td>输入梯度，公式中的z，shape与y一致。</td>
+      <td>BFLOAT16、FLOAT16、FLOAT、INT8、INT32</td>
       <td>ND</td>
     </tr>
   </tbody></table>
@@ -70,4 +72,4 @@ $$
 
 | 调用方式 | 调用样例                                                      | 说明                                                      |
 |--------------|-----------------------------------------------------------|---------------------------------------------------------|
-| 图模式调用 | [test_geir_sqrt_grad](./examples/test_geir_sqrt_grad.cpp) | 通过[算子IR](../sqrt_grad/op_graph/sqrt_grad_proto.h)构图方式调用SqrtGrad算子。 |
+| 图模式调用 | [test_geir_rsqrt_grad](./examples/test_geir_rsqrt_grad.cpp) | 通过[算子IR](./op_graph/rsqrt_grad_proto.h)构图方式调用RsqrtGrad算子。 |
