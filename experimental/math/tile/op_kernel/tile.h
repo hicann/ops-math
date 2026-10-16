@@ -20,11 +20,6 @@
 #include "tile_tiling_data.h"
 #include "tile_tiling_key.h"
 
-#ifndef COMPLEX64_TYPE_DEFINED
-#define COMPLEX64_TYPE_DEFINED
-using complex64 = uint64_t;
-#endif
-
 namespace TileKernel {
 
 using namespace AscendC;
@@ -49,9 +44,8 @@ __aicore__ inline void CopyOut(const GlobalTensor<T>& dst, const LocalTensor<T>&
 }
 
 template <typename T>
-__aicore__ inline void BuildInnerRow(
-    LocalTensor<T>& outBuf, const LocalTensor<T>& inData, int32_t srcBase, int32_t dstBase, int32_t innerDim,
-    int32_t innerMult)
+__aicore__ inline void BuildInnerRow(LocalTensor<T>& outBuf, const LocalTensor<T>& inData, int32_t srcBase,
+                                     int32_t dstBase, int32_t innerDim, int32_t innerMult)
 {
     if constexpr (sizeof(T) >= 2 && sizeof(T) <= 4) {
         constexpr int32_t ALIGN_ELEMS = DATA_BLOCK_BYTES / static_cast<int32_t>(sizeof(T));
@@ -459,9 +453,9 @@ __aicore__ inline void BuildInnerRow(
 }
 
 template <typename T>
-__aicore__ inline int32_t GatherBuildRows(
-    LocalTensor<T>& outBuf, const LocalTensor<T>& inData, int32_t numRows, int32_t innerDim, int32_t innerMult,
-    int32_t srcStride, int32_t outputInnerDim, int32_t alignElems)
+__aicore__ inline int32_t GatherBuildRows(LocalTensor<T>& outBuf, const LocalTensor<T>& inData, int32_t numRows,
+                                          int32_t innerDim, int32_t innerMult, int32_t srcStride,
+                                          int32_t outputInnerDim, int32_t alignElems)
 {
     if constexpr (sizeof(T) < 2) {
         return -1;
@@ -490,10 +484,8 @@ __aicore__ inline int32_t GatherBuildRows(
     for (int32_t k = 0; k < superRowElems; k++) {
         int32_t rowInBatch = k / oiDim;
         int32_t srcElem = (k % oiDim) % innerDim;
-        gOff.SetValue(
-            k,
-            static_cast<uint32_t>(
-                rowInBatch * srcStride * static_cast<int32_t>(sizeof(T)) + srcElem * static_cast<int32_t>(sizeof(T))));
+        gOff.SetValue(k, static_cast<uint32_t>(rowInBatch * srcStride * static_cast<int32_t>(sizeof(T)) +
+                                               srcElem * static_cast<int32_t>(sizeof(T))));
     }
     PipeBarrier<PIPE_V>();
 
@@ -501,8 +493,8 @@ __aicore__ inline int32_t GatherBuildRows(
     for (int32_t b = 0; b < fullBatches; b++) {
         int32_t batchSrc = b * superRowCount * srcStride;
         int32_t batchDst = gatherStart + b * superRowElems;
-        Gather(
-            outBuf[batchDst], inData[batchSrc], gOff, static_cast<uint32_t>(0), static_cast<uint32_t>(superRowElems));
+        Gather(outBuf[batchDst], inData[batchSrc], gOff, static_cast<uint32_t>(0),
+               static_cast<uint32_t>(superRowElems));
     }
     PipeBarrier<PIPE_V>();
     ResetMask();
@@ -515,9 +507,9 @@ __aicore__ inline int32_t GatherBuildRows(
 }
 
 template <typename T>
-__aicore__ inline int32_t GatherBuildRowsU8(
-    LocalTensor<T>& outBuf, const LocalTensor<T>& inData, int32_t numRows, int32_t innerDim, int32_t innerMult,
-    int32_t srcStride, int32_t outputInnerDim, int32_t alignElems)
+__aicore__ inline int32_t GatherBuildRowsU8(LocalTensor<T>& outBuf, const LocalTensor<T>& inData, int32_t numRows,
+                                            int32_t innerDim, int32_t innerMult, int32_t srcStride,
+                                            int32_t outputInnerDim, int32_t alignElems)
 {
     static_assert(sizeof(T) == 1, "GatherBuildRowsU8 requires sizeof(T)==1");
     if (innerDim % 2 != 0 || outputInnerDim % 2 != 0) {
@@ -544,9 +536,8 @@ __aicore__ inline int32_t GatherBuildRowsU8(
     PipeBarrier<PIPE_V>();
 
     for (int32_t r = 0; r < numRows; r++) {
-        Gather(
-            outU16[gatherStart_u16 + r * oiDim_u16], inU16[r * srcStride_u16], gOff, static_cast<uint32_t>(0),
-            static_cast<uint32_t>(oiDim_u16));
+        Gather(outU16[gatherStart_u16 + r * oiDim_u16], inU16[r * srcStride_u16], gOff, static_cast<uint32_t>(0),
+               static_cast<uint32_t>(oiDim_u16));
     }
     PipeBarrier<PIPE_V>();
     ResetMask();
@@ -565,13 +556,13 @@ public:
     __aicore__ inline void Process();
 
 private:
-    __aicore__ inline void ProcessSplitMult(
-        int32_t innerDimAligned, int32_t bufElems, bool isInnerAligned, int32_t inputBytes);
+    __aicore__ inline void ProcessSplitMult(int32_t innerDimAligned, int32_t bufElems, bool isInnerAligned,
+                                            int32_t inputBytes);
 
-    __aicore__ inline void ProcessBuild(
-        int32_t maxBatch, int32_t innerDimAligned, int32_t outputDimAligned, bool isOutputAligned);
-    __aicore__ inline void ProcessPerRow(
-        int32_t maxBatch, int32_t innerDimAligned, bool isInnerAligned, int32_t inputBytes);
+    __aicore__ inline void ProcessBuild(int32_t maxBatch, int32_t innerDimAligned, int32_t outputDimAligned,
+                                        bool isOutputAligned);
+    __aicore__ inline void ProcessPerRow(int32_t maxBatch, int32_t innerDimAligned, bool isInnerAligned,
+                                         int32_t inputBytes);
     __aicore__ inline void ProcessLargeInner(int32_t bufElems);
     __aicore__ inline void ProcessScalarBuildFast(int32_t innerDimAligned, int32_t bufElems);
     __aicore__ inline void ProcessBuildOnceAmplify(int32_t innerDimAligned, int32_t bufElems);
@@ -603,8 +594,8 @@ private:
 
 template <typename T>
 template <uint32_t schMode>
-__aicore__ inline void TileOpImpl<T>::Init(
-    GM_ADDR inputGm, GM_ADDR outputGm, const TileTilingData* tilingPtr, TPipe* pipeIn)
+__aicore__ inline void TileOpImpl<T>::Init(GM_ADDR inputGm, GM_ADDR outputGm, const TileTilingData* tilingPtr,
+                                           TPipe* pipeIn)
 {
     pipe = pipeIn;
     numDims = tilingPtr->numDims;
@@ -706,8 +697,8 @@ __aicore__ inline void TileOpImpl<T>::Init(
         constexpr int32_t ALIGN_CHK = DATA_BLOCK_BYTES / static_cast<int32_t>(sizeof(T));
         int32_t idAligned = ((innerDim + ALIGN_CHK - 1) / ALIGN_CHK) * ALIGN_CHK;
         int32_t halfBufElems = bufferBytes / elemBytes;
-        bool dmaBuildCond =
-            (innerMult > 1 && idAligned * innerMult <= halfBufElems && innerDim * elemBytes >= DATA_BLOCK_BYTES);
+        bool dmaBuildCond = (innerMult > 1 && idAligned * innerMult <= halfBufElems &&
+                             innerDim * elemBytes >= DATA_BLOCK_BYTES);
         bool gatherHybridOk = false;
         if constexpr (sizeof(T) >= 2 && sizeof(T) <= 4) {
             gatherHybridOk = true;
@@ -790,8 +781,8 @@ __aicore__ inline void TileOpImpl<T>::Process()
         int32_t rbBufElems = bufElems;
         constexpr int32_t ALIGN_CHK = DATA_BLOCK_BYTES / static_cast<int32_t>(sizeof(T));
         int32_t idAligned = ((innerDim + ALIGN_CHK - 1) / ALIGN_CHK) * ALIGN_CHK;
-        bool dmaBuildCheck =
-            (innerMult > 1 && idAligned * innerMult <= bufElems && innerDim * elemBytes >= DATA_BLOCK_BYTES);
+        bool dmaBuildCheck = (innerMult > 1 && idAligned * innerMult <= bufElems &&
+                              innerDim * elemBytes >= DATA_BLOCK_BYTES);
         bool gatherHybridCheck = false;
         if constexpr (sizeof(T) >= 2 && sizeof(T) <= 4) {
             gatherHybridCheck = (dmaBuildCheck && innerDim != idAligned);
@@ -849,8 +840,8 @@ __aicore__ inline void TileOpImpl<T>::Process()
 }
 
 template <typename T>
-__aicore__ inline void TileOpImpl<T>::ProcessSplitMult(
-    int32_t innerDimAligned, int32_t bufElems, bool isInnerAligned, int32_t inputBytes)
+__aicore__ inline void TileOpImpl<T>::ProcessSplitMult(int32_t innerDimAligned, int32_t bufElems, bool isInnerAligned,
+                                                       int32_t inputBytes)
 {
     for (int32_t outer = myStartRow; outer < myEndRow; outer++) {
         int32_t srcOff = SrcOff(outer);
@@ -928,8 +919,8 @@ __aicore__ inline void TileOpImpl<T>::ProcessSplitMult(
 }
 
 template <typename T>
-__aicore__ inline void TileOpImpl<T>::ProcessBuild(
-    int32_t maxBatch, int32_t innerDimAligned, int32_t outputDimAligned, bool isOutputAligned)
+__aicore__ inline void TileOpImpl<T>::ProcessBuild(int32_t maxBatch, int32_t innerDimAligned, int32_t outputDimAligned,
+                                                   bool isOutputAligned)
 {
     int32_t outer = myStartRow;
     bool canBatchRead = (innerDim == innerDimAligned) && (myEndRow - myStartRow > 1) &&
@@ -952,8 +943,8 @@ __aicore__ inline void TileOpImpl<T>::ProcessBuild(
         LocalTensor<T> outBuf = outQue.AllocTensor<T>();
         for (int32_t bIdx = 0; bIdx < batchSize; bIdx++) {
             for (int32_t mIdx = 0; mIdx < innerMult; mIdx++) {
-                DataCopy(
-                    outBuf[bIdx * outputDimAligned + mIdx * innerDim], inData[bIdx * innerDimAligned], innerDimAligned);
+                DataCopy(outBuf[bIdx * outputDimAligned + mIdx * innerDim], inData[bIdx * innerDimAligned],
+                         innerDimAligned);
             }
         }
         inQue.FreeTensor(inData);
@@ -974,8 +965,8 @@ __aicore__ inline void TileOpImpl<T>::ProcessBuild(
 }
 
 template <typename T>
-__aicore__ inline void TileOpImpl<T>::ProcessPerRow(
-    int32_t maxBatch, int32_t innerDimAligned, bool isInnerAligned, int32_t inputBytes)
+__aicore__ inline void TileOpImpl<T>::ProcessPerRow(int32_t maxBatch, int32_t innerDimAligned, bool isInnerAligned,
+                                                    int32_t inputBytes)
 {
     int32_t repeatPeriod = tilingRepeatPeriod;
     int32_t repeatInputPeriod = tilingRepeatInputPeriod;
@@ -1175,15 +1166,15 @@ __aicore__ inline void TileOpImpl<T>::ProcessBuildOnceAmplify(int32_t innerDimAl
 
     int32_t firstFullPeriod = ((myStartRow + repeatPeriod - 1) / repeatPeriod) * repeatPeriod;
     int32_t lastFullPeriodEnd = (myEndRow / repeatPeriod) * repeatPeriod;
-    bool seedBulkOk =
-        (repeatInputPeriod <= 1) || (SrcOff(1) - SrcOff(0) == innerDim &&
-                                     SrcOff(repeatInputPeriod - 1) == SrcOff(0) + (repeatInputPeriod - 1) * innerDim);
+    bool seedBulkOk = (repeatInputPeriod <= 1) ||
+                      (SrcOff(1) - SrcOff(0) == innerDim &&
+                       SrcOff(repeatInputPeriod - 1) == SrcOff(0) + (repeatInputPeriod - 1) * innerDim);
     int32_t seedSrcStride = seedBulkOk ? innerDim : innerDimAligned;
 
     int32_t fullPeriodElems = repeatPeriod * outputInnerDim;
     int32_t fullPeriodAligned = ((fullPeriodElems + alignElems - 1) / alignElems) * alignElems;
-    bool useFullPeriodCache =
-        srcGrp && nSrc <= blockDimVal && numAmplify >= 3 && fullPeriodAligned <= bufElems && periodsPS > 1;
+    bool useFullPeriodCache = srcGrp && nSrc <= blockDimVal && numAmplify >= 3 && fullPeriodAligned <= bufElems &&
+                              periodsPS > 1;
 
     if (useFullPeriodCache) {
         int32_t coreId = GetBlockIdx();
@@ -1297,8 +1288,8 @@ __aicore__ inline void TileOpImpl<T>::ProcessBuildOnceAmplify(int32_t innerDimAl
                         DataCopy(outBuf[tplBase], inData, ca);
                     } else {
                         for (int32_t bIdx = 0; bIdx < repeatInputPeriod; bIdx++)
-                            DataCopy(
-                                outBuf[tplBase + bIdx * outputInnerDim], inData[bIdx * seedSrcStride], innerDimAligned);
+                            DataCopy(outBuf[tplBase + bIdx * outputInnerDim], inData[bIdx * seedSrcStride],
+                                     innerDimAligned);
                     }
                 } else {
                     for (int32_t bIdx = 0; bIdx < repeatInputPeriod; bIdx++) {
@@ -1314,9 +1305,8 @@ __aicore__ inline void TileOpImpl<T>::ProcessBuildOnceAmplify(int32_t innerDimAl
             LocalTensor<T> outData = outQue.DeQue<T>();
             int32_t fullPeriodElems = repeatPeriod * outputInnerDim;
             int32_t fullPeriodAligned = ((fullPeriodElems + alignElems - 1) / alignElems) * alignElems;
-            bool canBroadcastPeriod =
-                (numAmplify >= 3 && fullPeriodAligned <= bufElems && tplCount <= 8 && linearN > tplCount * 5 &&
-                 linearN * numAmplify >= 500);
+            bool canBroadcastPeriod = (numAmplify >= 3 && fullPeriodAligned <= bufElems && tplCount <= 8 &&
+                                       linearN > tplCount * 5 && linearN * numAmplify >= 500);
             if (canBroadcastPeriod) {
                 int32_t repBases[64];
                 for (int32_t tt = 0; tt < tplCount; tt++)
@@ -1526,8 +1516,8 @@ __aicore__ inline void TileOpImpl<T>::ProcessBuildOnceAmplify(int32_t innerDimAl
                         if (sRC <= repeatInputPeriod)
                             sRE_check = sRC * outputInnerDim;
                         int32_t offU32 = ((sRE_check + 7) / 8) * 8;
-                        int32_t offT =
-                            (offU32 * 4 + static_cast<int32_t>(sizeof(T)) - 1) / static_cast<int32_t>(sizeof(T));
+                        int32_t offT = (offU32 * 4 + static_cast<int32_t>(sizeof(T)) - 1) /
+                                       static_cast<int32_t>(sizeof(T));
                         int32_t gStart = ((offT + alignElems - 1) / alignElems) * alignElems;
                         bool gatherFits = (gStart + seedOutElems <= bufElems);
                         bool superRowOk = (sRC >= 2 && repeatInputPeriod >= 4 * sRC);
@@ -1536,9 +1526,8 @@ __aicore__ inline void TileOpImpl<T>::ProcessBuildOnceAmplify(int32_t innerDimAl
                         int32_t scalarCost = repeatInputPeriod * outputInnerDim;
                         bool costOk = (tableElems * 5 < scalarCost);
                         if (gatherFits && (superRowOk || (perRowOk && costOk))) {
-                            int32_t gOff = GatherBuildRows(
-                                outBuf, inData, repeatInputPeriod, innerDim, innerMult, seedSrcStride, outputInnerDim,
-                                alignElems);
+                            int32_t gOff = GatherBuildRows(outBuf, inData, repeatInputPeriod, innerDim, innerMult,
+                                                           seedSrcStride, outputInnerDim, alignElems);
                             if (gOff >= 0) {
                                 seedOutputOffset = gOff;
                                 useGather = true;
@@ -1556,9 +1545,8 @@ __aicore__ inline void TileOpImpl<T>::ProcessBuildOnceAmplify(int32_t innerDimAl
                             int32_t gS16 = ((offE16 + ALN16 - 1) / ALN16) * ALN16;
                             int32_t gS8 = gS16 * 2;
                             if (gS8 + seedOutElems <= bufElems) {
-                                int32_t gOff = GatherBuildRowsU8(
-                                    outBuf, inData, repeatInputPeriod, innerDim, innerMult, seedSrcStride,
-                                    outputInnerDim, alignElems);
+                                int32_t gOff = GatherBuildRowsU8(outBuf, inData, repeatInputPeriod, innerDim, innerMult,
+                                                                 seedSrcStride, outputInnerDim, alignElems);
                                 if (gOff >= 0) {
                                     seedOutputOffset = gOff;
                                     useGather = true;
@@ -1597,9 +1585,8 @@ __aicore__ inline void TileOpImpl<T>::ProcessBuildOnceAmplify(int32_t innerDimAl
                         int32_t dstByteOff = overlapStart * outputInnerDim * elemBytes;
                         if (srcByteOff % DATA_BLOCK_BYTES == 0 && dstByteOff % DATA_BLOCK_BYTES == 0) {
                             int32_t writeRows = overlapEnd - overlapStart;
-                            CopyOut(
-                                gmOut[overlapStart * outputInnerDim], outData[seedOutputOffset + srcElOff],
-                                writeRows * outputInnerDim);
+                            CopyOut(gmOut[overlapStart * outputInnerDim], outData[seedOutputOffset + srcElOff],
+                                    writeRows * outputInnerDim);
                         } else {
                             if (overlapEnd > scalarFallbackEnd) {
                                 scalarFallbackEnd = overlapEnd;
@@ -1644,9 +1631,9 @@ __aicore__ inline void TileOpImpl<T>::ProcessDmaTemplateBuild(int32_t innerDimAl
     int32_t numAmplify = repeatPeriod / repeatInputPeriod;
     int32_t seedOutElems = repeatInputPeriod * outputInnerDim;
     int32_t seedInElems = (repeatInputPeriod - 1) * innerDim + innerDimAligned;
-    bool seedBulkOk =
-        (repeatInputPeriod <= 1) || (SrcOff(1) - SrcOff(0) == innerDim &&
-                                     SrcOff(repeatInputPeriod - 1) == SrcOff(0) + (repeatInputPeriod - 1) * innerDim);
+    bool seedBulkOk = (repeatInputPeriod <= 1) ||
+                      (SrcOff(1) - SrcOff(0) == innerDim &&
+                       SrcOff(repeatInputPeriod - 1) == SrcOff(0) + (repeatInputPeriod - 1) * innerDim);
 
     int32_t firstFullPeriod = ((myStartRow + repeatPeriod - 1) / repeatPeriod) * repeatPeriod;
     int32_t lastFullPeriodEnd = (myEndRow / repeatPeriod) * repeatPeriod;
@@ -1767,8 +1754,8 @@ __aicore__ inline void TileOpImpl<T>::ProcessRowReadbackAmplify(int32_t innerDim
     if constexpr (sizeof(T) >= 2 && sizeof(T) <= 4) {
         if (dmaBuildPossible && innerDim != innerDimAligned) {
             constexpr int32_t VREG_GH = 256 / static_cast<int32_t>(sizeof(T));
-            ghRowStride =
-                (outputInnerDim > VREG_GH) ? (((outputInnerDim + alignElems - 1) / alignElems) * alignElems) : VREG_GH;
+            ghRowStride = (outputInnerDim > VREG_GH) ? (((outputInnerDim + alignElems - 1) / alignElems) * alignElems) :
+                                                       VREG_GH;
             int32_t offU32 = ((outputInnerDim + 7) / 8) * 8;
             int32_t offT = (offU32 * 4 + static_cast<int32_t>(sizeof(T)) - 1) / static_cast<int32_t>(sizeof(T));
             ghStart = ((offT + alignElems - 1) / alignElems) * alignElems;
@@ -1818,9 +1805,8 @@ __aicore__ inline void TileOpImpl<T>::ProcessRowReadbackAmplify(int32_t innerDim
             LocalTensor<T> inData = inQue.DeQue<T>();
 
             for (int32_t r = 0; r < bc; r++) {
-                Gather(
-                    gOutBuf[ghStart + r * ghRowStride], inData[r * innerDimAligned], gOff, static_cast<uint32_t>(0),
-                    static_cast<uint32_t>(outputInnerDim));
+                Gather(gOutBuf[ghStart + r * ghRowStride], inData[r * innerDimAligned], gOff, static_cast<uint32_t>(0),
+                       static_cast<uint32_t>(outputInnerDim));
             }
             PipeBarrier<PIPE_V>();
             ResetMask();
@@ -1890,9 +1876,8 @@ __aicore__ inline void TileOpImpl<T>::ProcessRowReadbackAmplify(int32_t innerDim
 
         bool useDmaBuild = (innerMult > 1 && innerDimAligned * innerMult <= bufElems && innerDim * elemBytes >= 32);
         LocalTensor<T> inBuf = inQue.AllocTensor<T>();
-        bool seedBulk =
-            (!useDmaBuild && bc > 1 && SrcOff(seedBase + 1) - SrcOff(seedBase) == innerDim &&
-             SrcOff(seedBase + bc - 1) == SrcOff(seedBase) + (bc - 1) * innerDim);
+        bool seedBulk = (!useDmaBuild && bc > 1 && SrcOff(seedBase + 1) - SrcOff(seedBase) == innerDim &&
+                         SrcOff(seedBase + bc - 1) == SrcOff(seedBase) + (bc - 1) * innerDim);
         if (seedBulk) {
             int32_t bulkLen = (bc - 1) * innerDim + innerDimAligned;
             int32_t bulkAligned = ((bulkLen + alignElems - 1) / alignElems) * alignElems;
@@ -1918,9 +1903,8 @@ __aicore__ inline void TileOpImpl<T>::ProcessRowReadbackAmplify(int32_t innerDim
                 }
                 PipeBarrier<PIPE_V>();
                 for (int32_t r = 0; r < bc; r++) {
-                    Gather(
-                        outBuf[gStartG], inData[r * innerDimAligned], gOff, static_cast<uint32_t>(0),
-                        static_cast<uint32_t>(oiDim));
+                    Gather(outBuf[gStartG], inData[r * innerDimAligned], gOff, static_cast<uint32_t>(0),
+                           static_cast<uint32_t>(oiDim));
                     PipeBarrier<PIPE_V>();
                     ResetMask();
                     int32_t gmBase = (seedBase + r) * outputInnerDim;
@@ -2090,8 +2074,8 @@ __aicore__ inline void TileOpImpl<T>::ProcessScalarBuildFast(int32_t innerDimAli
             }
             continue;
         }
-        bool isFallbackRepeat =
-            hasRepeat && (posInBlock >= repeatInputPeriod) && outer >= myStartRow + repeatInputPeriod;
+        bool isFallbackRepeat = hasRepeat && (posInBlock >= repeatInputPeriod) &&
+                                outer >= myStartRow + repeatInputPeriod;
         int32_t batchSize = myEndRow - outer;
         if (batchSize > maxBatch) {
             batchSize = maxBatch;
@@ -2234,15 +2218,13 @@ __aicore__ inline void TileOpImpl<T>::ProcessScalarBuildFast(int32_t innerDimAli
                 if constexpr (sizeof(T) == 2) {
                     auto dstI = outBuf.template ReinterpretCast<int16_t>();
                     auto srcI = inData.template ReinterpretCast<int16_t>();
-                    Adds(
-                        dstI, srcI, static_cast<int16_t>(0), mask, static_cast<uint8_t>(innerMult),
-                        UnaryRepeatParams(1, 1, static_cast<uint8_t>(repStride), 0));
+                    Adds(dstI, srcI, static_cast<int16_t>(0), mask, static_cast<uint8_t>(innerMult),
+                         UnaryRepeatParams(1, 1, static_cast<uint8_t>(repStride), 0));
                 } else {
                     auto dstI = outBuf.template ReinterpretCast<int32_t>();
                     auto srcI = inData.template ReinterpretCast<int32_t>();
-                    Adds(
-                        dstI, srcI, static_cast<int32_t>(0), mask, static_cast<uint8_t>(innerMult),
-                        UnaryRepeatParams(1, 1, static_cast<uint8_t>(repStride), 0));
+                    Adds(dstI, srcI, static_cast<int32_t>(0), mask, static_cast<uint8_t>(innerMult),
+                         UnaryRepeatParams(1, 1, static_cast<uint8_t>(repStride), 0));
                 }
             }
         }
@@ -2286,8 +2268,8 @@ __aicore__ inline void TileOpImpl<T>::ProcessScalarBuildFast(int32_t innerDimAli
             }
             if (useVecRepeat) {
                 for (int32_t mIdx = 0; mIdx < innerMult; mIdx++) {
-                    CopyOut(
-                        gmOut[destRow * outputInnerDim + mIdx * innerDim], outData[mIdx * innerDimAligned], innerDim);
+                    CopyOut(gmOut[destRow * outputInnerDim + mIdx * innerDim], outData[mIdx * innerDimAligned],
+                            innerDim);
                 }
             } else {
                 int32_t writeElems = writeRows * outputInnerDim;
@@ -2361,9 +2343,8 @@ __aicore__ inline void TileOpImpl<T>::ProcessVecGatherBuild(int32_t innerDimAlig
                 gOff.SetValue(k, static_cast<uint32_t>((k % innerDim) * static_cast<int32_t>(sizeof(T))));
             PipeBarrier<PIPE_V>();
             for (int32_t bIdx = 0; bIdx < repeatInputPeriod; bIdx++)
-                Gather(
-                    outBuf[gatherStart + bIdx * gatherRowStride], inData[bIdx * innerDimAligned], gOff,
-                    static_cast<uint32_t>(0), static_cast<uint32_t>(oiDim));
+                Gather(outBuf[gatherStart + bIdx * gatherRowStride], inData[bIdx * innerDimAligned], gOff,
+                       static_cast<uint32_t>(0), static_cast<uint32_t>(oiDim));
             PipeBarrier<PIPE_V>();
             for (int32_t bIdx = 0; bIdx < repeatInputPeriod; bIdx++)
                 CopyOut(gmOut[(pb + bIdx) * oiDim], outBuf[gatherStart + bIdx * gatherRowStride], oiDim);
@@ -2510,8 +2491,8 @@ __aicore__ inline void TileOpImpl<T>::ProcessFlatResident()
         return;
     }
 
-    int32_t effectiveRowElems =
-        innerAligned ? outputDimAligned : (useScalarFR ? outputInnerDim : (innerMult * innerDimAligned));
+    int32_t effectiveRowElems = innerAligned ? outputDimAligned :
+                                               (useScalarFR ? outputInnerDim : (innerMult * innerDimAligned));
     int32_t overrun = (innerMult > 1 && innerAligned) ? (innerDimAligned - innerDim) : 0;
     int32_t maxBatch = (bufElems - overrun) / effectiveRowElems;
     if (maxBatch < 1) {
@@ -2657,8 +2638,8 @@ __aicore__ inline void TileOpImpl<T>::ProcessFlatResident()
             for (int32_t bIdx = 0; bIdx < batchSize; bIdx++) {
                 int32_t gmDst = (outer + bIdx) * outputInnerDim;
                 for (int32_t m = 0; m < innerMult; m++) {
-                    CopyOut(
-                        gmOut[gmDst + m * innerDim], outData[bIdx * effectiveRowElems + m * innerDimAligned], innerDim);
+                    CopyOut(gmOut[gmDst + m * innerDim], outData[bIdx * effectiveRowElems + m * innerDimAligned],
+                            innerDim);
                 }
             }
         } else if (isOutputAligned) {

@@ -20,14 +20,36 @@
 #include <cstdlib>
 #include <ctime>
 
+namespace op {
+extern SocVersion g_socVersion;
+extern NpuArch g_npuArchOverride;
+} // namespace op
+
 using namespace op;
 using namespace std;
 
 class l2_atan2_test : public testing::Test {
 protected:
+    void SetUp() override
+    {
+        savedSocVersion_ = op::g_socVersion;
+        savedNpuArchOverride_ = op::g_npuArchOverride;
+    }
+
+    void TearDown() override
+    {
+        // Restore both stub fields without the setters' coupled updates.
+        op::g_socVersion = savedSocVersion_;
+        op::g_npuArchOverride = savedNpuArchOverride_;
+    }
+
     static void SetUpTestCase() { std::cout << "atan2_test SetUp" << std::endl; }
 
     static void TearDownTestCase() { std::cout << "atan2_test TearDown" << std::endl; }
+
+private:
+    op::SocVersion savedSocVersion_{op::SocVersion::RESERVED_VERSION};
+    NpuArch savedNpuArchOverride_{NpuArch::DAV_RESV};
 };
 
 // 基础用例
@@ -349,8 +371,8 @@ TEST_F(l2_atan2_test, aclnnAtan2_5_4_float_nd_not_contiguous)
     int64_t sourceOffset = 0;
     const vector<int64_t>& outStorageDim = {4, 5};
 
-    auto selfTensorDesc =
-        TensorDesc(selfShape, selfDtype, selfFormat, selfViewDim, selfOffset, selfStorageDim).ValueRange(-2, 2);
+    auto selfTensorDesc = TensorDesc(selfShape, selfDtype, selfFormat, selfViewDim, selfOffset, selfStorageDim)
+                              .ValueRange(-2, 2);
 
     auto otherTensorDesc = TensorDesc(otherShape, otherDtype, otherFormat, otherViewDim, otherOffset, otherStorageDim);
 
@@ -447,16 +469,16 @@ TEST_F(l2_atan2_test, aclnnAtan2_self_shape_out_of_8)
     auto normal_tensor_desc = TensorDesc({10}, ACL_FLOAT, ACL_FORMAT_ND);
 
     // self形状大于8
-    auto self_out_of_shape_ut =
-        OP_API_UT(aclnnAtan2, INPUT(out_shape_tensor_desc, normal_tensor_desc), OUTPUT(normal_tensor_desc));
+    auto self_out_of_shape_ut = OP_API_UT(aclnnAtan2, INPUT(out_shape_tensor_desc, normal_tensor_desc),
+                                          OUTPUT(normal_tensor_desc));
 
     uint64_t workspaceSize = 0;
     aclnnStatus aclRet = self_out_of_shape_ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 
     // other形状大于8
-    auto other_out_of_shape_ut =
-        OP_API_UT(aclnnAtan2, INPUT(normal_tensor_desc, out_shape_tensor_desc), OUTPUT(normal_tensor_desc));
+    auto other_out_of_shape_ut = OP_API_UT(aclnnAtan2, INPUT(normal_tensor_desc, out_shape_tensor_desc),
+                                           OUTPUT(normal_tensor_desc));
     aclRet = other_out_of_shape_ut.TestGetWorkspaceSize(&workspaceSize);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }

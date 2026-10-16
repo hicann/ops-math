@@ -15,13 +15,22 @@
 
 #include "tile.h"
 
+namespace {
+#if defined(ORIG_DTYPE_X) && ORIG_DTYPE_X == DT_COMPLEX64
+// Repeat complex values as raw 64-bit data without redefining the SDK type.
+using TileDataType = uint64_t;
+#else
+using TileDataType = DTYPE_X;
+#endif
+} // namespace
+
 template <uint32_t schMode>
 __global__ __aicore__ void tile(GM_ADDR x, GM_ADDR multiples, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(TileTilingData);
     GET_TILING_DATA_WITH_STRUCT(TileTilingData, tilingData, tiling);
     AscendC::TPipe pipe;
-    TileKernel::TileOpImpl<DTYPE_X> op;
+    TileKernel::TileOpImpl<TileDataType> op;
     op.template Init<schMode>(x, y, &tilingData, &pipe);
     op.template Process<schMode>();
 }

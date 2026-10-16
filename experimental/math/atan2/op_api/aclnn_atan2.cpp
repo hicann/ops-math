@@ -13,7 +13,7 @@
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn/aclnn_base.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "op_api/aclnn_check.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
@@ -47,8 +47,8 @@ static const std::initializer_list<DataType> ASCEND910_OPERATOR_SUPPORT_LIST = {
 static const std::initializer_list<DataType> ASCEND910B_OPERATOR_SUPPORT_LIST = {
     DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_DOUBLE, DataType::DT_BF16};
 
-static const std::initializer_list<DataType> ARCH3510_DTYPE_SUPPORT_LIST = {
-    DataType::DT_FLOAT, DataType::DT_FLOAT16, DataType::DT_BF16};
+static const std::initializer_list<DataType> ARCH3510_DTYPE_SUPPORT_LIST = {DataType::DT_FLOAT, DataType::DT_FLOAT16,
+                                                                            DataType::DT_BF16};
 
 static inline const std::initializer_list<DataType>& GetDtypeSupportList(bool isInput)
 {
@@ -113,16 +113,15 @@ static inline DataType InferDtype(const DataType selfDtype, const DataType other
     DataType promoteType = PromoteType(selfDtype, otherDtype);
     auto supportList = GetDtypeSupportList(false);
     if (!CheckType(promoteType, supportList)) {
-        OP_LOGD(
-            "SelfDtype dtype %s ,otherDtype dtype %s ,promoteType %s,inferDtype type float.",
-            ToString(selfDtype).GetString(), ToString(otherDtype).GetString(), ToString(promoteType).GetString());
+        OP_LOGD("SelfDtype dtype %s ,otherDtype dtype %s ,promoteType %s,inferDtype type float.",
+                ToString(selfDtype).GetString(), ToString(otherDtype).GetString(), ToString(promoteType).GetString());
         return DataType::DT_FLOAT;
     }
     return promoteType;
 }
 
-static aclnnStatus ExecAtan2GetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+static aclnnStatus ExecAtan2GetWorkspaceSize(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                             uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     // 创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
@@ -172,15 +171,15 @@ static aclnnStatus ExecAtan2GetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnAtan2GetWorkspaceSize(
-    const aclTensor* self, const aclTensor* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnAtan2GetWorkspaceSize(const aclTensor* self, const aclTensor* other, aclTensor* out,
+                                       uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnAtan2, DFX_IN(self, other), DFX_OUT(out));
     return ExecAtan2GetWorkspaceSize(self, other, out, workspaceSize, executor);
 }
 
-aclnnStatus aclnnInplaceAtan2GetWorkspaceSize(
-    aclTensor* selfRef, aclTensor* other, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnInplaceAtan2GetWorkspaceSize(aclTensor* selfRef, aclTensor* other, uint64_t* workspaceSize,
+                                              aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnInplaceAtan2, DFX_IN(selfRef, other), DFX_OUT(selfRef));
     auto out = const_cast<aclTensor*>(selfRef);

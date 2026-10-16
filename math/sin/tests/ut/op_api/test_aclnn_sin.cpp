@@ -14,6 +14,11 @@
 #include "op_api_ut_common/op_api_ut.h"
 #include "opdev/platform.h"
 
+namespace op {
+extern SocVersion g_socVersion;
+extern NpuArch g_npuArchOverride;
+} // namespace op
+
 using namespace std;
 
 /**
@@ -27,15 +32,26 @@ using namespace std;
  */
 class sin_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
+    void SetUp() override
     {
-        cout << "sin_test SetUp" << endl;
+        savedSocVersion_ = op::g_socVersion;
+        savedNpuArchOverride_ = op::g_npuArchOverride;
     }
 
-    static void TearDownTestCase()
+    void TearDown() override
     {
-        cout << "sin_test TearDown" << endl;
+        // Restore both stub fields without the setters' coupled updates.
+        op::g_socVersion = savedSocVersion_;
+        op::g_npuArchOverride = savedNpuArchOverride_;
     }
+
+    static void SetUpTestCase() { cout << "sin_test SetUp" << endl; }
+
+    static void TearDownTestCase() { cout << "sin_test TearDown" << endl; }
+
+private:
+    op::SocVersion savedSocVersion_{op::SocVersion::RESERVED_VERSION};
+    NpuArch savedNpuArchOverride_{NpuArch::DAV_RESV};
 };
 
 /**

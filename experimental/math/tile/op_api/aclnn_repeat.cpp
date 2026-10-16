@@ -10,7 +10,7 @@
 
 #include "aclnn_repeat.h"
 
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 #include "op_api/aclnn_check.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/common_types.h"
@@ -86,9 +86,8 @@ static inline bool CheckTensorDimSize(const aclTensor* self, const aclIntArray* 
     int64_t repeatsSize = repeats->Size();
     OP_CHECK_MAX_DIM(self, MAX_SUPPORT_DIMS_NUMS, return false);
     if (repeatsSize > static_cast<int64_t>(MAX_SUPPORT_DIMS_NUMS)) {
-        OP_LOGE(
-            ACLNN_ERR_PARAM_INVALID, "repeats size should not be larger than 8. self %ld, repeats %ld", tensorDimSize,
-            repeatsSize);
+        OP_LOGE(ACLNN_ERR_PARAM_INVALID, "repeats size should not be larger than 8. self %ld, repeats %ld",
+                tensorDimSize, repeatsSize);
         return false;
     }
     return true;
@@ -187,9 +186,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclIntArray* repeats
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnRepeatGetWorkspaceSize(
-    const aclTensor* self, const aclIntArray* repeats, aclTensor* out, uint64_t* workspaceSize,
-    aclOpExecutor** executor)
+aclnnStatus aclnnRepeatGetWorkspaceSize(const aclTensor* self, const aclIntArray* repeats, aclTensor* out,
+                                        uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnRepeat, DFX_IN(self, repeats), DFX_OUT(out));
 

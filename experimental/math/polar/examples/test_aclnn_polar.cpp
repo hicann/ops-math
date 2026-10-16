@@ -107,7 +107,7 @@ static int RunCase(const char* name, aclrtStream stream, const std::vector<int64
 
     std::vector<float> inH(inN), anH(anN);
     for (int64_t i = 0; i < inN; ++i)
-        inH[i] = 0.5f + (float)(i % 17);        // abs ≥ 0 区间
+        inH[i] = 0.5f + (float)(i % 17); // abs ≥ 0 区间
     for (int64_t i = 0; i < anN; ++i)
         anH[i] = -3.1415926f + (float)(i % 11); // 角度
     std::vector<C64> outH(outN, {0.f, 0.f});
@@ -122,6 +122,8 @@ static int RunCase(const char* name, aclrtStream stream, const std::vector<int64
     aclOpExecutor* exec = nullptr;
     auto ret = aclnnPolarGetWorkspaceSize(in, an, out, &wsSize, &exec);
     CHECK_RET(ret == ACL_SUCCESS, LOG("[%s] GetWorkspaceSize failed %d\n", name, ret); return ret);
+    ret = aclSetAclOpExecutorRepeatable(exec);
+    CHECK_RET(ret == ACL_SUCCESS, LOG("[%s] enable executor reuse failed %d\n", name, ret); return ret);
     void* wsAddr = nullptr;
     if (wsSize > 0) {
         ret = aclrtMalloc(&wsAddr, wsSize, ACL_MEM_MALLOC_HUGE_FIRST);
@@ -133,7 +135,8 @@ static int RunCase(const char* name, aclrtStream stream, const std::vector<int64
         ret = aclnnPolar(wsAddr, wsSize, exec, stream);
         CHECK_RET(ret == ACL_SUCCESS, LOG("[%s] aclnnPolar failed %d\n", name, ret); return ret);
     }
-    aclrtSynchronizeStream(stream);
+    ret = aclrtSynchronizeStream(stream);
+    CHECK_RET(ret == ACL_SUCCESS, LOG("[%s] warmup synchronize failed %d\n", name, ret); return ret);
 
     // 计时（壁钟，msprof 另采设备时）
     auto t0 = std::chrono::high_resolution_clock::now();
@@ -141,12 +144,14 @@ static int RunCase(const char* name, aclrtStream stream, const std::vector<int64
         ret = aclnnPolar(wsAddr, wsSize, exec, stream);
         CHECK_RET(ret == ACL_SUCCESS, LOG("[%s] aclnnPolar failed %d\n", name, ret); return ret);
     }
-    aclrtSynchronizeStream(stream);
+    ret = aclrtSynchronizeStream(stream);
+    CHECK_RET(ret == ACL_SUCCESS, LOG("[%s] synchronize failed %d\n", name, ret); return ret);
     auto t1 = std::chrono::high_resolution_clock::now();
     double us = std::chrono::duration<double, std::micro>(t1 - t0).count() / repeat;
 
     // 读回 + CPU 参考校验（polar = abs*(cos+ i sin)，按广播规则）
-    aclrtMemcpy(outH.data(), outN * sizeof(C64), outD, outN * sizeof(C64), ACL_MEMCPY_DEVICE_TO_HOST);
+    ret = aclrtMemcpy(outH.data(), outN * sizeof(C64), outD, outN * sizeof(C64), ACL_MEMCPY_DEVICE_TO_HOST);
+    CHECK_RET(ret == ACL_SUCCESS, LOG("[%s] copy output failed %d\n", name, ret); return ret);
     int64_t err = 0;
     for (int64_t g = 0; g < outN; ++g) {
         // 由 g 反解广播下的 input/angle 元素（行主序，size==1 维不进位）
@@ -169,12 +174,15 @@ static int RunCase(const char* name, aclrtStream stream, const std::vector<int64
         }
         float a = inH[inIdx % inN], th = anH[anIdx % anN];
         float er = a * std::cos(th), ei = a * std::sin(th);
-        if (std::fabs(er - outH[g].re) > 1e-4f || std::fabs(ei - outH[g].im) > 1e-4f)
+        if (!std::isfinite(outH[g].re) || !std::isfinite(outH[g].im) || std::fabs(er - outH[g].re) > 1e-4f ||
+            std::fabs(ei - outH[g].im) > 1e-4f)
             ++err;
     }
     LOG("[%-22s] in=%lldel an=%lldel out=%lldel  avg=%.2f us/call  err=%lld/%lld  %s\n", name, (long long)inN,
         (long long)anN, (long long)outN, us, (long long)err, (long long)outN, (err <= outN * 1e-4 ? "PASS" : "FAIL"));
 
+    ret = aclDestroyAclOpExecutor(exec);
+    CHECK_RET(ret == ACL_SUCCESS, LOG("[%s] destroy executor failed %d\n", name, ret); return ret);
     aclDestroyTensor(in);
     aclDestroyTensor(an);
     aclDestroyTensor(out);
@@ -183,7 +191,7 @@ static int RunCase(const char* name, aclrtStream stream, const std::vector<int64
     aclrtFree(outD);
     if (wsSize > 0)
         aclrtFree(wsAddr);
-    return 0;
+    return err <= outN * 1e-4 ? 0 : 1;
 }
 
 int main()
@@ -194,14 +202,14 @@ int main()
     CHECK_RET(ret == ACL_SUCCESS, LOG("Init acl failed %d\n", ret); return ret);
 
     // 多组用例：同 shape（小/大-性能）+ 广播（多种模式）
-    RunCase("same-small [2,6,10]", stream, {2, 6, 10}, {2, 6, 10});
-    RunCase("same-large [4096,4096]", stream, {4096, 4096}, {4096, 4096}, 50);
-    RunCase("bcast [4,1,8]x[4,5,8]", stream, {4, 1, 8}, {4, 5, 8});
-    RunCase("bcast scalar [1]x[3,4,5]", stream, {1}, {3, 4, 5});
-    RunCase("bcast [8,1]x[1,7]", stream, {8, 1}, {1, 7});
+    ret |= (RunCase("same-small [2,6,10]", stream, {2, 6, 10}, {2, 6, 10}) != 0);
+    ret |= (RunCase("same-large [4096,4096]", stream, {4096, 4096}, {4096, 4096}, 50) != 0);
+    ret |= (RunCase("bcast [4,1,8]x[4,5,8]", stream, {4, 1, 8}, {4, 5, 8}) != 0);
+    ret |= (RunCase("bcast scalar [1]x[3,4,5]", stream, {1}, {3, 4, 5}) != 0);
+    ret |= (RunCase("bcast [8,1]x[1,7]", stream, {8, 1}, {1, 7}) != 0);
 
     aclrtDestroyStream(stream);
     aclrtResetDevice(deviceId);
     aclFinalize();
-    return 0;
+    return ret;
 }

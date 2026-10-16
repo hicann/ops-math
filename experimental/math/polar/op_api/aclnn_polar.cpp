@@ -30,7 +30,7 @@
 #include "opdev/platform.h"
 #include "opdev/shape_utils.h"
 #include "op_api/aclnn_check.h"
-#include "op_api/op_api_def.h"
+#include "op_api/op_api_def_math.h"
 
 using namespace op;
 
