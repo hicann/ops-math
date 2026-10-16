@@ -52,12 +52,24 @@ __aicore__ inline void PadSimtHuge<T, U>::Init(GM_ADDR x, GM_ADDR paddings, GM_A
     mOutputGMHuge.SetGlobalBuffer((__gm__ T*)y);
 
     if (constValue != nullptr) {
-        constValueGM_Huge.SetGlobalBuffer((__gm__ T*)constValue);
-        constValue_ = constValueGM_Huge(0);
-        if constexpr (IsSameType<U, fp4x2_e2m1_t>::value || IsSameType<U, fp4x2_e1m2_t>::value) {
-            T padValue = constValueGM_Huge(0);
-            T low4bit = padValue & 0x0F;
-            constValue_ = (low4bit << 4) | low4bit;
+        uint8_t improveDtypeSize = tilingData->improveDtypeSize;
+        uint8_t originDtypeSize = tilingData->originDtypeSize;
+        if (improveDtypeSize > 0 && originDtypeSize > 0 && improveDtypeSize > originDtypeSize) {
+            __gm__ uint8_t* constBytePtr = (__gm__ uint8_t*)constValue;
+            T promotedVal = 0;
+            uint8_t* valBytes = reinterpret_cast<uint8_t*>(&promotedVal);
+            for (uint8_t i = 0; i < sizeof(T); i++) {
+                valBytes[i] = *(constBytePtr + (i % originDtypeSize));
+            }
+            constValue_ = promotedVal;
+        } else {
+            constValueGM_Huge.SetGlobalBuffer((__gm__ T*)constValue);
+            constValue_ = constValueGM_Huge(0);
+            if constexpr (IsFp4PackType<U>()) {
+                T padValue = constValueGM_Huge(0);
+                T low4bit = padValue & 0x0F;
+                constValue_ = (low4bit << 4) | low4bit;
+            }
         }
     }
 }

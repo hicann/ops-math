@@ -16,6 +16,9 @@
 
 namespace ops {
 
+static constexpr ge::DataType DT_HIFLOAT4 = static_cast<ge::DataType>(42);
+static constexpr ge::DataType DT_HIFLOAT4_SCALE = static_cast<ge::DataType>(43);
+
 static const std::vector<ge::Format> format = {
     ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
     ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
@@ -40,6 +43,33 @@ static const std::vector<ge::DataType> padDataType = {
     ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
     ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32};
 
+static const std::vector<ge::Format> format_960 = {
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+
+static const std::vector<ge::DataType> valueDataType_960 = {
+    ge::DT_INT8,        ge::DT_UINT8,         ge::DT_INT16,         ge::DT_UINT16,      ge::DT_INT32,
+    ge::DT_UINT32,      ge::DT_INT64,         ge::DT_UINT64,        ge::DT_BF16,        ge::DT_FLOAT16,
+    ge::DT_FLOAT,       ge::DT_DOUBLE,        ge::DT_BOOL,          ge::DT_HIFLOAT8,    ge::DT_FLOAT8_E5M2,
+    ge::DT_FLOAT8_E8M0, ge::DT_FLOAT8_E4M3FN, ge::DT_FLOAT4_E2M1,   ge::DT_FLOAT4_E1M2, DT_HIFLOAT4,
+    DT_HIFLOAT4_SCALE,  ge::DT_INT8,          ge::DT_UINT8,         ge::DT_INT16,       ge::DT_UINT16,
+    ge::DT_INT32,       ge::DT_UINT32,        ge::DT_INT64,         ge::DT_UINT64,      ge::DT_BF16,
+    ge::DT_FLOAT16,     ge::DT_FLOAT,         ge::DT_DOUBLE,        ge::DT_BOOL,        ge::DT_HIFLOAT8,
+    ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E8M0,   ge::DT_FLOAT8_E4M3FN, ge::DT_FLOAT4_E2M1, ge::DT_FLOAT4_E1M2,
+    DT_HIFLOAT4,        DT_HIFLOAT4_SCALE};
+
+static const std::vector<ge::DataType> padDataType_960 = {
+    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+    ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32};
+
 class PadV3 : public OpDef {
 public:
     explicit PadV3(const char* name) : OpDef(name)
@@ -61,6 +91,30 @@ public:
             .ExtendCfgInfo("opFile.value", "pad_v3_apt");
         this->AICore().AddConfig("ascend950", aicore_config);
         this->AICore().AddConfig("ascend350", aicore_config);
+
+#if defined(METADEF_VERSION_NUM) && METADEF_VERSION_NUM >= 90300000
+        OpAICoreConfig config960;
+        config960.Input("x").ParamType(REQUIRED).DataType(valueDataType_960).Format(format_960);
+        config960.Input("paddings")
+            .ParamType(REQUIRED)
+            .ValueDepend(OPTIONAL)
+            .DataType(padDataType_960)
+            .Format(format_960);
+        config960.Input("constant_values")
+            .ParamType(OPTIONAL)
+            .ValueDepend(OPTIONAL)
+            .DataType(valueDataType_960)
+            .Format(format_960);
+        config960.Output("y").ParamType(REQUIRED).DataType(valueDataType_960).Format(format_960);
+        config960.DynamicCompileStaticFlag(true)
+            .DynamicFormatFlag(false)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .NeedCheckSupportFlag(false)
+            .PrecisionReduceFlag(true)
+            .ExtendCfgInfo("opFile.value", "pad_v3_apt");
+        this->AICore().AddConfig("ascend960dt", config960);
+#endif
     }
 };
 

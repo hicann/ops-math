@@ -129,7 +129,20 @@ __aicore__ inline void LaunchKernelPadSimt(GM_ADDR x, GM_ADDR paddings, GM_ADDR 
 {
     TPipe pipe;
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
-    if constexpr (sizeof(T) == sizeof(int32_t)) {
+    uint8_t improveDtypeSize = tilingData.improveDtypeSize;
+    if (improveDtypeSize == sizeof(int64_t)) {
+        PadV3::PadSimt<int64_t> op;
+        op.Init(x, paddings, y, &tilingData, constValue);
+        op.Process(tiling);
+    } else if (improveDtypeSize == sizeof(int32_t)) {
+        PadV3::PadSimt<int32_t> op;
+        op.Init(x, paddings, y, &tilingData, constValue);
+        op.Process(tiling);
+    } else if (improveDtypeSize == sizeof(int16_t)) {
+        PadV3::PadSimt<int16_t> op;
+        op.Init(x, paddings, y, &tilingData, constValue);
+        op.Process(tiling);
+    } else if constexpr (sizeof(T) == sizeof(int32_t)) {
         PadV3::PadSimt<int32_t> op;
         op.Init(x, paddings, y, &tilingData, constValue);
         op.Process(tiling);
@@ -154,7 +167,20 @@ __aicore__ inline void LaunchKernelPadSimtHuge(GM_ADDR x, GM_ADDR paddings, GM_A
 {
     TPipe pipe;
     GET_TILING_DATA_WITH_STRUCT(PadACTilingData, tilingData, tiling);
-    if constexpr (sizeof(T) == sizeof(int32_t)) {
+    uint8_t improveDtypeSize = tilingData.improveDtypeSize;
+    if (improveDtypeSize == sizeof(int64_t)) {
+        PadV3::PadSimtHuge<int64_t> op;
+        op.Init(x, paddings, y, &tilingData, constValue);
+        op.Process(tiling);
+    } else if (improveDtypeSize == sizeof(int32_t)) {
+        PadV3::PadSimtHuge<int32_t> op;
+        op.Init(x, paddings, y, &tilingData, constValue);
+        op.Process(tiling);
+    } else if (improveDtypeSize == sizeof(int16_t)) {
+        PadV3::PadSimtHuge<int16_t> op;
+        op.Init(x, paddings, y, &tilingData, constValue);
+        op.Process(tiling);
+    } else if constexpr (sizeof(T) == sizeof(int32_t)) {
         PadV3::PadSimtHuge<int32_t> op;
         op.Init(x, paddings, y, &tilingData, constValue);
         op.Process(tiling);

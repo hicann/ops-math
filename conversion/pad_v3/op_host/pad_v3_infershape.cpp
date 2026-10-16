@@ -44,8 +44,13 @@ static ge::graphStatus PadV3Infershape(const gert::InferShapeContext* context, c
     OP_LOGD(context->GetNodeName(), "input x = %s", Ops::Base::ToString(*x_shape).c_str());
     // input shape check
     size_t input_dim_size = x_shape->GetDimNum();
-    OP_CHECK_IF(input_dim_size == 0, OP_LOGE(context->GetNodeName(), "input shape cannot be empty"),
-                return ge::GRAPH_FAILED);
+    // scalar input (0-dim) is allowed, output is also 0-dim
+    if (input_dim_size == 0) {
+        y_shape->SetDimNum(0);
+        OP_LOGD(context->GetNodeName(), "PadV3Infershape scalar input, output y = []");
+        OP_LOGD(context->GetNodeName(), "End to do PadV3Infershape");
+        return ge::GRAPH_SUCCESS;
+    }
     // pad size check
     if (input_dim_size * PAIR != paddings_num) {
         OP_LOGE(context->GetNodeName(),
@@ -98,9 +103,13 @@ static ge::graphStatus PadV3InferShapeWithPaddingsValues(const gert::InferShapeC
     OP_LOGD(context->GetNodeName(), "input x = %s", Ops::Base::ToString(*x_shape).c_str());
     // input shape check
     size_t input_dim_size = x_shape->GetDimNum();
-    OP_CHECK_IF(input_dim_size == 0,
-                OP_LOGE(context->GetNodeName(), "PadV3InferShapeWithPaddingsValues input shape cannot be empty"),
-                return ge::GRAPH_FAILED);
+    // scalar input (0-dim) is allowed, output is also 0-dim
+    if (input_dim_size == 0) {
+        y_shape->SetDimNum(0);
+        OP_LOGD(context->GetNodeName(), "PadV3InferShapeWithPaddingsValues scalar input, output y = []");
+        OP_LOGD(context->GetNodeName(), "End to do PadV3InferShapeWithPaddingsValues");
+        return ge::GRAPH_SUCCESS;
+    }
     // pad size check
     if (input_dim_size * PAIR != paddings_num) {
         OP_LOGE(

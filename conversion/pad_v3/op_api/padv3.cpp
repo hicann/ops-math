@@ -18,6 +18,9 @@
 
 using namespace op;
 
+static constexpr ge::DataType DT_HIFLOAT4 = static_cast<ge::DataType>(42);
+static constexpr ge::DataType DT_HIFLOAT4_SCALE = static_cast<ge::DataType>(43);
+
 namespace l0op {
 OP_TYPE_REGISTER(PadV3);
 OP_TYPE_REGISTER(CircularPad);
@@ -52,6 +55,29 @@ static const std::initializer_list<op::DataType> CONSTANT_PAD_REGBASE_AICORE_DTY
     op::DataType::DT_BOOL,          op::DataType::DT_HIFLOAT8,    op::DataType::DT_FLOAT8_E5M2,
     op::DataType::DT_FLOAT8_E4M3FN, op::DataType::DT_FLOAT8_E8M0, op::DataType::DT_FLOAT4_E2M1,
     op::DataType::DT_FLOAT4_E1M2};
+
+static const std::initializer_list<op::DataType> CONSTANT_PAD_REGBASE_AICORE_DTYPE_SUPPORT_LIST_960 = {
+    op::DataType::DT_INT64,
+    op::DataType::DT_UINT64,
+    op::DataType::DT_DOUBLE,
+    op::DataType::DT_INT32,
+    op::DataType::DT_UINT32,
+    op::DataType::DT_FLOAT,
+    op::DataType::DT_INT16,
+    op::DataType::DT_UINT16,
+    op::DataType::DT_FLOAT16,
+    op::DataType::DT_BF16,
+    op::DataType::DT_INT8,
+    op::DataType::DT_UINT8,
+    op::DataType::DT_BOOL,
+    op::DataType::DT_HIFLOAT8,
+    op::DataType::DT_FLOAT8_E5M2,
+    op::DataType::DT_FLOAT8_E4M3FN,
+    op::DataType::DT_FLOAT8_E8M0,
+    op::DataType::DT_FLOAT4_E2M1,
+    op::DataType::DT_FLOAT4_E1M2,
+    DT_HIFLOAT4,
+    DT_HIFLOAT4_SCALE};
 
 static const std::initializer_list<op::DataType> REPLICATION_PAD_REGBASE_AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_INT64,         op::DataType::DT_UINT64,     op::DataType::DT_DOUBLE,
@@ -90,6 +116,9 @@ inline static bool IsAiCoreSupport(const aclTensor* self, const std::string& mod
         if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
             GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
             return CheckType(self->GetDataType(), CONSTANT_PAD_ASCEND910B_AICORE_DTYPE_SUPPORT_LIST);
+        } else if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_9201 ||
+                   GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_9202) {
+            return CheckType(self->GetDataType(), CONSTANT_PAD_REGBASE_AICORE_DTYPE_SUPPORT_LIST_960);
         } else if (IsRegBase()) {
             return CheckType(self->GetDataType(), CONSTANT_PAD_REGBASE_AICORE_DTYPE_SUPPORT_LIST);
         }

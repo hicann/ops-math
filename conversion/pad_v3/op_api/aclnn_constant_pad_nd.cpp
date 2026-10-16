@@ -27,6 +27,9 @@
 
 using namespace op;
 
+static constexpr ge::DataType DT_HIFLOAT4 = static_cast<ge::DataType>(42);
+static constexpr ge::DataType DT_HIFLOAT4_SCALE = static_cast<ge::DataType>(43);
+
 static const std::initializer_list<DataType> DTYPE_SUPPORT_LIST = {
     DataType::DT_FLOAT, DataType::DT_INT32, DataType::DT_FLOAT16,   DataType::DT_INT8,      DataType::DT_DOUBLE,
     DataType::DT_INT16, DataType::DT_INT64, DataType::DT_UINT64,    DataType::DT_UINT32,    DataType::DT_UINT16,
@@ -45,9 +48,27 @@ static const std::initializer_list<DataType> DTYPE_SUPPORT_REGBASE_LIST = {
     DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT8_E8M0, DataType::DT_FLOAT4_E2M1,
     DataType::DT_FLOAT4_E1M2};
 
-static const std::initializer_list<DataType> DTYPE_SUPPORT_FP8_FP4_LIST = {
-    DataType::DT_HIFLOAT8,    DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN,
-    DataType::DT_FLOAT8_E8M0, DataType::DT_FLOAT4_E2M1, DataType::DT_FLOAT4_E1M2};
+static const std::initializer_list<DataType> DTYPE_SUPPORT_REGBASE_LIST_960 = {
+    DataType::DT_FLOAT,       DataType::DT_INT32,
+    DataType::DT_FLOAT16,     DataType::DT_INT8,
+    DataType::DT_DOUBLE,      DataType::DT_INT16,
+    DataType::DT_INT64,       DataType::DT_UINT64,
+    DataType::DT_UINT32,      DataType::DT_UINT16,
+    DataType::DT_UINT8,       DataType::DT_BOOL,
+    DataType::DT_COMPLEX64,   DataType::DT_COMPLEX128,
+    DataType::DT_BF16,        DataType::DT_HIFLOAT8,
+    DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN,
+    DataType::DT_FLOAT8_E8M0, DataType::DT_FLOAT4_E2M1,
+    DataType::DT_FLOAT4_E1M2, DT_HIFLOAT4,
+    DT_HIFLOAT4_SCALE};
+
+static const std::initializer_list<DataType> DTYPE_SUPPORT_FP8_FP4_LIST = {DataType::DT_HIFLOAT8,
+                                                                           DataType::DT_FLOAT8_E5M2,
+                                                                           DataType::DT_FLOAT8_E4M3FN,
+                                                                           DataType::DT_FLOAT8_E8M0,
+                                                                           DataType::DT_FLOAT4_E2M1,
+                                                                           DataType::DT_FLOAT4_E1M2,
+                                                                           DT_HIFLOAT4};
 
 static const size_t DIM_BOUND = 8;
 static const size_t SIZE_T_TWICE = 2;
@@ -70,7 +91,10 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
                              GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93);
     std::initializer_list<op::DataType> CURRENT_DTYPE_SUPPORT_LIST = is910bSocVersion ? DTYPE_SUPPORT_910B_LIST :
                                                                                         DTYPE_SUPPORT_LIST;
-    if (IsRegBase()) {
+    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_9201 ||
+        GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_9202) {
+        CURRENT_DTYPE_SUPPORT_LIST = DTYPE_SUPPORT_REGBASE_LIST_960;
+    } else if (IsRegBase()) {
         CURRENT_DTYPE_SUPPORT_LIST = DTYPE_SUPPORT_REGBASE_LIST;
     }
     // 检查self与out数据类型是否一致
@@ -302,14 +326,20 @@ static aclnnStatus DoPadV3(const aclTensor* self, const aclIntArray* noneNegPad,
     }
 
     // self如果非连续，需要转连续
-    auto selfContiguous = l0op::Contiguous(self, executor);
-    CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
-
-    auto selfCasted = selfContiguous;
-    if (self->GetDataType() == DataType::DT_BOOL && !IsRegBase()) {
-        // 将bool类型承输入self的转换成int8的数据类型
-        selfCasted = l0op::Cast(selfContiguous, dataType, executor);
-        CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
+    // hifloat4_scale skip Contiguous: Contiguous may not support hifloat4_scale,
+    // and hifloat4_scale tensor is always contiguous, directly use self.
+    const aclTensor* selfCasted = self;
+    bool skipContiguous = false;
+    skipContiguous = (self->GetDataType() == DT_HIFLOAT4_SCALE);
+    if (!skipContiguous) {
+        auto selfContiguous = l0op::Contiguous(self, executor);
+        CHECK_RET(selfContiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        selfCasted = selfContiguous;
+        if (self->GetDataType() == DataType::DT_BOOL && !IsRegBase()) {
+            // 将bool类型承输入self的转换成int8的数据类型
+            selfCasted = l0op::Cast(selfContiguous, dataType, executor);
+            CHECK_RET(selfCasted != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        }
     }
 
     if (CheckType(self->GetDataType(), DTYPE_SUPPORT_FP8_FP4_LIST)) {

@@ -21,6 +21,7 @@
 #include "conversion/slice/op_host/arch35/slice_tiling_arch35.h"
 #include "conversion/strided_slice/op_host/arch35/strided_slice_tiling_arch35.h"
 #include "conversion/pad_v3/op_kernel/arch35/pad_v3_struct.h"
+#include "platform/soc_spec.h"
 #include <string>
 
 namespace optiling {
@@ -86,6 +87,7 @@ private:
     void DoTilingWithReflect();
     void DoTilingWithCircular();
     void DoTilingWithSIMTEdge();    // edge模板DoTilingWithSIMT
+    void XDtypeImproveSimt();       // SIMT访存提升(edge/constant通用)
     void DoTilingWithSIMTReflect(); // reflect模板DoTilingWithSIMT
     void DoTilingWithSIMTCircular();
     void DoTilingWithSIMT();
@@ -152,6 +154,7 @@ private:
     bool IsUnitDimToDrop(uint64_t inShapeV, int64_t padFront, int64_t padBack);
     bool IsFp8Fp4Dtype();
     bool IsFp4Dtype();
+    bool Is960Arch();
     ge::graphStatus DispatchTilingBranch();
 
 public:
@@ -178,6 +181,8 @@ private:
     uint32_t ubTotalCount_{0};
     uint32_t outTileSize_{0};
     uint32_t additionTileSize_{0};
+    uint8_t improveDtypeSize_{0};
+    uint8_t originDtypeSize_{0};
 
     bool isPadAllPositive_{true};
     bool isPadAllNegative_{true};
@@ -192,6 +197,7 @@ private:
     uint64_t inShapeSize_{1};
     uint64_t outShapeSize_{1};
     int64_t rightPad_[PAD_MAX_DIMS_NUM] = {0, 0, 0, 0, 0, 0, 0, 0};
+    NpuArch npuArch_{NpuArch::DAV_RESV};
 };
 } // namespace optiling
 #endif // OPS_BUILT_IN_OP_TILING_RUNTIME_PAD_TILING_H_

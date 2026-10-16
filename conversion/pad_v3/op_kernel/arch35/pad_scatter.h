@@ -83,7 +83,7 @@ public:
         if (constValue != nullptr) {
             constValueGM_.SetGlobalBuffer((__gm__ T*)constValue);
             constValue_ = constValueGM_(0);
-            if constexpr (IsSameType<U, fp4x2_e2m1_t>::value || IsSameType<U, fp4x2_e1m2_t>::value) {
+            if constexpr (IsFp4PackType<U>()) {
                 T padValue = constValueGM_(0);
                 T low4bit = padValue & 0x0F;
                 constValue_ = (low4bit << 4) | low4bit;
@@ -180,7 +180,7 @@ private:
             DoOnlyDup(outIndex, ubAxisOutCopyNum);
         } else {
             CopyIn(inIndex, ubAxisInCopyNum);
-            ScatterCompute(outIndex, ubAxisInCopyNum, idxTensor);
+            ScatterCompute(outIndex, ubAxisInCopyNum, ubAxisOutCopyNum, idxTensor);
             CopyOut(outIndex, ubAxisOutCopyNum);
         }
     }
@@ -197,17 +197,23 @@ private:
 
         DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
         DataCopyExtParams copyInParams = {1u, static_cast<uint32_t>(copyInNumScatter * sizeof(T)), 0, 0, 0};
+#if defined(__DAV_920R1__)
+        DataCopyPad(inLocal, inputGm_[inAddr], copyInParams, padParams, true);
+#else
         DataCopyPad(inLocal, inputGm_[inAddr], copyInParams, padParams);
+#endif
 
         inQue_.EnQue(inLocal);
     }
 
-    __aicore__ inline void ScatterCompute(const uint64_t* outIndex, uint32_t ubAxisInCopyNum,
+    __aicore__ inline void ScatterCompute(const uint64_t* outIndex, uint32_t ubAxisInCopyNum, uint32_t ubAxisOutCopyNum,
                                           LocalTensor<RangeType>& idxTensor)
     {
         LocalTensor<T> inLocal = inQue_.DeQue<T>();
         LocalTensor<T> outLocal = outQue_.AllocTensor<T>();
-        Duplicate(outLocal, constValue_, tdPtr_->outTileSize / sizeof(T));
+        uint32_t dupLen = static_cast<uint32_t>(CeilAlign(
+            static_cast<uint64_t>(ubAxisOutCopyNum) * tdPtr_->outStride[ubAxis_], static_cast<uint64_t>(BLOCK_NUM)));
+        Duplicate(outLocal, constValue_, dupLen);
 
         uint32_t outUbStart = 0;
         PadScatterParam scatterParam;
@@ -245,7 +251,9 @@ private:
         uint32_t copyOutNumScatter = ubAxisOutCopyNum * tdPtr_->outStride[ubAxis_];
 
         LocalTensor<T> outLocal = outQue_.AllocTensor<T>();
-        Duplicate(outLocal, constValue_, tdPtr_->outTileSize / sizeof(T));
+        uint32_t dupLen = static_cast<uint32_t>(CeilAlign(
+            static_cast<uint64_t>(ubAxisOutCopyNum) * tdPtr_->outStride[ubAxis_], static_cast<uint64_t>(BLOCK_NUM)));
+        Duplicate(outLocal, constValue_, dupLen);
         outQue_.EnQue(outLocal);
         outLocal = outQue_.DeQue<T>();
 

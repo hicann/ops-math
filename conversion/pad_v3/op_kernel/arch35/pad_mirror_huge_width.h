@@ -375,14 +375,6 @@ private:
         else
             SetFlag<HardEvent::MTE3_MTE2>(EVENT_ID0);
     }
-
-    template <HardEvent EVENT>
-    __aicore__ inline void SetEvent(HardEvent evt)
-    {
-        event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(evt));
-        SetFlag<EVENT>(eventId);
-        WaitFlag<EVENT>(eventId);
-    }
 };
 } // namespace PadV3
 #endif

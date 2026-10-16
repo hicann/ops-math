@@ -597,7 +597,7 @@ TEST_F(PadV3InfershapeTest, pad_v3_infershape_with_paddings_values_contiguous_fa
 }
 
 // 场景：paddings输入tensor为空，输入shape为空（0维tensor），paddings_values数量与输入维度不匹配
-// 期望：推导失败
+// 期望：标量输入允许，推导成功，输出为0维
 TEST_F(PadV3InfershapeTest, pad_v3_infershape_with_paddings_values_empty_input)
 {
     gert::StorageShape xShape = {{}, {{}}};
@@ -618,7 +618,10 @@ TEST_F(PadV3InfershapeTest, pad_v3_infershape_with_paddings_values_empty_input)
                                              Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>(paddingsValues))},
         {}, {}, {1});
 
-    ExecuteTestCase(infershapeContextPara, ge::GRAPH_FAILED, {});
+    std::vector<std::vector<int64_t>> expectOutputShape = {
+        {},
+    };
+    ExecuteTestCase(infershapeContextPara, ge::GRAPH_SUCCESS, expectOutputShape);
 }
 
 // 场景：paddings输入tensor为空，paddings_contiguous=true，但paddings_values数量不足（只有3个值，需要6个才能匹配3维输入）

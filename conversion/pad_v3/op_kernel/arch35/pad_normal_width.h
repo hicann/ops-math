@@ -50,6 +50,7 @@ private:
     const PadACTilingData* tilingData_ = nullptr;
     bool firstOut_{true};
     bool lastOut_{true};
+    bool bufferDirty_[BUFFER_NUM] = {false, false};
     uint32_t padHLength_{1};
     uint32_t padWLength_{0};
     uint32_t padStride_[MAX_H_DIMS] = {0, 0, 0};
@@ -75,7 +76,7 @@ public:
         if (constValue != nullptr) {
             constPad_.SetGlobalBuffer((__gm__ T*)constValue);
             constValue_ = constPad_(0);
-            if constexpr (IsSameType<U, fp4x2_e2m1_t>::value || IsSameType<U, fp4x2_e1m2_t>::value) {
+            if constexpr (IsFp4PackType<U>()) {
                 T padValue = constPad_(0);
                 T low4bit = padValue & 0x0F;
                 constValue_ = (low4bit << 4) | low4bit;
@@ -110,11 +111,12 @@ public:
         if (startIdxNormal >= tilingData_->ubTotalCount) {
             return;
         }
-        // 首次的dup在这里做，且设置两个EVENT_ID0
+        // 首次只dup buffer0，buffer1延迟到idx=0时填充
         LocalTensor<T> in = inQueue_.Get<T>();
-        Duplicate(in, constValue_, BUFFER_NUM * (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T));
+        Duplicate(in, constValue_, (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T));
         SetFlag<HardEvent::V_MTE2>(EVENT_ID0);
-        SetFlag<HardEvent::V_MTE2>(EVENT_ID1);
+        bufferDirty_[0] = false;
+        bufferDirty_[1] = false;
         uint32_t endIdxNormal = (blockIdx_ + 1L) * tilingData_->ubPerCount;
         endIdxNormal = (endIdxNormal < tilingData_->ubTotalCount ? endIdxNormal : tilingData_->ubTotalCount);
         uint8_t ubAxis = tilingData_->ubAxis;
@@ -188,26 +190,7 @@ private:
 
     __aicore__ inline void CopyIn(const LocalTensor<T>& src, PadNormalParam& padParam, bool& hasMTE2, int32_t idx)
     {
-        if (idx >= 1) {
-            int32_t nextIdx = idx + 1;
-            if ((nextIdx & 1) == 0) {
-                WaitFlag<HardEvent::MTE3_V>(EVENT_ID0);
-            } else {
-                WaitFlag<HardEvent::MTE3_V>(EVENT_ID1);
-            }
-            LocalTensor<T> input = inQueue_.Get<T>();
-            LocalTensor<T> nextLocal = input[(nextIdx & 1) *
-                                             (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T)];
-            Duplicate(nextLocal, constValue_, (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T));
-            if (!lastOut_) {
-                if ((nextIdx & 1) == 0) {
-                    SetFlag<HardEvent::V_MTE2>(EVENT_ID0);
-                } else {
-                    SetFlag<HardEvent::V_MTE2>(EVENT_ID1);
-                }
-            }
-        }
-
+        // 先发起当前buffer的MTE2搬运（其初始化flag在上一迭代已置好），与上一迭代的MTE3并行
         if ((idx & 1) == 0) {
             WaitFlag<HardEvent::V_MTE2>(EVENT_ID0);
         } else {
@@ -216,7 +199,36 @@ private:
         const uint8_t ubAxis = tilingData_->ubAxis;
         if (inCopyLen_[ubAxis] != 0) {
             DoCopyIn(src, padParam);
+            bufferDirty_[idx & 1] = true;
             hasMTE2 = true;
+        }
+        // 再准备下一迭代的buffer：等待其上次MTE3完成（此时当前MTE2已在执行），重填常量值
+        if (!lastOut_) {
+            int32_t nextIdx = idx + 1;
+            LocalTensor<T> input = inQueue_.Get<T>();
+            LocalTensor<T> nextLocal = input[(nextIdx & 1) *
+                                             (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T)];
+            if (idx == 0) {
+                // 首次迭代：下一buffer尚未初始化，直接填充，无需等待MTE3
+                Duplicate(nextLocal, constValue_,
+                          (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T));
+            } else {
+                if ((nextIdx & 1) == 0) {
+                    WaitFlag<HardEvent::MTE3_V>(EVENT_ID0);
+                } else {
+                    WaitFlag<HardEvent::MTE3_V>(EVENT_ID1);
+                }
+                if (bufferDirty_[nextIdx & 1]) {
+                    Duplicate(nextLocal, constValue_,
+                              (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T));
+                    bufferDirty_[nextIdx & 1] = false;
+                }
+            }
+            if ((nextIdx & 1) == 0) {
+                SetFlag<HardEvent::V_MTE2>(EVENT_ID0);
+            } else {
+                SetFlag<HardEvent::V_MTE2>(EVENT_ID1);
+            }
         }
     }
 
@@ -258,7 +270,11 @@ private:
             loopParams.loop1SrcStride = tilingData_->inStride[dimNum - DIM_INDEX_THIRD] * sizeof(T);
             loopParams.loop1DstStride = tilingData_->outShape[dimNum - DIM_INDEX_SECOND] * padParam.padW * sizeof(T);
             SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
+#if defined(__DAV_920R1__)
+            DataCopyPad(src[additionOffset_ + ubInOffset], input_[inAddr], copyInParams, padParams, true);
+#else
             DataCopyPad(src[additionOffset_ + ubInOffset], input_[inAddr], copyInParams, padParams);
+#endif
             ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
         } else if constexpr (UB_AXES == 4) {
             LoopModeParams loopParams;
@@ -270,10 +286,18 @@ private:
             loopParams.loop2DstStride = tilingData_->outShape[dimNum - DIM_INDEX_THIRD] *
                                         tilingData_->outShape[dimNum - DIM_INDEX_SECOND] * padParam.padW * sizeof(T);
             SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
+#if defined(__DAV_920R1__)
+            DataCopyPad(src[additionOffset_ + ubInOffset], input_[inAddr], copyInParams, padParams, true);
+#else
             DataCopyPad(src[additionOffset_ + ubInOffset], input_[inAddr], copyInParams, padParams);
+#endif
             ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
         } else {
+#if defined(__DAV_920R1__)
+            DataCopyPad(src[additionOffset_ + ubInOffset], input_[inAddr], copyInParams, padParams, true);
+#else
             DataCopyPad(src[additionOffset_ + ubInOffset], input_[inAddr], copyInParams, padParams);
+#endif
         }
     }
 

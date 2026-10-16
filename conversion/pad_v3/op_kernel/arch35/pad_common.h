@@ -27,6 +27,16 @@ constexpr int32_t MAX_H_DIMS = 3;
 constexpr int32_t B64_BYTES = 8;
 constexpr int32_t KEY_BASE = 10;
 
+template <typename U>
+__aicore__ inline constexpr bool IsFp4PackType()
+{
+    return AscendC::IsSameType<U, fp4x2_e2m1_t>::value || AscendC::IsSameType<U, fp4x2_e1m2_t>::value
+#if defined(__DAV_920R1__) || defined(__DAV_920R2__)
+           || AscendC::IsSameType<U, hifloat4x2_t>::value
+#endif
+        ;
+}
+
 } // namespace PadV3
 
 template <typename T1, typename T2>

@@ -76,7 +76,7 @@ public:
         if (constValue != nullptr) {
             constValueGMGather_.SetGlobalBuffer((__gm__ T*)constValue);
             constValue_ = constValueGMGather_(0);
-            if constexpr (IsSameType<U, fp4x2_e2m1_t>::value || IsSameType<U, fp4x2_e1m2_t>::value) {
+            if constexpr (IsFp4PackType<U>()) {
                 T padValue = constValueGMGather_(0);
                 T low4bit = padValue & 0x0F;
                 constValue_ = (low4bit << 4) | low4bit;
@@ -178,7 +178,7 @@ private:
             DoOnlyDup(outIndex, ubAxisOutCopyNum);
         } else {
             CopyIn(inIndex, ubAxisInCopyNum);
-            GatherCompute(outIndex, ubAxisInCopyNum, idxTensor);
+            GatherCompute(outIndex, ubAxisInCopyNum, ubAxisOutCopyNum, idxTensor);
             CopyOut(outIndex, ubAxisOutCopyNum);
         }
     }
@@ -195,17 +195,22 @@ private:
 
         DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
         DataCopyExtParams copyInParams = {1u, static_cast<uint32_t>(copyInNumGather * sizeof(T)), 0, 0, 0};
+#if defined(__DAV_920R1__)
+        DataCopyPad(inLocal[VL_CNT], inputGm_[inAddr], copyInParams, padParams, true);
+#else
         DataCopyPad(inLocal[VL_CNT], inputGm_[inAddr], copyInParams, padParams);
-
+#endif
         inQue_.EnQue(inLocal);
     }
 
-    __aicore__ inline void GatherCompute(const uint64_t* outIndex, uint32_t ubAxisInCopyNum,
+    __aicore__ inline void GatherCompute(const uint64_t* outIndex, uint32_t ubAxisInCopyNum, uint32_t ubAxisOutCopyNum,
                                          LocalTensor<RangeType>& idxTensor)
     {
         LocalTensor<T> inLocal = inQue_.DeQue<T>();
         LocalTensor<T> outLocal = outQue_.AllocTensor<T>();
-        Duplicate(outLocal, constValue_, tdPtr_->outTileSize / sizeof(T));
+        uint32_t dupLen = static_cast<uint32_t>(CeilAlign(
+            static_cast<uint64_t>(ubAxisOutCopyNum) * tdPtr_->outStride[ubAxis_], static_cast<uint64_t>(BLOCK_NUM)));
+        Duplicate(outLocal, constValue_, dupLen);
 
         uint32_t outUbStart = 0;
         PadGatherParam gatherParam;
@@ -243,7 +248,9 @@ private:
         uint32_t copyOutNumGather = ubAxisOutCopyNum * tdPtr_->outStride[ubAxis_];
 
         LocalTensor<T> outLocal = outQue_.AllocTensor<T>();
-        Duplicate(outLocal, constValue_, tdPtr_->outTileSize / sizeof(T));
+        uint32_t dupLen = static_cast<uint32_t>(CeilAlign(
+            static_cast<uint64_t>(ubAxisOutCopyNum) * tdPtr_->outStride[ubAxis_], static_cast<uint64_t>(BLOCK_NUM)));
+        Duplicate(outLocal, constValue_, dupLen);
         outQue_.EnQue(outLocal);
         outLocal = outQue_.DeQue<T>();
 

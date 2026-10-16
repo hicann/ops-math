@@ -52,7 +52,9 @@ private:
 
     uint16_t needPadRight_;
     uint32_t padRightLen_;
+    static constexpr uint32_t additionLen_ = VL_SIZE / sizeof(T);
     T padRightValue_;
+    uint32_t padRightSrcOffset_;
     uint16_t repeatTimes_;
 
     uint64_t factorOfubAxis_;
@@ -81,14 +83,25 @@ public:
 
     __aicore__ inline void Process()
     {
-        uint32_t startIdxEdgeHuge = blockIdx_ * tilingData_->ubPerCount;
-        if (startIdxEdgeHuge >= tilingData_->ubTotalCount) {
+        const uint32_t ubPerCount = tilingData_->ubPerCount;
+        const uint32_t ubTotalCount = tilingData_->ubTotalCount;
+        const uint8_t ubAxis = ubAxis_;
+        const uint64_t ubFactor = ubFactor_;
+        const uint64_t* outShape = tilingData_->outShape;
+        const int64_t* leftPad = tilingData_->leftPad;
+        const uint64_t* inShape = tilingData_->inShape;
+
+        uint32_t startIdxEdgeHuge = blockIdx_ * ubPerCount;
+        if (startIdxEdgeHuge >= ubTotalCount) {
             return;
         }
-        uint32_t endIdxEdgeHuge = (blockIdx_ + 1L) * tilingData_->ubPerCount;
-        endIdxEdgeHuge = (endIdxEdgeHuge < tilingData_->ubTotalCount ? endIdxEdgeHuge : tilingData_->ubTotalCount);
+        uint32_t endIdxEdgeHuge = (blockIdx_ + 1L) * ubPerCount;
+        endIdxEdgeHuge = (endIdxEdgeHuge < ubTotalCount ? endIdxEdgeHuge : ubTotalCount);
 
-        factorOfubAxis_ = CeilDiv(tilingData_->outShape[ubAxis_], ubFactor_);
+        factorOfubAxis_ = CeilDiv(outShape[ubAxis], ubFactor);
+        const uint64_t leftPadUb = leftPad[ubAxis];
+        const uint64_t inShapeUb = inShape[ubAxis];
+        const uint64_t leftPlusInUb = leftPadUb + inShapeUb;
 
         for (uint32_t idx = startIdxEdgeHuge; idx < endIdxEdgeHuge; idx++) {
             uint32_t curIdx = idx;
@@ -96,61 +109,66 @@ public:
             needPadRight_ = 0;
             padRightLen_ = 0;
 
-            for (int32_t i = ubAxis_; i >= 0; i--) {
-                uint64_t factor = tilingData_->outShape[i];
-                if (i == ubAxis_) {
-                    factor = factorOfubAxis_;
-                }
-
-                outIndex_[i] = (i == ubAxis_ ? curIdx % factor * ubFactor_ : curIdx % factor);
-
-                if (outIndex_[i] < tilingData_->leftPad[i]) {
-                    inIndex_[i] = 0;
-                } else {
-                    inIndex_[i] = min(outIndex_[i] - tilingData_->leftPad[i], tilingData_->inShape[i] - 1);
-                }
-
+            for (int32_t i = ubAxis; i >= 0; i--) {
+                uint64_t factor = (i == ubAxis) ? factorOfubAxis_ : outShape[i];
+                uint64_t outIdxI = (i == ubAxis) ? (curIdx % factor * ubFactor) : (curIdx % factor);
+                outIndex_[i] = outIdxI;
+                int64_t lp = leftPad[i];
+                inIndex_[i] = (outIdxI < static_cast<uint64_t>(lp)) ?
+                                  0 :
+                                  min(outIdxI - static_cast<uint64_t>(lp), inShape[i] - 1);
                 curIdx = curIdx / factor;
             }
 
-            if (outIndex_[ubAxis_] < tilingData_->leftPad[ubAxis_] + tilingData_->inShape[ubAxis_]) {
-                if (outIndex_[ubAxis_] + ubFactor_ <= tilingData_->leftPad[ubAxis_]) {
+            const uint64_t outUb = outIndex_[ubAxis];
+            if (outUb < leftPlusInUb) {
+                if (outUb + ubFactor <= leftPadUb) {
                     inCopyLen_ = 0;
-                } else if (outIndex_[ubAxis_] + ubFactor_ <
-                           tilingData_->leftPad[ubAxis_] + tilingData_->inShape[ubAxis_]) {
-                    inCopyLen_ = outIndex_[ubAxis_] + ubFactor_ - inIndex_[ubAxis_] - tilingData_->leftPad[ubAxis_];
+                } else if (outUb + ubFactor < leftPlusInUb) {
+                    inCopyLen_ = outUb + ubFactor - inIndex_[ubAxis] - leftPadUb;
                 } else {
-                    inCopyLen_ = tilingData_->inShape[ubAxis_] - inIndex_[ubAxis_];
+                    inCopyLen_ = inShapeUb - inIndex_[ubAxis];
                 }
             } else {
                 inCopyLen_ = 0;
             }
 
-            ProcessOneStep();
+            ProcessOneStep(additionLen_);
         }
     }
 
 private:
-    __aicore__ inline void ProcessOneStep()
+    __aicore__ inline void ProcessOneStep(const uint32_t additionLen)
     {
         PadEdgeHugeParam padParam;
 
         LocalTensor<T> srcLocal = inQueue_.AllocTensor<T>();
 
-        CopyIn(srcLocal, padParam);
+        CopyIn(srcLocal, padParam, additionLen);
 
-        PadOneLine(srcLocal[additionOffsetHuge_], padParam, srcLocal, VL_SIZE / sizeof(T));
+        PadOneLine(srcLocal[additionOffsetHuge_], padParam, srcLocal, additionLen);
 
         CopyOut(srcLocal, padParam);
 
         inQueue_.FreeTensor(srcLocal);
     }
 
-    __aicore__ inline void CopyIn(const LocalTensor<T>& src, PadEdgeHugeParam& padParam)
+    __aicore__ inline void CopyIn(const LocalTensor<T>& src, PadEdgeHugeParam& padParam, const uint32_t additionLen)
     {
+        const uint8_t dimNum = tilingData_->dimNum;
+        const uint8_t ubAxis = ubAxis_;
+        const uint64_t ubFactor = ubFactor_;
+        const uint64_t* inStride = tilingData_->inStride;
+        const int64_t* leftPad = tilingData_->leftPad;
+        const uint64_t* inShape = tilingData_->inShape;
+        const uint64_t* outShape = tilingData_->outShape;
+        const uint64_t leftPadUb = leftPad[ubAxis];
+        const uint64_t inShapeUb = inShape[ubAxis];
+        const uint64_t outShapeUb = outShape[ubAxis];
+
         uint64_t inAddr = 0;
-        for (uint32_t i = 0; i < tilingData_->dimNum; i++) {
-            inAddr += inIndex_[i] * tilingData_->inStride[i];
+        for (uint32_t i = 0; i < dimNum; i++) {
+            inAddr += inIndex_[i] * inStride[i];
         }
 
         DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
@@ -159,10 +177,10 @@ private:
         copyInParams.srcStride = 0;
         copyInParams.dstStride = 0;
 
-        if (inCopyLen_ == ubFactor_) {
+        if (inCopyLen_ == ubFactor) {
             padParam.padWLOffset = 0;
-            padParam.padWROffset = ubFactor_;
-            copyInParams.blockLen = ubFactor_ * sizeof(T);
+            padParam.padWROffset = ubFactor;
+            copyInParams.blockLen = ubFactor * sizeof(T);
 
             DataCopyPad(src[additionOffsetHuge_], input_[inAddr], copyInParams, padParams);
             SetEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V);
@@ -173,18 +191,18 @@ private:
             SetEvent<HardEvent::MTE3_S>(HardEvent::MTE3_S);
             T padValue = input_[inAddr].GetValue(0);
 
-            Duplicate(src[additionOffsetHuge_], padValue, ubFactor_);
+            Duplicate(src[additionOffsetHuge_], padValue, ubFactor);
         } else {
-            if (outIndex_[ubAxis_] < tilingData_->leftPad[ubAxis_]) {
-                padParam.padWLOffset = tilingData_->leftPad[ubAxis_] % ubFactor_;
+            if (outIndex_[ubAxis] < leftPadUb) {
+                padParam.padWLOffset = leftPadUb % ubFactor;
             } else {
                 padParam.padWLOffset = 0;
             }
 
-            if (outIndex_[ubAxis_] + ubFactor_ <= tilingData_->leftPad[ubAxis_] + tilingData_->inShape[ubAxis_]) {
-                padParam.padWROffset = ubFactor_;
+            if (outIndex_[ubAxis] + ubFactor <= leftPadUb + inShapeUb) {
+                padParam.padWROffset = ubFactor;
             } else {
-                padParam.padWROffset = (tilingData_->leftPad[ubAxis_] + tilingData_->inShape[ubAxis_]) % ubFactor_;
+                padParam.padWROffset = (leftPadUb + inShapeUb) % ubFactor;
             }
 
             uint32_t ubOffset = CeilAlign(padParam.padWLOffset, BLK_ELEMS);
@@ -211,27 +229,64 @@ private:
             }
 
             if (padParam.padWLOffset != 0) {
-                SetEvent<HardEvent::MTE2_S>(HardEvent::MTE2_S);
-                T padValue{0};
-                if (ubOffset != padParam.padWLOffset) {
-                    padValue = src.GetValue(0);
-                } else {
-                    padValue = src[additionOffsetHuge_].GetValue(ubOffset);
-                }
-                Duplicate(src[additionOffsetHuge_], padValue, padParam.padWLOffset);
-            }
-            if (padParam.padWROffset != ubFactor_) {
-                padRightLen_ = min(ubFactor_, tilingData_->outShape[ubAxis_] - outIndex_[ubAxis_]) -
-                               padParam.padWROffset;
-                if (padRightLen_ != 0) {
+                if constexpr (sizeof(T) == B64_BYTES) {
                     SetEvent<HardEvent::MTE2_S>(HardEvent::MTE2_S);
-                    if (copyLen != 0) {
-                        padRightValue_ = src[additionOffsetHuge_].GetValue(padParam.padWROffset - 1);
+                    T padValue{0};
+                    if (ubOffset != padParam.padWLOffset) {
+                        padValue = src.GetValue(0);
                     } else {
-                        padRightValue_ = src.GetValue(inCopyLen_ - 1);
+                        padValue = src[additionOffsetHuge_].GetValue(ubOffset);
+                    }
+                    Duplicate(src[additionOffsetHuge_], padValue, padParam.padWLOffset);
+                } else {
+                    SetEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V);
+                    __ubuf__ T* leftSrcAddr = (ubOffset != padParam.padWLOffset) ?
+                                                  (__ubuf__ T*)src.GetPhyAddr() :
+                                                  (__ubuf__ T*)src[additionOffsetHuge_].GetPhyAddr() + ubOffset;
+                    __ubuf__ T* leftDstAddr = (__ubuf__ T*)src[additionOffsetHuge_].GetPhyAddr();
+                    uint16_t leftPadLoops = padParam.padWLOffset / additionLen;
+                    uint32_t leftPadRemainder = padParam.padWLOffset % additionLen;
+                    __VEC_SCOPE__
+                    {
+                        AscendC::Reg::RegTensor<T> vRegLeft;
+                        AscendC::Reg::MaskReg maskAll = AscendC::Reg::CreateMask<T, AscendC::Reg::MaskPattern::ALL>();
+                        if constexpr (sizeof(T) == 1) {
+                            AscendC::Reg::LoadAlign<T, AscendC::Reg::LoadDist::DIST_BRC_B8>(vRegLeft, leftSrcAddr);
+                        } else if constexpr (sizeof(T) == 2) {
+                            AscendC::Reg::LoadAlign<T, AscendC::Reg::LoadDist::DIST_BRC_B16>(vRegLeft, leftSrcAddr);
+                        } else {
+                            AscendC::Reg::LoadAlign<T, AscendC::Reg::LoadDist::DIST_BRC_B32>(vRegLeft, leftSrcAddr);
+                        }
+                        for (uint16_t i = 0; i < leftPadLoops; i++) {
+                            AscendC::Reg::StoreAlign(leftDstAddr + i * additionLen, vRegLeft, maskAll);
+                        }
+                        if (leftPadRemainder > 0) {
+                            AscendC::Reg::MaskReg remMask = AscendC::Reg::UpdateMask<T>(leftPadRemainder);
+                            AscendC::Reg::StoreAlign(leftDstAddr + leftPadLoops * additionLen, vRegLeft, remMask);
+                        }
+                    }
+                }
+            }
+            if (padParam.padWROffset != ubFactor) {
+                padRightLen_ = min(ubFactor, outShapeUb - outIndex_[ubAxis]) - padParam.padWROffset;
+                if (padRightLen_ != 0) {
+                    if constexpr (sizeof(T) == B64_BYTES) {
+                        if (padParam.padWLOffset == 0) {
+                            SetEvent<HardEvent::MTE2_S>(HardEvent::MTE2_S);
+                        }
+                        if (copyLen != 0) {
+                            padRightValue_ = src[additionOffsetHuge_].GetValue(padParam.padWROffset - 1);
+                        } else {
+                            padRightValue_ = src.GetValue(inCopyLen_ - 1);
+                        }
+                    } else {
+                        if (padParam.padWLOffset == 0) {
+                            SetEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V);
+                        }
+                        padRightSrcOffset_ = (copyLen != 0) ? (additionOffsetHuge_ + padParam.padWROffset - 1) :
+                                                              (inCopyLen_ - 1);
                     }
 
-                    uint32_t additionLen = VL_SIZE / sizeof(T);
                     if (padRightLen_ <= additionLen) {
                         repeatTimes_ = 0;
                     } else {
@@ -245,35 +300,37 @@ private:
     }
 
     __aicore__ inline void PadOneLine(LocalTensor<T> src, PadEdgeHugeParam& padParam, LocalTensor<T> addition,
-                                      uint32_t additionLen)
+                                      const uint32_t additionLen)
     {
-        if (padParam.padWLOffset % BLK_ELEMS == 0 && needPadRight_ == 0) {
+        const bool padWLOffsetMode0 = padParam.padWLOffset % BLK_ELEMS == 0;
+        if (padWLOffsetMode0 && needPadRight_ == 0) {
             SetEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
             return;
         }
         if constexpr (sizeof(T) == B64_BYTES) {
             PadBothSide<AscendC::Reg::RegTraitNumTwo>(src, padParam, addition, additionLen, needPadRight_, padRightLen_,
-                                                      padRightValue_, repeatTimes_);
+                                                      padRightValue_, repeatTimes_, padWLOffsetMode0);
         } else {
             PadBothSide<AscendC::Reg::RegTraitNumOne>(src, padParam, addition, additionLen, needPadRight_, padRightLen_,
-                                                      padRightValue_, repeatTimes_);
+                                                      padRightValue_, repeatTimes_, padWLOffsetMode0);
         }
         SetEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
     }
 
     template <const AscendC::Reg::RegTrait& Trait>
     __aicore__ inline void PadBothSide(LocalTensor<T> dst, PadEdgeHugeParam& padParam, LocalTensor<T> addition,
-                                       uint32_t additionLen, uint16_t npr, uint32_t prl, T prv, uint16_t rt)
+                                       const uint32_t additionLen, uint16_t npr, uint32_t prl, T prv, uint16_t rt,
+                                       const bool padWLOffsetMode0)
     {
         __ubuf__ T* dstAddr = (__ubuf__ T*)dst.GetPhyAddr();
         __ubuf__ T* additionAddr = (__ubuf__ T*)addition.GetPhyAddr();
 
         const uint32_t padWLOffset = padParam.padWLOffset;
-        const uint16_t needPadLeft = (padParam.padWLOffset > 0 && padParam.padWLOffset % BLK_ELEMS != 0);
+        const uint16_t needPadLeft = (padWLOffset > 0 && !padWLOffsetMode0);
 
-        const uint32_t padLeftCeilAlign = CeilAlign(padParam.padWLOffset, BLK_ELEMS);
+        const uint32_t padLeftCeilAlign = CeilAlign(padWLOffset, BLK_ELEMS);
         const uint32_t padLeftEdge = padParam.padWROffset > padLeftCeilAlign ? padLeftCeilAlign : padParam.padWROffset;
-        const uint32_t padLeftSize = padLeftEdge - padParam.padWLOffset;
+        const uint32_t padLeftSize = padLeftEdge - padWLOffset;
 
         T padRightValue = prv;
         const uint16_t needPadRight = npr;
@@ -281,6 +338,7 @@ private:
         const uint32_t padRightLen = prl;
         const uint16_t repeatTimes = rt;
         const uint32_t padWROffset = padParam.padWROffset;
+        const uint32_t padWROffsetOnRepeat = padWROffset + repeatTimes * additionLen;
 
         __VEC_SCOPE__
         {
@@ -296,14 +354,27 @@ private:
 
             for (uint16_t j = 0; j < needPadRight; j++) {
                 __ubuf__ T* outAddr = dstAddr + padWROffset;
-                AscendC::Reg::Duplicate(vReg, padRightValue);
+                if constexpr (sizeof(T) == B64_BYTES) {
+                    AscendC::Reg::Duplicate(vReg, padRightValue);
+                } else {
+                    if constexpr (sizeof(T) == 1) {
+                        AscendC::Reg::LoadAlign<T, AscendC::Reg::LoadDist::DIST_BRC_B8>(
+                            vReg, additionAddr + padRightSrcOffset_);
+                    } else if constexpr (sizeof(T) == 2) {
+                        AscendC::Reg::LoadAlign<T, AscendC::Reg::LoadDist::DIST_BRC_B16>(
+                            vReg, additionAddr + padRightSrcOffset_);
+                    } else {
+                        AscendC::Reg::LoadAlign<T, AscendC::Reg::LoadDist::DIST_BRC_B32>(
+                            vReg, additionAddr + padRightSrcOffset_);
+                    }
+                }
 
                 for (uint16_t k = 0; k < repeatTimes; k++) {
                     AscendC::Reg::StoreUnAlign(outAddr, vReg, uReg, additionLen);
                 }
 
                 for (uint16_t k = 0; k < needPadRightSurplus; k++) {
-                    outAddr = dstAddr + padWROffset + repeatTimes * additionLen;
+                    outAddr = dstAddr + padWROffsetOnRepeat;
                     AscendC::Reg::StoreUnAlign(outAddr, vReg, uReg, padRightLen);
                 }
                 AscendC::Reg::StoreUnAlignPost(outAddr, uReg, 0);
@@ -313,13 +384,17 @@ private:
 
     __aicore__ inline void CopyOut(const LocalTensor<T>& src, PadEdgeHugeParam& padParam)
     {
+        const uint8_t dimNum = tilingData_->dimNum;
+        const uint8_t ubAxis = ubAxis_;
+        const uint64_t ubFactor = ubFactor_;
+        const uint64_t* outStride = tilingData_->outStride;
+        const uint64_t outShapeUb = tilingData_->outShape[ubAxis];
+
         uint64_t outAddr = 0;
-        for (uint32_t i = 0; i < tilingData_->dimNum; i++) {
-            outAddr += outIndex_[i] * tilingData_->outStride[i];
+        for (uint32_t i = 0; i < dimNum; i++) {
+            outAddr += outIndex_[i] * outStride[i];
         }
-        uint32_t copyLen = (outIndex_[ubAxis_] + ubFactor_ < tilingData_->outShape[ubAxis_] ?
-                                ubFactor_ :
-                                tilingData_->outShape[ubAxis_] - outIndex_[ubAxis_]);
+        uint32_t copyLen = (outIndex_[ubAxis] + ubFactor < outShapeUb ? ubFactor : outShapeUb - outIndex_[ubAxis]);
 
         DataCopyExtParams copyOutParams;
         copyOutParams.blockCount = 1;

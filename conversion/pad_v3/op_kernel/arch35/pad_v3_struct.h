@@ -27,6 +27,8 @@ constexpr int32_t INUB_DIM_INDEX_FOURTH = 4;
 struct PadACTilingData {
     uint8_t dimNum;
     uint8_t ubAxis;
+    uint8_t improveDtypeSize;
+    uint8_t originDtypeSize;
     uint32_t ubFactor;
     uint32_t ubPerCount;
     uint32_t ubTotalCount;

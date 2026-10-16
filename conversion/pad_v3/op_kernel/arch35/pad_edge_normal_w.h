@@ -45,6 +45,11 @@ private:
 
     TPipe* pipe_ = nullptr;
     int64_t blockIdx_;
+    int32_t dimNum_{0};
+    int32_t dimW_{0};
+    int32_t dimH_{0};
+    int32_t dimC_{0};
+    int32_t dimN_{0};
     T constValue_{0};
     uint32_t additionOffset_{0};
     const PadACTilingData* tilingData_ = nullptr;
@@ -80,14 +85,18 @@ public:
         output_.SetGlobalBuffer((__gm__ T*)y);
 
         pipe_->InitBuffer(inQueue_, BUFFER_NUM * (tilingData_->outTileSize + tilingData_->additionTileSize));
-        const int8_t dimNum = tilingData_->dimNum;
+        dimNum_ = tilingData_->dimNum;
+        dimW_ = dimNum_ - 1;
+        dimH_ = dimNum_ - CONST2;
+        dimC_ = dimNum_ - CONST3;
+        dimN_ = dimNum_ - CONST4;
         const int8_t ubAxis = tilingData_->ubAxis;
-        padWLength_ = CeilAlign(static_cast<uint32_t>(tilingData_->outShape[dimNum - 1]), BLK_ELEMS);
-        for (int8_t i = dimNum - 1; i > ubAxis; i--) {
+        padWLength_ = CeilAlign(static_cast<uint32_t>(tilingData_->outShape[dimW_]), BLK_ELEMS);
+        for (int8_t i = dimW_; i > ubAxis; i--) {
             inCopyLen_[i] = tilingData_->inShape[i];
             if constexpr (UB_AXES > CONST2) {
                 // UB内超过两个才需赋值下标1之后的参数
-                if (i != dimNum - 1) {
+                if (i != dimW_) {
                     padStride_[i - ubAxis] = padHLength_ * padWLength_;
                     padHLength_ = padHLength_ * tilingData_->outShape[i];
                     padHLOffset_[i - ubAxis] = tilingData_->leftPad[i];
@@ -148,25 +157,24 @@ public:
                     is3DPadding = true;
                 }
             }
-            ProcessOneStep(idx - startIdx);
+            PadReplNormalParam padParam = {.padH = padHLength_,
+                                           .padW = padWLength_,
+                                           .padStride = {padStride_[0], padStride_[1], padStride_[2]},
+                                           .padHLOffset = {0, padHLOffset_[1], padHLOffset_[2]},
+                                           .padHROffset = {tilingData_->ubFactor, padHROffset_[1], padHROffset_[2]},
+                                           .padWLOffset = static_cast<uint32_t>(tilingData_->leftPad[dimW_]),
+                                           .padWROffset = static_cast<uint32_t>(tilingData_->inShape[dimW_])};
+            ProcessOneStep(idx - startIdx, padParam);
         }
     }
 
 private:
-    __aicore__ inline void ProcessOneStep(int32_t idx)
+    __aicore__ inline void ProcessOneStep(int32_t idx, PadReplNormalParam& padParam)
     {
         // Copy IN
         LocalTensor<T> input = inQueue_.Get<T>();
         LocalTensor<T>
             srcLocal = input[(idx & 1) * (tilingData_->outTileSize + tilingData_->additionTileSize) / sizeof(T)];
-        PadReplNormalParam padParam = {
-            .padH = padHLength_,
-            .padW = padWLength_,
-            .padStride = {padStride_[0], padStride_[1], padStride_[2]},
-            .padHLOffset = {0, padHLOffset_[1], padHLOffset_[2]},
-            .padHROffset = {tilingData_->ubFactor, padHROffset_[1], padHROffset_[2]},
-            .padWLOffset = static_cast<uint32_t>(tilingData_->leftPad[tilingData_->dimNum - 1]),
-            .padWROffset = static_cast<uint32_t>(tilingData_->inShape[tilingData_->dimNum - 1])};
         CopyIn(srcLocal, padParam, idx);
 
         CopyOut(srcLocal, padParam, idx);
@@ -196,41 +204,39 @@ private:
     __aicore__ inline void CopyandProcess4D(const LocalTensor<T>& src, PadReplNormalParam& padParam, int32_t idx)
     {
         const int8_t ubAxis = tilingData_->ubAxis;
-        const int8_t dimNum = tilingData_->dimNum;
         const uint32_t ubFactor = tilingData_->ubFactor;
         uint64_t first = outIndex_[ubAxis];
         uint64_t last = outIndex_[ubAxis] + ubFactor < tilingData_->outShape[ubAxis] ? outIndex_[ubAxis] + ubFactor :
                                                                                        tilingData_->outShape[ubAxis];
-        uint64_t padHW = tilingData_->outShape[dimNum - CONST2] * padParam.padW;
-        uint64_t padCHW = tilingData_->outShape[dimNum - CONST3] * padHW;
+        uint64_t padHW = tilingData_->outShape[dimH_] * padParam.padW;
+        uint64_t padCHW = tilingData_->outShape[dimC_] * padHW;
         uint64_t inAddr = 0;
-        for (uint32_t i = 0; i < dimNum; i++) {
+        for (uint32_t i = 0; i < dimNum_; i++) {
             inAddr += (inIndex_[i] >= tilingData_->inShape[i] ? tilingData_->inShape[i] - 1 : inIndex_[i]) *
                       tilingData_->inStride[i];
         }
 
-        uint32_t firstOffset = tilingData_->leftPad[dimNum - CONST2] * padParam.padW +
-                               tilingData_->leftPad[dimNum - CONST3] * padHW;
-        uint32_t lastOffset = firstOffset + (inCopyLen_[dimNum - CONST2] - 1) * padParam.padW;
+        uint32_t firstOffset = tilingData_->leftPad[dimH_] * padParam.padW + tilingData_->leftPad[dimC_] * padHW;
+        uint32_t lastOffset = firstOffset + (inCopyLen_[dimH_] - 1) * padParam.padW;
 
         DataCopyPadExtParams<T> padParams{true, 0, 0, 0};
         DataCopyExtParams copyInParams;
-        copyInParams.blockCount = inCopyLen_[dimNum - CONST2];
-        copyInParams.blockLen = tilingData_->inShape[dimNum - 1] * sizeof(T);
+        copyInParams.blockCount = inCopyLen_[dimH_];
+        copyInParams.blockLen = tilingData_->inShape[dimW_] * sizeof(T);
         copyInParams.srcStride = 0;
-        copyInParams.dstStride = (padParam.padW - tilingData_->inShape[dimNum - 1]) / BLK_ELEMS;
+        copyInParams.dstStride = (padParam.padW - tilingData_->inShape[dimW_]) / BLK_ELEMS;
         LoopModeParams loopParams;
-        loopParams.loop1Size = inCopyLen_[dimNum - CONST3];
-        loopParams.loop1SrcStride = tilingData_->inStride[dimNum - CONST3] * sizeof(T);
-        loopParams.loop1DstStride = tilingData_->outShape[dimNum - CONST2] * padParam.padW * sizeof(T);
-        loopParams.loop2Size = inCopyLen_[dimNum - CONST4];
-        loopParams.loop2SrcStride = tilingData_->inStride[dimNum - CONST4] * sizeof(T);
-        loopParams.loop2DstStride = tilingData_->outShape[dimNum - CONST3] * tilingData_->outShape[dimNum - CONST2] *
-                                    padParam.padW * sizeof(T);
+        loopParams.loop1Size = inCopyLen_[dimC_];
+        loopParams.loop1SrcStride = tilingData_->inStride[dimC_] * sizeof(T);
+        loopParams.loop1DstStride = tilingData_->outShape[dimH_] * padParam.padW * sizeof(T);
+        loopParams.loop2Size = inCopyLen_[dimN_];
+        loopParams.loop2SrcStride = tilingData_->inStride[dimN_] * sizeof(T);
+        loopParams.loop2DstStride = tilingData_->outShape[dimC_] * tilingData_->outShape[dimH_] * padParam.padW *
+                                    sizeof(T);
         SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
         DataCopyPad(src[additionOffset_ + firstOffset], input_[inAddr], copyInParams, padParams);
         ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
-        SetEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V);
+        SetFlag<HardEvent::MTE2_V>(EVENT_ID2);
         if (!lastOut_) {
             if ((idx & 1) == 0) {
                 SetFlag<HardEvent::MTE2_V>(EVENT_ID0);
@@ -246,21 +252,22 @@ private:
                 WaitFlag<HardEvent::V_MTE3>(EVENT_ID1);
             }
         }
+        WaitFlag<HardEvent::MTE2_V>(EVENT_ID2);
 
         PadLeftSideFirst(src, padParam, firstOffset);
-        PadRightSide(src, padParam, firstOffset, inCopyLen_[dimNum - CONST2]);
+        PadRightSide(src, padParam, firstOffset, inCopyLen_[dimH_]);
         PadLeftSideLast(src, padParam, firstOffset);
         if (firstOffset != lastOffset) {
             PadLeftSideLast(src, padParam, lastOffset);
         }
         if constexpr (sizeof(T) == B64_BYTES) {
-            PadCopyDiff<AscendC::Reg::RegTraitNumTwo>(src, padParam, tilingData_->leftPad[dimNum - CONST3] * padHW,
+            PadCopyDiff<AscendC::Reg::RegTraitNumTwo>(src, padParam, tilingData_->leftPad[dimC_] * padHW,
                                                       ubAxis + CONST2);
         } else {
-            PadCopyDiff<AscendC::Reg::RegTraitNumOne>(src, padParam, tilingData_->leftPad[dimNum - CONST3] * padHW,
+            PadCopyDiff<AscendC::Reg::RegTraitNumOne>(src, padParam, tilingData_->leftPad[dimC_] * padHW,
                                                       ubAxis + CONST2);
         }
-        PadLeftSide(src, padParam, firstOffset + padParam.padW, false, inCopyLen_[dimNum - CONST2] - 1);
+        PadLeftSide(src, padParam, firstOffset + padParam.padW, false, inCopyLen_[dimH_] - 1);
         if constexpr (sizeof(T) == B64_BYTES) {
             PadCopyDiff<AscendC::Reg::RegTraitNumTwo>(src, padParam, 0, ubAxis + 1);
         } else {
@@ -272,14 +279,13 @@ private:
     __aicore__ inline void CopyandProcess3D(const LocalTensor<T>& src, PadReplNormalParam& padParam, int32_t idx)
     {
         const int8_t ubAxis = tilingData_->ubAxis;
-        const int8_t dimNum = tilingData_->dimNum;
         const uint32_t ubFactor = tilingData_->ubFactor;
         uint64_t first = outIndex_[ubAxis];
         uint64_t last = outIndex_[ubAxis] + ubFactor < tilingData_->outShape[ubAxis] ? outIndex_[ubAxis] + ubFactor :
                                                                                        tilingData_->outShape[ubAxis];
-        uint64_t padHW = tilingData_->outShape[dimNum - CONST2] * padParam.padW;
+        uint64_t padHW = tilingData_->outShape[dimH_] * padParam.padW;
         uint64_t inAddr = 0;
-        for (uint32_t i = 0; i < dimNum; i++) {
+        for (uint32_t i = 0; i < dimNum_; i++) {
             inAddr += (inIndex_[i] >= tilingData_->inShape[i] ? tilingData_->inShape[i] - 1 : inIndex_[i]) *
                       tilingData_->inStride[i];
         }
@@ -287,24 +293,24 @@ private:
         uint32_t firstOffset = (first >= tilingData_->leftPad[ubAxis] || is3DPadding) ?
                                    0 :
                                    (tilingData_->leftPad[ubAxis] - first) * padHW;
-        firstOffset = firstOffset + tilingData_->leftPad[dimNum - CONST2] * padParam.padW;
+        firstOffset = firstOffset + tilingData_->leftPad[dimH_] * padParam.padW;
 
         DataCopyPadExtParams<T> padParams{true, 0, 0, 0};
         DataCopyExtParams copyInParams;
-        copyInParams.blockCount = inCopyLen_[dimNum - CONST2];
-        copyInParams.blockLen = tilingData_->inShape[dimNum - 1] * sizeof(T);
+        copyInParams.blockCount = inCopyLen_[dimH_];
+        copyInParams.blockLen = tilingData_->inShape[dimW_] * sizeof(T);
         copyInParams.srcStride = 0;
-        copyInParams.dstStride = (padParam.padW - tilingData_->inShape[dimNum - 1]) / BLK_ELEMS;
+        copyInParams.dstStride = (padParam.padW - tilingData_->inShape[dimW_]) / BLK_ELEMS;
         LoopModeParams loopParams;
         loopParams.loop2Size = 1;
-        loopParams.loop1Size = is3DPadding ? 1 : inCopyLen_[dimNum - CONST3];
-        loopParams.loop1SrcStride = tilingData_->inStride[dimNum - CONST3] * sizeof(T);
-        loopParams.loop1DstStride = tilingData_->outShape[dimNum - CONST2] * padParam.padW * sizeof(T);
+        loopParams.loop1Size = is3DPadding ? 1 : inCopyLen_[dimC_];
+        loopParams.loop1SrcStride = tilingData_->inStride[dimC_] * sizeof(T);
+        loopParams.loop1DstStride = tilingData_->outShape[dimH_] * padParam.padW * sizeof(T);
 
         SetLoopModePara(loopParams, DataCopyMVType::OUT_TO_UB);
         DataCopyPad(src[additionOffset_ + firstOffset], input_[inAddr], copyInParams, padParams);
         ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
-        SetEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V);
+        SetFlag<HardEvent::MTE2_V>(EVENT_ID2);
         if (!lastOut_) {
             if ((idx & 1) == 0) {
                 SetFlag<HardEvent::MTE2_V>(EVENT_ID0);
@@ -320,41 +326,43 @@ private:
                 WaitFlag<HardEvent::V_MTE3>(EVENT_ID1);
             }
         }
+        WaitFlag<HardEvent::MTE2_V>(EVENT_ID2);
         ProcessPad3D(src, padParam, first, last);
     }
 
     __aicore__ inline void CopyandProcess2D(const LocalTensor<T>& src, PadReplNormalParam& padParam, int32_t idx)
     {
         const int8_t ubAxis = tilingData_->ubAxis;
-        const int8_t dimNum = tilingData_->dimNum;
         const uint32_t ubFactor = tilingData_->ubFactor;
         uint64_t inAddr = 0;
-        uint32_t copyLen = inCopyLen_[dimNum - CONST2] > 0 ? inCopyLen_[dimNum - CONST2] : 1;
+        uint32_t copyLen = inCopyLen_[dimH_] > 0 ? inCopyLen_[dimH_] : 1;
 
-        for (uint32_t i = 0; i < dimNum; i++) {
+        for (uint32_t i = 0; i < dimNum_; i++) {
             inAddr += (inIndex_[i] >= tilingData_->inShape[i] ? tilingData_->inShape[i] - 1 : inIndex_[i]) *
                       tilingData_->inStride[i];
         }
         DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
         DataCopyExtParams copyInParams;
         copyInParams.blockCount = copyLen;
-        copyInParams.blockLen = tilingData_->inShape[dimNum - 1] * sizeof(T);
+        copyInParams.blockLen = tilingData_->inShape[dimW_] * sizeof(T);
         copyInParams.srcStride = 0;
-        copyInParams.dstStride = (padParam.padW - tilingData_->inShape[dimNum - 1]) / BLK_ELEMS;
+        copyInParams.dstStride = (padParam.padW - tilingData_->inShape[dimW_]) / BLK_ELEMS;
         uint32_t ubInOffset = 0;
-        if (outIndex_[dimNum - CONST2] < tilingData_->leftPad[dimNum - CONST2] && !is2DPadding) {
-            padParam.padHLOffset[dimNum - CONST2 - ubAxis] = tilingData_->leftPad[dimNum - CONST2] -
-                                                             outIndex_[dimNum - CONST2];
+        uint32_t hlOffsetIdx = dimH_ - ubAxis;
+        uint32_t savedHlOffset = padParam.padHLOffset[hlOffsetIdx];
+        if (outIndex_[dimH_] < tilingData_->leftPad[dimH_] && !is2DPadding) {
+            padParam.padHLOffset[hlOffsetIdx] = tilingData_->leftPad[dimH_] - outIndex_[dimH_];
         }
         for (auto i = 0; i < MAX_H_DIMS; i++) {
             ubInOffset += padParam.padHLOffset[i] * padParam.padStride[i];
         }
+        padParam.padHLOffset[hlOffsetIdx] = savedHlOffset;
         DataCopyPad(src[additionOffset_ + ubInOffset], input_[inAddr], copyInParams, padParams);
         // 将最上行或最下行复制到pad位
         uint64_t first = outIndex_[ubAxis];
         uint64_t last = (outIndex_[ubAxis] + ubFactor < tilingData_->outShape[ubAxis] ? outIndex_[ubAxis] + ubFactor :
                                                                                         tilingData_->outShape[ubAxis]);
-        SetEvent<HardEvent::MTE2_V>(HardEvent::MTE2_V);
+        SetFlag<HardEvent::MTE2_V>(EVENT_ID2);
         if (!lastOut_) {
             if ((idx & 1) == 0) {
                 SetFlag<HardEvent::MTE2_V>(EVENT_ID0);
@@ -370,13 +378,13 @@ private:
                 WaitFlag<HardEvent::V_MTE3>(EVENT_ID1);
             }
         }
+        WaitFlag<HardEvent::MTE2_V>(EVENT_ID2);
         ProcessPad2D(src, padParam, first, last);
     }
 
     __aicore__ inline void ProcessPad2D(LocalTensor<T> src, PadReplNormalParam& padParam, uint32_t first, uint32_t last)
     {
         const int8_t ubAxis = tilingData_->ubAxis;
-        const int8_t dimNum = tilingData_->dimNum;
 
         if (is2DPadding) {
             PadLeftSideFirst(src, padParam, 0);
@@ -384,45 +392,42 @@ private:
             PadLeftSideLast(src, padParam, 0);
             if (last > first + 1) {
                 if constexpr (sizeof(T) == B64_BYTES) {
-                    PadCopySame<AscendC::Reg::RegTraitNumTwo>(src, padParam, 0, padParam.padW, last - first - 1,
-                                                              dimNum - CONST2);
+                    PadCopySame<AscendC::Reg::RegTraitNumTwo>(src, padParam, 0, padParam.padW, last - first - 1, dimH_);
                 } else {
-                    PadCopySame<AscendC::Reg::RegTraitNumOne>(src, padParam, 0, padParam.padW, last - first - 1,
-                                                              dimNum - CONST2);
+                    PadCopySame<AscendC::Reg::RegTraitNumOne>(src, padParam, 0, padParam.padW, last - first - 1, dimH_);
                 }
             }
         } else {
-            bool needPadUp = first < tilingData_->leftPad[dimNum - CONST2];
-            bool needPadDown = last > tilingData_->leftPad[dimNum - CONST2] + tilingData_->inShape[dimNum - CONST2];
-            uint32_t firstOffset = needPadUp ? (tilingData_->leftPad[dimNum - CONST2] - first) * padParam.padW : 0;
-            uint32_t lastOffset = (UB_AXES == 2) ? firstOffset + (inCopyLen_[ubAxis] - 1) * padParam.padW :
-                                                   (tilingData_->leftPad[dimNum - CONST2] +
-                                                    tilingData_->inShape[dimNum - CONST2] - 1) *
-                                                       padParam.padW;
+            bool needPadUp = first < tilingData_->leftPad[dimH_];
+            bool needPadDown = last > tilingData_->leftPad[dimH_] + tilingData_->inShape[dimH_];
+            uint32_t firstOffset = needPadUp ? (tilingData_->leftPad[dimH_] - first) * padParam.padW : 0;
+            uint32_t lastOffset = (UB_AXES == 2) ?
+                                      firstOffset + (inCopyLen_[ubAxis] - 1) * padParam.padW :
+                                      (tilingData_->leftPad[dimH_] + tilingData_->inShape[dimH_] - 1) * padParam.padW;
             PadLeftSideFirst(src, padParam, firstOffset);
-            PadRightSide(src, padParam, firstOffset, inCopyLen_[dimNum - CONST2]);
+            PadRightSide(src, padParam, firstOffset, inCopyLen_[dimH_]);
             if (needPadUp) {
                 PadLeftSideLast(src, padParam, firstOffset);
                 if constexpr (sizeof(T) == B64_BYTES) {
-                    PadCopySame<AscendC::Reg::RegTraitNumTwo>(
-                        src, padParam, firstOffset, 0, tilingData_->leftPad[dimNum - CONST2] - first, dimNum - CONST2);
+                    PadCopySame<AscendC::Reg::RegTraitNumTwo>(src, padParam, firstOffset, 0,
+                                                              tilingData_->leftPad[dimH_] - first, dimH_);
                 } else {
-                    PadCopySame<AscendC::Reg::RegTraitNumOne>(
-                        src, padParam, firstOffset, 0, tilingData_->leftPad[dimNum - CONST2] - first, dimNum - CONST2);
+                    PadCopySame<AscendC::Reg::RegTraitNumOne>(src, padParam, firstOffset, 0,
+                                                              tilingData_->leftPad[dimH_] - first, dimH_);
                 }
             }
-            if (inCopyLen_[dimNum - CONST2] > 1) {
-                PadLeftSide(src, padParam, firstOffset + padParam.padW, false, inCopyLen_[dimNum - CONST2] - 1);
+            if (inCopyLen_[dimH_] > 1) {
+                PadLeftSide(src, padParam, firstOffset + padParam.padW, false, inCopyLen_[dimH_] - 1);
             }
             if (needPadDown) {
-                uint32_t padLen = last - tilingData_->leftPad[dimNum - CONST2] - tilingData_->inShape[dimNum - CONST2];
+                uint32_t padLen = last - tilingData_->leftPad[dimH_] - tilingData_->inShape[dimH_];
                 PadLeftSideLast(src, padParam, lastOffset);
                 if constexpr (sizeof(T) == B64_BYTES) {
                     PadCopySame<AscendC::Reg::RegTraitNumTwo>(src, padParam, lastOffset, lastOffset + padParam.padW,
-                                                              padLen, dimNum - CONST2);
+                                                              padLen, dimH_);
                 } else {
                     PadCopySame<AscendC::Reg::RegTraitNumOne>(src, padParam, lastOffset, lastOffset + padParam.padW,
-                                                              padLen, dimNum - CONST2);
+                                                              padLen, dimH_);
                 }
             }
         }
@@ -431,35 +436,30 @@ private:
     __aicore__ inline void ProcessPad3D(LocalTensor<T> src, PadReplNormalParam& padParam, uint32_t first, uint32_t last)
     {
         const int8_t ubAxis = tilingData_->ubAxis;
-        const int8_t dimNum = tilingData_->dimNum;
-        uint32_t padHW = tilingData_->outShape[dimNum - CONST2] * padParam.padW;
+        uint32_t padHW = tilingData_->outShape[dimH_] * padParam.padW;
         if (is3DPadding) {
-            ProcessPad2D(src, padParam, 0, tilingData_->outShape[dimNum - CONST2]);
+            ProcessPad2D(src, padParam, 0, tilingData_->outShape[dimH_]);
             if (last > first + 1) {
                 if constexpr (sizeof(T) == B64_BYTES) {
-                    PadCopySame<AscendC::Reg::RegTraitNumTwo>(src, padParam, 0, padHW, last - first - 1,
-                                                              dimNum - CONST3);
+                    PadCopySame<AscendC::Reg::RegTraitNumTwo>(src, padParam, 0, padHW, last - first - 1, dimC_);
                 } else {
-                    PadCopySame<AscendC::Reg::RegTraitNumOne>(src, padParam, 0, padHW, last - first - 1,
-                                                              dimNum - CONST3);
+                    PadCopySame<AscendC::Reg::RegTraitNumOne>(src, padParam, 0, padHW, last - first - 1, dimC_);
                 }
             }
             // 每面第一行需要添加左pad
             PadLeftSide(src, padParam, padHW, true, 1);
         } else {
-            bool needPadUp = first < tilingData_->leftPad[dimNum - CONST3];
-            bool needPadDown = last > tilingData_->leftPad[dimNum - CONST3] + tilingData_->inShape[dimNum - CONST3];
-            uint32_t firstOffset = needPadUp ? (tilingData_->leftPad[dimNum - CONST3] - first) * padHW : 0;
+            bool needPadUp = first < tilingData_->leftPad[dimC_];
+            bool needPadDown = last > tilingData_->leftPad[dimC_] + tilingData_->inShape[dimC_];
+            uint32_t firstOffset = needPadUp ? (tilingData_->leftPad[dimC_] - first) * padHW : 0;
             uint32_t lastOffset = firstOffset + (inCopyLen_[ubAxis] - 1) * padHW;
-            uint32_t copyLen = tilingData_->leftPad[dimNum - CONST3] - first;
-            PadLeftSideFirst(src, padParam, firstOffset + tilingData_->leftPad[dimNum - CONST2] * padParam.padW);
-            PadRightSide(src, padParam, firstOffset + tilingData_->leftPad[dimNum - CONST2] * padParam.padW,
-                         inCopyLen_[dimNum - CONST2]);
-            PadLeftSideLast(src, padParam, firstOffset + tilingData_->leftPad[dimNum - CONST2] * padParam.padW);
+            uint32_t copyLen = tilingData_->leftPad[dimC_] - first;
+            PadLeftSideFirst(src, padParam, firstOffset + tilingData_->leftPad[dimH_] * padParam.padW);
+            PadRightSide(src, padParam, firstOffset + tilingData_->leftPad[dimH_] * padParam.padW, inCopyLen_[dimH_]);
+            PadLeftSideLast(src, padParam, firstOffset + tilingData_->leftPad[dimH_] * padParam.padW);
             PadLeftSideLast(
                 src, padParam,
-                firstOffset + (tilingData_->leftPad[dimNum - CONST2] + tilingData_->inShape[dimNum - CONST2] - 1) *
-                                  padParam.padW);
+                firstOffset + (tilingData_->leftPad[dimH_] + tilingData_->inShape[dimH_] - 1) * padParam.padW);
 
             if constexpr (sizeof(T) == B64_BYTES) {
                 PadCopyDiff<AscendC::Reg::RegTraitNumTwo>(src, padParam, firstOffset, ubAxis + 1);
@@ -467,24 +467,24 @@ private:
                 PadCopyDiff<AscendC::Reg::RegTraitNumOne>(src, padParam, firstOffset, ubAxis + 1);
             }
             // 补每面除第一行以外的左pad
-            PadLeftSide(src, padParam, firstOffset + (tilingData_->leftPad[dimNum - CONST2] + 1) * padParam.padW, false,
-                        inCopyLen_[dimNum - CONST2] - 1);
+            PadLeftSide(src, padParam, firstOffset + (tilingData_->leftPad[dimH_] + 1) * padParam.padW, false,
+                        inCopyLen_[dimH_] - 1);
 
             if (needPadUp) {
                 if constexpr (sizeof(T) == B64_BYTES) {
-                    PadCopySame<AscendC::Reg::RegTraitNumTwo>(src, padParam, firstOffset, 0, copyLen, dimNum - CONST3);
+                    PadCopySame<AscendC::Reg::RegTraitNumTwo>(src, padParam, firstOffset, 0, copyLen, dimC_);
                 } else {
-                    PadCopySame<AscendC::Reg::RegTraitNumOne>(src, padParam, firstOffset, 0, copyLen, dimNum - CONST3);
+                    PadCopySame<AscendC::Reg::RegTraitNumOne>(src, padParam, firstOffset, 0, copyLen, dimC_);
                 }
             }
             if (needPadDown) {
-                uint32_t padLen = last - tilingData_->leftPad[dimNum - CONST3] - tilingData_->inShape[dimNum - CONST3];
+                uint32_t padLen = last - tilingData_->leftPad[dimC_] - tilingData_->inShape[dimC_];
                 if constexpr (sizeof(T) == B64_BYTES) {
                     PadCopySame<AscendC::Reg::RegTraitNumTwo>(src, padParam, lastOffset, lastOffset + padHW, padLen,
-                                                              dimNum - CONST3);
+                                                              dimC_);
                 } else {
                     PadCopySame<AscendC::Reg::RegTraitNumOne>(src, padParam, lastOffset, lastOffset + padHW, padLen,
-                                                              dimNum - CONST3);
+                                                              dimC_);
                 }
             }
             // 补每面第一行左pad
@@ -497,17 +497,14 @@ private:
     {
         auto dstAddr = reinterpret_cast<__ubuf__ RT*>(dst.GetPhyAddr());
         const uint16_t sizeNum = (sizeof(T) > CONST4) ? 2 : 1;
-        const int8_t dimNum = tilingData_->dimNum;
-        const uint16_t dimNNum = (UB_AXES < CONST4) ? 1 : inCopyLen_[dimNum - CONST4];
-        const uint16_t dimCNum = (UB_AXES < CONST3 || is3DPadding) ?
-                                     1 :
-                                     (inCopyLen_[dimNum - CONST3] > 0 ? inCopyLen_[dimNum - CONST3] : 1);
+        const uint16_t dimNNum = (UB_AXES < CONST4) ? 1 : inCopyLen_[dimN_];
+        const uint16_t dimCNum = (UB_AXES < CONST3 || is3DPadding) ? 1 :
+                                                                     (inCopyLen_[dimC_] > 0 ? inCopyLen_[dimC_] : 1);
         const uint32_t padW = padParam.padStride[UB_AXES - CONST2] * sizeNum;
         const uint32_t padHW = (UB_AXES >= CONST3) ? padParam.padStride[UB_AXES - CONST3] * sizeNum : 0;
         const uint32_t padCHW = (UB_AXES >= CONST4) ? padParam.padStride[UB_AXES - CONST4] * sizeNum : 0;
         const uint32_t padRightFloorAlign = CeilAlign(padParam.padWROffset * sizeNum, BLK_ELEMS * sizeNum);
-        const uint32_t padLeftlen = (padParam.padWLOffset + padParam.padW - tilingData_->outShape[dimNum - 1]) *
-                                    sizeNum;
+        const uint32_t padLeftlen = (padParam.padWLOffset + padParam.padW - tilingData_->outShape[dimW_]) * sizeNum;
         const uint16_t padLeftVLNum = padLeftlen / (VL_ELEMS * sizeNum);
         const uint16_t padLeftBLNum = (padLeftlen % (VL_ELEMS * sizeNum)) / (BLK_ELEMS * sizeNum);
         const uint32_t PadRightSize = padRightFloorAlign - padParam.padWROffset * sizeNum;
@@ -634,14 +631,12 @@ private:
     {
         auto dstAddr = reinterpret_cast<__ubuf__ RT*>(dst.GetPhyAddr());
         const uint16_t sizeNum = (sizeof(T) > CONST4) ? 2 : 1;
-        const int8_t dimNum = tilingData_->dimNum;
-        const uint16_t dimNNum = (UB_AXES < CONST4) ? 1 : inCopyLen_[dimNum - CONST4];
-        const uint16_t dimCNum = (UB_AXES < CONST3 || is3DPadding) ?
-                                     1 :
-                                     (inCopyLen_[dimNum - CONST3] > 0 ? inCopyLen_[dimNum - CONST3] : 1);
+        const uint16_t dimNNum = (UB_AXES < CONST4) ? 1 : inCopyLen_[dimN_];
+        const uint16_t dimCNum = (UB_AXES < CONST3 || is3DPadding) ? 1 :
+                                                                     (inCopyLen_[dimC_] > 0 ? inCopyLen_[dimC_] : 1);
         const uint32_t padHW = (UB_AXES >= CONST3) ? padParam.padStride[UB_AXES - CONST3] * sizeNum : 0;
         const uint32_t padCHW = (UB_AXES >= CONST4) ? padParam.padStride[UB_AXES - CONST4] * sizeNum : 0;
-        const uint32_t padRight = (tilingData_->outShape[dimNum - 1] - tilingData_->leftPad[dimNum - 1]) * sizeNum;
+        const uint32_t padRight = (tilingData_->outShape[dimW_] - tilingData_->leftPad[dimW_]) * sizeNum;
         const uint32_t padRightFloorAlign = CeilAlign(padRight, BLK_ELEMS * sizeNum);
         const uint32_t padLeftSize = padRightFloorAlign - padRight;
         const uint16_t padLeftVLNum = (padParam.padW * sizeNum - padRightFloorAlign) / (VL_ELEMS * sizeNum);
@@ -745,23 +740,21 @@ private:
         const uint16_t sizeNum = (sizeof(T) > CONST4) ? 2 : 1;
         const int8_t ubAxis = tilingData_->ubAxis;
         const uint64_t ubFactor = tilingData_->ubFactor;
-        const int8_t dimNum = tilingData_->dimNum;
-        const uint16_t dim3D = dimNum - CONST3;
+        const uint16_t dim3D = dimC_;
         const uint16_t totalLen = (UB_AXES < CONST3) ? 1 :
                                                        ((outIndex_[dim3D] + ubFactor < tilingData_->outShape[dim3D] &&
                                                          UB_AXES == CONST3) ?
                                                             ubFactor :
                                                             tilingData_->outShape[dim3D] - outIndex_[dim3D]);
-        const uint16_t tempNNum = UB_AXES < CONST4 ? 1 : inCopyLen_[dimNum - CONST4];
-        const uint16_t dimNNum = (UB_AXES < CONST4 || isFirst) ? 1 : inCopyLen_[dimNum - CONST4];
+        const uint16_t tempNNum = UB_AXES < CONST4 ? 1 : inCopyLen_[dimN_];
+        const uint16_t dimNNum = (UB_AXES < CONST4 || isFirst) ? 1 : inCopyLen_[dimN_];
         const uint16_t dimCNum = (UB_AXES < CONST3 || (is3DPadding && !isFirst)) ?
                                      1 :
-                                     (isFirst ? totalLen * tempNNum - 1 : inCopyLen_[dimNum - CONST3]);
+                                     (isFirst ? totalLen * tempNNum - 1 : inCopyLen_[dimC_]);
         const uint32_t padW = padParam.padStride[UB_AXES - CONST2] * sizeNum;
         const uint32_t padHW = (UB_AXES >= CONST3) ? padParam.padStride[UB_AXES - CONST3] * sizeNum : 0;
         const uint32_t padCHW = (UB_AXES >= CONST4) ? padParam.padStride[UB_AXES - CONST4] * sizeNum : 0;
-        const uint32_t padLeftlen = (padParam.padWLOffset + padParam.padW - tilingData_->outShape[dimNum - 1]) *
-                                    sizeNum;
+        const uint32_t padLeftlen = (padParam.padWLOffset + padParam.padW - tilingData_->outShape[dimW_]) * sizeNum;
         const uint16_t padLeftVLNum = padLeftlen / (VL_ELEMS * sizeNum);
         const uint32_t PadLeftSize = padLeftlen - padLeftVLNum * VL_ELEMS * sizeNum;
         const uint16_t BLNum = PadLeftSize > 0 ? 1 : 0;
@@ -872,10 +865,8 @@ private:
     {
         auto dstAddr = reinterpret_cast<__ubuf__ RT*>(dst.GetPhyAddr());
         const uint16_t sizeNum = (sizeof(T) > CONST4) ? 2 : 1;
-        const int8_t dimNum = tilingData_->dimNum;
         const uint32_t padRightFloorAlign = CeilAlign(padParam.padWROffset * sizeNum, BLK_ELEMS * sizeNum);
-        const uint32_t padLeftlen = (padParam.padWLOffset + padParam.padW - tilingData_->outShape[dimNum - 1]) *
-                                    sizeNum;
+        const uint32_t padLeftlen = (padParam.padWLOffset + padParam.padW - tilingData_->outShape[dimW_]) * sizeNum;
         const uint16_t padLeftVLNum = padLeftlen / (VL_ELEMS * sizeNum);
         const uint16_t padLeftBLNum = (padLeftlen % (VL_ELEMS * sizeNum)) / (BLK_ELEMS * sizeNum);
         const uint16_t firstOffset = ubOffset * sizeNum;
@@ -968,7 +959,6 @@ private:
                                        int8_t curAxis)
     {
         auto dstAddr = reinterpret_cast<__ubuf__ RT*>(dst.GetPhyAddr());
-        const int8_t dimNum = tilingData_->dimNum;
         const int8_t ubAxis = tilingData_->ubAxis;
         const uint16_t sizeNum = (sizeof(T) > CONST4) ? 2 : 1;
         const uint16_t dimNNum = (curAxis - ubAxis <= 1) ? 1 : inCopyLen_[curAxis - CONST2];
@@ -1036,10 +1026,9 @@ private:
     __aicore__ inline void CopyOut(const LocalTensor<T>& src, PadReplNormalParam& padParam, int32_t idx)
     {
         const int8_t ubAxis = tilingData_->ubAxis;
-        const int8_t dimNum = tilingData_->dimNum;
         const uint32_t ubFactor = tilingData_->ubFactor;
         uint64_t outAddr = 0;
-        SetEvent<HardEvent::V_MTE3>(HardEvent::V_MTE3);
+        SetFlag<HardEvent::V_MTE3>(EVENT_ID2);
         if (!lastOut_) {
             if ((idx & 1) == 0) {
                 SetFlag<HardEvent::V_MTE3>(EVENT_ID0);
@@ -1055,56 +1044,56 @@ private:
                 WaitFlag<HardEvent::MTE3_MTE2>(EVENT_ID1);
             }
         }
-        for (uint32_t i = 0; i < dimNum; i++) {
+        for (uint32_t i = 0; i < dimNum_; i++) {
             outAddr += outIndex_[i] * tilingData_->outStride[i];
         }
 
         DataCopyExtParams copyOutParams;
         copyOutParams.blockCount = 1;
-        copyOutParams.blockLen = tilingData_->leftPad[dimNum - 1] * sizeof(T);
+        copyOutParams.blockLen = tilingData_->leftPad[dimW_] * sizeof(T);
         copyOutParams.srcStride = 0;
         copyOutParams.dstStride = 0;
 
-        if (tilingData_->leftPad[dimNum - 1] != 0) {
+        WaitFlag<HardEvent::V_MTE3>(EVENT_ID2);
+
+        if (tilingData_->leftPad[dimW_] != 0) {
             DataCopyExtParams copyOutParams0;
             copyOutParams0.blockCount = 1;
             copyOutParams0.blockLen = BLK_ELEMS * sizeof(T);
-            uint32_t addNum = tilingData_->leftPad[dimNum - 1] / BLK_ELEMS;
+            uint32_t addNum = tilingData_->leftPad[dimW_] / BLK_ELEMS;
             for (uint32_t i = 0; i < addNum; i++) {
                 DataCopyPad(output_[outAddr + i * BLK_ELEMS], src, copyOutParams0);
             }
-            if (tilingData_->leftPad[dimNum - 1] % BLK_ELEMS > 0) {
-                copyOutParams0.blockLen = (tilingData_->leftPad[dimNum - 1] % BLK_ELEMS) * sizeof(T);
+            if (tilingData_->leftPad[dimW_] % BLK_ELEMS > 0) {
+                copyOutParams0.blockLen = (tilingData_->leftPad[dimW_] % BLK_ELEMS) * sizeof(T);
                 DataCopyPad(output_[outAddr + addNum * BLK_ELEMS], src, copyOutParams0);
             }
         }
         uint32_t blockCount = (outIndex_[ubAxis] + ubFactor < tilingData_->outShape[ubAxis] ?
                                    ubFactor :
                                    tilingData_->outShape[ubAxis] - outIndex_[ubAxis]);
-        for (auto i = ubAxis + 1; i < dimNum - 1; i++) {
+        for (auto i = ubAxis + 1; i < dimW_; i++) {
             // blockCount 计算到倒数第二维
             blockCount = blockCount * tilingData_->outShape[i];
         }
         // 如果每行32B对齐，一次性搬出
-        if (tilingData_->outShape[dimNum - 1] % BLK_ELEMS == 0) {
-            copyOutParams.blockLen = (blockCount * tilingData_->outShape[dimNum - 1] -
-                                      tilingData_->leftPad[dimNum - 1]) *
+        if (tilingData_->outShape[dimW_] % BLK_ELEMS == 0) {
+            copyOutParams.blockLen = (blockCount * tilingData_->outShape[dimW_] - tilingData_->leftPad[dimW_]) *
                                      sizeof(T);
-            DataCopyPad(output_[outAddr + tilingData_->leftPad[dimNum - 1]], src[additionOffset_], copyOutParams);
+            DataCopyPad(output_[outAddr + tilingData_->leftPad[dimW_]], src[additionOffset_], copyOutParams);
         } else {
             // 先copy前blockCount - 1行，最后一行单独拷贝
             copyOutParams.blockCount = blockCount - 1;
-            copyOutParams.blockLen = tilingData_->outShape[dimNum - 1] * sizeof(T);
+            copyOutParams.blockLen = tilingData_->outShape[dimW_] * sizeof(T);
             if (copyOutParams.blockCount > 0) {
-                DataCopyPad(output_[outAddr + tilingData_->leftPad[dimNum - 1]], src[additionOffset_], copyOutParams);
+                DataCopyPad(output_[outAddr + tilingData_->leftPad[dimW_]], src[additionOffset_], copyOutParams);
             }
 
             DataCopyExtParams copyOutParams1;
             copyOutParams1.blockCount = 1;
-            copyOutParams1.blockLen = (tilingData_->outShape[dimNum - 1] - tilingData_->leftPad[dimNum - 1]) *
-                                      sizeof(T);
-            DataCopyPad(output_[outAddr + tilingData_->leftPad[dimNum - 1] +
-                                copyOutParams.blockCount * tilingData_->outShape[dimNum - 1]],
+            copyOutParams1.blockLen = (tilingData_->outShape[dimW_] - tilingData_->leftPad[dimW_]) * sizeof(T);
+            DataCopyPad(output_[outAddr + tilingData_->leftPad[dimW_] +
+                                copyOutParams.blockCount * tilingData_->outShape[dimW_]],
                         src[additionOffset_ + copyOutParams.blockCount * padParam.padW], copyOutParams1);
         }
         if (!lastOut_) {
@@ -1114,14 +1103,6 @@ private:
                 SetFlag<HardEvent::MTE3_MTE2>(EVENT_ID1);
             }
         }
-    }
-
-    template <HardEvent EVENT>
-    __aicore__ inline void SetEvent(HardEvent evt)
-    {
-        event_t eventId = static_cast<event_t>(GetTPipePtr()->FetchEventID(evt));
-        SetFlag<EVENT>(eventId);
-        WaitFlag<EVENT>(eventId);
     }
 };
 } // namespace PadV3

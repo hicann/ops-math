@@ -23,6 +23,8 @@
 
 using namespace AscendC;
 
+static constexpr ge::DataType DT_HIFLOAT4 = static_cast<ge::DataType>(42);
+
 namespace optiling {
 static constexpr uint64_t CONSTANT_SLICE_BRANCH = 10000;
 static constexpr uint64_t CONSTANT_SIMT_BRANCH = 20000;
@@ -73,6 +75,11 @@ static constexpr uint64_t DIM_OFFSET_SCALE = 10;
 static constexpr uint8_t UB_DIVIDER = 6;
 static constexpr uint64_t CONST4 = 4;
 static constexpr uint8_t CONST5 = 5;
+static constexpr uint64_t UINT16_MAX_NUM = 65536;
+
+static constexpr uint64_t B16 = 2;
+static constexpr uint64_t B32 = 4;
+static constexpr uint64_t B64 = 8;
 
 static const std::unordered_map<ge::DataType, uint16_t> DATA_TYPE_TO_BYTES{
     {ge::DataType::DT_INT8, 1},   {ge::DataType::DT_UINT8, 1},   {ge::DataType::DT_INT16, 2},
@@ -327,8 +334,10 @@ bool PadACTiling::CheckTilingInfoSatisfied(PadV3UbTileInfo& tilingInfo)
         tilingInfo.usedCoreNum = Ops::Base::CeilDiv(tilingInfo.ubTotalCnt, tilingInfo.ubPerCoreCnt);
     }
 
+    uint64_t checkStride = cutOutput ? tilingData_->outStride[tilingInfo.ubSplitAxis] :
+                                       tilingData_->inStride[tilingInfo.ubSplitAxis];
     if (static_cast<double>(tilingInfo.usedCoreNum) / static_cast<double>(coreNum_) >= MIN_USED_CORES_RATIO ||
-        tilingInfo.ubSplitFactor * tilingData_->inStride[tilingInfo.ubSplitAxis] * dtypeBytes_ <= MIN_PER_UB_SIZE) {
+        tilingInfo.ubSplitFactor * checkStride * dtypeBytes_ <= MIN_PER_UB_SIZE) {
         OP_LOGD(context_, "ubSplitAxis:%d ubSplitFactor:%d is ok, usedCoreNum:%ld dtypeBytes_:%u",
                 tilingInfo.ubSplitAxis, tilingInfo.ubSplitFactor, tilingInfo.usedCoreNum, dtypeBytes_);
         return true;
@@ -385,8 +394,9 @@ bool PadACTiling::SearchFactorForDim(uint8_t iDim, int64_t outCount, const PadV3
             break;
         }
 
-        if (factor * tilingData_->inStride[iDim] * dtypeBytes_ < MIN_PER_UB_SIZE ||
-            tmpFactor * tilingData_->inStride[iDim] * dtypeBytes_ < MIN_PER_UB_SIZE) {
+        uint64_t dimStride = cutOutput ? tilingData_->outStride[iDim] : tilingData_->inStride[iDim];
+        if (factor * dimStride * dtypeBytes_ < MIN_PER_UB_SIZE ||
+            tmpFactor * dimStride * dtypeBytes_ < MIN_PER_UB_SIZE) {
             OP_LOGD(context_, "iDim:%u factor:%ld tmpFactor:%ld in ubSize is too small", iDim, factor, tmpFactor);
             found = true;
             break;
@@ -634,6 +644,15 @@ void PadACTiling::CalculateTilingKeyEdge()
 
 void PadACTiling::KeyConstantBigLastDim(uint64_t lastShapeSizeAlign)
 {
+    // DAV_9201(960dt)的UB规格不同，按尾轴对齐块与blockSize收紧buffer上限
+    uint64_t lastDimAlignSize = GetSizeOfBlockAlign(tilingData_->outShape[dimNum_ - 1] * dtypeBytes_, blockSize_);
+    uint64_t ubMaxPerBuff = UB_MAX_DATA_SIZE_PER_BUFFER;
+    if (npuArch_ == NpuArch::DAV_9201) {
+        ubMaxPerBuff = ubSize_ / PAIR - lastDimAlignSize - blockSize_;
+    }
+    if (bufferSize_ > ubMaxPerBuff) {
+        bufferSize_ = ubMaxPerBuff;
+    }
     DoFindSplitAxis(true);
     if (tilingKey_ == CONSTANT_SIMT_BRANCH) {
         return;
@@ -656,6 +675,8 @@ void PadACTiling::KeyConstantBigLastDim(uint64_t lastShapeSizeAlign)
 void PadACTiling::KeyConstantSmallLastDim(uint64_t lastShapeSizeAlign)
 {
     bufferSize_ = GetSizeOfBlockAlign((ubSize_ - vectorSize_ * PAIR) / PAIR / PAIR, vectorSize_);
+    // 1字节dtype走gather/scatter时kernel侧索引为uint16，bufferSize需封顶防溢出
+    bufferSize_ = (dtypeBytes_ < PAIR) ? std::min(bufferSize_, UINT16_MAX_NUM) : bufferSize_;
     DoFindSplitAxis(false);
     if (tilingKey_ == CONSTANT_SIMT_BRANCH) {
         return;
@@ -782,8 +803,54 @@ ge::graphStatus PadACTiling::DoTilingWithSliceOp()
     return ge::GRAPH_SUCCESS;
 }
 
+void PadACTiling::XDtypeImproveSimt()
+{
+    OP_LOGD(context_, "Start PadACTiling XDtypeImproveSimt.");
+    uint8_t lastAxis = dimNum_ - 1;
+    uint64_t dtypeSize = dtypeBytes_;
+    uint64_t lastAxisBytes = tilingData_->inShape[lastAxis] * dtypeSize;
+    int64_t lastLeftPad = tilingData_->leftPad[lastAxis];
+    int64_t lastRightPad = rightPad_[lastAxis];
+
+    if (lastLeftPad != 0 || lastRightPad != 0) {
+        OP_LOGD(context_, "XDtypeImproveSimt skip: lastAxis has padding, leftPad=%ld, rightPad=%ld", lastLeftPad,
+                lastRightPad);
+        return;
+    }
+
+    if (dtypeSize < B64 && (lastAxisBytes % B64) == 0) {
+        improveDtypeSize_ = static_cast<uint8_t>(B64);
+    } else if (dtypeSize < B32 && (lastAxisBytes % B32) == 0) {
+        improveDtypeSize_ = static_cast<uint8_t>(B32);
+    } else if (dtypeSize < B16 && (lastAxisBytes % B16) == 0) {
+        improveDtypeSize_ = static_cast<uint8_t>(B16);
+    } else {
+        return;
+    }
+
+    originDtypeSize_ = static_cast<uint8_t>(dtypeSize);
+    uint64_t ratio = improveDtypeSize_ / dtypeSize;
+    tilingData_->inShape[lastAxis] /= ratio;
+    tilingData_->outShape[lastAxis] /= ratio;
+    tilingData_->leftPad[lastAxis] /= ratio;
+    rightPad_[lastAxis] /= ratio;
+
+    for (uint8_t i = 0; i < lastAxis; i++) {
+        tilingData_->inStride[i] /= ratio;
+        tilingData_->outStride[i] /= ratio;
+    }
+
+    inShapeSize_ /= ratio;
+    outShapeSize_ /= ratio;
+    dtypeBytes_ = improveDtypeSize_;
+    OP_LOGI(context_, "XDtypeImproveSimt improve dtype from %u to %u, ratio=%lu", originDtypeSize_, improveDtypeSize_,
+            ratio);
+}
+
 void PadACTiling::DoTilingWithSIMTEdge()
 {
+    // edge mode还不支持B4，不需要做条件判断
+    XDtypeImproveSimt();
     tilingKey_ = EDGE_SIMT_BRANCH;
     if (inShapeSize_ > INT32_MAX || outShapeSize_ > INT32_MAX) {
         tilingKey_ = EDGE_SIMT_BIG_SIZE_BRANCH;
@@ -800,6 +867,9 @@ void PadACTiling::DoTilingWithSIMTCircular()
 
 void PadACTiling::DoTilingWithSIMT()
 {
+    if (!IsFp8Fp4Dtype()) {
+        XDtypeImproveSimt();
+    }
     tilingKey_ = CONSTANT_SIMT_BRANCH;
     if (inShapeSize_ > INT32_MAX || outShapeSize_ > INT32_MAX) {
         tilingKey_ = CONSTANT_SIMT_BIG_SIZE_BRANCH;
@@ -1214,6 +1284,18 @@ ge::graphStatus PadACTiling::GetShapeAttrsInfo()
                 OP_LOGE(context_, "PadACTiling GetShapeAttrsInfo GetShapesAndDtypes error."), return ge::GRAPH_FAILED);
     OP_CHECK_IF(GetPaddings() == ge::GRAPH_FAILED, OP_LOGE(context_, "Get padding info failed"),
                 return ge::GRAPH_FAILED);
+
+    // scalar (0-dim) input normalization: convert to 1-dim with size 1, pads all zero
+    if (dimNum_ == 0) {
+        dimNum_ = 1;
+        tilingData_->inShape[0] = 1;
+        tilingData_->leftPad[0] = 0;
+        rightPad_[0] = 0;
+        paddings_.padFront.SetDimNum(1);
+        paddings_.padBack.SetDimNum(1);
+        paddings_.padFront.SetDim(0, 0);
+        paddings_.padBack.SetDim(0, 0);
+    }
     return ge::GRAPH_SUCCESS;
 }
 
@@ -1221,6 +1303,8 @@ void PadACTiling::FillsAndPrintTilingData()
 {
     tilingData_->dimNum = dimNum_;
     tilingData_->ubAxis = ubAxis_;
+    tilingData_->improveDtypeSize = improveDtypeSize_;
+    tilingData_->originDtypeSize = originDtypeSize_;
     tilingData_->ubFactor = ubFactor_;
     tilingData_->ubPerCount = ubPerCount_;
     tilingData_->ubTotalCount = ubTotalCount_;
@@ -1253,6 +1337,7 @@ ge::graphStatus PadACTiling::Init()
     OP_CHECK_IF(vectorSize_ == 0U, OP_LOGE(context_, "Failed to get vector size."), return ge::GRAPH_FAILED);
     cacheLineSize_ = Ops::Base::GetCacheLineSize(context_);
     OP_CHECK_IF(cacheLineSize_ == 0U, OP_LOGE(context_, "Failed to get cache line size."), return ge::GRAPH_FAILED);
+    npuArch_ = ascendcPlatform.GetCurNpuArch();
     OP_LOGD(context_,
             "platform info is coreNum_ = %u, ubSize_ = %lu, blockSize_ = %lu, vectorSize_ = %lu, cacheLineSize_ = %u",
             coreNum_, ubSize_, blockSize_, vectorSize_, cacheLineSize_);
@@ -1412,14 +1497,21 @@ ge::graphStatus PadACTiling::DoTilingModeCircular()
     return ge::GRAPH_SUCCESS;
 }
 
+bool PadACTiling::Is960Arch() { return npuArch_ == NpuArch::DAV_9201 || npuArch_ == NpuArch::DAV_9202; }
+
 bool PadACTiling::IsFp8Fp4Dtype()
 {
     return paramsDtype_ == ge::DT_HIFLOAT8 || paramsDtype_ == ge::DT_FLOAT8_E5M2 ||
            paramsDtype_ == ge::DT_FLOAT8_E4M3FN || paramsDtype_ == ge::DT_FLOAT8_E8M0 ||
-           paramsDtype_ == ge::DT_FLOAT4_E2M1 || paramsDtype_ == ge::DT_FLOAT4_E1M2;
+           paramsDtype_ == ge::DT_FLOAT4_E2M1 || paramsDtype_ == ge::DT_FLOAT4_E1M2 ||
+           (Is960Arch() && paramsDtype_ == DT_HIFLOAT4);
 }
 
-bool PadACTiling::IsFp4Dtype() { return paramsDtype_ == ge::DT_FLOAT4_E2M1 || paramsDtype_ == ge::DT_FLOAT4_E1M2; }
+bool PadACTiling::IsFp4Dtype()
+{
+    return paramsDtype_ == ge::DT_FLOAT4_E2M1 || paramsDtype_ == ge::DT_FLOAT4_E1M2 ||
+           (Is960Arch() && paramsDtype_ == DT_HIFLOAT4);
+}
 
 ge::graphStatus PadACTiling::DispatchTilingBranch()
 {

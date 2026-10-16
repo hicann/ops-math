@@ -67,7 +67,7 @@ public:
         if (constValue != nullptr) {
             constPad_.SetGlobalBuffer((__gm__ T*)constValue);
             constValue_ = constPad_(0);
-            if constexpr (IsSameType<U, fp4x2_e2m1_t>::value || IsSameType<U, fp4x2_e1m2_t>::value) {
+            if constexpr (IsFp4PackType<U>()) {
                 T padValue = constPad_(0);
                 T low4bit = padValue & 0x0F;
                 constValue_ = (low4bit << 4) | low4bit;
@@ -206,7 +206,11 @@ private:
             padParam.padWLOffset = 0;
             padParam.padWROffset = ubFactor;
             copyInParams.blockLen = ubFactor * sizeof(T);
+#if defined(__DAV_920R1__)
+            DataCopyPad(src[additionOffset_], input_[inAddr], copyInParams, padParams, true);
+#else
             DataCopyPad(src[additionOffset_], input_[inAddr], copyInParams, padParams);
+#endif
             hasMTE2 = true;
         } else if (inCopyLen_[ubAxis] == 0) {
             padParam.padWLOffset = 0;
@@ -233,11 +237,20 @@ private:
                     copyLen = inCopyLen_[ubAxis] - remainderLen;
                 }
                 copyInParams.blockLen = remainderLen * sizeof(T);
+#if defined(__DAV_920R1__)
+                DataCopyPad(src, input_[inAddr], copyInParams, padParams, true);
+#else
                 DataCopyPad(src, input_[inAddr], copyInParams, padParams);
+#endif
             }
             if (copyLen != 0) {
                 copyInParams.blockLen = copyLen * sizeof(T);
+#if defined(__DAV_920R1__)
+                DataCopyPad(src[additionOffset_ + ubOffset], input_[inAddr + remainderLen], copyInParams, padParams,
+                            true);
+#else
                 DataCopyPad(src[additionOffset_ + ubOffset], input_[inAddr + remainderLen], copyInParams, padParams);
+#endif
             }
             hasMTE2 = true;
         }
