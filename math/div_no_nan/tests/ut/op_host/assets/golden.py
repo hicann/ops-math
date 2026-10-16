@@ -12,15 +12,11 @@
 
 import numpy as np
 
-__golden__ = {
-    "kernel": {
-        "div_no_nan": "div_no_nan_golden"
-    }
-}
+__golden__ = {"kernel": {"div_no_nan": "div_no_nan_golden"}}
 
 
 def div_no_nan_golden(x1, x2, **kwargs):
-    '''
+    """
     Golden function for div_no_nan.
     All the parameters (names and order) follow @div_no_nan_def.cpp without outputs.
     All the input Tensors are numpy.ndarray.
@@ -31,24 +27,25 @@ def div_no_nan_golden(x1, x2, **kwargs):
 
     Returns:
         Output tensor
-    '''
+    """
     import tensorflow as tf
+
     tf.compat.v1.disable_eager_execution()
 
     x1_placeholder = tf.compat.v1.placeholder(shape=x1.shape, dtype=x1.dtype)
     x2_placeholder = tf.compat.v1.placeholder(shape=x2.shape, dtype=x2.dtype)
 
-    if x1.dtype == np.int8 or x1.dtype == np.int8:
+    if x1.dtype == np.int8:
         x1_fp16 = tf.cast(x1_placeholder, tf.float16)
         x2_fp16 = tf.cast(x2_placeholder, tf.float16)
         out = tf.compat.v1.div_no_nan(x1_fp16, x2_fp16, name="divnonan")
         out = tf.cast(out, tf.int8)
-    elif x1.dtype == np.uint8 or x1.dtype == np.uint8:
+    elif x1.dtype == np.uint8:
         x1_fp16 = tf.cast(x1_placeholder, tf.float16)
         x2_fp16 = tf.cast(x2_placeholder, tf.float16)
         out = tf.compat.v1.div_no_nan(x1_fp16, x2_fp16, name="divnonan")
         out = tf.cast(out, tf.uint8)
-    elif x1.dtype == np.int32 or x1.dtype == np.int32:
+    elif x1.dtype == np.int32:
         x1_fp32 = tf.cast(x1_placeholder, tf.float32)
         x2_fp32 = tf.cast(x2_placeholder, tf.float32)
         out = tf.compat.v1.div_no_nan(x1_fp32, x2_fp32, name="divnonan")
@@ -63,5 +60,5 @@ def div_no_nan_golden(x1, x2, **kwargs):
         sess.run(init_op)
         res = sess.run(out, feed_dict=feed_dict)
 
-    output_dtypes = kwargs.get('output_dtypes', [None])
+    output_dtypes = kwargs.get("output_dtypes", [None])
     return res.astype(output_dtypes[0]) if output_dtypes[0] else res
