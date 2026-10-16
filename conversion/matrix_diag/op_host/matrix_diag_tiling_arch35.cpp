@@ -412,7 +412,11 @@ static ge::graphStatus TilingPrepare4MatrixDiag(gert::TilingParseContext* contex
         return ge::GRAPH_FAILED);
     auto compileInfo = context->GetCompiledInfo<MatrixDiagAsc::MatrixDiagCompileInfo>();
     OP_CHECK_NULL_WITH_CONTEXT(context, compileInfo);
-    compileInfo->isAscendC = Ops::Base::IsRegbaseSocVersion(context);
+    auto platformInfoPtr = context->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(context, platformInfoPtr);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfoPtr);
+    compileInfo->isAscendC = Ops::Base::IsRegbaseSocVersion(context) ||
+                             ascendcPlatform.GetCurNpuArch() == NpuArch::DAV_9201;
     if (compileInfo->isAscendC) {
         return TilingPrepare4MatrixDiagAscendC(context);
     }

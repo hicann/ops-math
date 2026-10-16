@@ -63,6 +63,7 @@ public:
             .ExtendCfgInfo("opFile.value", "grouped_bias_add_grad_apt");
         this->AICore().AddConfig("ascend950", config950);
         this->AICore().AddConfig("ascend350", config950);
+        this->AICore().AddConfig("ascend960dt", config950);
     }
 };
 

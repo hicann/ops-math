@@ -17,15 +17,9 @@ using namespace std;
 
 class TilingGroupedBiasAddGrad : public ::testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "TilingGroupedBiasAddGrad SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "TilingGroupedBiasAddGrad SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "TilingGroupedBiasAddGrad TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "TilingGroupedBiasAddGrad TearDown" << std::endl; }
 };
 
 /*
@@ -34,8 +28,8 @@ protected:
 测试用例设计思路
 ============================================
 模式选择逻辑:
-CUT_G_MODE (tilingKey=67108865): 当 hBlockCount <= 32 时触发
-CUT_H_MODE (tilingKey=33554433): 当 hBlockCount > 32 时触发
+CUT_G_MODE (tilingKey=134217729): 当 hBlockCount <= 32 时触发
+CUT_H_MODE (tilingKey=67108865): 当 hBlockCount > 32 时触发
 ARA模式 (tilingKey根据reduce模版): 当 group_idx 为空（3D输入）时触发
 CUT_G_MODE tiling data 格式（12个字段）:
 cutGDim cutHDim blockFactor blockTailFactor blockTailStartIndex inputShape[0] inputShape[1]
@@ -69,7 +63,7 @@ TEST_F(TilingGroupedBiasAddGrad, ascend950_CutG_FP32_groupIdxType0)
         },
         {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo,
         64, 253952);
-    uint64_t expectTilingKey = 67108865; // CUT_G_MODE = 2
+    uint64_t expectTilingKey = 134217729; // CUT_G_MODE = 2
     string expectTilingData = "3 1 1 1 3 10 32 32 56800 32 512 2048 20480 0 ";
     std::vector<size_t> expectWorkspaces = {4096};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -90,7 +84,7 @@ TEST_F(TilingGroupedBiasAddGrad, ascend950_CutG_FP32_groupIdxType1)
         },
         {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(1))}, &compileInfo,
         64, 253952);
-    uint64_t expectTilingKey = 67108865;
+    uint64_t expectTilingKey = 134217729;
     string expectTilingData = "3 1 1 1 3 10 32 32 56800 32 512 2048 20480 1 ";
     std::vector<size_t> expectWorkspaces = {4096};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -111,7 +105,7 @@ TEST_F(TilingGroupedBiasAddGrad, ascend950_CutG_FP16_groupIdxType0)
         },
         {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo,
         64, 253952);
-    uint64_t expectTilingKey = 67108865;
+    uint64_t expectTilingKey = 134217729;
     // FP16: hPerBlock=64, cutHDim=1, outputSize=256, useUbSize=126752
     string expectTilingData = "3 1 1 1 3 10 64 64 55776 32 1024 2048 20480 0 ";
     std::vector<size_t> expectWorkspaces = {4096};
@@ -133,7 +127,7 @@ TEST_F(TilingGroupedBiasAddGrad, ascend950_CutG_BF16_groupIdxType0)
         },
         {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo,
         64, 253952);
-    uint64_t expectTilingKey = 67108865;
+    uint64_t expectTilingKey = 134217729;
     // BF16: 与FP16相同计算方式
     string expectTilingData = "3 1 1 1 3 10 64 64 55776 32 1024 2048 20480 0 ";
     std::vector<size_t> expectWorkspaces = {4096};
@@ -155,7 +149,7 @@ TEST_F(TilingGroupedBiasAddGrad, ascend950_CutG_LargeG)
         },
         {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo,
         64, 253952);
-    uint64_t expectTilingKey = 67108865;
+    uint64_t expectTilingKey = 134217729;
     // G=10, cutHDim=1, groupedIdxSize=64
     string expectTilingData = "10 1 1 1 10 100 32 32 56800 64 512 2048 20480 0 ";
     std::vector<size_t> expectWorkspaces = {4096};
@@ -177,7 +171,7 @@ TEST_F(TilingGroupedBiasAddGrad, ascend950_CutG_CoreSplitRemainder)
         },
         {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo,
         64, 253952);
-    uint64_t expectTilingKey = 67108865;
+    uint64_t expectTilingKey = 134217729;
     // G=5, cutHDim=1, groupedIdxSize=32
     string expectTilingData = "5 1 1 1 5 20 32 32 56800 32 512 2048 20480 0 ";
     std::vector<size_t> expectWorkspaces = {4096};
@@ -199,7 +193,7 @@ TEST_F(TilingGroupedBiasAddGrad, ascend950_CutG_INT64GroupIdx)
         },
         {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(1))}, &compileInfo,
         64, 253952);
-    uint64_t expectTilingKey = 603979777;
+    uint64_t expectTilingKey = 1207959553;
     // INT64 groupIdx: groupedIdxSize=AlignUp(3*8,32)=32
     string expectTilingData = "3 1 1 1 3 10 32 32 56800 32 512 2048 20480 1 ";
     std::vector<size_t> expectWorkspaces = {4096};
@@ -225,7 +219,7 @@ TEST_F(TilingGroupedBiasAddGrad, ascend950_CutH_FP32_LargeH)
         },
         {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo,
         64, 253952);
-    uint64_t expectTilingKey = 67108865; // CUT_H_MODE = 1
+    uint64_t expectTilingKey = 134217729; // CUT_H_MODE = 1
     // CUT_H: hFactorCount=64, blockFactor=1
     string expectTilingData = "4 16 1 1 64 100 2048 128 56800 32 512 2048 20480 0 ";
     std::vector<size_t> expectWorkspaces = {4096};
@@ -247,7 +241,7 @@ TEST_F(TilingGroupedBiasAddGrad, ascend950_CutH_FP16_LargeH)
         },
         {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo,
         64, 253952);
-    uint64_t expectTilingKey = 67108865;
+    uint64_t expectTilingKey = 134217729;
     // FP16 CUT_H: hPerBlock=64, hFactorCount=64, outputSize=256
     string expectTilingData = "4 16 1 1 64 100 4096 256 55776 32 1024 2048 20480 0 ";
     std::vector<size_t> expectWorkspaces = {4096};
@@ -273,7 +267,7 @@ TEST_F(TilingGroupedBiasAddGrad, ascend950_CutG_MinH)
         },
         {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo,
         64, 253952);
-    uint64_t expectTilingKey = 67108865;
+    uint64_t expectTilingKey = 134217729;
     string expectTilingData = "2 1 1 1 2 10 32 32 56800 32 512 2048 20480 0 ";
     std::vector<size_t> expectWorkspaces = {4096};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
@@ -294,7 +288,7 @@ TEST_F(TilingGroupedBiasAddGrad, ascend950_CutG_SingleGroup)
         },
         {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo,
         64, 253952);
-    uint64_t expectTilingKey = 67108865;
+    uint64_t expectTilingKey = 134217729;
     // G=1, cutHDim=2, totalBlocks=2
     string expectTilingData = "1 1 1 1 1 10 64 64 56800 32 512 2048 20480 0 ";
     std::vector<size_t> expectWorkspaces = {4096};
@@ -316,7 +310,7 @@ TEST_F(TilingGroupedBiasAddGrad, ascend950_CutG_MultiHBlocks)
         },
         {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo,
         64, 253952);
-    uint64_t expectTilingKey = 67108865; // GcutHDim = 44 = 16 <= 32, 仍为CUT_G_MODE
+    uint64_t expectTilingKey = 134217729; // GcutHDim = 44 = 16 <= 32, 仍为CUT_G_MODE
     // G=4, cutHDim=4, totalBlocks=16
     string expectTilingData = "4 1 1 1 4 20 128 128 56800 32 512 2048 20480 0 ";
     std::vector<size_t> expectWorkspaces = {4096};
@@ -338,7 +332,7 @@ TEST_F(TilingGroupedBiasAddGrad, ascend950_CutG_HBlockCountEqual32)
         },
         {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo,
         64, 253952);
-    uint64_t expectTilingKey = 67108865; // hBlockCount=32 <= 32, 仍为CUT_G_MODE
+    uint64_t expectTilingKey = 134217729; // hBlockCount=32 <= 32, 仍为CUT_G_MODE
     // G=2, cutHDim=32, totalBlocks=64
     string expectTilingData = "2 8 1 1 16 50 1024 128 56800 32 512 2048 20480 0 ";
     std::vector<size_t> expectWorkspaces = {4096};
@@ -360,7 +354,7 @@ TEST_F(TilingGroupedBiasAddGrad, ascend950_CutH_HBlockCountEqual33)
         },
         {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo,
         64, 253952);
-    uint64_t expectTilingKey = 67108865; // hBlockCount=33 > 32, CUT_H_MODE
+    uint64_t expectTilingKey = 134217729; // hBlockCount=33 > 32, CUT_H_MODE
     // CUT_H: hFactorCount=33
     string expectTilingData = "2 9 1 1 18 50 1056 32 56800 32 512 2048 20480 0 ";
     std::vector<size_t> expectWorkspaces = {4096};
@@ -386,7 +380,7 @@ TEST_F(TilingGroupedBiasAddGrad, ascend950_CutG_MaxGroupIdx2048)
         },
         {gert::TilingContextPara::OpAttr("group_idx_type", Ops::Math::AnyValue::CreateFrom<int64_t>(0))}, &compileInfo,
         64, 253952);
-    uint64_t expectTilingKey = 67108865; // CUT_G_MODE
+    uint64_t expectTilingKey = 134217729; // CUT_G_MODE
     // G=2048, cutHDim=1, totalBlocks=2048, usedCoreNum=64
     // blockFactor=32, blockTailFactor=32, tailStartIndex=64
     // groupedIdxSize = AlignUp(2048*4, 32) = 8192

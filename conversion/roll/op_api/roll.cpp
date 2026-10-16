@@ -29,16 +29,16 @@ OP_TYPE_REGISTER(Roll);
 static bool IsAiCoreSupport()
 {
     auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
-    if (curArch == NpuArch::DAV_2002 || curArch == NpuArch::DAV_1001 ||
-        curArch == NpuArch::DAV_2201 || IsRegBase(curArch)) {
+    if (curArch == NpuArch::DAV_2002 || curArch == NpuArch::DAV_1001 || curArch == NpuArch::DAV_2201 ||
+        IsRegBase(curArch)) {
         return true;
     }
 
     return false;
 }
 
-aclTensor* RollAiCore(
-    const aclTensor* x, const aclIntArray* shifts, const aclIntArray* dims, aclTensor* rollOut, aclOpExecutor* executor)
+aclTensor* RollAiCore(const aclTensor* x, const aclIntArray* shifts, const aclIntArray* dims, aclTensor* rollOut,
+                      aclOpExecutor* executor)
 {
     L0_DFX(RollAiCore, x, shifts, dims);
 
@@ -50,17 +50,16 @@ aclTensor* RollAiCore(
     return rollOut;
 }
 
-aclTensor* RollAiCpu(
-    const aclTensor* x, const aclIntArray* shifts, const aclIntArray* dims, aclTensor* rollOut, aclOpExecutor* executor)
+aclTensor* RollAiCpu(const aclTensor* x, const aclIntArray* shifts, const aclIntArray* dims, aclTensor* rollOut,
+                     aclOpExecutor* executor)
 {
     L0_DFX(RollAiCpu, x, shifts, dims);
 
     static internal::AicpuTaskSpace space("Roll", ge::DEPEND_IN_SHAPE, true);
     op::DataType inputDtype = x->GetDataType();
     op::DataType int64Dtype = op::DataType::DT_INT64;
-    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(
-        Roll, OP_ATTR_NAMES({"T", "Tshift", "Taxis"}), OP_INPUT(x, shifts, dims), OP_OUTPUT(rollOut),
-        OP_ATTR(inputDtype, int64Dtype, int64Dtype));
+    auto ret = ADD_TO_LAUNCHER_LIST_AICPU(Roll, OP_ATTR_NAMES({"T", "Tshift", "Taxis"}), OP_INPUT(x, shifts, dims),
+                                          OP_OUTPUT(rollOut), OP_ATTR(inputDtype, int64Dtype, int64Dtype));
     CHECK_RET(ret == ACLNN_SUCCESS, nullptr);
     return rollOut;
 }
