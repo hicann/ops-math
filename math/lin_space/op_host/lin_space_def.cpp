@@ -140,6 +140,7 @@ public:
             .ExtendCfgInfo("opFile.value", "lin_space_apt");
         this->AICore().AddConfig("ascend950", regBaseConfig);
         this->AICore().AddConfig("ascend350", regBaseConfig);
+        this->AICore().AddConfig("ascend960dt", regBaseConfig);
     }
 };
 
