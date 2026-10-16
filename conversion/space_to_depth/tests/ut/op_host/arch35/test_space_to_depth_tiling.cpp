@@ -49,6 +49,11 @@ TEST_F(SpaceToDepthTiling, test_nhwc_float16_success_001)
     TilingInfo tilingInfo;
     bool result = ExecuteTiling(tilingContextPara, tilingInfo);
     EXPECT_TRUE(result);
+    std::vector<size_t> expectWorkspaces = {0};
+    ASSERT_EQ(tilingInfo.workspaceSizes.size(), expectWorkspaces.size());
+    for (size_t i = 0; i < expectWorkspaces.size(); i++) {
+        EXPECT_EQ(tilingInfo.workspaceSizes[i], expectWorkspaces[i]);
+    }
 }
 
 // NCHW format with valid block_size=2, FP16 dtype, expect tiling success
@@ -72,6 +77,11 @@ TEST_F(SpaceToDepthTiling, test_nchw_float16_success_001)
     TilingInfo tilingInfo;
     bool result = ExecuteTiling(tilingContextPara, tilingInfo);
     EXPECT_TRUE(result);
+    std::vector<size_t> expectWorkspaces = {0};
+    ASSERT_EQ(tilingInfo.workspaceSizes.size(), expectWorkspaces.size());
+    for (size_t i = 0; i < expectWorkspaces.size(); i++) {
+        EXPECT_EQ(tilingInfo.workspaceSizes[i], expectWorkspaces[i]);
+    }
 }
 
 // NHWC format with valid block_size=2, FP32 dtype, expect tiling success
@@ -95,6 +105,11 @@ TEST_F(SpaceToDepthTiling, test_nhwc_float32_success_001)
     TilingInfo tilingInfo;
     bool result = ExecuteTiling(tilingContextPara, tilingInfo);
     EXPECT_TRUE(result);
+    std::vector<size_t> expectWorkspaces = {0};
+    ASSERT_EQ(tilingInfo.workspaceSizes.size(), expectWorkspaces.size());
+    for (size_t i = 0; i < expectWorkspaces.size(); i++) {
+        EXPECT_EQ(tilingInfo.workspaceSizes[i], expectWorkspaces[i]);
+    }
 }
 
 // NCHW format with valid block_size=2, FP32 dtype, expect tiling success
@@ -141,6 +156,11 @@ TEST_F(SpaceToDepthTiling, test_nhwc_block_size_3_success_001)
     TilingInfo tilingInfo;
     bool result = ExecuteTiling(tilingContextPara, tilingInfo);
     EXPECT_TRUE(result);
+    std::vector<size_t> expectWorkspaces = {0};
+    ASSERT_EQ(tilingInfo.workspaceSizes.size(), expectWorkspaces.size());
+    for (size_t i = 0; i < expectWorkspaces.size(); i++) {
+        EXPECT_EQ(tilingInfo.workspaceSizes[i], expectWorkspaces[i]);
+    }
 }
 
 // Invalid dims: 3D input shape, expect failure
@@ -428,4 +448,9 @@ TEST_F(SpaceToDepthTiling, test_nchw_bf16_block_size_4_success_001)
     TilingInfo tilingInfo;
     bool result = ExecuteTiling(tilingContextPara, tilingInfo);
     EXPECT_TRUE(result);
+    std::vector<size_t> expectWorkspaces = {0};
+    ASSERT_EQ(tilingInfo.workspaceSizes.size(), expectWorkspaces.size());
+    for (size_t i = 0; i < expectWorkspaces.size(); i++) {
+        EXPECT_EQ(tilingInfo.workspaceSizes[i], expectWorkspaces[i]);
+    }
 }

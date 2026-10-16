@@ -20,7 +20,7 @@ static constexpr int8_t NUM_TWO = 2;
 static constexpr int8_t NUM_THREE = 3;
 static constexpr int64_t NUM_FOUR = 4;
 static constexpr int64_t NUM_EIGHT = 8;
-static constexpr size_t SYS_WORKSPACE_SIZE = static_cast<size_t>(16) * 1024 * 1024;
+static constexpr size_t SYS_WORKSPACE_SIZE = 0;
 
 /**
  * @brief 计算 Gather 路径 UB 预算（dataTensorSize / indexTensorSize）

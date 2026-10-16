@@ -17,7 +17,7 @@
 
 namespace optiling {
 namespace Transpose021WithVCONV {
-static constexpr size_t SYS_WORKSPACE_SIZE = static_cast<size_t>(16) * 1024 * 1024;
+static constexpr size_t SYS_WORKSPACE_SIZE = 0;
 
 void Transpose021VCONVTiling::CalcBasicInfo()
 {

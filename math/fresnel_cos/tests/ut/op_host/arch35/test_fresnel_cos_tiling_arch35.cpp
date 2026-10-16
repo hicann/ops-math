@@ -222,7 +222,7 @@ TEST_F(FresnelCosTilingTest, tiling_data_bf16_4d)
 }
 
 // =============================================================================
-// Workspace test: workspace = sizeof(FresnelCosTilingData)
+// Workspace test: kernel does not use workspace, expect 0
 // =============================================================================
 TEST_F(FresnelCosTilingTest, workspace_size)
 {
@@ -232,13 +232,12 @@ TEST_F(FresnelCosTilingTest, workspace_size)
     TilingInfo info;
     ASSERT_TRUE(RunTiling(p, info));
     ASSERT_EQ(info.workspaceSizes.size(), 1u);
-    // Workspace should be >= sizeof(FresnelCosTilingData)
-    EXPECT_GE(info.workspaceSizes[0], sizeof(FresnelCosTilingData));
+    // Workspace should be 0 (kernel does not dereference workspace)
+    EXPECT_EQ(info.workspaceSizes[0], 0u);
     // Verify against TilingData
     ASSERT_GE(info.tilingDataSize, sizeof(FresnelCosTilingData));
     const FresnelCosTilingData* td = reinterpret_cast<const FresnelCosTilingData*>(info.tilingData.get());
-    size_t expectedWs = sizeof(FresnelCosTilingData);
-    EXPECT_EQ(info.workspaceSizes[0], expectedWs);
+    (void)td;
 }
 
 // =============================================================================

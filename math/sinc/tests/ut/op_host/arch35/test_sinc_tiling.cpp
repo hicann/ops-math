@@ -38,7 +38,7 @@ TEST_F(SincTilingTest, test_tiling_fp16_001)
     gert::TilingContextPara tilingContextPara("Sinc", {{shape, ge::DT_FLOAT16, ge::FORMAT_ND}},
                                               {{shape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 3;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -49,7 +49,7 @@ TEST_F(SincTilingTest, test_tiling_fp32_002)
     gert::TilingContextPara tilingContextPara("Sinc", {{shape, ge::DT_FLOAT, ge::FORMAT_ND}},
                                               {{shape, ge::DT_FLOAT, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 7;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -60,7 +60,7 @@ TEST_F(SincTilingTest, test_tiling_bf16_003)
     gert::TilingContextPara tilingContextPara("Sinc", {{shape, ge::DT_BF16, ge::FORMAT_ND}},
                                               {{shape, ge::DT_BF16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 5;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -73,7 +73,7 @@ TEST_F(SincTilingTest, test_tiling_1dim_fp32_004)
     gert::TilingContextPara tilingContextPara("Sinc", {{shape, ge::DT_FLOAT, ge::FORMAT_ND}},
                                               {{shape, ge::DT_FLOAT, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 7;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -84,7 +84,7 @@ TEST_F(SincTilingTest, test_tiling_2dim_fp32_005)
     gert::TilingContextPara tilingContextPara("Sinc", {{shape, ge::DT_FLOAT, ge::FORMAT_ND}},
                                               {{shape, ge::DT_FLOAT, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 7;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -95,7 +95,7 @@ TEST_F(SincTilingTest, test_tiling_4dim_fp32_006)
     gert::TilingContextPara tilingContextPara("Sinc", {{shape, ge::DT_FLOAT, ge::FORMAT_ND}},
                                               {{shape, ge::DT_FLOAT, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 7;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -206,7 +206,7 @@ TEST_F(SincTilingTest, test_tiling_large_shape_fp32_015)
     gert::TilingContextPara tilingContextPara("Sinc", {{shape, ge::DT_FLOAT, ge::FORMAT_ND}},
                                               {{shape, ge::DT_FLOAT, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 7;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 
@@ -217,7 +217,7 @@ TEST_F(SincTilingTest, test_tiling_large_shape_fp16_016)
     gert::TilingContextPara tilingContextPara("Sinc", {{shape, ge::DT_FLOAT16, ge::FORMAT_ND}},
                                               {{shape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
     uint64_t expectedTilingKey = 3;
-    std::vector<size_t> expectedWorkspaces = {16777216};
+    std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
 }
 

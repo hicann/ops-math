@@ -127,7 +127,7 @@ static ge::graphStatus GetWorkspaceSizes(gert::TilingContext* ctx)
 {
     size_t* ws = ctx->GetWorkspaceSizes(WORKSPACE_NUM);
     OP_CHECK_NULL_WITH_CONTEXT(ctx, ws);
-    ws[0] = sizeof(FresnelCosTilingData);
+    ws[0] = 0;
     return ge::GRAPH_SUCCESS;
 }
 

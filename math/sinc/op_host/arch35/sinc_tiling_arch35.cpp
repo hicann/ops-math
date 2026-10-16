@@ -27,9 +27,9 @@
 
 using namespace Ops::Base;
 namespace optiling {
-const int64_t ASCEND_WORKSPACE = 16777216; // 16M
-const int64_t ASCEND_API_BUFFER = 122880;  // 120K
-const int64_t DCACHE_SIZE = 32768;         // 32K
+const int64_t ASCEND_WORKSPACE = 0;
+const int64_t ASCEND_API_BUFFER = 122880; // 120K
+const int64_t DCACHE_SIZE = 32768;        // 32K
 
 ge::graphStatus SincTiling::SetTilingData()
 {

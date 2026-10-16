@@ -48,7 +48,7 @@ TEST_F(TransposeTiling, transpose_tiling_01)
         "10006 93802085788320 215891311432040488 16842752 27 27 190008 190008 755914244272 0 0 0 190008 0 0 1080 1 1 1 "
         "1 1 1 1 5456 1 1 1 1 1 1 1 176 1 1 1 1 1 1 1 133143986352 4294967297 4294967297 755914244127 4294967297 "
         "4294967297 16557351567361 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
@@ -74,7 +74,7 @@ TEST_F(TransposeTiling, transpose_021vconv_float32_rconv)
         EXPECT_EQ(tilingData.get_UseRConv(), true);
         EXPECT_EQ(tilingData.get_HAlignBlockElem(), 16);
         EXPECT_EQ(tilingData.get_WAlignBlockElem(), 8);
-        std::vector<size_t> expectWorkspaces = {16777216};
+        std::vector<size_t> expectWorkspaces = {0};
         ASSERT_EQ(tilingInfo.workspaceSizes.size(), expectWorkspaces.size());
         for (size_t i = 0; i < expectWorkspaces.size(); i++) {
             EXPECT_EQ(tilingInfo.workspaceSizes[i], expectWorkspaces[i]);

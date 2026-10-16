@@ -16,7 +16,7 @@
 
 namespace optiling {
 namespace TransposeWithVCONV {
-static constexpr size_t SYS_WORKSPACE_SIZE = static_cast<size_t>(16) * 1024 * 1024;
+static constexpr size_t SYS_WORKSPACE_SIZE = 0;
 static constexpr int64_t TRANSELEM = 16;
 static constexpr int8_t BUFFER_TENSOR_NUM = 2; // 输入输出各1块
 

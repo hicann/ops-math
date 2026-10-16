@@ -22,7 +22,7 @@ using namespace ge;
 constexpr int64_t K_DEFAULT_CORE_NUM = 64;
 constexpr uint64_t K_DEFAULT_UB_SIZE = 262144;
 constexpr uint32_t K_DEFAULT_TILING_DATA_SIZE = 4096;
-constexpr size_t K_EXPECT_WORKSPACE = 16777216;
+constexpr size_t K_EXPECT_WORKSPACE = 0;
 
 class SparseBincountTiling : public testing::Test {
 protected:

@@ -240,11 +240,10 @@ static ge::graphStatus SparseBincountTilingFunc(gert::TilingContext* context)
     // 8. Set schedule mode for SyncAll support
     context->SetScheduleMode(SCHEDULE_MODE_SYNC_ALL);
 
-    // 9. Set workspace (system workspace for atomic_add)
-    uint64_t sysWorkspaceSize = ascendcPlatform.GetLibApiWorkSpaceSize();
+    // 9. Set workspace
     size_t* ws = context->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, ws);
-    ws[0] = static_cast<size_t>(sysWorkspaceSize);
+    ws[0] = 0;
 
     // 10. Set local memory size
     OP_CHECK_IF((ubSize <= DCACHE_SIZE + STATIC_UB_ESTIMATE),
