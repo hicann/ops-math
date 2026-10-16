@@ -127,8 +127,11 @@ static bool IsRadixTopKSupport(const aclTensor* self, int64_t k, bool sorted, op
     int64_t sortLen = inputShape.GetDim(dimNum - 1);
     bool socCheck = version == SocVersion::ASCEND910B || version == SocVersion::ASCEND910_93;
     bool dtypeCheck = CheckType(self->GetDataType(), {op::DataType::DT_FLOAT16, op::DataType::DT_BF16});
-    // sortLen 超 int32 上限 → int64 大 shape 模板：只要求 indices 为 int64 且 k > 0，
-    // 不套用下面的 k 比例门限，故此处直接判定
+    // sortLen 超 int32 上限 → int64 大 shape 模板：
+    //   * 只要求 indices 为 int64 且 k > 0 且 !sorted：该量级下替代路径是 TopKV2 的 workspace OOM（模型场景
+    //     约 59.5GB），"k 大才有收益"的比例门限失去意义，故与 MIN_K 门限一并放掉；
+    //     RadixTopK 内核输出无序列，有序性靠调用方补 Sort + GatherElementsV2，
+    //     而 int64 索引补不了（GatherElementsV2 只接受 int32 索引）
     if (sortLen > MAX_INT32_INPUTSIZE) {
         return socCheck && dtypeCheck && (indicesDType == op::DataType::DT_INT64) && k > 0 && !sorted;
     }

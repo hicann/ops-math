@@ -70,8 +70,6 @@ protected:
     __aicore__ inline void AddTileHistToTileTopK(LocalTensor<int32_t>& globalHist);
     __aicore__ inline void HandleLastRoundBoundary(LocalTensor<int32_t>& resTensor, LocalTensor<float>& tileHistFp32);
     __aicore__ inline void WriteCoreTopKFromWs(LocalTensor<int32_t>& resTensor, LocalTensor<float>& tileHistFp32);
-    /** @brief 前驱 core 边界 bin 累计数（int64 累加，总量可达 sortLen > 2^31；int32 形状下同样安全） */
-    __aicore__ inline void ComputeCumSumPrevI64(LocalTensor<int32_t>& resTensor, int64_t& cumSumValuePrev);
 
     GlobalTensor<int32_t> tileTopKGm_;            /**< WS 中 tileTopK 段的 Global Tensor */
     GlobalTensor<int32_t> tileHistGm_;            /**< WS 中 tileHist 段的 Global Tensor */
@@ -332,7 +330,8 @@ __aicore__ inline void RadixTopKWs<T, largest>::HandleLastRoundBoundary(LocalTen
     SyncAll();
 
     int64_t cumSumValuePrev = 0;
-    ComputeCumSumPrevI64(resTensor, cumSumValuePrev);
+    // 复用基类的前缀和（出参已是 int64）：本变体与 UB 变体口径一致，避免两份只差累加器类型的实现
+    this->ComputeCumSumPrev(resTensor, cumSumValuePrev);
     int64_t remainCoreBoundaryNum = static_cast<int64_t>(this->remainK_) - cumSumValuePrev;
     if (remainCoreBoundaryNum > 0) {
         LocalTensor<int32_t> tileTopK = tileHistAndTopKBuf_.Get<int32_t>();
@@ -383,7 +382,11 @@ __aicore__ inline void RadixTopKWs<T, largest>::HandleLastRoundBoundary(LocalTen
                 Add(tileTopK, tileTopK, tileHistBoundary, dataNum);
                 PipeBarrier<PIPE_V>();
                 remainCoreBoundaryNum -= segSum;
-                SToMTE3Sync();
+                // Add 是 V 写 tileTopK，紧接着 MTE3 要读同一块 UB：PipeBarrier<PIPE_V> 只保证 V 流水线
+                // 内部顺序，SToMTE3Sync 只覆盖 S→MTE3，两者都管不到 V→MTE3，MTE3 可能读到 Add 之前的
+                // 旧值（该段 k 配额错乱）。同文件 AddTileHist2TileTopKInWs 对同样的 Add→CopyOut 序列
+                // 用的就是 VToMTE3Sync，这里必须保持一致。
+                VToMTE3Sync();
                 CopyTileTopKUb2Ws(tileTopK, startTileId, dataNum);
                 MTE3ToMTE2Sync();
                 if (remainCoreBoundaryNum == 0) {
@@ -450,30 +453,20 @@ __aicore__ inline void RadixTopKWs<T, largest>::WriteCoreTopKFromWs(LocalTensor<
 }
 
 /**
- * @brief 计算排在当前 core 之前所有 core 的边界 bin 累计元素数（int64 累加，总量可达 sortLen）
- */
-template <typename T, bool largest>
-__aicore__ inline void RadixTopKWs<T, largest>::ComputeCumSumPrevI64(LocalTensor<int32_t>& resTensor,
-                                                                     int64_t& cumSumValuePrev)
-{
-    DataCopyPad(
-        resTensor, this->boundaryBinCumSumGm_,
-        DataCopyExtParams{static_cast<uint16_t>(1), static_cast<uint32_t>(sizeof(int32_t) * this->coreNum_), 0, 0, 0},
-        DataCopyPadExtParams<int32_t>{true, 0, 0, 0});
-    MTE2ToSSync();
-    cumSumValuePrev = 0;
-    for (int32_t coreId = 0; coreId < this->blockIdx_; coreId++) {
-        cumSumValuePrev += resTensor.GetValue(coreId);
-    }
-}
-
-/**
  * @brief 为 TileTopK 阶段创建预生成索引，WS模板从 tileHistAndTopKBuf_ 剩余空间分配
  * @return 实际可用的 maxIndexLen
  */
 template <typename T, bool largest>
 __aicore__ inline uint32_t RadixTopKWs<T, largest>::CreateVecIndex4TopK()
 {
+    // tileNumAlign_ 是 UB 内 tileHistAndTopKBuf_ 已占用的元素数（= 对齐后的 tileNum_）。i64 变体的
+    // 多段 regime 会命中 tileNum_ > MAX_TILE_NUM_IN_UB：此时下面的无符号相减会下溢成巨大值，再被
+    // tileLen_ 兜住，最终 GetWithOffset(maxIndexLen, tileNumAlign_ * 4) 的偏移会写出 6144 元素 buffer。
+    // 这里把「不变量：仅当 tileNumAlign_ < MAX_TILE_NUM_IN_UB 才调用」显式落到代码，返回 0 时下游
+    // 走「现算索引」分支，行为与 maxIndexLen==0 的既有兜底一致。
+    if (this->tileNumAlign_ >= MAX_TILE_NUM_IN_UB) {
+        return 0;
+    }
     uint64_t int32Align = BLOCK_SIZE / sizeof(int32_t);
     uint32_t maxIndexLen = Ops::Base::FloorDiv(MAX_TILE_NUM_IN_UB - this->tileNumAlign_, int32Align) * int32Align;
     if (this->tileLen_ < maxIndexLen) {

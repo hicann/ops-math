@@ -35,6 +35,11 @@ static constexpr uint64_t LARGE_TILE_LEN = 10496;
 static constexpr uint64_t MAX_TILE_NUM_IN_UB = 6144;
 // sortLen 超过 int32 上限时切换 int64 模板（索引值域与跨核计数可达 sortLen）
 static constexpr uint64_t INT32_SORT_LEN_MAX = static_cast<uint64_t>(std::numeric_limits<int32_t>::max());
+// isInt64Shape_（sortLen > INT32_SORT_LEN_MAX）必须蕴含 isLargeShape_（sortLen > LARGE_SORT_LEN）：
+// needWorkspace / GetWorkspaceSize 两处都写成 `isLargeShape_ || isInt64Shape_`（后者冗余）。这里用
+// static_assert 把两个常量的相对大小钉死，避免以后调大 LARGE_SORT_LEN 时 i64 分支被漏掉。
+static_assert(LARGE_SORT_LEN < INT32_SORT_LEN_MAX,
+              "isInt64Shape_ must imply isLargeShape_: LARGE_SORT_LEN must stay below INT32_SORT_LEN_MAX");
 // checkUb 中 UB 占用按「每 tile 元素数 × 系数」估算：
 //   int32 索引：xBuf ping/pong(fp32) + outValue(fp32) + outIndex(int32) = 16 元素/tile；
 //   int64 索引：outIndexBuf 翻倍（int64），系数 16 -> 20。
@@ -133,6 +138,7 @@ ge::graphStatus RadixTopKTiling::DoOpTiling()
     blockDim_ = tilingData_.formerCoreNum + tilingData_.tailCoreNum;
     tilingData_.coreNum = blockDim_;
     // 仅 UB 变体可复用 indices 内存（WS/INT64 变体的 tileTopK/tileHist 与 CopyOutResult 跨 core 冲突）
+    // 注：isInt64Shape_ ⇒ isLargeShape_（见文件头 static_assert），这里的 `|| isInt64Shape_` 是防御性冗余
     if (isLargeShape_ || isInt64Shape_) {
         tilingData_.needWorkspace = true;
     } else {
@@ -168,6 +174,7 @@ ge::graphStatus RadixTopKTiling::GetWorkspaceSize()
         workspaceSize_ = 0;
         return ge::GRAPH_SUCCESS;
     }
+    // 注：同上，isInt64Shape_ 已被 isLargeShape_ 蕴含
     if (isLargeShape_ || isInt64Shape_) {
         workspaceSize_ = (NUM_VALUE_2BIT * tilingData_.coreNum + tilingData_.coreNum + tilingData_.coreNum +
                           WS_INT32_PER_TILE * tilingData_.totalTileNum) *

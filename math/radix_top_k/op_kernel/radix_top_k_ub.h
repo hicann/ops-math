@@ -322,9 +322,9 @@ __aicore__ inline void RadixTopKUb<T, largest>::HandleLastRoundBoundary(LocalTen
     this->CopyOutBoundaryBinCumSum(resTensor);
     SyncAll();
 
-    int32_t cumSumValuePrev = 0;
+    int64_t cumSumValuePrev = 0; // 基类 ComputeCumSumPrev 的本体为 int64 累加（与 WS 变体共用）
     this->ComputeCumSumPrev(resTensor, cumSumValuePrev);
-    int32_t remainCoreBoundaryNum = this->remainK_ - cumSumValuePrev;
+    int64_t remainCoreBoundaryNum = static_cast<int64_t>(this->remainK_) - cumSumValuePrev;
     if (remainCoreBoundaryNum > 0) {
         for (int32_t tileId = 0; tileId < this->tileNum_; tileId++) {
             int32_t curTileBoundaryNum = tileHist[this->boundaryBin * this->tileNumAlign_].GetValue(tileId);
@@ -335,7 +335,8 @@ __aicore__ inline void RadixTopKUb<T, largest>::HandleLastRoundBoundary(LocalTen
                 remainCoreBoundaryNum -= curTileBoundaryNum;
                 tileTopK.SetValue(tileId, tileTopK.GetValue(tileId) + curTileBoundaryNum);
             } else {
-                tileTopK.SetValue(tileId, tileTopK.GetValue(tileId) + remainCoreBoundaryNum);
+                // per-core 配额 <= 该 tile 的边界 bin 计数 < 2^31，回写 tileTopK 的 int32 通道安全
+                tileTopK.SetValue(tileId, tileTopK.GetValue(tileId) + static_cast<int32_t>(remainCoreBoundaryNum));
                 remainCoreBoundaryNum = 0;
                 break;
             }

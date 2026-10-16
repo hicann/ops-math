@@ -55,6 +55,13 @@ using namespace AscendC;
  * @param curTileKVal 当前 tile 的 TopK 元素数
  * @param vecIndexExpr 预生成索引序列表达式（UB/WS 变体不同）
  * 前置条件：curBuf, coreTopKOffset, maxIndexLen, tileOffset, curTileLen 在作用域内
+ * @note 提取相与计数相的 NaN 规范化口径**不对称是有意的**（勿在此处"补齐"）：
+ *       计数相 CanonicalizeDataForLargest 对 bf16/half、largest 两个方向都做，目的是让 ±NaN 落到
+ *       同一个 twiddle 键（largest=true -> 0xFFFF 计入配额；largest=false -> 0x0000 不计入）；
+ *       提取相只需保证"掩码口径与计数一致"——bf16 分支把原始数据 Cast 成 fp32 后比较，
+ *       Compares(LE, ±NaN) 恒 false ⇒ 取非后恒 true，符号/payload 不影响掩码；largest=false 走
+ *       Compares(LT)，NaN 参与比较恒 false ⇒ 天然不入选；元素本身为 NaN 的情形由 IsNaNValue +
+ *       Compare(x,x,EQ) 取非得来的 isNaN 掩码覆盖（同样与符号/payload 无关）。
  */
 #define PROCESS_ONE_TILE_TOPK_OR_SKIP(curTileKVal, vecIndexExpr)                                                       \
     if (curTileKVal > 0) {                                                                                             \
@@ -139,7 +146,8 @@ protected:
 
     __aicore__ inline void CopyOutBoundaryBinCumSum(LocalTensor<int32_t>& resTensor);
 
-    __aicore__ inline void ComputeCumSumPrev(LocalTensor<int32_t>& resTensor, int32_t& cumSumValuePrev);
+    /** @brief 前驱 core 边界 bin 累计元素数（int64 累加：总量可达 sortLen > 2^31；int32 形状下同样安全） */
+    __aicore__ inline void ComputeCumSumPrev(LocalTensor<int32_t>& resTensor, int64_t& cumSumValuePrev);
 
     __aicore__ inline void CopyOutCoreTopK(LocalTensor<int32_t>& resTensor, int32_t totalTileTopKInCore);
 
@@ -454,7 +462,11 @@ __aicore__ inline uint32_t RadixTopKBaseKernel<T, largest>::CreateVecIndex4TopK(
 }
 
 /**
- * @brief 单个 tile 内按 cmpMode 提取匹配 boundaryNumber 的元素并输出
+ * @brief 判断边界值是否为 NaN（提取相用：边界取到 NaN 时必须换 isNaN 掩码）
+ *        位模式判定（指数位全 1 且尾数非 0），对 ±NaN 与任意 payload 都成立；
+ *        不用浮点自比较（v != v）是为了避免浮点相等/自比较类告警。
+ * @param value 待判定的边界值（float 或 half）
+ * @return true 表示 value 是 NaN
  */
 template <typename T, bool largest>
 template <typename CT>
@@ -466,8 +478,13 @@ __aicore__ inline bool RadixTopKBaseKernel<T, largest>::IsNaNValue(const CT& val
     } else {
         valueFp32 = static_cast<float>(value); // half -> fp32，NaN 语义保持
     }
-    uint32_t bits = *reinterpret_cast<uint32_t*>(&valueFp32);
-    return (bits & 0x7FFFFFFFU) > 0x7F800000U; // 指数位全 1 且尾数非 0 ⇒ NaN
+    // 读 float 的位模式
+    union Fp32Bits {
+        float f;
+        uint32_t u;
+    } bits;
+    bits.f = valueFp32;
+    return (bits.u & 0x7FFFFFFFU) > 0x7F800000U; // 指数位全 1 且尾数非 0 ⇒ NaN
 }
 
 /**
@@ -706,7 +723,7 @@ __aicore__ inline void RadixTopKBaseKernel<T, largest>::CopyOutBoundaryBinCumSum
  */
 template <typename T, bool largest>
 __aicore__ inline void RadixTopKBaseKernel<T, largest>::ComputeCumSumPrev(LocalTensor<int32_t>& resTensor,
-                                                                          int32_t& cumSumValuePrev)
+                                                                          int64_t& cumSumValuePrev)
 {
     DataCopyPad(resTensor, boundaryBinCumSumGm_,
                 DataCopyExtParams{static_cast<uint16_t>(1), static_cast<uint32_t>(sizeof(int32_t) * coreNum_), 0, 0, 0},
@@ -714,6 +731,8 @@ __aicore__ inline void RadixTopKBaseKernel<T, largest>::ComputeCumSumPrev(LocalT
     MTE2ToSSync();
     cumSumValuePrev = 0;
     for (int32_t coreId = 0; coreId < blockIdx_; coreId++) {
+        // 每 core 的边界 bin 计数 < 2^31（per-core 元素数上限），int64 累加对 int32 形状同样安全，
+        // 故 UB/WS 两个变体共用本函数（不再各留一份只差累加器类型的实现）
         cumSumValuePrev += resTensor.GetValue(coreId);
     }
 }

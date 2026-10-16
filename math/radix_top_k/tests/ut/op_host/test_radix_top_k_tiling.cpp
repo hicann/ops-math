@@ -20,32 +20,23 @@ using namespace ge;
 
 class RadixTopKTilingTest : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "RadixTopKTilingTest SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "RadixTopKTilingTest TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "RadixTopKTilingTest SetUp" << std::endl; }
+    static void TearDownTestCase() { std::cout << "RadixTopKTilingTest TearDown" << std::endl; }
 };
 
 namespace {
 
 constexpr uint64_t LARGE_SORT_LEN = 1448600000;
+constexpr uint64_t INT32_SORT_LEN_MAX = 2147483647; // 与 op_host 的 INT32_SORT_LEN_MAX 对齐
 constexpr uint64_t CORE_NUM = 48;
 constexpr uint64_t UB_SIZE = 196608;
 
 static thread_local int32_t g_kValue = 0;
 
-gert::TilingContextPara MakeRadixTopKTilingContext(
-    const gert::StorageShape &xShape,
-    ge::DataType xDtype,
-    int32_t kValue,
-    bool sorted = true,
-    int64_t dim = -1,
-    bool largest = true,
-    int64_t indicesDtype = 3)
+gert::TilingContextPara MakeRadixTopKTilingContext(const gert::StorageShape& xShape, ge::DataType xDtype,
+                                                   int32_t kValue, bool sorted = true, int64_t dim = -1,
+                                                   bool largest = true, int64_t indicesDtype = 3,
+                                                   ge::DataType outIndicesDtype = ge::DT_INT32)
 {
     g_kValue = kValue;
     gert::StorageShape kShape({1}, {1});
@@ -64,14 +55,13 @@ gert::TilingContextPara MakeRadixTopKTilingContext(
         },
         {
             {xShape, xDtype, ge::FORMAT_ND},
-            {xShape, ge::DT_INT32, ge::FORMAT_ND},
+            {xShape, outIndicesDtype, ge::FORMAT_ND},
         },
         {
             gert::TilingContextPara::OpAttr("sorted", Ops::Math::AnyValue::CreateFrom<bool>(sorted)),
             gert::TilingContextPara::OpAttr("dim", Ops::Math::AnyValue::CreateFrom<int64_t>(dim)),
             gert::TilingContextPara::OpAttr("largest", Ops::Math::AnyValue::CreateFrom<bool>(largest)),
-            gert::TilingContextPara::OpAttr("indices_dtype",
-                Ops::Math::AnyValue::CreateFrom<int64_t>(indicesDtype)),
+            gert::TilingContextPara::OpAttr("indices_dtype", Ops::Math::AnyValue::CreateFrom<int64_t>(indicesDtype)),
         },
         compileInfoPtr);
 }
@@ -83,10 +73,14 @@ uint64_t ComputeExpectedTilingKey(bool sorted, bool largest, uint64_t sortLen)
     key |= (static_cast<uint64_t>(largest) << 1);
     bool isLargeShape = (sortLen > LARGE_SORT_LEN);
     key |= (static_cast<uint64_t>(isLargeShape) << 2);
+    // 第 4 位 isInt64Shape：与 op_host 的 GET_TPL_TILING_KEY(sorted, largest, isLargeShape,
+    // isInt64Shape) 一一对应；此前只编码 3 位，int64 主路径（sortLen > 2^31）恒测不到
+    bool isInt64Shape = (sortLen > INT32_SORT_LEN_MAX);
+    key |= (static_cast<uint64_t>(isInt64Shape) << 3);
     return key;
 }
 
-void CheckTilingKey(const gert::TilingContextPara &tilingCtx, uint64_t expectKey)
+void CheckTilingKey(const gert::TilingContextPara& tilingCtx, uint64_t expectKey)
 {
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingCtx, tilingInfo));
@@ -94,23 +88,20 @@ void CheckTilingKey(const gert::TilingContextPara &tilingCtx, uint64_t expectKey
     EXPECT_EQ(tilingInfo.workspaceSizes.size(), 1);
 }
 
-void CheckTilingWithWs(const gert::TilingContextPara &tilingCtx,
-                       uint64_t expectKey, bool expectWsNonzero)
+void CheckTilingWithWs(const gert::TilingContextPara& tilingCtx, uint64_t expectKey, bool expectWsNonzero)
 {
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingCtx, tilingInfo));
     EXPECT_EQ(tilingInfo.tilingKey, expectKey);
     ASSERT_EQ(tilingInfo.workspaceSizes.size(), 1);
     if (expectWsNonzero) {
-        EXPECT_GT(tilingInfo.workspaceSizes[0], 0u)
-            << "k 较小时应触发 workspace 分配 (needWorkspace=true)";
+        EXPECT_GT(tilingInfo.workspaceSizes[0], 0u) << "k 较小时应触发 workspace 分配 (needWorkspace=true)";
     } else {
-        EXPECT_EQ(tilingInfo.workspaceSizes[0], 0u)
-            << "k 较大时应复用 indices 内存 (needWorkspace=false)";
+        EXPECT_EQ(tilingInfo.workspaceSizes[0], 0u) << "k 较大时应复用 indices 内存 (needWorkspace=false)";
     }
 }
 
-}  // namespace
+} // namespace
 
 // ============================================================
 // UB 变体 fp16 — 1D shapes
@@ -239,8 +230,7 @@ TEST_F(RadixTopKTilingTest, ub_fp16_tiny_1x1)
 TEST_F(RadixTopKTilingTest, ws_fp16_large_sort_len)
 {
     uint64_t bigSortLen = LARGE_SORT_LEN + 1;
-    auto tilingCtx = MakeRadixTopKTilingContext(
-        {{1, bigSortLen}, {1, bigSortLen}}, ge::DT_FLOAT16, 10);
+    auto tilingCtx = MakeRadixTopKTilingContext({{1, bigSortLen}, {1, bigSortLen}}, ge::DT_FLOAT16, 10);
     uint64_t expectKey = ComputeExpectedTilingKey(true, true, bigSortLen);
     TilingInfo tilingInfo;
     ASSERT_TRUE(ExecuteTiling(tilingCtx, tilingInfo));
@@ -273,4 +263,31 @@ TEST_F(RadixTopKTilingTest, k100_ub_needs_ws)
 {
     auto tilingCtx = MakeRadixTopKTilingContext({{65536}, {65536}}, ge::DT_FLOAT16, 100);
     CheckTilingWithWs(tilingCtx, ComputeExpectedTilingKey(true, true, 65536), true);
+}
+
+// ============================================================
+// int64 主路径（sortLen > 2^31）：tiling key 第 4 位 + 入口防御校验
+// ============================================================
+
+TEST_F(RadixTopKTilingTest, i64_shape_tiling_key_bit3)
+{
+    // sortLen = 2^31 > INT32_SORT_LEN_MAX ⇒ isInt64Shape=true（tilingKey bit3），并蕴含
+    // isLargeShape（bit2）；indices 输出必须为 int64，且该变体必须申请 workspace
+    constexpr uint64_t SORT_LEN = 2147483648ULL; // 2^31
+    auto tilingCtx = MakeRadixTopKTilingContext(
+        {{1, static_cast<int64_t>(SORT_LEN)}, {1, static_cast<int64_t>(SORT_LEN)}}, ge::DT_FLOAT16, 1001, true, -1,
+        true, /*indicesDtype=*/9 /*DT_INT64*/,
+        /*outIndicesDtype=*/ge::DT_INT64);
+    CheckTilingWithWs(tilingCtx, ComputeExpectedTilingKey(true, true, SORT_LEN), true);
+}
+
+TEST_F(RadixTopKTilingTest, i64_shape_reject_int32_indices)
+{
+    // sortLen > 2^31 但 indices 输出为 int32 ⇒ DoOpTiling/GetShapeAttrsInfo 必须返回 GRAPH_FAILED
+    // （int32 索引表示不了 > 2^31 的下标，不能留到 kernel 再出错）
+    constexpr uint64_t SORT_LEN = 2147483648ULL;
+    auto tilingCtx = MakeRadixTopKTilingContext(
+        {{1, static_cast<int64_t>(SORT_LEN)}, {1, static_cast<int64_t>(SORT_LEN)}}, ge::DT_FLOAT16, 1001);
+    TilingInfo tilingInfo;
+    EXPECT_FALSE(ExecuteTiling(tilingCtx, tilingInfo)) << "sortLen 超 int32 上限且 indices 非 int64 时必须失败";
 }
