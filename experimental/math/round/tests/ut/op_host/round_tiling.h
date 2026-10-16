@@ -9,7 +9,7 @@
  */
 
 #ifndef ROUND_TILING_DEF_H
-#define ROUND_TILING_DATA_H__TILING_DEF_H
+#define ROUND_TILING_DEF_H
 
 #include "register/tilingdata_base.h"
 
