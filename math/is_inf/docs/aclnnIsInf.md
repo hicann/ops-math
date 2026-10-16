@@ -86,7 +86,7 @@ aclnnStatus aclnnIsInf(
       <td>输入</td>
       <td>待进行判断是否是inf的入参，公式中的input_i。</td>
       <td>-</td>
-      <td>FLOAT、FLOAT16、DOUBLE、BFLOAT16、INT8、INT16、INT32、INT64、UINT8、BOOL</td>
+      <td>FLOAT、FLOAT16、BFLOAT16</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
