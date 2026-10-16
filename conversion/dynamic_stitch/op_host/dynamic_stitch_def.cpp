@@ -78,6 +78,7 @@ public:
             .NeedCheckSupportFlag(true)
             .ExtendCfgInfo("opFile.value", "dynamic_stitch_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend960dt", aicoreConfig);
         this->AICore().AddConfig("ascend350", aicoreConfig);
     }
 };

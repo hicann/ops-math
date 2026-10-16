@@ -27,9 +27,9 @@
 #include "op_host/tiling_base_class.h"
 #include "../../op_kernel/arch35/dynamic_stitch_tiling_def.h"
 #include "platform/platform_info.h"
+#include "platform/platform_ascendc.h"
 #include "op_common/op_host/util/math_util.h"
 #include "op_host/tiling_base_util.h"
-
 
 namespace optiling {
 struct DynamicStitchCompileInfo {
@@ -37,37 +37,24 @@ struct DynamicStitchCompileInfo {
     uint64_t ubSize;
 };
 
-enum class SliceDivisorType : int64_t
-{
-    SLICE_ONE = 1,
-    SLICE_TWO = 2,
-    SLICE_FOUR = 4,
-    SLICE_EIGHT = 8
-};
+enum class SliceDivisorType : int64_t { SLICE_ONE = 1, SLICE_TWO = 2, SLICE_FOUR = 4, SLICE_EIGHT = 8 };
 
-class DynamicStitchTilingClass : public Ops::Base::TilingBaseClass
-{
+class DynamicStitchTilingClass : public Ops::Base::TilingBaseClass {
 public:
-    explicit DynamicStitchTilingClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit DynamicStitchTilingClass(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
-    void Reset(gert::TilingContext* context) override
-    {
-        Ops::Base::TilingBaseClass::Reset(context);
-    }
+    void Reset(gert::TilingContext* context) override { Ops::Base::TilingBaseClass::Reset(context); }
 
 protected:
     ge::graphStatus GetShapeAttrsInfo() override;
     ge::graphStatus GetPlatformInfo() override;
     bool IsCapable() override
     {
-        return Ops::Base::IsRegbaseSocVersion(context_);
+        auto platform = platform_ascendc::PlatformAscendC(context_->GetPlatformInfo());
+        return Ops::Base::IsRegbaseSocVersion(context_) || platform.GetCurNpuArch() == NpuArch::DAV_9201;
     }
     ge::graphStatus DoOpTiling() override;
-    ge::graphStatus DoLibApiTiling() override
-    {
-        return ge::GRAPH_SUCCESS;
-    }
+    ge::graphStatus DoLibApiTiling() override { return ge::GRAPH_SUCCESS; }
     ge::graphStatus GetWorkspaceSize() override;
     ge::graphStatus PostTiling() override;
     uint64_t GetTilingKey() const override;
@@ -83,8 +70,8 @@ private:
     ge::graphStatus CheckAndGetSliceSize();
 
     // Private method for handle slice shape
-    std::vector<int64_t> GetSliceShapeFromIndiceAndXShape(
-        const gert::Shape& indiceShape, const gert::Shape& xShape) const;
+    std::vector<int64_t> GetSliceShapeFromIndiceAndXShape(const gert::Shape& indiceShape,
+                                                          const gert::Shape& xShape) const;
     bool IsTwoSliceShapeEqual(const std::vector<int64_t>& sliceShape1, const std::vector<int64_t>& sliceShape2) const;
 
     // Other private method for tiling

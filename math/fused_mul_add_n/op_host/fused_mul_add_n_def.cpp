@@ -49,6 +49,7 @@ public:
             .ExtendCfgInfo("opFile.value", "fused_mul_add_n_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
         this->AICore().AddConfig("ascend350", aicoreConfig);
+        this->AICore().AddConfig("ascend960dt", aicoreConfig);
     }
 };
 
