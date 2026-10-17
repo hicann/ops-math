@@ -10,7 +10,10 @@
 
 /*!
  * \file stateless_drop_out_gen_mask_tiling_arch35.cpp
- * \brief
+ * \brief A5 (ascend950/ascend350)/A6 (ascend960dt/ascend960pr) 通用 tiling 实现：
+ *        1. key/counter 元数据经 tilingData 下发，seed/offset 由 kernel 从 GM 直接读取；
+ *        2. A6 (DAV_9201/DAV_9202) 核间对齐粒度为 32（DV121），其余平台沿用 256，
+ *           通过运行时 NpuArch 精确匹配隔离，A5/A6 共用本文件。
  */
 #include "platform/platform_infos_def.h"
 #include "platform/platform_ascendc.h"
@@ -36,6 +39,7 @@ static constexpr int64_t OUT_Y_IDX = 0;
 static constexpr uint64_t BUFFER_NUM = 2;
 static constexpr uint64_t EXIST_NODE_NUM = 3;
 static constexpr uint64_t CORE_ALIGN_SIZE = 256;
+static constexpr uint64_t CORE_ALIGN_SIZE_DV121 = 32; // A6 (DAV_9201/DAV_9202) 核间对齐粒度
 static constexpr uint64_t UB_ALIGN_SIZE = 256;
 static constexpr uint64_t REGBASE_CCEC_CACHE_SIZE = 8 * 1024;
 static constexpr uint32_t RIGHT_SHIFT_NUM = 32;
@@ -131,7 +135,19 @@ OpTilingConfig StatelessDropOutGenMaskTiling::BuildOpConfig()
 
 StatelessDropOutGenMaskTiling::StatelessDropOutGenMaskTiling(gert::TilingContext* context)
     : RandomTilingArch35(context, BuildOpConfig())
-{}
+{
+    // A6 (DAV_9201/DAV_9202) 使用 32 核间对齐，其余平台沿用公共配置的 256 对齐
+    auto platformInfo = context->GetPlatformInfo();
+    if (platformInfo == nullptr) {
+        OP_LOGE(context->GetNodeName(), "platformInfo is nullptr!");
+        return;
+    }
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    config_.coreAlignSize = (ascendcPlatform.GetCurNpuArch() == NpuArch::DAV_9201 ||
+                             ascendcPlatform.GetCurNpuArch() == NpuArch::DAV_9202) ?
+                                CORE_ALIGN_SIZE_DV121 :
+                                CORE_ALIGN_SIZE;
+}
 
 static ge::graphStatus TilingPrepare4StatelessDropOutGenMaskTiling(gert::TilingParseContext* context)
 {

@@ -74,10 +74,16 @@ static inline bool CheckProbability(double prob)
     return true;
 }
 
+// Ascend960 (DAV_9201/9202) 与 Ascend950 共用 StatelessDropoutGenMask 的 L0 实现路径
+static inline bool IsRegBaseOrArch92(NpuArch arch)
+{
+    return arch == NpuArch::DAV_3510 || arch == NpuArch::DAV_9201 || arch == NpuArch::DAV_9202;
+}
+
 static inline bool CheckSocVersionIsSupportDSA(void)
 {
     auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
-    return curArch == NpuArch::DAV_2201 || IsRegBase(curArch);
+    return curArch == NpuArch::DAV_2201 || IsRegBaseOrArch92(curArch);
 }
 
 static inline int64_t InferDSAOutShape(const aclIntArray* shape)
@@ -229,7 +235,7 @@ static const aclTensor* ComputeMaskV2Tensor(const aclIntArray* shape, double pro
                                             const aclTensor* offsetTensor, int64_t offset, op::DataType dtype,
                                             aclOpExecutor* executor)
 {
-    if (IsRegBase()) {
+    if (IsRegBaseOrArch92(GetCurrentPlatformInfo().GetCurNpuArch())) {
         FVector<int64_t> seed1Vector = {0};
         aclIntArray* seed1List = executor->AllocIntArray(seed1Vector.data(), seed1Vector.size());
         auto seed1Tensor = executor->ConvertToTensor(seed1List, op::DataType::DT_INT64);

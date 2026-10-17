@@ -46,8 +46,7 @@ ge::graphStatus DropOutDoMaskTilingForAscendC(gert::TilingContext* context);
 
 class DropOutDoMaskTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit DropOutDoMaskTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit DropOutDoMaskTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
 protected:
     bool IsCapable() override;
@@ -60,6 +59,7 @@ protected:
     ge::graphStatus PostTiling() override;
     void DumpTilingInfo() override;
     ge::graphStatus CheckInputShape();
+    bool IsDv121();
 
 private:
     int64_t ubSize_ = 0;

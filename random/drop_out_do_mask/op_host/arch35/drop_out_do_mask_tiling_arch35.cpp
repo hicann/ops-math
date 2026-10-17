@@ -33,11 +33,13 @@ constexpr int64_t KEEP_PROB_IDX = 2;
 constexpr int64_t DB_BUFFER = 2;
 constexpr int64_t BIT_ALIGN = 128;
 constexpr int64_t ALIGN256 = 256;
+constexpr int64_t ALIGN32 = 32;
 constexpr int64_t UINT8_BIT_NUMBER = 8;
 constexpr int64_t CACHE_LINE = 128;
 constexpr int64_t RESERVED_UB_SIZE = 8192;            // 8K
 constexpr int64_t ASCENDC_TOOLS_WORKSPACE = 16777216; // 16M
 constexpr int64_t UB_MIN_FACTOR = 2048;
+constexpr int64_t DV121_UB_MIN_FACTOR = 256;
 
 static const std::set<ge::DataType> DROP_SUPPORTED_DTYPE = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
 
@@ -114,6 +116,15 @@ ge::graphStatus DropOutDoMaskTiling::GetShapeAttrsInfo()
     return ge::GRAPH_SUCCESS;
 }
 
+bool DropOutDoMaskTiling::IsDv121()
+{
+    auto platformInfo = context_->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(context_, platformInfo);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    return (ascendcPlatform.GetCurNpuArch() == NpuArch::DAV_9201 ||
+            ascendcPlatform.GetCurNpuArch() == NpuArch::DAV_9202);
+}
+
 ge::graphStatus DropOutDoMaskTiling::DoOpTiling()
 {
     typeSize_ = ge::GetSizeByDataType(dType_);
@@ -121,13 +132,16 @@ ge::graphStatus DropOutDoMaskTiling::DoOpTiling()
                 return ge::GRAPH_FAILED);
     // total: ub/db
     // used: x*typesize (x), x/8 (mask), x*typesize(out)
+    // A6 (DAV_9201/DAV_9202) 使用 32 对齐与更小的 UB 最小因子，其余平台沿用 256 对齐
+    int64_t coreAlignSize = IsDv121() ? ALIGN32 : ALIGN256;
+    int64_t ubMinFactor = IsDv121() ? DV121_UB_MIN_FACTOR : UB_MIN_FACTOR;
     int64_t ubBlock = GetUbBlockSize(context_);
     ubFactor_ = (ubSize_ - RESERVED_UB_SIZE - ubBlock) / DB_BUFFER * UINT8_BIT_NUMBER /
                 (UINT8_BIT_NUMBER * typeSize_ + 1 + UINT8_BIT_NUMBER * typeSize_);
     ubFactor_ = Ops::Base::FloorAlign(ubFactor_, ALIGN256);
     normBlockData_ = Ops::Base::CeilDiv(allAxis_, totalCoreNum_);
-    normBlockData_ = Ops::Base::CeilAlign(normBlockData_, ALIGN256);
-    normBlockData_ = std::max(normBlockData_, UB_MIN_FACTOR);
+    normBlockData_ = Ops::Base::CeilAlign(normBlockData_, coreAlignSize);
+    normBlockData_ = std::max(normBlockData_, ubMinFactor);
     usedCoreNum_ = Ops::Base::CeilDiv(allAxis_, normBlockData_);
     tailBlockData_ = allAxis_ - (usedCoreNum_ - 1) * normBlockData_;
     int64_t normBlockLoop = Ops::Base::CeilDiv(normBlockData_, ubFactor_);

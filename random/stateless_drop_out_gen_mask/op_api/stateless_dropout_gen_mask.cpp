@@ -34,10 +34,16 @@ static const int64_t BIT_NUMBER = 128;
 static const int64_t UINT8_BIT_NUMBER = 8;
 static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST = {DataType::DT_UINT8};
 
+// Ascend960 (DAV_9201/9202) 与 Ascend950 共用 StatelessDropOutGenMask 的 AICore 实现与 dtype 支持集合
+static inline bool IsRegBaseOrArch92(NpuArch arch)
+{
+    return arch == NpuArch::DAV_3510 || arch == NpuArch::DAV_9201 || arch == NpuArch::DAV_9202;
+}
+
 // 根据芯片型号，dtype 判断AICore 是否支持
 static inline bool IsAiCoreSupport(DataType dType)
 {
-    if (IsRegBase()) {
+    if (IsRegBaseOrArch92(GetCurrentPlatformInfo().GetCurNpuArch())) {
         return CheckType(dType, AICORE_DTYPE_SUPPORT_LIST);
     }
     return false;
@@ -53,33 +59,34 @@ static inline int64_t inferShape(const aclIntArray* shape)
 }
 
 // AICPU算子kernel
-static const aclTensor* StatelessDropoutGenMaskAiCpu(
-    const aclTensor* shape, const aclTensor* prob, const aclTensor* seed, const aclTensor* seed1,
-    const aclTensor* offset, const aclTensor* out, aclOpExecutor* executor)
+static const aclTensor* StatelessDropoutGenMaskAiCpu(const aclTensor* shape, const aclTensor* prob,
+                                                     const aclTensor* seed, const aclTensor* seed1,
+                                                     const aclTensor* offset, const aclTensor* out,
+                                                     aclOpExecutor* executor)
 {
     L0_DFX(StatelessDropoutGenMaskAiCpu, shape, prob, seed, seed1, offset, out);
     static internal::AicpuTaskSpace space("StatelessDropOutGenMask");
-    ADD_TO_LAUNCHER_LIST_AICPU(
-        StatelessDropOutGenMask, OP_ATTR_NAMES(), OP_INPUT(shape, prob, seed, seed1, offset), OP_OUTPUT(out));
+    ADD_TO_LAUNCHER_LIST_AICPU(StatelessDropOutGenMask, OP_ATTR_NAMES(), OP_INPUT(shape, prob, seed, seed1, offset),
+                               OP_OUTPUT(out));
     return out;
 }
 
 // AICORE算子kernel
-static const aclTensor* StatelessDropoutGenMaskAiCore(
-    const aclTensor* shape, const aclTensor* prob, const aclTensor* seed, const aclTensor* seed1,
-    const aclTensor* offset, const aclTensor* out, aclOpExecutor* executor)
+static const aclTensor* StatelessDropoutGenMaskAiCore(const aclTensor* shape, const aclTensor* prob,
+                                                      const aclTensor* seed, const aclTensor* seed1,
+                                                      const aclTensor* offset, const aclTensor* out,
+                                                      aclOpExecutor* executor)
 {
     L0_DFX(StatelessDropoutGenMaskAiCore, shape, prob, seed, seed1, offset, out);
 
     // 使用框架宏 ADD_TO_LAUNCHER_LIST_AICORE, 将AiCore StatelessDropoutGenMask 算子加入任务队列
-    ADD_TO_LAUNCHER_LIST_AICORE(
-        StatelessDropOutGenMask, OP_ATTR_NAMES(), OP_INPUT(shape, prob, seed, seed1, offset), OP_OUTPUT(out));
+    ADD_TO_LAUNCHER_LIST_AICORE(StatelessDropOutGenMask, OP_ATTR_NAMES(), OP_INPUT(shape, prob, seed, seed1, offset),
+                                OP_OUTPUT(out));
     return out;
 }
 
-const aclTensor* StatelessDropoutGenMask(
-    const aclIntArray* shape, const aclTensor* prob, const aclTensor* seed, const aclTensor* seed1,
-    const aclTensor* offset, aclOpExecutor* executor)
+const aclTensor* StatelessDropoutGenMask(const aclIntArray* shape, const aclTensor* prob, const aclTensor* seed,
+                                         const aclTensor* seed1, const aclTensor* offset, aclOpExecutor* executor)
 {
     auto outShape = op::Shape{inferShape(shape)};
     auto out = executor->AllocTensor(outShape, DataType::DT_UINT8);

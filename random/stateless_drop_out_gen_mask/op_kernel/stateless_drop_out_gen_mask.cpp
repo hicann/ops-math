@@ -14,14 +14,16 @@
  */
 #define STATELESS_DROP_OUT_GEN_MASK_DEFAULT_TILING_KEY 100
 
+// A5 (ascend950/ascend350)/A6 (ascend960dt/ascend960pr) 共用 arch35 kernel：
+// key/counter 由 kernel 从 GM 直接读取 seed/offset，无架构差异
 #include "arch35/stateless_drop_out_gen_mask_pt.h"
 
 using namespace AscendC;
 using namespace StatelessDropOutGenMask;
 
-extern "C" __global__ __aicore__ void stateless_drop_out_gen_mask(
-    GM_ADDR shape, GM_ADDR prob, GM_ADDR seed, GM_ADDR seed1, GM_ADDR offset, GM_ADDR y, GM_ADDR workspace,
-    GM_ADDR tiling)
+extern "C" __global__ __aicore__ void stateless_drop_out_gen_mask(GM_ADDR shape, GM_ADDR prob, GM_ADDR seed,
+                                                                  GM_ADDR seed1, GM_ADDR offset, GM_ADDR y,
+                                                                  GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(RandomUnifiedTilingDataStruct);
     GET_TILING_DATA(tilingData, tiling);
@@ -32,5 +34,5 @@ extern "C" __global__ __aicore__ void stateless_drop_out_gen_mask(
         StatelessDropOutGenMask::StatelessDropOutGenMaskPt<DTYPE_PROB> op(&pipe, &tilingData);
         op.Init(shape, prob, seed, offset, y);
         op.Process();
-    } 
+    }
 }
