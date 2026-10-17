@@ -689,7 +689,11 @@ __aicore__ inline void TransposeWithGather<T>::CopyDataIn()
     DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
     auto xInLocal = xInQue_.AllocTensor<T>();
     SetLoopModePara(lpModeInParams_, DataCopyMVType::OUT_TO_UB);
+#if defined(__DAV_920R1__)
+    DataCopyPad<T, PaddingMode::Compact>(xInLocal, xGM_[blkInAddr_], copyInParams_, padParams, true);
+#else
     DataCopyPad<T, PaddingMode::Compact>(xInLocal, xGM_[blkInAddr_], copyInParams_, padParams);
+#endif
     ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
     xInQue_.EnQue(xInLocal);
 }

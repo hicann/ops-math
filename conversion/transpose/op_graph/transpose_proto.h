@@ -16,6 +16,7 @@
 #define OP_PROTO_TRANSPOSE_PROTO_H_
 
 #include "graph/operator_reg.h"
+#include "op_const_def_math.h"
 
 namespace ge {
 /**
@@ -27,8 +28,9 @@ namespace ge {
 * @li x: A Tensor. Must be one of the following types:
 * bfloat16, float16, float32, double, int64, int32, uint8, uint16, uint32, uint64, int8,
 * int16, complex32, complex64, complex128, qint8, quint8, qint16, quint16, qint32, bool, hifloat8, float8_e5m2,
-* float8_e4m3fn, and the maximum dimension should not exceed 8 dimensions,
-* and the shape should be consistent with output.
+* float8_e4m3fn, float4_e2m1, float4_e1m2, hifloat4, hifloat4_scale, and the maximum dimension should not exceed 8
+* dimensions, and the shape should be consistent with output.
+* If the type of x is float4_e2m1, float4_e1m2 or hifloat4, x's shape should be even number.
 * @li perm: A Tensor of type int32 or int64. A permutation of the dimensions of "x", the value
 * should be within the range of [0, number of dimensions for self -1].
 
@@ -39,15 +41,63 @@ namespace ge {
 * Compatible with the TensorFlow operator Transpose.
 */
 REG_OP(Transpose)
-    .INPUT(x, TensorType({DT_BF16,      DT_FLOAT16,   DT_FLOAT,      DT_DOUBLE,   DT_INT64,       DT_INT32,
-                          DT_UINT8,     DT_UINT16,    DT_UINT32,     DT_UINT64,   DT_INT8,        DT_INT16,
-                          DT_COMPLEX32, DT_COMPLEX64, DT_COMPLEX128, DT_QINT8,    DT_QUINT8,      DT_QINT16,
-                          DT_QUINT16,   DT_QINT32,    DT_BOOL,       DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN}))
+    .INPUT(x, TensorType({DT_BF16,
+                          DT_FLOAT16,
+                          DT_FLOAT,
+                          DT_DOUBLE,
+                          DT_INT64,
+                          DT_INT32,
+                          DT_UINT8,
+                          DT_UINT16,
+                          DT_UINT32,
+                          DT_UINT64,
+                          DT_INT8,
+                          DT_INT16,
+                          DT_COMPLEX32,
+                          DT_COMPLEX64,
+                          DT_COMPLEX128,
+                          DT_QINT8,
+                          DT_QUINT8,
+                          DT_QINT16,
+                          DT_QUINT16,
+                          DT_QINT32,
+                          DT_BOOL,
+                          DT_HIFLOAT8,
+                          DT_FLOAT8_E5M2,
+                          DT_FLOAT8_E4M3FN,
+                          DT_FLOAT4_E2M1,
+                          DT_FLOAT4_E1M2,
+                          Ops::Math::DT_HIFLOAT4,
+                          Ops::Math::DT_HIFLOAT4_SCALE}))
     .INPUT(perm, TensorType::IndexNumberType())
-    .OUTPUT(y, TensorType({DT_BF16,      DT_FLOAT16,   DT_FLOAT,      DT_DOUBLE,   DT_INT64,       DT_INT32,
-                           DT_UINT8,     DT_UINT16,    DT_UINT32,     DT_UINT64,   DT_INT8,        DT_INT16,
-                           DT_COMPLEX32, DT_COMPLEX64, DT_COMPLEX128, DT_QINT8,    DT_QUINT8,      DT_QINT16,
-                           DT_QUINT16,   DT_QINT32,    DT_BOOL,       DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN}))
+    .OUTPUT(y, TensorType({DT_BF16,
+                           DT_FLOAT16,
+                           DT_FLOAT,
+                           DT_DOUBLE,
+                           DT_INT64,
+                           DT_INT32,
+                           DT_UINT8,
+                           DT_UINT16,
+                           DT_UINT32,
+                           DT_UINT64,
+                           DT_INT8,
+                           DT_INT16,
+                           DT_COMPLEX32,
+                           DT_COMPLEX64,
+                           DT_COMPLEX128,
+                           DT_QINT8,
+                           DT_QUINT8,
+                           DT_QINT16,
+                           DT_QUINT16,
+                           DT_QINT32,
+                           DT_BOOL,
+                           DT_HIFLOAT8,
+                           DT_FLOAT8_E5M2,
+                           DT_FLOAT8_E4M3FN,
+                           DT_FLOAT4_E2M1,
+                           DT_FLOAT4_E1M2,
+                           Ops::Math::DT_HIFLOAT4,
+                           Ops::Math::DT_HIFLOAT4_SCALE}))
     .OP_END_FACTORY_REG(Transpose)
 
 } // namespace ge

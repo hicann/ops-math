@@ -53,6 +53,30 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST = {
     op::DataType::DT_UINT32,   op::DataType::DT_UINT64,      op::DataType::DT_BOOL,         op::DataType::DT_BF16,
     op::DataType::DT_HIFLOAT8, op::DataType::DT_FLOAT8_E5M2, op::DataType::DT_FLOAT8_E4M3FN};
 
+static constexpr op::DataType DT_HIFLOAT4 = static_cast<op::DataType>(42);
+static constexpr op::DataType DT_HIFLOAT4_SCALE = static_cast<op::DataType>(43);
+static const std::initializer_list<op::DataType> ARCH92_AICORE_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_FLOAT,
+    op::DataType::DT_FLOAT16,
+    op::DataType::DT_INT8,
+    op::DataType::DT_INT16,
+    op::DataType::DT_INT32,
+    op::DataType::DT_INT64,
+    op::DataType::DT_UINT8,
+    op::DataType::DT_UINT16,
+    op::DataType::DT_UINT32,
+    op::DataType::DT_UINT64,
+    op::DataType::DT_BOOL,
+    op::DataType::DT_BF16,
+    op::DataType::DT_HIFLOAT8,
+    op::DataType::DT_FLOAT8_E5M2,
+    op::DataType::DT_FLOAT8_E4M3FN,
+    op::DataType::DT_FLOAT4_E2M1,
+    op::DataType::DT_FLOAT4_E1M2,
+    DT_HIFLOAT4,
+    DT_HIFLOAT4_SCALE,
+};
+
 static bool IsTransposeV2021Support(const aclTensor* self, const aclIntArray* perm)
 {
     // 2 is perm value
@@ -131,6 +155,10 @@ const aclTensor* TransposeV2AiCore(const aclTensor* x, const aclTensor* y, const
 
 static bool IsAiCoreSupport(const aclTensor* self)
 {
+    auto curArch = op::GetCurrentPlatformInfo().GetCurNpuArch();
+    if (curArch == NpuArch::DAV_9201 || curArch == NpuArch::DAV_9202) {
+        return op::CheckType(self->GetDataType(), ARCH92_AICORE_DTYPE_SUPPORT_LIST);
+    }
     return op::CheckType(self->GetDataType(), AICORE_DTYPE_SUPPORT_LIST);
 }
 

@@ -42,6 +42,13 @@ constexpr NdDmaConfig config = {false, 0, 0, false}; // NDDMA DataCopy 默认配
 constexpr int64_t TWO = 2;
 constexpr int64_t BUFFER_NUM = 2; // 双缓冲数量，用于 TENSOR_MOVE 和 N_LAST 策略
 
+// 用于 NDDMA 相关模板的缓冲数量
+#if defined(__DAV_920R1__)
+constexpr int64_t NDDMA_BUFFER_NUM = 2;
+#else
+constexpr int64_t NDDMA_BUFFER_NUM = 1;
+#endif
+
 /**
  * @brief Transpose 算子 Kernel 侧基类
  *

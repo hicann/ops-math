@@ -50,6 +50,7 @@
 #include "arch35/transpose_with_gather.h"
 #include "arch35/transpose_transdata_5hd.h"
 #include "arch35/transpose_transdata_5hd_021.h"
+#include "arch35/transpose_b4.h"
 
 /* TilingKey 常量定义，与 Host 侧 SplitMode 枚举值一一对应 */
 #define TENSOR_MOVE 10000      // 融合后仅1维，等价于纯数据搬运
@@ -61,6 +62,7 @@
 #define GATHER_TRANSPOSE 10006 // 尾轴转置+大shape，使用DataCopyGather硬件指令(RegBase路径)
 #define VCONV_TRANSPOSE 10007  // 2D perm=[1,0]+16bit(DAV_5102)，TransDataTo5HD硬件指令
 #define VCONV_021_TRANSPOSE 10008 // 3D perm=[0,2,1]+8/16/32bit(DAV_5102)，TransDataTo5HD硬件指令
+#define B4_DUAL_CUT 10009         // B4 双切分
 
 using namespace Transpose;
 
@@ -94,7 +96,8 @@ extern "C" __aicore__ inline void TransposeTensorMoveProcess(GM_ADDR x, GM_ADDR 
         op.Init(x, y, tilingData, pipe);
         op.Process();
     } else {
-        Transpose::TransposeTensorMove<DTYPE_X> op;
+        // HIF4 视为 int8_t 来处理
+        Transpose::TransposeTensorMove<int8_t> op;
         op.Init(x, y, tilingData, pipe);
         op.Process();
     }
@@ -130,7 +133,8 @@ extern "C" __aicore__ inline void TransposeSmallShapeProcess(GM_ADDR x, GM_ADDR 
         op.Init(x, y, tilingData);
         op.Process();
     } else {
-        Transpose::TransposeSmallShape<DTYPE_X> op;
+        // HIF4 视为 int8_t 来处理
+        Transpose::TransposeSmallShape<int8_t> op;
         op.Init(x, y, tilingData);
         op.Process();
     }
@@ -166,7 +170,8 @@ extern "C" __aicore__ inline void TransposeCutOneAxisProcess(GM_ADDR x, GM_ADDR 
         op.Init(x, y, tilingData, pipe);
         op.Process();
     } else {
-        Transpose::TransposeCutOneAxis<DTYPE_X> op;
+        // HIF4 视为 int8_t 来处理
+        Transpose::TransposeCutOneAxis<int8_t> op;
         op.Init(x, y, tilingData, pipe);
         op.Process();
     }
@@ -202,7 +207,8 @@ extern "C" __aicore__ inline void TransposeCutTwoAxisProcess(GM_ADDR x, GM_ADDR 
         op.Init(x, y, tilingData, pipe);
         op.Process();
     } else {
-        Transpose::TransposeCutTwoAxis<DTYPE_X> op;
+        // HIF4 视为 int8_t 来处理
+        Transpose::TransposeCutTwoAxis<int8_t> op;
         op.Init(x, y, tilingData, pipe);
         op.Process();
     }
@@ -238,7 +244,8 @@ extern "C" __aicore__ inline void TransposeBigDimProcess(GM_ADDR x, GM_ADDR y, c
         op.Init(x, y, tilingData, pipe);
         op.Process();
     } else {
-        Transpose::TransposeBigDim<DTYPE_X> op;
+        // HIF4 视为 int8_t 来处理
+        Transpose::TransposeBigDim<int8_t> op;
         op.Init(x, y, tilingData, pipe);
         op.Process();
     }
@@ -275,7 +282,8 @@ extern "C" __aicore__ inline void TransposeNLastProcess(GM_ADDR x, GM_ADDR y, co
         op.Init(x, y, tilingData, pipe);
         op.Process();
     } else {
-        Transpose::TransposeNLast<DTYPE_X> op;
+        // HIF4 视为 int8_t 来处理
+        Transpose::TransposeNLast<int8_t> op;
         op.Init(x, y, tilingData, pipe);
         op.Process();
     }
@@ -309,6 +317,11 @@ extern "C" __aicore__ inline void TransposeGatherProcess(GM_ADDR x, GM_ADDR y,
         op.Process();
     } else if constexpr (sizeof(DTYPE_X) == sizeof(int64_t)) {
         Transpose::TransposeWithGather<int64_t> op;
+        op.Init(x, y, tilingData, pipe);
+        op.Process();
+    } else {
+        // HIF4 视为 int8_t 来处理
+        Transpose::TransposeWithGather<int8_t> op;
         op.Init(x, y, tilingData, pipe);
         op.Process();
     }
@@ -364,6 +377,14 @@ extern "C" __aicore__ inline void Transpose021VconvProcess(GM_ADDR x, GM_ADDR y,
     }
 }
 
+extern "C" __aicore__ inline void TransposeHIF4DualCutProcess(GM_ADDR x, GM_ADDR y,
+                                                              const HIF4DualCutTilingData* tilingData, TPipe* pipe)
+{
+    TransposeHIF4 op;
+    op.Init(x, y, tilingData, pipe);
+    op.Process();
+}
+
 /**
  * @brief Transpose 算子 Kernel 主入口函数
  *
@@ -416,5 +437,8 @@ extern "C" __global__ __aicore__ void transpose(GM_ADDR x, GM_ADDR perm, GM_ADDR
     } else if (TILING_KEY_IS(VCONV_021_TRANSPOSE)) { // 10008: TransDataTo5HD 3D 021转置
         GET_TILING_DATA_WITH_STRUCT(Transpose021VCONVTilingData, tilingData, tiling);
         Transpose021VconvProcess(x, y, &tilingData, &pipe);
+    } else if (TILING_KEY_IS(B4_DUAL_CUT)) {
+        GET_TILING_DATA_WITH_STRUCT(HIF4DualCutTilingData, tilingData, tiling);
+        TransposeHIF4DualCutProcess(x, y, &tilingData, &pipe);
     }
 }

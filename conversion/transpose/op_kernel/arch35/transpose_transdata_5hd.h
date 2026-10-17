@@ -267,7 +267,11 @@ __aicore__ inline void KernelTransDataTo5HD<T>::BaseCopyIn(uint32_t process)
 {
     LocalTensor<T> srcLocal = inQueueSrc.AllocTensor<T>();
     SetCopyInParams(process);
+#if defined(__DAV_920R1__)
+    DataCopyPad(srcLocal, srcGlobal[gmOffset + copyInCoreOffset], Params, padParams, true);
+#else
     DataCopyPad(srcLocal, srcGlobal[gmOffset + copyInCoreOffset], Params, padParams);
+#endif
     inQueueSrc.EnQue(srcLocal);
 }
 

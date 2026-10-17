@@ -128,7 +128,7 @@ __aicore__ inline void TransposeCutOneAxis<T>::Init(GM_ADDR x, GM_ADDR y, const 
     ParseTilingData();
     inputGM_.SetGlobalBuffer((__gm__ T*)x);
     outputGM_.SetGlobalBuffer((__gm__ T*)y);
-    pipe->InitBuffer(vecQue_, 1, tiling_->ubSize);
+    pipe->InitBuffer(vecQue_, NDDMA_BUFFER_NUM, tiling_->ubSize / NDDMA_BUFFER_NUM);
 }
 
 template <typename T>
@@ -318,7 +318,11 @@ __aicore__ inline void TransposeCutOneAxis<T>::CopyIn(int64_t loopIdx, NdDmaPara
                             srcLoopStride_[tiling_->expandedPerm[i]];
     }
     LocalTensor<T> bindLocalIn = vecQue_.AllocTensor<T>();
+#if defined(__DAV_920R1__)
+    DataCopy<T, NDDMA_MAX_DIM_NUM, config>(bindLocalIn, inputGM_[srcAddressOffset], params, true);
+#else
     DataCopy<T, NDDMA_MAX_DIM_NUM, config>(bindLocalIn, inputGM_[srcAddressOffset], params);
+#endif
     vecQue_.EnQue(bindLocalIn);
 }
 

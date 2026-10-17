@@ -78,6 +78,7 @@ private:
     int64_t srcLoopStride_[TRANSPOSE_MAX_AXIS_NUM] = {1, 1, 1, 1, 1, 1, 1, 1};
 
     int64_t cutIdx_ = 0;
+    int64_t bufferNum_ = 2;
 };
 
 template <typename T>
@@ -86,9 +87,10 @@ __aicore__ inline void TransposeBigDim<T>::Init(GM_ADDR x, GM_ADDR y, const Tran
 {
     blockIdx_ = GetBlockIdx();
     tiling_ = tilingData;
+    bufferNum_ = tiling_->bigDimBufferNum;
     inputGM_.SetGlobalBuffer((__gm__ T*)x);
     outputGM_.SetGlobalBuffer((__gm__ T*)y);
-    pipe->InitBuffer(vecQue_, 1, tiling_->ubSize);
+    pipe->InitBuffer(vecQue_, bufferNum_, tiling_->ubSize / bufferNum_);
 }
 
 template <typename T>
@@ -189,7 +191,11 @@ __aicore__ inline void TransposeBigDim<T>::CopyIn(int64_t loopIdx, NdDmaParams<T
                             srcLoopStride_[tiling_->permSize - 1 - tiling_->perm[tiling_->permSize - 1 - i]];
     }
     LocalTensor<T> bindLocalIn = vecQue_.AllocTensor<T>();
+#if defined(__DAV_920R1__)
+    DataCopy<T, NDDMA_MAX_DIM_NUM, config>(bindLocalIn, inputGM_[srcAddressOffset], params, true);
+#else
     DataCopy<T, NDDMA_MAX_DIM_NUM, config>(bindLocalIn, inputGM_[srcAddressOffset], params);
+#endif
     vecQue_.EnQue(bindLocalIn);
 }
 

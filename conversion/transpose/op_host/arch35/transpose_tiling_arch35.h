@@ -47,7 +47,9 @@ constexpr uint64_t B8_BYTES = 1;                            ///< 8bit 类型字�
 constexpr uint64_t B16_BYTES = 2;                           ///< 16bit 类型字节数
 constexpr uint64_t B32_BYTES = 4;                           ///< 32bit 类型字节数
 constexpr uint64_t B64_BYTES = 8;                           ///< 64bit 类型字节数
-constexpr uint64_t BUFFER_NUM = 2;                          ///< 双缓冲数量
+constexpr uint64_t BUFFER_NUM = 2;                          ///< 缓冲数量
+constexpr int64_t BUFFER_NUM_DOUBLE_BUF = 2;                ///< 双缓冲
+constexpr int64_t BUFFER_NUM_SINGLE_BUF = 1;                ///< 单缓冲
 constexpr double VEC_CORE_USED_THRES_HOLD = 0.9;            ///< 核利用率阈值（低于此值调整切分因子）
 constexpr int64_t MOVEALIGN_LAST_MIN_ELE = 32;              ///< N_LAST_TRANSPOSE 尾轴最小元素数
 constexpr int64_t SMALL_SHAPE_SPLIT_BYTES_ALIGN_SIZE = 128; ///< SmallShape 128字节对齐
@@ -97,6 +99,7 @@ TILING_DATA_FIELD_DEF(int64_t, rangeOutputTailStart);
 TILING_DATA_FIELD_DEF(int64_t, rangeOutputTailEnd);
 TILING_DATA_FIELD_DEF(int64_t, rangeTailStart);
 TILING_DATA_FIELD_DEF(int64_t, rangeTailEnd);
+TILING_DATA_FIELD_DEF(int64_t, bigDimBufferNum);
 TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_AXIS_NUM_FOR_TRANSPOSE, inputShape);
 TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_AXIS_NUM_FOR_TRANSPOSE, outputShape);
 TILING_DATA_FIELD_DEF_ARR(int64_t, MAX_AXIS_NUM_FOR_TRANSPOSE, perm);
@@ -136,6 +139,7 @@ enum class SplitMode : int64_t {
     GATHER_TRANSPOSE = 10006,    // DataCopyGather硬件加速
     VCONV_TRANSPOSE = 10007,     // TransDataTo5HD 2D转置(DAV_5102)
     VCONV_021_TRANSPOSE = 10008, // TransDataTo5HD 3D 021转置(DAV_5102)
+    B4_DOUBLE_SPLIT = 10009,     // B4 双切分
     NDDMA_BASE = 90000           // NDDMA基础key（非实际使用的key，用于策略选型中间状态）
 };
 
@@ -208,7 +212,11 @@ private:
     ge::graphStatus CheckShapeDims();
     ge::graphStatus CheckPermValue();
     ge::graphStatus CheckShapeInfo();
+    ge::graphStatus CheckB4ShapeInfo();
     ge::graphStatus CheckReducedShapeInfo();
+    bool CheckB4Tiling();
+    ge::graphStatus TryB4Tiling();
+    ge::graphStatus AdjustShapeForB4();
     ge::graphStatus TryVCONVTiling();
     bool Is021VConvValid();
     void FlushBaseNumForBigDim();
@@ -255,6 +263,8 @@ private:
     int64_t tilingKey_ = 0;
     int64_t blkFactor_ = 0;
     int64_t blkTailFactor_ = 0;
+    int64_t nddmaBufferNum_ = 1;
+    int64_t bigDimBufferNum_ = 1;
     int64_t totalNddmaNum_ = 1;
     int64_t isNddmaAxisContinue_ = 0;
     int64_t SMALL_SHAPE_BYTES_THRES_HOLD = 4000000;
@@ -288,6 +298,7 @@ private:
     int64_t inUbTailDstShape_[NDDMA_MAX_DIM_NUM] = {0};
 
     bool isRelatedTranspose_ = false;
+    bool is4bit_ = false;
 };
 } // namespace optiling
 

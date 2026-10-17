@@ -46,11 +46,14 @@
 #include "transpose_tiling_with_gather_arch35.h"
 #include "transpose_tiling_with_nchwconv_arch35.h"
 #include "transpose_tiling_with_021vconv_arch35.h"
+#include "transpose_tiling_b4_dual_cut_arch35.h"
 #include "common/inc/op_host/math_log.h"
 
 namespace optiling {
 static constexpr int32_t VCONV_DIM_NUM = 2;
 static constexpr int32_t VCONV_DSIZE = 2;
+static constexpr int64_t B4_TYPE_ELES_PER_BYTE = 2;
+static constexpr int64_t B4_BIT_SIZE = 4;
 
 ge::graphStatus TransposeNddmaTiling::Init(const int64_t& coreNum, const int64_t& ubSize)
 {
@@ -103,6 +106,12 @@ ge::graphStatus TransposeNddmaTiling::RunTranposelTiling()
                 return ge::GRAPH_SUCCESS);
 
     SetIsLastAxisTranspose();
+
+    if (CheckB4Tiling()) {
+        return TryB4Tiling();
+    }
+    AdjustShapeForB4();
+
     if (!isRelatedTranspose_ && shapeInfo_.isLastAxisTranspose) {
         TransWithGather::PlatInfo platInfo{coreNum_, ubSize_, cacheLineSize_, ubBlockSize_};
         TransWithGather::TransposeGatherTiling gatherTiling(tilingContext_, platInfo, shapeInfo_);
@@ -134,6 +143,37 @@ ge::graphStatus TransposeNddmaTiling::RunTranposelTiling()
     workspaces[0] = 0;
     OP_LOGD(tilingContext_->GetNodeName(), "Tiling4Transpose success.");
     return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus TransposeNddmaTiling::AdjustShapeForB4()
+{
+    if (!is4bit_) {
+        return ge::GRAPH_SUCCESS;
+    }
+    if (shapeInfo_.isLastAxisTranspose) {
+        return ge::GRAPH_SUCCESS;
+    }
+
+    // 4bit 类型，非尾轴转置，则视为 int8
+    shapeInfo_.eleLenInBytes = 1; // INT8 view
+    shapeInfo_.reducedInShape[shapeInfo_.dim - 1] /= B4_TYPE_ELES_PER_BYTE;
+    shapeInfo_.reducedOutShape[shapeInfo_.dim - 1] /= B4_TYPE_ELES_PER_BYTE;
+    shapeInfo_.totalVolumeActual /= B4_TYPE_ELES_PER_BYTE;
+    OP_LOGD(tilingContext_->GetNodeName(), "[B4] GetShapeInfo: non-last-axis, lastAxis halved to %ld, eleLenInBytes=1",
+            shapeInfo_.reducedInShape[shapeInfo_.dim - 1]);
+    return ge::GRAPH_SUCCESS;
+}
+
+bool TransposeNddmaTiling::CheckB4Tiling()
+{
+    // 4bit 类型，尾轴转置，其他模板无法处理，走 b4 模板
+    return is4bit_ && shapeInfo_.isLastAxisTranspose;
+}
+
+ge::graphStatus TransposeNddmaTiling::TryB4Tiling()
+{
+    TransHIF4DualCut::TransposeTilingHIF4DualCut b4Tiling(tilingContext_, shapeInfo_, coreNum_, ubSize_);
+    return b4Tiling.DoTiling();
 }
 
 /**
@@ -296,6 +336,7 @@ ge::graphStatus TransposeNddmaTiling::GetShapeInfo()
         shapeInfo_.outShape[i] = yShape[i];
     }
 
+    is4bit_ = shapeInfo_.eleLenInBytes == ge::kDataTypeSizeBitOffset + B4_BIT_SIZE;
     return ge::GRAPH_SUCCESS;
 }
 
@@ -350,6 +391,32 @@ ge::graphStatus TransposeNddmaTiling::CheckPermValue()
     return ge::GRAPH_SUCCESS;
 }
 
+ge::graphStatus TransposeNddmaTiling::CheckB4ShapeInfo()
+{
+    if (!is4bit_) {
+        return ge::GRAPH_SUCCESS;
+    }
+
+    // 4 bit 类型，输入输出尾轴应该为偶数
+    int64_t lastAxisIdx = shapeInfo_.inShapeSize - 1;
+    if (lastAxisIdx >= 0 && shapeInfo_.inShape[lastAxisIdx] % B4_TYPE_ELES_PER_BYTE != 0) {
+        std::string reasonMsg = "Last axis of x must be exactly divided by " + std::to_string(B4_TYPE_ELES_PER_BYTE) +
+                                ", when the type of x is 4bit type";
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(tilingContext_->GetNodeName(), "x",
+                                              std::to_string(shapeInfo_.inShape[lastAxisIdx]).c_str(), reasonMsg);
+        return ge::GRAPH_FAILED;
+    }
+    lastAxisIdx = shapeInfo_.outShapeSize - 1;
+    if (lastAxisIdx >= 0 && shapeInfo_.outShape[lastAxisIdx] % B4_TYPE_ELES_PER_BYTE != 0) {
+        std::string reasonMsg = "Last axis of y must be exactly divided by " + std::to_string(B4_TYPE_ELES_PER_BYTE) +
+                                ", when the type of y is 4bit type";
+        OP_LOGE_FOR_INVALID_SHAPE_WITH_REASON(tilingContext_->GetNodeName(), "y",
+                                              std::to_string(shapeInfo_.outShape[lastAxisIdx]).c_str(), reasonMsg);
+        return ge::GRAPH_FAILED;
+    }
+    return ge::GRAPH_SUCCESS;
+}
+
 ge::graphStatus TransposeNddmaTiling::CheckShapeInfo()
 {
     OP_LOGD(tilingContext_->GetNodeName(), "Entering CheckShapeInfo.");
@@ -386,7 +453,7 @@ ge::graphStatus TransposeNddmaTiling::CheckShapeInfo()
         }
     }
 
-    return ge::GRAPH_SUCCESS;
+    return CheckB4ShapeInfo();
 }
 
 ge::graphStatus TransposeNddmaTiling::CheckReducedShapeInfo()
@@ -907,6 +974,10 @@ void TransposeNddmaTiling::EntryTilingTemplate()
     auto platformInfo = tilingContext_->GetPlatformInfo();
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
     auto arch = ascendcPlatform.GetCurNpuArch();
+    if (arch == NpuArch::DAV_9201 || arch == NpuArch::DAV_9202) {
+        nddmaBufferNum_ = BUFFER_NUM_DOUBLE_BUF;
+    }
+
     if (arch == NpuArch::DAV_5102 && !shapeInfo_.isLastAxisTranspose &&
         shapeInfo_.reducedInShape[shapeInfo_.dim - 1] >= MOVEALIGN_LAST_MIN_ELE) {
         SMALL_SHAPE_BYTES_THRES_HOLD = SMALL_SHAPE_BYTES_THRES_HOLD_DAV_5102_NLAST;
@@ -951,11 +1022,21 @@ void TransposeNddmaTiling::CalcUBSplitInfo()
             splitInfo_.ubElement = ubSize_ / BUFFER_NUM / shapeInfo_.eleLenInBytes;
             break;
         case static_cast<int64_t>(SplitMode::NDDMA_BASE):
+            splitInfo_.ubElement = ubSize_ / nddmaBufferNum_ / shapeInfo_.eleLenInBytes;
             splitInfo_.inUbElement = sqrt(splitInfo_.ubElement);
             DoSplitUB();
             break;
         case static_cast<int64_t>(SplitMode::BIG_DIM):
+            bigDimBufferNum_ = nddmaBufferNum_;
+            splitInfo_.ubElement = ubSize_ / bigDimBufferNum_ / shapeInfo_.eleLenInBytes;
             DoSplitUBBigDim();
+            if (bigDimBufferNum_ > BUFFER_NUM_SINGLE_BUF &&
+                shapeInfo_.reducedPerm[splitInfo_.outCutIndex] == (shapeInfo_.dim - 1)) {
+                OP_LOGD(tilingContext_, "[BIG_DIM] fallback to single buffer");
+                bigDimBufferNum_ = BUFFER_NUM_SINGLE_BUF;
+                splitInfo_.ubElement = ubSize_ / bigDimBufferNum_ / shapeInfo_.eleLenInBytes;
+                DoSplitUBBigDim();
+            }
             break;
         default:
             break;
@@ -1680,6 +1761,7 @@ void TransposeNddmaTiling::FillTilingData()
     tilingData_.transposeOpTiling.set_blkFactor(blkFactor_);
     tilingData_.transposeOpTiling.set_blkTailFactor(blkTailFactor_);
     tilingData_.transposeOpTiling.set_ubSize(ubSize_);
+    tilingData_.transposeOpTiling.set_bigDimBufferNum(bigDimBufferNum_);
 
     for (int64_t i = 0; i < shapeInfo_.dim; i++) {
         inputShape_[i] = shapeInfo_.reducedInShape[i];

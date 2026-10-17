@@ -135,7 +135,7 @@ __aicore__ inline void TransposeCutTwoAxis<T>::Init(GM_ADDR x, GM_ADDR y, const 
     ParseTilingData();
     inputGM_.SetGlobalBuffer((__gm__ T*)x);
     outputGM_.SetGlobalBuffer((__gm__ T*)y);
-    pipe->InitBuffer(vecQue_, 1, tiling_->ubSize);
+    pipe->InitBuffer(vecQue_, NDDMA_BUFFER_NUM, tiling_->ubSize / NDDMA_BUFFER_NUM);
 }
 
 template <typename T>
@@ -398,7 +398,11 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessMain(int64_t loopidxStart,
             dstAddressOffset += dstAddressOffsetMixedBase[i] * dstLoopShapeSizeArray[i];
         }
         LocalTensor<T> bindLocalIn = vecQue_.AllocTensor<T>();
+#if defined(__DAV_920R1__)
+        DataCopy<T, NDDMA_MAX_DIM_NUM, config>(bindLocalIn, inputGM_[srcAddressOffset], paramsMain, true);
+#else
         DataCopy<T, NDDMA_MAX_DIM_NUM, config>(bindLocalIn, inputGM_[srcAddressOffset], paramsMain);
+#endif
         vecQue_.EnQue(bindLocalIn);
         SetLoopModePara(loopParams, DataCopyMVType::UB_TO_OUT);
         LocalTensor<T> bindLocalOut = vecQue_.DeQue<T>();
@@ -473,7 +477,11 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessInputTail(int64_t loopidxS
             dstAddressOffset += dstAddressOffsetMixedBase[i] * inputTailDstLoopShapeSizeArray[i];
         }
         LocalTensor<T> bindLocalIn = vecQue_.AllocTensor<T>();
+#if defined(__DAV_920R1__)
+        DataCopy<T, NDDMA_MAX_DIM_NUM, config>(bindLocalIn, inputGM_[srcAddressOffset], paramsInputTail, true);
+#else
         DataCopy<T, NDDMA_MAX_DIM_NUM, config>(bindLocalIn, inputGM_[srcAddressOffset], paramsInputTail);
+#endif
         vecQue_.EnQue(bindLocalIn);
         SetLoopModePara(loopParams, DataCopyMVType::UB_TO_OUT);
         LocalTensor<T> bindLocalOut = vecQue_.DeQue<T>();
@@ -556,7 +564,11 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessOutputTail(int64_t loopidx
             dstAddressOffset += dstAddressOffsetMixedBase[i] * outputTailDstLoopShapeSizeArray[i];
         }
         LocalTensor<T> bindLocalIn = vecQue_.AllocTensor<T>();
+#if defined(__DAV_920R1__)
+        DataCopy<T, NDDMA_MAX_DIM_NUM, config>(bindLocalIn, inputGM_[srcAddressOffset], paramsOutputTail, true);
+#else
         DataCopy<T, NDDMA_MAX_DIM_NUM, config>(bindLocalIn, inputGM_[srcAddressOffset], paramsOutputTail);
+#endif
         vecQue_.EnQue(bindLocalIn);
         SetLoopModePara(loopParams, DataCopyMVType::UB_TO_OUT);
         LocalTensor<T> bindLocalOut = vecQue_.DeQue<T>();
@@ -635,7 +647,11 @@ __aicore__ inline void TransposeCutTwoAxis<T>::ProcessTail(int64_t loopidxStart,
             dstAddressOffset += dstAddressOffsetMixedBase[i] * tailDstLoopShapeSizeArray[i];
         }
         LocalTensor<T> bindLocalIn = vecQue_.AllocTensor<T>();
+#if defined(__DAV_920R1__)
+        DataCopy<T, NDDMA_MAX_DIM_NUM, config>(bindLocalIn, inputGM_[srcAddressOffset], paramsTail, true);
+#else
         DataCopy<T, NDDMA_MAX_DIM_NUM, config>(bindLocalIn, inputGM_[srcAddressOffset], paramsTail);
+#endif
         vecQue_.EnQue(bindLocalIn);
         SetLoopModePara(loopParams, DataCopyMVType::UB_TO_OUT);
         LocalTensor<T> bindLocalOut = vecQue_.DeQue<T>();

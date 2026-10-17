@@ -48,6 +48,34 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
     op::DataType::DT_COMPLEX64,   op::DataType::DT_COMPLEX128,   op::DataType::DT_BF16,  op::DataType::DT_HIFLOAT8,
     op::DataType::DT_FLOAT8_E5M2, op::DataType::DT_FLOAT8_E4M3FN};
 
+static constexpr op::DataType DT_HIFLOAT4 = static_cast<op::DataType>(42);
+static constexpr op::DataType DT_HIFLOAT4_SCALE = static_cast<op::DataType>(43);
+
+static const std::initializer_list<op::DataType> ARCH92_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_FLOAT,
+    op::DataType::DT_FLOAT16,
+    op::DataType::DT_INT8,
+    op::DataType::DT_INT16,
+    op::DataType::DT_INT32,
+    op::DataType::DT_INT64,
+    op::DataType::DT_UINT8,
+    op::DataType::DT_UINT16,
+    op::DataType::DT_UINT32,
+    op::DataType::DT_UINT64,
+    op::DataType::DT_BOOL,
+    op::DataType::DT_DOUBLE,
+    op::DataType::DT_COMPLEX64,
+    op::DataType::DT_COMPLEX128,
+    op::DataType::DT_BF16,
+    op::DataType::DT_HIFLOAT8,
+    op::DataType::DT_FLOAT8_E5M2,
+    op::DataType::DT_FLOAT8_E4M3FN,
+    op::DataType::DT_FLOAT4_E2M1,
+    op::DataType::DT_FLOAT4_E1M2,
+    DT_HIFLOAT4,
+    DT_HIFLOAT4_SCALE,
+};
+
 static inline bool CheckNotNull(const aclTensor* self, const aclIntArray* dims, const aclTensor* out)
 {
     OP_CHECK_NULL(self, return false);
@@ -65,11 +93,17 @@ static inline bool CheckSocVersionIsSupportBf16(void)
 
 inline static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out)
 {
-    // 检查self的数据类型是否在支持列表内
-    OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST, return false);
-
-    // 检查out的数据类型是否在支持列表内
-    OP_CHECK_DTYPE_NOT_SUPPORT(out, DTYPE_SUPPORT_LIST, return false);
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (curArch == NpuArch::DAV_9201 || curArch == NpuArch::DAV_9202) {
+        // arch92 新增支持 hif4、fp4 等
+        OP_CHECK_DTYPE_NOT_SUPPORT(self, ARCH92_DTYPE_SUPPORT_LIST, return false);
+        OP_CHECK_DTYPE_NOT_SUPPORT(out, ARCH92_DTYPE_SUPPORT_LIST, return false);
+    } else {
+        // 检查self的数据类型是否在支持列表内
+        OP_CHECK_DTYPE_NOT_SUPPORT(self, DTYPE_SUPPORT_LIST, return false);
+        // 检查out的数据类型是否在支持列表内
+        OP_CHECK_DTYPE_NOT_SUPPORT(out, DTYPE_SUPPORT_LIST, return false);
+    }
 
     bool bf16flag = CheckSocVersionIsSupportBf16();
     auto socVersion = GetCurrentPlatformInfo().GetSocVersion();

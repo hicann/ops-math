@@ -346,7 +346,11 @@ __aicore__ inline void KernelTransDataTo5HD021<T>::CopyIn(int64_t nIdx, uint32_t
     } else {
         CopyInWUnaligned(actualValidRows, r, c, ubLoop);
     }
+#if defined(__DAV_920R1__)
+    DataCopyPad(srcLocal, srcGlobal[nSrcOffset + ubSrcOffset], copyInParams_, copyInPadParams, true);
+#else
     DataCopyPad(srcLocal, srcGlobal[nSrcOffset + ubSrcOffset], copyInParams_, copyInPadParams);
+#endif
     inQueueSrc.EnQue(srcLocal);
 }
 
@@ -508,7 +512,6 @@ __aicore__ inline void KernelTransDataTo5HD021<T>::CopyInHSplit(int64_t nIdx, ui
             copyInParams_.srcStride = (tiling_->WLen - c) * sizeof(T);
             copyInParams_.dstStride = 0;
         }
-        DataCopyPad(srcLocal, srcGlobal[totalSrcOffset], copyInParams_, copyInPadParams);
     } else {
         int32_t wOffset = ubLoop * tiling_->cUbSplitPara.UbFactor;
         int32_t validW = (tiling_->WLen - wOffset < c) ? tiling_->WLen - wOffset : c;
@@ -516,8 +519,12 @@ __aicore__ inline void KernelTransDataTo5HD021<T>::CopyInHSplit(int64_t nIdx, ui
         copyInParams_.blockLen = validW * sizeof(T);
         copyInParams_.srcStride = (tiling_->WLen - validW) * sizeof(T);
         copyInParams_.dstStride = (c - validW) * sizeof(T) / BLOCK_SIZE_BYTE;
-        DataCopyPad(srcLocal, srcGlobal[totalSrcOffset], copyInParams_, copyInPadParams);
     }
+#if defined(__DAV_920R1__)
+    DataCopyPad(srcLocal, srcGlobal[totalSrcOffset], copyInParams_, copyInPadParams, true);
+#else
+    DataCopyPad(srcLocal, srcGlobal[totalSrcOffset], copyInParams_, copyInPadParams);
+#endif
     inQueueSrc.EnQue(srcLocal);
 }
 

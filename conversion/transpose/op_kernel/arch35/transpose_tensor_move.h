@@ -108,7 +108,12 @@ __aicore__ inline void TransposeTensorMove<T>::ProcessPerCore()
         }
         copyOutParamsMain_.blockLen = copyNum * sizeof(T);
         LocalTensor<T> bindLocalIn = vecQue_.AllocTensor<T>();
+#if defined(__DAV_920R1__)
+        DataCopyPad(bindLocalIn, inputGM_[srcOffset_ + loopIdx * tiling_->inUbFactor], copyOutParamsMain_, padParams_,
+                    true);
+#else
         DataCopyPad(bindLocalIn, inputGM_[srcOffset_ + loopIdx * tiling_->inUbFactor], copyOutParamsMain_, padParams_);
+#endif
         vecQue_.EnQue(bindLocalIn);
         LocalTensor<T> bindLocalOut = vecQue_.DeQue<T>();
         DataCopyPad(outputGM_[srcOffset_ + loopIdx * tiling_->inUbFactor], bindLocalOut, copyOutParamsMain_);
