@@ -41,6 +41,13 @@ static const std::initializer_list<op::DataType> AICORE950_DTYPE_SUPPORT_LIST = 
     op::DataType::DT_FLOAT8_E4M3FN, op::DataType::DT_HIFLOAT8, op::DataType::DT_FLOAT4_E1M2,
     op::DataType::DT_FLOAT4_E2M1};
 
+static const std::initializer_list<op::DataType> AICORE960dt_DTYPE_SUPPORT_LIST = {
+    op::DataType::DT_INT8,          op::DataType::DT_INT32,    op::DataType::DT_INT64,
+    op::DataType::DT_UINT8,         op::DataType::DT_FLOAT16,  op::DataType::DT_FLOAT,
+    op::DataType::DT_BOOL,          op::DataType::DT_BF16,     op::DataType::DT_FLOAT8_E5M2,
+    op::DataType::DT_FLOAT8_E4M3FN, op::DataType::DT_HIFLOAT8, op::DataType::DT_FLOAT4_E1M2,
+    op::DataType::DT_FLOAT4_E2M1};
+
 static constexpr size_t MAX_DIM_LEN = 8;
 
 // 根据芯片类型、dtype判断算子是否支持走aicore
@@ -50,6 +57,10 @@ static bool IsAiCoreSupport(const aclTensor* self)
     if (GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910B ||
         GetCurrentPlatformInfo().GetSocVersion() == SocVersion::ASCEND910_93) {
         return CheckType(self->GetDataType(), AICORE910B_DTYPE_SUPPORT_LIST);
+    }
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    if (curArch == NpuArch::DAV_9201) {
+        return CheckType(self->GetDataType(), AICORE960dt_DTYPE_SUPPORT_LIST);
     }
     if (IsRegBase()) {
         return CheckType(self->GetDataType(), AICORE950_DTYPE_SUPPORT_LIST);

@@ -68,10 +68,11 @@ ge::graphStatus ZerosLikeTiling::CheckShape()
     const gert::Shape& outputYShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF((inputXShape.GetShapeSize() != outputYShape.GetShapeSize()),
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x(input) and y(output)",
-            Ops::Base::ToString(inputXShape) + ", " + Ops::Base::ToString(outputYShape),
-            "The shapes of x(input) and y(output) must be the same"),
-        return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                    tilingContext->GetNodeName(), "x(input) and y(output)",
+                    Ops::Base::ToString(inputXShape) + ", " + Ops::Base::ToString(outputYShape),
+                    "The shapes of x(input) and y(output) must be the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -88,10 +89,11 @@ ge::graphStatus ZerosLikeTiling::CalcOutputDtype()
     this->outputDtype = outputDesc->GetDataType();
 
     OP_CHECK_IF((this->outputDtype != this->inputDtype),
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "x(input) and y(output)",
-            Ops::Base::ToString(this->inputDtype) + " and " + Ops::Base::ToString(this->outputDtype),
-            "The dtypes of x(input) and y(output) must be the same"),
-        return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+                    tilingContext->GetNodeName(), "x(input) and y(output)",
+                    Ops::Base::ToString(this->inputDtype) + " and " + Ops::Base::ToString(this->outputDtype),
+                    "The dtypes of x(input) and y(output) must be the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -99,11 +101,10 @@ ge::graphStatus ZerosLikeTiling::RunTiling()
 {
     OP_LOGD(tilingContext->GetNodeName(), "ZerosLikeTiling RunTiling enter.");
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
-    OP_CHECK_IF(
-        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"),
+                return ge::GRAPH_FAILED);
 
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
     tiling = tilingContext->GetTilingData<ZerosLikeTilingData>();
@@ -112,36 +113,35 @@ ge::graphStatus ZerosLikeTiling::RunTiling()
     if (it != ZLDtypeNormalize.end()) {
         switch (it->second) {
             case ZL_DTYPE_SIZE_1:
-                baseTilingResult =
-                    elewiseBaseTiling.DoTiling<ZerosLikeOp::ZerosLikeDAG<int8_t>::OpDag>(tiling->baseTiling);
+                baseTilingResult = elewiseBaseTiling.DoTiling<ZerosLikeOp::ZerosLikeDAG<int8_t>::OpDag>(
+                    tiling->baseTiling);
                 break;
             case ZL_DTYPE_SIZE_2:
-                baseTilingResult =
-                    elewiseBaseTiling.DoTiling<ZerosLikeOp::ZerosLikeDAG<int16_t>::OpDag>(tiling->baseTiling);
+                baseTilingResult = elewiseBaseTiling.DoTiling<ZerosLikeOp::ZerosLikeDAG<int16_t>::OpDag>(
+                    tiling->baseTiling);
                 break;
             case ZL_DTYPE_SIZE_4:
-                baseTilingResult =
-                    elewiseBaseTiling.DoTiling<ZerosLikeOp::ZerosLikeDAG<int32_t>::OpDag>(tiling->baseTiling);
+                baseTilingResult = elewiseBaseTiling.DoTiling<ZerosLikeOp::ZerosLikeDAG<int32_t>::OpDag>(
+                    tiling->baseTiling);
                 break;
             case ZL_DTYPE_SIZE_8:
-                baseTilingResult =
-                    elewiseBaseTiling.DoTiling<ZerosLikeOp::ZerosLikeDAG<int64_t>::OpDag>(tiling->baseTiling);
+                baseTilingResult = elewiseBaseTiling.DoTiling<ZerosLikeOp::ZerosLikeDAG<int64_t>::OpDag>(
+                    tiling->baseTiling);
                 break;
             default: // ZL_DTYPE_SIZE_0_5
-                baseTilingResult =
-                    elewiseBaseTiling.DoTiling4Bits<ZerosLikeOp::ZerosLikeDAG<int8_t>::OpDag>(tiling->baseTiling);
+                baseTilingResult = elewiseBaseTiling.DoTiling4Bits<ZerosLikeOp::ZerosLikeDAG<int8_t>::OpDag>(
+                    tiling->baseTiling);
                 break;
         }
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y(output)",
-            Ops::Base::ToString(this->outputDtype),
-            "Float4_E1M2, Float4_E2M1, Bool, Int8, Uint8, Float8_E5M2, Float8_E4M3FN, Hifloat8, Float16, BFloat16, Float, Int32 and Int64");
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y(output)", Ops::Base::ToString(this->outputDtype),
+                                  "Float4_E1M2, Float4_E2M1, Bool, Int8, Uint8, Float8_E5M2, Float8_E4M3FN, Hifloat8, "
+                                  "Float16, BFloat16, Float, Int32 and Int64");
         return ge::GRAPH_FAILED;
     }
 
-    OP_CHECK_IF(
-        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"),
+                return ge::GRAPH_FAILED);
 
     return SetTilingData();
 }

@@ -25,6 +25,15 @@ static const std::vector<ge::Format> dataFormat = {
     ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
     ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
 
+static const std::vector<ge::DataType> dataType_91096 = {
+    ge::DT_FLOAT16,  ge::DT_FLOAT,       ge::DT_INT32,      ge::DT_INT64,       ge::DT_INT8,
+    ge::DT_UINT8,    ge::DT_BF16,        ge::DT_BOOL,       ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E4M3FN,
+    ge::DT_HIFLOAT8, ge::DT_FLOAT4_E1M2, ge::DT_FLOAT4_E2M1};
+
+static const std::vector<ge::Format> dataFormat_91096 = {
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+
 class ZerosLike : public OpDef {
 public:
     explicit ZerosLike(const char* name) : OpDef(name)
@@ -44,6 +53,27 @@ public:
 
         this->AICore().AddConfig("ascend950", aicore_config);
         this->AICore().AddConfig("ascend350", aicore_config);
+
+        OpAICoreConfig config91096;
+        config91096.Input("x")
+            .ParamType(REQUIRED)
+            .DataType(dataType_91096)
+            .Format(dataFormat_91096)
+            .UnknownShapeFormat(dataFormat_91096);
+        config91096.Output("y")
+            .ParamType(REQUIRED)
+            .DataType(dataType_91096)
+            .Format(dataFormat_91096)
+            .UnknownShapeFormat(dataFormat_91096);
+        config91096.DynamicCompileStaticFlag(true)
+            .DynamicFormatFlag(false)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .NeedCheckSupportFlag(false)
+            .ExtendCfgInfo("op.pattern", "formatAgnostic")
+            .ExtendCfgInfo("opFile.value", "zeros_like_apt");
+
+        this->AICore().AddConfig("ascend960dt", config91096);
     }
 };
 
