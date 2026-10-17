@@ -310,6 +310,7 @@ function(add_onnx_plugin_modules)
     target_include_directories(${ONNX_PLUGIN_NAME}_obj
       PRIVATE
       ${OP_PROTO_INCLUDE}
+      ${OPS_MATH_DIR}/common/inc/op_host
       ${PROTOBUF_INCLUDE_DIRS}
       ${CMAKE_BINARY_DIR}/proto
       ${ONNX_PLUGIN_COMMON_INCLUDE}

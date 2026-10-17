@@ -102,6 +102,8 @@ function(gen_es_math_lib_ready)
             -Wl,--as-needed
     )
   target_link_directories(proto_${PKG_NAME} PRIVATE ${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64)
+  # 生成的 ops_proto_math.h 会引用 op_const_def_math.h，需补充其所在目录
+  target_include_directories(proto_${PKG_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/common/inc/op_host)
 
   # 生成 es_math
   add_es_library_and_whl(
@@ -145,6 +147,8 @@ function(gen_es_math_lib_ready_cust)
             -Wl,--as-needed
     )
   target_link_directories(proto_${PKG_NAME}_cust PRIVATE ${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64)
+  # 生成的 ops_proto_math.h 会引用 op_const_def_math.h，需补充其所在目录
+  target_include_directories(proto_${PKG_NAME}_cust PRIVATE ${PROJECT_SOURCE_DIR}/common/inc/op_host)
 
   # 生成 es_math
   add_es_library(
@@ -210,6 +214,8 @@ function(gen_opgraph_symbol)
       ${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64
       ${CMAKE_BINARY_DIR}/es_packages/lib64
       )
+    # 生成的 ops_proto_math.cpp 会引用 op_const_def_math.h，需补充其所在目录
+    target_include_directories(${OPGRAPH_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/common/inc/op_host)
     set_target_properties(${OPGRAPH_NAME} PROPERTIES
       LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/opp/built-in/op_proto
       )
@@ -221,6 +227,12 @@ function(gen_opgraph_symbol)
 
     install(
       FILES ${ASCEND_GRAPH_CONF_DST}/ops_proto_math.h
+      DESTINATION ${OPGRAPH_INC_INSTALL_DIR}
+      OPTIONAL
+      )
+
+    install(
+      FILES ${PROJECT_SOURCE_DIR}/common/inc/op_host/op_const_def_math.h
       DESTINATION ${OPGRAPH_INC_INSTALL_DIR}
       OPTIONAL
       )
@@ -338,6 +350,8 @@ function(gen_cust_proto_symbol)
     PUBLIC  $<BUILD_INTERFACE:intf_pub_cxx17>
             ge_compiler
   )
+  # 生成的 ops_proto_math.cpp 会引用 op_const_def_math.h，需补充其所在目录
+  target_include_directories(cust_proto PRIVATE ${PROJECT_SOURCE_DIR}/common/inc/op_host)
 
   if(NEED_LINK_ES)
     add_dependencies(cust_proto build_es_math)
