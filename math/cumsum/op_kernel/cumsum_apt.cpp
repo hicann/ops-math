@@ -43,7 +43,7 @@ using namespace Cum;
 #define CUM_AR_SPLIT 11001
 #define CUM_WITH_GROUP 11002
 
-extern "C" __aicore__ inline void cumsumSimd(GM_ADDR x, GM_ADDR axis, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+static __aicore__ inline void cumsumSimd(GM_ADDR x, GM_ADDR axis, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     TPipe pipe;
     using PromoteType = __cumsumType::GetPromoteType<DTYPE_X>::T;
@@ -177,7 +177,7 @@ extern "C" __aicore__ inline void cumsumSimd(GM_ADDR x, GM_ADDR axis, GM_ADDR y,
     }
 }
 
-extern "C" __aicore__ inline void cumsumSimdInt(GM_ADDR x, GM_ADDR axis, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+static __aicore__ inline void cumsumSimdInt(GM_ADDR x, GM_ADDR axis, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     TPipe pipe;
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
