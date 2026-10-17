@@ -157,7 +157,7 @@ static aclnnStatus CheckParams(const aclTensor* grad, const aclTensor* x1, const
     return ACLNN_SUCCESS;
 }
 
-static const aclTensor* GetOutTensorWithValueZero(aclTensor* out, aclOpExecutor* executor)
+static const aclTensor* GetOutTensorWithValueZero(const aclTensor* out, aclOpExecutor* executor)
 {
     aclScalar* scalar = executor->AllocScalar(0);
     auto valueTensor = executor->ConvertToTensor(scalar, out->GetDataType());

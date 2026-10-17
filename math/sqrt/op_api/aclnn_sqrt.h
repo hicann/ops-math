@@ -45,11 +45,11 @@ extern "C" {
  * device侧的aclTensor，数据类型支持FLOAT16、FLOAT32、FLOAT64、COMPLEX64、COMPLEX128、
  * INT32、INT64、INT16、INT8、BOOL、BF16，支持非连续的Tensor
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
- * @param [out] opExecutor: 返回op执行器，包含算子计算流程。
+ * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
 ACLNN_API aclnnStatus aclnnSqrtGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
-                                                aclOpExecutor** opExecutor);
+                                                aclOpExecutor** executor);
 /**
  * @brief aclnnSqrt的第二段接口，用于执行计算。
  * 算子功能：完成非负数平方根计算，负数情况返回nan。
@@ -71,10 +71,10 @@ ACLNN_API aclnnStatus aclnnSqrtGetWorkspaceSize(const aclTensor* self, aclTensor
  * @param [in] workspace: 在npu device侧申请的workspace内存起址。
  * @param [in] workspaceSize: 在npu device侧申请的workspace大小，由第一段接口aclnnSqrtGetWorkspaceSize获取。
  * @param [in] stream: acl stream流。
- * @param [in] opExecutor: op执行器，包含了算子计算流程。
+ * @param [in] executor: op执行器，包含了算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnSqrt(void* workspace, uint64_t workspaceSize, aclOpExecutor* opExecutor, aclrtStream stream);
+ACLNN_API aclnnStatus aclnnSqrt(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
 /**
  * @brief aclnnInplaceSqrt的第一段接口，根据具体的计算流程，计算workspace大小。
  * @domain aclnn_math
@@ -119,4 +119,4 @@ ACLNN_API aclnnStatus aclnnInplaceSqrt(void* workspace, uint64_t workspaceSize, 
 }
 #endif
 
-#endif  // OP_API_INC_SQRT_H_
+#endif // OP_API_INC_SQRT_H_

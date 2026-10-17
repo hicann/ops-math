@@ -73,7 +73,7 @@ static bool CheckDtypeValid(const aclTensor* input, const aclTensor* out)
     return true;
 }
 
-static bool CheckInplaceDtypeValid(aclTensor* selfRef)
+static bool CheckInplaceDtypeValid(const aclTensor* selfRef)
 {
     auto inplaceSupportList = GetDtypeSupportListV2(ASCEND910B_OUTPUT_DTYPE_SUPPORT_LIST,
                                                     ASCEND910_OUTPUT_DTYPE_SUPPORT_LIST);

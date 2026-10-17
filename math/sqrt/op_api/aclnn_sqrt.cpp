@@ -54,7 +54,7 @@ static const std::initializer_list<op::DataType> ASCEND910B_DTYPE_OUT_LIST = {
     op::DataType::DT_FLOAT,     op::DataType::DT_FLOAT16,    op::DataType::DT_DOUBLE,
     op::DataType::DT_COMPLEX64, op::DataType::DT_COMPLEX128, op::DataType::DT_BF16};
 
-static bool CheckInplaceDtypeValid(aclTensor* selfRef)
+static bool CheckInplaceDtypeValid(const aclTensor* selfRef)
 {
     auto inplaceSupportList = GetDtypeSupportListV2(ASCEND910B_DTYPE_OUT_LIST, ASCEND910_DTYPE_OUT_LIST);
     // 检查selfRef的数据类型是否在inplace sqrt算子的支持列表内
@@ -161,7 +161,7 @@ aclnnStatus aclnnSqrtGetWorkspaceSize(const aclTensor* self, aclTensor* out, uin
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnSqrt(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
+aclnnStatus aclnnSqrt(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnSqrt);
     // 固定写法，调用框架能力，完成计算
@@ -175,7 +175,7 @@ aclnnStatus aclnnInplaceSqrtGetWorkspaceSize(aclTensor* self, uint64_t* workspac
     return aclnnSqrtGetWorkspaceSize(self, out, workspaceSize, executor);
 }
 
-aclnnStatus aclnnInplaceSqrt(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
+aclnnStatus aclnnInplaceSqrt(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnInplaceSqrt);
     // 固定写法，调用框架能力，完成计算

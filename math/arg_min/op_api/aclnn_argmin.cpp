@@ -291,7 +291,7 @@ aclnnStatus aclnnArgMinGetWorkspaceSize(const aclTensor* self, int64_t dim, bool
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnArgMin(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
+aclnnStatus aclnnArgMin(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnArgMin);
     return CommonOpExecutorRun(workspace, workspaceSize, executor, stream);

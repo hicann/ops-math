@@ -15,7 +15,6 @@
 #include "../../mul/op_api/mul.h"
 #include "../../sin/op_api/sin.h"
 #include "../../cos/op_api/cos.h"
-#include "op_api/op_api_def_math.h"
 #include "opdev/common_types.h"
 #include "opdev/data_type_utils.h"
 #include "opdev/format_utils.h"

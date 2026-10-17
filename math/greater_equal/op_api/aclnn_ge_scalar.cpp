@@ -253,8 +253,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclScalar* other, co
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnGeScalarCommon(const aclTensor* self, const aclScalar* other, aclTensor* out, uint64_t* workspaceSize,
-                                aclOpExecutor** executor)
+static aclnnStatus aclnnGeScalarCommon(const aclTensor* self, const aclScalar* other, aclTensor* out,
+                                       uint64_t* workspaceSize, aclOpExecutor** executor)
 {
     // 固定写法，创建OpExecutor
     auto uniqueExecutor = CREATE_EXECUTOR();
