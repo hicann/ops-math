@@ -32,6 +32,9 @@ using namespace std;
 using namespace ge;
 
 namespace optiling {
+static constexpr ge::DataType DT_HIFLOAT4 = static_cast<ge::DataType>(42);
+static constexpr ge::DataType DT_HIFLOAT4_SCALE = static_cast<ge::DataType>(43);
+
 constexpr size_t CONST_TWO = 2;
 constexpr size_t CONST_FOUR = 4;
 constexpr size_t UB_BUFFER_B8 = 126976;
@@ -42,6 +45,12 @@ constexpr size_t INPUT_DTYPE_B64 = 8;
 constexpr size_t INPUT_DTYPE_B32 = 4;
 constexpr size_t INPUT_DTYPE_B16 = 2;
 constexpr size_t INPUT_DTYPE_B8 = 1;
+constexpr size_t INPUT_DTYPE_B128 = 16;
+constexpr uint32_t BITS_PER_BYTE = 8;
+constexpr uint32_t TILING_KEY_GROUP = 100;
+constexpr uint32_t THREAD_NUM_2048 = 2048;
+constexpr uint32_t THREAD_NUM_1024 = 1024;
+constexpr uint32_t THREAD_NUM_512 = 512;
 constexpr uint32_t UB_ALIGN_SIZE = 32;
 constexpr size_t MOVEALIGN_DIM5 = 5;
 constexpr size_t MOVEALIGN_DIM4 = 4;
@@ -73,7 +82,8 @@ std::map<ge::DataType, uint32_t> tilingTypeKeyMap = {
     {ge::DT_COMPLEX32, INPUT_DTYPE_B32},  {ge::DT_FLOAT16, INPUT_DTYPE_B16},      {ge::DT_BF16, INPUT_DTYPE_B16},
     {ge::DT_INT16, INPUT_DTYPE_B16},      {ge::DT_UINT16, INPUT_DTYPE_B16},       {ge::DT_UINT8, INPUT_DTYPE_B8},
     {ge::DT_INT8, INPUT_DTYPE_B8},        {ge::DT_BOOL, INPUT_DTYPE_B8},          {ge::DT_HIFLOAT8, INPUT_DTYPE_B8},
-    {ge::DT_FLOAT8_E5M2, INPUT_DTYPE_B8}, {ge::DT_FLOAT8_E4M3FN, INPUT_DTYPE_B8},
+    {ge::DT_FLOAT8_E5M2, INPUT_DTYPE_B8}, {ge::DT_FLOAT8_E4M3FN, INPUT_DTYPE_B8}, {ge::DT_FLOAT4_E2M1, INPUT_DTYPE_B8},
+    {ge::DT_FLOAT4_E1M2, INPUT_DTYPE_B8}, {DT_HIFLOAT4, INPUT_DTYPE_B8},          {DT_HIFLOAT4_SCALE, INPUT_DTYPE_B32},
 };
 
 ge::graphStatus AsStridedTilingClass::AsStridedSetTilingData(AsStridedTilingData& tilingData)
@@ -135,7 +145,8 @@ void copyArrForTiling(T& tiling, const U& tilingParam, int64_t arrLen, int64_t n
 
 ge::graphStatus AsStridedTilingClass::SetTilingData(AsStridedTilingData& tiling, AsStridedTilingParam& tilingParam)
 {
-    if (tilingParam.tilingKey != ALL_STRIDES_ZERO_KEY && tilingParam.tilingKey != SIMT_KEY &&
+    if (tilingParam.tilingKey != ALL_STRIDES_ZERO_KEY &&
+        tilingParam.tilingKey / TILING_KEY_GROUP != SIMT_KEY / TILING_KEY_GROUP &&
         tilingParam.tilingKey != WITH_GATHER_KEY) {
         tiling.axisOutTotalFactor = tilingParam.axisOutTotalFactor;
         tiling.outerAxisFactor = tilingParam.outerAxisFactor;
@@ -548,6 +559,81 @@ inline static void SetSimtTilingParam(const gert::TilingContext* context, gert::
     for (int32_t i = tilingParam.outDimNum - 2; i >= 0; i--) {
         tilingParam.outSizeStride[i] = tilingParam.outSizeStride[i + 1] * outSize[i + 1];
     }
+}
+
+inline static uint32_t GetThreadNumFromPerBlock(int64_t mainBlockFactor)
+{
+    if (mainBlockFactor > THREAD_NUM_2048) {
+        return THREAD_NUM_2048;
+    } else if (mainBlockFactor > THREAD_NUM_1024) {
+        return THREAD_NUM_1024;
+    } else {
+        return THREAD_NUM_512;
+    }
+}
+
+inline static bool TryMergeSimtDtypeTo(gert::TilingContext* context, gert::Shape& outSize, gert::Shape& outStride,
+                                       AsStridedTilingParam& tilingParam, uint32_t targetDtype)
+{
+    uint32_t curDtype = tilingParam.sizeofDtype;
+    if (targetDtype <= curDtype) {
+        OP_LOGD(context, "TryMergeSimtDtypeTo: skip target B%u <= cur B%u", targetDtype * BITS_PER_BYTE,
+                curDtype * BITS_PER_BYTE);
+        return false;
+    }
+
+    uint32_t dimNum = outSize.GetDimNum();
+    if (dimNum == 0) {
+        OP_LOGD(context, "TryMergeSimtDtypeTo: fail, dimNum is 0");
+        return false;
+    }
+    uint32_t lastDimIdx = dimNum - 1;
+    uint32_t factor = targetDtype / curDtype;
+
+    // 最后一维stride必须为1
+    if (outStride[lastDimIdx] != 1) {
+        OP_LOGD(context, "TryMergeSimtDtypeTo: fail, last dim stride=%ld != 1", outStride[lastDimIdx]);
+        return false;
+    }
+
+    // 最后一维size必须被factor整除
+    if (outSize[lastDimIdx] % factor != 0) {
+        OP_LOGD(context, "TryMergeSimtDtypeTo: fail, last dim size=%ld not divisible by factor=%u", outSize[lastDimIdx],
+                factor);
+        return false;
+    }
+
+    // storageOffset必须被factor整除
+    if (tilingParam.storageOffset % static_cast<int64_t>(factor) != 0) {
+        OP_LOGD(context, "TryMergeSimtDtypeTo: fail, storageOffset=%ld not divisible by factor=%u",
+                tilingParam.storageOffset, factor);
+        return false;
+    }
+
+    // 所有非最后一维的stride必须被factor整除
+    for (uint32_t i = 0; i < lastDimIdx; i++) {
+        if (outStride[i] % static_cast<int64_t>(factor) != 0) {
+            OP_LOGD(context, "TryMergeSimtDtypeTo: fail, stride[%u]=%ld not divisible by factor=%u", i, outStride[i],
+                    factor);
+            return false;
+        }
+    }
+
+    // 所有条件满足，执行合并提升
+    OP_LOGD(context, "TryMergeSimtDtypeTo: success, merge from B%u to B%u, factor=%u", curDtype * BITS_PER_BYTE,
+            targetDtype * BITS_PER_BYTE, factor);
+
+    tilingParam.sizeofDtype = targetDtype;
+    tilingParam.tilingKey = targetDtype;
+    tilingParam.ubSize = (tilingParam.ubSizePlatForm / BUFFER_NUM) / tilingParam.sizeofDtype;
+
+    outSize[lastDimIdx] /= factor;
+    for (uint32_t i = 0; i < lastDimIdx; i++) {
+        outStride[i] /= static_cast<int64_t>(factor);
+    }
+    tilingParam.storageOffset /= static_cast<int64_t>(factor);
+
+    return true;
 }
 
 inline static void CalcTilingCore(const gert::TilingContext* context, gert::Shape outSize,
@@ -1182,6 +1268,59 @@ ge::graphStatus AsStridedTilingClass::NDDMAForAsStrided(AsStridedTilingParam& ti
 
     // simt
     if (IsSmallShape(context_, outSize, tilingParam.sizeofDtype)) {
+        // simt pack(dtype 合并提升) 仅在 960DT(NpuArch::DAV_9201) 启用, 其余平台只用 base key
+        auto platformInfoSimtPack = context_->GetPlatformInfo();
+        bool isSimtPackSupport = (platformInfoSimtPack != nullptr) &&
+                                 (platform_ascendc::PlatformAscendC(platformInfoSimtPack).GetCurNpuArch() ==
+                                  NpuArch::DAV_9201);
+        if (isSimtPackSupport) {
+            // 第一步：按原始 dtype 切分, 计算 baseThread
+            AsStridedTilingParam baseParam = tempTilingParam;
+            gert::Shape baseSize = outSize;
+            gert::Shape baseStride = outStride;
+            SetSimtTilingParam(context_, baseSize, baseStride, baseParam);
+            uint32_t baseThread = GetThreadNumFromPerBlock(baseParam.mainBlockFactor);
+
+            // 第二步：从 b128 开始逐一试探合并, 合并后线程数不变小才接受
+            bool merged = false;
+            constexpr uint32_t MERGE_DTYPES[] = {INPUT_DTYPE_B128, INPUT_DTYPE_B64, INPUT_DTYPE_B32, INPUT_DTYPE_B16};
+            constexpr uint32_t MERGE_COUNT = sizeof(MERGE_DTYPES) / sizeof(MERGE_DTYPES[0]);
+            for (uint32_t t = 0; t < MERGE_COUNT; t++) {
+                uint32_t targetDtype = MERGE_DTYPES[t];
+                if (targetDtype <= tempTilingParam.sizeofDtype) {
+                    continue;
+                }
+                AsStridedTilingParam testParam = tempTilingParam;
+                gert::Shape testSize = outSize;
+                gert::Shape testStride = outStride;
+                if (TryMergeSimtDtypeTo(context_, testSize, testStride, testParam, targetDtype)) {
+                    SetSimtTilingParam(context_, testSize, testStride, testParam);
+                    uint32_t mergedThread = GetThreadNumFromPerBlock(testParam.mainBlockFactor);
+                    // 特殊规则：小于B32的类型合并到B32, 不判断线程数是否变小, 强制合并
+                    bool forceMergeToB32 = (tempTilingParam.sizeofDtype < INPUT_DTYPE_B32 &&
+                                            targetDtype == INPUT_DTYPE_B32);
+                    if (mergedThread >= baseThread || forceMergeToB32) {
+                        tilingParam = testParam;
+                        baseThread = mergedThread;
+                        merged = true;
+                        OP_LOGD(context_, "Simt merge accepted, dtype=B%u, threadNum=%u",
+                                tilingParam.sizeofDtype * BITS_PER_BYTE, baseThread);
+                        break;
+                    }
+                    OP_LOGD(context_, "Simt merge rejected (mergedThread=%u < baseThread=%u), try next", mergedThread,
+                            baseThread);
+                }
+            }
+            if (!merged) {
+                // 未发生合并, 使用原始参数
+                tilingParam = tempTilingParam;
+                SetSimtTilingParam(context_, outSize, outStride, tilingParam);
+            }
+            SetSimtTilingData(tilingParam);
+            simtTilingData_->threadNum = baseThread;
+            tilingParam.tilingKey = SIMT_KEY + tilingParam.sizeofDtype;
+            return ge::GRAPH_SUCCESS;
+        }
         SetSimtTilingParam(context_, outSize, outStride, tilingParam);
         SetSimtTilingData(tilingParam);
         tilingParam.tilingKey = SIMT_KEY;

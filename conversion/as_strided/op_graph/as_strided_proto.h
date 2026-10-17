@@ -16,6 +16,7 @@
 #define OP_PROTO_AS_STRIDED_H_
 
 #include "graph/operator_reg.h"
+#include "op_const_def_math.h"
 
 namespace ge {
 /**
@@ -24,16 +25,15 @@ namespace ge {
 *@par Inputs:
 *Four inputs, including:
 *@li x: The input tensor. Must be the type of hifloat8, float8_e5m2,
-*float8_e4m3fn, bool and BasicType. Support format "ND".
+*float8_e4m3fn, float4_e2m1, float4_e1m2, hifloat4, hifloat4_scale, bool and BasicType. Support format "ND".
 *@li size: The shape of output tensor. Must be the type of
-*IndexNumberType(IndexNumberType includes: int32, int64). 
-*All elements in the size must be non-negative integers. 
+*IndexNumberType(IndexNumberType includes: int32, int64).
+*All elements in the size must be non-negative integers.
 *Support format "ND".
 *@li stride: The stride of output tensor. Must be the type of IndexNumberType.
-*All elements in the stride must be non-negative integers. 
+*All elements in the stride must be non-negative integers.
 *Support format "ND".
 *@li storage_offset: The offset in the underlying storage of the output tensor.
-*Must be a non-negative interger.
 *Must be the type of IndexNumberType. Support format "ND".
 
 *@par Outputs:
@@ -43,11 +43,13 @@ namespace ge {
 *Compatible with the PyTorch operator as_strided.
 */
 REG_OP(AsStrided)
-    .INPUT(x, TensorType({BasicType(), DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_BOOL}))
+    .INPUT(x, TensorType({BasicType(), DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT4_E2M1, DT_FLOAT4_E1M2,
+                          Ops::Math::DT_HIFLOAT4, DT_BOOL, Ops::Math::DT_HIFLOAT4_SCALE}))
     .INPUT(size, TensorType::IndexNumberType())
     .INPUT(stride, TensorType::IndexNumberType())
     .INPUT(storage_offset, TensorType::IndexNumberType())
-    .OUTPUT(y, TensorType({BasicType(), DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_BOOL}))
+    .OUTPUT(y, TensorType({BasicType(), DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT4_E2M1, DT_FLOAT4_E1M2,
+                           Ops::Math::DT_HIFLOAT4, DT_BOOL, Ops::Math::DT_HIFLOAT4_SCALE}))
     .OP_END_FACTORY_REG(AsStrided)
 
 } // namespace ge

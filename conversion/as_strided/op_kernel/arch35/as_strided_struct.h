@@ -56,6 +56,7 @@ struct AsStridedSimtTilingData {
     int64_t storageOffset{0};
     int64_t mainBlockFactor{0};
     int64_t tailBlockFactor{0};
+    uint32_t threadNum{0};
     uint64_t sizeArr[TILING_ARRAY_LEN] = {0};
     uint64_t strideArr[TILING_ARRAY_LEN] = {0};
     uint32_t outSizeStride[TILING_ARRAY_LEN] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1}; // 输出shape每维相邻元素步长

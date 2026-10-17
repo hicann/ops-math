@@ -115,7 +115,12 @@ __aicore__ inline void StridedIsZero<T>::CopyIn()
 {
     DataCopyPadExtParams dataCopyPadParams{false, 0, 0, static_cast<T>(0)};
     DataCopyExtParams dataCopyInParams{1, static_cast<uint32_t>(1 * sizeof(T)), 0, 0, 0};
+#if defined(__DAV_920R1__)
+    // 最后一个参数enablePreReadIgnoreSync = true表示开启PreAllocation
+    DataCopyPad(tempInTensor_, xGm_[tilingData_->storageOffset], dataCopyInParams, dataCopyPadParams, true);
+#else
     DataCopyPad(tempInTensor_, xGm_[tilingData_->storageOffset], dataCopyInParams, dataCopyPadParams);
+#endif
     tempInQue_.EnQue<T>(tempInTensor_);
 }
 

@@ -288,7 +288,12 @@ __aicore__ inline void KernelAsStridedGather<T>::AsCopyGM2Ub()
     copyInParams.srcStride = 0;
     copyInParams.dstStride = 0;
     DataCopyPadExtParams<T> copyInPadParams{false, 0, 0, 0};
+#if defined(__DAV_920R1__)
+    // 最后一个参数enablePreReadIgnoreSync = true表示开启PreAllocation
+    DataCopyPad(ubFactorLocal_, inputGM_, copyInParams, copyInPadParams, true);
+#else
     DataCopyPad(ubFactorLocal_, inputGM_, copyInParams, copyInPadParams);
+#endif
     inQue_.EnQue<T>(ubFactorLocal_);
 }
 

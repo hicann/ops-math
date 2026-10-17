@@ -16,6 +16,8 @@
 #include "opdev/platform.h"
 #include "op_api/aclnn_check.h"
 
+static constexpr ge::DataType DT_HIFLOAT4 = static_cast<ge::DataType>(42);
+
 namespace l0op {
 
 OP_TYPE_REGISTER(TensorMove);
@@ -31,6 +33,28 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_REGBA
     op::DataType::DT_BOOL,      op::DataType::DT_INT64,    op::DataType::DT_UINT64,      op::DataType::DT_BF16,
     op::DataType::DT_DOUBLE,    op::DataType::DT_HIFLOAT8, op::DataType::DT_FLOAT8_E5M2, op::DataType::DT_FLOAT8_E4M3FN,
     op::DataType::DT_COMPLEX32, op::DataType::DT_COMPLEX64};
+
+// DAV_9201(ARCH92)
+// float16,float,int32,uint32,int8,int16,uint16,uint8,bool,int64,uint64,bfloat16,double,hifloat8,float8,complex,hifloat4
+static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_ARCH92 = {op::DataType::DT_FLOAT,
+                                                                                     op::DataType::DT_FLOAT16,
+                                                                                     op::DataType::DT_INT32,
+                                                                                     op::DataType::DT_UINT32,
+                                                                                     op::DataType::DT_INT8,
+                                                                                     op::DataType::DT_INT16,
+                                                                                     op::DataType::DT_UINT16,
+                                                                                     op::DataType::DT_UINT8,
+                                                                                     op::DataType::DT_BOOL,
+                                                                                     op::DataType::DT_INT64,
+                                                                                     op::DataType::DT_UINT64,
+                                                                                     op::DataType::DT_BF16,
+                                                                                     op::DataType::DT_DOUBLE,
+                                                                                     op::DataType::DT_HIFLOAT8,
+                                                                                     op::DataType::DT_FLOAT8_E5M2,
+                                                                                     op::DataType::DT_FLOAT8_E4M3FN,
+                                                                                     op::DataType::DT_COMPLEX32,
+                                                                                     op::DataType::DT_COMPLEX64,
+                                                                                     DT_HIFLOAT4};
 
 // 910B float16,float,int32,uint32,int8,int16,uint16,uint8,bool,int64,uint64,bfloat16,double
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_910B = {
@@ -53,6 +77,9 @@ static bool IsAiCoreSupport(const aclTensor* self)
         return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_910B);
     }
 
+    if (curArch == NpuArch::DAV_9201 || curArch == NpuArch::DAV_9202) {
+        return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_ARCH92);
+    }
     if (op::IsRegBase(curArch)) {
         return op::CheckType(dataType, AICORE_DTYPE_SUPPORT_LIST_REGBASE);
     }

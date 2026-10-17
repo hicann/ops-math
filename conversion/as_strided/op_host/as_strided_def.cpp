@@ -15,8 +15,38 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
+static constexpr ge::DataType DT_HIFLOAT4 = static_cast<ge::DataType>(42);
+static constexpr ge::DataType DT_HIFLOAT4_SCALE = static_cast<ge::DataType>(43);
+
 class AsStrided : public OpDef {
 public:
+    const std::vector<ge::DataType> BASE_DATA_TYPE_ARCH92 = {
+        ge::DT_INT64,       ge::DT_UINT64,        ge::DT_INT32,         ge::DT_UINT32,      ge::DT_FLOAT,
+        ge::DT_FLOAT16,     ge::DT_INT8,          ge::DT_UINT8,         ge::DT_BF16,        ge::DT_INT16,
+        ge::DT_UINT16,      ge::DT_BOOL,          ge::DT_COMPLEX32,     ge::DT_COMPLEX64,   ge::DT_HIFLOAT8,
+        ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E4M3FN, ge::DT_FLOAT4_E2M1,   ge::DT_FLOAT4_E1M2, DT_HIFLOAT4,
+        DT_HIFLOAT4_SCALE,  ge::DT_INT64,         ge::DT_UINT64,        ge::DT_INT32,       ge::DT_UINT32,
+        ge::DT_FLOAT,       ge::DT_FLOAT16,       ge::DT_INT8,          ge::DT_UINT8,       ge::DT_BF16,
+        ge::DT_INT16,       ge::DT_UINT16,        ge::DT_BOOL,          ge::DT_COMPLEX32,   ge::DT_COMPLEX64,
+        ge::DT_HIFLOAT8,    ge::DT_FLOAT8_E5M2,   ge::DT_FLOAT8_E4M3FN, ge::DT_FLOAT4_E2M1, ge::DT_FLOAT4_E1M2,
+        DT_HIFLOAT4,        DT_HIFLOAT4_SCALE};
+
+    const std::vector<ge::Format> BASE_FORMAT_ARCH92 = {
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+
+    const std::vector<ge::DataType> ATTR_DATA_TYPE_ARCH92 = {
+        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
+
     explicit AsStrided(const char* name) : OpDef(name)
     {
         this->Input("x")
@@ -142,6 +172,43 @@ public:
             .ExtendCfgInfo("opFile.value", "as_strided_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
         this->AICore().AddConfig("ascend350", aicoreConfig);
+
+        OpAICoreConfig CONFIG_ARCH92;
+        CONFIG_ARCH92.Input("x")
+            .ParamType(REQUIRED)
+            .DataType(BASE_DATA_TYPE_ARCH92)
+            .Format(BASE_FORMAT_ARCH92)
+            .UnknownShapeFormat(BASE_FORMAT_ARCH92);
+        CONFIG_ARCH92.Input("size")
+            .ParamType(REQUIRED)
+            .ValueDepend(OPTIONAL)
+            .DataType(ATTR_DATA_TYPE_ARCH92)
+            .Format(BASE_FORMAT_ARCH92)
+            .UnknownShapeFormat(BASE_FORMAT_ARCH92);
+        CONFIG_ARCH92.Input("stride")
+            .ParamType(REQUIRED)
+            .ValueDepend(OPTIONAL)
+            .DataType(ATTR_DATA_TYPE_ARCH92)
+            .Format(BASE_FORMAT_ARCH92)
+            .UnknownShapeFormat(BASE_FORMAT_ARCH92);
+        CONFIG_ARCH92.Input("storage_offset")
+            .ParamType(OPTIONAL)
+            .ValueDepend(OPTIONAL)
+            .DataType(ATTR_DATA_TYPE_ARCH92)
+            .Format(BASE_FORMAT_ARCH92)
+            .UnknownShapeFormat(BASE_FORMAT_ARCH92);
+        CONFIG_ARCH92.Output("y")
+            .ParamType(REQUIRED)
+            .DataType(BASE_DATA_TYPE_ARCH92)
+            .Format(BASE_FORMAT_ARCH92)
+            .UnknownShapeFormat(BASE_FORMAT_ARCH92);
+        CONFIG_ARCH92.DynamicCompileStaticFlag(true)
+            .DynamicFormatFlag(false)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .NeedCheckSupportFlag(false)
+            .ExtendCfgInfo("opFile.value", "as_strided_apt");
+        this->AICore().AddConfig("ascend960dt", CONFIG_ARCH92);
     }
 };
 OP_ADD(AsStrided);

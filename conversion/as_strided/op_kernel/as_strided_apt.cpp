@@ -35,11 +35,21 @@ using namespace AsStrided;
 #define AS_STRIDED_DUAL_CUT 200
 #define ALL_STRIDEDS_ZERO_KEY 300
 #define SIMT_KEY 400
+// simt pack(dtype 合并提升) key 仅在 960DT(__DAV_920R1__) 编译, 其余平台只用 base key
+#if defined(__DAV_920R1__)
+#define SIMT_KEY_B8 401
+#define SIMT_KEY_B16 402
+#define SIMT_KEY_B32 404
+#define SIMT_KEY_B64 408
+#define SIMT_KEY_B128 416
+#endif
 #define AS_STRIDED_GATHER 500
+#define AS_STRIDED_NEW_GATHER 501
 #define EMPTY_TENSOR_KEY 1000
 
 extern "C" __global__ __aicore__ void as_strided(GM_ADDR input, GM_ADDR outShape, GM_ADDR outStride,
-    GM_ADDR storageOffset, GM_ADDR output, GM_ADDR workspace, GM_ADDR tiling)
+                                                 GM_ADDR storageOffset, GM_ADDR output, GM_ADDR workspace,
+                                                 GM_ADDR tiling)
 {
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     REGISTER_NONE_TILING;
@@ -88,50 +98,77 @@ extern "C" __global__ __aicore__ void as_strided(GM_ADDR input, GM_ADDR outShape
         if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
             KernelAsStridedDualCut<int8_t, AS_STRIDED_DUAL_CUT> op;
             op.Init(input, outShape, outStride, output, &tilingData);
-            op.Process();    
+            op.Process();
         } else {
             KernelAsStridedDualCut<DTYPE_X, AS_STRIDED_DUAL_CUT> op;
             op.Init(input, outShape, outStride, output, &tilingData);
-            op.Process();    
+            op.Process();
         }
     } else if (TILING_KEY_IS(ALL_STRIDEDS_ZERO_KEY)) {
         GET_TILING_DATA_WITH_STRUCT(AsStridedZeroStrideTilingData, tilingData, tiling);
-        if(sizeof(DTYPE_X) == sizeof(int8_t)) {
+        if (sizeof(DTYPE_X) == sizeof(int8_t)) {
             StridedIsZero<int8_t> op;
             op.Init(input, output, &tilingData);
             op.Process();
-        } else if(sizeof(DTYPE_X) == sizeof(half)) {
+        } else if (sizeof(DTYPE_X) == sizeof(half)) {
             StridedIsZero<half> op;
             op.Init(input, output, &tilingData);
             op.Process();
-        } else if(sizeof(DTYPE_X) == sizeof(float)) {
+        } else if (sizeof(DTYPE_X) == sizeof(float)) {
             StridedIsZero<float> op;
             op.Init(input, output, &tilingData);
             op.Process();
-        } else if(sizeof(DTYPE_X) == sizeof(int64_t)) {
+        } else if (sizeof(DTYPE_X) == sizeof(int64_t)) {
             StridedIsZero<int64_t> op;
             op.Init(input, output, &tilingData);
             op.Process();
         }
     } else if (TILING_KEY_IS(SIMT_KEY)) {
         GET_TILING_DATA_WITH_STRUCT(AsStridedSimtTilingData, tilingData, tiling);
-        if(sizeof(DTYPE_X) == sizeof(int8_t)) {
+        if (sizeof(DTYPE_X) == sizeof(int8_t)) {
             AsStridedSimt<int8_t> op;
             op.Init(input, output, &tilingData);
             op.Process(tiling);
-        } else if(sizeof(DTYPE_X) == sizeof(half)) {
+        } else if (sizeof(DTYPE_X) == sizeof(half)) {
             AsStridedSimt<half> op;
             op.Init(input, output, &tilingData);
             op.Process(tiling);
-        } else if(sizeof(DTYPE_X) == sizeof(float)) {
+        } else if (sizeof(DTYPE_X) == sizeof(float)) {
             AsStridedSimt<float> op;
             op.Init(input, output, &tilingData);
             op.Process(tiling);
-        } else if(sizeof(DTYPE_X) == sizeof(int64_t)) {
+        } else if (sizeof(DTYPE_X) == sizeof(int64_t)) {
             AsStridedSimt<int64_t> op;
             op.Init(input, output, &tilingData);
             op.Process(tiling);
         }
+#if defined(__DAV_920R1__)
+    } else if (TILING_KEY_IS(SIMT_KEY_B8)) {
+        GET_TILING_DATA_WITH_STRUCT(AsStridedSimtTilingData, tilingData, tiling);
+        AsStridedSimt<int8_t> op;
+        op.Init(input, output, &tilingData);
+        op.Process(tiling);
+    } else if (TILING_KEY_IS(SIMT_KEY_B16)) {
+        GET_TILING_DATA_WITH_STRUCT(AsStridedSimtTilingData, tilingData, tiling);
+        AsStridedSimt<half> op;
+        op.Init(input, output, &tilingData);
+        op.Process(tiling);
+    } else if (TILING_KEY_IS(SIMT_KEY_B32)) {
+        GET_TILING_DATA_WITH_STRUCT(AsStridedSimtTilingData, tilingData, tiling);
+        AsStridedSimt<float> op;
+        op.Init(input, output, &tilingData);
+        op.Process(tiling);
+    } else if (TILING_KEY_IS(SIMT_KEY_B64)) {
+        GET_TILING_DATA_WITH_STRUCT(AsStridedSimtTilingData, tilingData, tiling);
+        AsStridedSimt<int64_t> op;
+        op.Init(input, output, &tilingData);
+        op.Process(tiling);
+    } else if (TILING_KEY_IS(SIMT_KEY_B128)) {
+        GET_TILING_DATA_WITH_STRUCT(AsStridedSimtTilingData, tilingData, tiling);
+        AsStridedSimt<floatx4> op;
+        op.Init(input, output, &tilingData);
+        op.Process(tiling);
+#endif
     } else if (TILING_KEY_IS(AS_STRIDED_GATHER)) {
         GET_TILING_DATA_WITH_STRUCT(AsStridedWithGatherTilingData, tilingData, tiling);
         if constexpr (sizeof(DTYPE_X) == sizeof(int8_t)) {
@@ -151,7 +188,7 @@ extern "C" __global__ __aicore__ void as_strided(GM_ADDR input, GM_ADDR outShape
             op.Init(input, outShape, outStride, output, &tilingData);
             op.Process();
         }
-    } else if (TILING_KEY_IS(EMPTY_TENSOR_KEY)){
+    } else if (TILING_KEY_IS(EMPTY_TENSOR_KEY)) {
         GET_TILING_DATA_WITH_STRUCT(AsStridedEmptyTilingData, tilingData, tiling);
     }
 }

@@ -25,32 +25,34 @@ constexpr size_t IN_SIZE = 1;
 constexpr size_t IN_STRIDE = 2;
 constexpr size_t IN_OFFSET = 3;
 
-static bool GetSizeAndStride(gert::TilingContext* context, AsStridedRunInfo& runInfo) {
+static bool GetSizeAndStride(gert::TilingContext* context, AsStridedRunInfo& runInfo)
+{
     OP_CHECK_IF(!Ops::Base::GetConstIntToShape(context, IN_SIZE, runInfo.outputSize),
-                    OP_LOGE(context, "get const of size failed"), return false);
+                OP_LOGE(context, "get const of size failed"), return false);
     OP_CHECK_IF(!Ops::Base::GetConstIntToShape(context, IN_STRIDE, runInfo.outputStride),
-                    OP_LOGE(context, "get const of stride failed"), return false);
+                OP_LOGE(context, "get const of stride failed"), return false);
 
-    OP_CHECK_IF(runInfo.outputSize.GetDimNum() != runInfo.outputStride.GetDimNum(),
-                    OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
-                        context->GetNodeName(), "output_size, output_stride",
-                        (std::to_string(runInfo.outputSize.GetDimNum()) + ", " + 
-                         std::to_string(runInfo.outputStride.GetDimNum())).c_str(),
-                        "The shape dimensions of output_size and output_stride must be the same."),
-                    return false);
+    OP_CHECK_IF(
+        runInfo.outputSize.GetDimNum() != runInfo.outputStride.GetDimNum(),
+        OP_LOGE_FOR_INVALID_SHAPEDIMS_WITH_REASON(
+            context->GetNodeName(), "output_size, output_stride",
+            (std::to_string(runInfo.outputSize.GetDimNum()) + ", " + std::to_string(runInfo.outputStride.GetDimNum()))
+                .c_str(),
+            "The shape dimensions of output_size and output_stride must be the same."),
+        return false);
 
     const int64_t oriSizeLen = runInfo.outputSize.GetDimNum();
-    OP_CHECK_IF(
-        oriSizeLen == 0,
-        OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), "output_size",
-            std::to_string(oriSizeLen).c_str(),
-            "The shape dim of output_size must be greater than 0."),
-        return false);
+    OP_CHECK_IF(oriSizeLen == 0,
+                OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), "output_size",
+                                                         std::to_string(oriSizeLen).c_str(),
+                                                         "The shape dim of output_size must be greater than 0."),
+                return false);
 
     return true;
 }
 
-static void MergeAxisRule1(AsStridedRunInfo& runInfo) {
+static void MergeAxisRule1(AsStridedRunInfo& runInfo)
+{
     // merge rule 1: delete axis which size is 1
     const int64_t oriSizeLen = runInfo.outputSize.GetDimNum();
     size_t sizeIdx = 0;
@@ -66,7 +68,8 @@ static void MergeAxisRule1(AsStridedRunInfo& runInfo) {
     runInfo.outputStride.SetDimNum(sizeIdx);
 }
 
-static void MergeAxisRule2(AsStridedRunInfo& runInfo) {
+static void MergeAxisRule2(AsStridedRunInfo& runInfo)
+{
     // merge rule 2: merge the axes with continuous stride by 0
     const size_t sizeIdx = runInfo.outputSize.GetDimNum();
     size_t cuMergeSizeIdx = 0;
@@ -75,7 +78,7 @@ static void MergeAxisRule2(AsStridedRunInfo& runInfo) {
         const int64_t previousStrideValue = runInfo.outputStride.GetDim(cuMergeSizeIdx);
         if (strideValue == 0 && previousStrideValue == 0) {
             runInfo.outputSize.SetDim(cuMergeSizeIdx,
-                                    runInfo.outputSize.GetDim(cuMergeSizeIdx) * runInfo.outputSize.GetDim(i));
+                                      runInfo.outputSize.GetDim(cuMergeSizeIdx) * runInfo.outputSize.GetDim(i));
             continue;
         }
 
@@ -87,13 +90,14 @@ static void MergeAxisRule2(AsStridedRunInfo& runInfo) {
     runInfo.outputStride.SetDimNum(cuMergeSizeIdx + 1UL);
 }
 
-static void MergeAxisRule3(AsStridedRunInfo& runInfo) {
+static void MergeAxisRule3(AsStridedRunInfo& runInfo)
+{
     // merge rule 3: merge dims that is continuous stride except last dim
     const size_t outDimNum = runInfo.outputSize.GetDimNum();
 
     const size_t cuMergeSizeIdx = outDimNum - 1;
-    int64_t lastDimMergeValue =
-        (runInfo.outputStride.GetDim(cuMergeSizeIdx) * runInfo.outputSize.GetDim(cuMergeSizeIdx));
+    int64_t lastDimMergeValue = (runInfo.outputStride.GetDim(cuMergeSizeIdx) *
+                                 runInfo.outputSize.GetDim(cuMergeSizeIdx));
     int64_t lastDimMergeSize = runInfo.outputSize.GetDim(cuMergeSizeIdx);
     int64_t lastDimMergeStride = runInfo.outputStride.GetDim(cuMergeSizeIdx);
     size_t lastDimMergeDim = cuMergeSizeIdx;
@@ -102,8 +106,8 @@ static void MergeAxisRule3(AsStridedRunInfo& runInfo) {
             runInfo.outputSize.SetDim(lastDimMergeDim, lastDimMergeSize);
             runInfo.outputStride.SetDim(lastDimMergeDim, lastDimMergeStride);
             lastDimMergeDim--;
-            lastDimMergeValue =
-                (runInfo.outputStride.GetDim(cuMergeSizeIdx - 1 - i) * runInfo.outputSize.GetDim(cuMergeSizeIdx - 1 - i));
+            lastDimMergeValue = (runInfo.outputStride.GetDim(cuMergeSizeIdx - 1 - i) *
+                                 runInfo.outputSize.GetDim(cuMergeSizeIdx - 1 - i));
             lastDimMergeSize = runInfo.outputSize.GetDim(cuMergeSizeIdx - 1UL - i);
             lastDimMergeStride = runInfo.outputStride.GetDim(cuMergeSizeIdx - 1UL - i);
             continue;
@@ -124,7 +128,8 @@ static void MergeAxisRule3(AsStridedRunInfo& runInfo) {
     }
 }
 
-static void MergeAxis(AsStridedRunInfo& runInfo) {
+static void MergeAxis(AsStridedRunInfo& runInfo)
+{
     // merge rule 1: delete axis which size is 1
     MergeAxisRule1(runInfo);
 
@@ -146,4 +151,4 @@ static void MergeAxis(AsStridedRunInfo& runInfo) {
     ***/
     MergeAxisRule3(runInfo);
 }
-} // namespace
+} // namespace optiling

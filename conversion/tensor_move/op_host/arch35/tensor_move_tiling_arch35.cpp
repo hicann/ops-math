@@ -22,12 +22,19 @@ using namespace ge;
 using namespace Ops::Base;
 
 namespace optiling {
+static constexpr ge::DataType DT_HIFLOAT4 = static_cast<ge::DataType>(42);
+
 constexpr int64_t INDEX_INPUT_X = 0;
 constexpr int64_t INDEX_OUTPUT_Y = 0;
 constexpr int64_t UB_FACTOR_MIN_BETY = 2048;
 constexpr int64_t N_BUFFER = 2;
 constexpr int64_t ONE_BLK_BYTE = 32;
 constexpr int64_t WORKSPACE_SIZE = 32;
+
+namespace {
+bool isAscend960dt_ = false;
+constexpr int64_t TWO = 2;
+} // namespace
 
 static int64_t GetRemainder(int64_t u_value, int64_t d_value)
 {
@@ -81,21 +88,46 @@ static bool IsInvalidType(const DataType dtype)
                          dtype != ge::DT_INT16 && dtype != ge::DT_UINT32 && dtype != ge::DT_INT32 &&
                          dtype != ge::DT_UINT64 && dtype != ge::DT_INT64 && dtype != ge::DT_BOOL &&
                          dtype != ge::DT_DOUBLE && dtype != ge::DT_HIFLOAT8 && dtype != ge::DT_FLOAT8_E5M2 &&
-                         dtype != ge::DT_FLOAT8_E4M3FN && dtype != ge::DT_COMPLEX32 && dtype != ge::DT_COMPLEX64;
+                         dtype != ge::DT_FLOAT8_E4M3FN && dtype != ge::DT_COMPLEX32 && dtype != ge::DT_COMPLEX64 &&
+                         dtype != DT_HIFLOAT4;
     return isInvalidType;
+}
+
+ge::graphStatus CheckNpuArch(const gert::TilingContext* context)
+{
+    auto platformInfo = context->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(context, platformInfo);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    isAscend960dt_ = ascendcPlatform.GetCurNpuArch() == NpuArch::DAV_9201 ||
+                     ascendcPlatform.GetCurNpuArch() == NpuArch::DAV_9202;
+    return ge::GRAPH_SUCCESS;
+}
+
+ge::graphStatus CheckShapeForHif4(const gert::TilingContext* context, ge::DataType& dtype, int64_t& numel)
+{
+    if (dtype != DT_HIFLOAT4) {
+        return ge::GRAPH_SUCCESS;
+    }
+    OP_CHECK_IF(isAscend960dt_ && numel % TWO != 0,
+                OP_LOGE(context->GetNodeName(), "The number of x must be an even number."), return ge::GRAPH_FAILED);
+    numel /= TWO;
+    dtype = ge::DT_INT8;
+    return ge::GRAPH_SUCCESS;
 }
 
 static ge::graphStatus CheckTensorMoveDtype(const gert::TilingContext* context)
 {
+    OP_CHECK_IF(CheckNpuArch(context) != ge::GRAPH_SUCCESS, OP_LOGE(context->GetNodeName(), "check npu arch failed."),
+                return ge::GRAPH_FAILED);
     auto inputXPtr = context->GetInputDesc(INDEX_INPUT_X);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputXPtr);
     auto xDtype = inputXPtr->GetDataType();
     OP_CHECK_IF(IsInvalidType(xDtype),
                 OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
                     context->GetNodeName(), "x", Ops::Base::ToString(xDtype).c_str(),
-                    "The dtype of x must be within the range [DT_BF16, DT_FLOAT16, DT_FLOAT, DT_UINT8, DT_INT8, "
-                    "DT_UINT16, DT_INT16, DT_UINT32, DT_INT32, DT_UINT64, DT_INT64, DT_BOOL, DT_DOUBLE, DT_HIFLOAT8, "
-                    "DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_COMPLEX32, DT_COMPLEX64]."),
+                    "The dtype of x must be within the range [DT_HIFLOAT4, DT_BF16, DT_FLOAT16, DT_FLOAT, DT_UINT8, "
+                    "DT_INT8, DT_UINT16, DT_INT16, DT_UINT32, DT_INT32, DT_UINT64, DT_INT64, DT_BOOL, DT_DOUBLE, "
+                    "DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_COMPLEX32, DT_COMPLEX64]."),
                 return ge::GRAPH_FAILED);
 
     auto outputYPtr = context->GetOutputDesc(INDEX_OUTPUT_Y);
@@ -139,6 +171,8 @@ static ge::graphStatus DoTiling(const gert::TilingContext* context, TensorMoveTi
     auto inputXPtr = context->GetInputDesc(INDEX_INPUT_X);
     OP_CHECK_NULL_WITH_CONTEXT(context, inputXPtr);
     auto dtype = inputXPtr->GetDataType();
+    OP_CHECK_IF(CheckShapeForHif4(context, dtype, numel) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context->GetNodeName(), "check hifloat4 shape failed."), return ge::GRAPH_FAILED);
     tilingParam.bytesForOneData = ge::GetSizeByDataType(dtype);
 
     int64_t maxUbAvailable = tilingParam.ubSize / N_BUFFER / tilingParam.bytesForOneData;

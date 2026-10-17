@@ -153,7 +153,12 @@ public:
                     32,
                 0};
             DataCopyPadExtParams<T> padParames{false, padParams_.leftPadding, padParams_.rightPadding, 0};
+#if defined(__DAV_920R1__)
+            // 最后一个参数enablePreReadIgnoreSync = true表示开启PreAllocation
+            DataCopyPad(srcLocal, inputGm_[srcOffset], copyParams, padParames, true);
+#else
             DataCopyPad(srcLocal, inputGm_[srcOffset], copyParams, padParames);
+#endif
             ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
             inQueue_.EnQue(srcLocal);
         } else {
@@ -165,7 +170,12 @@ public:
                     32,
                 0};
             DataCopyPadExtParams<T> padParames{false, padParams_.leftPadding, padParams_.rightPadding, 0};
+#if defined(__DAV_920R1__)
+            // 最后一个参数enablePreReadIgnoreSync = true表示开启PreAllocation
+            DataCopyPad(srcLocal, inputGm_[srcOffset], copyParams, padParames, true);
+#else
             DataCopyPad(srcLocal, inputGm_[srcOffset], copyParams, padParames);
+#endif
             ResetLoopModePara(DataCopyMVType::OUT_TO_UB);
             inQueue_.EnQue(srcLocal);
         }

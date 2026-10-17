@@ -842,6 +842,100 @@ static ge::graphStatus SetBaseTilingInfo(gert::TilingContext* context, ViewCopyT
     return ge::GRAPH_SUCCESS;
 }
 
+inline static ge::DataType DtypeSizeToIntDtype(int64_t byteSize)
+{
+    // dtype_improve 仅按字节宽度搬运, 这里把字节宽度映射为等宽的整型 dtype;
+    // kernel 模板只看 tilingKey 的 bitwidth(1/2/4/8), 与 dtype 语义无关
+    switch (byteSize) {
+        case BYTE_PER_DATA_2:
+            return ge::DT_INT16;
+        case BYTE_PER_DATA_4:
+            return ge::DT_INT32;
+        case BYTE_PER_DATA_8:
+            return ge::DT_INT64;
+        default:
+            return ge::DT_INT8;
+    }
+}
+
+static int64_t CalcDtypeImproveForViewCopy(const ViewCopyTilingParam& tilingParam)
+{
+    int64_t dtypeSize = ge::GetSizeByDataType(tilingParam.dtype);
+    // 提升在 DoTiling 之前执行, 此时 dstSize.back() 为合并前尾轴大小
+    int64_t tailAxisSize = tilingParam.dstSize.back();
+    int64_t lastAxisBytes = tailAxisSize * dtypeSize;
+
+    if ((dtypeSize < BYTE_PER_DATA_8) && (lastAxisBytes % BYTE_PER_DATA_8 == 0)) {
+        OP_LOGD("ViewCopy", "CalcDtypeImproveForViewCopy lastAxisBytes %ld, improve to 8B", lastAxisBytes);
+        return BYTE_PER_DATA_8;
+    }
+    if ((dtypeSize < BYTE_PER_DATA_4) && (lastAxisBytes % BYTE_PER_DATA_4 == 0)) {
+        OP_LOGD("ViewCopy", "CalcDtypeImproveForViewCopy lastAxisBytes %ld, improve to 4B", lastAxisBytes);
+        return BYTE_PER_DATA_4;
+    }
+    if ((dtypeSize < BYTE_PER_DATA_2) && (lastAxisBytes % BYTE_PER_DATA_2 == 0)) {
+        OP_LOGD("ViewCopy", "CalcDtypeImproveForViewCopy lastAxisBytes %ld, improve to 2B", lastAxisBytes);
+        return BYTE_PER_DATA_2;
+    }
+    return dtypeSize;
+}
+
+static bool IsEnableDtypeImprove(const ViewCopyTilingParam& tilingParam)
+{
+    if (!tilingParam.isSimt) {
+        return false;
+    }
+    if (tilingParam.dstStride.empty() || tilingParam.dstStride.back() != 1) {
+        return false;
+    }
+    return true;
+}
+
+static void DoDtypeImproveForViewCopy(ViewCopyTilingParam& tilingParam)
+{
+    if (!IsEnableDtypeImprove(tilingParam)) {
+        return;
+    }
+
+    int64_t improveDtypeSize = CalcDtypeImproveForViewCopy(tilingParam);
+    int64_t curDtypeSize = ge::GetSizeByDataType(tilingParam.dtype);
+    if (improveDtypeSize <= curDtypeSize) {
+        return;
+    }
+    int64_t ratio = improveDtypeSize / curDtypeSize;
+    // stride 不能被ratio整除，改写后可能字节地址错位
+    for (size_t i = 0; i < tilingParam.srcSize.size() - 1; ++i) {
+        if (tilingParam.srcStride[i] % ratio != 0 || tilingParam.dstStride[i] % ratio != 0) {
+            return;
+        }
+    }
+    // 尾轴 size 不能被 ratio 整除，元素合并后数据不对齐
+    if (tilingParam.srcSize.empty() || tilingParam.dstSize.empty() || tilingParam.srcSize.back() % ratio != 0 ||
+        tilingParam.dstSize.back() % ratio != 0) {
+        return;
+    }
+    // 尾轴 stride 不为 1，元素间不连续
+    if (tilingParam.srcStride.back() != 1 || tilingParam.dstStride.back() != 1) {
+        return;
+    }
+    // offset 不能被 ratio 整除，起始字节地址偏移
+    if (tilingParam.srcStorageOffset % ratio != 0 || tilingParam.dstStorageOffset % ratio != 0) {
+        return;
+    }
+
+    tilingParam.dstDtypeSize = improveDtypeSize;
+    tilingParam.dtype = DtypeSizeToIntDtype(improveDtypeSize);
+    tilingParam.srcSize.back() /= ratio;
+    tilingParam.dstSize.back() /= ratio;
+    for (size_t i = 0; i < tilingParam.srcStride.size() - 1; ++i) {
+        tilingParam.srcStride[i] /= ratio;
+        tilingParam.dstStride[i] /= ratio;
+    }
+    tilingParam.srcStorageOffset /= ratio;
+    tilingParam.dstStorageOffset /= ratio;
+    return;
+}
+
 static void SetTilingData(ViewCopyTilingDataPureMoveAlign& tilingData, const ViewCopyTilingParam& tilingParam)
 {
     tilingData.set_ubDim(tilingParam.ubDim);
@@ -1062,6 +1156,13 @@ static ge::graphStatus ViewCopyTilingForAscendC(gert::TilingContext* context)
 
     if (IsUsePureMoveAlign(tilingParam)) {
         return TilingForViewCopyPureMoveAlign(context, tilingParam);
+    }
+
+    // 数据类型提升:SIMT模板在9201架构下,若尾轴连续且字节数可整除更大dtype,则提升dtype减少搬运次数
+    auto platformInfoDtypeImprove = context->GetPlatformInfo();
+    auto ascendcPlatformDtypeImprove = platform_ascendc::PlatformAscendC(platformInfoDtypeImprove);
+    if (ascendcPlatformDtypeImprove.GetCurNpuArch() == NpuArch::DAV_9201) {
+        DoDtypeImproveForViewCopy(tilingParam);
     }
 
     DoTiling(tilingParam);

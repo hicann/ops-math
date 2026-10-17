@@ -14,8 +14,21 @@
 #include "register/op_def_registry.h"
 
 namespace ops {
+static constexpr ge::DataType DT_HIFLOAT4 = static_cast<ge::DataType>(42);
+
 class TensorMove : public OpDef {
 public:
+    const std::vector<ge::DataType> BASE_DATA_TYPE_ARCH92 = {
+        DT_HIFLOAT4,        ge::DT_BF16,          ge::DT_FLOAT16,   ge::DT_FLOAT,    ge::DT_UINT8,
+        ge::DT_INT8,        ge::DT_UINT16,        ge::DT_INT16,     ge::DT_UINT32,   ge::DT_INT32,
+        ge::DT_UINT64,      ge::DT_INT64,         ge::DT_BOOL,      ge::DT_DOUBLE,   ge::DT_HIFLOAT8,
+        ge::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E4M3FN, ge::DT_COMPLEX32, ge::DT_COMPLEX64};
+
+    const std::vector<ge::Format> BASE_FORMAT_ARCH92 = {
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+
     explicit TensorMove(const char* name) : OpDef(name)
     {
         this->Input("x")
@@ -55,7 +68,26 @@ public:
         this->AICore().AddConfig("ascend950", aicoreConfig);
         this->AICore().AddConfig("ascend350", aicoreConfig);
         this->AICore().AddConfig("ascend960pr", aicoreConfig);
-        this->AICore().AddConfig("ascend960dt", aicoreConfig);
+
+        OpAICoreConfig CONFIG_ARCH92;
+        CONFIG_ARCH92.Input("x")
+            .ParamType(REQUIRED)
+            .DataType(BASE_DATA_TYPE_ARCH92)
+            .Format(BASE_FORMAT_ARCH92)
+            .UnknownShapeFormat(BASE_FORMAT_ARCH92);
+        CONFIG_ARCH92.Output("y")
+            .ParamType(REQUIRED)
+            .DataType(BASE_DATA_TYPE_ARCH92)
+            .Format(BASE_FORMAT_ARCH92)
+            .UnknownShapeFormat(BASE_FORMAT_ARCH92);
+        CONFIG_ARCH92.DynamicCompileStaticFlag(true)
+            .DynamicFormatFlag(false)
+            .DynamicRankSupportFlag(true)
+            .DynamicShapeSupportFlag(true)
+            .NeedCheckSupportFlag(false)
+            .PrecisionReduceFlag(true)
+            .ExtendCfgInfo("opFile.value", "tensor_move_apt");
+        this->AICore().AddConfig("ascend960dt", CONFIG_ARCH92);
     }
 };
 

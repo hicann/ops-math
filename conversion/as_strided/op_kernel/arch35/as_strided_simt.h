@@ -23,7 +23,22 @@
 namespace AsStrided {
 using namespace AscendC;
 
+#ifdef __DAV_920R1__
+// 960DT 上 SIMT 启动线程数由 tiling 运行期下发（tilingData->threadNum，随合并因子变化），上限 2048
+constexpr int64_t THREAD_NUM = 2048;
+#else
+// 其余芯片沿用编译期线程常量，行为与历史版本保持一致
 constexpr int64_t THREAD_NUM = 512;
+#endif
+
+// 960DT 上 SIMT 启动线程数由 tiling 运行期下发；其余芯片沿用编译期线程常量
+#ifdef __DAV_920R1__
+#define AS_STRIDED_SIMT_LAUNCH_THREADS(tilingData) \
+    dim3 { static_cast<uint32_t>((tilingData)->threadNum), 1, 1 }
+#else
+#define AS_STRIDED_SIMT_LAUNCH_THREADS(tilingData) \
+    dim3 { THREAD_NUM, 1, 1 }
+#endif
 constexpr uint16_t DIMS_1 = 1;
 constexpr uint16_t DIMS_2 = 2;
 constexpr uint16_t DIMS_3 = 3;
@@ -332,63 +347,67 @@ __aicore__ inline void AsStridedSimt<T>::LaunchVf(GM_ADDR tiling)
     __gm__ T* outputGmAddr = (__gm__ T*)outputGm_.GetPhyAddr();
 
     if (dimNum_ == DIMS_1) {
-        asc_vf_call<SimtStridedDim1<T, IndexT, DIMS_1>>(
-            dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, static_cast<IndexT>(curCoreBaseIndex_),
-            static_cast<IndexT>(curCoreElements_), static_cast<IndexT>(tilingData_->strideArr[0]));
+        asc_vf_call<SimtStridedDim1<T, IndexT, DIMS_1>>(AS_STRIDED_SIMT_LAUNCH_THREADS(tilingData_), inputGmAddr,
+                                                        outputGmAddr, static_cast<IndexT>(curCoreBaseIndex_),
+                                                        static_cast<IndexT>(curCoreElements_),
+                                                        static_cast<IndexT>(tilingData_->strideArr[0]));
     } else if (dimNum_ == DIMS_2) {
         asc_vf_call<SimtStridedDim2<T, IndexT, DIMS_2>>(
-            dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, static_cast<IndexT>(curCoreBaseIndex_),
-            static_cast<IndexT>(curCoreElements_), static_cast<IndexT>(tilingData_->strideArr[0]),
-            static_cast<IndexT>(tilingData_->strideArr[1]), static_cast<IndexT>(tilingData_->outSizeStride[0]),
-            magic[0], shift[0]);
+            AS_STRIDED_SIMT_LAUNCH_THREADS(tilingData_), inputGmAddr, outputGmAddr,
+            static_cast<IndexT>(curCoreBaseIndex_), static_cast<IndexT>(curCoreElements_),
+            static_cast<IndexT>(tilingData_->strideArr[0]), static_cast<IndexT>(tilingData_->strideArr[1]),
+            static_cast<IndexT>(tilingData_->outSizeStride[0]), magic[0], shift[0]);
     } else if (dimNum_ == DIMS_3) {
         asc_vf_call<SimtStridedDim3<T, IndexT, DIMS_3>>(
-            dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, static_cast<IndexT>(curCoreBaseIndex_),
-            static_cast<IndexT>(curCoreElements_), static_cast<IndexT>(tilingData_->strideArr[0]),
-            static_cast<IndexT>(tilingData_->strideArr[1]), static_cast<IndexT>(tilingData_->strideArr[2]),
-            static_cast<IndexT>(tilingData_->outSizeStride[0]), static_cast<IndexT>(tilingData_->outSizeStride[1]),
-            magic[0], shift[0], magic[1], shift[1]);
+            AS_STRIDED_SIMT_LAUNCH_THREADS(tilingData_), inputGmAddr, outputGmAddr,
+            static_cast<IndexT>(curCoreBaseIndex_), static_cast<IndexT>(curCoreElements_),
+            static_cast<IndexT>(tilingData_->strideArr[0]), static_cast<IndexT>(tilingData_->strideArr[1]),
+            static_cast<IndexT>(tilingData_->strideArr[2]), static_cast<IndexT>(tilingData_->outSizeStride[0]),
+            static_cast<IndexT>(tilingData_->outSizeStride[1]), magic[0], shift[0], magic[1], shift[1]);
     } else if (dimNum_ == DIMS_4) {
         asc_vf_call<SimtStridedDim4<T, IndexT, DIMS_4>>(
-            dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, static_cast<IndexT>(curCoreBaseIndex_),
-            static_cast<IndexT>(curCoreElements_), static_cast<IndexT>(tilingData_->strideArr[0]),
-            static_cast<IndexT>(tilingData_->strideArr[1]), static_cast<IndexT>(tilingData_->strideArr[2]),
-            static_cast<IndexT>(tilingData_->strideArr[3]), static_cast<IndexT>(tilingData_->outSizeStride[0]),
-            static_cast<IndexT>(tilingData_->outSizeStride[1]), static_cast<IndexT>(tilingData_->outSizeStride[2]),
-            magic[0], shift[0], magic[1], shift[1], magic[2], shift[2]);
+            AS_STRIDED_SIMT_LAUNCH_THREADS(tilingData_), inputGmAddr, outputGmAddr,
+            static_cast<IndexT>(curCoreBaseIndex_), static_cast<IndexT>(curCoreElements_),
+            static_cast<IndexT>(tilingData_->strideArr[0]), static_cast<IndexT>(tilingData_->strideArr[1]),
+            static_cast<IndexT>(tilingData_->strideArr[2]), static_cast<IndexT>(tilingData_->strideArr[3]),
+            static_cast<IndexT>(tilingData_->outSizeStride[0]), static_cast<IndexT>(tilingData_->outSizeStride[1]),
+            static_cast<IndexT>(tilingData_->outSizeStride[2]), magic[0], shift[0], magic[1], shift[1], magic[2],
+            shift[2]);
     } else if (dimNum_ == DIMS_5) {
         asc_vf_call<SimtStridedDim5<T, IndexT, DIMS_5>>(
-            dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, tiling, static_cast<IndexT>(curCoreBaseIndex_),
-            static_cast<IndexT>(curCoreElements_), static_cast<IndexT>(tilingData_->strideArr[0]),
-            static_cast<IndexT>(tilingData_->strideArr[1]), static_cast<IndexT>(tilingData_->strideArr[2]),
-            static_cast<IndexT>(tilingData_->strideArr[3]), static_cast<IndexT>(tilingData_->strideArr[4]), magic[0],
-            shift[0], magic[1], shift[1], magic[2], shift[2], magic[3], shift[3]);
+            AS_STRIDED_SIMT_LAUNCH_THREADS(tilingData_), inputGmAddr, outputGmAddr, tiling,
+            static_cast<IndexT>(curCoreBaseIndex_), static_cast<IndexT>(curCoreElements_),
+            static_cast<IndexT>(tilingData_->strideArr[0]), static_cast<IndexT>(tilingData_->strideArr[1]),
+            static_cast<IndexT>(tilingData_->strideArr[2]), static_cast<IndexT>(tilingData_->strideArr[3]),
+            static_cast<IndexT>(tilingData_->strideArr[4]), magic[0], shift[0], magic[1], shift[1], magic[2], shift[2],
+            magic[3], shift[3]);
     } else if (dimNum_ == DIMS_6) {
         asc_vf_call<SimtStridedDim6<T, IndexT, DIMS_6>>(
-            dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, tiling, static_cast<IndexT>(curCoreBaseIndex_),
-            static_cast<IndexT>(curCoreElements_), static_cast<IndexT>(tilingData_->strideArr[0]),
-            static_cast<IndexT>(tilingData_->strideArr[1]), static_cast<IndexT>(tilingData_->strideArr[2]),
-            static_cast<IndexT>(tilingData_->strideArr[3]), static_cast<IndexT>(tilingData_->strideArr[4]),
-            static_cast<IndexT>(tilingData_->strideArr[5]), magic[0], shift[0], magic[1], shift[1], magic[2], shift[2],
-            magic[3], shift[3], magic[4], shift[4]);
+            AS_STRIDED_SIMT_LAUNCH_THREADS(tilingData_), inputGmAddr, outputGmAddr, tiling,
+            static_cast<IndexT>(curCoreBaseIndex_), static_cast<IndexT>(curCoreElements_),
+            static_cast<IndexT>(tilingData_->strideArr[0]), static_cast<IndexT>(tilingData_->strideArr[1]),
+            static_cast<IndexT>(tilingData_->strideArr[2]), static_cast<IndexT>(tilingData_->strideArr[3]),
+            static_cast<IndexT>(tilingData_->strideArr[4]), static_cast<IndexT>(tilingData_->strideArr[5]), magic[0],
+            shift[0], magic[1], shift[1], magic[2], shift[2], magic[3], shift[3], magic[4], shift[4]);
     } else if (dimNum_ == DIMS_7) {
         asc_vf_call<SimtStridedDim7<T, IndexT, DIMS_7>>(
-            dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, tiling, static_cast<IndexT>(curCoreBaseIndex_),
-            static_cast<IndexT>(curCoreElements_), static_cast<IndexT>(tilingData_->strideArr[0]),
-            static_cast<IndexT>(tilingData_->strideArr[1]), static_cast<IndexT>(tilingData_->strideArr[2]),
-            static_cast<IndexT>(tilingData_->strideArr[3]), static_cast<IndexT>(tilingData_->strideArr[4]),
-            static_cast<IndexT>(tilingData_->strideArr[5]), static_cast<IndexT>(tilingData_->strideArr[6]), magic[0],
-            shift[0], magic[1], shift[1], magic[2], shift[2], magic[3], shift[3], magic[4], shift[4], magic[5],
-            shift[5]);
+            AS_STRIDED_SIMT_LAUNCH_THREADS(tilingData_), inputGmAddr, outputGmAddr, tiling,
+            static_cast<IndexT>(curCoreBaseIndex_), static_cast<IndexT>(curCoreElements_),
+            static_cast<IndexT>(tilingData_->strideArr[0]), static_cast<IndexT>(tilingData_->strideArr[1]),
+            static_cast<IndexT>(tilingData_->strideArr[2]), static_cast<IndexT>(tilingData_->strideArr[3]),
+            static_cast<IndexT>(tilingData_->strideArr[4]), static_cast<IndexT>(tilingData_->strideArr[5]),
+            static_cast<IndexT>(tilingData_->strideArr[6]), magic[0], shift[0], magic[1], shift[1], magic[2], shift[2],
+            magic[3], shift[3], magic[4], shift[4], magic[5], shift[5]);
     } else if (dimNum_ == DIMS_8) {
         asc_vf_call<SimtStridedDim8<T, IndexT, DIMS_8>>(
-            dim3{THREAD_NUM, 1, 1}, inputGmAddr, outputGmAddr, tiling, static_cast<IndexT>(curCoreBaseIndex_),
-            static_cast<IndexT>(curCoreElements_), static_cast<IndexT>(tilingData_->strideArr[0]),
-            static_cast<IndexT>(tilingData_->strideArr[1]), static_cast<IndexT>(tilingData_->strideArr[2]),
-            static_cast<IndexT>(tilingData_->strideArr[3]), static_cast<IndexT>(tilingData_->strideArr[4]),
-            static_cast<IndexT>(tilingData_->strideArr[5]), static_cast<IndexT>(tilingData_->strideArr[6]),
-            static_cast<IndexT>(tilingData_->strideArr[7]), magic[0], shift[0], magic[1], shift[1], magic[2], shift[2],
-            magic[3], shift[3], magic[4], shift[4], magic[5], shift[5], magic[6], shift[6]);
+            AS_STRIDED_SIMT_LAUNCH_THREADS(tilingData_), inputGmAddr, outputGmAddr, tiling,
+            static_cast<IndexT>(curCoreBaseIndex_), static_cast<IndexT>(curCoreElements_),
+            static_cast<IndexT>(tilingData_->strideArr[0]), static_cast<IndexT>(tilingData_->strideArr[1]),
+            static_cast<IndexT>(tilingData_->strideArr[2]), static_cast<IndexT>(tilingData_->strideArr[3]),
+            static_cast<IndexT>(tilingData_->strideArr[4]), static_cast<IndexT>(tilingData_->strideArr[5]),
+            static_cast<IndexT>(tilingData_->strideArr[6]), static_cast<IndexT>(tilingData_->strideArr[7]), magic[0],
+            shift[0], magic[1], shift[1], magic[2], shift[2], magic[3], shift[3], magic[4], shift[4], magic[5],
+            shift[5], magic[6], shift[6]);
     }
 }
 

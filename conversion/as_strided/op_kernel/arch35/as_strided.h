@@ -159,7 +159,12 @@ public:
         static constexpr NdDmaConfig Config = {false, 0, 0, false};
         if (innerAxisFactorTail_ == 0) {
             LocalTensor<T> srcLocal = inQueue_.AllocTensor<T>();
+#if defined(__DAV_920R1__)
+            // 最后一个参数enablePreReadIgnoreSync = true表示开启PreAllocation
+            DataCopy<T, NDDMA_DIM, Config>(srcLocal, inputGm_[srcOffset], dmaParam_, true);
+#else
             DataCopy<T, NDDMA_DIM, Config>(srcLocal, inputGm_[srcOffset], dmaParam_);
+#endif
             inQueue_.EnQue(srcLocal);
             LocalTensor<T> dstLocal = inQueue_.DeQue<T>();
             DataCopyPad(outputGm_[dstOffset], dstLocal, copyParams_);
@@ -167,14 +172,25 @@ public:
         } else {
             if ((totalIdx + 1) % outerAxisFactor_ != 0) {
                 LocalTensor<T> srcLocal = inQueue_.AllocTensor<T>();
+#if defined(__DAV_920R1__)
+                // 最后一个参数enablePreReadIgnoreSync = true表示开启PreAllocation
+                DataCopy<T, NDDMA_DIM, Config>(srcLocal, inputGm_[srcOffset], dmaParam_, true);
+#else
                 DataCopy<T, NDDMA_DIM, Config>(srcLocal, inputGm_[srcOffset], dmaParam_);
+#endif
+
                 inQueue_.EnQue(srcLocal);
                 LocalTensor<T> dstLocal = inQueue_.DeQue<T>();
                 DataCopyPad(outputGm_[dstOffset], dstLocal, copyParams_);
                 inQueue_.FreeTensor(dstLocal);
             } else {
                 LocalTensor<T> srcLocal = inQueue_.AllocTensor<T>();
+#if defined(__DAV_920R1__)
+                // 最后一个参数enablePreReadIgnoreSync = true表示开启PreAllocation
+                DataCopy<T, NDDMA_DIM, Config>(srcLocal, inputGm_[srcOffset], dmaTailParam_, true);
+#else
                 DataCopy<T, NDDMA_DIM, Config>(srcLocal, inputGm_[srcOffset], dmaTailParam_);
+#endif
                 inQueue_.EnQue(srcLocal);
                 LocalTensor<T> dstLocal = inQueue_.DeQue<T>();
                 DataCopyPad(outputGm_[dstOffset], dstLocal, copyParamsTail_);
