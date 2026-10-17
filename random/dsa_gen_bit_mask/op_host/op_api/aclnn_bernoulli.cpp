@@ -325,8 +325,7 @@ aclnnStatus aclnnBernoulliTensorGetWorkspaceSize(const aclTensor* self, const ac
     CHECK_RET(prob_contiguous != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     const aclTensor* prob_calc = nullptr;
-    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
-    if (curArch == NpuArch::DAV_3510) {
+    if (IsRegBase()) {
         prob_calc = l0op::Cast(prob_contiguous, op::DataType::DT_FLOAT, uniqueExecutor.get());
     } else {
         prob_calc = prob_contiguous;
@@ -387,8 +386,8 @@ aclnnStatus aclnnBernoulliGetWorkspaceSize(const aclTensor* self, const aclScala
         }
         CHECK_RET(doMaskOut != nullptr, ACLNN_ERR_INNER_NULLPTR);
         opOut = l0op::Cast(doMaskOut, out->GetDataType(), uniqueExecutor.get());
-    } else if (curArch == NpuArch::DAV_3510) {
-        // 调用StatelessBernoulli算子kernel，ARCH3510统一转成float
+    } else if (IsRegBase()) {
+        // 调用StatelessBernoulli算子kernel，ARCH3510/960统一转成float
         auto probScalar = uniqueExecutor->AllocScalar(static_cast<float>(prob->ToDouble()));
         CHECK_RET(probScalar != nullptr, ACLNN_ERR_INNER_NULLPTR);
         auto probTensor = uniqueExecutor.get()->ConvertToTensor(probScalar, probScalar->GetDataType());

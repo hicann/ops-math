@@ -14,42 +14,31 @@
  */
 #include "register/op_def_registry.h"
 
-namespace  ops{
+namespace ops {
 static const std::vector<ge::DataType> nDtype = {
-    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+    ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
 };
 
 static const std::vector<ge::DataType> outDtype = {
-    ge::DT_INT64, ge::DT_INT32, ge::DT_INT16, ge::DT_UINT8, ge::DT_INT8,
-    ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16,
+    ge::DT_INT64, ge::DT_INT32, ge::DT_INT16, ge::DT_UINT8, ge::DT_INT8, ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16,
 };
 
 static const std::vector<ge::Format> format = {
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, 
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
+    ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
 };
 
-class StatelessRandperm: public OpDef { 
+class StatelessRandperm : public OpDef {
 public:
-    explicit StatelessRandperm(const char* name) : OpDef(name) {
-        StatelessRandpermFor950();
-    }
+    explicit StatelessRandperm(const char* name) : OpDef(name) { StatelessRandpermFor950(); }
 
-private: 
-    void StatelessRandpermFor950() {
-        this->Input("n")
-            .ParamType(REQUIRED)
-            .DataType(nDtype)
-            .Format(format)
-            .UnknownShapeFormat(format)
-            .ValueDepend(OPTIONAL);
-        this->Input("seed")
-            .ParamType(REQUIRED)
-            .DataType(nDtype)
-            .Format(format)
-            .UnknownShapeFormat(format)
-            .ValueDepend(OPTIONAL);
+private:
+    void StatelessRandpermFor950()
+    {
+        this->Input("n").ParamType(REQUIRED).DataType(nDtype).Format(format).UnknownShapeFormat(format).ValueDepend(
+            OPTIONAL);
+        this->Input("seed").ParamType(REQUIRED).DataType(nDtype).Format(format).UnknownShapeFormat(format).ValueDepend(
+            OPTIONAL);
         this->Input("offset")
             .ParamType(REQUIRED)
             .DataType(nDtype)
@@ -57,12 +46,8 @@ private:
             .UnknownShapeFormat(format)
             .ValueDepend(OPTIONAL);
 
-        this->Output("y")
-            .ParamType(REQUIRED)
-            .DataType(outDtype)
-            .Format(format)
-            .UnknownShapeFormat(format);
-        
+        this->Output("y").ParamType(REQUIRED).DataType(outDtype).Format(format).UnknownShapeFormat(format);
+
         this->Attr("layout").AttrType(OPTIONAL).Int(0);
         this->Attr("dtype").AttrType(OPTIONAL).Int(ge::DT_INT64);
 
@@ -74,8 +59,10 @@ private:
             .NeedCheckSupportFlag(false)
             .ExtendCfgInfo("opFile.value", "stateless_randperm_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend960dt", aicoreConfig);
+        this->AICore().AddConfig("ascend960pr", aicoreConfig);
     }
 };
 
 OP_ADD(StatelessRandperm);
-};
+}; // namespace ops

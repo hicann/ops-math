@@ -9,11 +9,10 @@
 # ----------------------------------------------------------------------------
 
 #设置算子定义时支持的芯片类型
-set(SUPPORT_COMPUTE_UNIT "ascend950")
+set(SUPPORT_COMPUTE_UNIT "ascend950" "ascend960dt" "ascend960pr")
 
 #设置每种芯片类型对应的tiling文件目录
-set(SUPPORT_TILING_DIR "arch35")
+set(SUPPORT_TILING_DIR "arch35" "arch35" "arch35")
 
 #编译
 add_all_modules_sources(OPTYPE stateless_random_choice_with_mask ACLNNTYPE aclnn_exclude COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT} TILING_DIR ${SUPPORT_TILING_DIR} DISABLE_IN_OPP TRUE)
-

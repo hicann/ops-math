@@ -25,6 +25,7 @@ using namespace ge;
 
 namespace optiling {
 
+constexpr int64_t ALIGN32 = 32;
 constexpr int64_t ALIGN256 = 256;
 constexpr int64_t MASK_ALIGN_RESERVE = 192;
 constexpr int64_t KEEP_PROB_IDX = 0;
@@ -61,7 +62,6 @@ OpTilingConfig DropOutDoMaskV3DTiling::BuildOpConfig()
     config.getKeyAndCounter = []([[maybe_unused]] gert::TilingContext* ctx, [[maybe_unused]] uint32_t key[2],
                                  [[maybe_unused]] uint32_t counter[4]) -> ge::graphStatus { return ge::GRAPH_SUCCESS; };
 
-    config.coreAlignSize = ALIGN256;
     config.sharedTmpBufSize = MASK_ALIGN_RESERVE; // double mask buffer 128B 对齐预留
 
     config.getBufferNum = [](gert::TilingContext* ctx, int64_t& bufNum) -> ge::graphStatus {
@@ -76,6 +76,18 @@ OpTilingConfig DropOutDoMaskV3DTiling::BuildOpConfig()
 
     config.isNeedSyncAll = false;
     return config;
+}
+
+ge::graphStatus DropOutDoMaskV3DTiling::BeforeProcess()
+{
+    auto platformInfo = context_->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(context_, platformInfo);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    config_.coreAlignSize = (ascendcPlatform.GetCurNpuArch() == NpuArch::DAV_9201 ||
+                             ascendcPlatform.GetCurNpuArch() == NpuArch::DAV_9202) ?
+                                ALIGN32 :
+                                ALIGN256;
+    return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus DropOutDoMaskV3DTiling::UniqueProcess()

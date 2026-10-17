@@ -22,17 +22,18 @@
 #include "log/log.h"
 #include "util/math_util.h"
 #include "op_host/tiling_base_util.h"
-#include  "../../../random_common/op_host/arch35/random_tiling_arch35.h"
+#include "../../../random_common/op_host/arch35/random_tiling_arch35.h"
 
 namespace optiling {
-class DropOutDoMaskV3Tiling : public RandomTilingArch35
-{
+class DropOutDoMaskV3Tiling : public RandomTilingArch35 {
 public:
     explicit DropOutDoMaskV3Tiling(gert::TilingContext* context);
     ~DropOutDoMaskV3Tiling() override = default;
 
 protected:
-    ge::graphStatus UniqueProcess() override; 
+    ge::graphStatus BeforeProcess() override;
+    ge::graphStatus UniqueProcess() override;
+
 private:
     static OpTilingConfig BuildOpConfig();
 };
