@@ -27,21 +27,21 @@ namespace ge {
 * @par Inputs:
 * Five inputs, including:
 * @li var: A mutable ND Tensor of type BasicType.
-* Support dtype: [float16, float32, bfloat16, int32, int64, double, int8], Supoort format: [ND]. \n
+* Support dtype: [float16, float32, bfloat16, int32, int64, double, int8], Support format: [ND]. \n
 * @li input_value: A mutable ND Tensor of type BasicType .
-* Support dtype: [float16, float32, bfloat16, int32, int64, double, int8], Supoort format: [ND]. \n
+* Support dtype: [float16, float32, bfloat16, int32, int64, double, int8], Support format: [ND]. \n
 * @li begin: A mutable ND Tensor of type IndexNumberType.
-* Support dtype: [int64], Supoort format: [ND]. \n
+* Support dtype: [int64], Support format: [ND]. \n
 * Specifies the index of the first value to select.
 * @li end: A mutable ND Tensor of type IndexNumberType.
-* Support dtype: [int64], Supoort format: [ND]. \n
+* Support dtype: [int64], Support format: [ND]. \n
 * Specifies the index of the last value to select.
 * @li strides: A mutable ND Tensor of type IndexNumberType.
-* Support dtype: [int64], Supoort format: [ND]. \n
+* Support dtype: [int64], Support format: [ND]. \n
 * Specifies the stride to select.
 * @li axes: Optional. A mutable ND Tensor of type IndexNumberType.
-* Support dtype: [int64], Supoort format: [ND]. \n
-* Specifies the stride to select. \n
+* Support dtype: [int64], Support format: [ND]. \n
+* Specifies the axes to select. \n
 
 * @par Outputs:
 * var: A mutable Tensor. Has the same type and format as "var" . \n

@@ -52,7 +52,7 @@ REG_OP(ExpandDims)
     * @li offset: To avoid seed collision. \n
 
     * @par Attributes:
-    * @li dtype: The data type for the elements of the output tensor. if not specifed,
+    * @li dtype: The data type for the elements of the output tensor. if not specified,
     * we will use the data type of the input tensor. \n
 
     * @par Outputs:
@@ -409,7 +409,7 @@ REG_OP(ExpandDims)
 
     *@par Attributes:
     *type: An optional ge::DataType. It refers to the target data type of outputs . \n
-    *keepdim: If True, output dims equal intput dims. otherwise output dims can append. default value is false.  \n
+    *keepdim: If True, output dims equal input dims. otherwise output dims can append. default value is false.  \n
 
     *@par Third-party framework compatibility
     *Compatible with tensorflow QueueIsClosed operator.
