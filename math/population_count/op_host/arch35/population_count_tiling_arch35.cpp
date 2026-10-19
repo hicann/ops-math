@@ -28,12 +28,11 @@ using Ops::Base::FloorDiv;
 using Ops::Base::GetUbBlockSize;
 
 constexpr uint32_t WS_SYS_SIZE = 0U;
-constexpr int64_t MIN_SPLIT_THRESHOLD = 1024;
 // UB 中每个元素占用的等效总字节数（含所有 buffer 分配）
-// 单 buffer: 2(input) + 1(output) + 2(tmp) = 5
-constexpr int64_t UB_BYTES_PER_ELEM_SINGLE = 5;
-// 双 buffer: 4(input×2buf) + 2(output×2buf) + 2(tmp) = 8
-constexpr int64_t UB_BYTES_PER_ELEM_DOUBLE = 8;
+// 单 buffer: 2(input) + 1(output) = 3（SWAR 中间量驻留向量寄存器，无 VECCALC tmp）
+constexpr int64_t UB_BYTES_PER_ELEM_SINGLE = 3;
+// 双 buffer: 4(input×2buf) + 2(output×2buf) = 6
+constexpr int64_t UB_BYTES_PER_ELEM_DOUBLE = 6;
 
 static const gert::Shape G_VEC_1_SHAPE = {1};
 
@@ -134,13 +133,37 @@ static ge::graphStatus ComputeTilingParams(gert::TilingContext* context, int64_t
     tiling->totalNum = totalIdx;
 
     int64_t ubBlockSize = GetUbBlockSize(context);
-    tiling->blockFactor = CeilAlign(CeilDiv(totalIdx, coreNum), ubBlockSize);
+    // Per-core chunks are aligned to a cache-line-sized multiple (512 elements
+    // = 1KB for int16/uint16) instead of the minimum 32-element block. AIV
+    // block dispatch cost scales with the core count and dominates
+    // launch-bound small shapes: spreading n=3544 over 56 cores with 64-element
+    // chunks costs ~0.5us more than 7 cores with 512-element chunks. Large
+    // shapes still use every core (chunk count grows with n).
+    constexpr int64_t BLOCK_CHUNK_ELEMS = 512;
+    tiling->blockFactor = CeilAlign(CeilDiv(totalIdx, coreNum), std::max(BLOCK_CHUNK_ELEMS, ubBlockSize));
     int64_t usedCoreNum = CeilDiv(totalIdx, std::max<int64_t>(tiling->blockFactor, 1));
 
-    uint64_t useDoubleBuffer = (totalIdx > MIN_SPLIT_THRESHOLD) ? 1 : 0;
+    // CRITICAL: DataCopyParams.blockLen is a 16-bit byte field — a single
+    // CopyIn whose length exceeds 65535 bytes is silently truncated modulo
+    // 65536 (verified on NPU: a 33280-element int16 chunk delivered only its
+    // first 512 elements). For the supported 16-bit input dtypes one UB
+    // iteration must therefore stay <= 32767 elements; cap ubFactor so no
+    // iteration ever crosses that limit.
+    constexpr int64_t MAX_DMA_BLOCK_BYTES = 65535;
+    constexpr int64_t INPUT_DTYPE_BYTES = 2; // int16 / uint16 are the only supported inputs
+    const int64_t ubFactorCopyCap = FloorAlign(MAX_DMA_BLOCK_BYTES / INPUT_DTYPE_BYTES, ubBlockSize);
+
+    // Double buffering only pays off when the per-core work spans multiple UB
+    // iterations (loopCount >= 2, i.e. blockFactor > ubFactor); with a single
+    // iteration there is nothing to overlap and the extra queue buffer only
+    // adds sync overhead. ubFactor depends on the buffer mode, so decide with
+    // the single-buffer capacity first, then derive the final ubFactor.
+    int64_t ubFactorSingle = FloorAlign(static_cast<int64_t>(ubSize) / UB_BYTES_PER_ELEM_SINGLE, ubBlockSize);
+    ubFactorSingle = std::min(ubFactorSingle, ubFactorCopyCap);
+    uint64_t useDoubleBuffer = (tiling->blockFactor > ubFactorSingle) ? 1 : 0;
     int64_t perElemBytes = useDoubleBuffer ? UB_BYTES_PER_ELEM_DOUBLE : UB_BYTES_PER_ELEM_SINGLE;
     int64_t ubFactorRaw = static_cast<int64_t>(ubSize) / perElemBytes;
-    tiling->ubFactor = FloorAlign(ubFactorRaw, ubBlockSize);
+    tiling->ubFactor = std::min(FloorAlign(ubFactorRaw, ubBlockSize), ubFactorCopyCap);
 
     context->SetBlockDim(std::max<int64_t>(usedCoreNum, 1));
 

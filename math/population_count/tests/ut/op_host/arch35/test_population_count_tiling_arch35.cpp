@@ -29,7 +29,7 @@ protected:
     static void TearDownTestCase() { std::cout << "PopulationCountTilingTest TearDown" << std::endl; }
 };
 
-// INT16 small tensor — single buffer (totalNum <= 1024)
+// INT16 small tensor — single buffer (per-core chunk fits one UB iteration)
 TEST_F(PopulationCountTilingTest, tiling_int16_small_single_buffer)
 {
     gert::TilingContextPara tilingContextPara("PopulationCount", {{{{128}, {128}}, ge::DT_INT16, ge::FORMAT_ND}},
@@ -47,12 +47,13 @@ TEST_F(PopulationCountTilingTest, tiling_uint16_small_single_buffer)
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, KEY_SINGLE, expectWorkspaces);
 }
 
-// INT16 large tensor — double buffer (totalNum > 1024)
+// INT16 large tensor — double buffer (per-core chunk exceeds single-buffer UB
+// capacity, so the kernel loops over multiple UB iterations)
 TEST_F(PopulationCountTilingTest, tiling_int16_large_double_buffer)
 {
-    gert::TilingContextPara tilingContextPara("PopulationCount",
-                                              {{{{8, 1024}, {8, 1024}}, ge::DT_INT16, ge::FORMAT_ND}},
-                                              {{{{8, 1024}, {8, 1024}}, ge::DT_UINT8, ge::FORMAT_ND}}, &g_compileInfo);
+    gert::TilingContextPara tilingContextPara(
+        "PopulationCount", {{{{8, 1024, 1024}, {8, 1024, 1024}}, ge::DT_INT16, ge::FORMAT_ND}},
+        {{{{8, 1024, 1024}, {8, 1024, 1024}}, ge::DT_UINT8, ge::FORMAT_ND}}, &g_compileInfo);
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, KEY_DOUBLE, expectWorkspaces);
 }
@@ -61,8 +62,8 @@ TEST_F(PopulationCountTilingTest, tiling_int16_large_double_buffer)
 TEST_F(PopulationCountTilingTest, tiling_uint16_large_double_buffer)
 {
     gert::TilingContextPara tilingContextPara(
-        "PopulationCount", {{{{32, 64, 16}, {32, 64, 16}}, ge::DT_UINT16, ge::FORMAT_ND}},
-        {{{{32, 64, 16}, {32, 64, 16}}, ge::DT_UINT8, ge::FORMAT_ND}}, &g_compileInfo);
+        "PopulationCount", {{{{64, 64, 2048}, {64, 64, 2048}}, ge::DT_UINT16, ge::FORMAT_ND}},
+        {{{{64, 64, 2048}, {64, 64, 2048}}, ge::DT_UINT8, ge::FORMAT_ND}}, &g_compileInfo);
     std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, KEY_DOUBLE, expectWorkspaces);
 }
@@ -85,7 +86,7 @@ TEST_F(PopulationCountTilingTest, tiling_scalar_input)
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, KEY_SINGLE, expectWorkspaces);
 }
 
-// Boundary: exactly at double buffer threshold (1024) — single buffer
+// Boundary: small tensor that still fits one UB iteration per core — single buffer
 TEST_F(PopulationCountTilingTest, tiling_at_threshold_boundary)
 {
     gert::TilingContextPara tilingContextPara("PopulationCount", {{{{1024}, {1024}}, ge::DT_INT16, ge::FORMAT_ND}},
@@ -94,13 +95,13 @@ TEST_F(PopulationCountTilingTest, tiling_at_threshold_boundary)
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, KEY_SINGLE, expectWorkspaces);
 }
 
-// Boundary: just above double buffer threshold (1025) — double buffer
-TEST_F(PopulationCountTilingTest, tiling_above_threshold_boundary)
+// Mid-size tensor — one UB iteration per core, single buffer
+TEST_F(PopulationCountTilingTest, tiling_mid_size_single_buffer)
 {
     gert::TilingContextPara tilingContextPara("PopulationCount", {{{{1025}, {1025}}, ge::DT_INT16, ge::FORMAT_ND}},
                                               {{{{1025}, {1025}}, ge::DT_UINT8, ge::FORMAT_ND}}, &g_compileInfo);
     std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, KEY_DOUBLE, expectWorkspaces);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, KEY_SINGLE, expectWorkspaces);
 }
 
 // High-dimensional: 5D tensor (720 elements, single buffer)
@@ -113,14 +114,15 @@ TEST_F(PopulationCountTilingTest, tiling_5d_tensor)
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, KEY_SINGLE, expectWorkspaces);
 }
 
-// Very large tensor — multi-core splitting, double buffer
+// Very large tensor — multi-core splitting; per-core chunk still fits
+// single-buffer UB capacity in this range, so single buffer applies
 TEST_F(PopulationCountTilingTest, tiling_very_large_multicore)
 {
     gert::TilingContextPara tilingContextPara(
         "PopulationCount", {{{{1024, 1024}, {1024, 1024}}, ge::DT_INT16, ge::FORMAT_ND}},
         {{{{1024, 1024}, {1024, 1024}}, ge::DT_UINT8, ge::FORMAT_ND}}, &g_compileInfo);
     std::vector<size_t> expectWorkspaces = {0};
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, KEY_DOUBLE, expectWorkspaces);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, KEY_SINGLE, expectWorkspaces);
 }
 
 // L2 exception case 001: bfloat16 input must be rejected with EZ0020 (invalid dtype)

@@ -15,6 +15,7 @@
 template <uint32_t BUFFER_MODE>
 __global__ __aicore__ void population_count(GM_ADDR x, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
+    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     REGISTER_TILING_DEFAULT(PopulationCountTilingData);
     GET_TILING_DATA_WITH_STRUCT(PopulationCountTilingData, tilingData, tiling);
 

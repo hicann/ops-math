@@ -15,30 +15,36 @@
 
 /**
  * \file population_count.h
- * \brief PopulationCount SWAR kernel implementation (arch35)
+ * \brief PopulationCount kernel implementation (arch35)
  *
  * Template parameters:
  *   - T:           input dtype (int16_t / uint16_t)
  *   - BUFFER_MODE: 0 = single buffer, 1 = double buffer
  *
- * Algorithm: 16-bit SWAR popcount (4 steps + high-byte mask):
+ * Algorithm: 16-bit SWAR popcount (4 steps), executed as a register-resident
+ * vector chain (AscendC::Reg, __VEC_SCOPE__):
  *   x = x - ((x >> 1) & 0x5555);
  *   x = (x & 0x3333) + ((x >> 2) & 0x3333);
  *   x = (x + (x >> 4)) & 0x0F0F;
  *   y = x + (x >> 8);            // low byte holds popcount [0..16]
- *   y = y & 0x00FF;              // CRITICAL: clear high byte before Cast
- *   out_u8 = Cast<uint8_t>(y, CAST_NONE);
+ *   out_u8 = low byte of y;      // DIST_PACK_B16 store selects it per lane
  *
- * For int16 input: ReinterpretCast to uint16 first so all right-shifts are logical.
+ * For int16 input: bits are reinterpreted as uint16 so all right-shifts are
+ * logical (identical bit-level popcount semantics).
  *
- * IMPORTANT (Cast saturation, verified by probe_uint16_small / probe_int16_dbuf /
- *            probe_unaligned_tail on NPU 2026-04-20):
- *   arch35 `Cast<uint8_t, uint16_t, CAST_NONE>` performs **numeric saturation**
- *   (>255 -> 255), NOT low-byte truncation. After SWAR step 4, `u`'s high byte
- *   still carries residual data (the "high-byte popcount" that was never
- *   cleared), so values > 255 are common. Without masking with 0x00FF, every
- *   non-zero popcount element ends up as 0xFF. Hence we MUST insert
- *   `Ands(u, u, 0x00FF)` between step 4 and Cast.
+ * Why register-resident (was: LocalTensor chain via VECCALC tmpBuf):
+ *   the SWAR dependency chain is serial; in UB-resident form every op pays one
+ *   UB read + one UB write, which adds avoidable latency and cold-run variance
+ *   to launch-bound small shapes. The VF chain loads once, relays intermediates
+ *   in vector registers, and stores once.
+ *
+ * Exit path note (replaces the historical 0x00FF mask + saturation Cast):
+ *   arch35 `Cast<uint8_t, uint16_t, CAST_NONE>` performs numeric saturation
+ *   (>255 -> 255), NOT low-byte truncation (verified by probe_uint16_small /
+ *   probe_int16_dbuf / probe_unaligned_tail on NPU 2026-04-20), so the classic
+ *   chain needed `Ands(u, u, 0x00FF)` before Cast. The VF exit avoids both ops:
+ *   DIST_PACK_B16 stores the low byte of every 16-bit lane, which after SWAR
+ *   step 4 is exactly the popcount (high byte holds only discarded residue).
  */
 
 #ifndef POPULATION_COUNT_H
@@ -56,7 +62,76 @@ using namespace AscendC;
 constexpr uint16_t SWAR_MASK_EVEN_BITS = 0x5555;
 constexpr uint16_t SWAR_MASK_LOW_TWO_BITS = 0x3333;
 constexpr uint16_t SWAR_MASK_LOW_NIBBLE = 0x0F0F;
-constexpr uint16_t SWAR_MASK_LOW_BYTE = 0x00FF;
+
+// DAV_3510 vector register is 256B; u16 in packed 16-bit lanes processes 128
+// elements per beat (LoadDist::DIST_NORM), and the output store dist
+// DIST_PACK_B16 takes the low byte of every 16-bit lane, which is exactly the
+// popcount after SWAR step 4 — no Cast / Pack / 0x00FF mask needed on exit.
+constexpr uint32_t POPCOUNT_VF_TILE = 128U;
+
+// Register-resident SWAR popcount chain.
+// in/out are UB pointers derived from LocalTensor::GetPhyAddr() by the caller;
+// `elements` is the number of u16 elements to process (tail beat narrows via mask).
+__aicore__ inline void PopulationCountVF(__ubuf__ uint16_t* in, __ubuf__ uint8_t* out, uint32_t elements)
+{
+    const uint16_t tileCount = static_cast<uint16_t>((elements + POPCOUNT_VF_TILE - 1U) / POPCOUNT_VF_TILE);
+    uint32_t remaining = elements;
+    __VEC_SCOPE__
+    {
+        Reg::RegTensor<uint16_t> u;
+        Reg::RegTensor<uint16_t> t;
+        Reg::RegTensor<uint16_t> mEvenBits;
+        Reg::RegTensor<uint16_t> mLowTwoBits;
+        Reg::RegTensor<uint16_t> mLowNibble;
+        Reg::MaskReg preg;
+        // Loop-invariant SWAR constants: duplicated once, reused by every tile.
+        Reg::Duplicate(mEvenBits, SWAR_MASK_EVEN_BITS);
+        Reg::Duplicate(mLowTwoBits, SWAR_MASK_LOW_TWO_BITS);
+        Reg::Duplicate(mLowNibble, SWAR_MASK_LOW_NIBBLE);
+        for (uint16_t i = 0; i < tileCount; ++i) {
+            // Per-beat mask count: maintain the remaining-element counter here
+            // and feed UpdateMask each beat's own element count (<= 128) instead
+            // of a running total. This keeps the mask input small and makes the
+            // tail narrowing independent of the intrinsic's POST_UPDATE
+            // decrement semantics.
+            uint32_t tileElems = (remaining > POPCOUNT_VF_TILE) ? POPCOUNT_VF_TILE : remaining;
+            remaining -= tileElems;
+            preg = Reg::UpdateMask<uint16_t>(tileElems);
+            const uint32_t offset = static_cast<uint32_t>(i) * POPCOUNT_VF_TILE;
+            // Entry: packed B16 load, values stay in registers for the whole chain.
+            Reg::LoadAlign<uint16_t, Reg::LoadDist::DIST_NORM>(u, in + offset);
+
+            // SWAR step 1: u = u - ((u >> 1) & EVEN_BITS)
+            Reg::ShiftRights(t, u, static_cast<int16_t>(1), preg);
+            Reg::And(t, t, mEvenBits, preg);
+            Reg::Sub(u, u, t, preg);
+
+            // SWAR step 2: u = (u & LOW_TWO_BITS) + ((u >> 2) & LOW_TWO_BITS)
+            Reg::ShiftRights(t, u, static_cast<int16_t>(2), preg);
+            Reg::And(t, t, mLowTwoBits, preg);
+            Reg::And(u, u, mLowTwoBits, preg);
+            Reg::Add(u, u, t, preg);
+
+            // SWAR step 3: u = (u + (u >> 4)) & LOW_NIBBLE
+            // (the LOW_NIBBLE mask is required: without it nibble residue from
+            // the neighboring byte carries into bit 4 of the final low byte and
+            // breaks popcount == 16 inputs)
+            Reg::ShiftRights(t, u, static_cast<int16_t>(4), preg);
+            Reg::Add(u, u, t, preg);
+            Reg::And(u, u, mLowNibble, preg);
+
+            // SWAR step 4: u = u + (u >> 8)  (low byte holds popcount [0..16],
+            // high byte holds residue which the packed store discards)
+            Reg::ShiftRights(t, u, static_cast<int16_t>(8), preg);
+            Reg::Add(u, u, t, preg);
+
+            // Exit: DIST_PACK_B16 stores the low byte of every 16-bit lane,
+            // i.e. the popcount, contiguously as uint8.
+            Reg::StoreAlign<uint16_t, Reg::StoreDist::DIST_PACK_B16>(reinterpret_cast<__ubuf__ uint16_t*>(out + offset),
+                                                                     u, preg);
+        }
+    }
+}
 
 template <typename T, uint32_t BUFFER_MODE>
 class PopulationCount {
@@ -77,7 +152,6 @@ private:
     TPipe pipe;
     TQue<QuePosition::VECIN, BUFFER_NUM> inputQueueX;
     TQue<QuePosition::VECOUT, BUFFER_NUM> outputQueueY;
-    TBuf<QuePosition::VECCALC> tmpBuf;
 
     GlobalTensor<T> inputGMX;
     GlobalTensor<uint8_t> outputGMY;
@@ -103,8 +177,6 @@ __aicore__ inline void PopulationCount<T, BUFFER_MODE>::Init(GM_ADDR x, GM_ADDR 
 
     pipe.InitBuffer(inputQueueX, BUFFER_NUM, ubLength_ * sizeof(T));
     pipe.InitBuffer(outputQueueY, BUFFER_NUM, ubLength_ * sizeof(uint8_t));
-    // tmpBuf holds intermediate SWAR results as uint16
-    pipe.InitBuffer(tmpBuf, ubLength_ * sizeof(uint16_t));
 }
 
 template <typename T, uint32_t BUFFER_MODE>
@@ -138,50 +210,11 @@ __aicore__ inline void PopulationCount<T, BUFFER_MODE>::Compute(int64_t currentN
 {
     AscendC::LocalTensor<T> xLocal = inputQueueX.template DeQue<T>();
     AscendC::LocalTensor<uint8_t> yLocal = outputQueueY.template AllocTensor<uint8_t>();
-    AscendC::LocalTensor<uint16_t> tmp = tmpBuf.Get<uint16_t>();
 
-    // Reinterpret int16 -> uint16 to force logical right shift
-    AscendC::LocalTensor<uint16_t> u;
-    if constexpr (std::is_same_v<T, int16_t>) {
-        u = xLocal.template ReinterpretCast<uint16_t>();
-    } else {
-        u = xLocal;
-    }
-
-    const int32_t count = static_cast<int32_t>(currentNum);
-
-    // SWAR step 1: u = u - ((u >> 1) & SWAR_MASK_EVEN_BITS)
-    AscendC::ShiftRight(tmp, u, static_cast<uint16_t>(1), count);
-    AscendC::Ands(tmp, tmp, SWAR_MASK_EVEN_BITS, count);
-    AscendC::Sub(u, u, tmp, count);
-
-    // SWAR step 2: u = (u & SWAR_MASK_LOW_TWO_BITS) + ((u >> 2) & SWAR_MASK_LOW_TWO_BITS)
-    AscendC::ShiftRight(tmp, u, static_cast<uint16_t>(2), count);
-    AscendC::Ands(tmp, tmp, SWAR_MASK_LOW_TWO_BITS, count);
-    AscendC::Ands(u, u, SWAR_MASK_LOW_TWO_BITS, count);
-    AscendC::Add(u, u, tmp, count);
-
-    // SWAR step 3: u = (u + (u >> 4)) & SWAR_MASK_LOW_NIBBLE
-    AscendC::ShiftRight(tmp, u, static_cast<uint16_t>(4), count);
-    AscendC::Add(u, u, tmp, count);
-    AscendC::Ands(u, u, SWAR_MASK_LOW_NIBBLE, count);
-
-    // SWAR step 4: u = u + (u >> 8)  (low byte holds popcount [0..16])
-    AscendC::ShiftRight(tmp, u, static_cast<uint16_t>(8), count);
-    AscendC::Add(u, u, tmp, count);
-
-    // CRITICAL: mask high byte BEFORE Cast.
-    //   arch35 `Cast<uint8_t, uint16_t, CAST_NONE>` is numeric saturation, not
-    //   low-byte truncation. After step 4, the high byte of `u` still holds
-    //   residual data from SWAR, making `u` > 255 for many inputs. Without
-    //   this mask, every non-zero popcount element saturates to 0xFF.
-    //   Verified on NPU by probe_uint16_small / probe_int16_dbuf /
-    //   probe_unaligned_tail (2026-04-20).
-    AscendC::Ands(u, u, SWAR_MASK_LOW_BYTE, count);
-
-    // Cast uint16 -> uint8 (CAST_NONE). After the 0x00FF mask above, u in [0,16]
-    // so the Cast is exact and saturation-safe.
-    AscendC::Cast(yLocal, u, AscendC::RoundMode::CAST_NONE, count);
+    // int16/uint16 share the same bit layout; the SWAR chain treats both as
+    // uint16 so every right shift is logical (two's-complement bit count).
+    PopulationCountVF(reinterpret_cast<__ubuf__ uint16_t*>(xLocal.GetPhyAddr()),
+                      reinterpret_cast<__ubuf__ uint8_t*>(yLocal.GetPhyAddr()), static_cast<uint32_t>(currentNum));
 
     outputQueueY.template EnQue<uint8_t>(yLocal);
     inputQueueX.FreeTensor(xLocal);
