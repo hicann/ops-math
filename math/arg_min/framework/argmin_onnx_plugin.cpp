@@ -31,7 +31,7 @@ static bool IsRegBasePlatform()
         return false;
     }
     auto curArch = static_cast<NpuArch>(std::strtol(archStr, nullptr, 10));
-    const static std::set<NpuArch> regbaseArch = {NpuArch::DAV_3510, NpuArch::DAV_5102};
+    const static std::set<NpuArch> regbaseArch = {NpuArch::DAV_3510, NpuArch::DAV_5102, NpuArch::DAV_9201};
     bool isRegbase = (regbaseArch.find(curArch) != regbaseArch.end());
     OP_LOGD("ArgMin", "IsRegBasePlatform: curArch=%u, is_regbase=%d.", static_cast<uint32_t>(curArch), isRegbase);
     return isRegbase;
