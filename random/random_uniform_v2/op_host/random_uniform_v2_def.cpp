@@ -58,6 +58,8 @@ public:
             .PrecisionReduceFlag(true);
         this->AICore().AddConfig("ascend950", aicoreconfig);
         this->AICore().AddConfig("ascend350", aicoreconfig);
+        this->AICore().AddConfig("ascend960dt", aicoreconfig);
+        this->AICore().AddConfig("ascend960pr", aicoreconfig);
     }
 };
 OP_ADD(RandomUniformV2);

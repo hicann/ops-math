@@ -28,6 +28,7 @@ const static size_t OUTPUT_Z = 0;
 
 const static int64_t SINGLE_CORE = 1;
 const static int64_t MIN_CORE_PROCESS = 2048;
+const static int64_t DV121_MIN_CORE_PROCESS = 256;
 const static int64_t DOUBLE_BUFFER = 2;
 const static int64_t DOUBLE_INPUT = 2;
 const static int64_t RESERVED_UB_SIZE = 512;
@@ -49,9 +50,7 @@ ge::graphStatus TensorEqualTiling::GetPlatformInfo()
 
     totalCoreNum_ = compileInfo->totalCoreNum;
     ubSize_ = compileInfo->ubSizePlatForm;
-    OP_CHECK_IF((ubSize_ <= 0),
-                    OP_LOGE(opName_, "ub size is invalid."),
-                    return ge::GRAPH_FAILED);
+    OP_CHECK_IF((ubSize_ <= 0), OP_LOGE(opName_, "ub size is invalid."), return ge::GRAPH_FAILED);
 
     return ge::GRAPH_SUCCESS;
 }
@@ -83,20 +82,19 @@ ge::graphStatus TensorEqualTiling::CheckDType()
     if (inputXDType_ != inputYDType_) {
         std::string valueStr = Ops::Base::ToString(inputXDType_) + " and " + Ops::Base::ToString(inputYDType_);
         std::string reasonMsg = "The dtype of input x and input y must be the same";
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
-            opName_, "input tensor x and input tensor y", valueStr.c_str(), reasonMsg.c_str());
+        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(opName_, "input tensor x and input tensor y", valueStr.c_str(),
+                                               reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
 
     if (INPUT_SUPPORT_DTYPE_SET.count(inputXDType_) == 0) {
         std::string valueStr = Ops::Base::ToString(inputXDType_);
-        std::string reasonMsg =
-            "Input dtype only support float16, float32, bfloat16, int8, uint8, int32, uint32, int16, uint16, int64, uint64, bool currently";
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
-            opName_, "input tensor x", valueStr.c_str(), reasonMsg.c_str());
+        std::string reasonMsg = "Input dtype only support float16, float32, bfloat16, int8, uint8, int32, uint32, "
+                                "int16, uint16, int64, uint64, bool currently";
+        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName_, "input tensor x", valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
-    }    
-    
+    }
+
     auto outputDesc = context_->GetOutputDesc(OUTPUT_Z);
     OP_CHECK_NULL_WITH_CONTEXT(context_, outputDesc);
     outputDType_ = outputDesc->GetDataType();
@@ -106,7 +104,7 @@ ge::graphStatus TensorEqualTiling::CheckDType()
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(opName_, "output tensor z", valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
-    
+
     return ge::GRAPH_SUCCESS;
 }
 
@@ -129,7 +127,7 @@ ge::graphStatus TensorEqualTiling::GetShapeAttrsInfo()
     inputDtypeSize_ = inputXDTypeSize;
     inputShapeSize_ = inputXShape.GetShapeSize();
     vRegSize_ = Ops::Base::GetVRegSize(context_);
-    
+
     tilingKey_ = NORMAL_SHAPE_TILINGKEY;
     if (inputXShape.GetShapeSize() == 0 || inputYShape.GetShapeSize() == 0) {
         tilingKey_ = EMPTY_SHAPE_TILINGKEY;
@@ -139,9 +137,15 @@ ge::graphStatus TensorEqualTiling::GetShapeAttrsInfo()
     return ge::GRAPH_SUCCESS;
 }
 
-bool TensorEqualTiling::IsCapable()
+bool TensorEqualTiling::IsCapable() { return true; }
+
+bool TensorEqualTiling::IsDv121()
 {
-    return true;
+    auto platformInfo = context_->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(context_, platformInfo);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    auto npuArch = ascendcPlatform.GetCurNpuArch();
+    return npuArch == NpuArch::DAV_9201 || npuArch == NpuArch::DAV_9202;
 }
 
 // 3、计算数据切分TilingData
@@ -152,7 +156,9 @@ ge::graphStatus TensorEqualTiling::DoOpTiling()
     int64_t vRegFactor = Ops::Base::CeilDiv(vRegSize_, inputDtypeSize_);
     // split core
     int64_t perCoreProcessTemp = Ops::Base::CeilDiv(inputShapeSize_, totalCoreNum_);
-    int64_t perCoreProcess = std::max(perCoreProcessTemp, MIN_CORE_PROCESS);
+    // 121 平台（ascend960dt/ascend960pr）通过架构判断隔离，使用更小的单核最小处理粒度
+    int64_t minCoreProcess = IsDv121() ? DV121_MIN_CORE_PROCESS : MIN_CORE_PROCESS;
+    int64_t perCoreProcess = std::max(perCoreProcessTemp, minCoreProcess);
     perCoreProcess = Ops::Base::CeilAlign(perCoreProcess, vRegFactor);
     usedCoreNum_ = Ops::Base::CeilDiv(inputShapeSize_, perCoreProcess);
     if (tilingKey_ == DIFFER_SHAPE_TILINGKEY || tilingKey_ == EMPTY_SHAPE_TILINGKEY) {
@@ -169,10 +175,10 @@ ge::graphStatus TensorEqualTiling::DoOpTiling()
     // split ub
     ubFactor_ = perCoreUbFactor >= maxUbAvailable ? maxUbAvailable : perCoreUbFactor;
     perCoreLoopTimes_ = Ops::Base::CeilDiv(perCoreUbFactor, ubFactor_);
-    perCoreTailFactor_ = perCoreUbFactor - (perCoreLoopTimes_ - 1) * ubFactor_ ;
+    perCoreTailFactor_ = perCoreUbFactor - (perCoreLoopTimes_ - 1) * ubFactor_;
 
     tailCoreLoopTimes_ = Ops::Base::CeilDiv(tailCoreUbFactor, ubFactor_);
-    tailCoreTailFactor_ = tailCoreUbFactor - (tailCoreLoopTimes_ - 1) * ubFactor_ ;
+    tailCoreTailFactor_ = tailCoreUbFactor - (tailCoreLoopTimes_ - 1) * ubFactor_;
 
     SetTilingData();
 
@@ -180,10 +186,7 @@ ge::graphStatus TensorEqualTiling::DoOpTiling()
 }
 
 // 4、计算高阶API的TilingData
-ge::graphStatus TensorEqualTiling::DoLibApiTiling()
-{
-    return ge::GRAPH_SUCCESS;
-}
+ge::graphStatus TensorEqualTiling::DoLibApiTiling() { return ge::GRAPH_SUCCESS; }
 
 // 5、计算TilingKey
 uint64_t TensorEqualTiling::GetTilingKey() const
@@ -196,7 +199,7 @@ uint64_t TensorEqualTiling::GetTilingKey() const
 ge::graphStatus TensorEqualTiling::GetWorkspaceSize()
 {
     OP_LOGD(opName_, "TensorEqualTiling GetWorkspaceSize .");
-    size_t *workspaces = context_->GetWorkspaceSizes(1);
+    size_t* workspaces = context_->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context_, workspaces);
     workspaces[0] = WORKSPACE_SAVE_SIZE;
 
@@ -209,14 +212,10 @@ ge::graphStatus TensorEqualTiling::PostTiling()
     OP_LOGD(opName_, "TensorEqualTiling PostTiling.");
 
     auto res = context_->SetBlockDim(static_cast<uint32_t>(usedCoreNum_));
-    OP_CHECK_IF(
-        (res != ge::GRAPH_SUCCESS),
-        OP_LOGE(opName_, "SetBlockDim failed."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((res != ge::GRAPH_SUCCESS), OP_LOGE(opName_, "SetBlockDim failed."), return ge::GRAPH_FAILED);
     context_->SetScheduleMode(1); // SyncAll need set
     context_->SetTilingKey(tilingKey_);
-    tilingData_.SaveToBuffer(context_->GetRawTilingData()->GetData(),
-                             context_->GetRawTilingData()->GetCapacity());
+    tilingData_.SaveToBuffer(context_->GetRawTilingData()->GetData(), context_->GetRawTilingData()->GetCapacity());
     context_->GetRawTilingData()->SetDataSize(tilingData_.GetDataSize());
     return ge::GRAPH_SUCCESS;
 }
@@ -250,7 +249,7 @@ void TensorEqualTiling::DumpTilingInfo()
     info << ", perCoreTailFactor: " << tilingData_.get_perCoreTailFactor();
     info << ", tailCoreTailFactor: " << tilingData_.get_tailCoreTailFactor();
     info << ", tilingKey: " << tilingData_.get_tilingKey();
-    
+
     OP_LOGI(opName_, "%s", info.str().c_str());
 }
 
@@ -287,13 +286,11 @@ ge::graphStatus TilingPrepare4TensorEqual(gert::TilingParseContext* context)
     uint64_t ubSizePlatForm = 0;
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, ubSizePlatForm);
     compileInfo->ubSizePlatForm = static_cast<int64_t>(ubSizePlatForm);
-    OP_CHECK_IF((compileInfo->ubSizePlatForm <= 0),
-        OP_LOGE(context->GetNodeName(), "Failed to get ub size"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF((compileInfo->ubSizePlatForm <= 0), OP_LOGE(context->GetNodeName(), "Failed to get ub size"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 // register tiling interface of the TensorEqual op.
-IMPL_OP_OPTILING(TensorEqual)
-    .Tiling(Tiling4TensorEqual)
-    .TilingParse<TensorEqualCompileInfo>(TilingPrepare4TensorEqual);
+IMPL_OP_OPTILING(TensorEqual).Tiling(Tiling4TensorEqual).TilingParse<TensorEqualCompileInfo>(TilingPrepare4TensorEqual);
 } // namespace optiling

@@ -36,7 +36,9 @@ REGISTER_TILING_DATA_CLASS(TensorEqual, TensorEqualTilingData)
 
 class TensorEqualTiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit TensorEqualTiling(gert::TilingContext *context) : Ops::Base::TilingBaseClass(context), opName_(context->GetNodeName()) {}
+    explicit TensorEqualTiling(gert::TilingContext* context)
+        : Ops::Base::TilingBaseClass(context), opName_(context->GetNodeName())
+    {}
 
 protected:
     bool IsCapable() override;
@@ -58,6 +60,8 @@ protected:
     void DumpTilingInfo() override;
 
 private:
+    // 121 平台（DAV_9201/DAV_9202，含 ascend960dt 与 ascend960pr）使用更小的单核最小处理粒度
+    bool IsDv121();
     ge::graphStatus CheckDType();
     void SetTilingData();
 
@@ -68,26 +72,26 @@ private:
     ge::DataType inputYDType_;
     ge::DataType outputDType_;
 
-    int64_t inputShapeSize_ {0};
-    int64_t inputDtypeSize_ {0};
-    int64_t usedCoreNum_ {0};
-    int64_t ubSize_ {0};
-    int64_t vRegSize_ {0};
-    int64_t ubFactor_ {0};
-    int64_t platformUbFactor_ {0};
-    int64_t tilingKey_ {0};
-    int64_t perCoreLoopTimes_ {0};
-    int64_t tailCoreLoopTimes_ {0};
-    int64_t perCoreTailFactor_ {0};
-    int64_t tailCoreTailFactor_ {0};
-    int64_t totalCoreNum_ {0};
+    int64_t inputShapeSize_{0};
+    int64_t inputDtypeSize_{0};
+    int64_t usedCoreNum_{0};
+    int64_t ubSize_{0};
+    int64_t vRegSize_{0};
+    int64_t ubFactor_{0};
+    int64_t platformUbFactor_{0};
+    int64_t tilingKey_{0};
+    int64_t perCoreLoopTimes_{0};
+    int64_t tailCoreLoopTimes_{0};
+    int64_t perCoreTailFactor_{0};
+    int64_t tailCoreTailFactor_{0};
+    int64_t totalCoreNum_{0};
 
     TensorEqualTilingData tilingData_;
 };
 
 struct TensorEqualCompileInfo {
-    int64_t totalCoreNum {0};
-    uint64_t ubSizePlatForm {0};
+    int64_t totalCoreNum{0};
+    uint64_t ubSizePlatForm{0};
 };
 } // namespace optiling
-#endif  // AIR_CXX_RUNTIME_V2_OP_IMPL_TENSOR_EQUAL_H
+#endif // AIR_CXX_RUNTIME_V2_OP_IMPL_TENSOR_EQUAL_H
