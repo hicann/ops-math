@@ -24,7 +24,7 @@ extern "C" {
  *
  * 算子功能：完成位与或者逻辑与计算
  * 计算公式：
- * $$ output_i = self_i\&other_i $$
+ * $$ output_i = self_i\&other $$
  *
  * 实现说明
  * 计算图一
@@ -71,7 +71,7 @@ ACLNN_API aclnnStatus aclnnBitwiseAndScalarGetWorkspaceSize(const aclTensor* sel
  *
  * 算子功能：完成位与或者逻辑与计算
  * 计算公式：
- * $$ output_i = self_i\&other_i $$
+ * $$ output_i = self_i\&other $$
  *
  * 实现说明
  * 计算图一
@@ -115,7 +115,7 @@ ACLNN_API aclnnStatus aclnnBitwiseAndScalar(void* workspace, uint64_t workspaceS
  *
  * 算子功能：完成位与或者逻辑与计算
  * 计算公式：
- * $$ output_i = self_i\&other_i $$
+ * $$ output_i = selfRef_i\&other $$
  *
  * 实现说明
  * 计算图一
@@ -143,10 +143,10 @@ ACLNN_API aclnnStatus aclnnBitwiseAndScalar(void* workspace, uint64_t workspaceS
  *     I --> J[(out)]
  * ```
  *
- * @param [in] self: npu device侧的aclTensor，数据类型支持INT16,UINT16,INT32,INT64,INT8,UINT8,BOOL，
- * 且数据类型需要与other构成互相推导关系，支持非连续的Tensor，数据格式支持ND。
+ * @param [in] selfRef: npu device侧的aclTensor，数据类型支持INT16,UINT16,INT32,INT64,INT8,UINT8,BOOL，
+ * 且数据类型需要与other构成互相推导关系，且推导后的数据类型需支持转换到selfRef的数据类型，支持非连续的Tensor，数据格式支持ND。
  * @param [in] other:
- * host侧的aclScalar，数据类型支持INT16,UINT16,INT32,INT64,INT8,UINT8,BOOL，且数据类型需要与self构成互相推导关系。
+ * host侧的aclScalar，数据类型支持INT16,UINT16,INT32,INT64,INT8,UINT8,BOOL，且数据类型需要与selfRef构成互相推导关系。
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
@@ -159,7 +159,7 @@ ACLNN_API aclnnStatus aclnnInplaceBitwiseAndScalarGetWorkspaceSize(const aclTens
  *
  * 算子功能：完成位与或者逻辑与计算
  * 计算公式：
- * $$ output_i = self_i\&other_i $$
+ * $$ output_i = selfRef_i\&other $$
  *
  * 实现说明
  * 计算图一
@@ -201,4 +201,4 @@ ACLNN_API aclnnStatus aclnnInplaceBitwiseAndScalar(void* workspace, uint64_t wor
 }
 #endif
 
-#endif  // OP_API_INC_BITWISE_AND_SCALAR_H_
+#endif // OP_API_INC_BITWISE_AND_SCALAR_H_

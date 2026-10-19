@@ -28,7 +28,7 @@
 - 计算公式：
 
   $$
-  out_i = self_i \& other_i
+  out_i = self_i \& other
   $$
 
 ## 函数原型
@@ -82,7 +82,7 @@ aclnnStatus aclnnBitwiseAndScalar(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>公式中的self。</td>
-      <td>数据类型与other需满足数据类型推导规则（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>），推导后的数据类型需在支持的数据类型范围内。</td>
+      <td>数据类型与other需满足数据类型推导规则（参见<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>），推导后的数据类型需在支持的数据类型范围内。</td>
       <td>INT16、UINT16、INT32、INT64、INT8、UINT8、UINT32、UINT64、BOOL</td>
       <td>ND</td>
       <td>不超过8维</td>
@@ -92,7 +92,7 @@ aclnnStatus aclnnBitwiseAndScalar(
       <td>other（aclScalar*）</td>
       <td>输入</td>
       <td>公式中的other。</td>
-      <td>数据类型与self需满足数据类型推导规则（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>），推导后的数据类型需在支持的数据类型范围内。</td>
+      <td>数据类型与self需满足数据类型推导规则（参见<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">互推导关系</a>），推导后的数据类型需在支持的数据类型范围内。</td>
       <td>INT16、UINT16、INT32、INT64、INT8、UINT8、UINT32、UINT64、BOOL</td>
       <td>-</td>
       <td>-</td>
@@ -103,7 +103,7 @@ aclnnStatus aclnnBitwiseAndScalar(
       <td>输出</td>
       <td>公式中的out。</td>
       <td>数据类型需要是self与other推导之后可转换的数据类型（参见<a href="../../../docs/zh/context/conversion_relationship.md" target="_blank">互转换关系</a>），shape需要与self保持一致。</td>
-      <td>BOOL、INT8、INT16、UINT16、INT32、INT64、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16</td>
+      <td>BOOL、INT8、INT16、UINT16、INT32、INT64、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16、UINT32、UINT64、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>不超过8维</td>
       <td>√</td>
@@ -310,12 +310,12 @@ int main() {
   aclTensor* out = nullptr;
   std::vector<int64_t> selfHostData = {5, 1, 2, 3};
   std::vector<int64_t> outHostData = {0, 0, 0, 0};
-  int64_t alphaValue = 6;
+  int64_t otherValue = 6;
   // 创建self aclTensor
   ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_INT64, &self);
   CHECK_RET(ret == ACL_SUCCESS, return ret);
   // 创建other aclScalar
-  other = aclCreateScalar(&alphaValue, aclDataType::ACL_INT64);
+  other = aclCreateScalar(&otherValue, aclDataType::ACL_INT64);
   CHECK_RET(other != nullptr, return ret);
   // 创建out aclTensor
   ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_INT64, &out);

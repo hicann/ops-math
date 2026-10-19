@@ -10,7 +10,7 @@
 
 /*!
  * \file bitwise_and_tiling.h
- * \brief 
+ * \brief
  */
 
 #ifndef OPS_BUILD_IN_OP_TILING_RUNTIME_BITWISE_AND_TILING_H
@@ -21,15 +21,13 @@
 #include "op_host/tiling_base_class.h"
 #include "register/op_impl_registry.h"
 
-namespace optiling
-{
+namespace optiling {
 struct BitWiseAndCompileInfo {
     uint64_t coreNum;
     uint64_t ubSize;
 };
 
-class BitwiseAndTiling : public Ops::Base::TilingBaseClass
-{
+class BitwiseAndTiling : public Ops::Base::TilingBaseClass {
 public:
     explicit BitwiseAndTiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
@@ -47,6 +45,6 @@ private:
     uint64_t tilingKey = 0;
 };
 
-}  // namespace optiling
+} // namespace optiling
 
-#endif  // OPS_BUILD_IN_OP_TILING_RUNTIME_BITWISE_AND_TILING_H
+#endif // OPS_BUILD_IN_OP_TILING_RUNTIME_BITWISE_AND_TILING_H

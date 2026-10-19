@@ -44,4 +44,3 @@ REG_OP(BitwiseAnd)
 } // namespace ge
 
 #endif // OPS_OP_PROTO_INC_BITWISE_AND_H_
-

@@ -15,7 +15,7 @@
 - <term>Atlas 200I/500 A2推理产品</term>：不支持
 <!-- end id4 -->
 <!-- npu="310p" id5 -->
-- <term>Atlas推理系列产品</term>：不支持
+- <term>Atlas推理系列产品</term>：支持
 <!-- end id5 -->
 <!-- npu="910" id6 -->
 - <term>Atlas训练系列产品</term>：支持
@@ -135,7 +135,7 @@ aclnnStatus aclnnInplaceBitwiseAndScalar(
   </colgroup>
   <thead>
     <tr>
-      <th>返回码</th>
+      <th>返回值</th>
       <th>错误码</th>
       <th>描述</th>
     </tr></thead>
@@ -157,7 +157,7 @@ aclnnStatus aclnnInplaceBitwiseAndScalar(
       <td>selfRef和other推导出的数据类型无法转换为指定输出selfRef的类型。</td>
     </tr>
     <tr>
-      <td>selfRef、other的维度超过8维。</td>
+      <td>selfRef的维度超过8维。</td>
     </tr>
   </tbody></table>
 

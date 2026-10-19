@@ -90,12 +90,12 @@ int main()
     aclTensor* out = nullptr;
     std::vector<int64_t> selfHostData = {5, 1, 2, 3};
     std::vector<int64_t> outHostData = {0, 0, 0, 0};
-    int64_t alphaValue = 6;
+    int64_t otherValue = 6;
     // 创建self aclTensor
     ret = CreateAclTensor(selfHostData, selfShape, &selfDeviceAddr, aclDataType::ACL_INT64, &self);
     CHECK_RET(ret == ACL_SUCCESS, return ret);
     // 创建other aclScalar
-    other = aclCreateScalar(&alphaValue, aclDataType::ACL_INT64);
+    other = aclCreateScalar(&otherValue, aclDataType::ACL_INT64);
     CHECK_RET(other != nullptr, return ret);
     // 创建out aclTensor
     ret = CreateAclTensor(outHostData, outShape, &outDeviceAddr, aclDataType::ACL_INT64, &out);

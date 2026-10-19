@@ -89,12 +89,15 @@ const aclTensor* BitwiseAnd(const aclTensor* self, const aclTensor* other, aclOp
     }
     // 根据输出shape申请输出tensor
     auto BitwiseAndOut = executor->AllocTensor(broadcastShape, self->GetDataType(), op::Format::FORMAT_ND);
+    if (BitwiseAndOut == nullptr) {
+        OP_LOGE(ACLNN_ERR_INNER_NULLPTR, "AllocTensor for BitwiseAndOut failed.");
+        return nullptr;
+    }
     if (IsAiCoreSupport(self)) {
         return BitwiseAndAiCore(self, other, BitwiseAndOut, executor);
     } else {
         return BitwiseAndAiCpu(self, other, BitwiseAndOut, executor);
     }
-    return BitwiseAndOut;
 }
 
 } // namespace l0op

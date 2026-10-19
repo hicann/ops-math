@@ -102,7 +102,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
       <td>输入</td>
       <td>输入tensor，公式中的self。</td>
       <td>数据类型需要与other的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。<br>shape需要与other满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
-      <td>INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL</td>
+      <td>INT16、UINT16、INT32、INT64、INT8、UINT8、UINT32、UINT64、BOOL</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -112,7 +112,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
       <td>输入</td>
       <td>输入tensor，公式中的other。</td>
       <td>数据类型需要与self的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。<br>shape需要与self满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
-      <td>INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL</td>
+      <td>INT16、UINT16、INT32、INT64、INT8、UINT8、UINT32、UINT64、BOOL</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -122,7 +122,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
       <td>输出</td>
       <td>输出tensor，公式中的out。</td>
       <td>数据类型需要是self与other推导之后可转换的数据类型。<br>shape需要是self与other满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>之后的shape。</td>
-      <td>BOOL、INT8、INT16、INT32、INT64、UINT8、UINT16、UINT32、UINT64</td>
+      <td>BOOL、INT8、INT16、UINT16、INT32、UINT32、INT64、UINT64、UINT8、FLOAT、FLOAT16、DOUBLE、BFLOAT16、COMPLEX64、COMPLEX128</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -162,7 +162,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
   </colgroup>
   <thead>
     <tr>
-      <th>返回码</th>
+      <th>返回值</th>
       <th>错误码</th>
       <th>描述</th>
     </tr></thead>
@@ -173,8 +173,8 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
       <td>传入的self、other或out是空指针。</td>
     </tr>
     <tr>
-      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="5">161002</td>
+      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="6">161002</td>
       <td>self和other的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
@@ -182,6 +182,9 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
     </tr>
     <tr>
       <td>self和other推导出的数据类型无法转换为指定输出out的类型。</td>
+    </tr>
+    <tr>
+      <td>self、other、out的数据格式需保持一致。</td>
     </tr>
     <tr>
       <td>self和other的shape无法做broadcast。</td>
@@ -265,7 +268,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
       <td>输入/输出</td>
       <td>输入和输出tensor，公式中的self。</td>
       <td>数据类型需要与other的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。<br>shape需要与other满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>，并且broadcast后的shape需与原shape保持一致。</td>
-      <td>INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL</td>
+      <td>INT16、UINT16、INT32、INT64、INT8、UINT8、UINT32、UINT64、BOOL</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -275,7 +278,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
       <td>输入</td>
       <td>输入tensor，公式中的other。</td>
       <td>数据类型需要与self的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。<br>shape需要与self满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
-      <td>INT16、UINT16、INT32、INT64、INT8、UINT8、BOOL</td>
+      <td>INT16、UINT16、INT32、INT64、INT8、UINT8、UINT32、UINT64、BOOL</td>
       <td>ND</td>
       <td>0-8</td>
       <td>√</td>
@@ -315,7 +318,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
   </colgroup>
   <thead>
     <tr>
-      <th>返回码</th>
+      <th>返回值</th>
       <th>错误码</th>
       <th>描述</th>
     </tr></thead>
@@ -326,8 +329,8 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
       <td>传入的self或other是空指针。</td>
     </tr>
     <tr>
-      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="5">161002</td>
+      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="6">161002</td>
       <td>self和other的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
@@ -335,6 +338,9 @@ aclnnStatus aclnnInplaceBitwiseAndTensorOut(
     </tr>
     <tr>
       <td>self和other推导出的数据类型无法转换为指定输出self的类型。</td>
+    </tr>
+    <tr>
+      <td>self、other的数据格式需保持一致。</td>
     </tr>
     <tr>
       <td>self和other的shape无法做broadcast。</td>

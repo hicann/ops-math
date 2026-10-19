@@ -15,7 +15,7 @@
 - <term>Atlas 200I/500 A2推理产品</term>：不支持
 <!-- end id4 -->
 <!-- npu="310p" id5 -->
-- <term>Atlas推理系列产品</term>：不支持
+- <term>Atlas推理系列产品</term>：支持
 <!-- end id5 -->
 <!-- npu="910" id6 -->
 - <term>Atlas训练系列产品</term>：支持
@@ -27,7 +27,7 @@
 - 计算公式：
 
   $$
-  selfRef_i = selfRef_i \& other
+  selfRef_i = selfRef_i \& other_i
   $$
 
 ## 函数原型
@@ -80,7 +80,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensor(
       <td>selfRef（aclTensor*）</td>
       <td>输入/输出</td>
       <td>输入和输出tensor，公式中的selfRef。</td>
-      <td>数据类型需要与other的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。shape需要与other满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
+      <td>数据类型需要与other的数据类型满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。shape需要与other满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>，且broadcast后的shape需与selfRef的shape一致。</td>
       <td>INT16、UINT16、INT32、INT64、INT8、UINT8、UINT32、UINT64、BOOL</td>
       <td>ND</td>
       <td>0-8</td>
@@ -131,7 +131,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensor(
   </colgroup>
   <thead>
     <tr>
-      <th>返回码</th>
+      <th>返回值</th>
       <th>错误码</th>
       <th>描述</th>
     </tr></thead>
@@ -139,7 +139,7 @@ aclnnStatus aclnnInplaceBitwiseAndTensor(
     <tr>
       <td>ACLNN_ERR_PARAM_NULLPTR</td>
       <td>161001</td>
-      <td>传入的selfRef、other或out是空指针。</td>
+      <td>传入的selfRef、other是空指针。</td>
     </tr>
     <tr>
       <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>

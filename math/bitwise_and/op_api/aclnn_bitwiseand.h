@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 /**
- * @brief aclnnBitwiseAnd的第一段接口，根据具体的计算流程，计算workspace大小。
+ * @brief aclnnBitwiseAndTensorOut的第一段接口，根据具体的计算流程，计算workspace大小。
  * @domain aclnn_math
  *
  * 算子功能：完成位与或者逻辑与计算
@@ -28,6 +28,22 @@ extern "C" {
  *
  * 实现说明：
  * api计算的基本路径：
+ * 计算图一
+ * 场景一：经过类型推导后，self和other的数据类型都为BOOL类型时，需要调用l0::LogicalAnd接口做计算：
+ * ```mermaid
+ * graph LR
+ *     A[(Self)] -->B([Contiguous])
+ *     B --> C([Cast])
+ *     C --> G([LogicalAnd])
+ *     D[(other)] -->E([Contiguous])
+ *     E --> F([Cast])
+ *     F --> G
+ *     G --> H([Cast])
+ *     H --> I([ViewCopy])
+ *     I --> J[(out)]
+ * ```
+ * 计算图二
+ * 场景二：经过类型推导后，self和other的数据类型都为INT类型时，需要调用l0::BitwiseAnd接口做计算：
  * ```mermaid
  * graph LR
  *     A[(Self)] -->B([Contiguous])
@@ -36,19 +52,20 @@ extern "C" {
  *     D[(other)] -->E([Contiguous])
  *     E --> F([Cast])
  *     F --> G
- *     G --> H([ViewCopy])
- *     H --> I([Cast])
+ *     G --> H([Cast])
+ *     H --> I([ViewCopy])
  *     I --> J[(out)]
  * ```
  *
  * @param [in] self: npu
- * device侧的aclTensor，数据类型支持INT16,UINT16,INT32,INT64,INT8,UINT8,BOOL，且数据类型需要与other构成互相推导关系，
+ * device侧的aclTensor，数据类型支持INT8,UINT8,INT16,UINT16,INT32,UINT32,INT64,UINT64,BOOL，且数据类型需要与other构成互相推导关系，
  * shape需要与other满足broadcast关系，支持非连续的Tensor，数据格式支持ND。
  * @param [in] other: npu
- * device侧的aclTensor，数据类型支持INT16,UINT16,INT32,INT64,INT8,UINT8,BOOL，且数据类型需要与self构成互相推导关系，
+ * device侧的aclTensor，数据类型支持INT8,UINT8,INT16,UINT16,INT32,UINT32,INT64,UINT64,BOOL，且数据类型需要与self构成互相推导关系，
  * shape需要与self满足broadcast关系，支持非连续的Tensor，数据格式支持ND。
  * @param [in] out: npu
- * device侧的aclTensor，数据类型支持INT16,UINT16,INT32,INT64,INT8,UINT8,BOOL，且数据类型需要是self与other推导之后可转换的数据类型，
+ * device侧的aclTensor，数据类型支持BOOL,INT8,UINT8,INT16,UINT16,INT32,UINT32,INT64,UINT64,FLOAT,FLOAT16,DOUBLE,BFLOAT16,COMPLEX64,COMPLEX128，
+ * 且数据类型需要是self与other推导之后可转换的数据类型，
  * shape需要是self与other，broadcast之后的shape，数据格式支持ND，且数据格式需要与self一致。
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。
@@ -59,7 +76,7 @@ ACLNN_API aclnnStatus aclnnBitwiseAndTensorOutGetWorkspaceSize(const aclTensor* 
                                                                aclOpExecutor** executor);
 
 /**
- * @brief aclnnBitwiseAnd的第二段接口，用于执行计算。
+ * @brief aclnnBitwiseAndTensorOut的第二段接口，用于执行计算。
  *
  * 算子功能：完成位与或者逻辑与计算
  * 计算公式：
@@ -67,6 +84,22 @@ ACLNN_API aclnnStatus aclnnBitwiseAndTensorOutGetWorkspaceSize(const aclTensor* 
  *
  * 实现说明：
  * api计算的基本路径：
+ * 计算图一
+ * 场景一：经过类型推导后，self和other的数据类型都为BOOL类型时，需要调用l0::LogicalAnd接口做计算：
+ * ```mermaid
+ * graph LR
+ *     A[(Self)] -->B([Contiguous])
+ *     B --> C([Cast])
+ *     C --> G([LogicalAnd])
+ *     D[(other)] -->E([Contiguous])
+ *     E --> F([Cast])
+ *     F --> G
+ *     G --> H([Cast])
+ *     H --> I([ViewCopy])
+ *     I --> J[(out)]
+ * ```
+ * 计算图二
+ * 场景二：经过类型推导后，self和other的数据类型都为INT类型时，需要调用l0::BitwiseAnd接口做计算：
  * ```mermaid
  * graph LR
  *     A[(Self)] -->B([Contiguous])
@@ -75,8 +108,8 @@ ACLNN_API aclnnStatus aclnnBitwiseAndTensorOutGetWorkspaceSize(const aclTensor* 
  *     D[(other)] -->E([Contiguous])
  *     E --> F([Cast])
  *     F --> G
- *     G --> H([ViewCopy])
- *     H --> I([Cast])
+ *     G --> H([Cast])
+ *     H --> I([ViewCopy])
  *     I --> J[(out)]
  * ```
  *
@@ -91,7 +124,7 @@ ACLNN_API aclnnStatus aclnnBitwiseAndTensorOut(void* workspace, uint64_t workspa
                                                aclrtStream stream);
 
 /**
- * @brief aclnnInplaceBitwiseAnd的第一段接口，根据具体的计算流程，计算workspace大小。
+ * @brief aclnnInplaceBitwiseAndTensorOut的第一段接口，根据具体的计算流程，计算workspace大小。
  * @domain aclnn_math
  *
  * 算子功能：完成位与或者逻辑与计算
@@ -100,6 +133,22 @@ ACLNN_API aclnnStatus aclnnBitwiseAndTensorOut(void* workspace, uint64_t workspa
  *
  * 实现说明：
  * api计算的基本路径：
+ * 计算图一
+ * 场景一：经过类型推导后，self和other的数据类型都为BOOL类型时，需要调用l0::LogicalAnd接口做计算：
+ * ```mermaid
+ * graph LR
+ *     A[(Self)] -->B([Contiguous])
+ *     B --> C([Cast])
+ *     C --> G([LogicalAnd])
+ *     D[(other)] -->E([Contiguous])
+ *     E --> F([Cast])
+ *     F --> G
+ *     G --> H([Cast])
+ *     H --> I([ViewCopy])
+ *     I --> J[(out)]
+ * ```
+ * 计算图二
+ * 场景二：经过类型推导后，self和other的数据类型都为INT类型时，需要调用l0::BitwiseAnd接口做计算：
  * ```mermaid
  * graph LR
  *     A[(Self)] -->B([Contiguous])
@@ -108,16 +157,16 @@ ACLNN_API aclnnStatus aclnnBitwiseAndTensorOut(void* workspace, uint64_t workspa
  *     D[(other)] -->E([Contiguous])
  *     E --> F([Cast])
  *     F --> G
- *     G --> H([ViewCopy])
- *     H --> I([Cast])
+ *     G --> H([Cast])
+ *     H --> I([ViewCopy])
  *     I --> J[(out)]
  * ```
  *
  * @param [in] self: npu
- * device侧的aclTensor，数据类型支持INT16,UINT16,INT32,INT64,INT8,UINT8,BOOL，且数据类型需要与other构成互相推导关系，
+ * device侧的aclTensor，数据类型支持INT8,UINT8,INT16,UINT16,INT32,UINT32,INT64,UINT64,BOOL，且数据类型需要与other构成互相推导关系，
  * shape需要与other满足broadcast关系，支持非连续的Tensor，数据格式支持ND。
  * @param [in] other: npu
- * device侧的aclTensor，数据类型支持INT16,UINT16,INT32,INT64,INT8,UINT8,BOOL，且数据类型需要与self构成互相推导关系，
+ * device侧的aclTensor，数据类型支持INT8,UINT8,INT16,UINT16,INT32,UINT32,INT64,UINT64,BOOL，且数据类型需要与self构成互相推导关系，
  * shape需要与self满足broadcast关系，支持非连续的Tensor，数据格式支持ND。
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含了算子计算流程。
@@ -128,7 +177,7 @@ ACLNN_API aclnnStatus aclnnInplaceBitwiseAndTensorOutGetWorkspaceSize(const aclT
                                                                       aclOpExecutor** executor);
 
 /**
- * @brief aclnnInplaceBitwiseAnd的第二段接口，用于执行计算。
+ * @brief aclnnInplaceBitwiseAndTensorOut的第二段接口，用于执行计算。
  *
  * 算子功能：完成位与或者逻辑与计算
  * 计算公式：
@@ -136,6 +185,22 @@ ACLNN_API aclnnStatus aclnnInplaceBitwiseAndTensorOutGetWorkspaceSize(const aclT
  *
  * 实现说明：
  * api计算的基本路径：
+ * 计算图一
+ * 场景一：经过类型推导后，self和other的数据类型都为BOOL类型时，需要调用l0::LogicalAnd接口做计算：
+ * ```mermaid
+ * graph LR
+ *     A[(Self)] -->B([Contiguous])
+ *     B --> C([Cast])
+ *     C --> G([LogicalAnd])
+ *     D[(other)] -->E([Contiguous])
+ *     E --> F([Cast])
+ *     F --> G
+ *     G --> H([Cast])
+ *     H --> I([ViewCopy])
+ *     I --> J[(out)]
+ * ```
+ * 计算图二
+ * 场景二：经过类型推导后，self和other的数据类型都为INT类型时，需要调用l0::BitwiseAnd接口做计算：
  * ```mermaid
  * graph LR
  *     A[(Self)] -->B([Contiguous])
@@ -144,8 +209,8 @@ ACLNN_API aclnnStatus aclnnInplaceBitwiseAndTensorOutGetWorkspaceSize(const aclT
  *     D[(other)] -->E([Contiguous])
  *     E --> F([Cast])
  *     F --> G
- *     G --> H([ViewCopy])
- *     H --> I([Cast])
+ *     G --> H([Cast])
+ *     H --> I([ViewCopy])
  *     I --> J[(out)]
  * ```
  *
@@ -163,4 +228,4 @@ ACLNN_API aclnnStatus aclnnInplaceBitwiseAndTensorOut(void* workspace, uint64_t 
 }
 #endif
 
-#endif  // OP_API_INC_BITWISE_AND_H_
+#endif // OP_API_INC_BITWISE_AND_H_

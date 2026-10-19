@@ -24,3 +24,8 @@ bitwise_and_aclnn_scalar_bool_true,aclnnBitwiseAndScalar,"((8, 16),(8, 16),)","(
 bitwise_and_aclnn_inplace_scalar_u8_0,aclnnInplaceBitwiseAndScalar,"((8, 16),)","('uint8',)","('ND',)","('uint8',)",{'other': 0},"(0,)","(0,)","((0,255),)","((0,0),)",1e-08
 bitwise_and_aclnn_tensor_rank0,aclnnBitwiseAndTensor,"((),(),(),)","('int8','int8','int8',)","('ND','ND','ND',)",,,"(2,)",,"((-64,63),(-64,63),)","((0,0),)",1e-08
 bitwise_and_aclnn_tensor_empty,aclnnBitwiseAndTensor,"((0, 16),(1, 16),(0, 16),)","('int8','int8','int8',)","('ND','ND','ND',)",,,"(2,)",,"((-64,63),(-64,63),)","((0,0),)",1e-08
+bitwise_and_aclnn_tensorout_uint32_001,aclnnBitwiseAndTensorOut,"((8, 16),(8, 16),(8, 16),)","('uint32','uint32','uint32',)","('ND','ND','ND',)",,,"(2,)",,"((0,1000000),(0,1000000),)","((0,0),)",1e-08
+bitwise_and_aclnn_tensorout_uint64_001,aclnnBitwiseAndTensorOut,"((8, 16),(8, 16),(8, 16),)","('uint64','uint64','uint64',)","('ND','ND','ND',)",,,"(2,)",,"((0,1000000),(0,1000000),)","((0,0),)",1e-08
+bitwise_and_aclnn_tensorout_int32_bcast,aclnnBitwiseAndTensorOut,"((2, 3, 4),(4,),(2, 3, 4),)","('int32','int32','int32',)","('ND','ND','ND',)",,,"(2,)",,"((-1000,1000),(-255,255),)","((0,0),)",1e-08
+bitwise_and_aclnn_inplace_tensorout_uint32_001,aclnnInplaceBitwiseAndTensorOut,"((8, 16),(8, 16),)","('uint32','uint32',)","('ND','ND',)",,,"(0,)","(0,)","((0,1000000),(0,1000000),)","((0,0),)",1e-08
+bitwise_and_aclnn_inplace_tensorout_out_narrow,aclnnInplaceBitwiseAndTensorOut,"((8, 16),(8, 16),)","('int8','int32',)","('ND','ND',)",,,"(0,)","(0,)","((-64,63),(-1000,1000),)","((0,0),)",1e-08

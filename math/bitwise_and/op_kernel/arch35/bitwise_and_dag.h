@@ -22,22 +22,21 @@
 
 using namespace Ops::Base;
 
-namespace BitwiseAndOp
-{
-    using namespace AscendC;
-    template <typename T>
-    struct BitwiseAndCompute {
-        using OpInputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
-        using OpInputX2 = Bind<Vec::CopyInBrc<T>, Placeholder::In1<T>>;
+namespace BitwiseAndOp {
+using namespace AscendC;
+template <typename T>
+struct BitwiseAndCompute {
+    using OpInputX1 = Bind<Vec::CopyInBrc<T>, Placeholder::In0<T>>;
+    using OpInputX2 = Bind<Vec::CopyInBrc<T>, Placeholder::In1<T>>;
 
-        using BitwiseAndRes = Bind<Vec::And<T>, OpInputX1, OpInputX2>;
+    using BitwiseAndRes = Bind<Vec::And<T>, OpInputX1, OpInputX2>;
 
-        using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, BitwiseAndRes>;
+    using OpCopyOut = Bind<Vec::CopyOut<T>, Placeholder::Out0<T>, BitwiseAndRes>;
 
-        using Outputs = Elems<OpCopyOut>;
-        using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
-        using OpDag = DAGSch<Outputs, void, MemCfg>;
-    };
+    using Outputs = Elems<OpCopyOut>;
+    using MemCfg = MemOptCfg<MemLevel::LEVEL_2>;
+    using OpDag = DAGSch<Outputs, void, MemCfg>;
+};
 
-}  // namespace BitwiseAndOp
-#endif  // BITWISE_AND_DAG_H
+} // namespace BitwiseAndOp
+#endif // BITWISE_AND_DAG_H

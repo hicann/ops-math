@@ -27,6 +27,11 @@ Ascend 950PR 实测 173/173); e2e ✅(torch.bitwise_and 函数形式, 经 torch_
    已知限制(TTK 8167baa): torch.Tensor.bitwise_and_ 方法形式因双重载回退
    alias(torch.bitwise_and) 解析出 out kwarg 并注入, 设备端调用 TypeError
    (框架调用构造问题, golden 未执行); 注册保留待上游修复, 验证用函数形式.
+
+三方(GPU)标杆: 每个 Spec 均按 TestSpec 规范声明 third_party={"torch": _XxxCompose},
+  由 TTK 远端 GPU 以设备侧 torch.Tensor 执行(与 CPU golden 同 API、不同设备, 互为
+  印证)。cross_check 档位下参与 NPU/golden/third_party 三方比对; 本算子判据为
+  binary_equal(位运算无舍入路径), 故此处仅作声明, 不改变既有精度口径。
 """
 
 import numpy as np
@@ -39,6 +44,8 @@ __spec__ = {
     "aclnnBitwiseAndScalar": "AclnnBitwiseAndScalarSpec",
     "aclnnInplaceBitwiseAndTensor": "AclnnInplaceBitwiseAndTensorSpec",
     "aclnnInplaceBitwiseAndScalar": "AclnnInplaceBitwiseAndScalarSpec",
+    "aclnnBitwiseAndTensorOut": "AclnnBitwiseAndTensorOutSpec",
+    "aclnnInplaceBitwiseAndTensorOut": "AclnnInplaceBitwiseAndTensorOutSpec",
     "torch.bitwise_and": "TorchBitwiseAndSpec",
     "torch.Tensor.bitwise_and": "TorchBitwiseAndSpec",
     "torch.Tensor.bitwise_and_": "TorchBitwiseAndInplaceSpec",
@@ -52,6 +59,8 @@ __golden__ = {
         "aclnnBitwiseAndScalar": "aclnn_bitwise_and_scalar_golden",
         "aclnnInplaceBitwiseAndTensor": "aclnn_inplace_bitwise_and_tensor_golden",
         "aclnnInplaceBitwiseAndScalar": "aclnn_inplace_bitwise_and_scalar_golden",
+        "aclnnBitwiseAndTensorOut": "aclnn_bitwise_and_tensor_out_golden",
+        "aclnnInplaceBitwiseAndTensorOut": "aclnn_inplace_bitwise_and_tensor_out_golden",
     },
     "e2e": {
         "torch.bitwise_and": "torch_bitwise_and_golden",
@@ -175,6 +184,95 @@ def _compute_api_scalar(self_t, other):
     return torch.bitwise_and(self_t, _wrap_scalar_to(other, self_t))
 
 
+# 三方(GPU)标杆: 由 TTK 远端 GPU 执行, 与 golden(CPU) 同 API、不同设备, 互为印证。
+# 形参名按各入口对位: kernel=x1/x2(def.cpp), aclnn=头文件形参(self/selfRef/other/out),
+# e2e=torch 形参(input/other)。aclnn 的 self 条目不能作为方法形参名(Python 保留名),
+# 与同仓 logical_not/neg/cast 一致以 self_ 承接; 未消费条目由 *args/**kwargs 吸收。
+
+
+class _BitwiseAndKernelCompose:
+    """三方(GPU)标杆: bitwise_and kernel(8 整型, x1/x2 同 dtype)。"""
+
+    def __init__(self, **kwargs):
+        del kwargs
+
+    def __call__(self, x1=None, x2=None, *args, **kwargs):
+        del args, kwargs
+        return [torch.bitwise_and(_as_torch(x1), _as_torch(x2))]
+
+
+class _BitwiseAndTensorCompose:
+    """三方(GPU)标杆: aclnnTensor/aclnnBitwiseAndTensorOut(self, other, out)。"""
+
+    def __init__(self, **kwargs):
+        del kwargs
+
+    def __call__(self, self_=None, other=None, out=None, *args, **kwargs):
+        del args, kwargs
+        result = _compute_api_tensor(_as_torch(self_), _as_torch(other))
+        return [_cast_into_out(result, _as_torch(out))] if out is not None else [result]
+
+
+class _BitwiseAndScalarCompose:
+    """三方(GPU)标杆: aclnnBitwiseAndScalar(self, other:Scalar, out)。"""
+
+    def __init__(self, **kwargs):
+        del kwargs
+
+    def __call__(self, self_=None, other=None, out=None, *args, **kwargs):
+        del args, kwargs
+        result = _compute_api_scalar(_as_torch(self_), other)
+        return [_cast_into_out(result, _as_torch(out))] if out is not None else [result]
+
+
+class _BitwiseAndInplaceTensorCompose:
+    """三方(GPU)标杆: aclnnInplaceBitwiseAndTensor(selfRef, other)。"""
+
+    def __init__(self, **kwargs):
+        del kwargs
+
+    def __call__(self, selfRef=None, other=None, out=None, *args, **kwargs):
+        del out, args, kwargs
+        result = _compute_api_tensor(_as_torch(selfRef), _as_torch(other))
+        return [result.to(selfRef.dtype)]
+
+
+class _BitwiseAndInplaceScalarCompose:
+    """三方(GPU)标杆: aclnnInplaceBitwiseAndScalar(selfRef, other:Scalar)。"""
+
+    def __init__(self, **kwargs):
+        del kwargs
+
+    def __call__(self, selfRef=None, other=None, out=None, *args, **kwargs):
+        del out, args, kwargs
+        result = _compute_api_scalar(_as_torch(selfRef), other)
+        return [result.to(selfRef.dtype)]
+
+
+class _TorchBitwiseAndCompose:
+    """三方(GPU)标杆: torch.bitwise_and(input, other) 函数形式(e2e)。"""
+
+    def __init__(self, **kwargs):
+        del kwargs
+
+    def __call__(self, input=None, other=None, out=None, *args, **kwargs):
+        del out, args, kwargs
+        return [torch.bitwise_and(_as_torch(input), _as_torch(other))]
+
+
+class _TorchBitwiseAndInplaceCompose:
+    """三方(GPU)标杆: torch.Tensor.bitwise_and_(self, other) 方法形式(e2e)。"""
+
+    def __init__(self, **kwargs):
+        del kwargs
+
+    def __call__(self, self_=None, other=None, *args, **kwargs):
+        del args, kwargs
+        result = _as_torch(self_).clone()
+        result.bitwise_and_(_as_torch(other))
+        return [result]
+
+
 class BitwiseAndKernelSpec:
     """Kernel/GEIR: numpy 入参, torch 计算; 契约源 def.cpp + tiling.cpp (同 dtype, 8 整型)."""
 
@@ -195,6 +293,7 @@ class BitwiseAndKernelSpec:
         # numpy 式广播 == BroadcastBaseTiling 规则, torch 逐位一致
         return [torch.bitwise_and(_to_torch(x1), _to_torch(x2)).numpy()]
 
+    third_party = {"torch": _BitwiseAndKernelCompose}
     tolerance = _KERNEL_TOLERANCE
 
 
@@ -212,6 +311,7 @@ class AclnnBitwiseAndTensorSpec:
             return [_cast_into_out(result, _as_torch(out))]
         return [result]
 
+    third_party = {"torch": _BitwiseAndTensorCompose}
     tolerance = _API_TOLERANCE
 
 
@@ -228,6 +328,7 @@ class AclnnBitwiseAndScalarSpec:
             return [_cast_into_out(result, _as_torch(out))]
         return [result]
 
+    third_party = {"torch": _BitwiseAndScalarCompose}
     tolerance = _API_TOLERANCE
 
 
@@ -243,6 +344,7 @@ class AclnnInplaceBitwiseAndTensorSpec:
         result = _compute_api_tensor(selfRef, other)
         return [result.to(selfRef.dtype)]
 
+    third_party = {"torch": _BitwiseAndInplaceTensorCompose}
     tolerance = _API_TOLERANCE
 
 
@@ -256,7 +358,18 @@ class AclnnInplaceBitwiseAndScalarSpec:
         result = _compute_api_scalar(selfRef, other)
         return [result.to(selfRef.dtype)]
 
+    third_party = {"torch": _BitwiseAndInplaceScalarCompose}
     tolerance = _API_TOLERANCE
+
+
+class AclnnBitwiseAndTensorOutSpec(AclnnBitwiseAndTensorSpec):
+    """ACLNN: 签名随 aclnnBitwiseAndTensorOutGetWorkspaceSize(self, other, out);
+    计算与推导契约同 AclnnBitwiseAndTensorSpec(TensorOut 与 Tensor 等价)."""
+
+
+class AclnnInplaceBitwiseAndTensorOutSpec(AclnnInplaceBitwiseAndTensorSpec):
+    """ACLNN: 签名随 aclnnInplaceBitwiseAndTensorOutGetWorkspaceSize(selfRef, other);
+    计算与推导契约同 AclnnInplaceBitwiseAndTensorSpec."""
 
 
 class TorchBitwiseAndSpec:
@@ -268,6 +381,7 @@ class TorchBitwiseAndSpec:
         del kwargs
         return [torch.bitwise_and(_as_torch(input), _as_torch(other))]
 
+    third_party = {"torch": _TorchBitwiseAndCompose}
     tolerance = _API_TOLERANCE
 
 
@@ -282,6 +396,7 @@ class TorchBitwiseAndInplaceSpec:
         result.bitwise_and_(_as_torch(other))
         return [result]
 
+    third_party = {"torch": _TorchBitwiseAndInplaceCompose}
     tolerance = _API_TOLERANCE
 
 
@@ -312,6 +427,16 @@ def aclnn_inplace_bitwise_and_tensor_golden(selfRef, other, **kwargs):
 def aclnn_inplace_bitwise_and_scalar_golden(selfRef, other, **kwargs):
     """legacy aclnn golden: aclnnInplaceBitwiseAndScalar."""
     return AclnnInplaceBitwiseAndScalarSpec.golden(selfRef, other, **kwargs)
+
+
+def aclnn_bitwise_and_tensor_out_golden(selfT, other, out=None, **kwargs):
+    """legacy aclnn golden: aclnnBitwiseAndTensorOut."""
+    return AclnnBitwiseAndTensorOutSpec.golden(selfT, other, out=out, **kwargs)
+
+
+def aclnn_inplace_bitwise_and_tensor_out_golden(selfRef, other, **kwargs):
+    """legacy aclnn golden: aclnnInplaceBitwiseAndTensorOut."""
+    return AclnnInplaceBitwiseAndTensorOutSpec.golden(selfRef, other, **kwargs)
 
 
 def torch_bitwise_and_golden(input, other, **kwargs):

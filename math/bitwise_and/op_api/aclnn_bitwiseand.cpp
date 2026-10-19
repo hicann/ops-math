@@ -35,9 +35,13 @@ extern "C" {
  * self                               other
  *   |                                  |
  *   \                                  /
- * Contiguous(workspace_0)    Contiguous(workspace_1)
- *            \                       /
- *             LogicalAnd(workspace_2)
+ * Contiguous(workspace_0)    Contiguous(workspace_2)
+ *      \                             /
+ *     Cast(workspace_1)     Cast(workspace_3)
+ *               \            /
+ *             LogicalAnd(workspace_4)
+ *                    |
+ *              Cast(workspace_5)
  *                    |
  *                ViewCopy
  *                    |
@@ -61,8 +65,9 @@ extern "C" {
 
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_INT16, op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_INT8,
-    op::DataType::DT_UINT8, op::DataType::DT_BOOL,  op::DataType::DT_UINT16};
+    op::DataType::DT_INT8,   op::DataType::DT_INT16,  op::DataType::DT_INT32,
+    op::DataType::DT_INT64,  op::DataType::DT_UINT8,  op::DataType::DT_UINT16,
+    op::DataType::DT_UINT32, op::DataType::DT_UINT64, op::DataType::DT_BOOL};
 
 static bool CheckNotNull(const aclTensor* self, const aclTensor* other, const aclTensor* out)
 {
