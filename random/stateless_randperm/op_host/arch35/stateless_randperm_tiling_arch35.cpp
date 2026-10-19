@@ -50,9 +50,10 @@ static const std::map<ge::DataType, int64_t> maxValueMap = {
     {ge::DT_INT16, std::numeric_limits<int16_t>::max()},
     {ge::DT_UINT8, std::numeric_limits<uint8_t>::max()},
     {ge::DT_INT8, std::numeric_limits<int8_t>::max()},
-    {ge::DT_FLOAT, std::numeric_limits<float>::max()},
-    {ge::DT_FLOAT16, static_cast<int64_t>((2.0 - std::exp2(-10.0)) * std::exp2(15.0))},
-    {ge::DT_BF16, static_cast<int64_t>((2.0 - std::exp2(-7.0)) * std::exp2(127.0))},
+    // 浮点类型取可精确表示的最大连续整数（2^尾数位数），保证排列输出0..n-1的唯一性
+    {ge::DT_FLOAT, int64_t(1) << 24},
+    {ge::DT_FLOAT16, int64_t(1) << 11},
+    {ge::DT_BF16, int64_t(1) << 8},
 };
 
 // 1、获取平台信息比如CoreNum、UB/L1/L0C资源大小
@@ -143,15 +144,15 @@ ge::graphStatus StatelessRandpermTiling::GetInputN()
                                               "DT_UINT8, DT_INT8, DT_FLOAT, DT_FLOAT16, DT_BF16]");
         return ge::GRAPH_FAILED;
     }
-    if (n_ > maxIter->second) {
-        std::string valueStr = std::to_string(n_);
-        std::string reasonMsg = "input n must not be greater than max value of [attr]dtype";
-        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName_, "input tensor n", valueStr.c_str(), reasonMsg.c_str());
-        return ge::GRAPH_FAILED;
-    }
     if (n_ < 0) {
         std::string valueStr = std::to_string(n_);
         std::string reasonMsg = "input n must be non-negative";
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName_, "input tensor n", valueStr.c_str(), reasonMsg.c_str());
+        return ge::GRAPH_FAILED;
+    }
+    if (n_ - 1 > maxIter->second) {
+        std::string valueStr = std::to_string(n_);
+        std::string reasonMsg = "the max permuted value (n-1) must not be greater than max value of [attr]dtype";
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName_, "input tensor n", valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }
@@ -270,9 +271,9 @@ ge::graphStatus StatelessRandpermTiling::GetOutputY()
                 OP_LOGE(opName_, "max value of y.dtype does not exist in the map, please check."),
                 return ge::GRAPH_FAILED);
     const double nMax = iter->second;
-    if (static_cast<double>(yLen) > nMax) {
+    if (static_cast<double>(yLen - 1) > nMax) {
         std::string valueStr = std::to_string(yLen);
-        std::string reasonMsg = "output y shape[0] is over the max value of y dtype";
+        std::string reasonMsg = "the max permuted value (n-1) must not be greater than max value of y dtype";
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(opName_, "output tensor y", valueStr.c_str(), reasonMsg.c_str());
         return ge::GRAPH_FAILED;
     }

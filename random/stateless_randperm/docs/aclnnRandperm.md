@@ -222,7 +222,8 @@ aclnnStatus aclnnRandperm(
 - 确定性计算：aclnnRandperm默认确定性实现。
 <!-- npu="950" id8 -->
 - Ascend 950PR&950DT系列产品：
-  - INT64、INT32、INT16、UINT8、INT8、FLOAT、FLOAT16、BFLOAT16：n不超过int32的最大值。
+  - INT64、INT32：n不超过int32的最大值。
+  - INT8：n不超过128；UINT8：n不超过256；INT16：n不超过32768；FLOAT16：n不超过2049；BFLOAT16：n不超过257；FLOAT：n不超过16777217（输出为0..n-1的随机排列，最大输出值n-1需能被输出dtype精确表示）。
   - DOUBLE：当n大于268000000时有运行超时风险，通过aclrtSetOpExecuteTimeOut设置超时时间。
 <!-- end id8 -->
 

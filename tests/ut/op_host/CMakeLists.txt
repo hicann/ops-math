@@ -82,6 +82,8 @@ target_link_libraries(${OP_HOST_UT_EXE} PRIVATE
     -Wl,--no-as-needed
         metadef
         unified_dlog
+    # 防止libregister被--as-needed裁剪，确保DT_NEEDED保留以供op_host so运行时dlopen解析符号
+    "-Wl,--no-as-needed,${ASCEND_DIR}/${SYSTEM_PREFIX}/lib64/libregister.so"
     -Wl,--as-needed
     register
     opp_registry

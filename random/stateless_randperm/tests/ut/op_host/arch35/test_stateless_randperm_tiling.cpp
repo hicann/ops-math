@@ -139,3 +139,79 @@ TEST_F(StatelessRandpermTiling, stateless_randperm_tiling_950_struct_check)
     bool result = CheckTilingDataDefinitions();
     EXPECT_TRUE(result);
 }
+
+struct RandpermBoundaryCase {
+    vector<int64_t> nValue;
+    vector<int64_t> seedValue;
+    vector<int64_t> offsetValue;
+    optiling::StatelessRandpermCompileInfo compileInfo;
+    gert::TilingContextPara para;
+
+    RandpermBoundaryCase(int64_t n, ge::DataType dtype)
+        : nValue{n},
+          seedValue{1},
+          offsetValue{0},
+          compileInfo{64, 196608},
+          para("StatelessRandperm",
+               {{gert::StorageShape({1}, {1}), ge::DT_INT64, ge::FORMAT_ND, true, nValue.data()},
+                {gert::StorageShape({1}, {1}), ge::DT_INT64, ge::FORMAT_ND, true, seedValue.data()},
+                {gert::StorageShape({1}, {1}), ge::DT_INT64, ge::FORMAT_ND, true, offsetValue.data()}},
+               {{gert::StorageShape({n}, {n}), dtype, ge::FORMAT_ND}},
+               {gert::TilingContextPara::OpAttr("dtype",
+                                                Ops::Math::AnyValue::CreateFrom<int64_t>(static_cast<int64_t>(dtype)))},
+               &compileInfo)
+    {}
+};
+
+// 输出为0..n-1的排列，最大输出值为n-1：n-1可被dtype表示时应放行，n-1溢出时应拒绝
+TEST_F(StatelessRandpermTiling, stateless_randperm_tiling_950_int8_boundary)
+{
+    RandpermBoundaryCase acceptCase(128, ge::DT_INT8);
+    RandpermBoundaryCase rejectCase(129, ge::DT_INT8);
+    ExecuteTestCase(acceptCase.para, ge::GRAPH_SUCCESS, 16843010, std::vector<size_t>{16779264});
+    ExecuteTestCase(rejectCase.para, ge::GRAPH_FAILED);
+}
+
+TEST_F(StatelessRandpermTiling, stateless_randperm_tiling_950_uint8_boundary)
+{
+    RandpermBoundaryCase acceptCase(256, ge::DT_UINT8);
+    RandpermBoundaryCase rejectCase(257, ge::DT_UINT8);
+    ExecuteTestCase(acceptCase.para, ge::GRAPH_SUCCESS, 16843010, std::vector<size_t>{16781312});
+    ExecuteTestCase(rejectCase.para, ge::GRAPH_FAILED);
+}
+
+TEST_F(StatelessRandpermTiling, stateless_randperm_tiling_950_int16_boundary)
+{
+    RandpermBoundaryCase acceptCase(32768, ge::DT_INT16);
+    RandpermBoundaryCase rejectCase(32769, ge::DT_INT16);
+    ExecuteTestCase(acceptCase.para, ge::GRAPH_SUCCESS, 16908547, std::vector<size_t>{18292736});
+    ExecuteTestCase(rejectCase.para, ge::GRAPH_FAILED);
+}
+
+// 浮点类型按连续整数精确表示上限校验：最大输出值n-1超出精度范围（会舍入产生重复值）时应拒绝
+TEST_F(StatelessRandpermTiling, stateless_randperm_tiling_950_float16_boundary)
+{
+    RandpermBoundaryCase acceptCase(2049, ge::DT_FLOAT16);
+    RandpermBoundaryCase rejectCase(2050, ge::DT_FLOAT16);
+    ExecuteTestCase(acceptCase.para, ge::GRAPH_SUCCESS, 16843010, std::vector<size_t>{16810000});
+    ExecuteTestCase(rejectCase.para, ge::GRAPH_FAILED);
+}
+
+TEST_F(StatelessRandpermTiling, stateless_randperm_tiling_950_bfloat16_boundary)
+{
+    RandpermBoundaryCase acceptCase(257, ge::DT_BF16);
+    RandpermBoundaryCase rejectCase(258, ge::DT_BF16);
+    ExecuteTestCase(acceptCase.para, ge::GRAPH_SUCCESS, 16843010, std::vector<size_t>{16781328});
+    ExecuteTestCase(rejectCase.para, ge::GRAPH_FAILED);
+}
+
+TEST_F(StatelessRandpermTiling, stateless_randperm_tiling_950_float_boundary)
+{
+    RandpermBoundaryCase acceptCase(16777217, ge::DT_FLOAT);
+    RandpermBoundaryCase rejectCase(16777218, ge::DT_FLOAT);
+    // 大规模n的sort workspace依赖运行环境平台信息查询结果，不校验环境相关workspace
+    TilingInfo info;
+    EXPECT_TRUE(ExecuteTiling(acceptCase.para, info));
+    EXPECT_EQ(info.tilingKey, 16908547);
+    ExecuteTestCase(rejectCase.para, ge::GRAPH_FAILED);
+}
