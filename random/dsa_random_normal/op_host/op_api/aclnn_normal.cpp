@@ -199,7 +199,9 @@ static const aclTensor* normalDoublePath(const aclTensor* selfContiguous, const 
 static const aclTensor* normalDavidPath(const aclTensor* selfContiguous, int64_t seed, int64_t offset, float mean,
                                         float std, aclOpExecutor* executor)
 {
-    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 &&
+    if ((GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 ||
+         GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_9201 ||
+         GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_9202) &&
         selfContiguous->GetDataType() != DataType::DT_DOUBLE) {
         if (!aclnnGetPytorchRandom()) {
             OP_LOGD("compat mode, use V3 Normal");
@@ -260,7 +262,9 @@ static const aclTensor* normalTensorDavidPath(const aclTensor* selfContiguous, c
         return nullptr;
     }
 
-    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 &&
+    if ((GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 ||
+         GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_9201 ||
+         GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_9202) &&
         selfContiguous->GetDataType() != DataType::DT_DOUBLE) {
         if (!aclnnGetPytorchRandom()) {
             OP_LOGD("compat mode, use V3 Normal");
