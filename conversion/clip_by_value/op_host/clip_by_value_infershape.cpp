@@ -17,5 +17,12 @@
 
 using namespace ge;
 namespace ops {
-IMPL_OP_INFERSHAPE(ClipByValue).InferShape(Ops::Base::InferShape4Broadcast);
+constexpr size_t INPUT_NUM_THREE = 3;
+
+static ge::graphStatus InferShape4ClipByValue(gert::InferShapeContext* context)
+{
+    return Ops::Base::InferShape4Broadcast(context, INPUT_NUM_THREE);
+}
+
+IMPL_OP_INFERSHAPE(ClipByValue).InferShape(InferShape4ClipByValue);
 } // namespace ops
