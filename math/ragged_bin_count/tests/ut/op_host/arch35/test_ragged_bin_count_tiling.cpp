@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <iostream>
 #include <limits>
+#include <map>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -18,6 +19,8 @@
 #include "gtest/gtest.h"
 #include "tiling_case_executor.h"
 #include "tiling_context_faker.h"
+#include "platform/platform_infos_def.h"
+#include "base/registry/op_impl_space_registry_v2.h"
 #include "../../../../op_kernel/arch35/ragged_bin_count_precision_policy.h"
 #include "../../../../op_kernel/arch35/ragged_bin_count_tiling_data.h"
 
@@ -1049,4 +1052,103 @@ TEST_F(RaggedBinCountTilingTest, test_dynamic_ub_size_must_fit_host_api_range)
                                     },
                                     {}, &compileInfo, DEFAULT_CORE_NUM, oversizedUb, DEFAULT_TILING_DATA_SIZE);
     ExecuteTestCase(context, ge::GRAPH_FAILED);
+}
+
+// Exercise the real GE deterministic flag, key selection and bounded workspace
+// together; the shared ExecuteTiling helper does not expose this context input.
+TEST_F(RaggedBinCountTilingTest, test_deterministic_dispatch_and_workspace_boundary)
+{
+    struct Scenario {
+        int64_t values;
+        int64_t bins;
+        uint32_t cores;
+        uint64_t countExtraWorkspace;
+        uint64_t weightExtraWorkspace;
+        uint64_t defaultKey;
+        uint64_t ubBytes = 262144;
+        bool deterministicFailure = false;
+    };
+    const Scenario scenarios[] = {
+        {65536, 1, 64, 4096, 16384, 4},
+        {65536, 256, 64, 1048576, 4194304, 4},
+        {65536, 257, 64, 1052672, 1052672, 4},
+        {65536, 4095, 64, 16773120, 16773120, 4},
+        {65536, 4096, 64, 16777216, 16777216, 4},
+        {65536, 4097, 64, 524416, 524416, 4},
+        {65536, 8192, 64, 1048576, 1048576, 4},
+        {65536, 8193, 64, 1048704, 1048704, 4},
+        {65536, 524288, 64, 67108864, 67108864, 4},
+        {65536, 524289, 64, 0, 0, 4},
+        {64, 8, 1, 0, 0, 0},
+        {40306591, 1, 64, 2523136, 4194304, 4},
+        {65536, 8193, 64, 0, 0, 4, 163839, true},
+        {65536, 8193, 64, 1048704, 1048704, 4, 163840, false},
+    };
+    for (const bool weighted : {false, true}) {
+        for (const auto& scenario : scenarios) {
+            const int64_t values = scenario.values;
+            const int64_t bins = scenario.bins;
+            for (const int32_t deterministic : {0, 1}) {
+                SCOPED_TRACE("weighted=" + std::to_string(weighted) + ", bins=" + std::to_string(bins) +
+                             ", values=" + std::to_string(values) + ", deterministic=" + std::to_string(deterministic));
+                int64_t sizeData = bins;
+                gert::StorageFormat format(ge::FORMAT_ND, ge::FORMAT_ND, gert::ExpandDimsType());
+                gert::Tensor splitsTensor({{2}, {2}}, format, gert::TensorPlacement::kOnHost, ge::DT_INT64, nullptr);
+                gert::Tensor valuesTensor({{values}, {values}}, format, gert::TensorPlacement::kOnHost, ge::DT_INT64,
+                                          nullptr);
+                gert::Tensor sizeTensor({{1}, {1}}, format, gert::TensorPlacement::kOnHost, ge::DT_INT64, &sizeData);
+                const int64_t weights = weighted ? values : 0;
+                gert::Tensor weightsTensor({{weights}, {weights}}, format, gert::TensorPlacement::kOnHost, ge::DT_FLOAT,
+                                           nullptr);
+                gert::Tensor outputTensor({{1, bins}, {1, bins}}, format, gert::TensorPlacement::kOnHost, ge::DT_FLOAT,
+                                          nullptr);
+                fe::PlatFormInfos platform;
+                platform.Init();
+                std::map<std::string, std::string> soc = {{"ai_core_cnt", "64"}, {"core_type_list", "AICore"}};
+                std::map<std::string, std::string> spec = {{"ub_size", std::to_string(scenario.ubBytes)}};
+                std::map<std::string, std::string> version = {{"NpuArch", "3510"}, {"Short_SoC_version", "Ascend950"}};
+                platform.SetPlatformRes("SoCInfo", soc);
+                platform.SetPlatformRes("AICoreSpec", spec);
+                platform.SetPlatformRes("version", version);
+                platform.SetCoreNumByCoreType("AICore");
+                auto data = gert::TilingData::CreateCap(DEFAULT_TILING_DATA_SIZE);
+                auto workspace = gert::ContinuousVector::Create<size_t>(16);
+                RaggedBinCountCompileInfo compileInfo;
+                int32_t flag = deterministic;
+                auto holder = gert::TilingContextFaker()
+                                  .NodeIoNum(4, 1)
+                                  .InputTensors({&splitsTensor, &valuesTensor, &sizeTensor, &weightsTensor})
+                                  .OutputTensors({&outputTensor})
+                                  .Attr("binary_output", false)
+                                  .DeterministicInfo(&flag)
+                                  .SetOpType("RaggedBinCount")
+                                  .CompileInfo(&compileInfo)
+                                  .PlatformInfo(reinterpret_cast<char*>(&platform))
+                                  .TilingData(data.get())
+                                  .Workspace(reinterpret_cast<gert::ContinuousVector*>(workspace.get()))
+                                  .Build();
+                auto context = holder.GetContext();
+                auto registry = gert::DefaultOpImplSpaceRegistryV2::GetInstance().GetSpaceRegistry();
+                ASSERT_NE(registry, nullptr);
+                auto functions = registry->GetOpImpl("RaggedBinCount");
+                ASSERT_NE(functions, nullptr);
+                const auto status = functions->tiling(context);
+                if (deterministic && scenario.deterministicFailure) {
+                    EXPECT_EQ(status, ge::GRAPH_FAILED);
+                    continue;
+                }
+                ASSERT_EQ(status, ge::GRAPH_SUCCESS);
+                EXPECT_EQ(context->GetTilingKey(), (deterministic ? 8U : scenario.defaultKey) + (weighted ? 1U : 0U));
+                const auto* result = context->GetTilingData<RaggedBinCountTilingData>();
+                ASSERT_NE(result, nullptr);
+                EXPECT_EQ(result->usedCoreNum, scenario.cores);
+                if (deterministic) {
+                    EXPECT_EQ(result->privateHistElems, 0U);
+                    EXPECT_EQ(context->GetWorkspaceSizes(1)[0],
+                              EXPECTED_TOTAL_WORKSPACE +
+                                  (weighted ? scenario.weightExtraWorkspace : scenario.countExtraWorkspace));
+                }
+            }
+        }
+    }
 }

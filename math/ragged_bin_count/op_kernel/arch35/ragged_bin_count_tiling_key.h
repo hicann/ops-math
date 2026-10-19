@@ -13,7 +13,7 @@
  * \brief Tiling key declaration for RaggedBinCount.
  *
  * schMode = mappingMode * 4 + binaryOutput * 2 + hasWeights.
- * mappingMode: 0=row ownership, 1=value-centric.
+ * mappingMode: 0=row ownership, 1=value-centric, 2=deterministic reduction.
  */
 #ifndef RAGGED_BIN_COUNT_TILING_KEY_H
 #define RAGGED_BIN_COUNT_TILING_KEY_H
@@ -28,18 +28,21 @@
 #define RBC_SCH_VALUE_COUNT_WEIGHT 5
 #define RBC_SCH_VALUE_BINARY_NO_WEIGHT 6
 #define RBC_SCH_VALUE_BINARY_WEIGHT 7
+#define RBC_SCH_DETERMINISTIC_COUNT 8
+#define RBC_SCH_DETERMINISTIC_WEIGHT 9
 
-ASCENDC_TPL_ARGS_DECL(RaggedBinCount,
-                      ASCENDC_TPL_UINT_DECL(schMode, 8, ASCENDC_TPL_UI_LIST, RBC_SCH_ROW_COUNT_NO_WEIGHT,
-                                            RBC_SCH_ROW_COUNT_WEIGHT, RBC_SCH_ROW_BINARY_NO_WEIGHT,
-                                            RBC_SCH_ROW_BINARY_WEIGHT, RBC_SCH_VALUE_COUNT_NO_WEIGHT,
-                                            RBC_SCH_VALUE_COUNT_WEIGHT, RBC_SCH_VALUE_BINARY_NO_WEIGHT,
-                                            RBC_SCH_VALUE_BINARY_WEIGHT));
+ASCENDC_TPL_ARGS_DECL(RaggedBinCount, ASCENDC_TPL_UINT_DECL(schMode, 8, ASCENDC_TPL_UI_LIST,
+                                                            RBC_SCH_ROW_COUNT_NO_WEIGHT, RBC_SCH_ROW_COUNT_WEIGHT,
+                                                            RBC_SCH_ROW_BINARY_NO_WEIGHT, RBC_SCH_ROW_BINARY_WEIGHT,
+                                                            RBC_SCH_VALUE_COUNT_NO_WEIGHT, RBC_SCH_VALUE_COUNT_WEIGHT,
+                                                            RBC_SCH_VALUE_BINARY_NO_WEIGHT, RBC_SCH_VALUE_BINARY_WEIGHT,
+                                                            RBC_SCH_DETERMINISTIC_COUNT, RBC_SCH_DETERMINISTIC_WEIGHT));
 
 ASCENDC_TPL_SEL(ASCENDC_TPL_ARGS_SEL(ASCENDC_TPL_UINT_SEL(schMode, ASCENDC_TPL_UI_LIST, RBC_SCH_ROW_COUNT_NO_WEIGHT,
                                                           RBC_SCH_ROW_COUNT_WEIGHT, RBC_SCH_ROW_BINARY_NO_WEIGHT,
                                                           RBC_SCH_ROW_BINARY_WEIGHT, RBC_SCH_VALUE_COUNT_NO_WEIGHT,
                                                           RBC_SCH_VALUE_COUNT_WEIGHT, RBC_SCH_VALUE_BINARY_NO_WEIGHT,
-                                                          RBC_SCH_VALUE_BINARY_WEIGHT)));
+                                                          RBC_SCH_VALUE_BINARY_WEIGHT, RBC_SCH_DETERMINISTIC_COUNT,
+                                                          RBC_SCH_DETERMINISTIC_WEIGHT)));
 
 #endif // RAGGED_BIN_COUNT_TILING_KEY_H

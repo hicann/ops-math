@@ -57,6 +57,7 @@ constexpr uint32_t SCHEDULE_MODE_SYNC_ALL = 1U;
 
 constexpr uint32_t MAPPING_MODE_ROW = 0U;
 constexpr uint32_t MAPPING_MODE_VALUE = 1U;
+constexpr uint32_t MAPPING_MODE_DETERMINISTIC = 2U;
 // The schMode shifts are not redeclared here: they live in ragged_bin_count_tiling_data.h as
 // RBC_MAPPING_MODE_SHIFT / RBC_BINARY_OUTPUT_SHIFT so this encoder and the kernel-entry decoder read
 // from one definition.
@@ -384,17 +385,38 @@ ge::graphStatus ResolveUserWorkspaceSize(const gert::TilingContext* context, con
                                          const ScheduleParams& schedule, uint64_t& userWorkspaceSize)
 {
     userWorkspaceSize = NsRaggedBinCount::USER_WORKSPACE_HEADER_BYTES;
-    const bool usePreciseValue = schedule.mappingMode == MAPPING_MODE_VALUE && problem.hasWeights &&
-                                 !schedule.binaryOutput &&
-                                 NsRaggedBinCount::UsePreciseValuePath(problem.numValues, problem.numBins);
+    if (schedule.mappingMode == MAPPING_MODE_DETERMINISTIC &&
+        NsRaggedBinCount::UseDeterministicDirect(problem.numValues, problem.numRows)) {
+        return ge::GRAPH_SUCCESS;
+    }
+    if (schedule.mappingMode == MAPPING_MODE_DETERMINISTIC &&
+        !NsRaggedBinCount::UseDeterministicPartials(problem.outputElements, schedule.coreNum) &&
+        NsRaggedBinCount::UseDeterministicHistogram(problem.outputElements)) {
+        // The shared policy bounds this product and the following header addition.
+        userWorkspaceSize += static_cast<uint64_t>(problem.outputElements) *
+                             NsRaggedBinCount::DETERMINISTIC_HISTOGRAM_SLOT_BYTES;
+        return ge::GRAPH_SUCCESS;
+    }
+    const bool usePreciseValue = (schedule.mappingMode == MAPPING_MODE_DETERMINISTIC &&
+                                  NsRaggedBinCount::UseDeterministicPartials(problem.outputElements,
+                                                                             schedule.coreNum)) ||
+                                 (schedule.mappingMode == MAPPING_MODE_VALUE && problem.hasWeights &&
+                                  !schedule.binaryOutput &&
+                                  NsRaggedBinCount::UsePreciseValuePath(problem.numValues, problem.numBins));
     if (!usePreciseValue) {
         return ge::GRAPH_SUCCESS;
     }
 
     const uint64_t coreNum = static_cast<uint64_t>(schedule.coreNum);
     const uint64_t outputElements = static_cast<uint64_t>(problem.outputElements);
-    constexpr uint64_t partitions = static_cast<uint64_t>(NsRaggedBinCount::PRECISE_VALUE_PARTITIONS_PER_CORE);
-    constexpr uint64_t slotBytes = NsRaggedBinCount::PRECISE_VALUE_PARTIAL_BYTES;
+    const bool deterministic = schedule.mappingMode == MAPPING_MODE_DETERMINISTIC;
+    const uint64_t partitions = deterministic ?
+                                    static_cast<uint64_t>(NsRaggedBinCount::DeterministicPartitionsPerCore(
+                                        problem.numValues, problem.outputElements, schedule.coreNum,
+                                        problem.hasWeights)) :
+                                    static_cast<uint64_t>(NsRaggedBinCount::PRECISE_VALUE_PARTITIONS_PER_CORE);
+    const uint64_t slotBytes = deterministic ? NsRaggedBinCount::DETERMINISTIC_PARTIAL_BYTES :
+                                               NsRaggedBinCount::PRECISE_VALUE_PARTIAL_BYTES;
     constexpr uint64_t maxValue = std::numeric_limits<uint64_t>::max();
     OP_CHECK_IF(outputElements != 0U && coreNum > maxValue / outputElements,
                 OP_LOGE(context->GetNodeName(), "The precise VALUE workspace entry count overflows uint64."),
@@ -435,10 +457,25 @@ ge::graphStatus ResolveSchedule(gert::TilingContext* context, const ProblemSize&
         }
     }
 
+    // Binary output is already order independent. Counting and weighting need
+    // fixed ownership/reduction when determinism is requested by GE.
+    if (context->GetDeterministic() == 1 && !schedule.binaryOutput) {
+        schedule.mappingMode = MAPPING_MODE_DETERMINISTIC;
+    }
     const bool usePreciseValue = schedule.mappingMode == MAPPING_MODE_VALUE && problem.hasWeights &&
                                  !schedule.binaryOutput &&
                                  NsRaggedBinCount::UsePreciseValuePath(problem.numValues, problem.numBins);
-    schedule.privateHistElems = usePreciseValue ? 0U : DecidePrivateHistElems(problem, budget, schedule.coreNum);
+    schedule.privateHistElems = (usePreciseValue || schedule.mappingMode == MAPPING_MODE_DETERMINISTIC) ?
+                                    0U :
+                                    DecidePrivateHistElems(problem, budget, schedule.coreNum);
+    const bool useIntegerHistogram = schedule.mappingMode == MAPPING_MODE_DETERMINISTIC &&
+                                     !NsRaggedBinCount::UseDeterministicDirect(problem.numValues, problem.numRows) &&
+                                     !NsRaggedBinCount::UseDeterministicPartials(problem.outputElements,
+                                                                                 schedule.coreNum) &&
+                                     NsRaggedBinCount::UseDeterministicHistogram(problem.outputElements);
+    OP_CHECK_IF(useIntegerHistogram && budget.localMemorySize < NsRaggedBinCount::DETERMINISTIC_ZERO_BUFFER_BYTES,
+                OP_LOGE(context->GetNodeName(), "UB is too small for deterministic histogram initialization."),
+                return ge::GRAPH_FAILED);
     schedule.schMode = (schedule.mappingMode << RBC_MAPPING_MODE_SHIFT) |
                        (static_cast<uint32_t>(schedule.binaryOutput) << RBC_BINARY_OUTPUT_SHIFT) |
                        static_cast<uint32_t>(problem.hasWeights);

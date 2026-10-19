@@ -33,7 +33,7 @@ struct RaggedBinCountTilingData {
 // Both sides of the key live on these three constants -- the host tiling encodes with them and the
 // kernel entry decodes with them. They used to be host-side constants paired with bare literals in the
 // kernel entry, which is the worst kind of duplication here: changing one shift would still compile,
-// still emit all eight keys, and only show up as wrong numbers at runtime.
+// still emit the keys, and only show up as wrong numbers at runtime.
 constexpr uint32_t RBC_MAPPING_MODE_SHIFT = 2U;
 constexpr uint32_t RBC_BINARY_OUTPUT_SHIFT = 1U;
 constexpr uint32_t RBC_HAS_WEIGHTS_MASK = 1U;

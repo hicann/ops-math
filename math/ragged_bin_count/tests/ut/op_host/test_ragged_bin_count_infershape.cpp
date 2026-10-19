@@ -18,6 +18,39 @@
 #include "infershape_context_faker.h"
 #include "../../../op_host/ragged_bin_count_check_support.h"
 
+namespace {
+class RaggedBinCountSupportOp : public ge::Operator {
+public:
+    RaggedBinCountSupportOp() : ge::Operator("ragged_bin_count_support_test", "RaggedBinCount")
+    {
+        InputRegister("splits");
+        InputRegister("values");
+        InputRegister("size");
+        InputRegister("weights");
+        OutputRegister("output");
+    }
+};
+
+void CheckNativeSupport(ge::DataType valuesType, ge::DataType sizeType, ge::DataType weightsType,
+                        ge::graphStatus expected)
+{
+    RaggedBinCountSupportOp op;
+    ASSERT_EQ(op.UpdateInputDesc("splits", ge::TensorDesc(ge::Shape({2}), ge::FORMAT_ND, ge::DT_INT64)),
+              ge::GRAPH_SUCCESS);
+    ASSERT_EQ(op.UpdateInputDesc("values", ge::TensorDesc(ge::Shape({1}), ge::FORMAT_ND, valuesType)),
+              ge::GRAPH_SUCCESS);
+    ASSERT_EQ(op.UpdateInputDesc("size", ge::TensorDesc(ge::Shape({1}), ge::FORMAT_ND, sizeType)), ge::GRAPH_SUCCESS);
+    ASSERT_EQ(op.UpdateInputDesc("weights", ge::TensorDesc(ge::Shape({1}), ge::FORMAT_ND, weightsType)),
+              ge::GRAPH_SUCCESS);
+    ASSERT_EQ(op.UpdateOutputDesc("output", ge::TensorDesc(ge::Shape({1, 1}), ge::FORMAT_ND, ge::DT_FLOAT)),
+              ge::GRAPH_SUCCESS);
+    ge::AscendString result;
+    EXPECT_EQ(ops::CheckSupport4RaggedBinCount(op, result), expected);
+    ASSERT_NE(result.GetString(), nullptr);
+    EXPECT_STRNE(result.GetString(), "");
+}
+} // namespace
+
 class RaggedBinCountInfershapeTest : public testing::Test {
 protected:
     static void SetUpTestCase() { std::cout << "RaggedBinCountInfershapeTest SetUp" << std::endl; }
@@ -27,26 +60,22 @@ protected:
 
 TEST_F(RaggedBinCountInfershapeTest, check_support_accepts_int32_native_combination)
 {
-    EXPECT_TRUE(ops::IsRaggedBinCountNativeDtypeCombination(ge::DT_INT64, ge::DT_INT32, ge::DT_INT32, ge::DT_FLOAT,
-                                                            ge::DT_FLOAT));
+    CheckNativeSupport(ge::DT_INT32, ge::DT_INT32, ge::DT_FLOAT, ge::GRAPH_SUCCESS);
 }
 
 TEST_F(RaggedBinCountInfershapeTest, check_support_accepts_int64_native_combination)
 {
-    EXPECT_TRUE(ops::IsRaggedBinCountNativeDtypeCombination(ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_FLOAT,
-                                                            ge::DT_FLOAT));
+    CheckNativeSupport(ge::DT_INT64, ge::DT_INT64, ge::DT_FLOAT, ge::GRAPH_SUCCESS);
 }
 
 TEST_F(RaggedBinCountInfershapeTest, check_support_rejects_mismatched_values_and_size)
 {
-    EXPECT_FALSE(ops::IsRaggedBinCountNativeDtypeCombination(ge::DT_INT64, ge::DT_INT32, ge::DT_INT64, ge::DT_FLOAT,
-                                                             ge::DT_FLOAT));
+    CheckNativeSupport(ge::DT_INT32, ge::DT_INT64, ge::DT_FLOAT, ge::GRAPH_FAILED);
 }
 
 TEST_F(RaggedBinCountInfershapeTest, check_support_rejects_non_fp32_weights)
 {
-    EXPECT_FALSE(ops::IsRaggedBinCountNativeDtypeCombination(ge::DT_INT64, ge::DT_INT32, ge::DT_INT32, ge::DT_FLOAT16,
-                                                             ge::DT_FLOAT));
+    CheckNativeSupport(ge::DT_INT32, ge::DT_INT32, ge::DT_FLOAT16, ge::GRAPH_FAILED);
 }
 
 TEST_F(RaggedBinCountInfershapeTest, test_int32_static_shape)

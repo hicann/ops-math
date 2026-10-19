@@ -31,6 +31,7 @@ constexpr uint32_t THREAD_NUM_U32 = 1024U;
 constexpr uint32_t THREAD_NUM_U64 = 512U;
 constexpr uint32_t MAPPING_MODE_ROW = 0U;
 constexpr uint32_t MAPPING_MODE_VALUE = 1U;
+constexpr uint32_t MAPPING_MODE_DETERMINISTIC = 2U;
 constexpr uint32_t UB_BLOCK_BYTES = 32U;
 // The compensated ROW path scans a short row once per bin. Keep the total
 // comparison work bounded so long or wide histograms retain the original
@@ -192,8 +193,9 @@ __simt_callee__ inline bool CompensatedAccumulate(float value, float& high, floa
 }
 
 // A finite FP32 value is an integer multiple of 2^-149. The largest finite
-// value needs bit 276 in that unit and summing at most 262144 values needs at
-// most bit 294, so five 64-bit limbs hold the exact signed sum without overflow.
+// value needs bit 276 in that unit. Six 64-bit limbs cover the exact signed
+// sum of any int64-sized row (highest magnitude bit at most 339), including
+// deterministic mode, whose rows are not bounded by the precision policy.
 // This slow path is entered when the lightweight TwoSum path cannot guarantee
 // mode-independent correct rounding: non-finite/subnormal/low-band inputs,
 // finite intermediate overflow, or a third component needed to retain the
@@ -204,6 +206,7 @@ struct ExactFloatAccumulator {
     uint64_t limb2;
     uint64_t limb3;
     uint64_t limb4;
+    uint64_t limb5;
     bool hasNan;
     bool hasPositiveInf;
     bool hasNegativeInf;
@@ -232,28 +235,33 @@ __simt_callee__ inline void AddAccumulatorWord(ExactFloatAccumulator& accumulato
         carry = carry == 0ULL ? 0ULL : AddWithCarry(accumulator.limb2, carry);
         carry = carry == 0ULL ? 0ULL : AddWithCarry(accumulator.limb3, carry);
         if (carry != 0ULL) {
-            (void)AddWithCarry(accumulator.limb4, carry);
+            carry = AddWithCarry(accumulator.limb4, carry);
+            accumulator.limb5 += carry;
         }
     } else if (wordIndex == 1U) {
         carry = AddWithCarry(accumulator.limb1, value);
         carry = carry == 0ULL ? 0ULL : AddWithCarry(accumulator.limb2, carry);
         carry = carry == 0ULL ? 0ULL : AddWithCarry(accumulator.limb3, carry);
         if (carry != 0ULL) {
-            (void)AddWithCarry(accumulator.limb4, carry);
+            carry = AddWithCarry(accumulator.limb4, carry);
+            accumulator.limb5 += carry;
         }
     } else if (wordIndex == 2U) {
         carry = AddWithCarry(accumulator.limb2, value);
         carry = carry == 0ULL ? 0ULL : AddWithCarry(accumulator.limb3, carry);
         if (carry != 0ULL) {
-            (void)AddWithCarry(accumulator.limb4, carry);
+            carry = AddWithCarry(accumulator.limb4, carry);
+            accumulator.limb5 += carry;
         }
     } else if (wordIndex == 3U) {
         carry = AddWithCarry(accumulator.limb3, value);
         if (carry != 0ULL) {
-            (void)AddWithCarry(accumulator.limb4, carry);
+            carry = AddWithCarry(accumulator.limb4, carry);
+            accumulator.limb5 += carry;
         }
     } else {
-        (void)AddWithCarry(accumulator.limb4, value);
+        carry = AddWithCarry(accumulator.limb4, value);
+        accumulator.limb5 += carry;
     }
 }
 
@@ -266,28 +274,33 @@ __simt_callee__ inline void SubAccumulatorWord(ExactFloatAccumulator& accumulato
         borrow = borrow == 0ULL ? 0ULL : SubWithBorrow(accumulator.limb2, borrow);
         borrow = borrow == 0ULL ? 0ULL : SubWithBorrow(accumulator.limb3, borrow);
         if (borrow != 0ULL) {
-            (void)SubWithBorrow(accumulator.limb4, borrow);
+            borrow = SubWithBorrow(accumulator.limb4, borrow);
+            accumulator.limb5 -= borrow;
         }
     } else if (wordIndex == 1U) {
         borrow = SubWithBorrow(accumulator.limb1, value);
         borrow = borrow == 0ULL ? 0ULL : SubWithBorrow(accumulator.limb2, borrow);
         borrow = borrow == 0ULL ? 0ULL : SubWithBorrow(accumulator.limb3, borrow);
         if (borrow != 0ULL) {
-            (void)SubWithBorrow(accumulator.limb4, borrow);
+            borrow = SubWithBorrow(accumulator.limb4, borrow);
+            accumulator.limb5 -= borrow;
         }
     } else if (wordIndex == 2U) {
         borrow = SubWithBorrow(accumulator.limb2, value);
         borrow = borrow == 0ULL ? 0ULL : SubWithBorrow(accumulator.limb3, borrow);
         if (borrow != 0ULL) {
-            (void)SubWithBorrow(accumulator.limb4, borrow);
+            borrow = SubWithBorrow(accumulator.limb4, borrow);
+            accumulator.limb5 -= borrow;
         }
     } else if (wordIndex == 3U) {
         borrow = SubWithBorrow(accumulator.limb3, value);
         if (borrow != 0ULL) {
-            (void)SubWithBorrow(accumulator.limb4, borrow);
+            borrow = SubWithBorrow(accumulator.limb4, borrow);
+            accumulator.limb5 -= borrow;
         }
     } else {
-        (void)SubWithBorrow(accumulator.limb4, value);
+        borrow = SubWithBorrow(accumulator.limb4, value);
+        accumulator.limb5 -= borrow;
     }
 }
 
@@ -351,7 +364,10 @@ __simt_callee__ inline uint64_t GetAccumulatorWord(const ExactFloatAccumulator& 
     if (wordIndex == 3U) {
         return accumulator.limb3;
     }
-    return wordIndex == 4U ? accumulator.limb4 : 0ULL;
+    if (wordIndex == 4U) {
+        return accumulator.limb4;
+    }
+    return wordIndex == 5U ? accumulator.limb5 : 0ULL;
 }
 
 __simt_callee__ inline void MakeAccumulatorMagnitude(ExactFloatAccumulator& accumulator)
@@ -361,6 +377,7 @@ __simt_callee__ inline void MakeAccumulatorMagnitude(ExactFloatAccumulator& accu
     accumulator.limb2 = ~accumulator.limb2;
     accumulator.limb3 = ~accumulator.limb3;
     accumulator.limb4 = ~accumulator.limb4;
+    accumulator.limb5 = ~accumulator.limb5;
     AddAccumulatorWord(accumulator, 0U, 1ULL);
 }
 
@@ -395,6 +412,9 @@ __simt_callee__ inline int32_t HighestBitInWord(uint64_t value)
 
 __simt_callee__ inline int32_t HighestAccumulatorBit(const ExactFloatAccumulator& accumulator)
 {
+    if (accumulator.limb5 != 0ULL) {
+        return 320 + HighestBitInWord(accumulator.limb5);
+    }
     if (accumulator.limb4 != 0ULL) {
         return 256 + HighestBitInWord(accumulator.limb4);
     }
@@ -459,7 +479,7 @@ __simt_callee__ inline float FinalizeExactFloat(ExactFloatAccumulator accumulato
         return result.f;
     }
 
-    const bool negative = (accumulator.limb4 >> 63U) != 0ULL;
+    const bool negative = (accumulator.limb5 >> 63U) != 0ULL;
     if (negative) {
         MakeAccumulatorMagnitude(accumulator);
     }
@@ -794,6 +814,331 @@ __simt_vf__ __aicore__ __launch_bounds__(THREAD_NUM) inline void FinalizePrecise
     }
 }
 
+struct DeterministicPartial {
+    uint64_t words[8]; // Six signed accumulator limbs, non-finite flags, padding.
+};
+
+static_assert(sizeof(DeterministicPartial) == DETERMINISTIC_PARTIAL_BYTES,
+              "host and kernel disagree on the deterministic partial size");
+
+struct IntegerHistogram {
+    uint64_t words[16]; // Positive magnitude, negative magnitude, flags, padding.
+};
+
+static_assert(sizeof(IntegerHistogram) == DETERMINISTIC_HISTOGRAM_SLOT_BYTES,
+              "host and kernel disagree on the integer histogram slot size");
+
+__simt_callee__ inline uint64_t MergeAccumulatorWord(uint64_t& destination, uint64_t value, uint64_t carry)
+{
+    const uint64_t firstCarry = AddWithCarry(destination, value);
+    const uint64_t secondCarry = AddWithCarry(destination, carry);
+    return firstCarry | secondCarry;
+}
+
+__simt_callee__ inline void MergeDeterministicPartial(ExactFloatAccumulator& sum, __gm__ DeterministicPartial* partial)
+{
+    uint64_t carry = AddWithCarry(sum.limb0, partial->words[0]);
+    carry = MergeAccumulatorWord(sum.limb1, partial->words[1], carry);
+    carry = MergeAccumulatorWord(sum.limb2, partial->words[2], carry);
+    carry = MergeAccumulatorWord(sum.limb3, partial->words[3], carry);
+    carry = MergeAccumulatorWord(sum.limb4, partial->words[4], carry);
+    (void)MergeAccumulatorWord(sum.limb5, partial->words[5], carry);
+    const uint64_t flags = partial->words[6];
+    sum.hasNan = sum.hasNan || ((flags & 1U) != 0U);
+    sum.hasPositiveInf = sum.hasPositiveInf || ((flags & 2U) != 0U);
+    sum.hasNegativeInf = sum.hasNegativeInf || ((flags & 4U) != 0U);
+}
+
+template <typename VALUE_TYPE, typename INDEX_TYPE, uint32_t THREAD_NUM, bool HAS_WEIGHTS>
+__simt_vf__ __aicore__ __launch_bounds__(THREAD_NUM) inline void BuildDeterministicPartials(
+    uint32_t coreIdx, uint32_t coreNum, int64_t numValues, int64_t outputElements, int64_t numBins, int64_t partitions,
+    __gm__ int64_t* splits, __gm__ VALUE_TYPE* values, __gm__ float* weights, __gm__ DeterministicPartial* partials)
+{
+    const int64_t totalPartitions = static_cast<int64_t>(coreNum) * partitions;
+    for (int64_t task = threadIdx.x; task < outputElements * partitions; task += blockDim.x) {
+        const int64_t outputIndex = task / partitions;
+        const int64_t localPartition = task % partitions;
+        const int64_t partition = static_cast<int64_t>(coreIdx) * partitions + localPartition;
+        const int64_t row = outputIndex / numBins;
+        const int64_t bin = outputIndex % numBins;
+        const int64_t length = splits[row + 1] - splits[row];
+        const int64_t baseLength = length / totalPartitions;
+        const int64_t extra = length % totalPartitions;
+        const int64_t begin = splits[row] + partition * baseLength + (partition < extra ? partition : extra);
+        const int64_t end = begin + baseLength + (partition < extra ? 1 : 0);
+        const int64_t slot = (static_cast<int64_t>(coreIdx) * outputElements + outputIndex) * partitions +
+                             localPartition;
+        if constexpr (HAS_WEIGHTS) {
+            if (numValues <= PRECISE_VALUE_MAX_WORK) {
+                float high = 0.0F;
+                float low = 0.0F;
+                const uint32_t flags = AccumulatePreciseRange<VALUE_TYPE, INDEX_TYPE>(
+                    static_cast<INDEX_TYPE>(begin), static_cast<INDEX_TYPE>(end), bin, values, weights, high, low);
+                auto partial = reinterpret_cast<__gm__ PreciseValuePartial*>(partials + slot);
+                if ((flags & PRECISE_PARTIAL_HAS_HIT) != 0U) {
+                    (void)asc_atomic_exch(&partial->high, high);
+                    (void)asc_atomic_exch(&partial->low, low);
+                }
+                (void)asc_atomic_exch(&partial->flags, flags);
+                continue;
+            }
+        }
+        ExactFloatAccumulator sum{};
+        uint64_t count = 0U;
+        for (INDEX_TYPE index = static_cast<INDEX_TYPE>(begin); index < static_cast<INDEX_TYPE>(end); ++index) {
+            if (static_cast<int64_t>(values[index]) == bin) {
+                if constexpr (HAS_WEIGHTS) {
+                    AccumulateExactFloat(weights[index], sum);
+                } else {
+                    ++count;
+                }
+            }
+        }
+        if constexpr (HAS_WEIGHTS) {
+            // Atomic exchange bypasses dirty cache-line writeback between cores;
+            // every word still has exactly one producer.
+            for (uint32_t word = 0U; word < 6U; ++word) {
+                (void)asc_atomic_exch(&partials[slot].words[word], GetAccumulatorWord(sum, word));
+            }
+            const uint64_t flags = static_cast<uint64_t>(sum.hasNan) |
+                                   (static_cast<uint64_t>(sum.hasPositiveInf) << 1U) |
+                                   (static_cast<uint64_t>(sum.hasNegativeInf) << 2U);
+            (void)asc_atomic_exch(&partials[slot].words[6], flags);
+        } else {
+            (void)asc_atomic_exch(&partials[slot].words[0], count);
+        }
+    }
+}
+
+template <typename VALUE_TYPE, typename INDEX_TYPE>
+__simt_callee__ inline float ReduceCompensatedPartials(int64_t outputIndex, uint32_t coreNum, int64_t outputElements,
+                                                       int64_t numBins, int64_t partitions, __gm__ int64_t* splits,
+                                                       __gm__ VALUE_TYPE* values, __gm__ float* weights,
+                                                       __gm__ DeterministicPartial* partials)
+{
+    const int64_t row = outputIndex / numBins;
+    const int64_t bin = outputIndex % numBins;
+    float high = 0.0F;
+    float low = 0.0F;
+    for (int64_t core = 0; core < static_cast<int64_t>(coreNum); ++core) {
+        for (int64_t partition = 0; partition < partitions; ++partition) {
+            const int64_t slot = (core * outputElements + outputIndex) * partitions + partition;
+            auto partial = reinterpret_cast<__gm__ PreciseValuePartial*>(partials + slot);
+            const uint32_t flags = partial->flags;
+            if ((flags & PRECISE_PARTIAL_HAS_HIT) == 0U) {
+                continue;
+            }
+            if ((flags & PRECISE_PARTIAL_REQUIRES_EXACT) != 0U || CompensatedAccumulate(partial->high, high, low) ||
+                CompensatedAccumulate(partial->low, high, low)) {
+                return AccumulateExactBin<VALUE_TYPE, INDEX_TYPE>(static_cast<INDEX_TYPE>(splits[row]),
+                                                                  static_cast<INDEX_TYPE>(splits[row + 1]), bin, values,
+                                                                  weights);
+            }
+        }
+    }
+    return high + low;
+}
+
+template <typename VALUE_TYPE, typename INDEX_TYPE, uint32_t THREAD_NUM, bool HAS_WEIGHTS>
+__simt_vf__ __aicore__ __launch_bounds__(THREAD_NUM) inline void FinalizeDeterministicPartials(
+    uint32_t coreIdx, uint32_t coreNum, int64_t numValues, int64_t outputElements, int64_t numBins, int64_t partitions,
+    __gm__ int64_t* splits, __gm__ VALUE_TYPE* values, __gm__ float* weights, __gm__ DeterministicPartial* partials,
+    __gm__ float* output)
+{
+    const int64_t first = static_cast<int64_t>(threadIdx.x) * coreNum + coreIdx;
+    const int64_t stride = static_cast<int64_t>(blockDim.x) * coreNum;
+    for (int64_t outputIndex = first; outputIndex < outputElements; outputIndex += stride) {
+        if constexpr (HAS_WEIGHTS) {
+            if (numValues <= PRECISE_VALUE_MAX_WORK) {
+                const float result = ReduceCompensatedPartials<VALUE_TYPE, INDEX_TYPE>(
+                    outputIndex, coreNum, outputElements, numBins, partitions, splits, values, weights, partials);
+                (void)asc_atomic_exch(output + outputIndex, result);
+                continue;
+            }
+        }
+        ExactFloatAccumulator sum{};
+        uint64_t count = 0U;
+        for (int64_t core = 0; core < static_cast<int64_t>(coreNum); ++core) {
+            for (int64_t partition = 0; partition < partitions; ++partition) {
+                const int64_t slot = (core * outputElements + outputIndex) * partitions + partition;
+                if constexpr (HAS_WEIGHTS) {
+                    MergeDeterministicPartial(sum, partials + slot);
+                } else {
+                    count += partials[slot].words[0];
+                }
+            }
+        }
+        const float result = HAS_WEIGHTS ? FinalizeExactFloat(sum) : static_cast<float>(count);
+        (void)asc_atomic_exch(output + outputIndex, result);
+    }
+}
+
+// Integer limb additions commute modulo 2^384. Each atomic's returned old word
+// determines its carry, which is fully propagated before the final barrier.
+// No reader observes the intermediate multiword state.
+__simt_callee__ inline void AddIntegerHistogram(__gm__ IntegerHistogram* slot, float weight)
+{
+    union {
+        float value;
+        uint32_t bits;
+    } magnitude;
+    magnitude.value = weight;
+    const bool negative = (magnitude.bits >> 31U) != 0U;
+    magnitude.bits &= 0x7FFFFFFFU;
+    ExactFloatAccumulator value{};
+    AccumulateExactFloat(magnitude.value, value);
+    const uint32_t base = negative ? 6U : 0U;
+    uint64_t carry = 0U;
+    bool firstNonzero = false;
+    for (uint32_t word = 0U; word < 6U; ++word) {
+        const uint64_t limb = GetAccumulatorWord(value, word);
+        const uint64_t increment = limb + carry;
+        carry = static_cast<uint64_t>(increment < limb);
+        if (increment != 0U) {
+            const uint64_t previous = asc_atomic_add(&slot->words[base + word], increment);
+            carry += static_cast<uint64_t>(previous > ~increment);
+            firstNonzero = firstNonzero || previous == 0U;
+        }
+    }
+    const uint64_t flags = static_cast<uint64_t>(value.hasNan) |
+                           (static_cast<uint64_t>(value.hasPositiveInf) << (negative ? 2U : 1U));
+    // The first nonzero limb update observes zero and publishes the active bit.
+    // Finite zero needs no update; all producers finish before flags are read.
+    if (firstNonzero || flags != 0U) {
+        (void)asc_atomic_or(&slot->words[12], flags | 8U);
+    }
+}
+
+__aicore__ inline void InitializeIntegerHistogram(uint32_t coreIdx, uint32_t coreNum, int64_t outputElements,
+                                                  __gm__ IntegerHistogram* histogram, TPipe* pipe)
+{
+    constexpr uint32_t tileWords = DETERMINISTIC_ZERO_BUFFER_BYTES / sizeof(uint32_t);
+    constexpr int64_t wordsPerSlot = DETERMINISTIC_HISTOGRAM_SLOT_BYTES / sizeof(uint32_t);
+    const int64_t slotsPerCore = outputElements / coreNum + static_cast<int64_t>(outputElements % coreNum != 0);
+    const int64_t begin = static_cast<int64_t>(coreIdx) * slotsPerCore * wordsPerSlot;
+    const int64_t lastSlot = (static_cast<int64_t>(coreIdx) + 1) * slotsPerCore;
+    const int64_t end = (lastSlot < outputElements ? lastSlot : outputElements) * wordsPerSlot;
+    TQue<TPosition::VECOUT, 1> queue;
+    pipe->InitBuffer(queue, 1, tileWords * sizeof(uint32_t));
+    LocalTensor<uint32_t> zeros = queue.AllocTensor<uint32_t>();
+    Duplicate(zeros, uint32_t{0}, tileWords);
+    queue.EnQue(zeros);
+    zeros = queue.DeQue<uint32_t>();
+    GlobalTensor<uint32_t> target;
+    target.SetGlobalBuffer(reinterpret_cast<__gm__ uint32_t*>(histogram), outputElements * wordsPerSlot);
+    for (int64_t offset = begin; offset < end; offset += tileWords) {
+        const uint32_t count = static_cast<uint32_t>(end - offset < tileWords ? end - offset : tileWords);
+        DataCopy(target[offset], zeros, count);
+    }
+    queue.FreeTensor(zeros);
+}
+
+template <typename VALUE_TYPE, typename INDEX_TYPE, uint32_t THREAD_NUM, bool HAS_WEIGHTS>
+__simt_vf__ __aicore__ __launch_bounds__(THREAD_NUM) inline void ScatterIntegerHistogram(
+    uint32_t coreIdx, uint32_t coreNum, int64_t numRows, int64_t numValues, int64_t numBins, __gm__ int64_t* splits,
+    __gm__ VALUE_TYPE* values, __gm__ float* weights, __gm__ IntegerHistogram* histogram)
+{
+    const INDEX_TYPE first = static_cast<INDEX_TYPE>(coreIdx) * blockDim.x + threadIdx.x;
+    const INDEX_TYPE stride = static_cast<INDEX_TYPE>(coreNum) * blockDim.x;
+    for (INDEX_TYPE index = first; index < static_cast<INDEX_TYPE>(numValues); index += stride) {
+        const int64_t bin = static_cast<int64_t>(values[index]);
+        if (bin < 0 || bin >= numBins) {
+            continue;
+        }
+        const int64_t row = FindRaggedRow(splits, numRows, static_cast<int64_t>(index));
+        if (row >= 0) {
+            auto slot = histogram + row * numBins + bin;
+            if constexpr (HAS_WEIGHTS) {
+                AddIntegerHistogram(slot, weights[index]);
+            } else {
+                (void)asc_atomic_add(&slot->words[0], uint64_t{1});
+            }
+        }
+    }
+}
+
+template <uint32_t THREAD_NUM, bool HAS_WEIGHTS>
+__simt_vf__ __aicore__ __launch_bounds__(THREAD_NUM) inline void FinalizeIntegerHistogram(
+    uint32_t coreIdx, uint32_t coreNum, int64_t outputElements, __gm__ IntegerHistogram* histogram,
+    __gm__ float* output)
+{
+    const int64_t first = static_cast<int64_t>(coreIdx) * blockDim.x + threadIdx.x;
+    const int64_t stride = static_cast<int64_t>(coreNum) * blockDim.x;
+    for (int64_t index = first; index < outputElements; index += stride) {
+        float result = 0.0F;
+        if constexpr (HAS_WEIGHTS) {
+            const uint64_t flags = histogram[index].words[12];
+            if ((flags & 8U) == 0U) {
+                continue;
+            }
+            ExactFloatAccumulator sum{histogram[index].words[0],
+                                      histogram[index].words[1],
+                                      histogram[index].words[2],
+                                      histogram[index].words[3],
+                                      histogram[index].words[4],
+                                      histogram[index].words[5],
+                                      false,
+                                      false,
+                                      false};
+            ExactFloatAccumulator negative{histogram[index].words[6],
+                                           histogram[index].words[7],
+                                           histogram[index].words[8],
+                                           histogram[index].words[9],
+                                           histogram[index].words[10],
+                                           histogram[index].words[11],
+                                           false,
+                                           false,
+                                           false};
+            MakeAccumulatorMagnitude(negative);
+            uint64_t carry = AddWithCarry(sum.limb0, negative.limb0);
+            carry = MergeAccumulatorWord(sum.limb1, negative.limb1, carry);
+            carry = MergeAccumulatorWord(sum.limb2, negative.limb2, carry);
+            carry = MergeAccumulatorWord(sum.limb3, negative.limb3, carry);
+            carry = MergeAccumulatorWord(sum.limb4, negative.limb4, carry);
+            (void)MergeAccumulatorWord(sum.limb5, negative.limb5, carry);
+            sum.hasNan = (flags & 1U) != 0U;
+            sum.hasPositiveInf = (flags & 2U) != 0U;
+            sum.hasNegativeInf = (flags & 4U) != 0U;
+            result = FinalizeExactFloat(sum);
+        } else {
+            if (histogram[index].words[0] == 0U) {
+                continue;
+            }
+            result = static_cast<float>(histogram[index].words[0]);
+        }
+        (void)asc_atomic_exch(output + index, result);
+    }
+}
+
+// Large outputs avoid a workspace proportional to cores * output size. Each
+// output has one producer and scans its row in input order. Atomic exchange
+// prevents different cores sharing a cache line from losing each other's stores.
+template <typename VALUE_TYPE, typename INDEX_TYPE, uint32_t THREAD_NUM, bool HAS_WEIGHTS>
+__simt_vf__ __aicore__ __launch_bounds__(THREAD_NUM) inline void ComputeDeterministicOutputs(
+    uint32_t coreIdx, uint32_t coreNum, int64_t outputElements, int64_t numBins, __gm__ int64_t* splits,
+    __gm__ VALUE_TYPE* values, __gm__ float* weights, __gm__ float* output)
+{
+    const INDEX_TYPE first = static_cast<INDEX_TYPE>(threadIdx.x) * coreNum + coreIdx;
+    const INDEX_TYPE stride = static_cast<INDEX_TYPE>(coreNum) * blockDim.x;
+    for (INDEX_TYPE index = first; index < static_cast<INDEX_TYPE>(outputElements); index += stride) {
+        const int64_t row = index / numBins;
+        const int64_t bin = index % numBins;
+        const INDEX_TYPE begin = static_cast<INDEX_TYPE>(splits[row]);
+        const INDEX_TYPE end = static_cast<INDEX_TYPE>(splits[row + 1]);
+        float result = 0.0F;
+        if constexpr (HAS_WEIGHTS) {
+            (void)AccumulatePreciseBin<VALUE_TYPE, INDEX_TYPE>(begin, end, bin, values, weights, result);
+        } else {
+            uint64_t count = 0U;
+            for (INDEX_TYPE valueIndex = begin; valueIndex < end; ++valueIndex) {
+                count += static_cast<int64_t>(values[valueIndex]) == bin ? 1U : 0U;
+            }
+            result = static_cast<float>(count);
+        }
+        (void)asc_atomic_exch(output + index, result);
+    }
+}
+
 template <typename VALUE_TYPE, typename INDEX_TYPE, uint32_t THREAD_NUM, bool PRIVATE, bool BINARY_OUTPUT,
           bool HAS_WEIGHTS>
 __simt_vf__ __aicore__ __launch_bounds__(THREAD_NUM) inline void ScatterByValue(
@@ -847,6 +1192,9 @@ __aicore__ inline void ProcessWithIndexType(GM_ADDR splits, GM_ADDR values, GM_A
     __gm__ uint32_t* invalidFlag = reinterpret_cast<__gm__ uint32_t*>(userWorkspace);
     __gm__ PreciseValuePartial* preciseValuePartials = reinterpret_cast<__gm__ PreciseValuePartial*>(
         userWorkspace + USER_WORKSPACE_HEADER_BYTES);
+    auto deterministicPartials = reinterpret_cast<__gm__ DeterministicPartial*>(userWorkspace +
+                                                                                USER_WORKSPACE_HEADER_BYTES);
+    auto integerHistogram = reinterpret_cast<__gm__ IntegerHistogram*>(userWorkspace + USER_WORKSPACE_HEADER_BYTES);
 
     // Read the logical block identity in outer __aicore__ code and pass it into
     // the SIMT VF explicitly: blockIdx/gridDim inside a VF describe the VF grid,
@@ -869,6 +1217,57 @@ __aicore__ inline void ProcessWithIndexType(GM_ADDR splits, GM_ADDR values, GM_A
     }
     SyncAll();
     if (*invalidFlag != 0U) {
+        return;
+    }
+
+    if constexpr (MAPPING_MODE == MAPPING_MODE_DETERMINISTIC) {
+        // Select the same workspace layout as the host, even if fewer blocks launch.
+        if (UseDeterministicDirect(tilingData->numValues, tilingData->numRows)) {
+            if (participates) {
+                asc_vf_call<ComputeDeterministicOutputs<VALUE_TYPE, INDEX_TYPE, THREAD_NUM, HAS_WEIGHTS>>(
+                    dim3(THREAD_NUM), launchCoreIdx, usedCoreNum, tilingData->outputElements, tilingData->numBins,
+                    splitsGm, valuesGm, weightsGm, outputGm);
+            }
+        } else if (UseDeterministicPartials(tilingData->outputElements, tilingData->usedCoreNum)) {
+            if (participates) {
+                asc_vf_call<BuildDeterministicPartials<VALUE_TYPE, INDEX_TYPE, THREAD_NUM, HAS_WEIGHTS>>(
+                    dim3(THREAD_NUM), launchCoreIdx, usedCoreNum, tilingData->numValues, tilingData->outputElements,
+                    tilingData->numBins,
+                    DeterministicPartitionsPerCore(tilingData->numValues, tilingData->outputElements,
+                                                   tilingData->usedCoreNum, HAS_WEIGHTS),
+                    splitsGm, valuesGm, weightsGm, deterministicPartials);
+            }
+            SyncAll();
+            if (participates) {
+                asc_vf_call<FinalizeDeterministicPartials<VALUE_TYPE, INDEX_TYPE, THREAD_NUM, HAS_WEIGHTS>>(
+                    dim3(THREAD_NUM), launchCoreIdx, usedCoreNum, tilingData->numValues, tilingData->outputElements,
+                    tilingData->numBins,
+                    DeterministicPartitionsPerCore(tilingData->numValues, tilingData->outputElements,
+                                                   tilingData->usedCoreNum, HAS_WEIGHTS),
+                    splitsGm, valuesGm, weightsGm, deterministicPartials, outputGm);
+            }
+        } else if (UseDeterministicHistogram(tilingData->outputElements)) {
+            if (participates) {
+                InitializeIntegerHistogram(launchCoreIdx, usedCoreNum, tilingData->outputElements, integerHistogram,
+                                           pipe);
+            }
+            SyncAll();
+            if (participates) {
+                asc_vf_call<ScatterIntegerHistogram<VALUE_TYPE, INDEX_TYPE, THREAD_NUM, HAS_WEIGHTS>>(
+                    dim3(THREAD_NUM), launchCoreIdx, usedCoreNum, tilingData->numRows, tilingData->numValues,
+                    tilingData->numBins, splitsGm, valuesGm, weightsGm, integerHistogram);
+            }
+            SyncAll();
+            if (participates) {
+                asc_vf_call<FinalizeIntegerHistogram<THREAD_NUM, HAS_WEIGHTS>>(dim3(THREAD_NUM), launchCoreIdx,
+                                                                               usedCoreNum, tilingData->outputElements,
+                                                                               integerHistogram, outputGm);
+            }
+        } else if (participates) {
+            asc_vf_call<ComputeDeterministicOutputs<VALUE_TYPE, INDEX_TYPE, THREAD_NUM, HAS_WEIGHTS>>(
+                dim3(THREAD_NUM), launchCoreIdx, usedCoreNum, tilingData->outputElements, tilingData->numBins, splitsGm,
+                valuesGm, weightsGm, outputGm);
+        }
         return;
     }
 
