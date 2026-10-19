@@ -63,7 +63,7 @@ std::vector<PatternUniqPtr> HistogramFusionPass::Patterns()
     return patternGraphs;
 }
 
-bool HistogramFusionPass::MeetRequirements(const std::unique_ptr<MatchResult> &match_result)
+bool HistogramFusionPass::MeetRequirements(const std::unique_ptr<MatchResult>& match_result)
 {
     OP_LOGD(kPassName.c_str(), "Enter MeetRequirements for HistogramFusionPass");
 
@@ -74,8 +74,8 @@ bool HistogramFusionPass::MeetRequirements(const std::unique_ptr<MatchResult> &m
         return false;
     }
     const std::string soc = platformInfo.str_info.short_soc_version;
-    if (soc != "Ascend950") {
-        OP_LOGD(kPassName.c_str(), "Platform %s is not supported, only Ascend950.", soc.c_str());
+    if (soc != "Ascend950" && soc != "Ascend350") {
+        OP_LOGD(kPassName.c_str(), "Platform %s is not supported, only Ascend950 and Ascend350.", soc.c_str());
         return false;
     }
 
@@ -112,7 +112,7 @@ bool HistogramFusionPass::MeetRequirements(const std::unique_ptr<MatchResult> &m
     return true;
 }
 
-std::unique_ptr<Graph> HistogramFusionPass::Replacement(const std::unique_ptr<MatchResult> &match_result)
+std::unique_ptr<Graph> HistogramFusionPass::Replacement(const std::unique_ptr<MatchResult>& match_result)
 {
     OP_LOGD(kPassName.c_str(), "Enter Replacement for HistogramFusionPass");
 
@@ -173,10 +173,10 @@ std::unique_ptr<Graph> HistogramFusionPass::Replacement(const std::unique_ptr<Ma
     return replaceGraph;
 }
 
-static void GetInputsInfo(const std::vector<SubgraphInput> &subgraphInputs, std::vector<Shape> &inputShapes,
-    std::vector<DataType> &inputDtypes, std::vector<Format> &inputFormats)
+static void GetInputsInfo(const std::vector<SubgraphInput>& subgraphInputs, std::vector<Shape>& inputShapes,
+                          std::vector<DataType>& inputDtypes, std::vector<Format>& inputFormats)
 {
-    for (const auto &subgraphInput : subgraphInputs) {
+    for (const auto& subgraphInput : subgraphInputs) {
         auto matchNode = subgraphInput.GetAllInputs().at(0);
         TensorDesc tensorDesc;
         matchNode.node.GetInputDesc(matchNode.index, tensorDesc);
@@ -186,11 +186,11 @@ static void GetInputsInfo(const std::vector<SubgraphInput> &subgraphInputs, std:
     }
 }
 
-static Status InferShape(const GraphUniqPtr &replaceGraph, const std::vector<SubgraphInput> &subgraphInputs)
+static Status InferShape(const GraphUniqPtr& replaceGraph, const std::vector<SubgraphInput>& subgraphInputs)
 {
     OP_LOGD(kPassName.c_str(), "Begin infershape for replacements.");
     std::vector<Shape> inputShapes;
-    for (const auto &subgraphInput : subgraphInputs) {
+    for (const auto& subgraphInput : subgraphInputs) {
         auto matchNode = subgraphInput.GetAllInputs().at(0);
         TensorDesc tensorDesc;
         matchNode.node.GetInputDesc(matchNode.index, tensorDesc);
@@ -201,4 +201,4 @@ static Status InferShape(const GraphUniqPtr &replaceGraph, const std::vector<Sub
 
 REG_FUSION_PASS(HistogramFusionPass).Stage(CustomPassStage::kAfterInferShape);
 
-}  // namespace ops
+} // namespace ops

@@ -107,6 +107,7 @@ public:
                                  ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND});
         this->AICore().AddConfig("ascend950", config_91095);
         this->AICore().AddConfig("ascend960dt", config_91095);
+        this->AICore().AddConfig("ascend350", config_91095);
     }
 };
 
