@@ -43,6 +43,12 @@ static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {op::DataT
 // 表示mean,std的数据类型是Tensor还是Scalar
 enum class ScalarMode { TensorTensor, TensorScalar, ScalarTensor, ScalarScalar };
 
+static inline bool IsNormalV3SupportedArch()
+{
+    auto curArch = GetCurrentPlatformInfo().GetCurNpuArch();
+    return curArch == NpuArch::DAV_3510 || curArch == NpuArch::DAV_9201 || curArch == NpuArch::DAV_9202;
+}
+
 /* 查看TensorFloat的Dtype和Shape */
 static bool CheckTensorAndFloatDtype(const aclTensor* mean, const aclTensor* out)
 {
@@ -211,8 +217,7 @@ aclnnStatus CommonLogicGeneralNormal(const aclTensor* mean, const aclTensor* std
 {
     const aclTensor* addOut = nullptr;
 
-    if (!aclnnGetPytorchRandom() && GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 &&
-        self->GetDataType() != DataType::DT_DOUBLE) {
+    if (!aclnnGetPytorchRandom() && IsNormalV3SupportedArch() && self->GetDataType() != DataType::DT_DOUBLE) {
         OP_LOGD("compat mode, use V3 Normal");
         // seed转化为key
         FVector<int64_t, op::MAX_DIM_NUM> key_vec = {seed};
@@ -253,8 +258,7 @@ aclnnStatus CommonLogicGeneralNormal(const aclTensor* mean, const aclTensor* std
             }
         }
         addOut = l0op::StatelessRandomNormalV3(self, keyArr, counterArr, meanCasted, stdCasted, uniqueExecutor.get());
-    } else if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 &&
-               self->GetDataType() != DataType::DT_DOUBLE) {
+    } else if (IsNormalV3SupportedArch() && self->GetDataType() != DataType::DT_DOUBLE) {
         if (scalarMode == ScalarMode::TensorTensor || scalarMode == ScalarMode::ScalarTensor) {
             FVector<float> zeroMeanVector = {0.0f};
             auto zeroMeanTensor = uniqueExecutor.get()->ConvertToTensor(zeroMeanVector.data(), zeroMeanVector.size(),

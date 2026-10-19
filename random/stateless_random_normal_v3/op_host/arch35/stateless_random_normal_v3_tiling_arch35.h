@@ -9,9 +9,9 @@
  */
 
 /*!
-* \file stateless_random_normal_v3_tiling.h
-* \brief
-*/
+ * \file stateless_random_normal_v3_tiling.h
+ * \brief
+ */
 
 #ifndef STATELESS_RANDOM_NORMAL_V3_TILING_ARCH35_H
 #define STATELESS_RANDOM_NORMAL_V3_TILING_ARCH35_H
@@ -23,16 +23,16 @@
 #include "tiling/platform/platform_ascendc.h"
 #include "log/log.h"
 #include "util/math_util.h"
-#include  "../../../random_common/op_host/arch35/random_tiling_arch35.h"
+#include "../../../random_common/op_host/arch35/random_tiling_arch35.h"
 
 namespace optiling {
-class StatelessRandomNormalV3Tiling : public RandomTilingArch35
-{
+class StatelessRandomNormalV3Tiling : public RandomTilingArch35 {
 public:
     explicit StatelessRandomNormalV3Tiling(gert::TilingContext* ctx);
     ~StatelessRandomNormalV3Tiling() override = default;
 
 protected:
+    ge::graphStatus BeforeProcess() override;
     ge::graphStatus UniqueProcess() override;
 
 private:

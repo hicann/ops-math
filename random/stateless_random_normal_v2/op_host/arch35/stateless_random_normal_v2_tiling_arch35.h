@@ -38,25 +38,17 @@ REGISTER_TILING_DATA_CLASS(StatelessRandomNormalV2, StatelessRandomNormalV2Tilin
 struct StatelessRandomNormalV2CompileInfo {
     uint64_t aivNum;
     uint64_t ubSize;
+    bool isArch92 = false;
 };
 
 class StatelessRandomNormalV2Tiling : public Ops::Base::TilingBaseClass {
 public:
-    explicit StatelessRandomNormalV2Tiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context)
-    {}
+    explicit StatelessRandomNormalV2Tiling(gert::TilingContext* context) : Ops::Base::TilingBaseClass(context) {}
 
-    enum class Algorithm : int32_t
-    {
-        RNG_ALG_PHILOX = 1,
-        RNG_ALG_THREEFRY = 2,
-        RNG_ALG_AUTO_SELECT = 3
-    };
+    enum class Algorithm : int32_t { RNG_ALG_PHILOX = 1, RNG_ALG_THREEFRY = 2, RNG_ALG_AUTO_SELECT = 3 };
 
 protected:
-    bool IsCapable() override
-    {
-        return true;
-    }
+    bool IsCapable() override { return true; }
 
     // 1、获取平台信息比如CoreNum、UB/L1/L0C资源大小
     ge::graphStatus GetPlatformInfo() override;
@@ -76,6 +68,8 @@ protected:
 private:
     static constexpr uint32_t CORE_ALIGN_SIZE = 512;
     static constexpr uint32_t BLOCK_SIZE_BYTES = 32;
+    static constexpr uint32_t CORE_ALIGN_ELEMENTS_ARCH92 = 32;
+    static constexpr uint32_t UB_ALIGN_ELEMENTS_ARCH92 = 256;
     static constexpr uint32_t MIN_TILING_SIZE = 256;
     static constexpr uint32_t REGBASE_CCEC_CACHE_SIZE = 8 * 1024;
     static constexpr uint32_t DEFAULT_WORKSPACE_SIZE = 16 * 1024 * 1024;
@@ -91,6 +85,7 @@ private:
 private:
     uint32_t coreNum_ = 0;
     uint32_t ubSize_ = 0;
+    bool isArch92_ = false;
     ge::DataType outputDtype_ = ge::DT_UNDEFINED;
     uint32_t outputDtypeVal_ = 0;
     uint64_t outputSize_ = 1;

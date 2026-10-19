@@ -15,6 +15,7 @@
 #include "stateless_random_normal_v2_tiling_arch35.h"
 #include <string>
 #include "platform/platform_info.h"
+#include "platform/platform_ascendc.h"
 #include "log/log.h"
 #include "register/op_impl_registry.h"
 
@@ -32,6 +33,8 @@ static constexpr uint16_t SIZE_OF_FLOAT = 4;
 static constexpr uint16_t SPLIT_UB_NUM = 5;
 static constexpr int64_t COUNTER_NUMBER_LOW_BOUND = 1;
 
+static inline bool IsArch92(NpuArch npuArch) { return npuArch == NpuArch::DAV_9201 || npuArch == NpuArch::DAV_9202; }
+
 ge::graphStatus StatelessRandomNormalV2Tiling::GetPlatformInfo()
 {
     auto platformInfo = context_->GetPlatformInfo();
@@ -40,6 +43,7 @@ ge::graphStatus StatelessRandomNormalV2Tiling::GetPlatformInfo()
         OP_CHECK_IF(compileInfoPtr == nullptr, OP_LOGE(context_, "compile info is null"), return ge::GRAPH_FAILED);
         coreNum_ = compileInfoPtr->aivNum;
         ubSize_ = compileInfoPtr->ubSize - REGBASE_CCEC_CACHE_SIZE;
+        isArch92_ = compileInfoPtr->isArch92;
     } else {
         auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
         auto aivNum = ascendcPlatform.GetCoreNumAiv();
@@ -53,6 +57,7 @@ ge::graphStatus StatelessRandomNormalV2Tiling::GetPlatformInfo()
                             REGBASE_CCEC_CACHE_SIZE),
                     return ge::GRAPH_FAILED);
         ubSize_ = ubSizePlatForm - REGBASE_CCEC_CACHE_SIZE;
+        isArch92_ = IsArch92(ascendcPlatform.GetCurNpuArch());
     }
     return ge::GRAPH_SUCCESS;
 }
@@ -133,7 +138,7 @@ inline T1 StatelessRandomNormalV2Tiling::CeilDiv(const T1 a, const T2 b) const
 void StatelessRandomNormalV2Tiling::BlockTiling()
 {
     outputDtypeSize_ = SIZE_OF_FLOAT;
-    auto coreAlignFactor = CORE_ALIGN_SIZE / outputDtypeSize_;
+    auto coreAlignFactor = isArch92_ ? CORE_ALIGN_ELEMENTS_ARCH92 : CORE_ALIGN_SIZE / outputDtypeSize_;
     auto blockFactor = CeilDiv(outputSize_, coreNum_);
     auto blockAlignFactor = CeilDiv(blockFactor, coreAlignFactor) * coreAlignFactor;
     auto minTilingSize = MIN_TILING_SIZE;
@@ -151,8 +156,12 @@ ge::graphStatus StatelessRandomNormalV2Tiling::UbTiling()
 {
     // splitUbSize: 2 for double buffer; 3 for data converse
     auto splitUbSize = ubSize_ / SPLIT_UB_NUM;
-    auto alignFactor = BLOCK_SIZE_BYTES / outputDtypeSize_;
-    ubTilingSize_ = CeilDiv(splitUbSize / outputDtypeSize_, alignFactor) * alignFactor;
+    if (isArch92_) {
+        ubTilingSize_ = splitUbSize / outputDtypeSize_ / UB_ALIGN_ELEMENTS_ARCH92 * UB_ALIGN_ELEMENTS_ARCH92;
+    } else {
+        auto alignFactor = BLOCK_SIZE_BYTES / outputDtypeSize_;
+        ubTilingSize_ = CeilDiv(splitUbSize / outputDtypeSize_, alignFactor) * alignFactor;
+    }
     OP_LOGD(opName, "splitUbSize = %u, ubTilingSize = %u", splitUbSize, ubTilingSize_);
     return ge::GRAPH_SUCCESS;
 }
@@ -227,6 +236,7 @@ static ge::graphStatus TilingPrepare4StatelessRandomNormalV2(gert::TilingParseCo
     auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfoPtr);
     compileInfoPtr->aivNum = ascendcPlatform.GetCoreNumAiv();
     ascendcPlatform.GetCoreMemSize(platform_ascendc::CoreMemType::UB, compileInfoPtr->ubSize);
+    compileInfoPtr->isArch92 = IsArch92(ascendcPlatform.GetCurNpuArch());
     return ge::GRAPH_SUCCESS;
 }
 
