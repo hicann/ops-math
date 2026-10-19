@@ -16,6 +16,7 @@
 #define OPS_OP_PROTO_INC_PAD_V3_OPS_H_
 
 #include "graph/operator_reg.h"
+#include "op_const_def_math.h"
 
 namespace ge {
 /**
@@ -63,13 +64,16 @@ namespace ge {
 * Compatible with ONNX operator Pad.
 */
 REG_OP(PadV3)
-    .INPUT(x, TensorType({TensorType::BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN,
-                          DT_FLOAT8_E8M0, DT_FLOAT4_E2M1, DT_FLOAT4_E1M2}))
+    .INPUT(x,
+           TensorType({TensorType::BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0,
+                       DT_FLOAT4_E2M1, DT_FLOAT4_E1M2, Ops::Math::DT_HIFLOAT4, Ops::Math::DT_HIFLOAT4_SCALE}))
     .INPUT(paddings, TensorType::IndexNumberType())
     .OPTIONAL_INPUT(constant_values, TensorType({TensorType::BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2,
-                                                 DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0, DT_FLOAT4_E2M1, DT_FLOAT4_E1M2}))
-    .OUTPUT(y, TensorType({TensorType::BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN,
-                           DT_FLOAT8_E8M0, DT_FLOAT4_E2M1, DT_FLOAT4_E1M2}))
+                                                 DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0, DT_FLOAT4_E2M1, DT_FLOAT4_E1M2,
+                                                 Ops::Math::DT_HIFLOAT4, Ops::Math::DT_HIFLOAT4_SCALE}))
+    .OUTPUT(y,
+            TensorType({TensorType::BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0,
+                        DT_FLOAT4_E2M1, DT_FLOAT4_E1M2, Ops::Math::DT_HIFLOAT4, Ops::Math::DT_HIFLOAT4_SCALE}))
     .ATTR(mode, String, "constant")
     .ATTR(paddings_contiguous, Bool, true)
     .OP_END_FACTORY_REG(PadV3)
