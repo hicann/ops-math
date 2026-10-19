@@ -71,5 +71,5 @@
 
 | 调用方式 | 调用样例                                                                   | 说明                                                             |
 |--------------|------------------------------------------------------------------------|----------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_gt_scalar](./examples/test_aclnn_gt_scalar.cpp) | 通过[aclnnGtScalar&aclnnInplaceGtScalar](./docs/aclnnGtScalar&aclnnInplaceGtScalar.md)接口方式调用Greater算子。    |
-| 图模式调用 | [test_geir_greater](./examples/test_geir_greater.cpp)   | 通过[算子IR](./op_graph/greater_proto.h)构图方式调用Greater算子。 |
+| aclnn API | [test_aclnn_gt_scalar](./examples/test_aclnn_gt_scalar.cpp) | 通过[aclnnGtScalar&aclnnInplaceGtScalar](./docs/aclnnGtScalar&aclnnInplaceGtScalar.md)接口方式调用Greater算子。    |
+| GE图模式 | [test_geir_greater](./examples/test_geir_greater.cpp)   | 通过[算子IR](./op_graph/greater_proto.h)构图方式调用Greater算子。 |

@@ -70,5 +70,5 @@ $$
 
 | 调用方式 | 调用样例                                                                   | 说明                                                             |
 |--------------|------------------------------------------------------------------------|----------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_ne_tensor](./examples/test_aclnn_ne_tensor.cpp) | 通过[aclnnNeTensor](./docs/aclnnNeTensor&aclnnInplaceNeTensor.md)接口方式调用NotEqual算子    |
-| 图模式调用 | [test_geir_not_equal](./examples/test_geir_not_equal.cpp)   | 通过[算子IR](./op_graph/not_equal_proto.h)构图方式调用NotEqual算子 |
+| aclnn API | [test_aclnn_ne_tensor](./examples/test_aclnn_ne_tensor.cpp) | 通过[aclnnNeTensor](./docs/aclnnNeTensor&aclnnInplaceNeTensor.md)接口方式调用NotEqual算子    |
+| GE图模式 | [test_geir_not_equal](./examples/test_geir_not_equal.cpp)   | 通过[算子IR](./op_graph/not_equal_proto.h)构图方式调用NotEqual算子 |

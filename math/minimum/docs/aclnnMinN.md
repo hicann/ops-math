@@ -150,8 +150,8 @@ aclnnStatus aclnnMinN(
       <td>传入的tensors或out是空指针时。</td>
     </tr>
     <tr>
-      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="4">161002</td>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
       <td>tensors列表中tensor或out的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
@@ -162,6 +162,9 @@ aclnnStatus aclnnMinN(
     </tr>
     <tr>
       <td>tensors列表中tensor最大维度超过8。</td>
+    </tr>
+    <tr>
+      <td>tensors列表中tensor的个数为0。</td>
     </tr>
   </tbody>
   </table>

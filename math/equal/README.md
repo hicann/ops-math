@@ -13,7 +13,7 @@
 
 ## 功能说明
 
-- 算子功能：计算两个Tensor是否有相同的大小和元素，返回一个Bool类型。
+- 算子功能：逐元素比较两个输入张量是否相等，返回bool类型张量。
 - 计算表达式：
 
   $$
@@ -69,5 +69,5 @@
 
 | 调用方式 | 调用样例                                                   | 说明                                               |
 |--------------|--------------------------------------------------------|--------------------------------------------------|
-| aclnn调用 | [test_aclnn_equal.cpp](../tensor_equal/examples/test_aclnn_equal.cpp) | 通过[aclnnEqual](../tensor_equal/docs/aclnnEqual.md)接口方式调用Equal算子。 |
-| 图模式调用 | [test_geir_equal.cpp](examples/test_geir_equal.cpp) | 通过[算子IR](op_graph/equal_proto.h)构图方式调用Equal算子。   |
+| aclnn API | [test_aclnn_eq_tensor.cpp](../equal/examples/test_aclnn_eq_tensor.cpp) | 通过[aclnnEqTensor](../equal/docs/aclnnEqTensor&aclnnInplaceEqTensor.md)接口方式调用Equal算子。 |
+| GE图模式 | [test_geir_equal.cpp](examples/test_geir_equal.cpp) | 通过[算子IR](op_graph/equal_proto.h)构图方式调用Equal算子。   |

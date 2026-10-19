@@ -124,9 +124,9 @@ aclnnStatus aclnnInplaceLtTensor(
         </ul>
       </td>
       <td class="tg-0pky">FLOAT、FLOAT16、BFLOAT16、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、DOUBLE、BOOL</td>
-      <td class="tg-0pky">-</td>
-      <td class="tg-0pky">-</td>
-      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">0-8</td>
+      <td class="tg-0pky">√</td>
     </tr>
     <tr>
       <td class="tg-0pky">out（aclTensor*）</td>
@@ -309,9 +309,9 @@ aclnnStatus aclnnInplaceLtTensor(
         </ul>
       </td>
       <td class="tg-0pky">FLOAT、FLOAT16、BFLOAT16、INT32、UINT32、INT64、UINT64、INT16、UINT16、INT8、UINT8、DOUBLE、BOOL</td>
-      <td class="tg-0pky">-</td>
-      <td class="tg-0pky">-</td>
-      <td class="tg-0pky">-</td>
+      <td class="tg-0pky">ND</td>
+      <td class="tg-0pky">0-8</td>
+      <td class="tg-0pky">√</td>
     </tr>
     <tr>
       <td class="tg-0pky">workspaceSize（uint64_t*）</td>

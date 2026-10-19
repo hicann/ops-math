@@ -44,14 +44,14 @@
       <td>x1</td>
       <td>输入</td>
       <td>公式中的输入张量x1。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT64、UINT6、INT8、UINT8、BOOL</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT64、UINT64、INT8、UINT8、BOOL</td>
       <td>ND</td>
     </tr>
     <tr>
       <td>x2</td>
       <td>输入</td>
       <td>公式中的输入张量x2。</td>
-      <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT64、UINT6、INT8、UINT8、BOOL</td>
+      <td>FLOAT、FLOAT16、BFLOAT16、INT32、INT64、UINT64、INT8、UINT8、BOOL</td>
       <td>ND</td>
     </tr>
     <tr>
@@ -71,5 +71,5 @@
 
 | 调用方式 | 调用样例                                                                   | 说明                                                             |
 |--------------|------------------------------------------------------------------------|----------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_ge_scalar](./examples/test_aclnn_ge_scalar.cpp) | 通过[aclnnGeScalar&aclnnInplaceGeScalar](./docs/aclnnGeScalar&aclnnInplaceGeScalar.md)接口方式调用GreaterEqual算子。    |
-| 图模式调用 | [test_geir_greater_equal](./examples/test_geir_greater_equal.cpp) | 通过[算子IR](./op_graph/greater_equal_proto.h)构图方式调用GreaterEqual算子。 |
+| aclnn API | [test_aclnn_ge_scalar](./examples/test_aclnn_ge_scalar.cpp) | 通过[aclnnGeScalar&aclnnInplaceGeScalar](./docs/aclnnGeScalar&aclnnInplaceGeScalar.md)接口方式调用GreaterEqual算子。    |
+| GE图模式 | [test_geir_greater_equal](./examples/test_geir_greater_equal.cpp) | 通过[算子IR](./op_graph/greater_equal_proto.h)构图方式调用GreaterEqual算子。 |

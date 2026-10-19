@@ -147,6 +147,7 @@ int32_t GenOnesDataFloat32(vector<int64_t> shapes, Tensor& input_tensor, TensorD
         *(pData + i) = value;
     }
     input_tensor = Tensor(input_tensor_desc, (uint8_t*)pData, data_len);
+    delete[] pData;
     return SUCCESS;
 }
 
@@ -164,6 +165,7 @@ int32_t GenOnesData(vector<int64_t> shapes, Tensor& input_tensor, TensorDesc& in
         *(pData + i) = value;
     }
     input_tensor = Tensor(input_tensor_desc, reinterpret_cast<uint8_t*>(pData), data_len);
+    delete[] pData;
     return SUCCESS;
 }
 
@@ -209,8 +211,6 @@ int main(int argc, char* argv[])
     std::vector<Operator> inputs{};
     std::vector<Operator> outputs{};
 
-    std::cout << argv[1] << std::endl;
-
     DataType inDtype = DT_FLOAT;
     std::cout << inDtype << std::endl;
 
@@ -242,6 +242,12 @@ int main(int argc, char* argv[])
     };
     uint32_t graph_id = 0;
     ret = session->AddGraph(graph_id, graph, graph_options);
+    if (ret != SUCCESS) {
+        printf("%s - ERROR - [XIR]: Session add ir compute graph to ir session failed\n", GetTime().c_str());
+        delete session;
+        ge::GEFinalize();
+        return FAILED;
+    }
 
     printf("%s - INFO - [XIR]: Session add ir compute graph to ir session success\n", GetTime().c_str());
     printf("%s - INFO - [XIR]: dump graph to txt\n", GetTime().c_str());
@@ -291,6 +297,7 @@ int main(int argc, char* argv[])
     std::string warning_str(warning_msg.GetString());
     std::cout << "Warning message: " << warning_str << std::endl;
     printf("%s - INFO - [XIR]: Start to finalize ir graph session\n", GetTime().c_str());
+    delete session;
     ret = ge::GEFinalize();
     if (ret != SUCCESS) {
         printf("%s - ERROR - [XIR]: Finalize ir graph session failed\n", GetTime().c_str());

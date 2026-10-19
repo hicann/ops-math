@@ -25,13 +25,13 @@ extern "C" {
  * 算子功能：计算两个张量中每个元素的最大值，并返回一个新的张量。
  *
  * @param [in] self: npu
- * device侧的aclTensor，数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL，
+ * device侧的aclTensor，数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16，
  * 且数据类型需要与other构成互相推导关系，shape需要与other满足broadcast关系。支持非连续的Tensor，数据格式支持ND。
  * @param [in] other: npu
- * device侧的aclTensor，数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL，
+ * device侧的aclTensor，数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16，
  * 且数据类型需要与other构成互相推导关系，shape需要与other满足broadcast关系。支持非连续的Tensor，数据格式支持ND。
  * @param [in] out: npu
- * device侧的aclTensor，数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL，
+ * device侧的aclTensor，数据类型支持FLOAT、FLOAT16、DOUBLE、INT32、INT64、INT16、INT8、UINT8、BOOL、BFLOAT16，
  * 且数据类型需要是self与other推导之后可转换的数据类型，shape需要是self与other
  * broadcast之后的shape。支持非连续的Tensor，数据格式支持ND。
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。

@@ -26,14 +26,14 @@ extern "C" {
  * 计算公式： $$ out_{i}= (self_i >= other_i) ? True : False $$
  *
  * @param [in] self: 待进行ge计算的入参,npu device侧的aclTensor，
- * 数据类型支持FLOAT16、FLOAT32、INT32、INT64、INT8、UINT8、DOUBLE、UINT16、UINT32、UINT64、BFLOAT16，数据格式支持ND,
- * 支持非连续的Tensor。
+ * 数据类型支持FLOAT16、FLOAT32、INT32、INT64、INT8、UINT8、DOUBLE、UINT16、UINT32、UINT64、BFLOAT16、
+ * INT16、BOOL，数据格式支持ND，支持非连续的Tensor。
  * @param [in] other: 待进行ge计算的入参,npu device侧的aclTensor，
- * 数据类型支持FLOAT16、FLOAT32、INT32、INT64、INT8、UINT8、DOUBLE、UINT16、UINT32、UINT64、BFLOAT16，数据格式支持ND,
- * 支持非连续的Tensor。
+ * 数据类型支持FLOAT16、FLOAT32、INT32、INT64、INT8、UINT8、DOUBLE、UINT16、UINT32、UINT64、BFLOAT16、
+ * INT16、BOOL，数据格式支持ND，支持非连续的Tensor。
  * @param [in] out: ge计算的出参。npu device侧的aclTensor，
- * 输出一个数据类型为BOOL的Tensor，数据格式支持ND，
- * 支持非连续的Tensor。
+ * 数据类型支持FLOAT16、FLOAT32、INT32、INT64、INT8、UINT8、DOUBLE、UINT16、UINT32、UINT64、BFLOAT16、
+ * INT16、BOOL、COMPLEX64、COMPLEX128，数据格式支持ND，支持非连续的Tensor。
  * @param [out] workspace_size: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
@@ -59,7 +59,8 @@ ACLNN_API aclnnStatus aclnnGeTensor(void* workspace, uint64_t workspaceSize, acl
  * 计算公式： $$ selfRef_{i} = (selfRef_{i} >= other_{i}) ? True : False $$
  *
  * @param [in] selfRef: 待进行ge本地计算的入参,npu device侧的aclTensor，
- * 数据类型支持FLOAT16、FLOAT32、INT32、INT64、INT8、UINT8、DOUBLE、UINT16、UINT32、UINT64、BOOL、BFLOAT16，数据格式支持ND，支持非连续的Tensor。
+ * 数据类型支持FLOAT16、FLOAT32、INT32、INT64、INT8、UINT8、DOUBLE、UINT16、UINT32、UINT64、BOOL、BFLOAT16、
+ * INT16，数据格式支持ND，支持非连续的Tensor。
  * @param [in] other: 待进行ge计算的入参,aclTensor。
  * @param [out] workspace_size: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。

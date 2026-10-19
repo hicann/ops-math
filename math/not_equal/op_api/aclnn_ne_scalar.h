@@ -22,11 +22,13 @@ extern "C" {
  * @brief aclnnNeScalar的第一段接口，根据具体的计算流程，计算workspace大小。
  * @domain aclnn_math
  * @param [in] self: npu device侧的aclTensor，
- * 数据类型支持FLOAT16,FLOAT,INT64,UINT64,INT32,INT8,UINT8,BOOL,UINT32,BFLOAT16,INT16，数据格式支持ND，支持非连续的Tensor。
+ * 数据类型支持FLOAT16,FLOAT,INT64,UINT64,INT32,INT8,UINT8,BOOL,BFLOAT16,INT16,DOUBLE,COMPLEX64,COMPLEX128，数据格式支持ND，支持非连续的Tensor。
  * @param [in] other:
- * host侧的aclScalar，数据类型支持FLOAT16,FLOAT,INT64,UINT64,INT32,INT8,UINT8,BOOL,UINT32,BFLOAT16,INT16,
+ * host侧的aclScalar，数据类型支持FLOAT16,FLOAT,INT64,UINT64,INT32,INT8,UINT8,BOOL,BFLOAT16,INT16,DOUBLE,COMPLEX64,COMPLEX128，
  * 数据类型需要能转换成self的数据类型
- * @param [in] out: npu device侧的aclTensor，数据类型为bool，shape与self的shape一致，数据格式支持ND
+ * @param [in] out: npu
+ * device侧的aclTensor，数据类型支持FLOAT16,FLOAT,INT64,UINT64,INT32,INT8,UINT8,BOOL,BFLOAT16,INT16,
+ * DOUBLE,COMPLEX64,COMPLEX128,UINT16,UINT32，shape与self的shape一致，数据格式支持ND
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
@@ -49,12 +51,11 @@ ACLNN_API aclnnStatus aclnnNeScalar(void* workspace, uint64_t workspaceSize, acl
  * @brief aclnnInplaceNeScalar的第一段接口，根据具体的计算流程，计算workspace大小。
  * @domain aclnn_math
  * @param [in] selfRef: npu device侧的aclTensor，
- * 数据类型支持FLOAT16,FLOAT,INT64,UINT64,INT32,INT8,UINT8,BOOL,UINT32,BFLOAT16,INT16数据类型，
+ * 数据类型支持FLOAT16,FLOAT,INT64,UINT64,INT32,INT8,UINT8,BOOL,BFLOAT16,INT16,DOUBLE,COMPLEX64,COMPLEX128，
  * shape需要与other满足broadcast关系，支持非连续的Tensor，数据格式支持ND。selfRef也是输出结果。
- * @param [in] other: npu device侧的aclTensor，
- * 数据类型支持FLOAT16,FLOAT,INT64,UINT64,INT32,INT8,UINT8,BOOL,UINT32,BFLOAT16,INT16数据类型，
- * shape需要与other满足broadcast关系，支持非连续的Tensor，数据格式支持ND
- * @param [in] out: npu device侧的aclTensor，输出一个数据类型为BOOL类型的Tensor，数据格式支持ND。
+ * @param [in] other: host侧的aclScalar，
+ * 数据类型支持FLOAT16,FLOAT,INT64,UINT64,INT32,INT8,UINT8,BOOL,BFLOAT16,INT16,DOUBLE,COMPLEX64,COMPLEX128，
+ * shape需要与other满足broadcast关系，支持非连续的Tensor，数据格式支持ND。
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。

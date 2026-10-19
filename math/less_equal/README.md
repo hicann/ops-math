@@ -65,4 +65,4 @@
 
 | 调用方式 | 调用样例                                                                   | 说明                                                             |
 |--------------|------------------------------------------------------------------------|----------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_le_scalar](./examples/test_aclnn_le_scalar.cpp) | 通过[aclnnLeScalar&aclnnInplaceLeScalar](./docs/aclnnLeScalar&aclnnInplaceLeScalar.md)接口方式调用LessEqual算子。    |
+| aclnn API | [test_aclnn_le_scalar](./examples/test_aclnn_le_scalar.cpp) | 通过[aclnnLeScalar&aclnnInplaceLeScalar](./docs/aclnnLeScalar&aclnnInplaceLeScalar.md)接口方式调用LessEqual算子。    |

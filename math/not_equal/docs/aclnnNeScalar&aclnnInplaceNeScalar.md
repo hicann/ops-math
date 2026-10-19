@@ -203,7 +203,7 @@ aclnnStatus aclnnInplaceNeScalar(
   </tbody>
   </table>
 
-## aclnnInplaceNeScalar
+## aclnnNeScalar
 
 - **参数说明**：
 

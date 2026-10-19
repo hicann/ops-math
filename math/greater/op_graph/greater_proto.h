@@ -18,7 +18,7 @@ namespace ge {
 
 /**
 *@brief Returns the truth value of (x1 > x2) element-wise. Support broadcasting operations. \n
-*When input is int32 and (x2 - x1) > 2^31 or < -2^31,
+*When input is int32 and (x1 - x2) > 2^31 or < -2^31,
 *aicore accuracy is not guaranteed.
 
 *@par Inputs:

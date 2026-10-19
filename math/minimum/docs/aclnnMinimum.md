@@ -158,9 +158,9 @@ aclnnStatus aclnnMinimum(
       <td>传入的self、other或out是空指针时。</td>
     </tr>
     <tr>
-      <td rowspan="4">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="4">161002</td>
-      <td>self和other的数据类型不在支持的范围之内。</td>
+      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="5">161002</td>
+      <td>self、other、out的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
       <td>self和other无法做数据类型推导。</td>
@@ -170,6 +170,9 @@ aclnnStatus aclnnMinimum(
     </tr>
     <tr>
       <td>self和other的shape无法做broadcast。</td>
+    </tr>
+    <tr>
+      <td>self和other的shape的最大维度超过8。</td>
     </tr>
   </tbody>
   </table>

@@ -40,7 +40,7 @@ ACLNN_API aclnnStatus aclnnMaxNGetWorkspaceSize(const aclTensorList* tensors, ac
  * 算子功能：计算输入tensors列表中每个tensor对应元素求max。
  *
  * @param [in] workspace: 在npu device侧申请的workspace内存起址。
- * @param [in] workspace_size: 在npu device侧申请的workspace大小，由第一段接口aclnnSumGetWorkspaceSize获取。
+ * @param [in] workspaceSize: 在npu device侧申请的workspace大小，由第一段接口aclnnMaxNGetWorkspaceSize获取。
  * @param [in] executor: op执行器，包含了算子计算流程。
  * @param [in] stream: acl stream流。
  * @return aclnnStatus: 返回状态码。

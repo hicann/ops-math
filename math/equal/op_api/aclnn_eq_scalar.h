@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #ifndef OP_API_INC_LEVEL2_ACLNN_EQ_SCALAR_H_
 #define OP_API_INC_LEVEL2_ACLNN_EQ_SCALAR_H_
 
@@ -53,13 +53,14 @@ extern "C" {
  * COMPLEX128，UINT64，UINT32，UINT16。
  * Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件、Atlas A3 训练系列产品/Atlas A3 推理系列产品：
  * 数据类型支持DOUBLE, FLOAT16，FLOAT，BFLOAT16，INT64，INT32，INT8，UINT8，BOOL，INT16，COMPLEX64，COMPLEX128。
- * Atlas 训练系列产品：数据类型支持DOUBLE，FLOAT16，FLOAT，INT64，INT32，INT8，UINT8，BOOL，INT16，COMPLEX64，COMPLEX128。
+ * Atlas 训练系列产品：
+ * 数据类型支持DOUBLE，FLOAT16，FLOAT，INT64，INT32，INT8，UINT8，BOOL，INT16，COMPLEX64，COMPLEX128。
  * @param [out] workspace_size: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnEqScalarGetWorkspaceSize(
-    const aclTensor* self, const aclScalar* other, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnEqScalarGetWorkspaceSize(const aclTensor* self, const aclScalar* other, aclTensor* out,
+                                                    uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief aclnnEqScalar的第二段接口，用于执行计算。
@@ -69,8 +70,8 @@ ACLNN_API aclnnStatus aclnnEqScalarGetWorkspaceSize(
  * @param [in] executor: op执行器，包含了算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus
-aclnnEqScalar(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream);
+ACLNN_API aclnnStatus aclnnEqScalar(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                    const aclrtStream stream);
 
 /**
  * @brief aclnnInplaceEqScalar的第一段接口，根据具体的计算流程，计算workspace大小。
@@ -88,21 +89,25 @@ aclnnEqScalar(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, 
 * D -->F1([l0op::ViewCopy])--> J[(selfRef)]
 ```
  * @param [in] selfRef: npu device侧的aclTensor，数据格式支持ND，支持非连续的Tensor。
- * 昇腾950 AI处理器：数据类型支持DOUBLE，FLOAT16，FLOAT，BFLOAT16，INT64，INT32，INT8，UINT8，BOOL，INT16，COMPLEX64，COMPLEX128，UINT64。
+ * 昇腾950 AI处理器：
+ * 数据类型支持DOUBLE，FLOAT16，FLOAT，BFLOAT16，INT64，INT32，INT8，UINT8，BOOL，INT16，COMPLEX64，COMPLEX128，UINT64。
  * Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件、Atlas A3 训练系列产品/Atlas A3 推理系列产品：
  * 数据类型支持FLOAT16，FLOAT，INT64，INT32，INT8，UINT8，BOOL， BFLOAT16，DOUBLE，INT16，COMPLEX64，COMPLEX128。
- * Atlas 训练系列产品：数据类型支持FLOAT16，FLOAT，INT64，UINT64，INT32，INT8，UINT8，BOOL，UINT32，DOUBLE，INT16，COMPLEX64，COMPLEX128。
+ * Atlas 训练系列产品：
+ * 数据类型支持FLOAT16，FLOAT，INT64，UINT64，INT32，INT8，UINT8，BOOL，UINT32，DOUBLE，INT16，COMPLEX64，COMPLEX128。
  * @param [in] other: host侧的aclScalar，
- * 昇腾950 AI处理器：数据类型支持DOUBLE，FLOAT16，FLOAT，BFLOAT16，INT64，INT32，INT8，UINT8，BOOL，INT16，COMPLEX64，COMPLEX128，UINT64。
+ * 昇腾950 AI处理器：
+ * 数据类型支持DOUBLE，FLOAT16，FLOAT，BFLOAT16，INT64，INT32，INT8，UINT8，BOOL，INT16，COMPLEX64，COMPLEX128，UINT64。
  * Atlas A2 训练系列产品/Atlas 800I A2 推理产品/A200I A2 Box 异构组件、Atlas A3 训练系列产品/Atlas A3 推理系列产品：
  * 数据类型支持FLOAT16，FLOAT，INT64，INT32，INT8，UINT8，BOOL， BFLOAT16，DOUBLE，INT16，COMPLEX64，COMPLEX128。
- * Atlas 训练系列产品：数据类型支持FLOAT16，FLOAT，INT64，UINT64，INT32，INT8，UINT8，BOOL，UINT32，DOUBLE，INT16，COMPLEX64，COMPLEX128。
+ * Atlas 训练系列产品：
+ * 数据类型支持FLOAT16，FLOAT，INT64，UINT64，INT32，INT8，UINT8，BOOL，UINT32，DOUBLE，INT16，COMPLEX64，COMPLEX128。
  * @param [out] workspaceSize: 返回用户需要在npu device侧申请的workspace大小。
  * @param [out] executor: 返回op执行器，包含算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus aclnnInplaceEqScalarGetWorkspaceSize(
-    const aclTensor* selfRef, const aclScalar* other, uint64_t* workspaceSize, aclOpExecutor** executor);
+ACLNN_API aclnnStatus aclnnInplaceEqScalarGetWorkspaceSize(const aclTensor* selfRef, const aclScalar* other,
+                                                           uint64_t* workspaceSize, aclOpExecutor** executor);
 
 /**
  * @brief aclnnInplaceEqScalar的第二段接口，用于执行计算。
@@ -112,8 +117,8 @@ ACLNN_API aclnnStatus aclnnInplaceEqScalarGetWorkspaceSize(
  * @param [in] executor: op执行器，包含了算子计算流程。
  * @return aclnnStatus: 返回状态码。
  */
-ACLNN_API aclnnStatus
-aclnnInplaceEqScalar(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, aclrtStream stream);
+ACLNN_API aclnnStatus aclnnInplaceEqScalar(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                                           aclrtStream stream);
 
 #ifdef __cplusplus
 }
