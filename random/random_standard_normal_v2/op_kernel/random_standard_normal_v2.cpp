@@ -9,9 +9,10 @@
  */
 
 /*!
- * \file truncated_normal_v2.cpp
- * \brief
+ * \file random_standard_normal_v2.cpp
+ * \brief RandomStandardNormalV2 Kernel 入口（Ascend950/Ascend350/Ascend960dt/Ascend960pr）
  */
+// ascend950/ascend350(A5)与ascend960dt/ascend960pr(A6)芯片：共用arch35目录下的实现
 #include "arch35/random_standard_normal_v2.h"
 
 using namespace AscendC;
@@ -19,15 +20,15 @@ using namespace RandomStandardNormalV2;
 
 #define RANDOM_STANDARD_NORMAL_V2_DEFAULT_TILING_KEY 100
 
-extern "C" __global__ __aicore__ void random_standard_normal_v2(
-    GM_ADDR shape, GM_ADDR offset, GM_ADDR y, GM_ADDR count, GM_ADDR workspace, GM_ADDR tiling)
+extern "C" __global__ __aicore__ void random_standard_normal_v2(GM_ADDR shape, GM_ADDR offset, GM_ADDR y, GM_ADDR count,
+                                                                GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(RandomUnifiedTilingDataStruct);
     KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIV_1_0);
     GET_TILING_DATA(tilingData, tiling);
 
     AscendC::TPipe pipe;
-    if(TILING_KEY_IS(RANDOM_STANDARD_NORMAL_V2_DEFAULT_TILING_KEY)) {
+    if (TILING_KEY_IS(RANDOM_STANDARD_NORMAL_V2_DEFAULT_TILING_KEY)) {
         RandomStandardNormalV2::RandomStandardNormalV2Op<DTYPE_Y, DTYPE_OFFSET> op(&pipe, &tilingData);
         op.Init(offset, y, count);
         op.Process();
