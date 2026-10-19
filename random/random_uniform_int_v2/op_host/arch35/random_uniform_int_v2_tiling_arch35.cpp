@@ -280,7 +280,12 @@ void RandomUniformIntV2Tiling::DoBlockTiling()
         return;
     }
 
-    auto coreAlignFactor = CORE_ALIGN_SIZE / outputDtypeSize_;
+    auto platformInfo = context_->GetPlatformInfo();
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    auto coreAlignFactor = (ascendcPlatform.GetCurNpuArch() == NpuArch::DAV_9201 ||
+                            ascendcPlatform.GetCurNpuArch() == NpuArch::DAV_9202) ?
+                               CORE_ALIGN_FACTOR :
+                               (CORE_ALIGN_SIZE / outputDtypeSize_);
     auto blockFactor = Ops::Base::CeilDiv(outputSize_, totalCoreNum_);
     auto blockAlignFactor = Ops::Base::CeilDiv(blockFactor, coreAlignFactor) * coreAlignFactor;
     auto minTilingSize = MIN_TILING_SIZE;

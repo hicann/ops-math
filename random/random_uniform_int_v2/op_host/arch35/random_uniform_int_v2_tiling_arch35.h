@@ -34,9 +34,9 @@ static constexpr uint32_t MIN_TILING_SIZE = 256;
 static constexpr uint64_t DEFAULT_WORKSPACE_SIZE = 0;
 static constexpr int64_t DOUBLE_BUFFER = 2;
 static constexpr int64_t DCACHE_SIZE = 32 * 1024;
+static constexpr int64_t CORE_ALIGN_FACTOR = 32;
 
-class RandomUniformIntV2Tiling : public Ops::Base::TilingBaseClass
-{
+class RandomUniformIntV2Tiling : public Ops::Base::TilingBaseClass {
 public:
     explicit RandomUniformIntV2Tiling(gert::TilingContext* context)
         : Ops::Base::TilingBaseClass(context), opName_(context->GetNodeName())
@@ -82,8 +82,8 @@ private:
 
     void SetTilingData();
     template <typename T>
-    ge::graphStatus GetIntValue(const gert::Tensor *constTensor, gert::Shape &constShape);
-    ge::graphStatus GetIntValueByDtype(const gert::Tensor *constTensor, gert::Shape &constShape, ge::DataType dType);
+    ge::graphStatus GetIntValue(const gert::Tensor* constTensor, gert::Shape& constShape);
+    ge::graphStatus GetIntValueByDtype(const gert::Tensor* constTensor, gert::Shape& constShape, ge::DataType dType);
     ge::graphStatus GetMinAndMaxValue();
     ge::graphStatus GetInputInfo();
     ge::graphStatus GetOutputInfo();

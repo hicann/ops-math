@@ -234,7 +234,9 @@ static const aclTensor* randomDoublePath(const aclTensor* uniformOpOut, int64_t 
 static const aclTensor* randomDavidPath(const aclTensor* selfRef, int64_t seed, int64_t offset, int64_t from,
                                         int64_t to, aclOpExecutor* executor)
 {
-    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 &&
+    if ((GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 ||
+         GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_9201 ||
+         GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_9202) &&
         selfRef->GetDataType() != DataType::DT_DOUBLE) {
         if (!aclnnGetPytorchRandom()) {
             OP_LOGD("compat mode, use V3 uniform");
@@ -275,7 +277,9 @@ static const aclTensor* randomTensorDavidPath(const aclTensor* selfRef, const ac
         return nullptr;
     }
 
-    if (GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 &&
+    if ((GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_3510 ||
+         GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_9201 ||
+         GetCurrentPlatformInfo().GetCurNpuArch() == NpuArch::DAV_9202) &&
         selfRef->GetDataType() != DataType::DT_DOUBLE) {
         if (!aclnnGetPytorchRandom()) {
             OP_LOGD("compat mode, use V3 uniform");
