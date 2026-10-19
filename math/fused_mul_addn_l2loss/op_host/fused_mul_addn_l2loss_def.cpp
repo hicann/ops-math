@@ -55,6 +55,7 @@ public:
             .ExtendCfgInfo("opFile.value", "fused_mul_addn_l2loss")
             .ExtendCfgInfo("opInterface.value", "fused_mul_addn_l2loss");
         this->AICore().AddConfig("ascend950", aicoreConfig);
+        this->AICore().AddConfig("ascend350", aicoreConfig);
     }
 };
 

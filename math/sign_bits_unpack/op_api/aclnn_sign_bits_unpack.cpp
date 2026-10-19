@@ -67,7 +67,8 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* out, aclData
     if (GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND310P &&
         GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910B &&
         GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND910_93 &&
-        GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND950) {
+        GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND950 &&
+        GetCurrentPlatformInfo().GetSocVersion() != SocVersion::ASCEND350) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID, "SignBitsUnpack is not supported on this device.");
         return false;
     }

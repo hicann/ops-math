@@ -17,7 +17,7 @@
  *   - 支持 dtype: FLOAT / FLOAT16 / BFLOAT16
  *   - format: ND
  *   - PrecisionReduceFlag(false)：19 步内部已升 FP32 精度，无需框架降精度
- *   - 仅 ascend950（DAV_3510 / arch35）
+ *   - ascend950、ascend350（DAV_3510 / arch35，复用 arch35 tiling）
  *
  * 迭代一范围：仅 FP32 完整实现；FP16/BF16 在迭代二落地。
  * 但 DataType 列表声明 3 个 dtype 保证 TilingKey 接口稳定。
@@ -46,11 +46,12 @@ public:
         aicoreConfig950.DynamicCompileStaticFlag(true)
             .DynamicFormatFlag(false)
             .DynamicRankSupportFlag(true)
-            .DynamicShapeSupportFlag(true)    // 必须为 true 否则不会进入二进制编译流程
+            .DynamicShapeSupportFlag(true) // 必须为 true 否则不会进入二进制编译流程
             .NeedCheckSupportFlag(false)
-            .PrecisionReduceFlag(false)        // 19 步内部已 Cast 升精，无需框架降精度
+            .PrecisionReduceFlag(false) // 19 步内部已 Cast 升精，无需框架降精度
             .ExtendCfgInfo("opFile.value", "asinh_apt");
         this->AICore().AddConfig("ascend950", aicoreConfig950);
+        this->AICore().AddConfig("ascend350", aicoreConfig950);
     }
 };
 OP_ADD(Asinh);
