@@ -1,4 +1,4 @@
-# ReduceSumV2
+# ReduceProdV2
 
 ## 产品支持情况
 
@@ -31,4 +31,4 @@
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | :-------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
-| aclnn接口 | [test_reduce_prod_v2](examples/test_aclnn_reduce_prod_v2.cpp) | 通过[aclnnReduceSumV2]接口方式调用reduce_prod_v2算子。 |
+| aclnn接口 | [test_reduce_prod_v2](examples/test_aclnn_reduce_prod_v2.cpp) | 通过aclnnReduceProdV2接口方式调用reduce_prod_v2算子。 |
