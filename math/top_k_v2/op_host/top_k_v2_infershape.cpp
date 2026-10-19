@@ -22,7 +22,7 @@ static constexpr int OUTPUT_INDICES_INDEX = 1;
 static constexpr int INPUT_X_INDEX = 0;
 using namespace ge;
 namespace ops {
-static bool InferShapeForTopKCommon(gert::InferShapeContext* context, int64_t k, const int64_t* dim)
+static graphStatus InferShapeForTopKCommon(gert::InferShapeContext* context, int64_t k, const int64_t* dim)
 {
     const gert::Shape* input_x_shape = context->GetInputShape(INPUT_X_INDEX);
     OP_CHECK_NULL_WITH_CONTEXT(context, input_x_shape);
@@ -39,13 +39,27 @@ static bool InferShapeForTopKCommon(gert::InferShapeContext* context, int64_t k,
         if (sorted_axis < 0) {
             sorted_axis += dim_size;
         }
-        if (sorted_axis >= static_cast<int64_t>(dim_size)) {
+        if (sorted_axis < 0 || sorted_axis >= static_cast<int64_t>(dim_size)) {
             OP_LOGE_WITH_INVALID_ATTR(
                 context->GetNodeName(), "dim", std::to_string(*dim).c_str(),
                 ("[-" + std::to_string(dim_size) + ", " + std::to_string(static_cast<int64_t>(dim_size) - 1) + "]")
                     .c_str());
             return GRAPH_FAILED;
         }
+    }
+
+    if (k < 0) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "k", std::to_string(k).c_str(),
+                                              "The value of k must be non-negative.");
+        return GRAPH_FAILED;
+    }
+    const int64_t axis_size = input_x_shape->GetDim(static_cast<size_t>(sorted_axis));
+    if (axis_size >= 0 && k > axis_size) {
+        OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(
+            context->GetNodeName(), "k", std::to_string(k).c_str(),
+            ("The value of k must not be greater than the sorted axis size " + std::to_string(axis_size) + ".")
+                .c_str());
+        return GRAPH_FAILED;
     }
 
     gert::Shape* output_values_shape = context->GetOutputShape(OUTPUT_VALUES_INDEX);
