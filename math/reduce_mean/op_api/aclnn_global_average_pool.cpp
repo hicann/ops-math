@@ -155,7 +155,8 @@ aclnnStatus aclnnGlobalAveragePoolGetWorkspaceSize(const aclTensor* self, aclTen
     for (int64_t i = 2; i < dimNum; i++) {
         dimVector.push_back(i);
     }
-    const aclIntArray* dims = aclCreateIntArray(dimVector.data(), dimNum - 2);
+    const aclIntArray* dims = uniqueExecutor.get()->AllocIntArray(dimVector.data(), dimNum - 2);
+    CHECK_RET(dims != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     if (IsNonContiguousSupport(self, dims)) {
         OP_LOGD("Enter NonContiguous");

@@ -34,11 +34,11 @@ static const uint64_t GLOBAL_MAX_POOL_MAX_DIMS_NUMS = 8;
 static const uint64_t DIM_NUMBER_TWO = 2;
 
 // 根据API定义，需要列出所能支持的所有dtype
-static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16, op::DataType::DT_DOUBLE};
+static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {op::DataType::DT_FLOAT, op::DataType::DT_FLOAT16,
+                                                                       op::DataType::DT_DOUBLE};
 
-static const std::initializer_list<op::Format> FORMAT_SUPPORT_LIST = {
-    op::Format::FORMAT_ND, op::Format::FORMAT_NCHW, op::Format::FORMAT_NCDHW};
+static const std::initializer_list<op::Format> FORMAT_SUPPORT_LIST = {op::Format::FORMAT_ND, op::Format::FORMAT_NCHW,
+                                                                      op::Format::FORMAT_NCDHW};
 
 static bool CheckNotNull(const aclTensor* self, const aclTensor* out)
 {
@@ -114,8 +114,8 @@ static aclnnStatus CheckParams(const aclTensor* self, const aclTensor* out)
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnGlobalMaxPoolGetWorkspaceSize(
-    const aclTensor* self, aclTensor* out, uint64_t* workspaceSize, aclOpExecutor** executor)
+aclnnStatus aclnnGlobalMaxPoolGetWorkspaceSize(const aclTensor* self, aclTensor* out, uint64_t* workspaceSize,
+                                               aclOpExecutor** executor)
 {
     L2_DFX_PHASE_1(aclnnGlobalMaxPool, DFX_IN(self), DFX_OUT(out));
 
@@ -137,7 +137,8 @@ aclnnStatus aclnnGlobalMaxPoolGetWorkspaceSize(
     for (int64_t i = 2; i < dimNum; i++) {
         dimVector.push_back(i);
     }
-    const aclIntArray* dim = aclCreateIntArray(dimVector.data(), dimNum - 2);
+    const aclIntArray* dim = uniqueExecutor.get()->AllocIntArray(dimVector.data(), dimNum - 2);
+    CHECK_RET(dim != nullptr, ACLNN_ERR_INNER_NULLPTR);
 
     // 调用max算子kernel
     auto maxOpOut = l0op::ReduceMax(selfContiguous, dim, true, true, uniqueExecutor.get());
@@ -153,8 +154,8 @@ aclnnStatus aclnnGlobalMaxPoolGetWorkspaceSize(
     return ACLNN_SUCCESS;
 }
 
-aclnnStatus aclnnGlobalMaxPool(
-    void* workspace, uint64_t workspaceSize, aclOpExecutor* executor, const aclrtStream stream)
+aclnnStatus aclnnGlobalMaxPool(void* workspace, uint64_t workspaceSize, aclOpExecutor* executor,
+                               const aclrtStream stream)
 {
     L2_DFX_PHASE_2(aclnnGlobalMaxPool);
     // 固定写法，调用框架能力，完成计算
