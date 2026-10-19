@@ -163,6 +163,23 @@ static bool EmplaceTensorList(const aclTensorList* tensors, op::FVector<const ac
     return true;
 }
 
+static op::Shape InferStackOutShape(const aclTensorList* tensors, int64_t realDim)
+{
+    op::Shape shape = (*tensors)[0]->GetViewShape();
+    auto dimNum = static_cast<int64_t>(shape.GetDimNum());
+    op::Shape outShape;
+    outShape.SetDimNum(dimNum + 1);
+    for (int64_t i = 0, j = 0; i <= dimNum; i++) {
+        if (i == realDim) {
+            outShape.SetDim(i, static_cast<int64_t>(tensors->Size()));
+        } else {
+            outShape.SetDim(i, shape.GetDim(j));
+            j++;
+        }
+    }
+    return outShape;
+}
+
 // stack 语义等价于在 dim 处插一个 size=1 的轴后沿 dim 做 ConcatD, 此处构造插轴后的 view shape
 static op::Shape MakeStackViewShape(const op::Shape& shape, int64_t dim)
 {
@@ -550,6 +567,8 @@ aclnnStatus aclnnStackGetWorkspaceSize(const aclTensorList* tensors, int64_t dim
     const aclTensor* castIn = nullptr;
     if (tensors->Size() == 1) {
         if ((*tensors)[0]->IsEmpty()) {
+            OP_CHECK_SHAPE_NOT_EQUAL_WITH_EXPECTED_SIZE(out, InferStackOutShape(tensors, realDim),
+                                                        return ACLNN_ERR_PARAM_INVALID);
             *workspaceSize = 0;
             uniqueExecutor.ReleaseTo(executor);
             return ACLNN_SUCCESS;
@@ -564,6 +583,8 @@ aclnnStatus aclnnStackGetWorkspaceSize(const aclTensorList* tensors, int64_t dim
         CHECK_RET(retSplit == ACLNN_SUCCESS, retSplit);
     }
     if (castIn == nullptr) {
+        OP_CHECK_SHAPE_NOT_EQUAL_WITH_EXPECTED_SIZE(out, InferStackOutShape(tensors, realDim),
+                                                    return ACLNN_ERR_PARAM_INVALID);
         *workspaceSize = 0;
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;

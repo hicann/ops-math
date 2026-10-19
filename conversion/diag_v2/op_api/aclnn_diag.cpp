@@ -14,6 +14,7 @@
  */
 
 #include "aclnn_diag.h"
+#include <algorithm>
 #include "aclnn_kernels/cast.h"
 #include "aclnn_kernels/contiguous.h"
 #include "diagv2.h"
@@ -99,6 +100,31 @@ static bool CheckDiagonal(const aclTensor* self, int64_t diagonal)
     return false;
 }
 
+static op::Shape InferDiagOutShape(const aclTensor* self, int64_t diagonal)
+{
+    const op::Shape& inputShape = self->GetViewShape();
+    op::Shape outShape;
+    if (inputShape.GetDimNum() < DIM_TWO) {
+        int64_t side = inputShape.GetShapeSize() + std::abs(diagonal);
+        outShape.SetDimNum(DIM_TWO);
+        outShape.SetDim(0, side);
+        outShape.SetDim(1, side);
+        return outShape;
+    }
+
+    int64_t rows = inputShape.GetDim(0);
+    int64_t cols = inputShape.GetDim(1);
+    int64_t len = 0;
+    if (diagonal >= 0 && diagonal < cols) {
+        len = std::min(rows, cols - diagonal);
+    } else if (diagonal < 0 && -diagonal < rows) {
+        len = std::min(rows + diagonal, cols);
+    }
+    outShape.SetDimNum(1);
+    outShape.SetDim(0, len);
+    return outShape;
+}
+
 static aclnnStatus FillScalar(aclTensor* out, float val, aclOpExecutor* executor)
 {
     OP_CHECK_DTYPE_NOT_SUPPORT(out, EMPTY_INPUT_DTYPE_SUPPORT_LIST, return ACLNN_ERR_PARAM_INVALID);
@@ -162,13 +188,16 @@ aclnnStatus aclnnDiagGetWorkspaceSize(const aclTensor* self, int64_t diagonal, a
 
     CheckFormat(self);
 
-    if ((self->IsEmpty() && diagonal == 0) || CheckDiagonal(self, diagonal)) {
+    op::Shape expectShape = InferDiagOutShape(self, diagonal);
+    if (expectShape.GetShapeSize() == 0 && (self->IsEmpty() || CheckDiagonal(self, diagonal))) {
+        OP_CHECK_SHAPE_NOT_EQUAL_WITH_EXPECTED_SIZE(out, expectShape, return ACLNN_ERR_PARAM_INVALID);
         *workspaceSize = 0;
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
     }
 
-    if ((self->IsEmpty() && std::abs(diagonal) > 0)) {
+    if (self->IsEmpty() && std::abs(diagonal) > 0) {
+        OP_CHECK_SHAPE_NOT_EQUAL_WITH_EXPECTED_SIZE(out, expectShape, return ACLNN_ERR_PARAM_INVALID);
         ret = FillScalar(out, 0, uniqueExecutor.get());
         if (ret == ACLNN_SUCCESS) {
             *workspaceSize = uniqueExecutor->GetWorkspaceSize();

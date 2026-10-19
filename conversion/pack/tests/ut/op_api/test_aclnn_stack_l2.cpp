@@ -567,6 +567,26 @@ TEST_F(l2_stack_test, l2_stack_test_one_empty_tensor)
     EXPECT_EQ(aclRet, ACL_SUCCESS);
 }
 
+TEST_F(l2_stack_test, l2_stack_test_empty_wrong_out_shape)
+{
+    auto tensor_1_desc = TensorDesc({0}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto tensor_list_desc = TensorListDesc({tensor_1_desc});
+    auto out_tensor_desc = TensorDesc({5}, ACL_FLOAT, ACL_FORMAT_ND);
+    int64_t dim = 0;
+
+    auto ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+
+    auto tensor_2_desc = TensorDesc({2, 2, 0}, ACL_FLOAT, ACL_FORMAT_ND);
+    tensor_list_desc = TensorListDesc({tensor_2_desc, tensor_2_desc});
+    out_tensor_desc = TensorDesc({5}, ACL_FLOAT, ACL_FORMAT_ND);
+    ut = OP_API_UT(aclnnStack, INPUT(tensor_list_desc, dim), OUTPUT(out_tensor_desc));
+    aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}
+
 // 正常路径，bfloat16
 TEST_F(l2_stack_test, ascend310P_l2_stack_test_dtype_bfloat16)
 {
