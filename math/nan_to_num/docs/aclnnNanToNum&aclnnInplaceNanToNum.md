@@ -699,4 +699,5 @@ int main() {
   aclrtResetDevice(deviceId);
   aclFinalize();
   return 0;
-}```
+}
+```
