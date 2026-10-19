@@ -173,7 +173,11 @@ private:
             if (wValidMin < 0) {
                 wValidMin = 0;
             }
-            int64_t wValidMax = (widthIn + padLeft - bw - 1) / blockSize;
+            int64_t wValidMaxNumerator = widthIn + padLeft - bw - 1;
+            int64_t wValidMax = wValidMaxNumerator / blockSize;
+            if (wValidMaxNumerator < 0 && wValidMaxNumerator % blockSize != 0) {
+                wValidMax--; // floor division for negative numerator
+            }
             int64_t wEnd = wStart + tilingData_->ubFactor - 1;
             int64_t wOutLast = tilingData_->outShape[STB_AXIS_W] - 1;
             if (wEnd > wOutLast) {
@@ -342,7 +346,11 @@ private:
         if (wValidMin < 0) {
             wValidMin = 0;
         }
-        int64_t wValidMax = (widthIn + padLeft - bw - 1) / blockSize;
+        int64_t wValidMaxNumerator = widthIn + padLeft - bw - 1;
+        int64_t wValidMax = wValidMaxNumerator / blockSize;
+        if (wValidMaxNumerator < 0 && wValidMaxNumerator % blockSize != 0) {
+            wValidMax--; // floor division for negative numerator
+        }
 
         int64_t wEnd = wStart + count - 1;
         int64_t wBlockStart = (wStart > wValidMin) ? wStart : wValidMin;
