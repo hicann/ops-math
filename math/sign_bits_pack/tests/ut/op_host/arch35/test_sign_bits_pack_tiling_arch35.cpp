@@ -48,7 +48,7 @@ TEST_F(SignBitsPackTilingTest, test_tiling_normal_256_fp32_size1)
                                               },
                                               &compileInfo);
     uint64_t expectTilingKey = 1;
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, EMPTY_EXPECT_TILING_DATA);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, EMPTY_EXPECT_TILING_DATA, {0});
 }
 
 // 正常1D输入 N=512 fp16 size=8
@@ -69,7 +69,7 @@ TEST_F(SignBitsPackTilingTest, test_tiling_normal_512_fp16_size8)
                                               },
                                               &compileInfo);
     uint64_t expectTilingKey = 1;
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, EMPTY_EXPECT_TILING_DATA);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, EMPTY_EXPECT_TILING_DATA, {0});
 }
 
 // 空Tensor N=0
@@ -90,7 +90,7 @@ TEST_F(SignBitsPackTilingTest, test_tiling_empty_tensor)
                                               },
                                               &compileInfo);
     uint64_t expectTilingKey = 0;
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, EMPTY_EXPECT_TILING_DATA);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, EMPTY_EXPECT_TILING_DATA, {0});
 }
 
 // 非8倍数 N=17 fp32 size=1 (填充场景)
@@ -111,5 +111,5 @@ TEST_F(SignBitsPackTilingTest, test_tiling_non8_pad)
                                               },
                                               &compileInfo);
     uint64_t expectTilingKey = 1;
-    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, EMPTY_EXPECT_TILING_DATA);
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, EMPTY_EXPECT_TILING_DATA, {0});
 }

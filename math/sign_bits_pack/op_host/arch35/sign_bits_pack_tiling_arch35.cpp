@@ -96,6 +96,13 @@ static ge::graphStatus TilingFuncSignBitsPack(gert::TilingContext* context)
         return ge::GRAPH_FAILED;
     }
 
+    size_t* currentWorkspace = context->GetWorkspaceSizes(1);
+    if (currentWorkspace == nullptr) {
+        OP_LOGE(kOpName, "GetWorkspaceSizes returned null");
+        return ge::GRAPH_FAILED;
+    }
+    currentWorkspace[0] = 0;
+
     if (n <= 0) {
         SignBitsPackTilingData* td = context->GetTilingData<SignBitsPackTilingData>();
         if (td == nullptr) {
