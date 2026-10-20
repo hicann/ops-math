@@ -82,4 +82,4 @@ $$
 
 | 调用方式  | 样例代码                                                     | 说明                                                         |
 | --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| 图模式调用 | [test_geir_drop_out_do_mask_v3_d](./examples/test_geir_drop_out_do_mask_v3_d.cpp)   | 通过[算子IR](./op_graph/drop_out_do_mask_v3_d_proto.h)构图方式调用TruncatedNormalV2算子。 |
+| 图模式调用 | [test_geir_drop_out_do_mask_v3_d](./examples/test_geir_drop_out_do_mask_v3_d.cpp)   | 通过[算子IR](./op_graph/drop_out_do_mask_v3_d_proto.h)构图方式调用DropOutDoMaskV3D算子。 |
