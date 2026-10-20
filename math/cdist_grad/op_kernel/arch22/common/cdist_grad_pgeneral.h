@@ -81,7 +81,8 @@ using namespace AscendC;
 
 // Largest finite fp32. Used to detect a cdist that overflowed to +inf, which happens for
 // every fp16 case whose true distance exceeds 65504 (the reference computes cdist in fp64
-// and rounds it to the operator dtype).
+// and rounds it to the operator dtype). The p>1 inf guard applies it to BOTH the cdist and
+// the pre-division numerator so that only finite/inf is zeroed and inf/inf keeps its NaN.
 constexpr float MAX_FINITE_F32 = 3.4028235e38f;
 
 // fp32 binary layout, used by the bit tricks below.
@@ -408,6 +409,9 @@ __aicore__ inline void CdistGradPGeneral<T>::ComputeBatch(int64_t base, int64_t 
     // |diff|, remember |diff|==0
     AscendC::Abs(diff, diff, count);
     AscendC::Compares(maskDiffZero, diff, 0.0f, AscendC::CMPMODE::EQ, count);
+    if (pMinus1 >= 0.0f) {
+        AscendC::Compares(maskDistZero, diff, MAX_FINITE_F32, AscendC::CMPMODE::LT, count);
+    }
 
     LocalTensor<float> tmpF32 = this->tmpBuf.template Get<float>();
 
@@ -422,15 +426,18 @@ __aicore__ inline void CdistGradPGeneral<T>::ComputeBatch(int64_t base, int64_t 
     // sign * r^q * grad
     AscendC::Mul(term, sign, powDst, count);
     AscendC::Mul(term, this->gradChunk_[off], term, count);
+    AscendC::Select(term, maskDiffZero, this->zero_, term, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, count);
+    if (pMinus1 >= 0.0f) {
+        LocalTensor<float> termRaw = powDst;
+        AscendC::Adds(termRaw, term, 0.0f, count);
+        LocalTensor<uint8_t> maskDistInf = this->maskBuf2.template Get<uint8_t>();
+        AscendC::Compares(maskDistInf, this->distChunk_[off], MAX_FINITE_F32, AscendC::CMPMODE::GE, count);
+        AscendC::Select(term, maskDistInf, this->zero_, term, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, count);
+        AscendC::Select(term, maskDistZero, term, termRaw, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, count);
+    }
     // SelectZero(cdist==0)
     AscendC::Compares(maskDistZero, this->distChunk_[off], 0.0f, AscendC::CMPMODE::EQ, count);
     AscendC::Select(term, maskDistZero, this->zero_, term, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, count);
-    if (pMinus1 >= 0.0f) {
-        AscendC::Compares(maskDistZero, this->distChunk_[off], MAX_FINITE_F32, AscendC::CMPMODE::GE, count);
-        AscendC::Select(term, maskDistZero, this->zero_, term, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, count);
-    }
-    // SelectZero(|diff|==0)
-    AscendC::Select(term, maskDiffZero, this->zero_, term, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, count);
 }
 
 template <typename T>

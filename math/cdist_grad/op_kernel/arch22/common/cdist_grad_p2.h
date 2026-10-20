@@ -65,6 +65,9 @@ __aicore__ inline void CdistGradP2<T>::ComputeBatch(int64_t base, int64_t rows)
     AscendC::Mul(term, this->gradChunk_[off], term, n);
     LocalTensor<float> rcp = this->sc2_;
     LocalTensor<float> t = this->sc3_;
+    LocalTensor<uint8_t> maskNumFinite = this->maskBuf2.template Get<uint8_t>();
+    AscendC::Abs(rcp, term, n);
+    AscendC::Compares(maskNumFinite, rcp, 3.4028235e38f, AscendC::CMPMODE::LT, n);
     AscendC::Reciprocal(rcp, distSafe, n); // r0 = 1/b, b = cdist + 1e-38
     AscendC::Mul(t, distSafe, rcp, n);     // b*r0
     AscendC::Muls(t, t, -1.0f, n);         // -b*r0
@@ -75,10 +78,15 @@ __aicore__ inline void CdistGradP2<T>::ComputeBatch(int64_t base, int64_t rows)
     AscendC::Adds(t, t, 2.0f, n);          // 2 - b*r1
     AscendC::Mul(rcp, rcp, t, n);          // r2 = r1*(2 - b*r1)
     AscendC::Mul(term, term, rcp, n);      // q = a*r2
+    // Save the post-division term: the refined inf guard needs it to restore the NaN of an
+    // inf/nan numerator. t (sc3_) is dead after the reciprocal loop.
+    LocalTensor<float> termRaw = t;
+    AscendC::Adds(termRaw, term, 0.0f, n);
     // *(cdist != 0): where cdist==0 take 0
     AscendC::Select(term, maskDistZero, this->zero_, term, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
     AscendC::Compares(maskDistZero, this->distChunk_[off], 3.4028235e38f, AscendC::CMPMODE::GE, n);
     AscendC::Select(term, maskDistZero, this->zero_, term, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
+    AscendC::Select(term, maskNumFinite, term, termRaw, AscendC::SELMODE::VSEL_TENSOR_TENSOR_MODE, n);
 }
 
 } // namespace NsCdistGrad
