@@ -2732,7 +2732,7 @@ __aicore__ inline void PadV3GradGather<T, modeName>::FoldWAxisForCHWAxis(
                     AscendC::Reg::Select(leftIdxR, zeroFull, leftIdxR, gtLPWMask);
                 } else {
                     // leftIdx = midIdx - 2*col - 1，valid: col < leftPadW
-                    AscendC::Reg::Sub(leftIdxR, midIdxR, colReg, fullMask);
+                    AscendC::Reg::Sub(leftIdxR, midIdxR, col2Reg, fullMask);
                     AscendC::Reg::Adds(leftIdxR, leftIdxR, static_cast<GatherRangeType>(-1), fullMask);
                     // col >= leftPadW → 置 0
                     AscendC::Reg::MaskReg geLPWMask;

@@ -180,7 +180,10 @@ bool PadV3GradACTiling::OptimizeFactorSearch(uint8_t dimIdx, int64_t sliceCount,
         int64_t balancedFactor = Ops::Base::CeilDiv(tilingData_->outShape[dimIdx],
                                                     static_cast<uint64_t>(dimSliceCnt)); // 切分更均匀
 
-        if (lastInfo.ubPerCoreCnt != perCoreCnt) {
+        // 仅同轴搜索保持 ubPerCoreCnt 不变的前提(原始语义, 约束搜索空间);
+        // 跨轴搜索放开该约束: 大UB场景下初始tile数不足时, 需允许缩小factor
+        // 改变每核tile数来增加总tile数, 否则核利用率无法达标
+        if (dimIdx == lastInfo.ubSplitAxis && lastInfo.ubPerCoreCnt != perCoreCnt) {
             OP_LOGD(context_, "iDim:%u factor:%ld tmpPerCount:%ld not equal ubPerCoreCnt:%ld", dimIdx, tryFactor,
                     perCoreCnt, lastInfo.ubPerCoreCnt);
             searchDone = true;
@@ -195,11 +198,15 @@ bool PadV3GradACTiling::OptimizeFactorSearch(uint8_t dimIdx, int64_t sliceCount,
             break;
         }
 
-        bestInfo.ubSplitAxis = dimIdx;
-        bestInfo.ubSplitFactor = balancedFactor;
-        bestInfo.ubTotalCnt = totalCnt;
-        bestInfo.ubPerCoreCnt = perCoreCnt;
-        bestInfo.usedCoreNum = usedCores;
+        // best-recorded-wins: usedCores 随搜索推进非单调(perCore递增边界存在下陷),
+        // 仅当核数不低于已记录解时才覆盖, 保证搜索终止在下陷点时结果不劣化
+        if (usedCores >= static_cast<int64_t>(bestInfo.usedCoreNum)) {
+            bestInfo.ubSplitAxis = dimIdx;
+            bestInfo.ubSplitFactor = balancedFactor;
+            bestInfo.ubTotalCnt = totalCnt;
+            bestInfo.ubPerCoreCnt = perCoreCnt;
+            bestInfo.usedCoreNum = static_cast<uint32_t>(usedCores);
+        }
 
         double coreUseRate = static_cast<double>(usedCores) / static_cast<double>(coreNum_);
         OP_LOGD(context_, "current iDim:%u factor:%ld iDimOuter:%ld tmpFactor:%ld tmpCoreNum:%ld usedRate:%f", dimIdx,
@@ -220,7 +227,7 @@ void PadV3GradACTiling::GetOptimizeTiling(const PadV3GradUbTileInfo& oldTilingIn
         outCount *= tilingData_->outShape[i];
     }
 
-    // ubPerCoreCnt 不发生变化为前提时，最多循环coreNum+dimNum_次就可以找到最优解, 这里仅做防死循环保护
+    // 同轴搜索以 ubPerCoreCnt 不变化为前提(跨轴搜索已放开该前提), loopGuard 仅做防死循环保护
     uint32_t maxLoop = coreNum_ + dimNum_;
     uint32_t loops = 0;
     bool found = false;
@@ -240,10 +247,25 @@ void PadV3GradACTiling::GetOptimizeTiling(const PadV3GradUbTileInfo& oldTilingIn
     }
     // 如果切分轴变化，不是尾轴，且该轴满载，那还是切前一个轴且factor=1
     if (NeedFallBackToPrevAxis(oldTilingInfo, newTilingInfo)) {
-        newTilingInfo.ubSplitAxis = newTilingInfo.ubSplitAxis - 1;
-        newTilingInfo.ubSplitFactor = 1;
-        OP_LOGD(context_, "Back to last axis, ubSplitAxis:%u ubSplitFactor:%u", newTilingInfo.ubSplitAxis,
-                newTilingInfo.ubSplitFactor);
+        // 满载轴回退到前一轴factor=1是切分表示的等价归一化(tile数不变),
+        // 重算回退后的分核信息并校验核数不退化, 不满足则维持当前切分
+        uint8_t prevAxis = newTilingInfo.ubSplitAxis - 1;
+        int64_t fallbackTotalCnt = static_cast<int64_t>(tilingData_->outShape[prevAxis]);
+        for (uint8_t i = 0; i < prevAxis; i++) {
+            fallbackTotalCnt *= static_cast<int64_t>(tilingData_->outShape[i]);
+        }
+        int64_t fallbackPerCoreCnt = 0;
+        int64_t fallbackUsedCores = 0;
+        CalcCoreInfo(fallbackTotalCnt, fallbackPerCoreCnt, fallbackUsedCores);
+        if (fallbackUsedCores >= static_cast<int64_t>(newTilingInfo.usedCoreNum)) {
+            newTilingInfo.ubSplitAxis = prevAxis;
+            newTilingInfo.ubSplitFactor = 1;
+            newTilingInfo.ubTotalCnt = fallbackTotalCnt;
+            newTilingInfo.ubPerCoreCnt = fallbackPerCoreCnt;
+            newTilingInfo.usedCoreNum = static_cast<uint32_t>(fallbackUsedCores);
+            OP_LOGD(context_, "Back to last axis, ubSplitAxis:%u ubSplitFactor:%u usedCoreNum:%u",
+                    newTilingInfo.ubSplitAxis, newTilingInfo.ubSplitFactor, newTilingInfo.usedCoreNum);
+        }
     }
 }
 
@@ -378,7 +400,6 @@ bool PadV3GradACTiling::ClampBufferSizeAndCheckBigShape(uint64_t lastShapeSizeAl
     }
     return false;
 }
-
 void PadV3GradACTiling::CalculateTilingKeyCircular()
 {
     OP_LOGD(context_, "Start PadV3GradACTiling CalculateTilingKeyCircular.");
@@ -392,6 +413,17 @@ void PadV3GradACTiling::CalculateTilingKeyCircular()
 
     bufferSize_ = GetSizeOfBlockAlign(ubSize_ / (CONST2 * dtypeBytes_ + CONST2 * FP32_SIZE) - alignNum, alignNum);
     if (ClampBufferSizeAndCheckBigShape(lastShapeSizeAlign)) {
+        return;
+    }
+
+    // 仅当整行数据量超过 MIN_PER_UB_SIZE，且末轴 <= bufferSize：整行可驻留 UB，走SIMD
+    if (lastShapeSizeAlign * dtypeBytes_ > static_cast<uint64_t>(MIN_PER_UB_SIZE)) {
+        cutMode_ = TPL_SIMD_BIG;
+        ubAxis_ = static_cast<uint8_t>(dimNum_ - 1);
+        uint64_t rowFactor = lastShapeSizeAlign < bufferSize_ ? lastShapeSizeAlign : bufferSize_;
+        ubFactor_ = static_cast<uint32_t>(rowFactor);
+        outTileSize_ = static_cast<uint32_t>(rowFactor);
+        TilingInfoTune();
         return;
     }
     DoTilingWithSIMTCircular();

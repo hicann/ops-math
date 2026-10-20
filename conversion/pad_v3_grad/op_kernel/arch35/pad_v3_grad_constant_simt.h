@@ -76,28 +76,30 @@ __simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__
     }
 }
 
+// 2~5 维参数标量化：__ubuf__ 数组参数会产生每元素 4*dim-1 次 UB 标量读（运行时索引，
+// 编译器无法缓存），与 GM 访问共享 LSU 通道。改为标量传参后每核仅在调用点读一次 UB，
+// kernel 内全部走寄存器，LSU 流量仅剩 GM 读+写
 template <typename T, typename U, typename S, int32_t DIM>
 __simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__
     void SimtComputeDimTwo(__gm__ T* inputGM, __gm__ volatile T* outputGM, U outputSize, uint32_t blockIdx,
-                           uint32_t blockNum, __ubuf__ U* outStrides, __ubuf__ U* inStrides, __ubuf__ U* inShapes, U m0,
-                           U s0, __ubuf__ S* lefts)
+                           uint32_t blockNum, U outStride0, U inStride0, U inStride1, U inShape0, U inShape1, U m0,
+                           U s0, S left0, S left1)
 {
     for (U idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         S inIndexGrad2[DIM]{0};
         U yIdx = idx;
 
         inIndexGrad2[0] = Simt::UintDiv(yIdx, m0, s0);
-        yIdx -= inIndexGrad2[0] * outStrides[0];
+        yIdx -= inIndexGrad2[0] * outStride0;
         inIndexGrad2[1] = yIdx;
 
-        inIndexGrad2[0] = inIndexGrad2[0] + lefts[0];
-        inIndexGrad2[1] = inIndexGrad2[1] + lefts[1];
+        inIndexGrad2[0] = inIndexGrad2[0] + left0;
+        inIndexGrad2[1] = inIndexGrad2[1] + left1;
 
-        if (inIndexGrad2[0] < 0 || inIndexGrad2[0] >= inShapes[0] || inIndexGrad2[1] < 0 ||
-            inIndexGrad2[1] >= inShapes[1]) {
+        if (inIndexGrad2[0] < 0 || inIndexGrad2[0] >= inShape0 || inIndexGrad2[1] < 0 || inIndexGrad2[1] >= inShape1) {
             outputGM[idx] = 0;
         } else {
-            U inputOffset = U(inIndexGrad2[0]) * inStrides[0] + U(inIndexGrad2[1]);
+            U inputOffset = U(inIndexGrad2[0]) * inStride0 + U(inIndexGrad2[1]);
             outputGM[idx] = inputGM[inputOffset];
         }
     }
@@ -106,8 +108,8 @@ __simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__
 template <typename T, typename U, typename S, int32_t DIM>
 __simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__
     void SimtComputeDimThree(__gm__ T* inputGM, __gm__ volatile T* outputGM, U outputSize, uint32_t blockIdx,
-                             uint32_t blockNum, __ubuf__ U* outStrides, __ubuf__ U* inStrides, __ubuf__ U* inShapes,
-                             U m0, U m1, U s0, U s1, __ubuf__ S* lefts)
+                             uint32_t blockNum, U outStride0, U outStride1, U inStride0, U inStride1, U inStride2,
+                             U inShape0, U inShape1, U inShape2, U m0, U m1, U s0, U s1, S left0, S left1, S left2)
 {
     for (U idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         S inIndexGrad3[DIM]{0};
@@ -115,20 +117,20 @@ __simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__
         U yIdx = idx;
 
         inIndexGrad3[0] = Simt::UintDiv(yIdx, m0, s0);
-        yIdx -= inIndexGrad3[0] * outStrides[0];
+        yIdx -= inIndexGrad3[0] * outStride0;
         inIndexGrad3[1] = Simt::UintDiv(yIdx, m1, s1);
-        yIdx -= inIndexGrad3[1] * outStrides[1];
+        yIdx -= inIndexGrad3[1] * outStride1;
         inIndexGrad3[2] = yIdx;
 
-        inIndexGrad3[0] = inIndexGrad3[0] + lefts[0];
-        inIndexGrad3[1] = inIndexGrad3[1] + lefts[1];
-        inIndexGrad3[2] = inIndexGrad3[2] + lefts[2];
+        inIndexGrad3[0] = inIndexGrad3[0] + left0;
+        inIndexGrad3[1] = inIndexGrad3[1] + left1;
+        inIndexGrad3[2] = inIndexGrad3[2] + left2;
 
-        if (inIndexGrad3[0] < 0 || inIndexGrad3[0] >= inShapes[0] || inIndexGrad3[1] < 0 ||
-            inIndexGrad3[1] >= inShapes[1] || inIndexGrad3[2] < 0 || inIndexGrad3[2] >= inShapes[2]) {
+        if (inIndexGrad3[0] < 0 || inIndexGrad3[0] >= inShape0 || inIndexGrad3[1] < 0 || inIndexGrad3[1] >= inShape1 ||
+            inIndexGrad3[2] < 0 || inIndexGrad3[2] >= inShape2) {
             outputGM[idx] = 0;
         } else {
-            U inputOffset = U(inIndexGrad3[0]) * inStrides[0] + U(inIndexGrad3[1]) * inStrides[1] + U(inIndexGrad3[2]);
+            U inputOffset = U(inIndexGrad3[0]) * inStride0 + U(inIndexGrad3[1]) * inStride1 + U(inIndexGrad3[2]);
             outputGM[idx] = inputGM[inputOffset];
         }
     }
@@ -137,8 +139,9 @@ __simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__
 template <typename T, typename U, typename S, int32_t DIM>
 __simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__
     void SimtComputeDimFour(__gm__ T* inputGM, __gm__ volatile T* outputGM, U outputSize, uint32_t blockIdx,
-                            uint32_t blockNum, __ubuf__ U* outStrides, __ubuf__ U* inStrides, __ubuf__ U* inShapes,
-                            U m0, U m1, U m2, U s0, U s1, U s2, __ubuf__ S* lefts)
+                            uint32_t blockNum, U outStride0, U outStride1, U outStride2, U inStride0, U inStride1,
+                            U inStride2, U inStride3, U inShape0, U inShape1, U inShape2, U inShape3, U m0, U m1, U m2,
+                            U s0, U s1, U s2, S left0, S left1, S left2, S left3)
 {
     for (U idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         S inIndexGrad4[DIM]{0};
@@ -146,25 +149,24 @@ __simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__
         U yIdx = idx;
 
         inIndexGrad4[0] = Simt::UintDiv(yIdx, m0, s0);
-        yIdx -= inIndexGrad4[0] * outStrides[0];
+        yIdx -= inIndexGrad4[0] * outStride0;
         inIndexGrad4[1] = Simt::UintDiv(yIdx, m1, s1);
-        yIdx -= inIndexGrad4[1] * outStrides[1];
+        yIdx -= inIndexGrad4[1] * outStride1;
         inIndexGrad4[2] = Simt::UintDiv(yIdx, m2, s2);
-        yIdx -= inIndexGrad4[2] * outStrides[2];
+        yIdx -= inIndexGrad4[2] * outStride2;
         inIndexGrad4[3] = yIdx;
 
-        inIndexGrad4[0] = inIndexGrad4[0] + lefts[0];
-        inIndexGrad4[1] = inIndexGrad4[1] + lefts[1];
-        inIndexGrad4[2] = inIndexGrad4[2] + lefts[2];
-        inIndexGrad4[3] = inIndexGrad4[3] + lefts[3];
+        inIndexGrad4[0] = inIndexGrad4[0] + left0;
+        inIndexGrad4[1] = inIndexGrad4[1] + left1;
+        inIndexGrad4[2] = inIndexGrad4[2] + left2;
+        inIndexGrad4[3] = inIndexGrad4[3] + left3;
 
-        if (inIndexGrad4[0] < 0 || inIndexGrad4[0] >= inShapes[0] || inIndexGrad4[1] < 0 ||
-            inIndexGrad4[1] >= inShapes[1] || inIndexGrad4[2] < 0 || inIndexGrad4[2] >= inShapes[2] ||
-            inIndexGrad4[3] < 0 || inIndexGrad4[3] >= inShapes[3]) {
+        if (inIndexGrad4[0] < 0 || inIndexGrad4[0] >= inShape0 || inIndexGrad4[1] < 0 || inIndexGrad4[1] >= inShape1 ||
+            inIndexGrad4[2] < 0 || inIndexGrad4[2] >= inShape2 || inIndexGrad4[3] < 0 || inIndexGrad4[3] >= inShape3) {
             outputGM[idx] = 0;
         } else {
-            U inputOffset = U(inIndexGrad4[0]) * inStrides[0] + U(inIndexGrad4[1]) * inStrides[1] +
-                            U(inIndexGrad4[2]) * inStrides[2] + U(inIndexGrad4[3]);
+            U inputOffset = U(inIndexGrad4[0]) * inStride0 + U(inIndexGrad4[1]) * inStride1 +
+                            U(inIndexGrad4[2]) * inStride2 + U(inIndexGrad4[3]);
             outputGM[idx] = inputGM[inputOffset];
         }
     }
@@ -173,8 +175,10 @@ __simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__
 template <typename T, typename U, typename S, int32_t DIM>
 __simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__
     void SimtComputeDimFive(__gm__ T* inputGM, __gm__ volatile T* outputGM, U outputSize, uint32_t blockIdx,
-                            uint32_t blockNum, __ubuf__ U* outStrides, __ubuf__ U* inStrides, __ubuf__ U* inShapes,
-                            U m0, U m1, U m2, U m3, U s0, U s1, U s2, U s3, __ubuf__ S* lefts)
+                            uint32_t blockNum, U outStride0, U outStride1, U outStride2, U outStride3, U inStride0,
+                            U inStride1, U inStride2, U inStride3, U inStride4, U inShape0, U inShape1, U inShape2,
+                            U inShape3, U inShape4, U m0, U m1, U m2, U m3, U s0, U s1, U s2, U s3, S left0, S left1,
+                            S left2, S left3, S left4)
 {
     for (U idx = blockIdx * blockDim.x + threadIdx.x; idx < outputSize; idx += blockNum * blockDim.x) {
         S inIndexGrad5[DIM]{0};
@@ -182,29 +186,29 @@ __simt_vf__ LAUNCH_BOUND(CONSTANT_GRAD_THREAD_DIM) __aicore__
         U yIdx = idx;
 
         inIndexGrad5[0] = Simt::UintDiv(yIdx, m0, s0);
-        yIdx -= inIndexGrad5[0] * static_cast<S>(outStrides[0]);
+        yIdx -= inIndexGrad5[0] * static_cast<S>(outStride0);
         inIndexGrad5[1] = Simt::UintDiv(yIdx, m1, s1);
-        yIdx -= inIndexGrad5[1] * static_cast<S>(outStrides[1]);
+        yIdx -= inIndexGrad5[1] * static_cast<S>(outStride1);
         inIndexGrad5[2] = Simt::UintDiv(yIdx, m2, s2);
-        yIdx -= inIndexGrad5[2] * static_cast<S>(outStrides[2]);
+        yIdx -= inIndexGrad5[2] * static_cast<S>(outStride2);
         inIndexGrad5[3] = Simt::UintDiv(yIdx, m3, s3);
-        yIdx -= inIndexGrad5[3] * static_cast<S>(outStrides[3]);
+        yIdx -= inIndexGrad5[3] * static_cast<S>(outStride3);
         inIndexGrad5[4] = yIdx;
 
-        for (int32_t i = 0; i < DIM; i++) {
-            inIndexGrad5[i] = inIndexGrad5[i] + static_cast<S>(lefts[i]);
-        }
-
-        if (inIndexGrad5[0] < 0 || inIndexGrad5[0] >= inShapes[0] || inIndexGrad5[1] < 0 ||
-            inIndexGrad5[1] >= inShapes[1] || inIndexGrad5[2] < 0 || inIndexGrad5[2] >= inShapes[2] ||
-            inIndexGrad5[3] < 0 || inIndexGrad5[3] >= inShapes[3] || inIndexGrad5[4] < 0 ||
-            inIndexGrad5[4] >= inShapes[4]) {
+        inIndexGrad5[0] = inIndexGrad5[0] + left0;
+        inIndexGrad5[1] = inIndexGrad5[1] + left1;
+        inIndexGrad5[2] = inIndexGrad5[2] + left2;
+        inIndexGrad5[3] = inIndexGrad5[3] + left3;
+        inIndexGrad5[4] = inIndexGrad5[4] + left4;
+        if (inIndexGrad5[0] < 0 || inIndexGrad5[0] >= inShape0 || inIndexGrad5[1] < 0 || inIndexGrad5[1] >= inShape1 ||
+            inIndexGrad5[2] < 0 || inIndexGrad5[2] >= inShape2 || inIndexGrad5[3] < 0 || inIndexGrad5[3] >= inShape3 ||
+            inIndexGrad5[4] < 0 || inIndexGrad5[4] >= inShape4) {
             outputGM[idx] = 0;
         } else {
-            U inputOffset = static_cast<U>(inIndexGrad5[0]) * static_cast<U>(inStrides[0]) +
-                            static_cast<U>(inIndexGrad5[1]) * static_cast<U>(inStrides[1]) +
-                            static_cast<U>(inIndexGrad5[2]) * static_cast<U>(inStrides[2]) +
-                            static_cast<U>(inIndexGrad5[3]) * static_cast<U>(inStrides[3]) +
+            U inputOffset = static_cast<U>(inIndexGrad5[0]) * static_cast<U>(inStride0) +
+                            static_cast<U>(inIndexGrad5[1]) * static_cast<U>(inStride1) +
+                            static_cast<U>(inIndexGrad5[2]) * static_cast<U>(inStride2) +
+                            static_cast<U>(inIndexGrad5[3]) * static_cast<U>(inStride3) +
                             static_cast<U>(inIndexGrad5[4]);
             outputGM[idx] = inputGM[inputOffset];
         }
@@ -400,23 +404,28 @@ __aicore__ inline void PadV3GradConstantSimt<T>::Process()
     if (mDimNum == 2) {
         asc_vf_call<SimtComputeDimTwo<T, U, S, 2>>(dim3(CONSTANT_GRAD_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
                                                    (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize,
-                                                   mBlockIdx_, blockNum, outStrides, inStrides, inShapes, m[0], s[0],
-                                                   leftPads);
+                                                   mBlockIdx_, blockNum, outStrides[0], inStrides[0], inStrides[1],
+                                                   inShapes[0], inShapes[1], m[0], s[0], leftPads[0], leftPads[1]);
     } else if (mDimNum == 3) {
         asc_vf_call<SimtComputeDimThree<T, U, S, 3>>(
             dim3(CONSTANT_GRAD_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
-            (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize, mBlockIdx_, blockNum, outStrides, inStrides,
-            inShapes, m[0], m[1], s[0], s[1], leftPads);
+            (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize, mBlockIdx_, blockNum, outStrides[0],
+            outStrides[1], inStrides[0], inStrides[1], inStrides[2], inShapes[0], inShapes[1], inShapes[2], m[0], m[1],
+            s[0], s[1], leftPads[0], leftPads[1], leftPads[2]);
     } else if (mDimNum == 4) {
         asc_vf_call<SimtComputeDimFour<T, U, S, 4>>(dim3(CONSTANT_GRAD_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
                                                     (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize,
-                                                    mBlockIdx_, blockNum, outStrides, inStrides, inShapes, m[0], m[1],
-                                                    m[2], s[0], s[1], s[2], leftPads);
+                                                    mBlockIdx_, blockNum, outStrides[0], outStrides[1], outStrides[2],
+                                                    inStrides[0], inStrides[1], inStrides[2], inStrides[3], inShapes[0],
+                                                    inShapes[1], inShapes[2], inShapes[3], m[0], m[1], m[2], s[0], s[1],
+                                                    s[2], leftPads[0], leftPads[1], leftPads[2], leftPads[3]);
     } else if (mDimNum == 5) {
-        asc_vf_call<SimtComputeDimFive<T, U, S, 5>>(dim3(CONSTANT_GRAD_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
-                                                    (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize,
-                                                    mBlockIdx_, blockNum, outStrides, inStrides, inShapes, m[0], m[1],
-                                                    m[2], m[3], s[0], s[1], s[2], s[3], leftPads);
+        asc_vf_call<SimtComputeDimFive<T, U, S, 5>>(
+            dim3(CONSTANT_GRAD_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
+            (__gm__ volatile T*)(mOutputGM_.GetPhyAddr()), outputSize, mBlockIdx_, blockNum, outStrides[0],
+            outStrides[1], outStrides[2], outStrides[3], inStrides[0], inStrides[1], inStrides[2], inStrides[3],
+            inStrides[4], inShapes[0], inShapes[1], inShapes[2], inShapes[3], inShapes[4], m[0], m[1], m[2], m[3], s[0],
+            s[1], s[2], s[3], leftPads[0], leftPads[1], leftPads[2], leftPads[3], leftPads[4]);
     } else if (mDimNum == 6) {
         asc_vf_call<SimtComputeDimSix<T, U, S, 6>>(
             dim3(CONSTANT_GRAD_HALF_THREAD_DIM), (__gm__ T*)(mInputGM_.GetPhyAddr()),
