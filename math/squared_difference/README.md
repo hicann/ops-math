@@ -68,4 +68,4 @@
 
 | 调用方式 | 调用样例                                                                        | 说明                                                             |
 |---------|-----------------------------------------------------------------------------|----------------------------------------------------------------|
-| 图模式调用 | [test_geir_squared_difference](./examples/test_geir_squared_difference.cpp) | 通过[算子IR](./op_graph/squared_difference_proto.h)构图方式调用Square算子。 |
+| 图模式调用 | [test_geir_squared_difference](./examples/test_geir_squared_difference.cpp) | 通过[算子IR](./op_graph/squared_difference_proto.h)构图方式调用SquaredDifference算子。 |

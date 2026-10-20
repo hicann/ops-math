@@ -65,7 +65,7 @@ $$
 
 | 调用方式 | 调用样例                                                                   | 说明                                                           |
 |--------------|------------------------------------------------------------------------|--------------------------------------------------------------|
-| aclnn调用 | [test_aclnn_bitwise_and_tensor](./examples/test_aclnn_bitwise_and_tensor.cpp) | 通过[aclnnBitwiseAndTensor](./docs/aclnnBitwiseAndTensor.md)接口方式调用SwishGrad算子。 |
+| aclnn调用 | [test_aclnn_bitwise_and_tensor](./examples/test_aclnn_bitwise_and_tensor.cpp) | 通过[aclnnBitwiseAndTensor](./docs/aclnnBitwiseAndTensor.md)接口方式调用BitwiseAnd算子。 |
 
 ## 贡献说明
 
