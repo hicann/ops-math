@@ -60,7 +60,6 @@ static aclnnStatus commonPad2dBackward(const aclTensor* gradOutput, const aclTen
 
     // 空tensor处理
     if (gradOutput->IsEmpty() || self->IsEmpty() || gradInput->IsEmpty()) {
-        *workspaceSize = 0;
         // 3 is dim number
         if (self->GetViewShape().GetDimNum() == 3) {
             // 1, 2 are indexes
@@ -79,6 +78,11 @@ static aclnnStatus commonPad2dBackward(const aclTensor* gradOutput, const aclTen
                 return ACLNN_ERR_PARAM_INVALID;
             }
         }
+        auto fillout = GetGradInputWithValueZero(gradInput, uniqueExecutor.get());
+        CHECK_RET(fillout != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto viewCopyResult = l0op::ViewCopy(fillout, gradInput, uniqueExecutor.get());
+        CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        *workspaceSize = uniqueExecutor->GetWorkspaceSize();
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
     }

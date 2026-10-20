@@ -20,15 +20,9 @@ using namespace std;
 
 class l2_unfold_grad_test : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        cout << "unfold_grad_test SetUp" << endl;
-    }
+    static void SetUpTestCase() { cout << "unfold_grad_test SetUp" << endl; }
 
-    static void TearDownTestCase()
-    {
-        cout << "unfold_grad_test TearDown" << endl;
-    }
+    static void TearDownTestCase() { cout << "unfold_grad_test TearDown" << endl; }
 };
 
 TEST_F(l2_unfold_grad_test, case_last_dim_FLOAT)
@@ -38,9 +32,7 @@ TEST_F(l2_unfold_grad_test, case_last_dim_FLOAT)
     auto input_sizes_desc = IntArrayDesc(input_sizes);
     auto out_desc = TensorDesc({1, 658, 658}, ACL_FLOAT, ACL_FORMAT_ND);
 
-    auto ut = OP_API_UT(aclnnUnfoldGrad,
-        INPUT(grad_out_desc, input_sizes_desc, 2, 20, 2),
-        OUTPUT(out_desc));
+    auto ut = OP_API_UT(aclnnUnfoldGrad, INPUT(grad_out_desc, input_sizes_desc, 2, 20, 2), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 1000000;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
@@ -54,9 +46,7 @@ TEST_F(l2_unfold_grad_test, case_last_second_dim_FLOAT16)
     auto input_sizes_desc = IntArrayDesc(input_sizes);
     auto out_desc = TensorDesc({1, 658, 658}, ACL_FLOAT16, ACL_FORMAT_ND);
 
-    auto ut = OP_API_UT(aclnnUnfoldGrad,
-        INPUT(grad_out_desc, input_sizes_desc, 1, 20, 2),
-        OUTPUT(out_desc));
+    auto ut = OP_API_UT(aclnnUnfoldGrad, INPUT(grad_out_desc, input_sizes_desc, 1, 20, 2), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 1000000;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
@@ -70,11 +60,21 @@ TEST_F(l2_unfold_grad_test, case_last_third_dim_FLOAT16)
     auto input_sizes_desc = IntArrayDesc(input_sizes);
     auto out_desc = TensorDesc({1, 658, 2, 658}, ACL_FLOAT16, ACL_FORMAT_ND);
 
-    auto ut = OP_API_UT(aclnnUnfoldGrad,
-        INPUT(grad_out_desc, input_sizes_desc, 1, 20, 2),
-        OUTPUT(out_desc));
+    auto ut = OP_API_UT(aclnnUnfoldGrad, INPUT(grad_out_desc, input_sizes_desc, 1, 20, 2), OUTPUT(out_desc));
     // SAMPLE: only test GetWorkspaceSize
     uint64_t workspace_size = 1000000;
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+TEST_F(l2_unfold_grad_test, case_empty_grad_out_nonzero_grad_in)
+{
+    auto grad_out_desc = TensorDesc({0, 8, 3}, ACL_FLOAT, ACL_FORMAT_ND);
+    vector<int64_t> input_sizes = {2, 10};
+    auto input_sizes_desc = IntArrayDesc(input_sizes);
+    auto out_desc = TensorDesc({2, 10}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnUnfoldGrad, INPUT(grad_out_desc, input_sizes_desc, 1, 3, 1), OUTPUT(out_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
 }

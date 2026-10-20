@@ -12,9 +12,11 @@
 #define CIRCULAR_PAD_BACKWARD_COMMON_H
 
 #include "conversion/pad_v3_grad/op_api/padv3grad.h"
+#include "conversion/fill/op_api/fill.h"
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "opdev/op_dfx.h"
+#include "opdev/shape_utils.h"
 
 using namespace op;
 
@@ -116,6 +118,16 @@ static aclnnStatus InputPreprocess(const aclTensor*& gradOutput, const aclTensor
     self = l0op::Contiguous(self, executor);
     CHECK_RET(self != nullptr, ACLNN_ERR_INNER_NULLPTR);
     return ACLNN_SUCCESS;
+}
+
+inline static const aclTensor* GetGradInputWithValueZero(aclTensor* gradInput, aclOpExecutor* executor)
+{
+    aclScalar* scalar = executor->AllocScalar(0);
+    auto valueTensor = executor->ConvertToTensor(scalar, gradInput->GetDataType());
+    auto outputDims = op::ToShapeVector(gradInput->GetViewShape());
+    aclIntArray* dimArray = executor->AllocIntArray(outputDims.data(), outputDims.size());
+    auto dimTensor = executor->ConvertToTensor(dimArray, op::DataType::DT_INT64);
+    return l0op::Fill(dimTensor, valueTensor, dimArray, executor);
 }
 
 #endif // CIRCULAR_PAD_BACKWARD_COMMON_H

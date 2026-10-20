@@ -72,7 +72,6 @@ static aclnnStatus CommonPad3dBackward(const aclTensor* gradOutput, const aclTen
 
     // 空tensor处理
     if (gradOutput->IsEmpty() || self->IsEmpty() || gradInput->IsEmpty()) {
-        *workspaceSize = 0;
         // 4 is dim number
         if (self->GetViewShape().GetDimNum() == 4) {
             OP_LOGE(ACLNN_ERR_PARAM_INVALID, "Expected 4D tensor can not be empty for input.");
@@ -89,6 +88,11 @@ static aclnnStatus CommonPad3dBackward(const aclTensor* gradOutput, const aclTen
                 return ACLNN_ERR_PARAM_INVALID;
             }
         }
+        auto fillout = GetGradInputWithValueZero(gradInput, uniqueExecutor.get());
+        CHECK_RET(fillout != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto viewCopyResult = l0op::ViewCopy(fillout, gradInput, uniqueExecutor.get());
+        CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        *workspaceSize = uniqueExecutor->GetWorkspaceSize();
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
     }

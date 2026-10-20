@@ -11,12 +11,14 @@
 #include "../../reflection_pad3d_grad/op_api/aclnn_reflection_pad3d_backward.h"
 #include "aclnn_replication_pad3d_backward.h"
 #include "../../pad_v3_grad/op_api/padv3grad.h"
+#include "../../fill/op_api/fill.h"
 #include "aclnn_kernels/contiguous.h"
 #include "../../squeeze/op_host/op_api/squeeze.h"
 #include "../../unsqueeze/op_host/op_api/unsqueeze.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "aclnn_kernels/cast.h"
 #include "opdev/op_dfx.h"
+#include "opdev/shape_utils.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -210,6 +212,16 @@ static aclnnStatus InputPreprocess(const aclTensor*& gradOutput, const aclTensor
     return ACLNN_SUCCESS;
 }
 
+static const aclTensor* GetGradInputWithValueZero(aclTensor* gradInput, aclOpExecutor* executor)
+{
+    aclScalar* scalar = executor->AllocScalar(0);
+    auto valueTensor = executor->ConvertToTensor(scalar, gradInput->GetDataType());
+    auto outputDims = op::ToShapeVector(gradInput->GetViewShape());
+    aclIntArray* dimArray = executor->AllocIntArray(outputDims.data(), outputDims.size());
+    auto dimTensor = executor->ConvertToTensor(dimArray, op::DataType::DT_INT64);
+    return l0op::Fill(dimTensor, valueTensor, dimArray, executor);
+}
+
 static aclnnStatus CommonPad3dBackward(const aclTensor* gradOutput, const aclTensor* self, const aclIntArray* padding,
                                        const string& mode, aclTensor* gradInput, uint64_t* workspaceSize,
                                        aclOpExecutor** executor)
@@ -224,7 +236,6 @@ static aclnnStatus CommonPad3dBackward(const aclTensor* gradOutput, const aclTen
 
     // 空tensor处理
     if (gradOutput->IsEmpty() || self->IsEmpty() || gradInput->IsEmpty()) {
-        *workspaceSize = 0;
         // 4 is dim number
         if (self->GetViewShape().GetDimNum() == 4) {
             OP_LOGE(ACLNN_ERR_PARAM_INVALID,
@@ -242,6 +253,11 @@ static aclnnStatus CommonPad3dBackward(const aclTensor* gradOutput, const aclTen
                 return ACLNN_ERR_PARAM_INVALID;
             }
         }
+        auto fillout = GetGradInputWithValueZero(gradInput, uniqueExecutor.get());
+        CHECK_RET(fillout != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto viewCopyResult = l0op::ViewCopy(fillout, gradInput, uniqueExecutor.get());
+        CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        *workspaceSize = uniqueExecutor->GetWorkspaceSize();
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
     }

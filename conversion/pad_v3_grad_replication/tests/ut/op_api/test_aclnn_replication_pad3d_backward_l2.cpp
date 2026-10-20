@@ -273,3 +273,16 @@ TEST_F(replication_pad3d_backward_test, case_18)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
+
+TEST_F(replication_pad3d_backward_test, case_empty_grad_output_nonzero_grad_input)
+{
+    auto grad_output_tensor_desc = TensorDesc({0, 1, 6, 6, 6}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto input_tensor_desc = TensorDesc({2, 1, 4, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto padding_desc = IntArrayDesc(vector<int64_t>{1, 1, 1, 1, 1, 1});
+    auto grad_input_desc = TensorDesc({2, 1, 4, 4, 4}, ACL_FLOAT, ACL_FORMAT_ND);
+    auto ut = OP_API_UT(aclnnReplicationPad3dBackward, INPUT(grad_output_tensor_desc, input_tensor_desc, padding_desc),
+                        OUTPUT(grad_input_desc));
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_SUCCESS);
+}

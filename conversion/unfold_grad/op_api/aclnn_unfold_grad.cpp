@@ -13,6 +13,7 @@
 #include "aclnn_kernels/contiguous.h"
 #include "aclnn/aclnn_base.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "conversion/fill/op_api/fill.h"
 #include "opdev/common_types.h"
 #include "opdev/shape_utils.h"
 #include "opdev/data_type_utils.h"
@@ -47,6 +48,16 @@ static const aclTensor* GetInputSizesTensor(const aclIntArray* inputSizes, aclOp
     auto newInputSizes = executor->AllocIntArray(inputSizesVector.data(), dimNum);
     auto inputSizesTensor = executor->ConvertToTensor(newInputSizes, static_cast<op::DataType>(ACL_INT64));
     return inputSizesTensor;
+}
+
+static const aclTensor* GetGradInWithValueZero(const aclTensor* gradIn, aclOpExecutor* executor)
+{
+    aclScalar* scalar = executor->AllocScalar(0);
+    auto valueTensor = executor->ConvertToTensor(scalar, gradIn->GetDataType());
+    auto outputDims = op::ToShapeVector(gradIn->GetViewShape());
+    aclIntArray* dimArray = executor->AllocIntArray(outputDims.data(), outputDims.size());
+    auto dimTensor = executor->ConvertToTensor(dimArray, op::DataType::DT_INT64);
+    return l0op::Fill(dimTensor, valueTensor, dimArray, executor);
 }
 
 static bool CheckNotNull(const aclTensor* gradOut, const aclIntArray* inputSizes, const aclTensor* gradIn)
@@ -143,7 +154,11 @@ aclnnStatus aclnnUnfoldGradGetWorkspaceSize(const aclTensor* gradOut, const aclI
 
     if (gradOut->IsEmpty() || gradIn->IsEmpty()) {
         // 根据实际支持情况补充
-        *workspaceSize = 0;
+        auto fillout = GetGradInWithValueZero(gradIn, uniqueExecutor.get());
+        CHECK_RET(fillout != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        auto viewCopyResult = l0op::ViewCopy(fillout, gradIn, uniqueExecutor.get());
+        CHECK_RET(viewCopyResult != nullptr, ACLNN_ERR_INNER_NULLPTR);
+        *workspaceSize = uniqueExecutor->GetWorkspaceSize();
         uniqueExecutor.ReleaseTo(executor);
         return ACLNN_SUCCESS;
     }
