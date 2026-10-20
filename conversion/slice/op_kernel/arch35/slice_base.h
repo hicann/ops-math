@@ -145,7 +145,8 @@ __aicore__ inline void SliceBase<T, U, V>::ParseBaseTilingData(GM_ADDR begin, co
             begin_[i] = tilingData->begin[i];
         } else {
             begin_[i] = static_cast<int64_t>(((__gm__ U*)begin)[i]);
-            if constexpr (IsSameType<V, fp4x2_e2m1_t>::value || IsSameType<V, fp4x2_e1m2_t>::value) {
+            if constexpr (IsSameType<V, fp4x2_e2m1_t>::value || IsSameType<V, fp4x2_e1m2_t>::value ||
+                          IsSameType<V, hifloat4x2_t>::value) {
                 ascendc_assert(!(begin_[inputDims_ - 1] & 1),
                                "When the input dtype is fp4, the last dimension of offset must be even.\n");
                 begin_[inputDims_ - 1] /= 2;

@@ -57,7 +57,8 @@ __aicore__ inline void SliceMoveAlignTwoDim<T, U, V>::Init(GM_ADDR x, GM_ADDR be
             begin_[i] = tilingData->begin[i];
         } else {
             begin_[i] = static_cast<int64_t>(((__gm__ U*)begin)[i]);
-            if constexpr (IsSameType<V, fp4x2_e2m1_t>::value || IsSameType<V, fp4x2_e1m2_t>::value) {
+            if constexpr (IsSameType<V, fp4x2_e2m1_t>::value || IsSameType<V, fp4x2_e1m2_t>::value ||
+                          IsSameType<V, hifloat4x2_t>::value) {
                 ascendc_assert(!(begin_[NUM_TWO - 1] & 1),
                                "When the input dtype is fp4, the last dimension of offset must be even.\n");
                 begin_[NUM_TWO - 1] /= 2;

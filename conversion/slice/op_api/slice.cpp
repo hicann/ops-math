@@ -23,6 +23,7 @@
 #include "opdev/platform.h"
 #include "op_api/aclnn_check.h"
 #include "aclnn_kernels/common/op_error_check.h"
+#include "common/inc/op_host/op_const_def_math.h"
 
 using namespace op;
 
@@ -75,13 +76,13 @@ static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST_ASCEND910
 
 // "float", "float16", "int8", "int16", "int32", "int64", "uint8", "uint16",
 // "uint32", "uint64", "bool", "bfloat16", "hifloat8", "float8_e5m2", "float8_e4m3fn"
-// "float8_e8m0", "float4_e2m1", "float4_e1m2"
+// "float8_e8m0", "float4_e2m1", "float4_e1m2", "hifloat4", "hifloat4_scale"
 static const std::initializer_list<DataType> AICORE_DTYPE_SUPPORT_LIST_ASCEND960dt = {
     DataType::DT_FLOAT,       DataType::DT_FLOAT16,     DataType::DT_INT8,          DataType::DT_INT16,
     DataType::DT_INT32,       DataType::DT_UINT8,       DataType::DT_UINT16,        DataType::DT_UINT32,
     DataType::DT_INT64,       DataType::DT_UINT64,      DataType::DT_BOOL,          DataType::DT_BF16,
     DataType::DT_HIFLOAT8,    DataType::DT_FLOAT8_E5M2, DataType::DT_FLOAT8_E4M3FN, DataType::DT_FLOAT8_E8M0,
-    DataType::DT_FLOAT4_E2M1, DataType::DT_FLOAT4_E1M2};
+    DataType::DT_FLOAT4_E2M1, DataType::DT_FLOAT4_E1M2, Ops::Math::DT_HIFLOAT4,     Ops::Math::DT_HIFLOAT4_SCALE};
 
 static bool IsSliceV2ARAFullLoadSupport(const aclTensor* self, const aclIntArray* offsets, const aclIntArray* size)
 {

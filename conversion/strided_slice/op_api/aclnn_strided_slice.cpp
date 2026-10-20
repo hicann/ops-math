@@ -18,6 +18,7 @@
 #include "op_api/aclnn_check.h"
 #include "op_api/op_api_def_math.h"
 #include "aclnn_kernels/transdata.h"
+#include "common/inc/op_host/op_const_def_math.h"
 
 using namespace op;
 #ifdef __cplusplus
@@ -28,11 +29,13 @@ static constexpr size_t ARRAY_SIZE = 0;
 
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
-    op::DataType::DT_FLOAT16,   op::DataType::DT_FLOAT,       op::DataType::DT_INT32,      op::DataType::DT_UINT8,
-    op::DataType::DT_BOOL,      op::DataType::DT_INT8,        op::DataType::DT_INT16,      op::DataType::DT_INT64,
-    op::DataType::DT_UINT16,    op::DataType::DT_UINT32,      op::DataType::DT_UINT64,     op::DataType::DT_BF16,
-    op::DataType::DT_COMPLEX32, op::DataType::DT_COMPLEX64,   op::DataType::DT_HIFLOAT8,   op::DataType::DT_FLOAT8_E5M2,
-    ge::DT_FLOAT8_E4M3FN,       op::DataType::DT_FLOAT4_E2M1, op::DataType::DT_FLOAT4_E1M2};
+    op::DataType::DT_FLOAT16,     op::DataType::DT_FLOAT,     op::DataType::DT_INT32,
+    op::DataType::DT_UINT8,       op::DataType::DT_BOOL,      op::DataType::DT_INT8,
+    op::DataType::DT_INT16,       op::DataType::DT_INT64,     op::DataType::DT_UINT16,
+    op::DataType::DT_UINT32,      op::DataType::DT_UINT64,    op::DataType::DT_BF16,
+    op::DataType::DT_COMPLEX32,   op::DataType::DT_COMPLEX64, op::DataType::DT_HIFLOAT8,
+    op::DataType::DT_FLOAT8_E5M2, ge::DT_FLOAT8_E4M3FN,       op::DataType::DT_FLOAT4_E2M1,
+    op::DataType::DT_FLOAT4_E1M2, Ops::Math::DT_HIFLOAT4,     Ops::Math::DT_HIFLOAT4_SCALE};
 
 static inline bool CheckNotNull(const aclTensor* self, const aclIntArray* begin, const aclIntArray* end,
                                 const aclIntArray* strides, aclTensor* out)

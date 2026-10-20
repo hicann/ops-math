@@ -12,6 +12,7 @@
 #define OP_PROTO_STRIDED_SLICE_V3_H_
 
 #include "graph/operator_reg.h"
+#include "op_const_def_math.h"
 
 namespace ge {
 /**
@@ -25,7 +26,8 @@ namespace ge {
 * @li x: A Tensor. 1-8 dimensions. Must be one of the following types: float32, float64, int32, uint8, int16, int8,
 *     complex64, int64, qint8, quint8, qint32, qint16, quint16, uint16,
 *     complex128, float16, bfloat16, uint32, uint64, bool, hifloat8, float8_e5m2, float8_e4m3fn, float8_e8m0,
-*     float4_e2m1, float4_e1m2.
+*     float4_e2m1, float4_e1m2, hifloat4,
+*     hifloat4_scale.
 * @li begin: A Tensor of type int32 or int64, for the index of the first value to select.
 *     Elements in begin with negative values are interpreted as indices from the end of the dimension.
 *     Negative indices are clamped to the valid range after conversion.
@@ -52,13 +54,13 @@ namespace ge {
 */
 REG_OP(StridedSliceV3)
     .INPUT(x, TensorType({BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0,
-                          DT_FLOAT4_E2M1, DT_FLOAT4_E1M2}))
+                          DT_FLOAT4_E2M1, DT_FLOAT4_E1M2, Ops::Math::DT_HIFLOAT4, Ops::Math::DT_HIFLOAT4_SCALE}))
     .INPUT(begin, TensorType::IndexNumberType())
     .INPUT(end, TensorType::IndexNumberType())
     .OPTIONAL_INPUT(axes, TensorType::IndexNumberType())
     .OPTIONAL_INPUT(strides, TensorType::IndexNumberType())
     .OUTPUT(y, TensorType({BasicType(), DT_BOOL, DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0,
-                           DT_FLOAT4_E2M1, DT_FLOAT4_E1M2}))
+                           DT_FLOAT4_E2M1, DT_FLOAT4_E1M2, Ops::Math::DT_HIFLOAT4, Ops::Math::DT_HIFLOAT4_SCALE}))
     .OP_END_FACTORY_REG(StridedSliceV3)
 } // namespace ge
 #endif // OP_PROTO_STRIDED_SLICE_V3_H_

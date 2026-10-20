@@ -14,6 +14,7 @@
  */
 #include "slice_tiling_arch35.h"
 #include "atvoss/broadcast/broadcast_tiling.h"
+#include "common/inc/op_host/op_const_def_math.h"
 
 namespace optiling {
 
@@ -743,7 +744,7 @@ static ge::graphStatus AssignInputValueOpt(gert::TilingContext* context, size_t 
     for (size_t i = 0; i < size; i++) {
         list_vector[i] = value[i];
     }
-    if (dtype == ge::DT_FLOAT4_E2M1 || dtype == ge::DT_FLOAT4_E1M2) {
+    if (dtype == ge::DT_FLOAT4_E2M1 || dtype == ge::DT_FLOAT4_E1M2 || dtype == Ops::Math::DT_HIFLOAT4) {
         if (list_vector[size - 1] & 1) {
             OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context->GetNodeName(), "offsets",
                                                    Ops::Base::ToString(list_vector).c_str(),
@@ -771,7 +772,7 @@ static ge::graphStatus AssignInputValue(gert::TilingContext* context, size_t siz
     for (size_t i = 0; i < size; i++) {
         list_vector[i] = value[i];
     }
-    if (dtype == ge::DT_FLOAT4_E2M1 || dtype == ge::DT_FLOAT4_E1M2) {
+    if (dtype == ge::DT_FLOAT4_E2M1 || dtype == ge::DT_FLOAT4_E1M2 || dtype == Ops::Math::DT_HIFLOAT4) {
         if (list_vector[size - 1] & 1) {
             OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context->GetNodeName(), "last dimension of size",
                                                    Ops::Base::ToString(list_vector).c_str(),
@@ -909,7 +910,7 @@ static ge::graphStatus Tiling4Slice(gert::TilingContext* context)
         return ge::GRAPH_FAILED;
     }
     ge::DataType inputDtype = shape_tensor_x->GetDataType();
-    if (inputDtype == ge::DT_FLOAT4_E2M1 || inputDtype == ge::DT_FLOAT4_E1M2) {
+    if (inputDtype == ge::DT_FLOAT4_E2M1 || inputDtype == ge::DT_FLOAT4_E1M2 || inputDtype == Ops::Math::DT_HIFLOAT4) {
         if (sliceparam.input[shape_size_offsets - 1] & 1) {
             OP_LOGE_FOR_INVALID_VALUES_WITH_REASON(context->GetNodeName(), "last dimension of input",
                                                    Ops::Base::ToString(sliceparam.input).c_str(),
@@ -969,7 +970,7 @@ static ge::graphStatus Tiling4Slice(gert::TilingContext* context)
         sliceparam.stride_list[i] = 1;
     }
     MakePerformanceParams(sliceparam);
-    if (inputDtype == ge::DT_FLOAT4_E2M1 || inputDtype == ge::DT_FLOAT4_E1M2) {
+    if (inputDtype == ge::DT_FLOAT4_E2M1 || inputDtype == ge::DT_FLOAT4_E1M2 || inputDtype == Ops::Math::DT_HIFLOAT4) {
         inputDtype = ge::DT_INT8;
     }
     return SliceTilingForAscendC(context, compile_info->block_dim, compile_info->ub_size, compile_info->cacheLineSize,

@@ -18,6 +18,7 @@
 #include "opdev/platform.h"
 #include "aclnn_kernels/common/op_error_check.h"
 #include "op_api/aclnn_check.h"
+#include "common/inc/op_host/op_const_def_math.h"
 
 namespace l0op {
 
@@ -33,7 +34,7 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_910D 
     ge::DT_FLOAT8_E4M3FN};
 
 // 960dt float16,float,int32,uint8,bool,int8,int16,int64,uint16,uint32,uint64,bfloat16,complex32,complex64,
-// hifloat8,float8_e5m2,float8_e4m3fn,float4_e2m1,float4_e1m2,
+// hifloat8,float8_e5m2,float8_e4m3fn,float4_e2m1,float4_e1m2,hifloat4,hifloat4_scale,
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_960dt = {
     op::DataType::DT_FLOAT16,     op::DataType::DT_FLOAT,         op::DataType::DT_INT32,
     op::DataType::DT_UINT8,       op::DataType::DT_BOOL,          op::DataType::DT_INT8,
@@ -41,7 +42,7 @@ static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_960dt
     op::DataType::DT_UINT32,      op::DataType::DT_UINT64,        op::DataType::DT_BF16,
     op::DataType::DT_COMPLEX32,   op::DataType::DT_COMPLEX64,     op::DataType::DT_HIFLOAT8,
     op::DataType::DT_FLOAT8_E5M2, op::DataType::DT_FLOAT8_E4M3FN, op::DataType::DT_FLOAT4_E2M1,
-    op::DataType::DT_FLOAT4_E1M2};
+    op::DataType::DT_FLOAT4_E1M2, Ops::Math::DT_HIFLOAT4,         Ops::Math::DT_HIFLOAT4_SCALE};
 
 // 910B float16,float,int32,uint8,bool,int8,int64,int16,uint16,uint32,uint64,bfloat16,complex32,complex64,
 static const std::initializer_list<op::DataType> AICORE_DTYPE_SUPPORT_LIST_910B = {

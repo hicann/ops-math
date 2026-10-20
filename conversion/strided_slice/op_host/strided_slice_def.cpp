@@ -13,6 +13,7 @@
  * \brief
  */
 #include "register/op_def_registry.h"
+#include "common/inc/op_host/op_const_def_math.h"
 
 namespace ops {
 class StridedSlice : public OpDef {
@@ -38,15 +39,48 @@ public:
         ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
         ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
 
-    const std::vector<ge::DataType> baseDataType_91096 = {
-        ge::DT_INT8,          ge::DT_UINT8,         ge::DT_INT16,       ge::DT_UINT16,      ge::DT_INT32,
-        ge::DT_UINT32,        ge::DT_INT64,         ge::DT_UINT64,      ge::DT_FLOAT,       ge::DT_FLOAT16,
-        ge::DT_BF16,          ge::DT_BOOL,          ge::DT_COMPLEX32,   ge::DT_COMPLEX64,   ge::DT_HIFLOAT8,
-        ge::DT_FLOAT8_E5M2,   ge::DT_FLOAT8_E4M3FN, ge::DT_FLOAT4_E2M1, ge::DT_FLOAT4_E1M2, ge::DT_INT8,
-        ge::DT_UINT8,         ge::DT_INT16,         ge::DT_UINT16,      ge::DT_INT32,       ge::DT_UINT32,
-        ge::DT_INT64,         ge::DT_UINT64,        ge::DT_FLOAT,       ge::DT_FLOAT16,     ge::DT_BF16,
-        ge::DT_BOOL,          ge::DT_COMPLEX32,     ge::DT_COMPLEX64,   ge::DT_HIFLOAT8,    ge::DT_FLOAT8_E5M2,
-        ge::DT_FLOAT8_E4M3FN, ge::DT_FLOAT4_E2M1,   ge::DT_FLOAT4_E1M2};
+    const std::vector<ge::DataType> baseDataType_91096 = {ge::DT_INT8,
+                                                          ge::DT_UINT8,
+                                                          ge::DT_INT16,
+                                                          ge::DT_UINT16,
+                                                          ge::DT_INT32,
+                                                          ge::DT_UINT32,
+                                                          ge::DT_INT64,
+                                                          ge::DT_UINT64,
+                                                          ge::DT_FLOAT,
+                                                          ge::DT_FLOAT16,
+                                                          ge::DT_BF16,
+                                                          ge::DT_BOOL,
+                                                          ge::DT_COMPLEX32,
+                                                          ge::DT_COMPLEX64,
+                                                          ge::DT_HIFLOAT8,
+                                                          ge::DT_FLOAT8_E5M2,
+                                                          ge::DT_FLOAT8_E4M3FN,
+                                                          ge::DT_FLOAT4_E2M1,
+                                                          ge::DT_FLOAT4_E1M2,
+                                                          Ops::Math::DT_HIFLOAT4,
+                                                          Ops::Math::DT_HIFLOAT4_SCALE,
+                                                          ge::DT_INT8,
+                                                          ge::DT_UINT8,
+                                                          ge::DT_INT16,
+                                                          ge::DT_UINT16,
+                                                          ge::DT_INT32,
+                                                          ge::DT_UINT32,
+                                                          ge::DT_INT64,
+                                                          ge::DT_UINT64,
+                                                          ge::DT_FLOAT,
+                                                          ge::DT_FLOAT16,
+                                                          ge::DT_BF16,
+                                                          ge::DT_BOOL,
+                                                          ge::DT_COMPLEX32,
+                                                          ge::DT_COMPLEX64,
+                                                          ge::DT_HIFLOAT8,
+                                                          ge::DT_FLOAT8_E5M2,
+                                                          ge::DT_FLOAT8_E4M3FN,
+                                                          ge::DT_FLOAT4_E2M1,
+                                                          ge::DT_FLOAT4_E1M2,
+                                                          Ops::Math::DT_HIFLOAT4,
+                                                          Ops::Math::DT_HIFLOAT4_SCALE};
 
     const std::vector<ge::Format> baseFormat_91096 = {
         ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
@@ -54,14 +88,15 @@ public:
         ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
         ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
         ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+        ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
 
     const std::vector<ge::DataType> attrDataType_91096 = {
-        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
-        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
-        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
+        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+        ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32, ge::DT_INT32,
+        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64,
+        ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64, ge::DT_INT64};
 
     explicit StridedSlice(const char* name) : OpDef(name)
     {

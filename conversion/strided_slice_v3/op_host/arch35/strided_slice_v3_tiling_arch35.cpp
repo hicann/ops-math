@@ -14,6 +14,7 @@
  */
 #include "strided_slice_v3_tiling_arch35.h"
 #include <numeric>
+#include "common/inc/op_host/op_const_def_math.h"
 
 namespace {
 const std::string OP_NAME = "StridedSliceV3";
@@ -753,7 +754,8 @@ static ge::graphStatus TilingForStridedSliceV3(gert::TilingContext* context)
     // For fp4 input, reinterpret as int8 by halving the last packed dim.
     // Must be done before MakePerformanceParams, otherwise perf may merge/reverse
     // the packed dim and strideList, which would break the halving logic.
-    bool isFp4Input = (inputDtype == ge::DT_FLOAT4_E2M1 || inputDtype == ge::DT_FLOAT4_E1M2);
+    bool isFp4Input = (inputDtype == ge::DT_FLOAT4_E2M1 || inputDtype == ge::DT_FLOAT4_E1M2 ||
+                       inputDtype == Ops::Math::DT_HIFLOAT4);
     if (isFp4Input) {
         OP_CHECK_IF(CheckInputForFp4(context, sliceParam) != ge::GRAPH_SUCCESS,
                     OP_LOGE(context->GetNodeName(), "CheckInputForFp4 Failed"), return ge::GRAPH_FAILED);

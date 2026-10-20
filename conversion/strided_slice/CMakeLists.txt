@@ -13,3 +13,11 @@ set(SUPPORT_COMPUTE_UNIT "ascend310p" "ascend910_93" "ascend910b" "ascend950" "m
 # 设置每种芯片类型对应的tiling文件目录，即采用op_host目录下哪个文件夹下的tiling文件编译
 set(SUPPORT_TILING_DIR "arch22" "arch22" "arch22" "arch35" "arch35" "arch35" "arch35")
 add_all_modules_sources(OPTYPE strided_slice ACLNNTYPE aclnn_exclude COMPUTE_UNIT ${SUPPORT_COMPUTE_UNIT} TILING_DIR ${SUPPORT_TILING_DIR} DISABLE_IN_OPP TRUE HOSTCPU TRUE)
+
+# framework UT 会编译 framework/npu_indexing_onnx_plugin.cpp, 其中 include
+# op_graph/strided_slice_proto.h, 该头文件引用 common/inc/op_host 下的
+# op_const_def_math.h; 在算子本地给 framework UT 目标加该路径。
+if(TARGET ${OP_FRAMEWORK_MODULE_NAME}_cases_obj)
+    target_include_directories(${OP_FRAMEWORK_MODULE_NAME}_cases_obj
+        PRIVATE ${OPS_MATH_DIR}/common/inc/op_host)
+endif()

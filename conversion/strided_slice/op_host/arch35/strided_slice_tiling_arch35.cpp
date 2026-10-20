@@ -13,6 +13,7 @@
  * \brief
  */
 #include "strided_slice_tiling_arch35.h"
+#include "common/inc/op_host/op_const_def_math.h"
 
 namespace optiling {
 static const std::string OP_NAME = "StridedSlice";
@@ -943,6 +944,10 @@ void StrideSliceTiling::SetSIMTTilingMode()
     OP_LOGD(tilingContext_->GetNodeName(), "SIMT pack: p=%ld, threadNum=%u, finalElements=%ld", simtPackFactor_,
             threadNum_, finalElements);
 
+    if (simtPackFactor_ == 1) {
+        tilingKey_ = base;
+        return;
+    }
     int64_t mergedBytes = simtPackFactor_ * xDtypeSize_;
     int64_t offset = 0;
     switch (mergedBytes) {
@@ -2274,7 +2279,7 @@ ge::graphStatus Tiling4StridedSlice(gert::TilingContext* context)
     // For fp4 input, reinterpret as int8 by halving the last packed dim.
     // Must be done before MakePerformanceParams, otherwise perf may merge/reverse
     // the packed dim and strideList, which would break the halving logic.
-    if (inputDtype == ge::DT_FLOAT4_E2M1 || inputDtype == ge::DT_FLOAT4_E1M2) {
+    if (inputDtype == ge::DT_FLOAT4_E2M1 || inputDtype == ge::DT_FLOAT4_E1M2 || inputDtype == Ops::Math::DT_HIFLOAT4) {
         if (!compileInfo->isAscendc) {
             OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "x", Ops::Base::ToString(inputDtype).c_str(),
                                                   "fp4 input is only supported on ascendc path.");

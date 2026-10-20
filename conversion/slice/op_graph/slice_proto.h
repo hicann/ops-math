@@ -15,6 +15,7 @@
 #define OP_PROTO_SLICE_H_
 
 #include "graph/operator_reg.h"
+#include "op_const_def_math.h"
 
 namespace ge {
 /**
@@ -26,7 +27,7 @@ namespace ge {
 * @li x: A Tensor. Must be one of the following types:
 * bfloat16, float16, float32, double, int64, int32, uint8, uint16, uint32, uint64, int8,
 * int16, complex64, complex128, qint8, quint8, qint16, quint16, qint32, hifloat8, float8_e5m2, float8_e4m3fn
-* float8_e8m0, float4_e2m1, float4_e1m2.
+* float8_e8m0, float4_e2m1, float4_e1m2, hifloat4, hifloat4_scale.
 * @li offsets: A Tensor of type int32 or int64. The starting location for the slice.
 * @li size: A Tensor of type int32 or int64. The tensor size for the slice. \n
 
@@ -43,11 +44,11 @@ namespace ge {
 */
 REG_OP(Slice)
     .INPUT(x, TensorType({BasicType(), DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0, DT_FLOAT4_E2M1,
-                          DT_FLOAT4_E1M2}))
+                          DT_FLOAT4_E1M2, Ops::Math::DT_HIFLOAT4, Ops::Math::DT_HIFLOAT4_SCALE}))
     .INPUT(offsets, TensorType::IndexNumberType())
     .INPUT(size, TensorType::IndexNumberType())
     .OUTPUT(y, TensorType({BasicType(), DT_HIFLOAT8, DT_FLOAT8_E5M2, DT_FLOAT8_E4M3FN, DT_FLOAT8_E8M0, DT_FLOAT4_E2M1,
-                           DT_FLOAT4_E1M2}))
+                           DT_FLOAT4_E1M2, Ops::Math::DT_HIFLOAT4, Ops::Math::DT_HIFLOAT4_SCALE}))
     .OP_END_FACTORY_REG(Slice)
 
 } // namespace ge

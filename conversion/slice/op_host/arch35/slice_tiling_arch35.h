@@ -97,8 +97,7 @@ private:
     int64_t outLoopSteps_ = 1;
     bool isUnalignCopy_ = false;
 };
-ge::graphStatus SliceTilingForAscendC(
-    gert::TilingContext* context, int64_t coreNum, int64_t ubSize, int64_t cacheLineSize, SliceParasRuntime2& param,
-    const ge::DataType dtype);
+ge::graphStatus SliceTilingForAscendC(gert::TilingContext* context, int64_t coreNum, int64_t ubSize,
+                                      int64_t cacheLineSize, SliceParasRuntime2& param, const ge::DataType dtype);
 } // namespace optiling
 #endif // CANN_OPS_BUILT_IN_OP_TILING_RUNTIME_SLICE_TILING_H_
