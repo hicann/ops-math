@@ -8,6 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -24,6 +27,31 @@ using namespace fe;
 using namespace fusion;
 using namespace ops;
 
+namespace {
+const char* const kSupportedArchDav3510 = "3510"; // Ascend950/Ascend350
+
+// UT stub for rtGetSocSpec: the UT executable does not link the runtime lib, while the pass gates
+// on NpuArch via this API. The stub feeds the arch from the ASCEND_NPU_ARCH env variable (same
+// convention as concat_d UT). Weak definition: yields to any real one.
+extern "C" {
+typedef int32_t rtError_t;
+static const int32_t RT_ERROR_NONE = 0;
+rtError_t rtGetSocSpec(const char* label, const char* key, char* val, const uint32_t maxLen);
+}
+
+__attribute__((weak)) rtError_t rtGetSocSpec(const char* label, const char* key, char* val, const uint32_t maxLen)
+{
+    const char* arch = std::getenv("ASCEND_NPU_ARCH");
+    if (arch == nullptr || std::strcmp(label, "version") != 0 || std::strcmp(key, "NpuArch") != 0) {
+        return static_cast<rtError_t>(1);
+    }
+    (void)std::snprintf(val, maxLen, "%s", arch);
+    return RT_ERROR_NONE;
+}
+
+static void SetNpuArch(const char* arch) { (void)setenv("ASCEND_NPU_ARCH", arch, 1); }
+} // namespace
+
 class RandomStandardNormalFusionPassTest : public testing::Test {
 protected:
     static void SetUpTestCase()
@@ -35,6 +63,7 @@ protected:
         optiCompilationInfo.soc_version = "Ascend910_93";
         fe::PlatformInfoManager::Instance().platform_info_map_["Ascend910_93"] = platformInfo;
         fe::PlatformInfoManager::Instance().SetOptionalCompilationInfo(optiCompilationInfo);
+        SetNpuArch(kSupportedArchDav3510);
     }
 
     void SetUp() override
@@ -46,6 +75,7 @@ protected:
         optiCompilationInfo.soc_version = "Ascend910_93";
         fe::PlatformInfoManager::Instance().platform_info_map_["Ascend910_93"] = platformInfo;
         fe::PlatformInfoManager::Instance().SetOptionalCompilationInfo(optiCompilationInfo);
+        SetNpuArch(kSupportedArchDav3510);
     }
 };
 
@@ -91,6 +121,7 @@ TEST_F(RandomStandardNormalFusionPassTest, unsupportedPlatformFail)
     optiCompilationInfo.soc_version = "Ascend310";
     fe::PlatformInfoManager::Instance().platform_info_map_["Ascend310"] = platformInfo;
     fe::PlatformInfoManager::Instance().SetOptionalCompilationInfo(optiCompilationInfo);
+    SetNpuArch("2003");
 
     std::vector<int64_t> shapeDims{2};
 
@@ -123,6 +154,7 @@ TEST_F(RandomStandardNormalFusionPassTest, fusionFloatSuccess)
     optiCompilationInfo.soc_version = "Ascend950";
     fe::PlatformInfoManager::Instance().platform_info_map_["Ascend950"] = platformInfo;
     fe::PlatformInfoManager::Instance().SetOptionalCompilationInfo(optiCompilationInfo);
+    SetNpuArch(kSupportedArchDav3510);
 
     std::vector<int64_t> shapeDims{2};
 
@@ -166,6 +198,7 @@ TEST_F(RandomStandardNormalFusionPassTest, fusionFloat16Success)
     optiCompilationInfo.soc_version = "Ascend950";
     fe::PlatformInfoManager::Instance().platform_info_map_["Ascend950"] = platformInfo;
     fe::PlatformInfoManager::Instance().SetOptionalCompilationInfo(optiCompilationInfo);
+    SetNpuArch(kSupportedArchDav3510);
 
     std::vector<int64_t> shapeDims{3};
 
@@ -208,6 +241,7 @@ TEST_F(RandomStandardNormalFusionPassTest, fusionBf16Success)
     optiCompilationInfo.soc_version = "Ascend950";
     fe::PlatformInfoManager::Instance().platform_info_map_["Ascend950"] = platformInfo;
     fe::PlatformInfoManager::Instance().SetOptionalCompilationInfo(optiCompilationInfo);
+    SetNpuArch(kSupportedArchDav3510);
 
     std::vector<int64_t> shapeDims{2};
 
@@ -250,6 +284,7 @@ TEST_F(RandomStandardNormalFusionPassTest, fusion950Success)
     optiCompilationInfo.soc_version = "Ascend950";
     fe::PlatformInfoManager::Instance().platform_info_map_["Ascend950"] = platformInfo;
     fe::PlatformInfoManager::Instance().SetOptionalCompilationInfo(optiCompilationInfo);
+    SetNpuArch(kSupportedArchDav3510);
 
     std::vector<int64_t> shapeDims{4};
 
@@ -292,6 +327,7 @@ TEST_F(RandomStandardNormalFusionPassTest, fusionDifferentShapeSuccess)
     optiCompilationInfo.soc_version = "Ascend950";
     fe::PlatformInfoManager::Instance().platform_info_map_["Ascend950"] = platformInfo;
     fe::PlatformInfoManager::Instance().SetOptionalCompilationInfo(optiCompilationInfo);
+    SetNpuArch(kSupportedArchDav3510);
 
     std::vector<int64_t> shapeDims{4};
 

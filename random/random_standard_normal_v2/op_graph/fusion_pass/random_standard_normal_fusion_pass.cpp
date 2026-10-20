@@ -26,16 +26,24 @@
  * - Attributes seed, seed2, dtype are transferred to the new node
  */
 
+#include <cstdlib>
 #include <vector>
 #include <string>
 #include <set>
 #include "es_math_ops.h"
 #include "platform/platform_info.h"
+#include "platform/soc_spec.h"
 #include "ge/ge_utils.h"
 #include "log/log.h"
 #include "version/ge-compiler_version.h"
 #include "random_standard_normal_fusion_pass.h"
 #include "common/inc/op_graph/fusion_pass/fusion_pass_common.h"
+
+extern "C" {
+typedef int32_t rtError_t;
+static const int32_t RT_ERROR_NONE = 0;
+rtError_t rtGetSocSpec(const char* label, const char* key, char* val, const uint32_t maxLen);
+}
 
 using namespace ge;
 using namespace ge::fusion;
@@ -65,6 +73,27 @@ CustomPassStage GetRandomStandardNormalFusionPassStage()
 
 static const std::string kPassName = "RandomStandardNormalFusionPass";
 static const int64_t kCaptureIdx = 0L;
+
+namespace {
+// 平台门控改用 NpuArch 判别(参考 concat_to_concatd_fusion_pass):
+// Ascend950 与 Ascend350 上报的 NpuArch 同为 DAV_3510, 按 arch 判断可同时覆盖两档芯片。
+bool IsTargetPlatform()
+{
+    char npuArchVal[32] = {0};
+    if (rtGetSocSpec("version", "NpuArch", npuArchVal, sizeof(npuArchVal)) != RT_ERROR_NONE) {
+        OP_LOGW(kPassName.c_str(), "Get NpuArch from soc spec failed, skip whole graph.");
+        return false;
+    }
+    const auto npuArch = static_cast<NpuArch>(std::strtol(npuArchVal, nullptr, 10));
+    static const std::set<NpuArch> supportedArch = {NpuArch::DAV_3510};
+    const bool isSupported = (supportedArch.count(npuArch) > 0);
+    if (!isSupported) {
+        OP_LOGI(kPassName.c_str(), "Platform NpuArch %u is not supported(DAV_3510), skip.",
+                static_cast<uint32_t>(npuArch));
+    }
+    return isSupported;
+}
+} // namespace
 
 static const std::set<ge::DataType> kSupportedDtypes = {ge::DT_FLOAT, ge::DT_FLOAT16, ge::DT_BF16};
 
@@ -127,16 +156,8 @@ bool RandomStandardNormalFusionPass::MeetRequirements(const std::unique_ptr<Matc
         return false;
     }
 
-    // 1. Platform check - regbase architectures only
-    PlatformInfo platformInfo;
-    OptionalInfo optionalInfo;
-    if (PlatformInfoManager::Instance().GetPlatformInfoWithOutSocVersion(platformInfo, optionalInfo) != SUCCESS) {
-        OP_LOGE(kPassName.c_str(), "Get platform info failed.");
-        return false;
-    }
-    const std::string soc = platformInfo.str_info.short_soc_version;
-    if (soc != "Ascend950") {
-        OP_LOGD(kPassName.c_str(), "Platform %s is not supported, skip.", soc.c_str());
+    // 1. Platform check - NpuArch based (DAV_3510 covers both Ascend950 and Ascend350)
+    if (!IsTargetPlatform()) {
         return false;
     }
 
