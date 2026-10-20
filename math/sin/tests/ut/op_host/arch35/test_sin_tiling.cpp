@@ -118,3 +118,58 @@ TEST_F(SinTilingTest, test_tiling_failed_unsupport_output_010)
     std::vector<size_t> expectedWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
 }
+
+TEST_F(SinTilingTest, test_tiling_fp16_small_shape_011)
+{
+    optiling::SinCompileInfo compileInfo = {64, 262144};
+    gert::StorageShape shape = {{16}, {16}};
+    gert::TilingContextPara tilingContextPara("Sin", {{shape, ge::DT_FLOAT16, ge::FORMAT_ND}},
+                                              {{shape, ge::DT_FLOAT16, ge::FORMAT_ND}}, &compileInfo);
+    uint64_t expectedTilingKey = 3;
+    std::vector<size_t> expectedWorkspaces = {0};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
+}
+
+TEST_F(SinTilingTest, test_tiling_fp32_large_shape_012)
+{
+    optiling::SinCompileInfo compileInfo = {64, 262144};
+    gert::StorageShape shape = {{1024, 1024}, {1024, 1024}};
+    gert::TilingContextPara tilingContextPara("Sin", {{shape, ge::DT_FLOAT, ge::FORMAT_ND}},
+                                              {{shape, ge::DT_FLOAT, ge::FORMAT_ND}}, &compileInfo);
+    uint64_t expectedTilingKey = 7;
+    std::vector<size_t> expectedWorkspaces = {0};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
+}
+
+TEST_F(SinTilingTest, test_tiling_bf16_3d_shape_013)
+{
+    optiling::SinCompileInfo compileInfo = {64, 262144};
+    gert::StorageShape shape = {{2, 32, 64}, {2, 32, 64}};
+    gert::TilingContextPara tilingContextPara("Sin", {{shape, ge::DT_BF16, ge::FORMAT_ND}},
+                                              {{shape, ge::DT_BF16, ge::FORMAT_ND}}, &compileInfo);
+    uint64_t expectedTilingKey = 5;
+    std::vector<size_t> expectedWorkspaces = {0};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectedTilingKey, expectedWorkspaces);
+}
+
+TEST_F(SinTilingTest, test_tiling_failed_unsupport_int8_014)
+{
+    optiling::SinCompileInfo compileInfo = {64, 262144};
+    gert::StorageShape shape = {{1, 64, 2, 32}, {1, 64, 2, 32}};
+    gert::TilingContextPara tilingContextPara("Sin", {{shape, ge::DT_INT8, ge::FORMAT_ND}},
+                                              {{shape, ge::DT_INT8, ge::FORMAT_ND}}, &compileInfo);
+    uint64_t expectedTilingKey = 0;
+    std::vector<size_t> expectedWorkspaces = {0};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
+}
+
+TEST_F(SinTilingTest, test_tiling_failed_unsupport_int32_015)
+{
+    optiling::SinCompileInfo compileInfo = {64, 262144};
+    gert::StorageShape shape = {{1, 64, 2, 32}, {1, 64, 2, 32}};
+    gert::TilingContextPara tilingContextPara("Sin", {{shape, ge::DT_INT32, ge::FORMAT_ND}},
+                                              {{shape, ge::DT_INT32, ge::FORMAT_ND}}, &compileInfo);
+    uint64_t expectedTilingKey = 0;
+    std::vector<size_t> expectedWorkspaces = {0};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED, expectedTilingKey, expectedWorkspaces);
+}

@@ -55,7 +55,8 @@ static bool CheckDtypeValid(const aclTensor* self, const aclTensor* result)
                 return false;
             }
             case NpuArch::DAV_2201:
-            case NpuArch::DAV_3510: {
+            case NpuArch::DAV_3510:
+            case NpuArch::DAV_9201: {
                 if (!CheckType(self->GetDataType(), DTYPE_SUPPORT_LIST_WITH_BF16)) {
                     OP_LOGE(ACLNN_ERR_PARAM_INVALID, "On %s, self dtype %s should be in dtype support list %s.",
                             op::ToString(socVersion).GetString(), op::ToString(self->GetDataType()).GetString(),
