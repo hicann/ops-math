@@ -161,3 +161,71 @@ TEST_F(SignBitsUnpackInfershapeTest, missing_size_attribute_fails)
 
     ExecuteTestCase(context, ge::GRAPH_FAILED, {});
 }
+
+TEST_F(SignBitsUnpackInfershapeTest, unknown_rank_input_propagates_unknown_rank)
+{
+    gert::InfershapeContextPara context("SignBitsUnpack",
+                                        {
+                                            {{{-2}, {-2}}, ge::DT_UINT8, ge::FORMAT_ND},
+                                        },
+                                        {
+                                            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                        },
+                                        {
+                                            {"size", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+                                        });
+    std::vector<std::vector<int64_t>> expectedShape = {{-2}};
+
+    ExecuteTestCase(context, ge::GRAPH_SUCCESS, expectedShape);
+}
+
+TEST_F(SignBitsUnpackInfershapeTest, unknown_rank_input_size_one_propagates_unknown_rank)
+{
+    gert::InfershapeContextPara context("SignBitsUnpack",
+                                        {
+                                            {{{-2}, {-2}}, ge::DT_UINT8, ge::FORMAT_ND},
+                                        },
+                                        {
+                                            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                        },
+                                        {
+                                            {"size", Ops::Math::AnyValue::CreateFrom<int64_t>(1)},
+                                        });
+    std::vector<std::vector<int64_t>> expectedShape = {{-2}};
+
+    ExecuteTestCase(context, ge::GRAPH_SUCCESS, expectedShape);
+}
+
+TEST_F(SignBitsUnpackInfershapeTest, unknown_dim_input_propagates_unknown_size_dim)
+{
+    gert::InfershapeContextPara context("SignBitsUnpack",
+                                        {
+                                            {{{-1}, {-1}}, ge::DT_UINT8, ge::FORMAT_ND},
+                                        },
+                                        {
+                                            {{{}, {}}, ge::DT_FLOAT16, ge::FORMAT_ND},
+                                        },
+                                        {
+                                            {"size", Ops::Math::AnyValue::CreateFrom<int64_t>(2)},
+                                        });
+    std::vector<std::vector<int64_t>> expectedShape = {{2, -1}};
+
+    ExecuteTestCase(context, ge::GRAPH_SUCCESS, expectedShape);
+}
+
+TEST_F(SignBitsUnpackInfershapeTest, unknown_dim_input_size_four_propagates_unknown_size_dim)
+{
+    gert::InfershapeContextPara context("SignBitsUnpack",
+                                        {
+                                            {{{-1}, {-1}}, ge::DT_UINT8, ge::FORMAT_ND},
+                                        },
+                                        {
+                                            {{{}, {}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                        },
+                                        {
+                                            {"size", Ops::Math::AnyValue::CreateFrom<int64_t>(4)},
+                                        });
+    std::vector<std::vector<int64_t>> expectedShape = {{4, -1}};
+
+    ExecuteTestCase(context, ge::GRAPH_SUCCESS, expectedShape);
+}

@@ -33,31 +33,57 @@ static ge::graphStatus InferShape4SignBitsUnpack(gert::InferShapeContext* contex
 
     const gert::Shape* inShape = context->GetInputShape(INPUT_X_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context, inShape);
-    int64_t xShape = inShape->GetDim(0);
-    int64_t xDims = inShape->GetDimNum();
-
-    OP_CHECK_IF(xDims != 1, OP_LOGE(context->GetNodeName(), "input x shape must be 1 dim!"), return ge::GRAPH_FAILED);
-
-    auto attrs = context->GetAttrs();
-    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
-
-    auto dim = attrs->GetAttrPointer<int64_t>(ATTR_SIZE_IDX);
-    OP_CHECK_NULL_WITH_CONTEXT(context, dim);
-    OP_CHECK_IF(*dim <= 0, OP_LOGE(context->GetNodeName(), "dim size must be larger than zero!"),
-                return ge::GRAPH_FAILED);
 
     gert::Shape* outShape = context->GetOutputShape(OUTPUT_Y_IDX);
     OP_CHECK_NULL_WITH_CONTEXT(context, outShape);
 
-    OP_CHECK_IF(xShape < 0 || xShape > std::numeric_limits<int64_t>::max() / PACK_RATE,
-                OP_LOGE(context->GetNodeName(), "input size overflows packed bit count"), return ge::GRAPH_FAILED);
-    const int64_t packedBits = xShape * PACK_RATE;
-    OP_CHECK_IF(packedBits % *dim != 0, OP_LOGE(context->GetNodeName(), "input bit count must be divisible by size"),
+    auto attrs = context->GetAttrs();
+    OP_CHECK_NULL_WITH_CONTEXT(context, attrs);
+
+    auto size = attrs->GetInt(ATTR_SIZE_IDX);
+    OP_CHECK_NULL_WITH_CONTEXT(context, size);
+    const int64_t sizeValue = *size;
+    OP_CHECK_IF(sizeValue <= 0,
+                OP_LOGE_WITH_INVALID_ATTR(context->GetNodeName(), "size", std::to_string(sizeValue), "positive"),
                 return ge::GRAPH_FAILED);
-    int64_t yShape = packedBits / *dim;
+
+    // 未知 rank：无法推导输出 rank，输出 shape 也置为未知 rank
+    if (Ops::Base::IsUnknownRank(*inShape)) {
+        Ops::Base::SetUnknownRank(*outShape);
+        OP_LOGI(context->GetNodeName(), "[InferShape] input rank is unknown, output shape is unknown rank");
+        return ge::GRAPH_SUCCESS;
+    }
+
+    int64_t xDims = inShape->GetDimNum();
+    OP_CHECK_IF(xDims != 1,
+                OP_LOGE_FOR_INVALID_SHAPEDIM(context->GetNodeName(), "x", std::to_string(xDims) + "D", "1D"),
+                return ge::GRAPH_FAILED);
+
+    int64_t xShape = inShape->GetDim(0);
+
+    // 未知 shape：输入维度未知（-1），输出第二维保持未知
+    if (xShape == ge::UNKNOWN_DIM) {
+        outShape->SetDimNum(0);
+        outShape->AppendDim(sizeValue);
+        outShape->AppendDim(ge::UNKNOWN_DIM);
+        OP_LOGI(context->GetNodeName(), "[InferShape] input dim is unknown, output shape=%s",
+                Ops::Base::ToString(*outShape).c_str());
+        return ge::GRAPH_SUCCESS;
+    }
+
+    OP_CHECK_IF(
+        xShape < 0 || xShape > std::numeric_limits<int64_t>::max() / PACK_RATE,
+        OP_LOGE_FOR_INVALID_SHAPESIZE(context->GetNodeName(), "x", std::to_string(xShape), "less than INT64_MAX / 8"),
+        return ge::GRAPH_FAILED);
+    const int64_t packedBits = xShape * PACK_RATE;
+    OP_CHECK_IF(packedBits % sizeValue != 0,
+                OP_LOGE_FOR_INVALID_VALUE(context->GetNodeName(), "size", std::to_string(sizeValue),
+                                          "able to divide x bit count"),
+                return ge::GRAPH_FAILED);
+    int64_t yShape = packedBits / sizeValue;
 
     outShape->SetDimNum(0);
-    outShape->AppendDim(*dim);
+    outShape->AppendDim(sizeValue);
     outShape->AppendDim(yShape);
     OP_LOGI(context->GetNodeName(), "[InferShape] output shape=%s", Ops::Base::ToString(*outShape).c_str());
     return ge::GRAPH_SUCCESS;
