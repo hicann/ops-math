@@ -100,7 +100,7 @@ aclnnStatus aclnnInplaceAcosh(
         <td>输入</td>
         <td>-</td>
         <td>输入为复数输出必须为复数。</td>
-        <td>FLOAT16、FLOAT、DOUBLE</td>
+        <td>FLOAT16、FLOAT、DOUBLE、INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64、COMPLEX128</td>
         <td>ND</td>
         <td>-</td>
         <td>√</td>
@@ -110,7 +110,7 @@ aclnnStatus aclnnInplaceAcosh(
         <td>输出</td>
         <td>-</td>
         <td>-</td>
-        <td>FLOAT16、FLOAT、DOUBLE</td>
+        <td>FLOAT16、FLOAT、DOUBLE、COMPLEX64、COMPLEX128</td>
         <td>ND</td>
         <td>-</td>
         <td>√</td>
@@ -137,10 +137,10 @@ aclnnStatus aclnnInplaceAcosh(
       </tr>
     </tbody></table>
 
-  <!-- npu="A3" id7 -->
-  - <term>Atlas A3系列产品</term>：
-    - self数据类型额外支持INT8、INT16、INT32、INT64、UINT8、BOOL、COMPLEX64、COMPLEX128、BFLOAT16；
-    - out数据类型额外支持COMPLEX64、COMPLEX128、BFLOAT16。
+  <!-- npu="950,A3,910b" id7 -->
+  - <term>Ascend 950PR&950DT系列产品</term>、<term>Atlas A3系列产品</term>、<term>Atlas A2系列产品</term>：
+    - self数据类型额外支持BFLOAT16；
+    - out数据类型额外支持BFLOAT16。
   <!-- end id7 -->
 
 - **返回值：**
