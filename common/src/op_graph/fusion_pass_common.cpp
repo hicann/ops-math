@@ -36,6 +36,8 @@ STUB_REG_PASS("RandomUniformIntFusionPass", fe::BUILT_IN_GRAPH_PASS, 0x01);
 STUB_REG_PASS("DropOutV3FusionPass", fe::BUILT_IN_GRAPH_PASS, 0x05);
 STUB_REG_PASS("DropOutV3SplitFusionPass", fe::BUILT_IN_GRAPH_PASS, 0x05);
 STUB_REG_PASS("BernoulliFusionPass", fe::BUILT_IN_GRAPH_PASS, 0);
+// MulAddN：math 侧 Stage=kCompatibleInherited，且在 OPP 白名单 3510(ascend950) 内，登记后生效
+STUB_REG_PASS("MulAddNPass", fe::BUILT_IN_GRAPH_PASS, 0);
 
 #endif // GE_COMPILER_VERSION_NUM >= GE_COMPILER_VERSION_900
 #endif // OP_GRAPH_MATH_ASCEND950
