@@ -25,7 +25,7 @@
 
 namespace optiling {
 constexpr uint64_t INVERT_TILING_KEY = 101;
-constexpr size_t INVERT_WORKSPACE_RESERVE_BYTE = 16777216; // 16 * 1024 * 1024
+constexpr size_t INVERT_WORKSPACE_RESERVE_BYTE = 0;
 
 ge::graphStatus InvertTiling::SetTilingData()
 {
@@ -44,20 +44,19 @@ ge::graphStatus InvertTiling::CheckAndGetOutputDtype(ge::DataType& outputDtype)
     auto outputDesc = context_->GetOutputDesc(0);
     OP_CHECK_NULL_WITH_CONTEXT(context_, outputDesc);
     outputDtype = outputDesc->GetDataType();
-    OP_CHECK_IF((inputDtype != outputDtype), 
-        OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "y",
-            Ops::Base::ToString(outputDtype),
-            "the dtype of y must be the same as " + Ops::Base::ToString(inputDtype) + " of x"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF((inputDtype != outputDtype),
+                OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+                    context_->GetNodeName(), "y", Ops::Base::ToString(outputDtype),
+                    "the dtype of y must be the same as " + Ops::Base::ToString(inputDtype) + " of x"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
 ge::graphStatus InvertTiling::RunTiling()
 {
     ge::DataType outputDtype = ge::DataType::DT_MAX;
-    OP_CHECK_IF(
-        CheckAndGetOutputDtype(outputDtype) != ge::GRAPH_SUCCESS,
-        OP_LOGE(context_->GetNodeName(), "get output dtype failed."), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckAndGetOutputDtype(outputDtype) != ge::GRAPH_SUCCESS,
+                OP_LOGE(context_->GetNodeName(), "get output dtype failed."), return ge::GRAPH_FAILED);
 
     ge::graphStatus res = ge::GRAPH_FAILED;
     td_ = context_->GetTilingData<EleBaseTilingData>();
@@ -95,18 +94,17 @@ ge::graphStatus InvertTiling::RunTiling()
             break;
         }
         default: {
-            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context_->GetNodeName(), "y",
-                Ops::Base::ToString(outputDtype),
+            OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(
+                context_->GetNodeName(), "y", Ops::Base::ToString(outputDtype),
                 "the dtype of y must be within the range "
                 "{DT_INT8, DT_INT16, DT_INT32, DT_INT64, DT_UINT8, DT_UINT16, DT_UINT32, DT_UINT64}");
-            
+
             return ge::GRAPH_FAILED;
         }
     }
 
-    OP_CHECK_IF(
-        res != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "do elewise tiling failed."),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(res != ge::GRAPH_SUCCESS, OP_LOGE(context_->GetNodeName(), "do elewise tiling failed."),
+                return ge::GRAPH_FAILED);
 
     res = SetTilingData();
     return res;

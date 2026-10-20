@@ -11,7 +11,7 @@
 /*!
  * \file diag_tiling_arch35.cpp
  * \brief Tiling implementation for Diag operator (arch35)
- *      
+ *
  */
 
 #include "diag_tiling_arch35.h"
@@ -26,8 +26,8 @@ static constexpr int64_t HALF_VL_LEN = 128L;
 static constexpr size_t MIN_INPUT_DIM = 1;
 static constexpr size_t MAX_INPUT_DIM = 4;
 
-static void CalcSimtTiling(
-    int64_t nSize, int32_t dtypeSize, int64_t coreNum, int64_t ubSize, DiagSimtTilingData* tilingData)
+static void CalcSimtTiling(int64_t nSize, int32_t dtypeSize, int64_t coreNum, int64_t ubSize,
+                           DiagSimtTilingData* tilingData)
 {
     int64_t sideLengthFactor = HALF_VL_LEN / dtypeSize;
     int64_t blockNum = Ops::Base::CeilDiv(nSize, sideLengthFactor);
@@ -56,8 +56,8 @@ static ge::graphStatus TilingGetCompileInfo(gert::TilingContext* context, DiagCo
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
     if (compileInfo->coreNum == 0) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "coreNum",
-            std::to_string(compileInfo->coreNum).c_str(),
-            "The value of coreNum must be greater than 0.");
+                                              std::to_string(compileInfo->coreNum).c_str(),
+                                              "The value of coreNum must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
 
@@ -66,8 +66,8 @@ static ge::graphStatus TilingGetCompileInfo(gert::TilingContext* context, DiagCo
     compileInfo->ubSize = static_cast<uint32_t>(ubSize);
     if (compileInfo->ubSize == 0) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ubSize",
-            std::to_string(compileInfo->ubSize).c_str(),
-            "The value of ubSize must be greater than 0.");
+                                              std::to_string(compileInfo->ubSize).c_str(),
+                                              "The value of ubSize must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
 
@@ -75,8 +75,7 @@ static ge::graphStatus TilingGetCompileInfo(gert::TilingContext* context, DiagCo
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus TilingCheckInputParams(
-    gert::TilingContext* context, int64_t* nSize, int32_t* dtypeSize)
+static ge::graphStatus TilingCheckInputParams(gert::TilingContext* context, int64_t* nSize, int32_t* dtypeSize)
 {
     OP_LOGD(context->GetNodeName(), "Enter TilingCheckInputParams.");
 
@@ -86,8 +85,8 @@ static ge::graphStatus TilingCheckInputParams(
     auto inputShape = input->GetStorageShape();
     if (inputShape.GetDimNum() < MIN_INPUT_DIM || inputShape.GetDimNum() > MAX_INPUT_DIM) {
         OP_LOGE_FOR_INVALID_SHAPEDIM_WITH_REASON(context->GetNodeName(), "input",
-            std::to_string(inputShape.GetDimNum()).c_str(),
-            "The dimNum of input must be within the range [1, 4].");
+                                                 std::to_string(inputShape.GetDimNum()).c_str(),
+                                                 "The dimNum of input must be within the range [1, 4].");
         return ge::GRAPH_FAILED;
     }
 
@@ -95,8 +94,8 @@ static ge::graphStatus TilingCheckInputParams(
     *dtypeSize = ge::GetSizeByDataType(dataType);
     if (*dtypeSize <= 0) {
         OP_LOGE_FOR_INVALID_DTYPE_WITH_REASON(context->GetNodeName(), "input",
-            ge::TypeUtils::DataTypeToSerialString(dataType).c_str(),
-            "The dtype size of input must be greater than 0.");
+                                              ge::TypeUtils::DataTypeToSerialString(dataType).c_str(),
+                                              "The dtype size of input must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
 
@@ -106,8 +105,7 @@ static ge::graphStatus TilingCheckInputParams(
     return ge::GRAPH_SUCCESS;
 }
 
-static ge::graphStatus TilingEmptyTensor(
-    gert::TilingContext* context, int64_t ubSize, DiagSimtTilingData* tilingData)
+static ge::graphStatus TilingEmptyTensor(gert::TilingContext* context, int64_t ubSize, DiagSimtTilingData* tilingData)
 {
     tilingData->nSize = 0;
     tilingData->ubSize = ubSize;
@@ -117,7 +115,7 @@ static ge::graphStatus TilingEmptyTensor(
     tilingData->tailBlockFactor = 0;
     context->SetBlockDim(1);
     context->SetTilingKey(TILING_SIMT);
-    size_t sysWorkspaceSize = 16 * 1024 * 1024;
+    size_t sysWorkspaceSize = 0;
     size_t* currentWorkspace = context->GetWorkspaceSizes(1);
     OP_CHECK_NULL_WITH_CONTEXT(context, currentWorkspace);
     currentWorkspace[0] = sysWorkspaceSize;
@@ -161,12 +159,11 @@ static ge::graphStatus Tiling4Diag(gert::TilingContext* context)
     OP_CHECK_NULL_WITH_CONTEXT(context, currentWorkspace);
     currentWorkspace[0] = sysWorkspaceSize;
 
-    OP_LOGI(
-        context->GetNodeName(),
-        "Diag tiling: nSize=%ld, batchSize=1, realCoreNum=%ld, mainBlockCount=%ld, mainBlockFactor=%ld, "
-        "tailBlockFactor=%ld",
-        tilingData->nSize, tilingData->realCoreNum, tilingData->mainBlockCount, tilingData->mainBlockFactor,
-        tilingData->tailBlockFactor);
+    OP_LOGI(context->GetNodeName(),
+            "Diag tiling: nSize=%ld, batchSize=1, realCoreNum=%ld, mainBlockCount=%ld, mainBlockFactor=%ld, "
+            "tailBlockFactor=%ld",
+            tilingData->nSize, tilingData->realCoreNum, tilingData->mainBlockCount, tilingData->mainBlockFactor,
+            tilingData->tailBlockFactor);
 
     return ge::GRAPH_SUCCESS;
 }
@@ -182,8 +179,8 @@ static ge::graphStatus TilingPrepare4Diag(gert::TilingParseContext* context)
     compileInfo->coreNum = ascendcPlatform.GetCoreNumAiv();
     if (compileInfo->coreNum == 0) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "coreNum",
-            std::to_string(compileInfo->coreNum).c_str(),
-            "The value of coreNum must be greater than 0.");
+                                              std::to_string(compileInfo->coreNum).c_str(),
+                                              "The value of coreNum must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
 
@@ -192,8 +189,8 @@ static ge::graphStatus TilingPrepare4Diag(gert::TilingParseContext* context)
     compileInfo->ubSize = static_cast<uint32_t>(ubSize);
     if (compileInfo->ubSize == 0) {
         OP_LOGE_FOR_INVALID_VALUE_WITH_REASON(context->GetNodeName(), "ubSize",
-            std::to_string(compileInfo->ubSize).c_str(),
-            "The value of ubSize must be greater than 0.");
+                                              std::to_string(compileInfo->ubSize).c_str(),
+                                              "The value of ubSize must be greater than 0.");
         return ge::GRAPH_FAILED;
     }
 

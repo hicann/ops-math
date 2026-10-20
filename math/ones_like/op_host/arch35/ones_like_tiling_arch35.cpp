@@ -23,7 +23,7 @@
 #include "math/ones_like/op_kernel/arch35/ones_like_tiling_key.h"
 
 namespace optiling {
-const int64_t ASCEND_WORKSPACE = 16777216; // 16 * 1024 * 1024
+const int64_t ASCEND_WORKSPACE = 0;
 
 ge::graphStatus OnesLikeTiling::SetTilingData()
 {
@@ -43,9 +43,8 @@ ge::graphStatus OnesLikeTiling::SetTilingData()
     } else if (this->outputDtype == ge::DT_UINT8) {
         dType = ONES_LIKE_TPL_UINT8;
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y(output)",
-            Ops::Base::ToString(this->outputDtype),
-            "Float16, BFloat16, Float, Int32, Bool, Int8 and Uint8");
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y(output)", Ops::Base::ToString(this->outputDtype),
+                                  "Float16, BFloat16, Float, Int32, Bool, Int8 and Uint8");
         return ge::GRAPH_FAILED;
     }
     schMode = tiling->baseTiling.scheMode;
@@ -70,10 +69,10 @@ ge::graphStatus OnesLikeTiling::CalcInputDtype()
                                                           ge::DT_BOOL,    ge::DT_INT32, ge::DT_UINT8};
     auto inputTypeCheck = std::find(inputDtypes.begin(), inputDtypes.end(), this->inputDtype);
 
-    OP_CHECK_IF((inputTypeCheck == inputDtypes.end()),
-        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "x(input)",
-            Ops::Base::ToString(this->inputDtype),
-            "Float16, BFloat16, Int8, Float, Bool, Int32 and Uint8"),
+    OP_CHECK_IF(
+        (inputTypeCheck == inputDtypes.end()),
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "x(input)", Ops::Base::ToString(this->inputDtype),
+                                  "Float16, BFloat16, Int8, Float, Bool, Int32 and Uint8"),
         return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
@@ -90,10 +89,11 @@ ge::graphStatus OnesLikeTiling::CheckShape()
     const gert::Shape& outputZShape = Ops::Base::EnsureNotScalar(outputStorageShape->GetStorageShape());
 
     OP_CHECK_IF((inputYShape.GetShapeSize() != outputZShape.GetShapeSize()),
-        OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(tilingContext->GetNodeName(), "x(input) and y(output)",
-            Ops::Base::ToString(inputYShape) + ", " + Ops::Base::ToString(outputZShape),
-            "The shapes of x(input) and y(output) must be the same"),
-        return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_SHAPES_WITH_REASON(
+                    tilingContext->GetNodeName(), "x(input) and y(output)",
+                    Ops::Base::ToString(inputYShape) + ", " + Ops::Base::ToString(outputZShape),
+                    "The shapes of x(input) and y(output) must be the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -110,10 +110,11 @@ ge::graphStatus OnesLikeTiling::CalcOutputDtype()
     this->outputDtype = outputDesc->GetDataType();
 
     OP_CHECK_IF((this->outputDtype != this->inputDtype),
-        OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(tilingContext->GetNodeName(), "x(input) and y(output)",
-            Ops::Base::ToString(this->inputDtype) + " and " + Ops::Base::ToString(this->outputDtype),
-            "The dtypes of x(input) and y(output) must be the same"),
-        return ge::GRAPH_FAILED);
+                OP_LOGE_FOR_INVALID_DTYPES_WITH_REASON(
+                    tilingContext->GetNodeName(), "x(input) and y(output)",
+                    Ops::Base::ToString(this->inputDtype) + " and " + Ops::Base::ToString(this->outputDtype),
+                    "The dtypes of x(input) and y(output) must be the same"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
@@ -121,14 +122,12 @@ ge::graphStatus OnesLikeTiling::RunTiling()
 {
     OP_LOGD(tilingContext->GetNodeName(), "OnesLikeTiling RunTiling enter.");
     ElewiseBaseTiling elewiseBaseTiling(tilingContext);
-    OP_CHECK_IF(
-        CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get input dtype failed"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
-        return ge::GRAPH_FAILED);
-    OP_CHECK_IF(
-        CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"), return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcInputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get input dtype failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CalcOutputDtype() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "get output dtype failed"),
+                return ge::GRAPH_FAILED);
+    OP_CHECK_IF(CheckShape() == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "check shape failed"),
+                return ge::GRAPH_FAILED);
 
     ge::graphStatus baseTilingResult = ge::GRAPH_FAILED;
     tiling = tilingContext->GetTilingData<OnesLikeTilingData>();
@@ -145,14 +144,12 @@ ge::graphStatus OnesLikeTiling::RunTiling()
     } else if (this->outputDtype == ge::DT_UINT8) {
         baseTilingResult = elewiseBaseTiling.DoTiling<OnesLikeDAG<uint8_t>::OpDag>(tiling->baseTiling);
     } else {
-        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y(output)",
-            Ops::Base::ToString(this->outputDtype),
-            "Float16, BFloat16, Int8, Float, Bool, Int32 and Uint8");
+        OP_LOGE_FOR_INVALID_DTYPE(tilingContext->GetNodeName(), "y(output)", Ops::Base::ToString(this->outputDtype),
+                                  "Float16, BFloat16, Int8, Float, Bool, Int32 and Uint8");
         return ge::GRAPH_FAILED;
     }
-    OP_CHECK_IF(
-        baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(baseTilingResult == ge::GRAPH_FAILED, OP_LOGE(tilingContext, "elewiseBaseTiling failed"),
+                return ge::GRAPH_FAILED);
 
     return SetTilingData();
 }

@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include <gtest/gtest.h>
 #include <iostream>
 #include "../../../../op_host/arch35/fills_tiling_arch35.h"
@@ -19,14 +19,10 @@
 using namespace std;
 
 class FillsTilingTest : public testing::Test {
- protected:
-  static void SetUpTestCase() {
-    std::cout << "FillsTilingTest SetUp" << std::endl;
-  }
+protected:
+    static void SetUpTestCase() { std::cout << "FillsTilingTest SetUp" << std::endl; }
 
-  static void TearDownTestCase() {
-    std::cout << "FillsTilingTest TearDown" << std::endl;
-  }
+    static void TearDownTestCase() { std::cout << "FillsTilingTest TearDown" << std::endl; }
 };
 
 TEST_F(FillsTilingTest, fills_test_tiling_fp32_input)
@@ -47,8 +43,9 @@ TEST_F(FillsTilingTest, fills_test_tiling_fp32_input)
 
     uint64_t expectTilingKey = 7;
     string expectTilingData = "4096 4 32768 1024 4 1 1 1024 1024 32768 1 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData,
+                          expectWorkspaces);
 }
 
 TEST_F(FillsTilingTest, fills_test_tiling_fp16_input)
@@ -69,8 +66,9 @@ TEST_F(FillsTilingTest, fills_test_tiling_fp16_input)
 
     uint64_t expectTilingKey = 3;
     string expectTilingData = "4096 2 65536 2048 2 1 1 2048 2048 65536 1 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData,
+                          expectWorkspaces);
 }
 
 TEST_F(FillsTilingTest, fills_test_tiling_int32_input)
@@ -91,8 +89,9 @@ TEST_F(FillsTilingTest, fills_test_tiling_int32_input)
 
     uint64_t expectTilingKey = 9;
     string expectTilingData = "4096 4 32768 1024 4 1 1 1024 1024 32768 1 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData,
+                          expectWorkspaces);
 }
 
 TEST_F(FillsTilingTest, fills_test_tiling_int64_input)
@@ -113,8 +112,9 @@ TEST_F(FillsTilingTest, fills_test_tiling_int64_input)
 
     uint64_t expectTilingKey = 11;
     string expectTilingData = "4096 8 16384 512 8 1 1 512 512 16384 1 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData,
+                          expectWorkspaces);
 }
 
 TEST_F(FillsTilingTest, fills_test_tiling_int8_input)
@@ -135,8 +135,9 @@ TEST_F(FillsTilingTest, fills_test_tiling_int8_input)
 
     uint64_t expectTilingKey = 13;
     string expectTilingData = "4096 1 131072 4096 1 1 1 4096 4096 131072 1 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData,
+                          expectWorkspaces);
 }
 
 TEST_F(FillsTilingTest, fills_test_tiling_uint8_input)
@@ -157,8 +158,9 @@ TEST_F(FillsTilingTest, fills_test_tiling_uint8_input)
 
     uint64_t expectTilingKey = 15;
     string expectTilingData = "4096 1 131072 4096 1 1 1 4096 4096 131072 1 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_SUCCESS, true, expectTilingKey, true, expectTilingData,
+                          expectWorkspaces);
 }
 
 TEST_F(FillsTilingTest, fills_test_tiling_invalid_dtype)
@@ -179,6 +181,7 @@ TEST_F(FillsTilingTest, fills_test_tiling_invalid_dtype)
 
     uint64_t expectTilingKey = 7;
     string expectTilingData = "4096 4 32768 1024 4 1 1 1024 1024 32768 1 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
-    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_FAILED, true, expectTilingKey, true, expectTilingData, expectWorkspaces);
+    std::vector<size_t> expectWorkspaces = {0};
+    ExecuteTestCaseForEle(tilingContextPara, ge::GRAPH_FAILED, true, expectTilingKey, true, expectTilingData,
+                          expectWorkspaces);
 }

@@ -20,7 +20,7 @@
 #include "../../op_kernel/cdist_tiling_key.h"
 
 namespace optiling {
-constexpr int64_t WORK_SPACE_SIZE = static_cast<int64_t>(16 * 1024 * 1024);
+constexpr int64_t WORK_SPACE_SIZE = 0;
 constexpr int64_t MIN_DIM_LEN = 2;
 constexpr int64_t M_SIZE = 256;
 constexpr int64_t BUFFER_NUM = 2;

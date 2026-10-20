@@ -24,19 +24,12 @@ using namespace std;
 
 class RollTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "RollSubTiling2 SetUp" << std::endl;
-    }
-    static void TearDownTestCase()
-    {
-        std::cout << "RollSubTiling2 TearDown" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "RollSubTiling2 SetUp" << std::endl; }
+    static void TearDownTestCase() { std::cout << "RollSubTiling2 TearDown" << std::endl; }
 };
 
 TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_001)
 {
-
     optiling::RollCompileInfoArch35 compileInfo = {64, 262144, 0, true, platform_ascendc::SocVersion::ASCEND950};
     gert::TilingContextPara tilingContextPara(
         "Roll",
@@ -50,10 +43,10 @@ TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_001)
          gert::TilingContextPara::OpAttr("dims", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({0, 1}))},
         &compileInfo);
     uint64_t expectTilingKey = 50001;
-    string expectTilingData =
-        "0 1 2 2 0 0 1 2 2 0 1 2 2 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 16304 3 2 3 4 0 0 0 0 0 12 4 1 0 "
-        "0 0 0 0 1 2 0 0 0 0 0 0 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    string expectTilingData = "0 1 2 2 0 0 1 2 2 0 1 2 2 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 16304 3 2 3 "
+                              "4 0 0 0 0 0 12 4 1 0 "
+                              "0 0 0 0 1 2 0 0 0 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_002)
@@ -71,10 +64,10 @@ TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_002)
          gert::TilingContextPara::OpAttr("dims", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({0}))},
         &compileInfo);
     uint64_t expectTilingKey = 10000;
-    string expectTilingData =
-        "0 0 0 0 -1 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 64 765221 765202 1 32768 1 48974125 0 0 "
-        "0 0 0 0 0 1 0 0 0 0 0 0 0 12578 0 0 0 0 0 0 0 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    string expectTilingData = "0 0 0 0 -1 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 64 765221 765202 1 "
+                              "32768 1 48974125 0 0 "
+                              "0 0 0 0 0 1 0 0 0 0 0 0 0 12578 0 0 0 0 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_003)
@@ -92,10 +85,10 @@ TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_003)
          gert::TilingContextPara::OpAttr("dims", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({1, 3, 5}))},
         &compileInfo);
     uint64_t expectTilingKey = 20000;
-    string expectTilingData =
-        "0 63 5 5 2 4 3 8 5 4 3 8 5 2 0 1440 0 0 30 4 0 0 41 41 0 0 48 48 0 0 164 0 0 0 0 0 0 0 32768 7 7 5 9 17 21 34 "
-        "41 0 22394610 4478922 497658 29274 1394 41 1 0 0 2 0 3 0 4 0 0 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    string expectTilingData = "0 63 5 5 2 4 3 8 5 4 3 8 5 2 0 1440 0 0 30 4 0 0 41 41 0 0 48 48 0 0 164 0 0 0 0 0 0 0 "
+                              "32768 7 7 5 9 17 21 34 "
+                              "41 0 22394610 4478922 497658 29274 1394 41 1 0 0 2 0 3 0 4 0 0 ";
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_004)
@@ -113,10 +106,10 @@ TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_004)
          gert::TilingContextPara::OpAttr("dims", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({0, 1, 2}))},
         &compileInfo);
     uint64_t expectTilingKey = 30001;
-    string expectTilingData =
-        "0 64 28 18 1 1 1 28 28 1 1 18 18 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 64 1977 1971 1 32768 3 33 54 71 0 "
-        "0 0 0 0 3834 71 1 0 0 0 0 0 2 1 4 0 0 0 0 0 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    string expectTilingData = "0 64 28 18 1 1 1 28 28 1 1 18 18 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 64 1977 1971 "
+                              "1 32768 3 33 54 71 0 "
+                              "0 0 0 0 3834 71 1 0 0 0 0 0 2 1 4 0 0 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_005)
@@ -134,10 +127,10 @@ TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_005)
          gert::TilingContextPara::OpAttr("dims", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({0}))},
         &compileInfo);
     uint64_t expectTilingKey = 30000;
-    string expectTilingData =
-        "0 17 1 1 0 0 1 1 1 0 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 32768 2 17 64 0 0 0 0 0 0 64 1 0 "
-        "0 0 0 0 0 3 0 0 0 0 0 0 0 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    string expectTilingData = "0 17 1 1 0 0 1 1 1 0 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 32768 2 17 "
+                              "64 0 0 0 0 0 0 64 1 0 "
+                              "0 0 0 0 0 3 0 0 0 0 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_006)
@@ -155,10 +148,10 @@ TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_006)
          gert::TilingContextPara::OpAttr("dims", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({0, 1}))},
         &compileInfo);
     uint64_t expectTilingKey = 50000;
-    string expectTilingData =
-        "0 63 20 7 0 0 1 20 20 0 1 7 7 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 16304 2 1247 9 0 0 0 0 0 0 9 "
-        "1 0 0 0 0 0 0 3 1 0 0 0 0 0 0 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    string expectTilingData = "0 63 20 7 0 0 1 20 20 0 1 7 7 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 16304 2 "
+                              "1247 9 0 0 0 0 0 0 9 "
+                              "1 0 0 0 0 0 0 3 1 0 0 0 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_007)
@@ -176,10 +169,10 @@ TEST_F(RollTiling, ascend910D1_test_tiling_int32_success_007)
          gert::TilingContextPara::OpAttr("dims", Ops::Math::AnyValue::CreateFrom<std::vector<int64_t>>({0}))},
         &compileInfo);
     uint64_t expectTilingKey = 40000;
-    string expectTilingData =
-        "0 64 55296 55296 1 1 2 32768 22528 1 2 32768 22528 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 64 55296 55296 0 "
-        "32768 2 48 73728 0 0 0 0 0 0 73728 1 0 0 0 0 0 0 42 0 0 0 0 0 0 0 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    string expectTilingData = "0 64 55296 55296 1 1 2 32768 22528 1 2 32768 22528 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+                              "0 0 0 64 55296 55296 0 "
+                              "32768 2 48 73728 0 0 0 0 0 0 73728 1 0 0 0 0 0 0 42 0 0 0 0 0 0 0 ";
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 

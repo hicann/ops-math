@@ -31,7 +31,7 @@ static constexpr int64_t VL_LEN = 256;
 static constexpr int64_t USED_MIN_UB_SIZE = 8 * 1024; // 8KB
 static constexpr int64_t BASE_512 = 512;
 static constexpr int64_t BASE_4 = 4;
-static constexpr uint64_t SYS_WORKSPACE_SIZE = static_cast<uint64_t>(16 * 1024 * 1024);
+static constexpr uint64_t SYS_WORKSPACE_SIZE = 0;
 static constexpr int64_t B8_MAX_SIZE = 65536;
 
 std::string MatrixDiagTiling::PrintTilingData()

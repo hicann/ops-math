@@ -19,15 +19,9 @@ using namespace ge;
 
 class DiagPartTiling : public testing::Test {
 protected:
-    static void SetUpTestCase()
-    {
-        std::cout << "DiagPartTiling SetUp" << std::endl;
-    }
+    static void SetUpTestCase() { std::cout << "DiagPartTiling SetUp" << std::endl; }
 
-    static void TearDownTestCase()
-    {
-        std::cout << "DiagPartTiling TearDown" << std::endl;
-    }
+    static void TearDownTestCase() { std::cout << "DiagPartTiling TearDown" << std::endl; }
 };
 
 TEST_F(DiagPartTiling, neg_test_tiling_001)
@@ -38,18 +32,17 @@ TEST_F(DiagPartTiling, neg_test_tiling_001)
     };
 
     DiagPartCompileInfo compileInfo = {64, 253952};
-    gert::TilingContextPara tilingContextPara(
-        "DiagPart",
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("DiagPart",
+                                              {
+                                                  {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     uint64_t expectTilingKey = 1000;
     string expectTilingData = "16 1 32 16 253952 ";
-    std::vector<size_t> expectWorkspaces = {16777216};
+    std::vector<size_t> expectWorkspaces = {0};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
 
@@ -61,15 +54,14 @@ TEST_F(DiagPartTiling, neg_test_invalid_core_num)
     };
 
     DiagPartCompileInfo compileInfo = {0, 253952};
-    gert::TilingContextPara tilingContextPara(
-        "DiagPart",
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("DiagPart",
+                                              {
+                                                  {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
@@ -81,15 +73,14 @@ TEST_F(DiagPartTiling, neg_test_invalid_ub_size)
     };
 
     DiagPartCompileInfo compileInfo = {64, 0};
-    gert::TilingContextPara tilingContextPara(
-        "DiagPart",
-        {
-            {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("DiagPart",
+                                              {
+                                                  {{{16, 16}, {16, 16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
@@ -101,15 +92,14 @@ TEST_F(DiagPartTiling, neg_test_x_dim_odd)
     };
 
     DiagPartCompileInfo compileInfo = {64, 253952};
-    gert::TilingContextPara tilingContextPara(
-        "DiagPart",
-        {
-            {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("DiagPart",
+                                              {
+                                                  {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{16}, {16}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
@@ -121,15 +111,14 @@ TEST_F(DiagPartTiling, neg_test_x_front_back_half_mismatch)
     };
 
     DiagPartCompileInfo compileInfo = {64, 253952};
-    gert::TilingContextPara tilingContextPara(
-        "DiagPart",
-        {
-            {{{4, 8}, {4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("DiagPart",
+                                              {
+                                                  {{{4, 8}, {4, 8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4}, {4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
@@ -141,15 +130,14 @@ TEST_F(DiagPartTiling, neg_test_y_dim_mismatch)
     };
 
     DiagPartCompileInfo compileInfo = {64, 253952};
-    gert::TilingContextPara tilingContextPara(
-        "DiagPart",
-        {
-            {{{4, 4}, {4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{4, 4}, {4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("DiagPart",
+                                              {
+                                                  {{{4, 4}, {4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{4, 4}, {4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }
 
@@ -161,14 +149,13 @@ TEST_F(DiagPartTiling, neg_test_xy_front_dim_mismatch)
     };
 
     DiagPartCompileInfo compileInfo = {64, 253952};
-    gert::TilingContextPara tilingContextPara(
-        "DiagPart",
-        {
-            {{{4, 4}, {4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        {
-            {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
-        },
-        &compileInfo);
+    gert::TilingContextPara tilingContextPara("DiagPart",
+                                              {
+                                                  {{{4, 4}, {4, 4}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{8}, {8}}, ge::DT_FLOAT, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
     ExecuteTestCase(tilingContextPara, ge::GRAPH_FAILED);
 }

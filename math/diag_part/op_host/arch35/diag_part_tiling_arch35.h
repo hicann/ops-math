@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ constexpr int32_t B16_BYTES = 2;
 constexpr int32_t B32_BYTES = 4;
 constexpr int32_t B64_BYTES = 8;
 constexpr uint64_t TWO = 2;
-constexpr int64_t WORK_SPACE_SIZE = static_cast<int64_t>(16 * 1024 * 1024);
+constexpr int64_t WORK_SPACE_SIZE = 0;
 constexpr int64_t TILING_KEY_GATHER = 1000;
 constexpr int64_t TILING_KEY_SIMT = 2000;
 constexpr int64_t DCACHE_SIZE = 32 * 1024;

@@ -39,7 +39,7 @@ constexpr uint64_t TILING_KEY_FOR_SIMD_SPLIT_W = 40000;
 constexpr uint64_t TILING_KEY_FOR_SIMD_SMALL_TAIL_SHIFTW = 50000;
 constexpr uint64_t TILING_KEY_FOR_SIMD_SMALL_TAIL_NOT_SHIFTW = 50001;
 constexpr uint64_t TILING_KEY_FOR_EMPTY_TENSOR = 60000;
-constexpr size_t RESERVED_WORKSPACE_SIZE = static_cast<size_t>(16 * 1024 * 1024);
+constexpr size_t RESERVED_WORKSPACE_SIZE = 0;
 constexpr int64_t SIMT_DCACHE_SIZE = static_cast<int64_t>(64 * 1024);
 
 static const std::vector<ge::DataType> X_SUPPORT_DTYPE = {ge::DT_INT8,   ge::DT_UINT8, ge::DT_INT32,

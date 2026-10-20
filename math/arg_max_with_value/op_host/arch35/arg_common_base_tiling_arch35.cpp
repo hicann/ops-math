@@ -25,7 +25,6 @@ static const uint64_t INPUT_IDX_X = 0;
 static const uint64_t INPUT_IDX_DIMENSION = 1;
 static const uint64_t OUTPUT_IDX_INDICE = 0;
 static const uint64_t INDEX_DIMENSION = 0;
-static const uint64_t WORK_SPACE_SIZE = static_cast<uint64_t>(16) * 1024 * 1024;
 static const uint64_t VALUE_TWO = 2;
 static const uint64_t DOUBLE_BUFFER_NUM = 2;
 static const uint64_t TEMP_BUFFER_NUM = 3;
@@ -97,7 +96,10 @@ ge::graphStatus ArgCommonBaseTiling::RunArgMaxTiling(bool withValue)
     }
     tilingContext_->SetTilingKey(tilingData_.get_tilingKey());
     size_t* workspaces = tilingContext_->GetWorkspaceSizes(1);
-    workspaces[0] = workSpaceSize_ + WORK_SPACE_SIZE;
+    auto platformInfo = tilingContext_->GetPlatformInfo();
+    OP_CHECK_NULL_WITH_CONTEXT(tilingContext_, platformInfo);
+    auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+    workspaces[0] = workSpaceSize_ + ascendcPlatform.GetLibApiWorkSpaceSize();
     OP_LOGD(tilingContext_->GetNodeName(), "Tiling4ArgMaxWithValue success.");
     return ge::GRAPH_SUCCESS;
 }
