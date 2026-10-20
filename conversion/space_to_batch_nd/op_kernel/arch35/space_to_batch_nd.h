@@ -200,7 +200,7 @@ private:
         int64_t sp = spatial_[axis - 1];
         int64_t bsVal = bs_[axis - 1];
         int64_t absMin = (pt > bi) ? ((pt - bi + bsVal - 1) / bsVal) : 0;
-        int64_t absMax = (pt + sp - 1 - bi) / bsVal;
+        int64_t absMax = (pt + sp - 1 - bi) < 0 ? -1 : (pt + sp - 1 - bi) / bsVal;
         return absMin <= absMax;
     }
 
@@ -238,7 +238,7 @@ private:
         int64_t pt = padTop_[axis - 1];
         int64_t sp = spatial_[axis - 1];
         int64_t absMin = (pt > bi) ? ((pt - bi + bsVal - 1) / bsVal) : 0;
-        int64_t absMax = (pt + sp - 1 - bi) / bsVal;
+        int64_t absMax = (pt + sp - 1 - bi) < 0 ? -1 : (pt + sp - 1 - bi) / bsVal;
         validStart = (absMin > tileStart) ? absMin : tileStart;
         int64_t validEnd = (absMax < tileStart + tileCount - 1) ? absMax : (tileStart + tileCount - 1);
         validCount = (validEnd >= validStart) ? (validEnd - validStart + 1) : 0;
@@ -254,7 +254,7 @@ private:
             int64_t ptN = padTop_[N_ - 1];
             int64_t spN = spatial_[N_ - 1];
             bcStart = (ptN > biN) ? ((ptN - biN + bsN - 1) / bsN) : 0;
-            int64_t bcEnd = (ptN + spN - 1 - biN) / bsN + 1;
+            int64_t bcEnd = (ptN + spN - 1 - biN) < 0 ? 0 : (ptN + spN - 1 - biN) / bsN + 1;
             if (bcEnd > fullSize) {
                 bcEnd = fullSize;
             }
