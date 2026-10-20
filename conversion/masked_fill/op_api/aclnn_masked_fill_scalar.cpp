@@ -53,7 +53,7 @@ extern "C" {
 // 根据API定义，需要列出所能支持的所有dtype
 static const std::initializer_list<op::DataType> DTYPE_SUPPORT_LIST = {
     op::DataType::DT_FLOAT, op::DataType::DT_INT32, op::DataType::DT_INT64, op::DataType::DT_FLOAT16,
-    op::DataType::DT_INT8,  op::DataType::DT_BOOL,  op::DataType::DT_BF16};
+    op::DataType::DT_INT8,  op::DataType::DT_INT16, op::DataType::DT_BOOL,  op::DataType::DT_BF16};
 
 static bool CheckNotNull(const aclTensor* selfRef, const aclTensor* mask, const aclScalar* value)
 {
@@ -71,8 +71,9 @@ static inline bool CheckSocVersionIsSupportBf16(void)
 
 static bool CheckDtypeValid(const aclTensor* selfRef, const aclTensor* mask)
 {
-    // 如果soc是1980芯片，则不支持DT_BF16，需要校验拦截
-    if (!CheckSocVersionIsSupportBf16() && (selfRef->GetDataType() == op::DataType::DT_BF16)) {
+    // 如果soc是1980芯片，则不支持DT_BF16，需要校验拦截；950新增支持INT16，其他芯片校验拦截
+    if ((!CheckSocVersionIsSupportBf16() && (selfRef->GetDataType() == op::DataType::DT_BF16)) ||
+        (!IsRegBase() && (selfRef->GetDataType() == op::DataType::DT_INT16))) {
         OP_LOGE(ACLNN_ERR_PARAM_INVALID,
                 "Input dtype of aclnnInplaceMaskedFillScalar is not supported in current soc version.");
         return false;

@@ -134,3 +134,22 @@ TEST_F(MaskedFillTiling, masked_fill_test_5)
     std::vector<size_t> expectWorkspaces = {16777216};
     ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
 }
+
+TEST_F(MaskedFillTiling, masked_fill_test_6)
+{
+    optiling::MaskedFillCompileInfo compileInfo = {64, 245760};
+    gert::TilingContextPara tilingContextPara("MaskedFill",
+                                              {
+                                                  {{{16}, {16}}, ge::DT_INT16, ge::FORMAT_ND},
+                                                  {{{16}, {16}}, ge::DT_BOOL, ge::FORMAT_ND},
+                                                  {{{1}, {1}}, ge::DT_INT16, ge::FORMAT_ND},
+                                              },
+                                              {
+                                                  {{{16}, {16}}, ge::DT_INT16, ge::FORMAT_ND},
+                                              },
+                                              &compileInfo);
+    uint64_t expectTilingKey = 8;
+    string expectTilingData = "16 1125904201810432 ";
+    std::vector<size_t> expectWorkspaces = {16777216};
+    ExecuteTestCase(tilingContextPara, ge::GRAPH_SUCCESS, expectTilingKey, expectTilingData, expectWorkspaces);
+}

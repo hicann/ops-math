@@ -22,13 +22,13 @@ namespace ge {
 
 * @par Inputs:
 * Three inputs, including:
-* @li x: A Tensor of dtype is bfloat16 or float16 or float32 or int64 or int32 or int8 or bool.
+* @li x: A Tensor of dtype is bfloat16 or float16 or float32 or int64 or int32 or int16 or int8 or bool.
 * @li mask: A Tensor of dtype bool.
-* @li value: A Tensor of dtype bfloat16 or float16 or float32 or int64 or int32 or int8 or bool. \n
+* @li value: A Tensor of dtype bfloat16 or float16 or float32 or int64 or int32 or int16 or int8 or bool. \n
 
 * @par Outputs:
 * y: A tensor. Must be one of the following dtypes:
-* bfloat16, float16, float32, int64, int32, int8, bool.
+* bfloat16, float16, float32, int64, int32, int16, int8, bool.
 
 * @attention Constraints:
 * @li The input tensors of x and mask must meet the broadcast relationship.
@@ -36,11 +36,11 @@ namespace ge {
 * @li The shape of y is formed by broadcasting x, masked and value.
 */
 REG_OP(MaskedFill)
-    .INPUT(x, TensorType({DT_FLOAT, DT_BF16, DT_FLOAT16, DT_INT8, DT_INT32, DT_INT64, DT_BOOL}))
+    .INPUT(x, TensorType({DT_FLOAT, DT_BF16, DT_FLOAT16, DT_INT8, DT_INT16, DT_INT32, DT_INT64, DT_BOOL}))
     .INPUT(mask, TensorType({DT_BOOL}))
-    .INPUT(value, TensorType({DT_FLOAT, DT_BF16, DT_FLOAT16, DT_INT8, DT_INT32, DT_INT64, DT_BOOL}))
-    .OUTPUT(y, TensorType({DT_FLOAT, DT_BF16, DT_FLOAT16, DT_INT8, DT_INT32, DT_INT64, DT_BOOL}))
+    .INPUT(value, TensorType({DT_FLOAT, DT_BF16, DT_FLOAT16, DT_INT8, DT_INT16, DT_INT32, DT_INT64, DT_BOOL}))
+    .OUTPUT(y, TensorType({DT_FLOAT, DT_BF16, DT_FLOAT16, DT_INT8, DT_INT16, DT_INT32, DT_INT64, DT_BOOL}))
     .OP_END_FACTORY_REG(MaskedFill)
 } // namespace ge
 
-#endif  // OPS_BUILT_IN_OP_PROTO_INC_SELECTION_OPS_H_
+#endif // OPS_BUILT_IN_OP_PROTO_INC_SELECTION_OPS_H_

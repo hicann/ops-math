@@ -18,15 +18,16 @@ namespace ops {
 class MaskedFill : public OpDef {
 public:
     const std::vector<ge::DataType> baseDataType = {ge::DT_BF16,  ge::DT_FLOAT16, ge::DT_FLOAT, ge::DT_INT64,
-                                                    ge::DT_INT32, ge::DT_INT8,    ge::DT_BOOL};
+                                                    ge::DT_INT32, ge::DT_INT16,   ge::DT_INT8,  ge::DT_BOOL};
     const std::vector<ge::Format> baseFormat = {ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND,
-                                                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
+                                                ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND, ge::FORMAT_ND};
     explicit MaskedFill(const char* name) : OpDef(name)
     {
         this->Input("x").ParamType(REQUIRED).DataType(baseDataType).Format(baseFormat).UnknownShapeFormat(baseFormat);
         this->Input("mask")
             .ParamType(REQUIRED)
-            .DataType({ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL})
+            .DataType({ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL, ge::DT_BOOL,
+                       ge::DT_BOOL})
             .Format(baseFormat)
             .UnknownShapeFormat(baseFormat);
         this->Input("value")
