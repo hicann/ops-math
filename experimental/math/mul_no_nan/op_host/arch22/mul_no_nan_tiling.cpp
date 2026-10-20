@@ -61,10 +61,9 @@ static ge::graphStatus CheckDtype(gert::TilingContext* context)
     ge::DataType yType = outputDesc->GetDataType();
     bool supported = x1Type == x2Type && x1Type == yType &&
                      (x1Type == ge::DT_FLOAT || x1Type == ge::DT_FLOAT16 || x1Type == ge::DT_BF16);
-    OP_CHECK_IF(
-        !supported,
-        OP_LOGE_WITH_INVALID_INPUT_DTYPE(context->GetNodeName(), "x", "unsupported", "DT_FLOAT16, DT_FLOAT, DT_BF16"),
-        return ge::GRAPH_FAILED);
+    OP_CHECK_IF(!supported,
+                OP_LOGE_FOR_INVALID_DTYPE(context->GetNodeName(), "x", "unsupported", "DT_FLOAT16, DT_FLOAT, DT_BF16"),
+                return ge::GRAPH_FAILED);
     return ge::GRAPH_SUCCESS;
 }
 
