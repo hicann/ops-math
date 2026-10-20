@@ -16,7 +16,7 @@
 #include "platform/platform_infos_def.h"
 #include "platform/platform_ascendc.h"
 #include "op_common/op_host/util/platform_util.h"
-#include  "../../../random_common/op_host/arch35/random_tiling_base.h"
+#include "../../../random_common/op_host/arch35/random_tiling_base.h"
 #include "exe_graph/runtime/shape.h"
 #include "op_host/tiling_base_class.h"
 #include "stateless_random_uniform_v3_tiling_arch35.h"
@@ -29,6 +29,7 @@ static constexpr uint16_t OUTPUT_IDX_Y = 0;
 // v3KernelMode 是 OpDef 中第 2 个属性（dtype 为索引 0，v3KernelMode 为索引 1）
 static constexpr uint32_t ATTR_IDX_V3_KERNEL_MODE = 1;
 static constexpr uint16_t CORE_ALIGN_SIZE = 512;
+static constexpr uint16_t CORE_ALIGN_SIZE_DV121 = 32;
 static constexpr int32_t COEF_VAL_FP32 = 1;
 static constexpr int32_t COEF_VAL_FP16_BF16 = 2;
 static constexpr uint32_t BUFFER_NUM = 2;
@@ -40,15 +41,15 @@ OpTilingConfig StatelessRandomUniformV3Tiling::BuildOpConfig()
 
     config.inputCheckRules = {
         // 输入索引: dtype列表, shapeSize, dim_num
-        {0, {{ge::DT_INT32, ge::DT_INT64}, -1, {1}, nullptr}},   // shape
-        {1, {{ge::DT_UINT64}, 1, {}, nullptr}},                   // key
-        {2, {{ge::DT_UINT64}, -1, {}, nullptr}},                  // counter
-        {3, {{ge::DT_FLOAT}, 1, {}, nullptr}},                    // from
-        {4, {{ge::DT_FLOAT}, 1, {}, nullptr}}                     // to
+        {0, {{ge::DT_INT32, ge::DT_INT64}, -1, {1}, nullptr}}, // shape
+        {1, {{ge::DT_UINT64}, 1, {}, nullptr}},                // key
+        {2, {{ge::DT_UINT64}, -1, {}, nullptr}},               // counter
+        {3, {{ge::DT_FLOAT}, 1, {}, nullptr}},                 // from
+        {4, {{ge::DT_FLOAT}, 1, {}, nullptr}}                  // to
     };
 
     config.outputCheckRules = {
-        {0, {{ge::DT_FLOAT, ge::DT_BF16, ge::DT_FLOAT16}, -1, {0,1,2,3,4,5,6,7,8}, nullptr}}  // y
+        {0, {{ge::DT_FLOAT, ge::DT_BF16, ge::DT_FLOAT16}, -1, {0, 1, 2, 3, 4, 5, 6, 7, 8}, nullptr}} // y
     };
 
     // 获取 outputSize：输出 y 的 shapeSize
@@ -60,9 +61,14 @@ OpTilingConfig StatelessRandomUniformV3Tiling::BuildOpConfig()
     };
 
     // key/counter 现在由 kernel 从 GM 直接读取，tiling 不再负责
-    config.getKeyAndCounter = []([[maybe_unused]] gert::TilingContext* ctx, uint32_t key[2], uint32_t counter[4]) -> ge::graphStatus {
-        key[0] = 0; key[1] = 0;
-        counter[0] = 0; counter[1] = 0; counter[2] = 0; counter[3] = 0;
+    config.getKeyAndCounter = []([[maybe_unused]] gert::TilingContext* ctx, uint32_t key[2],
+                                 uint32_t counter[4]) -> ge::graphStatus {
+        key[0] = 0;
+        key[1] = 0;
+        counter[0] = 0;
+        counter[1] = 0;
+        counter[2] = 0;
+        counter[3] = 0;
         return ge::GRAPH_SUCCESS;
     };
 
@@ -87,7 +93,17 @@ OpTilingConfig StatelessRandomUniformV3Tiling::BuildOpConfig()
 }
 
 StatelessRandomUniformV3Tiling::StatelessRandomUniformV3Tiling(gert::TilingContext* ctx)
-    : RandomTilingArch35(ctx, BuildOpConfig()) {}
+    : RandomTilingArch35(ctx, BuildOpConfig())
+{
+    auto platformInfo = context_->GetPlatformInfo();
+    if (platformInfo != nullptr) {
+        auto ascendcPlatform = platform_ascendc::PlatformAscendC(platformInfo);
+        if (ascendcPlatform.GetCurNpuArch() == NpuArch::DAV_9201 ||
+            ascendcPlatform.GetCurNpuArch() == NpuArch::DAV_9202) {
+            config_.coreAlignSize = CORE_ALIGN_SIZE_DV121;
+        }
+    }
+}
 
 ge::graphStatus StatelessRandomUniformV3Tiling::UniqueProcess()
 {

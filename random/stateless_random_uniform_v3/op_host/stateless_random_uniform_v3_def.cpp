@@ -97,6 +97,8 @@ public:
         this->Attr("v3KernelMode").AttrType(OPTIONAL).Int(0);
         this->AICore().AddConfig("ascend950");
         this->AICore().AddConfig("ascend350");
+        this->AICore().AddConfig("ascend960dt");
+        this->AICore().AddConfig("ascend960pr");
     }
 };
 

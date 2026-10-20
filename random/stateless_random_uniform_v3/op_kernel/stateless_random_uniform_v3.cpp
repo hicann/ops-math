@@ -15,10 +15,10 @@ using namespace StatelessRandomUniformV3Simd;
 namespace {
 #define STATELESSRANDOMUNIFORMV3_TILING_KEY 100
 } // namespace
-
-extern "C" __global__ __aicore__ void stateless_random_uniform_v3(
-    GM_ADDR shape, GM_ADDR key, GM_ADDR counter, GM_ADDR from, GM_ADDR to, GM_ADDR y, GM_ADDR workspace,
-    GM_ADDR tiling)
+#if defined(__DAV_VEC__)
+extern "C" __global__ __aicore__ void stateless_random_uniform_v3(GM_ADDR shape, GM_ADDR key, GM_ADDR counter,
+                                                                  GM_ADDR from, GM_ADDR to, GM_ADDR y,
+                                                                  GM_ADDR workspace, GM_ADDR tiling)
 {
     REGISTER_TILING_DEFAULT(RandomUnifiedTilingDataStruct);
     GET_TILING_DATA(tilingData, tiling);
@@ -31,3 +31,4 @@ extern "C" __global__ __aicore__ void stateless_random_uniform_v3(
         op.Process();
     }
 }
+#endif
