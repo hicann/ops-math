@@ -300,7 +300,9 @@ private:
      * @param isLeftPad  是否为 left pad（true=left, false=right）
      * @param leftPadH   上 pad 高度
      * @param outH       输出高度
-     * @param midAddr    数据地址
+     * @param nFactor    N 维度因子
+     * @param nStride    N 维度步长
+     * @param baseAddr   数据基地址
      * @param srcIdxAddr 源索引数组地址
      * @param dstIdxAddr 目标索引数组地址
      */
@@ -329,7 +331,9 @@ private:
      * @param isLeftPad   是否为 left pad（true=left, false=right）
      * @param leftPadC    左 pad 通道数
      * @param outC        输出通道数
-     * @param midAddr     数据地址
+     * @param factor      N 维度因子
+     * @param nStride     N 维度步长
+     * @param baseAddr    数据基地址
      * @param srcIdxAddr  源索引数组地址
      * @param dstIdxAddr  目标索引数组地址
      */
