@@ -283,3 +283,45 @@ TEST_F(l2_gcd_test, case_error_output_dtype_bool)
     aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
     EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
 }
+
+// Single-side BOOL: self BOOL + other INT32 (BOOL is promoted to INT32)
+TEST_F(l2_gcd_test, case_bool_int32_mixed)
+{
+    auto self = TensorDesc({2, 2}, ACL_BOOL, ACL_FORMAT_ND);
+    auto other = TensorDesc({2, 2}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-2, 2);
+    auto out = TensorDesc({2, 2}, ACL_INT32, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
+
+    auto ut = OP_API_UT(aclnnGcd, INPUT(self, other), OUTPUT(out));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// Single-side BOOL: self INT32 + other BOOL (BOOL is promoted to INT32)
+TEST_F(l2_gcd_test, case_int32_bool_mixed)
+{
+    auto self = TensorDesc({2, 2}, ACL_INT32, ACL_FORMAT_ND).ValueRange(-2, 2);
+    auto other = TensorDesc({2, 2}, ACL_BOOL, ACL_FORMAT_ND);
+    auto out = TensorDesc({2, 2}, ACL_INT32, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
+
+    auto ut = OP_API_UT(aclnnGcd, INPUT(self, other), OUTPUT(out));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACL_SUCCESS);
+}
+
+// Both BOOL: rejected with ACLNN_ERR_PARAM_INVALID
+TEST_F(l2_gcd_test, case_bool_bool_error)
+{
+    auto self = TensorDesc({2, 2}, ACL_BOOL, ACL_FORMAT_ND);
+    auto other = TensorDesc({2, 2}, ACL_BOOL, ACL_FORMAT_ND);
+    auto out = TensorDesc({2, 2}, ACL_INT32, ACL_FORMAT_ND).Precision(0.0001, 0.0001);
+
+    auto ut = OP_API_UT(aclnnGcd, INPUT(self, other), OUTPUT(out));
+
+    uint64_t workspace_size = 0;
+    aclnnStatus aclRet = ut.TestGetWorkspaceSize(&workspace_size);
+    EXPECT_EQ(aclRet, ACLNN_ERR_PARAM_INVALID);
+}

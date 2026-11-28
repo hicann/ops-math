@@ -23,7 +23,7 @@
 
 ## 功能说明
 
-对给定的self和other计算element-wise的最大公约数，其中self和other都需要为整数。
+对给定的self和other计算element-wise的最大公约数。self和other均需为整型或BOOL，且不能同时为BOOL；BOOL按数据类型推导规则转换为整型后，两侧均为整型参与计算。
 
 ## 函数原型
 
@@ -76,8 +76,8 @@ aclnnStatus aclnnGcd(
       <td>self（aclTensor*）</td>
       <td>输入</td>
       <td>表示待转换的目标张量。</td>
-      <td>数据类型与other的数据类型需满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。shape与other的shape满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
-      <td>UINT8、INT8、INT16、INT32、INT64</td>
+      <td>数据类型与other的数据类型需满足<a href="../../../docs/zh/context/deduction_relationship.md" target="_blank">数据类型推导规则</a>。self和other数据类型不支持同时为BOOL。shape与other的shape满足<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>。</td>
+      <td>UINT8、INT8、INT16、INT32、INT64、BOOL</td>
       <td>ND</td>
       <td>1-8</td>
       <td>√</td>
@@ -86,8 +86,8 @@ aclnnStatus aclnnGcd(
       <td>other（aclTensor*）</td>
       <td>输入</td>
       <td>表示待计算最大公约数的输入张量。</td>
-      <td>数据类型与self的数据类型需满足数据类型推导规则。shape需要与self满足broadcast关系。</td>
-      <td>UINT8、INT8、INT16、INT32、INT64</td>
+      <td>数据类型与self的数据类型需满足数据类型推导规则。self和other数据类型不支持同时为BOOL。shape需要与self满足broadcast关系。</td>
+      <td>UINT8、INT8、INT16、INT32、INT64、BOOL</td>
       <td>ND</td>
       <td>1-8</td>
       <td>√</td>
@@ -152,8 +152,8 @@ aclnnStatus aclnnGcd(
       <td>传入的self、other、out是空指针。</td>
     </tr>
     <tr>
-      <td rowspan="5">ACLNN_ERR_PARAM_INVALID</td>
-      <td rowspan="5">161002</td>
+      <td rowspan="6">ACLNN_ERR_PARAM_INVALID</td>
+      <td rowspan="6">161002</td>
       <td>self、other推导后的数据类型不在支持范围之内，或out的数据类型不在支持的范围之内。</td>
     </tr>
     <tr>
@@ -167,6 +167,9 @@ aclnnStatus aclnnGcd(
     </tr>
     <tr>
       <td>self和other进行<a href="../../../docs/zh/context/broadcast_relationship.md" target="_blank">broadcast关系</a>后的shape与out不一样。</td>
+    </tr>
+    <tr>
+      <td>self和other同时为bool数据类型。</td>
     </tr>
   </tbody>
   </table>
